@@ -674,8 +674,204 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ### Version 2.0.x
 
-- :white_check_mark: GetVariables
-- :white_check_mark: SetVariables
+#### AlignedDataCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: Interval (type: integer) (units: seconds)
+- :white_check_mark: Measurands (type: memberlist) (units: -)
+- :white_check_mark: SendDuringIdle (type: boolean) (units: -)
+- :white_check_mark: SignReadings (type: boolean) (units: -)
+- :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
+
+#### AuthCacheCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: DisablePostAuthorize (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: LifeTime (type: integer) (units: -)
+- :white_check_mark: Policy (type: optionlist) (units: -)
+
+#### AuthCtrlr
+
+- :white_check_mark: AdditionalInfoItemsPerMessage (type: integer) (units: -)
+- :white_check_mark: AuthorizeRemoteStart (type: boolean) (units: -)
+- :white_check_mark: DisableRemoteAuthorization (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
+- :white_check_mark: LocalPreAuthorize (type: boolean) (units: -)
+- :white_check_mark: MasterPassGroupId (type: string) (units: -)
+- :white_check_mark: OfflineTxForUnknownIdEnabled (type: boolean) (units: -)
+
+#### CHAdeMOCtrlr
+
+- :white_check_mark: AutoManufacturerCode (type: integer) (units: -)
+- :white_check_mark: CHAdeMOProtocolNumber (type: integer) (units: -)
+- :white_check_mark: DynamicControl (type: boolean) (units: -)
+- :white_check_mark: HighCurrentControl (type: boolean) (units: -)
+- :white_check_mark: HighVoltageControl (type: boolean) (units: -)
+- :white_check_mark: SelftestActive (type: boolean) (units: -)
+- :white_check_mark: VehicleStatus (type: boolean) (units: -)
+
+#### ChargingStation
+
+- :white_check_mark: AllowNewSessionsPendingFirmwareUpdate (type: boolean) (units: -)
+- :white_check_mark: AvailabilityState (type: optionlist) (units: -)
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white*check_mark: ConnectionUrl (type: string) (units: -) *(vendor-specific)\_
+- :white_check_mark: Model (type: string) (units: -)
+- :white_check_mark: SupplyPhases (type: integer) (units: -)
+- :white_check_mark: VendorName (type: string) (units: -)
+- :white*check_mark: WebSocketPingInterval (type: integer) (units: seconds) *(vendor-specific)\_
+
+#### ClockCtrlr
+
+- :white_check_mark: DateTime (type: datetime) (units: -)
+- :white_check_mark: NextTimeOffsetTransitionDateTime (type: datetime) (units: -)
+- :white_check_mark: NtpServerUri (type: string) (units: -)
+- :white_check_mark: NtpSource (type: optionlist) (units: -)
+- :white_check_mark: TimeAdjustmentReportingThreshold (type: integer) (units: -)
+- :white_check_mark: TimeOffset (type: string) (units: -)
+- :white_check_mark: TimeSource (type: sequencelist) (units: -)
+- :white_check_mark: TimeZone (type: string) (units: -)
+
+#### DeviceDataCtrlr
+
+- :white_check_mark: BytesPerMessage (type: integer) (units: -)
+- :white_check_mark: ConfigurationValueSize (type: integer) (units: characters)
+- :white_check_mark: ItemsPerMessage (type: integer) (units: -)
+- :white_check_mark: ReportingValueSize (type: integer) (units: characters)
+- :white_check_mark: ValueSize (type: integer) (units: characters)
+
+#### EVSE
+
+- :white_check_mark: AllowReset (type: boolean) (units: -)
+- :white_check_mark: AvailabilityState (type: optionlist) (units: -)
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: EvseId (type: string) (units: -)
+- :white_check_mark: ISO15118EvseId (type: string) (units: -)
+- :white_check_mark: SupplyPhases (type: integer) (units: -)
+
+#### FirmwareCtrlr
+
+- :white*check_mark: SimulateSignatureVerificationFailure (type: boolean) (units: -) *(vendor-specific)\_
+
+#### ISO15118Ctrlr
+
+- :white_check_mark: CentralContractValidationAllowed (type: boolean) (units: -)
+- :white_check_mark: ContractCertificateInstallationEnabled (type: boolean) (units: -)
+- :white_check_mark: ContractValidationOffline (type: boolean) (units: -)
+- :white_check_mark: CountryName (type: string) (units: -)
+- :white_check_mark: MaxScheduleEntries (type: integer) (units: -)
+- :white_check_mark: OrganizationName (type: string) (units: -)
+- :white_check_mark: PnCEnabled (type: boolean) (units: -)
+- :white_check_mark: RequestMeteringReceipt (type: boolean) (units: -)
+- :white_check_mark: RequestedEnergyTransferMode (type: optionlist) (units: -)
+- :white_check_mark: SeccId (type: string) (units: -)
+- :white_check_mark: V2GCertificateInstallationEnabled (type: boolean) (units: -)
+
+#### LocalAuthListCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: BytesPerMessage (type: integer) (units: -)
+- :white_check_mark: DisablePostAuthorize (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: Entries (type: integer) (units: -)
+- :white_check_mark: ItemsPerMessage (type: integer) (units: -)
+
+#### MonitoringCtrlr
+
+- :white_check_mark: ActiveMonitoringBase (type: optionlist) (units: -)
+- :white_check_mark: ActiveMonitoringLevel (type: integer) (units: -)
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: BytesPerMessage (type: integer) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: ItemsPerMessage (type: integer) (units: -)
+- :white_check_mark: MonitoringBase (type: optionlist) (units: -)
+- :white_check_mark: MonitoringLevel (type: integer) (units: -)
+- :white_check_mark: OfflineQueuingSeverity (type: integer) (units: -)
+
+#### OCPPCommCtrlr
+
+- :white_check_mark: ActiveNetworkProfile (type: string) (units: -)
+- :white_check_mark: FieldLength (type: integer) (units: -)
+- :white_check_mark: FileTransferProtocols (type: memberlist) (units: -)
+- :white_check_mark: HeartbeatInterval (type: integer) (units: seconds)
+- :white_check_mark: MessageAttemptInterval (type: integer) (units: seconds)
+- :white_check_mark: MessageAttempts (type: integer) (units: -)
+- :white_check_mark: MessageTimeout (type: integer) (units: seconds)
+- :white_check_mark: NetworkConfigurationPriority (type: string) (units: -)
+- :white_check_mark: NetworkProfileConnectionAttempts (type: integer) (units: -)
+- :white_check_mark: OfflineThreshold (type: integer) (units: seconds)
+- :white_check_mark: PublicKeyWithSignedMeterValue (type: optionlist) (units: -)
+- :white_check_mark: QueueAllMessages (type: boolean) (units: -)
+- :white_check_mark: ResetRetries (type: integer) (units: -)
+- :white_check_mark: RetryBackOffRandomRange (type: integer) (units: -)
+- :white_check_mark: RetryBackOffRepeatTimes (type: integer) (units: -)
+- :white_check_mark: RetryBackOffWaitMinimum (type: integer) (units: -)
+- :white_check_mark: UnlockOnEVSideDisconnect (type: boolean) (units: -)
+- :white_check_mark: WebSocketPingInterval (type: integer) (units: seconds)
+
+#### ReservationCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: NonEvseSpecific (type: boolean) (units: -)
+
+#### SampledDataCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: RegisterValuesWithoutPhases (type: boolean) (units: -)
+- :white_check_mark: SignReadings (type: boolean) (units: -)
+- :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
+- :white_check_mark: TxStartedMeasurands (type: memberlist) (units: -)
+- :white_check_mark: TxUpdatedInterval (type: integer) (units: seconds)
+
+#### SecurityCtrlr
+
+- :white_check_mark: AdditionalRootCertificateCheck (type: boolean) (units: -)
+- :white_check_mark: BasicAuthPassword (type: string) (units: -)
+- :white_check_mark: CertSigningRepeatTimes (type: integer) (units: -)
+- :white_check_mark: CertSigningWaitMinimum (type: integer) (units: seconds)
+- :white_check_mark: CertificateEntries (type: integer) (units: -)
+- :white*check_mark: CertificatePrivateKey (type: string) (units: -) *(vendor-specific)\_
+- :white_check_mark: Identity (type: string) (units: -)
+- :white_check_mark: MaxCertificateChainSize (type: integer) (units: -)
+- :white_check_mark: OrganizationName (type: string) (units: -)
+- :white_check_mark: SecurityProfile (type: integer) (units: -)
+
+#### SmartChargingCtrlr
+
+- :white_check_mark: ACPhaseSwitchingSupported (type: boolean) (units: -)
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: Entries (type: integer) (units: -)
+- :white_check_mark: ExternalControlSignalsEnabled (type: boolean) (units: -)
+- :white_check_mark: LimitChangeSignificance (type: decimal) (units: percent)
+- :white_check_mark: NotifyChargingLimitWithSchedules (type: boolean) (units: -)
+- :white_check_mark: PeriodsPerSchedule (type: integer) (units: -)
+- :white_check_mark: Phases3to1 (type: boolean) (units: -)
+- :white_check_mark: ProfileStackLevel (type: integer) (units: -)
+
+#### TariffCostCtrlr
+
+- :white_check_mark: Available (type: boolean) (units: -)
+- :white_check_mark: Currency (type: string) (units: -)
+- :white_check_mark: Enabled (type: boolean) (units: -)
+- :white_check_mark: TariffFallbackMessage (type: string) (units: -)
+- :white_check_mark: TotalCostFallbackMessage (type: string) (units: -)
+
+#### TxCtrlr
+
+- :white_check_mark: ChargingTime (type: decimal) (units: seconds)
+- :white_check_mark: EVConnectionTimeOut (type: integer) (units: seconds)
+- :white_check_mark: MaxEnergyOnInvalidId (type: integer) (units: Wh)
+- :white_check_mark: StopTxOnEVSideDisconnect (type: boolean) (units: -)
+- :white_check_mark: StopTxOnInvalidId (type: boolean) (units: -)
+- :white_check_mark: TxBeforeAcceptedEnabled (type: boolean) (units: -)
+- :white_check_mark: TxStartPoint (type: memberlist) (units: -)
+- :white_check_mark: TxStopPoint (type: memberlist) (units: -)
 
 ## UI Protocol
 
