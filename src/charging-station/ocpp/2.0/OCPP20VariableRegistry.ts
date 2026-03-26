@@ -984,6 +984,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: 'SupplyPhases',
   },
 
+  // FirmwareCtrlr Component
+  [buildRegistryKey(
+    OCPP20ComponentName.FirmwareCtrlr as string,
+    'SimulateSignatureVerificationFailure'
+  )]: {
+    component: OCPP20ComponentName.FirmwareCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'When true, firmware signature verification is simulated as failed (L01.FR.03/L01.FR.04).',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SimulateSignatureVerificationFailure',
+    vendorSpecific: true,
+  },
+
   // ISO15118Ctrlr Component
   [buildRegistryKey(
     OCPP20ComponentName.ISO15118Ctrlr as string,
