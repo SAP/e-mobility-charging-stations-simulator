@@ -683,6 +683,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: SendDuringIdle (type: boolean) (units: -)
 - :white_check_mark: SignReadings (type: boolean) (units: -)
 - :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
+- :white_check_mark: TxEndedMeasurands (type: memberlist) (units: -)
 
 #### AuthCacheCtrlr
 
@@ -691,6 +692,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Enabled (type: boolean) (units: -)
 - :white_check_mark: LifeTime (type: integer) (units: -)
 - :white_check_mark: Policy (type: optionlist) (units: -)
+- :white_check_mark: Storage (type: integer) (units: -)
 
 #### AuthCtrlr
 
@@ -698,8 +700,8 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: AuthorizeRemoteStart (type: boolean) (units: -)
 - :white_check_mark: DisableRemoteAuthorization (type: boolean) (units: -)
 - :white_check_mark: Enabled (type: boolean) (units: -)
-- :white_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
-- :white_check_mark: LocalPreAuthorize (type: boolean) (units: -)
+- :white_check_mark: LocalAuthorizationOffline (type: boolean) (units: -)
+- :white_check_mark: LocalPreAuthorization (type: boolean) (units: -)
 - :white_check_mark: MasterPassGroupId (type: string) (units: -)
 - :white_check_mark: OfflineTxForUnknownIdEnabled (type: boolean) (units: -)
 
@@ -750,6 +752,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Available (type: boolean) (units: -)
 - :white_check_mark: EvseId (type: string) (units: -)
 - :white_check_mark: ISO15118EvseId (type: string) (units: -)
+- :white_check_mark: Power (type: decimal) (units: W)
 - :white_check_mark: SupplyPhases (type: integer) (units: -)
 
 #### FirmwareCtrlr
@@ -763,7 +766,6 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: ContractValidationOffline (type: boolean) (units: -)
 - :white_check_mark: CountryName (type: string) (units: -)
 - :white_check_mark: MaxScheduleEntries (type: integer) (units: -)
-- :white_check_mark: OrganizationName (type: string) (units: -)
 - :white_check_mark: PnCEnabled (type: boolean) (units: -)
 - :white_check_mark: RequestMeteringReceipt (type: boolean) (units: -)
 - :white_check_mark: RequestedEnergyTransferMode (type: optionlist) (units: -)
@@ -778,6 +780,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Enabled (type: boolean) (units: -)
 - :white_check_mark: Entries (type: integer) (units: -)
 - :white_check_mark: ItemsPerMessage (type: integer) (units: -)
+- :white_check_mark: Storage (type: integer) (units: -)
 
 #### MonitoringCtrlr
 
@@ -825,8 +828,10 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: RegisterValuesWithoutPhases (type: boolean) (units: -)
 - :white_check_mark: SignReadings (type: boolean) (units: -)
 - :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
+- :white_check_mark: TxEndedMeasurands (type: memberlist) (units: -)
 - :white_check_mark: TxStartedMeasurands (type: memberlist) (units: -)
 - :white_check_mark: TxUpdatedInterval (type: integer) (units: seconds)
+- :white_check_mark: TxUpdatedMeasurands (type: memberlist) (units: -)
 
 #### SecurityCtrlr
 
@@ -853,6 +858,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: PeriodsPerSchedule (type: integer) (units: -)
 - :white_check_mark: Phases3to1 (type: boolean) (units: -)
 - :white_check_mark: ProfileStackLevel (type: integer) (units: -)
+- :white_check_mark: RateUnit (type: memberlist) (units: -)
 
 #### TariffCostCtrlr
 
