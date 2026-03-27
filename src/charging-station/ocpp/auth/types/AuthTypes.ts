@@ -1,4 +1,5 @@
 import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
+import type { OCPP20MessageFormatEnumType } from '../../../../types/index.js'
 
 import {
   OCPP16AuthorizationStatus,
@@ -181,7 +182,7 @@ export interface AuthorizationResult {
   /** Personal message for user display */
   readonly personalMessage?: {
     content: string
-    format: 'ASCII' | 'HTML' | 'URI' | 'UTF8'
+    format: OCPP20MessageFormatEnumType
     language?: string
   }
 

@@ -14,6 +14,7 @@ import {
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthHelpers } from '../../../../../src/charging-station/ocpp/auth/utils/AuthHelpers.js'
+import { OCPP20MessageFormatEnumType } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthHelpers', async () => {
@@ -444,7 +445,7 @@ await describe('AuthHelpers', async () => {
         method: AuthenticationMethod.LOCAL_LIST,
         personalMessage: {
           content: 'Welcome',
-          format: 'ASCII',
+          format: OCPP20MessageFormatEnumType.ASCII,
         },
         status: AuthorizationStatus.ACCEPTED,
         timestamp: new Date('2024-01-01T00:00:00Z'),
