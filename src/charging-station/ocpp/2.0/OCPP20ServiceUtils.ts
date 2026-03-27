@@ -190,14 +190,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     data: T[],
     itemsLimit: number,
     bytesLimit: number,
-    buildRejected: (item: T, reason: { info: string; reasonCode: string }) => unknown,
+    buildRejected: (item: T, reason: { info: string; reasonCode: ReasonCodeEnumType }) => unknown,
     logger: { debug: (...args: unknown[]) => void }
   ): { rejected: boolean; results: unknown[] } {
     if (itemsLimit > 0 && data.length > itemsLimit) {
       const results = data.map(d =>
         buildRejected(d, {
           info: `ItemsPerMessage limit ${itemsLimit.toString()} exceeded (${data.length.toString()} requested)`,
-          reasonCode: ReasonCodeEnumType.TooManyElements as string,
+          reasonCode: ReasonCodeEnumType.TooManyElements,
         })
       )
       logger.debug(
@@ -211,7 +211,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         const results = data.map(d =>
           buildRejected(d, {
             info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
-            reasonCode: ReasonCodeEnumType.TooLargeElement as string,
+            reasonCode: ReasonCodeEnumType.TooLargeElement,
           })
         )
         logger.debug(
@@ -232,7 +232,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     originalData: T[],
     currentResults: unknown[],
     bytesLimit: number,
-    buildRejected: (item: T, reason: { info: string; reasonCode: string }) => unknown,
+    buildRejected: (item: T, reason: { info: string; reasonCode: ReasonCodeEnumType }) => unknown,
     logger: { debug: (...args: unknown[]) => void }
   ): unknown[] {
     if (bytesLimit > 0) {
@@ -242,7 +242,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           const results = originalData.map(d =>
             buildRejected(d, {
               info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
-              reasonCode: ReasonCodeEnumType.TooLargeElement as string,
+              reasonCode: ReasonCodeEnumType.TooLargeElement,
             })
           )
           logger.debug(

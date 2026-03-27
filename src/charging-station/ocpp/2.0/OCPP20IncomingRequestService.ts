@@ -586,7 +586,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         attributeStatusInfo: {
           additionalInfo: reason.info,
 
-          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+          reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType,
         component: v.component,
@@ -657,7 +657,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         attributeStatusInfo: {
           additionalInfo: reason.info,
 
-          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+          reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType ?? AttributeEnumType.Actual,
         component: v.component,

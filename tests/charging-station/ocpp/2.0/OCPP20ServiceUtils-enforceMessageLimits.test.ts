@@ -18,7 +18,7 @@ interface MockLogger {
 interface RejectedResult {
   info: string
   original: TestItem
-  reasonCode: string
+  reasonCode: ReasonCodeEnumType
 }
 
 interface TestItem {
@@ -58,7 +58,10 @@ function makeMockStation () {
 
 /** @returns A builder function that creates rejected result objects */
 function makeRejectedBuilder () {
-  return (item: TestItem, reason: { info: string; reasonCode: string }): RejectedResult => ({
+  return (
+    item: TestItem,
+    reason: { info: string; reasonCode: ReasonCodeEnumType }
+  ): RejectedResult => ({
     info: reason.info,
     original: item,
     reasonCode: reason.reasonCode,
@@ -361,7 +364,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
       const item = makeItem('WebSocketPingInterval', 'xyz')
-      const capturedReasons: { info: string; reasonCode: string }[] = []
+      const capturedReasons: { info: string; reasonCode: ReasonCodeEnumType }[] = []
 
       OCPP20ServiceUtils.enforceMessageLimits(
         station,
