@@ -3668,11 +3668,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
-  private toHandler (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handler: (chargingStation: ChargingStation, commandPayload: any) => JsonType | Promise<JsonType>
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- bridges contravariant handler signatures into IncomingRequestHandler
+  private toHandler<P extends JsonType, R extends JsonType>(
+    handler: (chargingStation: ChargingStation, commandPayload: P) => Promise<R> | R
   ): IncomingRequestHandler {
-    return handler as IncomingRequestHandler
+    return handler as unknown as IncomingRequestHandler
   }
 
   private triggerAllEvseStatusNotifications (

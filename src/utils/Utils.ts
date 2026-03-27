@@ -30,17 +30,15 @@ export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const once = <T extends (...args: any[]) => any>(fn: T): T => {
+export const once = <A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) => {
   let hasBeenCalled = false
-  let result: ReturnType<T>
+  let result!: R
   let thrownError: Error | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function (this: any, ...args: Parameters<T>): ReturnType<T> {
+  return (...args: A): R => {
     if (!hasBeenCalled) {
       hasBeenCalled = true
       try {
-        result = fn.apply(this, args) as ReturnType<T>
+        result = fn(...args)
       } catch (err) {
         thrownError = err as Error
       }
@@ -48,9 +46,8 @@ export const once = <T extends (...args: any[]) => any>(fn: T): T => {
     if (thrownError != null) {
       throw thrownError
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result
-  } as T
+  }
 }
 
 export const has = (property: PropertyKey, object: unknown): boolean => {
