@@ -1,3 +1,4 @@
+import type { JsonObject } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../ChargingStation.js'
 import type { AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
@@ -131,7 +132,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     logger.debug(`${moduleName}: Certificate authentication strategy cleaned up`)
   }
 
-  getStats (): Record<string, unknown> {
+  getStats (): JsonObject {
     return {
       ...this.stats,
       isInitialized: this.isInitialized,

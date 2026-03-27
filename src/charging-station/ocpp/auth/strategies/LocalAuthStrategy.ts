@@ -1,3 +1,4 @@
+import type { JsonObject } from '../../../../types/index.js'
 import type {
   AuthCache,
   AuthStrategy,
@@ -205,7 +206,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including hit rates, request counts, and cache status
    */
-  public getStats (): Record<string, unknown> {
+  public getStats (): JsonObject {
     const cacheStats = this.authCache ? this.authCache.getStats() : null
 
     return {

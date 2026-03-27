@@ -1,3 +1,4 @@
+import type { JsonObject } from '../../../../types/index.js'
 import type {
   AuthCache,
   AuthStrategy,
@@ -216,7 +217,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including success rates, response times, and error counts
    */
-  public async getStats (): Promise<Record<string, unknown>> {
+  public async getStats (): Promise<JsonObject> {
     const cacheStats = this.authCache ? this.authCache.getStats() : null
 
     let adapterAvailable = false

@@ -1,4 +1,9 @@
-import type { OCPP20IdTokenInfoType, OCPPVersion } from '../../../../types/index.js'
+import type {
+  JsonObject,
+  OCPP20IdTokenInfoType,
+  OCPP20IdTokenType,
+  OCPPVersion,
+} from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
@@ -154,7 +159,7 @@ export interface AuthStrategy {
   /**
    * Get strategy-specific statistics
    */
-  getStats(): Promise<Record<string, unknown>> | Record<string, unknown>
+  getStats(): JsonObject | Promise<JsonObject>
 
   /**
    * Initialize the strategy with configuration
@@ -173,7 +178,7 @@ export interface AuthStrategy {
   readonly priority: number
 }
 
-export interface CacheStats {
+export interface CacheStats extends JsonObject {
   /** Number of entries evicted due to capacity limits */
   evictions: number
 
@@ -322,7 +327,7 @@ export interface LocalAuthListManager {
  * Adapters handle the translation between unified auth types
  * and version-specific OCPP types and protocols.
  */
-export interface OCPPAuthAdapter {
+export interface OCPPAuthAdapter<TVersionId = OCPP20IdTokenType | string> {
   /**
    * Perform remote authorization using version-specific protocol
    * @param identifier - Unified identifier to authorize
@@ -341,7 +346,7 @@ export interface OCPPAuthAdapter {
    * @param identifier - Unified identifier
    * @returns Version-specific identifier
    */
-  convertFromUnifiedIdentifier(identifier: UnifiedIdentifier): object | string
+  convertFromUnifiedIdentifier(identifier: UnifiedIdentifier): TVersionId
 
   /**
    * Convert a version-specific identifier to unified format
@@ -350,14 +355,14 @@ export interface OCPPAuthAdapter {
    * @returns Unified identifier
    */
   convertToUnifiedIdentifier(
-    identifier: object | string,
+    identifier: TVersionId,
     additionalData?: Record<string, unknown>
   ): UnifiedIdentifier
 
   /**
    * Get adapter-specific configuration requirements
    */
-  getConfigurationSchema(): Record<string, unknown>
+  getConfigurationSchema(): JsonObject
 
   /**
    * Check if remote authorization is available

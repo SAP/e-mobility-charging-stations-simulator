@@ -1,4 +1,5 @@
 import type { ChargingStation } from '../../../../charging-station/index.js'
+import type { JsonObject } from '../../../../types/index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
   AuthConfiguration,
@@ -34,7 +35,7 @@ const moduleName = 'OCPP16AuthAdapter'
  * Handles authentication for OCPP 1.6 charging stations by translating
  * between unified auth types and OCPP 1.6 specific types and protocols.
  */
-export class OCPP16AuthAdapter implements OCPPAuthAdapter {
+export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   readonly ocppVersion = OCPPVersion.VERSION_16
 
   constructor (private readonly chargingStation: ChargingStation) {}
@@ -215,7 +216,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * Get OCPP 1.6 specific configuration schema
    * @returns JSON schema object describing valid OCPP 1.6 auth configuration properties
    */
-  getConfigurationSchema (): Record<string, unknown> {
+  getConfigurationSchema (): JsonObject {
     return {
       properties: {
         allowOfflineTxForUnknownId: {
@@ -258,7 +259,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * Get adapter-specific status information
    * @returns Status object with online state, auth settings, and station identifier
    */
-  getStatus (): Record<string, unknown> {
+  getStatus (): JsonObject {
     return {
       isOnline: this.chargingStation.inAcceptedState(),
       localAuthEnabled: this.chargingStation.getLocalAuthListEnabled(),

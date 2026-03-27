@@ -24,6 +24,7 @@ import {
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
+import { OCPP20IdTokenEnumType, type OCPP20IdTokenType } from '../../../../../src/types/index.js'
 
 /**
  * Factory functions for creating test mocks and fixtures
@@ -204,13 +205,10 @@ export const createMockOCPPAdapter = (
   convertFromUnifiedIdentifier: (identifier: UnifiedIdentifier) =>
     ocppVersion === OCPPVersion.VERSION_16
       ? identifier.value
-      : { idToken: identifier.value, type: identifier.type },
-  convertToUnifiedIdentifier: (identifier: object | string) => ({
+      : { idToken: identifier.value, type: OCPP20IdTokenEnumType.Central },
+  convertToUnifiedIdentifier: (identifier: OCPP20IdTokenType | string) => ({
     type: IdentifierType.ID_TAG,
-    value:
-      typeof identifier === 'string'
-        ? identifier
-        : ((identifier as { idToken?: string }).idToken ?? 'unknown'),
+    value: typeof identifier === 'string' ? identifier : identifier.idToken,
   }),
   getConfigurationSchema: () => ({}),
   isRemoteAvailable: () => true,

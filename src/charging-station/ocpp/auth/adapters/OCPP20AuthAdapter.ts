@@ -1,5 +1,6 @@
 import type {
   AdditionalInfoType,
+  JsonObject,
   OCPP20AuthorizeRequest,
   OCPP20AuthorizeResponse,
   RequestStartStopStatusEnumType,
@@ -321,7 +322,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Get OCPP 2.0 specific configuration schema
    * @returns Configuration schema object for OCPP 2.0 authorization settings
    */
-  getConfigurationSchema (): Record<string, unknown> {
+  getConfigurationSchema (): JsonObject {
     return {
       properties: {
         authCacheEnabled: {
@@ -364,7 +365,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Get adapter-specific status information
    * @returns Status object containing adapter state and capabilities
    */
-  getStatus (): Record<string, unknown> {
+  getStatus (): JsonObject {
     return {
       isOnline: this.chargingStation.inAcceptedState(),
       localAuthEnabled: true, // Configuration dependent
