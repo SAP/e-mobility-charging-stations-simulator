@@ -71,9 +71,9 @@ export class PerformanceStatistics {
 
   public static deleteInstance (objId: string | undefined): boolean {
     if (objId == null) {
-      const errMsg = 'Cannot delete performance statistics instance without specifying object id'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
-      throw new BaseError(errMsg)
+      const errorMsg = 'Cannot delete performance statistics instance without specifying object id'
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
     }
     return PerformanceStatistics.instances.delete(objId)
   }
@@ -98,19 +98,19 @@ export class PerformanceStatistics {
     uri: undefined | URL
   ): PerformanceStatistics | undefined {
     if (objId == null) {
-      const errMsg = 'Cannot get performance statistics instance without specifying object id'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
-      throw new BaseError(errMsg)
+      const errorMsg = 'Cannot get performance statistics instance without specifying object id'
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
     }
     if (objName == null) {
-      const errMsg = 'Cannot get performance statistics instance without specifying object name'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
-      throw new BaseError(errMsg)
+      const errorMsg = 'Cannot get performance statistics instance without specifying object name'
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
     }
     if (uri == null) {
-      const errMsg = 'Cannot get performance statistics instance without specifying object uri'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
-      throw new BaseError(errMsg)
+      const errorMsg = 'Cannot get performance statistics instance without specifying object uri'
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
     }
     if (!PerformanceStatistics.instances.has(objId)) {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri))

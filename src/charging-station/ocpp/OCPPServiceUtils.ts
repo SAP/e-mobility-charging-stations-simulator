@@ -1253,7 +1253,7 @@ const buildPowerMeasurandValue = (
         )
       break
     default: {
-      const errMsg = `MeterValues measurand ${
+      const errorMsg = `MeterValues measurand ${
         powerTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: Unknown ${chargingStation.stationInfo?.currentOutType} currentOutType in template file ${
@@ -1261,8 +1261,8 @@ const buildPowerMeasurandValue = (
       }, cannot calculate ${
         powerTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`
-      logger.error(`${chargingStation.logPrefix()} ${errMsg}`)
-      throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
+      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`)
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, RequestCommand.METER_VALUES)
     }
   }
 
@@ -1519,7 +1519,7 @@ const buildCurrentMeasurandValue = (
         : getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
       break
     default: {
-      const errMsg = `MeterValues measurand ${
+      const errorMsg = `MeterValues measurand ${
         currentTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: Unknown ${chargingStation.stationInfo?.currentOutType} currentOutType in template file ${
@@ -1527,8 +1527,8 @@ const buildCurrentMeasurandValue = (
       }, cannot calculate ${
         currentTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`
-      logger.error(`${chargingStation.logPrefix()} ${errMsg}`)
-      throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
+      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`)
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, RequestCommand.METER_VALUES)
     }
   }
 
@@ -1960,17 +1960,17 @@ const checkMeasurandPowerDivider = (
   measurandType: MeterValueMeasurand | undefined
 ): void => {
   if (chargingStation.powerDivider == null) {
-    const errMsg = `MeterValues measurand ${
+    const errorMsg = `MeterValues measurand ${
       measurandType ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
     }: powerDivider is undefined`
-    logger.error(`${chargingStation.logPrefix()} ${errMsg}`)
-    throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
+    logger.error(`${chargingStation.logPrefix()} ${errorMsg}`)
+    throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, RequestCommand.METER_VALUES)
   } else if (chargingStation.powerDivider <= 0) {
-    const errMsg = `MeterValues measurand ${
+    const errorMsg = `MeterValues measurand ${
       measurandType ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
     }: powerDivider have zero or below value ${chargingStation.powerDivider.toString()}`
-    logger.error(`${chargingStation.logPrefix()} ${errMsg}`)
-    throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
+    logger.error(`${chargingStation.logPrefix()} ${errorMsg}`)
+    throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, RequestCommand.METER_VALUES)
   }
 }
 
