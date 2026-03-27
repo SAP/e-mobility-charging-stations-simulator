@@ -17,19 +17,14 @@
   "Configuration": {
     "configurationKey": [
       {
-        "key": "SampledDataCtrlr.TxUpdatedMeasurands",
-        "readonly": false,
-        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
-      },
-      {
-        "key": "SampledDataCtrlr.TxUpdatedInterval",
-        "readonly": false,
-        "value": "30"
-      },
-      {
         "key": "AuthCtrlr.AuthorizeRemoteStart",
         "readonly": false,
         "value": "false"
+      },
+      {
+        "key": "AuthCtrlr.LocalAuthorizationOffline",
+        "readonly": false,
+        "value": "true"
       },
       {
         "key": "AuthCtrlr.LocalPreAuthorization",
@@ -42,9 +37,14 @@
         "value": "false"
       },
       {
-        "key": "OCPPCommCtrlr.MessageAttempts.TransactionEvent",
+        "key": "ChargingStation.WebSocketPingInterval",
         "readonly": false,
-        "value": "3"
+        "value": "60"
+      },
+      {
+        "key": "LocalAuthListCtrlr.Enabled",
+        "readonly": false,
+        "value": "false"
       },
       {
         "key": "OCPPCommCtrlr.MessageAttemptInterval.TransactionEvent",
@@ -52,9 +52,34 @@
         "value": "20"
       },
       {
-        "key": "ChargingStation.WebSocketPingInterval",
+        "key": "OCPPCommCtrlr.MessageAttempts.TransactionEvent",
         "readonly": false,
-        "value": "60"
+        "value": "3"
+      },
+      {
+        "key": "ReservationCtrlr.Enabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "ReservationCtrlr.NonEvseSpecific",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedMeasurands",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
+      },
+      {
+        "key": "TxCtrlr.EVConnectionTimeOut",
+        "readonly": false,
+        "value": "180"
       }
     ]
   },

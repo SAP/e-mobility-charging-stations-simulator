@@ -424,6 +424,52 @@ await describe('ConfigurationKeyUtils', async () => {
       )
       assert.strictEqual(k.value, '60')
     })
+
+    await it('should resolve LocalAuthListEnabled to LocalAuthListCtrlr.Enabled on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+
+      // Act
+      addConfigurationKey(cs, StandardParametersKey.LocalAuthListEnabled, 'true', undefined, {
+        save: false,
+      })
+
+      // Assert
+      const k = getConfigurationKey(cs, StandardParametersKey.LocalAuthListEnabled)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, StandardParametersKey.Enabled)
+      )
+      assert.strictEqual(k.value, 'true')
+    })
+
+    await it('should resolve ReserveConnectorZeroSupported to ReservationCtrlr.NonEvseSpecific on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+
+      // Act
+      addConfigurationKey(
+        cs,
+        StandardParametersKey.ReserveConnectorZeroSupported,
+        'false',
+        undefined,
+        { save: false }
+      )
+
+      // Assert
+      const k = getConfigurationKey(cs, StandardParametersKey.ReserveConnectorZeroSupported)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(OCPP20ComponentName.ReservationCtrlr, StandardParametersKey.NonEvseSpecific)
+      )
+      assert.strictEqual(k.value, 'false')
+    })
   })
 
   await describe('SetConfigurationKeyValue', async () => {

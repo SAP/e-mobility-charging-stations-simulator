@@ -39,6 +39,10 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
             ),
           ],
           [
+            StandardParametersKey.LocalAuthListEnabled,
+            buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, StandardParametersKey.Enabled),
+          ],
+          [
             StandardParametersKey.LocalPreAuthorize,
             buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.LocalPreAuthorization),
           ],
@@ -55,6 +59,10 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
               OCPP20ComponentName.SampledDataCtrlr,
               StandardParametersKey.TxUpdatedMeasurands
             ),
+          ],
+          [
+            StandardParametersKey.ReserveConnectorZeroSupported,
+            buildConfigKey(OCPP20ComponentName.ReservationCtrlr, StandardParametersKey.NonEvseSpecific),
           ],
         ] as [ConfigurationKeyType, ConfigurationKeyType][]
       ).map(([from, to]) => [

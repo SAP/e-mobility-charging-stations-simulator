@@ -12,6 +12,7 @@ import {
   OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
+  OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
@@ -24,6 +25,7 @@ import {
   type OCPP20TransactionType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
+  ReasonCodeEnumType,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -195,7 +197,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       const results = data.map(d =>
         buildRejected(d, {
           info: `ItemsPerMessage limit ${itemsLimit.toString()} exceeded (${data.length.toString()} requested)`,
-          reasonCode: 'TooManyElements',
+          reasonCode: ReasonCodeEnumType.TooManyElements as string,
         })
       )
       logger.debug(
@@ -209,7 +211,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         const results = data.map(d =>
           buildRejected(d, {
             info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
-            reasonCode: 'TooLargeElement',
+            reasonCode: ReasonCodeEnumType.TooLargeElement as string,
           })
         )
         logger.debug(
@@ -240,7 +242,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           const results = originalData.map(d =>
             buildRejected(d, {
               info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
-              reasonCode: 'TooLargeElement',
+              reasonCode: ReasonCodeEnumType.TooLargeElement as string,
             })
           )
           logger.debug(
@@ -351,7 +353,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     const maxEnergyOnInvalidId = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       OCPP20ComponentName.TxCtrlr,
-      'MaxEnergyOnInvalidId',
+      OCPP20OptionalVariableName.MaxEnergyOnInvalidId,
       0
     )
 
@@ -589,7 +591,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           const maxEnergy = OCPP20ServiceUtils.readVariableAsInteger(
             chargingStation,
             OCPP20ComponentName.TxCtrlr,
-            'MaxEnergyOnInvalidId',
+            OCPP20OptionalVariableName.MaxEnergyOnInvalidId,
             0
           )
           const currentEnergy = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0

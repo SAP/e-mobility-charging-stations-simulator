@@ -9,9 +9,11 @@ import {
   OCPP20ChargingRateUnitEnumType,
   OCPP20ComponentName,
   OCPP20DeviceInfoVariableName,
+  OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
+  OCPP20RequestCommand,
   OCPP20RequiredVariableName,
   OCPP20UnitEnumType,
   OCPP20VendorVariableName,
@@ -121,20 +123,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'Interval')]: {
-    component: OCPP20ComponentName.AlignedDataCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '900',
-    description:
-      'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the MeterValuesRequest message.',
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.SECONDS,
-    variable: 'Interval',
-  },
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'Measurands')]: {
     component: OCPP20ComponentName.AlignedDataCtrlr as string,
     dataType: DataEnumType.MemberList,
@@ -205,7 +193,40 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.SECONDS,
     variable: 'TxEndedInterval',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'TxEndedMeasurands')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr as string,
+    OCPP20RequiredVariableName.AlignedDataInterval as string
+  )]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '900',
+    description:
+      'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the MeterValuesRequest message.',
+    min: 1,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.SECONDS,
+    variable: OCPP20RequiredVariableName.AlignedDataInterval as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'If this variable reports a value of true, Clock-Aligned Data is enabled',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr as string,
+    OCPP20RequiredVariableName.TxEndedMeasurands as string
+  )]: {
     component: OCPP20ComponentName.AlignedDataCtrlr as string,
     dataType: DataEnumType.MemberList,
     defaultValue: `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL},${OCPP20MeasurandEnumType.VOLTAGE}`,
@@ -238,19 +259,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxEndedMeasurands,
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.AlignedDataCtrlr as string,
-    OCPP20RequiredVariableName.Enabled as string
-  )]: {
-    component: OCPP20ComponentName.AlignedDataCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'If this variable reports a value of true, Clock-Aligned Data is enabled',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.Enabled as string,
   },
 
   // AuthCacheCtrlr Component
@@ -532,16 +540,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'Model')]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.string,
-    description: 'Charging station model as reported in BootNotification.',
-    maxLength: 50,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20DeviceInfoVariableName.Model,
-  },
   [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'SupplyPhases')]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.integer,
@@ -554,16 +552,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SupplyPhases',
-  },
-  [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'VendorName')]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.string,
-    description: 'Charging station vendor name as reported in BootNotification.',
-    maxLength: 50,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20DeviceInfoVariableName.VendorName,
   },
   [buildRegistryKey(
     OCPP20ComponentName.ChargingStation as string,
@@ -582,6 +570,32 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20DeviceInfoVariableName.AvailabilityState as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.ChargingStation as string,
+    OCPP20DeviceInfoVariableName.Model as string
+  )]: {
+    component: OCPP20ComponentName.ChargingStation as string,
+    dataType: DataEnumType.string,
+    description: 'Charging station model as reported in BootNotification.',
+    maxLength: 50,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20DeviceInfoVariableName.Model,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.ChargingStation as string,
+    OCPP20DeviceInfoVariableName.VendorName as string
+  )]: {
+    component: OCPP20ComponentName.ChargingStation as string,
+    dataType: DataEnumType.string,
+    description: 'Charging station vendor name as reported in BootNotification.',
+    maxLength: 50,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20DeviceInfoVariableName.VendorName,
   },
   [buildRegistryKey(
     OCPP20ComponentName.ChargingStation as string,
@@ -756,13 +770,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.BytesPerMessage,
-    'GetVariables'
+    OCPP20IncomingRequestCommand.GET_VARIABLES as string
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '8192',
     description: 'Maximum number of bytes in a GetVariables message.',
-    instance: 'GetVariables',
+    instance: OCPP20IncomingRequestCommand.GET_VARIABLES as string,
     max: 65535,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -775,13 +789,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.BytesPerMessage,
-    'SetVariables'
+    OCPP20IncomingRequestCommand.SET_VARIABLES as string
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '8192',
     description: 'Maximum number of bytes in a SetVariables message.',
-    instance: 'SetVariables',
+    instance: OCPP20IncomingRequestCommand.SET_VARIABLES as string,
     max: 65535,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -832,13 +846,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ItemsPerMessage,
-    'GetVariables'
+    OCPP20IncomingRequestCommand.GET_VARIABLES as string
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '32',
     description: 'Maximum ComponentVariable entries in a GetVariables message.',
-    instance: 'GetVariables',
+    instance: OCPP20IncomingRequestCommand.GET_VARIABLES as string,
     max: 256,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -851,13 +865,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ItemsPerMessage,
-    'SetVariables'
+    OCPP20IncomingRequestCommand.SET_VARIABLES as string
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '32',
     description: 'Maximum ComponentVariable entries in a SetVariables message.',
-    instance: 'SetVariables',
+    instance: OCPP20IncomingRequestCommand.SET_VARIABLES as string,
     max: 256,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -914,21 +928,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'AllowReset',
-  },
-  [buildRegistryKey(OCPP20ComponentName.EVSE as string, 'AvailabilityState')]: {
-    component: OCPP20ComponentName.EVSE as string,
-    dataType: DataEnumType.OptionList,
-    defaultValue: OCPP20OperationalStatusEnumType.Operative,
-    description: 'This variable reports current availability state for the EVSE',
-    enumeration: [
-      OCPP20OperationalStatusEnumType.Operative,
-      OCPP20OperationalStatusEnumType.Inoperative,
-    ],
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Volatile,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20DeviceInfoVariableName.AvailabilityState,
   },
   [buildRegistryKey(OCPP20ComponentName.EVSE as string, 'Available')]: {
     component: OCPP20ComponentName.EVSE as string,
@@ -991,6 +990,24 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SupplyPhases',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.EVSE as string,
+    OCPP20DeviceInfoVariableName.AvailabilityState as string
+  )]: {
+    component: OCPP20ComponentName.EVSE as string,
+    dataType: DataEnumType.OptionList,
+    defaultValue: OCPP20OperationalStatusEnumType.Operative,
+    description: 'This variable reports current availability state for the EVSE',
+    enumeration: [
+      OCPP20OperationalStatusEnumType.Operative,
+      OCPP20OperationalStatusEnumType.Inoperative,
+    ],
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Volatile,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20DeviceInfoVariableName.AvailabilityState,
   },
 
   // FirmwareCtrlr Component
@@ -1149,18 +1166,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'BytesPerMessage')]: {
-    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '8192',
-    description: 'Maximum number of bytes in a SendLocalList message.',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.BytesPerMessage,
-  },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'DisablePostAuthorize')]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr as string,
     dataType: DataEnumType.boolean,
@@ -1184,18 +1189,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Entries',
   },
-  [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'ItemsPerMessage')]: {
-    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '100',
-    description: 'Maximum number of records in SendLocalList',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.ItemsPerMessage,
-  },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'Storage')]: {
     characteristics: {
       maxLimit: 1048576, // 1MB default
@@ -1214,6 +1207,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
   [buildRegistryKey(
     OCPP20ComponentName.LocalAuthListCtrlr as string,
+    OCPP20RequiredVariableName.BytesPerMessage as string
+  )]: {
+    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '8192',
+    description: 'Maximum number of bytes in a SendLocalList message.',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.LocalAuthListCtrlr as string,
     OCPP20RequiredVariableName.Enabled as string
   )]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr as string,
@@ -1225,6 +1233,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.LocalAuthListCtrlr as string,
+    OCPP20RequiredVariableName.ItemsPerMessage as string
+  )]: {
+    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '100',
+    description: 'Maximum number of records in SendLocalList',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
 
   // MonitoringCtrlr Component
@@ -1262,73 +1285,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.MonitoringCtrlr as string,
-    'BytesPerMessage',
-    'ClearVariableMonitoring'
-  )]: {
-    component: OCPP20ComponentName.MonitoringCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '8192',
-    description: 'Maximum number of bytes in a ClearVariableMonitoring message.',
-    instance: 'ClearVariableMonitoring',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.BytesPerMessage,
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.MonitoringCtrlr as string,
-    'BytesPerMessage',
-    'SetVariableMonitoring'
-  )]: {
-    component: OCPP20ComponentName.MonitoringCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '8192',
-    description: 'Maximum number of bytes in a SetVariableMonitoring message',
-    instance: 'SetVariableMonitoring',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.BytesPerMessage,
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.MonitoringCtrlr as string,
-    'ItemsPerMessage',
-    'ClearVariableMonitoring'
-  )]: {
-    component: OCPP20ComponentName.MonitoringCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '100',
-    description: 'Maximum number of IDs in a ClearVariableMonitoringRequest.',
-    instance: 'ClearVariableMonitoring',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.ItemsPerMessage,
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.MonitoringCtrlr as string,
-    'ItemsPerMessage',
-    'SetVariableMonitoring'
-  )]: {
-    component: OCPP20ComponentName.MonitoringCtrlr as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '100',
-    description:
-      'Maximum number of setMonitoringData elements that can be sent in one setVariableMonitoringRequest message.',
-    instance: 'SetVariableMonitoring',
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
   [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr as string, 'MonitoringBase')]: {
     component: OCPP20ComponentName.MonitoringCtrlr as string,
@@ -1368,6 +1324,39 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr as string,
+    OCPP20RequiredVariableName.BytesPerMessage as string,
+    'ClearVariableMonitoring'
+  )]: {
+    component: OCPP20ComponentName.MonitoringCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '8192',
+    description: 'Maximum number of bytes in a ClearVariableMonitoring message.',
+    instance: 'ClearVariableMonitoring',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.MonitoringCtrlr as string,
+    OCPP20RequiredVariableName.BytesPerMessage as string,
+    'SetVariableMonitoring'
+  )]: {
+    component: OCPP20ComponentName.MonitoringCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '8192',
+    description: 'Maximum number of bytes in a SetVariableMonitoring message',
+    instance: 'SetVariableMonitoring',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.MonitoringCtrlr as string,
     OCPP20RequiredVariableName.Enabled as string
   )]: {
     component: OCPP20ComponentName.MonitoringCtrlr as string,
@@ -1378,6 +1367,40 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.MonitoringCtrlr as string,
+    OCPP20RequiredVariableName.ItemsPerMessage as string,
+    'ClearVariableMonitoring'
+  )]: {
+    component: OCPP20ComponentName.MonitoringCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '100',
+    description: 'Maximum number of IDs in a ClearVariableMonitoringRequest.',
+    instance: 'ClearVariableMonitoring',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.MonitoringCtrlr as string,
+    OCPP20RequiredVariableName.ItemsPerMessage as string,
+    'SetVariableMonitoring'
+  )]: {
+    component: OCPP20ComponentName.MonitoringCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '100',
+    description:
+      'Maximum number of setMonitoringData elements that can be sent in one setVariableMonitoringRequest message.',
+    instance: 'SetVariableMonitoring',
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
 
   // OCPPCommCtrlr Component
@@ -1506,13 +1529,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageAttemptInterval,
-    'TransactionEvent'
+    OCPP20RequestCommand.TRANSACTION_EVENT as string
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '5',
     description: 'Interval (seconds) between retry attempts for TransactionEvent messages.',
-    instance: 'TransactionEvent',
+    instance: OCPP20RequestCommand.TRANSACTION_EVENT as string,
     max: 3600,
     min: 1,
     mutability: MutabilityEnumType.ReadWrite,
@@ -1526,13 +1549,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageAttempts,
-    'TransactionEvent'
+    OCPP20RequestCommand.TRANSACTION_EVENT as string
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '3',
     description: 'Maximum number of TransactionEvent message attempts after initial send.',
-    instance: 'TransactionEvent',
+    instance: OCPP20RequestCommand.TRANSACTION_EVENT as string,
     max: 10,
     min: 1,
     mutability: MutabilityEnumType.ReadWrite,
@@ -1654,7 +1677,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.ReservationCtrlr as string, 'NonEvseSpecific')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.ReservationCtrlr as string,
+    OCPP20OptionalVariableName.NonEvseSpecific as string
+  )]: {
     component: OCPP20ComponentName.ReservationCtrlr as string,
     dataType: DataEnumType.boolean,
     defaultValue: 'false',
@@ -1663,7 +1689,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'NonEvseSpecific',
+    variable: OCPP20OptionalVariableName.NonEvseSpecific as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.ReservationCtrlr as string,
@@ -2299,18 +2325,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.SECONDS,
     variable: 'ChargingTime',
   },
-  [buildRegistryKey(OCPP20ComponentName.TxCtrlr as string, 'MaxEnergyOnInvalidId')]: {
-    component: OCPP20ComponentName.TxCtrlr as string,
-    dataType: DataEnumType.integer,
-    description:
-      'Maximum amount of energy in Wh delivered when an identifier is deauthorized by the CSMS after start of a transaction.',
-    min: 0,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.WATT_HOUR,
-    variable: 'MaxEnergyOnInvalidId',
-  },
   [buildRegistryKey(OCPP20ComponentName.TxCtrlr as string, 'TxBeforeAcceptedEnabled')]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.boolean,
@@ -2321,6 +2335,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'TxBeforeAcceptedEnabled',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.TxCtrlr as string,
+    OCPP20OptionalVariableName.MaxEnergyOnInvalidId as string
+  )]: {
+    component: OCPP20ComponentName.TxCtrlr as string,
+    dataType: DataEnumType.integer,
+    description:
+      'Maximum amount of energy in Wh delivered when an identifier is deauthorized by the CSMS after start of a transaction.',
+    min: 0,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.WATT_HOUR,
+    variable: OCPP20OptionalVariableName.MaxEnergyOnInvalidId as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.TxCtrlr as string,
