@@ -32,6 +32,9 @@ import {
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
+  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
+  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   OCPP20RequiredVariableName,
@@ -2433,7 +2436,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(endedEvent.stoppedReason, OCPP20ReasonEnumType.DeAuthorized)
     })
 
-    await it('should include final meter values in Ended event', async () => {
+    await it('should include final meter values with Transaction.End context in Ended event', async () => {
       // Arrange
       const connectorId = 2
       const transactionId = generateUUID()
@@ -2444,6 +2447,21 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 1500
       }
+
+      const evseStatus = mockTracking.station.getEvseStatus(
+        mockTracking.station.getEvseIdByConnectorId(connectorId) ?? 1
+      )
+      if (evseStatus != null) {
+        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+      }
+
+      addConfigurationKey(
+        mockTracking.station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`,
+        'Energy.Active.Import.Register',
+        undefined,
+        { save: false }
+      )
 
       // Act
       await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 2)
@@ -2456,6 +2474,21 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       const endedPayload = txEvents[1].payload
       assert.strictEqual(endedPayload.stoppedReason, OCPP20ReasonEnumType.DeAuthorized)
+      const meterValues = endedPayload.meterValue as OCPP20MeterValue[] | undefined
+      assert.notStrictEqual(meterValues, undefined)
+      if (meterValues == null) {
+        assert.fail('Expected meterValue to be defined in Ended event')
+      }
+      assert.strictEqual(meterValues.length, 1)
+      const endedMeterValue = meterValues[0]
+      assert.ok(endedMeterValue.timestamp instanceof Date)
+      assert.strictEqual(endedMeterValue.sampledValue.length, 1)
+      const sampledValue = endedMeterValue.sampledValue[0]
+      assert.strictEqual(sampledValue.context, OCPP20ReadingContextEnumType.TRANSACTION_END)
+      assert.strictEqual(
+        sampledValue.measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
     })
 
     await it('should reset connector status after deauthorization', async () => {
@@ -2670,8 +2703,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
   })
 
   await describe('buildTransactionStartedMeterValues', async () => {
-    await it('should build meter values using TxStartedMeasurands config key', () => {
-      const { station } = createMockChargingStation({
+    let station: ChargingStation
+
+    beforeEach(() => {
+      const { station: s } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },
@@ -2685,15 +2720,21 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         },
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
+      station = s
       resetLimits(station)
+    })
 
-      // Set up energy MeterValues template on EVSE
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should build meter values using TxStartedMeasurands config key', () => {
+      // Arrange
       const evseStatus = station.getEvseStatus(1)
       if (evseStatus != null) {
         evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
       }
 
-      // Set up transaction
       const transactionId = generateUUID()
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
@@ -2702,7 +2743,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
       }
 
-      // Add TxStartedMeasurands config key with energy measurand
       addConfigurationKey(
         station,
         `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxStartedMeasurands}`,
@@ -2711,38 +2751,162 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         { save: false }
       )
 
+      // Act
       const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(station, transactionId)
 
+      // Assert
       assert.strictEqual(result.length, 1)
-      assert.ok(result[0].sampledValue.length >= 1)
-      assert.ok(result[0].timestamp instanceof Date)
+      const meterValue = result[0]
+      assert.ok(meterValue.timestamp instanceof Date)
+      assert.strictEqual(meterValue.sampledValue.length, 1)
+      const sampledValue = meterValue.sampledValue[0]
+      assert.strictEqual(sampledValue.context, OCPP20ReadingContextEnumType.TRANSACTION_BEGIN)
+      assert.strictEqual(
+        sampledValue.measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
     })
 
     await it('should return empty array when no transaction found for transactionId', () => {
-      const { station } = createMockChargingStation({
-        baseName: TEST_CHARGING_STATION_BASE_NAME,
-        connectorsCount: 3,
-        evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        ocppRequestService: {
-          requestHandler: async () => Promise.resolve({} as EmptyObject),
-        },
-        stationInfo: {
-          ocppStrictCompliance: true,
-          ocppVersion: OCPPVersion.VERSION_201,
-        },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-      resetLimits(station)
-
-      // No transaction set up - transactionId won't resolve
       const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
         station,
         'non-existent-tx'
       )
 
-      // buildMeterValue returns empty meter value when transactionId can't be resolved
       assert.strictEqual(result.length, 0)
+    })
+
+    await it('should return empty array when TxStartedMeasurands config key is not set', () => {
+      // Arrange
+      const transactionId = generateUUID()
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      // Act
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(station, transactionId)
+
+      // Assert
+      assert.strictEqual(result.length, 0)
+    })
+  })
+
+  await describe('buildTransactionEndedMeterValues', async () => {
+    let mockTracking: MockStationWithTracking
+
+    beforeEach(() => {
+      mockTracking = createMockStationWithRequestTracking()
+      resetConnectorTransactionState(mockTracking.station)
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should include ended meter values in Ended event when TxEndedMeasurands config key is set', async () => {
+      // Arrange
+      const evseStatus = mockTracking.station.getEvseStatus(1)
+      if (evseStatus != null) {
+        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+      }
+
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 5678
+      }
+
+      addConfigurationKey(
+        mockTracking.station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`,
+        'Energy.Active.Import.Register',
+        undefined,
+        { save: false }
+      )
+
+      // Act
+      await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, 1, 1)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
+      )
+      assert.strictEqual(txEvents.length, 1)
+
+      const endedEvent = txEvents[0].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.ok(Array.isArray(endedEvent.meterValue))
+      assert.strictEqual((endedEvent.meterValue as OCPP20MeterValue[]).length, 1)
+      const meterValue = (endedEvent.meterValue as OCPP20MeterValue[])[0]
+      assert.ok(meterValue.timestamp instanceof Date)
+      assert.strictEqual(meterValue.sampledValue.length, 1)
+      const sampledValue = meterValue.sampledValue[0]
+      assert.strictEqual(sampledValue.context, OCPP20ReadingContextEnumType.TRANSACTION_END)
+      assert.strictEqual(
+        sampledValue.measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+    })
+
+    await it('should send Ended event without meter values when TxEndedMeasurands config key is not set', async () => {
+      // Arrange
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, 1, 1)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
+      )
+      assert.strictEqual(txEvents.length, 1)
+
+      const endedEvent = txEvents[0].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(endedEvent.meterValue, undefined)
+    })
+
+    await it('should send Ended event without meter values when EVSE has no MeterValues template', async () => {
+      // Arrange
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 5678
+      }
+
+      addConfigurationKey(
+        mockTracking.station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxEndedMeasurands}`,
+        'Energy.Active.Import.Register',
+        undefined,
+        { save: false }
+      )
+
+      // Act
+      await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, 1, 1)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
+      )
+      assert.strictEqual(txEvents.length, 1)
+
+      const endedEvent = txEvents[0].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(endedEvent.meterValue, undefined)
     })
   })
 })
