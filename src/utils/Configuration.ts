@@ -205,7 +205,7 @@ export class Configuration {
 
   private static buildLogSection (): LogConfiguration {
     const configData = Configuration.getConfigurationData()
-    const deprecatedLogKeyMap: [string, string][] = [
+    const deprecatedLogKeyMap: [keyof ConfigurationData, keyof LogConfiguration][] = [
       ['logEnabled', 'enabled'],
       ['logFile', 'file'],
       ['logErrorFile', 'errorFile'],
@@ -220,9 +220,7 @@ export class Configuration {
     const deprecatedLogConfiguration: Record<string, unknown> = {}
     for (const [deprecatedKey, newKey] of deprecatedLogKeyMap) {
       if (has(deprecatedKey, configData)) {
-        deprecatedLogConfiguration[newKey] = (configData as unknown as Record<string, unknown>)[
-          deprecatedKey
-        ]
+        deprecatedLogConfiguration[newKey] = configData?.[deprecatedKey]
       }
     }
     const logConfiguration: LogConfiguration = {
@@ -291,7 +289,7 @@ export class Configuration {
 
   private static buildWorkerSection (): WorkerConfiguration {
     const configData = Configuration.getConfigurationData()
-    const deprecatedWorkerKeyMap: [string, string][] = [
+    const deprecatedWorkerKeyMap: [keyof ConfigurationData, keyof WorkerConfiguration][] = [
       ['workerProcess', 'processType'],
       ['workerStartDelay', 'startDelay'],
       ['chargingStationsPerWorker', 'elementsPerWorker'],
@@ -302,18 +300,17 @@ export class Configuration {
     const deprecatedWorkerConfiguration: Record<string, unknown> = {}
     for (const [deprecatedKey, newKey] of deprecatedWorkerKeyMap) {
       if (has(deprecatedKey, configData)) {
-        deprecatedWorkerConfiguration[newKey] = (configData as unknown as Record<string, unknown>)[
-          deprecatedKey
-        ]
+        deprecatedWorkerConfiguration[newKey] = configData?.[deprecatedKey]
       }
     }
     if (has('elementStartDelay', configData?.worker)) {
-      deprecatedWorkerConfiguration.elementAddDelay = (
-        configData?.worker as unknown as Record<string, unknown>
-      ).elementStartDelay
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key migration
+      deprecatedWorkerConfiguration.elementAddDelay = configData?.worker?.elementStartDelay
     }
-    has('workerPoolStrategy', configData) &&
-      delete (configData as unknown as Record<string, unknown>).workerPoolStrategy
+    if (configData != null) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key removal
+      delete configData.workerPoolStrategy
+    }
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
