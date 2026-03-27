@@ -504,7 +504,16 @@ export class ChargingStation extends EventEmitter {
           )
           : DCElectricUtils.power(voltageOut, amperageLimitation)) / (this.powerDivider ?? 1)
     }
-    const connectorMaximumPower = (this.stationInfo?.maximumPower ?? 0) / (this.powerDivider ?? 1)
+    const maximumPower = this.stationInfo?.maximumPower
+    if (maximumPower == null || maximumPower <= 0) {
+      logger.error(
+        `${this.logPrefix()} getConnectorMaximumAvailablePower: maximumPower is ${
+          maximumPower?.toString() ?? 'undefined'
+        }, cannot compute connector maximum power`
+      )
+      return Number.POSITIVE_INFINITY
+    }
+    const connectorMaximumPower = maximumPower / (this.powerDivider ?? 1)
     const chargingStationChargingProfilesLimit =
       (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
       (this.powerDivider ?? 1)
@@ -1443,7 +1452,15 @@ export class ChargingStation extends EventEmitter {
 
   private getMaximumAmperage (stationInfo?: ChargingStationInfo): number | undefined {
     const localStationInfo = stationInfo ?? this.stationInfo
-    const maximumPower = localStationInfo?.maximumPower ?? 0
+    const maximumPower = localStationInfo?.maximumPower
+    if (maximumPower == null || maximumPower <= 0) {
+      logger.error(
+        `${this.logPrefix()} getMaximumAmperage: maximumPower is ${
+          maximumPower?.toString() ?? 'undefined'
+        }, cannot compute maximum amperage`
+      )
+      return undefined
+    }
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
@@ -2062,12 +2079,21 @@ export class ChargingStation extends EventEmitter {
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) == null
     ) {
-      addConfigurationKey(
-        this,
-        this.stationInfo.amperageLimitationOcppKey,
-        // prettier-ignore
-        ((this.stationInfo.maximumAmperage ?? 0) * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
-      )
+      const maximumAmperage = this.stationInfo.maximumAmperage
+      if (maximumAmperage != null && maximumAmperage > 0) {
+        addConfigurationKey(
+          this,
+          this.stationInfo.amperageLimitationOcppKey,
+          // prettier-ignore
+          (maximumAmperage * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
+        )
+      } else {
+        logger.error(
+          `${this.logPrefix()} initializeOcppConfiguration: maximumAmperage is ${
+            maximumAmperage?.toString() ?? 'undefined'
+          }, cannot set amperage limitation configuration key`
+        )
+      }
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
       addConfigurationKey(
