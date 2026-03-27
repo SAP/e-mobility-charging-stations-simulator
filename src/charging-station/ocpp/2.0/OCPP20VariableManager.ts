@@ -141,13 +141,13 @@ export class OCPP20VariableManager {
         variableData.component.instance,
         variableData.variable.name
       )
-      const entry = pairedBounds.get(varKey) ?? {}
+      const pairedBoundsEntry = pairedBounds.get(varKey) ?? {}
       if (resolvedAttr === AttributeEnumType.MinSet) {
-        entry.minValue = variableData.attributeValue
+        pairedBoundsEntry.minValue = variableData.attributeValue
       } else {
-        entry.maxValue = variableData.attributeValue
+        pairedBoundsEntry.maxValue = variableData.attributeValue
       }
-      pairedBounds.set(varKey, entry)
+      pairedBounds.set(varKey, pairedBoundsEntry)
     }
 
     // Pre-apply coherent MinSet/MaxSet pairs so per-item cross-check sees paired values

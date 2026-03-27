@@ -178,11 +178,11 @@ export class Configuration {
     if (
       Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
     ) {
-      const configData = Configuration.getConfigurationData()
-      if (configData != null) {
-        configData.supervisionUrls = configData['supervisionURLs' as keyof ConfigurationData] as
-          | string
-          | string[]
+      const configurationData = Configuration.getConfigurationData()
+      if (configurationData != null) {
+        configurationData.supervisionUrls = configurationData[
+          'supervisionURLs' as keyof ConfigurationData
+        ] as string | string[]
       }
     }
     return Configuration.getConfigurationData()?.supervisionUrls
@@ -206,7 +206,7 @@ export class Configuration {
   }
 
   private static buildLogSection (): LogConfiguration {
-    const configData = Configuration.getConfigurationData()
+    const configurationData = Configuration.getConfigurationData()
     const deprecatedLogKeyMap: [keyof ConfigurationData, keyof LogConfiguration][] = [
       ['logEnabled', 'enabled'],
       ['logFile', 'file'],
@@ -221,14 +221,14 @@ export class Configuration {
     ]
     const deprecatedLogConfiguration: Record<string, unknown> = {}
     for (const [deprecatedKey, newKey] of deprecatedLogKeyMap) {
-      if (has(deprecatedKey, configData)) {
-        deprecatedLogConfiguration[newKey] = configData?.[deprecatedKey]
+      if (has(deprecatedKey, configurationData)) {
+        deprecatedLogConfiguration[newKey] = configurationData?.[deprecatedKey]
       }
     }
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...(deprecatedLogConfiguration as Partial<LogConfiguration>),
-      ...(has(ConfigurationSection.log, configData) && configData?.log),
+      ...(has(ConfigurationSection.log, configurationData) && configurationData?.log),
     }
     return logConfiguration
   }
@@ -290,7 +290,7 @@ export class Configuration {
   }
 
   private static buildWorkerSection (): WorkerConfiguration {
-    const configData = Configuration.getConfigurationData()
+    const configurationData = Configuration.getConfigurationData()
     const deprecatedWorkerKeyMap: [keyof ConfigurationData, keyof WorkerConfiguration][] = [
       ['workerProcess', 'processType'],
       ['workerStartDelay', 'startDelay'],
@@ -301,22 +301,22 @@ export class Configuration {
     ]
     const deprecatedWorkerConfiguration: Record<string, unknown> = {}
     for (const [deprecatedKey, newKey] of deprecatedWorkerKeyMap) {
-      if (has(deprecatedKey, configData)) {
-        deprecatedWorkerConfiguration[newKey] = configData?.[deprecatedKey]
+      if (has(deprecatedKey, configurationData)) {
+        deprecatedWorkerConfiguration[newKey] = configurationData?.[deprecatedKey]
       }
     }
-    if (has('elementStartDelay', configData?.worker)) {
+    if (has('elementStartDelay', configurationData?.worker)) {
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key migration
-      deprecatedWorkerConfiguration.elementAddDelay = configData?.worker?.elementStartDelay
+      deprecatedWorkerConfiguration.elementAddDelay = configurationData?.worker?.elementStartDelay
     }
-    if (configData != null) {
+    if (configurationData != null) {
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key removal
-      delete configData.workerPoolStrategy
+      delete configurationData.workerPoolStrategy
     }
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
-      ...(has(ConfigurationSection.worker, configData) && configData?.worker),
+      ...(has(ConfigurationSection.worker, configurationData) && configurationData?.worker),
     }
     if (workerConfiguration.processType != null) {
       checkWorkerProcessType(workerConfiguration.processType)
@@ -483,9 +483,9 @@ export class Configuration {
       Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
       null
     ) {
-      const configData = Configuration.getConfigurationData()
-      if (configData != null) {
-        configData.stationTemplateUrls = configData[
+      const configurationData = Configuration.getConfigurationData()
+      if (configurationData != null) {
+        configurationData.stationTemplateUrls = configurationData[
           'stationTemplateURLs' as keyof ConfigurationData
         ] as StationTemplateUrl[]
       }

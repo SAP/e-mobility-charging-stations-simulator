@@ -218,7 +218,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @returns Strategy statistics including success rates, response times, and error counts
    */
   public async getStats (): Promise<JsonObject> {
-    const cacheStats = this.authCache ? this.authCache.getStats() : null
+    const cacheStatistics = this.authCache ? this.authCache.getStats() : null
 
     let adapterAvailable = false
     if (this.adapter) {
@@ -232,7 +232,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     return {
       ...this.stats,
       adapterAvailable,
-      cacheStats,
+      cacheStatistics,
       hasAdapter: this.adapter != null,
       hasAuthCache: !!this.authCache,
       isInitialized: this.isInitialized,

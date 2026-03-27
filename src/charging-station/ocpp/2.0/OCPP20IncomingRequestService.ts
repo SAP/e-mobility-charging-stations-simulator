@@ -882,9 +882,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               })
             }
             if (r.attributeStatus === GetVariableStatusEnumType.Accepted) {
-              const entry = grouped.get(key)
-              if (entry) {
-                entry.attributes.push({
+              const variableGroupEntry = grouped.get(key)
+              if (variableGroupEntry) {
+                variableGroupEntry.attributes.push({
                   type: r.attributeType ?? AttributeEnumType.Actual,
                   value: r.attributeValue,
                 })

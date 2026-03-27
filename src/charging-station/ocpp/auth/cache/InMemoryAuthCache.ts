@@ -175,32 +175,32 @@ export class InMemoryAuthCache implements AuthCache {
       return undefined
     }
 
-    const entry = this.cache.get(identifier)
+    const authCacheEntry = this.cache.get(identifier)
 
     // Cache miss
-    if (!entry) {
+    if (!authCacheEntry) {
       this.stats.misses++
       return undefined
     }
 
     // Check expiration
     const now = Date.now()
-    if (now >= entry.expiresAt) {
+    if (now >= authCacheEntry.expiresAt) {
       this.stats.expired++
       // Transition to EXPIRED status instead of deleting (C10.FR.08)
-      entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
+      authCacheEntry.result = { ...authCacheEntry.result, status: AuthorizationStatus.EXPIRED }
       // Apply absolute lifetime cap to expired-transition TTL refresh (default-TTL entries only)
-      if (!entry.hasExplicitTtl) {
-        const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
+      if (!authCacheEntry.hasExplicitTtl) {
+        const absoluteDeadline = authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs
         if (absoluteDeadline > now) {
-          entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          authCacheEntry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
         }
       }
       this.lruOrder.set(identifier, now)
       logger.debug(
         `${moduleName}: Expired entry transitioned to EXPIRED for identifier: ${truncateId(identifier)}`
       )
-      return entry.result
+      return authCacheEntry.result
     }
 
     // Cache hit - update LRU order and reset TTL (C10.FR.08)
@@ -209,12 +209,15 @@ export class InMemoryAuthCache implements AuthCache {
 
     // Reset TTL on access for default-TTL entries only; explicit TTL entries (e.g. CSMS
     // cacheExpiryDateTime) keep their original expiration per OCPP spec.
-    if (!entry.hasExplicitTtl && entry.createdAt + this.maxAbsoluteLifetimeMs > now) {
-      entry.expiresAt = now + this.defaultTtl * 1000
+    if (
+      !authCacheEntry.hasExplicitTtl &&
+      authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs > now
+    ) {
+      authCacheEntry.expiresAt = now + this.defaultTtl * 1000
     }
 
     logger.debug(`${moduleName}: Cache hit for identifier: ${truncateId(identifier)}`)
-    return entry.result
+    return authCacheEntry.result
   }
 
   /**
@@ -369,32 +372,32 @@ export class InMemoryAuthCache implements AuthCache {
     this.stats.rateLimitChecks++
 
     const now = Date.now()
-    const entry = this.rateLimits.get(identifier)
+    const rateLimitEntry = this.rateLimits.get(identifier)
 
     // No existing entry - create one
-    if (!entry) {
+    if (!rateLimitEntry) {
       this.rateLimits.set(identifier, { count: 1, windowStart: now })
       this.boundRateLimitsMap()
       return true
     }
 
     // Check if window has expired
-    const windowExpired = now - entry.windowStart >= this.rateLimit.windowMs
+    const windowExpired = now - rateLimitEntry.windowStart >= this.rateLimit.windowMs
     if (windowExpired) {
       // Reset window
-      entry.count = 1
-      entry.windowStart = now
+      rateLimitEntry.count = 1
+      rateLimitEntry.windowStart = now
       return true
     }
 
     // Within window - check count
-    if (entry.count >= this.rateLimit.maxRequests) {
+    if (rateLimitEntry.count >= this.rateLimit.maxRequests) {
       // Rate limit exceeded
       return false
     }
 
     // Increment count
-    entry.count++
+    rateLimitEntry.count++
     return true
   }
 
@@ -425,8 +428,11 @@ export class InMemoryAuthCache implements AuthCache {
     let candidateTime = Number.POSITIVE_INFINITY
 
     for (const [identifier, accessTime] of this.lruOrder.entries()) {
-      const entry = this.cache.get(identifier)
-      if (entry?.result.status !== AuthorizationStatus.ACCEPTED && accessTime < candidateTime) {
+      const authCacheEntry = this.cache.get(identifier)
+      if (
+        authCacheEntry?.result.status !== AuthorizationStatus.ACCEPTED &&
+        accessTime < candidateTime
+      ) {
         candidateTime = accessTime
         candidateIdentifier = identifier
       }

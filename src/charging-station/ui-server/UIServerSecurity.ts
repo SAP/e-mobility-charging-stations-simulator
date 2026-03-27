@@ -68,9 +68,9 @@ export const createRateLimiter = (
       }
     }
 
-    const entry = trackedIps.get(ipAddress)
+    const ipRateLimitEntry = trackedIps.get(ipAddress)
 
-    if (entry === undefined || now >= entry.resetTime) {
+    if (ipRateLimitEntry === undefined || now >= ipRateLimitEntry.resetTime) {
       trackedIps.set(ipAddress, {
         count: 1,
         resetTime: now + windowMs,
@@ -78,8 +78,8 @@ export const createRateLimiter = (
       return true
     }
 
-    if (entry.count < maxRequests) {
-      entry.count++
+    if (ipRateLimitEntry.count < maxRequests) {
+      ipRateLimitEntry.count++
       return true
     }
 

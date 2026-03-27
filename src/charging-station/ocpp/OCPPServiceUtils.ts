@@ -807,7 +807,7 @@ const validateSocMeasurandValue = (
   socMaximumValue: number,
   debug: boolean
 ): void => {
-  const connector = chargingStation.getConnectorStatus(connectorId)
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   if (
     convertToInt(sampledValue.value) > socMaximumValue ||
     convertToInt(sampledValue.value) < socMinimumValue ||
@@ -817,7 +817,7 @@ const validateSocMeasurandValue = (
       `${chargingStation.logPrefix()} ${moduleName}.validateSocMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${sampledValue.value.toString()}/${socMaximumValue.toString()}`
+      }: connector id ${connectorId.toString()}, transaction id ${connectorStatus?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${sampledValue.value.toString()}/${socMaximumValue.toString()}`
     )
   }
 }
@@ -1030,21 +1030,21 @@ const buildEnergyMeasurandValue = (
 }
 
 const updateConnectorEnergyValues = (
-  connector: ConnectorStatus | undefined,
+  connectorStatus: ConnectorStatus | undefined,
   energyValue: number
 ): void => {
-  if (connector != null) {
+  if (connectorStatus != null) {
     if (
-      connector.energyActiveImportRegisterValue != null &&
-      connector.energyActiveImportRegisterValue >= 0 &&
-      connector.transactionEnergyActiveImportRegisterValue != null &&
-      connector.transactionEnergyActiveImportRegisterValue >= 0
+      connectorStatus.energyActiveImportRegisterValue != null &&
+      connectorStatus.energyActiveImportRegisterValue >= 0 &&
+      connectorStatus.transactionEnergyActiveImportRegisterValue != null &&
+      connectorStatus.transactionEnergyActiveImportRegisterValue >= 0
     ) {
-      connector.energyActiveImportRegisterValue += energyValue
-      connector.transactionEnergyActiveImportRegisterValue += energyValue
+      connectorStatus.energyActiveImportRegisterValue += energyValue
+      connectorStatus.transactionEnergyActiveImportRegisterValue += energyValue
     } else {
-      connector.energyActiveImportRegisterValue = 0
-      connector.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.energyActiveImportRegisterValue = 0
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
     }
   }
 }
@@ -1060,12 +1060,12 @@ const validateEnergyMeasurandValue = (
   debug: boolean
 ): void => {
   if (energyValue > maxValue || energyValue < minValue || debug) {
-    const connector = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateEnergyMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${minValue.toString()}/${energyValue.toString()}/${maxValue.toString()}, duration: ${interval.toString()}ms`
+      }: connector id ${connectorId.toString()}, transaction id ${connectorStatus?.transactionId?.toString()}, value: ${minValue.toString()}/${energyValue.toString()}/${maxValue.toString()}, duration: ${interval.toString()}ms`
     )
   }
 }
@@ -1276,7 +1276,7 @@ const buildPowerMeasurandValue = (
 const validatePowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
-  connector: ConnectorStatus | undefined,
+  connectorStatus: ConnectorStatus | undefined,
   sampledValue: SampledValue,
   connectorMaximumPower: number,
   connectorMinimumPower: number,
@@ -1291,7 +1291,7 @@ const validatePowerMeasurandValue = (
       `${chargingStation.logPrefix()} ${moduleName}.validatePowerMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPower.toString()}/${sampledValue.value.toString()}/${connectorMaximumPower.toString()}`
+      }: connector id ${connectorId.toString()}, transaction id ${connectorStatus?.transactionId?.toString()}, value: ${connectorMinimumPower.toString()}/${sampledValue.value.toString()}/${connectorMaximumPower.toString()}`
     )
   }
 }
@@ -1299,7 +1299,7 @@ const validatePowerMeasurandValue = (
 const validateCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
-  connector: ConnectorStatus | undefined,
+  connectorStatus: ConnectorStatus | undefined,
   sampledValue: SampledValue,
   connectorMaximumAmperage: number,
   connectorMinimumAmperage: number,
@@ -1314,7 +1314,7 @@ const validateCurrentMeasurandValue = (
       `${chargingStation.logPrefix()} ${moduleName}.validateCurrentMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
+      }: connector id ${connectorId.toString()}, transaction id ${connectorStatus?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
     )
   }
 }
@@ -1322,7 +1322,7 @@ const validateCurrentMeasurandValue = (
 const validateCurrentMeasurandPhaseValue = (
   chargingStation: ChargingStation,
   connectorId: number,
-  connector: ConnectorStatus | undefined,
+  connectorStatus: ConnectorStatus | undefined,
   sampledValue: SampledValue,
   connectorMaximumAmperage: number,
   connectorMinimumAmperage: number,
@@ -1340,7 +1340,7 @@ const validateCurrentMeasurandPhaseValue = (
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         sampledValue.phase
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
+      }, connector id ${connectorId.toString()}, transaction id ${connectorStatus?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
     )
   }
 }
@@ -1563,7 +1563,7 @@ export const buildMeterValue = (
           RequestCommand.METER_VALUES
         )
       }
-      const connector = chargingStation.getConnectorStatus(connectorId)
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
       const buildVersionedSampledValue = (
         sampledValueTemplate: SampledValueTemplate,
@@ -1638,7 +1638,7 @@ export const buildMeterValue = (
         validatePowerMeasurandValue(
           chargingStation,
           connectorId,
-          connector,
+          connectorStatus,
           meterValue.sampledValue[sampledValuesIndex],
           connectorMaximumPower / unitDivider,
           connectorMinimumPower / unitDivider,
@@ -1667,7 +1667,7 @@ export const buildMeterValue = (
               validatePowerMeasurandValue(
                 chargingStation,
                 connectorId,
-                connector,
+                connectorStatus,
                 meterValue.sampledValue[sampledValuesPerPhaseIndex],
                 connectorMaximumPowerPerPhase / unitDivider,
                 connectorMinimumPowerPerPhase / unitDivider,
@@ -1702,7 +1702,7 @@ export const buildMeterValue = (
         validateCurrentMeasurandValue(
           chargingStation,
           connectorId,
-          connector,
+          connectorStatus,
           meterValue.sampledValue[sampledValuesIndex],
           connectorMaximumAmperage,
           connectorMinimumAmperage,
@@ -1728,7 +1728,7 @@ export const buildMeterValue = (
           validateCurrentMeasurandPhaseValue(
             chargingStation,
             connectorId,
-            connector,
+            connectorStatus,
             meterValue.sampledValue[sampledValuesPerPhaseIndex],
             connectorMaximumAmperage,
             connectorMinimumAmperage,
@@ -1739,7 +1739,7 @@ export const buildMeterValue = (
       // Energy.Active.Import.Register measurand (default)
       const energyMeasurand = buildEnergyMeasurandValue(chargingStation, connectorId, interval)
       if (energyMeasurand != null) {
-        updateConnectorEnergyValues(connector, energyMeasurand.value)
+        updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
         const unitDivider =
           energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
         const energySampledValue = buildVersionedSampledValue(
@@ -1782,7 +1782,7 @@ export const buildMeterValue = (
           RequestCommand.METER_VALUES
         )
       }
-      const connector = chargingStation.getConnectorStatus(connectorId)
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const meterValue = buildEmptyMeterValue() as OCPP20MeterValue
       const buildVersionedSampledValue = (
         sampledValueTemplate: SampledValueTemplate,
@@ -1849,7 +1849,7 @@ export const buildMeterValue = (
         evseId
       )
       if (energyMeasurand != null) {
-        updateConnectorEnergyValues(connector, energyMeasurand.value)
+        updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
         const unitDivider =
           energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
         const energySampledValue = buildVersionedSampledValue(

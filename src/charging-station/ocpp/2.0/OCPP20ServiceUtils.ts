@@ -569,8 +569,8 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     interval: number
   ): void {
-    const connector = chargingStation.getConnectorStatus(connectorId)
-    if (connector == null) {
+    const initialConnectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (initialConnectorStatus == null) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Connector ${connectorId.toString()} not found`
       )
@@ -582,13 +582,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       )
       return
     }
-    if (connector.transactionMeterValuesSetInterval != null) {
+    if (initialConnectorStatus.transactionMeterValuesSetInterval != null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval already started, stopping first`
       )
       OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     }
-    connector.transactionMeterValuesSetInterval = setInterval(() => {
+    initialConnectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
         if (
@@ -710,10 +710,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number
   ): void {
-    const connector = chargingStation.getConnectorStatus(connectorId)
-    if (connector?.transactionMeterValuesSetInterval != null) {
-      clearInterval(connector.transactionMeterValuesSetInterval)
-      delete connector.transactionMeterValuesSetInterval
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+      delete connectorStatus.transactionMeterValuesSetInterval
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.stopPeriodicMeterValues: TxUpdatedInterval stopped`
       )

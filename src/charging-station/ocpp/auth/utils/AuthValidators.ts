@@ -101,40 +101,43 @@ function validateAuthConfiguration (config: unknown): boolean {
     return false
   }
 
-  const authConfig = config as AuthConfiguration
+  const authConfiguration = config as AuthConfiguration
 
   // Validate required boolean fields exist
   if (
-    typeof authConfig.authorizationCacheEnabled !== 'boolean' ||
-    typeof authConfig.localAuthListEnabled !== 'boolean' ||
-    typeof authConfig.offlineAuthorizationEnabled !== 'boolean' ||
-    typeof authConfig.allowOfflineTxForUnknownId !== 'boolean' ||
-    typeof authConfig.localPreAuthorize !== 'boolean' ||
-    typeof authConfig.certificateAuthEnabled !== 'boolean'
+    typeof authConfiguration.authorizationCacheEnabled !== 'boolean' ||
+    typeof authConfiguration.localAuthListEnabled !== 'boolean' ||
+    typeof authConfiguration.offlineAuthorizationEnabled !== 'boolean' ||
+    typeof authConfiguration.allowOfflineTxForUnknownId !== 'boolean' ||
+    typeof authConfiguration.localPreAuthorize !== 'boolean' ||
+    typeof authConfiguration.certificateAuthEnabled !== 'boolean'
   ) {
     return false
   }
 
   // Validate authorization timeout (required, must be positive)
-  if (typeof authConfig.authorizationTimeout !== 'number' || authConfig.authorizationTimeout <= 0) {
+  if (
+    typeof authConfiguration.authorizationTimeout !== 'number' ||
+    authConfiguration.authorizationTimeout <= 0
+  ) {
     return false
   }
 
   // Validate optional cache lifetime if provided
   if (
-    authConfig.authorizationCacheLifetime !== undefined &&
-    (typeof authConfig.authorizationCacheLifetime !== 'number' ||
-      authConfig.authorizationCacheLifetime < 0)
+    authConfiguration.authorizationCacheLifetime !== undefined &&
+    (typeof authConfiguration.authorizationCacheLifetime !== 'number' ||
+      authConfiguration.authorizationCacheLifetime < 0)
   ) {
     return false
   }
 
   // Validate optional max cache entries if provided
   if (
-    authConfig.maxCacheEntries !== undefined &&
-    (typeof authConfig.maxCacheEntries !== 'number' ||
-      authConfig.maxCacheEntries < 1 ||
-      !Number.isInteger(authConfig.maxCacheEntries))
+    authConfiguration.maxCacheEntries !== undefined &&
+    (typeof authConfiguration.maxCacheEntries !== 'number' ||
+      authConfiguration.maxCacheEntries < 1 ||
+      !Number.isInteger(authConfiguration.maxCacheEntries))
   ) {
     return false
   }

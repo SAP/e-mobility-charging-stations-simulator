@@ -12,14 +12,14 @@ const DEFAULT_TAIL_LINES = 200
 const TAIL_BYTES = 65_536
 
 const getLogFilePath = (configField: 'errorFile' | 'file', date?: string): string | undefined => {
-  const logConfig = Configuration.getConfigurationSection<LogConfiguration>(
+  const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
     ConfigurationSection.log
   )
-  const relativePath = logConfig[configField]
+  const relativePath = logConfiguration[configField]
   if (relativePath == null) {
     return undefined
   }
-  if (logConfig.rotate !== true) {
+  if (logConfiguration.rotate !== true) {
     return resolve(relativePath)
   }
   const now = new Date()

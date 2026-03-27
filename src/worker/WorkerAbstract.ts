@@ -29,11 +29,11 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
     if (workerScript.trim().length === 0) {
       throw new Error('Worker script is an empty string')
     }
-    const workerScriptStats = statSync(workerScript, { throwIfNoEntry: false })
-    if (workerScriptStats == null) {
+    const workerScriptStatistics = statSync(workerScript, { throwIfNoEntry: false })
+    if (workerScriptStatistics == null) {
       throw new Error(`Worker script file does not exist: '${workerScript}'`)
     }
-    if (!workerScriptStats.isFile()) {
+    if (!workerScriptStatistics.isFile()) {
       throw new Error(`Worker script is not a regular file: '${workerScript}'`)
     }
     this.workerScript = workerScript

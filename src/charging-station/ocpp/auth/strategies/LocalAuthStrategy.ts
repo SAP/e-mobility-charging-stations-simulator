@@ -207,13 +207,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @returns Strategy statistics including hit rates, request counts, and cache status
    */
   public getStats (): JsonObject {
-    const cacheStats = this.authCache ? this.authCache.getStats() : null
+    const cacheStatistics = this.authCache ? this.authCache.getStats() : null
 
     return {
       ...this.stats,
       cacheHitRate:
         this.stats.totalRequests > 0 ? (this.stats.cacheHits / this.stats.totalRequests) * 100 : 0,
-      cacheStats,
+      cacheStatistics,
       hasAuthCache: !!this.authCache,
       hasLocalAuthListManager: !!this.localAuthListManager,
       isInitialized: this.isInitialized,

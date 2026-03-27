@@ -369,21 +369,21 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         : 0
 
     // Get rate limiting stats from cache via remote strategy
-    let rateLimitStats:
+    let rateLimitStatistics:
       | undefined
       | { blockedRequests: number; rateLimitedIdentifiers: number; totalChecks: number }
     const remoteStrategy = this.strategies.get('remote')
     if (remoteStrategy?.getStats) {
-      const strategyStats = await remoteStrategy.getStats()
-      if ('cache' in strategyStats) {
-        const cacheStats = strategyStats.cache as {
+      const strategyStatistics = await remoteStrategy.getStats()
+      if ('cache' in strategyStatistics) {
+        const cacheStatistics = strategyStatistics.cache as {
           rateLimit?: {
             blockedRequests: number
             rateLimitedIdentifiers: number
             totalChecks: number
           }
         }
-        rateLimitStats = cacheStats.rateLimit
+        rateLimitStatistics = cacheStatistics.rateLimit
       }
     }
 
@@ -393,7 +393,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       failedAuth: this.metrics.failedAuth,
       lastUpdatedDate: this.metrics.lastReset,
       localUsageRate: Math.round(localUsageRate * 10000) / 100,
-      rateLimit: rateLimitStats,
+      rateLimit: rateLimitStatistics,
       remoteSuccessRate: Math.round(remoteSuccessRate * 10000) / 100,
       successfulAuth: this.metrics.successfulAuth,
       totalRequests: this.metrics.totalRequests,
@@ -587,13 +587,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    */
   public updateConfiguration (config: Partial<AuthConfiguration>): void {
     // Merge new config with existing
-    const newConfig = { ...this.config, ...config }
+    const newConfiguration = { ...this.config, ...config }
 
     // Validate merged configuration
-    AuthConfigValidator.validate(newConfig)
+    AuthConfigValidator.validate(newConfiguration)
 
     // Apply validated configuration
-    this.config = newConfig
+    this.config = newConfiguration
 
     logger.info(
       `${this.chargingStation.logPrefix()} ${moduleName}.updateConfiguration: Authentication configuration updated`
