@@ -79,6 +79,31 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
               StandardParametersKey.WebSocketPingInterval
             ),
           ],
+          [
+            StandardParametersKey.MeterValuesAlignedData,
+            buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, 'Measurands'),
+          ],
+          [
+            StandardParametersKey.ClockAlignedDataInterval,
+            buildConfigKey(
+              OCPP20ComponentName.AlignedDataCtrlr,
+              StandardParametersKey.AlignedDataInterval
+            ),
+          ],
+          [
+            StandardParametersKey.StopTxnSampledData,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              StandardParametersKey.TxEndedMeasurands
+            ),
+          ],
+          [
+            StandardParametersKey.StopTxnAlignedData,
+            buildConfigKey(
+              OCPP20ComponentName.AlignedDataCtrlr,
+              StandardParametersKey.TxEndedMeasurands
+            ),
+          ],
         ] as [ConfigurationKeyType, ConfigurationKeyType][]
       ).map(([from, to]) => [
         from,

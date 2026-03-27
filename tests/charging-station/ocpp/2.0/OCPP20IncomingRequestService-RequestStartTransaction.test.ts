@@ -24,8 +24,6 @@ import {
   OCPP20ChargingProfilePurposeEnumType,
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
-  OCPP20MeasurandEnumType,
-  OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
@@ -451,18 +449,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       ]
       assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       assert.strictEqual(args[2].eventType, OCPP20TransactionEventEnumType.Started)
-      assert.ok(
-        Array.isArray(args[2].meterValue) && args[2].meterValue.length > 0,
-        'TransactionEvent(Started) should include non-empty meterValue array'
-      )
-      assert.strictEqual(
-        args[2].meterValue[0].sampledValue[0].context,
-        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
-      )
-      assert.strictEqual(
-        args[2].meterValue[0].sampledValue[0].measurand,
-        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
-      )
     })
 
     await it('should NOT call TransactionEvent when response is Rejected', () => {

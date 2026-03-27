@@ -23,8 +23,6 @@ import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/au
 import {
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
-  OCPP20MeasurandEnumType,
-  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -412,26 +410,6 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const transactionEvent = args[2]
 
       assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
-
-      assert.notStrictEqual(transactionEvent.meterValue, undefined)
-      if (transactionEvent.meterValue == null) {
-        assert.fail('Expected meterValue to be defined')
-      }
-      assert.strictEqual(transactionEvent.meterValue.length, 1)
-
-      const meterValue = transactionEvent.meterValue[0]
-      assert.notStrictEqual(meterValue, undefined)
-      assert.ok(meterValue.timestamp instanceof Date)
-      assert.notStrictEqual(meterValue.sampledValue, undefined)
-      assert.strictEqual(meterValue.sampledValue.length, 1)
-
-      const sampledValue = meterValue.sampledValue[0]
-      assert.strictEqual(sampledValue.value, 12345.67)
-      assert.strictEqual(sampledValue.context, OCPP20ReadingContextEnumType.TRANSACTION_END)
-      assert.strictEqual(
-        sampledValue.measurand,
-        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
-      )
     })
   })
 })

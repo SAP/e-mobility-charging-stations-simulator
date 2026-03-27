@@ -10,7 +10,6 @@ import {
   OCPP20ComponentName,
   type OCPP20EVSEType,
   OCPP20IncomingRequestCommand,
-  OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
@@ -26,6 +25,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
+  StandardParametersKey,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -99,11 +99,30 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
-  static buildTransactionStartedMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
-    return OCPP20ServiceUtils.buildEnergyMeterValues(
-      connectorStatus,
-      OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
-    )
+  static buildTransactionStartedMeterValues (
+    chargingStation: ChargingStation,
+    transactionId: number | string
+  ): OCPP20MeterValue[] {
+    try {
+      const measurandsKey = buildConfigKey(
+        OCPP20ComponentName.SampledDataCtrlr,
+        StandardParametersKey.TxStartedMeasurands
+      )
+      const meterValue = buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        false,
+        measurandsKey,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      ) as OCPP20MeterValue
+      return meterValue.sampledValue.length > 0 ? [meterValue] : []
+    } catch (error) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionStartedMeterValues: ${(error as Error).message}`
+      )
+      return []
+    }
   }
 
   public static async cleanupEndedTransaction (
@@ -720,34 +739,30 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  private static buildEnergyMeterValues (
-    connectorStatus: ConnectorStatus,
-    context: OCPP20ReadingContextEnumType
-  ): OCPP20MeterValue[] {
-    const meterValues: OCPP20MeterValue[] = []
-    const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
-    if (energyValue >= 0) {
-      meterValues.push({
-        sampledValue: [
-          {
-            context,
-            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-            value: energyValue,
-          },
-        ],
-        timestamp: new Date(),
-      })
-    }
-    return meterValues
-  }
-
   private static buildTransactionEndedMeterValues (
-    connectorStatus: ConnectorStatus
+    chargingStation: ChargingStation,
+    transactionId: number | string
   ): OCPP20MeterValue[] {
-    return OCPP20ServiceUtils.buildEnergyMeterValues(
-      connectorStatus,
-      OCPP20ReadingContextEnumType.TRANSACTION_END
-    )
+    try {
+      const measurandsKey = buildConfigKey(
+        OCPP20ComponentName.SampledDataCtrlr,
+        StandardParametersKey.TxEndedMeasurands
+      )
+      const meterValue = buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        false,
+        measurandsKey,
+        OCPP20ReadingContextEnumType.TRANSACTION_END
+      ) as OCPP20MeterValue
+      return meterValue.sampledValue.length > 0 ? [meterValue] : []
+    } catch (error) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${(error as Error).message}`
+      )
+      return []
+    }
   }
 
   private static readVariableAsBoolean (
@@ -851,7 +866,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     stoppedReason: OCPP20ReasonEnumType,
     evseId?: number
   ): Promise<OCPP20TransactionEventResponse> {
-    const endedMeterValues = this.buildTransactionEndedMeterValues(connectorStatus)
+    const endedMeterValues = this.buildTransactionEndedMeterValues(chargingStation, transactionId)
 
     const response = await this.sendTransactionEvent(
       chargingStation,

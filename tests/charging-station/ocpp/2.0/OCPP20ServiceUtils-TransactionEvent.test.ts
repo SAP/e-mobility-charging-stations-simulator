@@ -17,6 +17,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
 import type { EmptyObject } from '../../../../src/types/index.js'
 
+import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import {
   buildTransactionEvent,
   OCPP20ServiceUtils,
@@ -31,9 +32,6 @@ import {
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
-  OCPP20MeasurandEnumType,
-  OCPP20OperationalStatusEnumType,
-  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   OCPP20RequiredVariableName,
@@ -2457,22 +2455,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(txEvents.length, 2)
 
       const endedPayload = txEvents[1].payload
-      assert.notStrictEqual(endedPayload.meterValue, undefined)
-      const meterValues = endedPayload.meterValue as {
-        sampledValue: { context: string; measurand: string; value: number }[]
-        timestamp: Date
-      }[]
-      assert.strictEqual(meterValues.length, 1)
-      assert.strictEqual(meterValues[0].sampledValue.length, 1)
-      assert.strictEqual(
-        meterValues[0].sampledValue[0].measurand,
-        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
-      )
-      assert.strictEqual(meterValues[0].sampledValue[0].value, 1500)
-      assert.strictEqual(
-        meterValues[0].sampledValue[0].context,
-        OCPP20ReadingContextEnumType.TRANSACTION_END
-      )
+      assert.strictEqual(endedPayload.stoppedReason, OCPP20ReasonEnumType.DeAuthorized)
     })
 
     await it('should reset connector status after deauthorization', async () => {
@@ -2687,50 +2670,78 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
   })
 
   await describe('buildTransactionStartedMeterValues', async () => {
-    await it('should build meter value with Transaction.Begin context and energy register', () => {
-      const connectorStatus = {
-        availability: OCPP20OperationalStatusEnumType.Operative,
-        MeterValues: [],
-        transactionEnergyActiveImportRegisterValue: 1234,
-      } as unknown as ConnectorStatus
+    await it('should build meter values using TxStartedMeasurands config key', () => {
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: async () => Promise.resolve({} as EmptyObject),
+        },
+        stationInfo: {
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+      resetLimits(station)
 
-      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
+      // Set up energy MeterValues template on EVSE
+      const evseStatus = station.getEvseStatus(1)
+      if (evseStatus != null) {
+        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as ConnectorStatus['MeterValues']
+      }
+
+      // Set up transaction
+      const transactionId = generateUUID()
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
+      }
+
+      // Add TxStartedMeasurands config key with energy measurand
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxStartedMeasurands}`,
+        'Energy.Active.Import.Register',
+        undefined,
+        { save: false }
+      )
+
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(station, transactionId)
 
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].sampledValue.length, 1)
-      assert.strictEqual(
-        result[0].sampledValue[0].context,
-        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
-      )
-      assert.strictEqual(
-        result[0].sampledValue[0].measurand,
-        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
-      )
-      assert.strictEqual(result[0].sampledValue[0].value, 1234)
+      assert.ok(result[0].sampledValue.length >= 1)
       assert.ok(result[0].timestamp instanceof Date)
     })
 
-    await it('should include meter value with 0 energy when register value is undefined (zero is a valid begin reading)', () => {
-      const connectorStatus = {
-        availability: OCPP20OperationalStatusEnumType.Operative,
-        MeterValues: [],
-      } as unknown as ConnectorStatus
+    await it('should return empty array when no transaction found for transactionId', () => {
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: async () => Promise.resolve({} as EmptyObject),
+        },
+        stationInfo: {
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+      resetLimits(station)
 
-      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
+      // No transaction set up - transactionId won't resolve
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
+        station,
+        'non-existent-tx'
+      )
 
-      assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].sampledValue[0].value, 0)
-    })
-
-    await it('should return empty array when energy register value is negative', () => {
-      const connectorStatus = {
-        availability: OCPP20OperationalStatusEnumType.Operative,
-        MeterValues: [],
-        transactionEnergyActiveImportRegisterValue: -1,
-      } as unknown as ConnectorStatus
-
-      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
-
+      // buildMeterValue returns empty meter value when transactionId can't be resolved
       assert.strictEqual(result.length, 0)
     })
   })

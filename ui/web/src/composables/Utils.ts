@@ -13,11 +13,9 @@ export const convertToBoolean = (value: unknown): boolean => {
     // Check the type
     if (typeof value === 'boolean') {
       return value
-    } else if (
-      typeof value === 'string' &&
-      (value.trim().toLowerCase() === 'true' || value === '1')
-    ) {
-      result = true
+    } else if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase()
+      result = normalized === 'true' || normalized === '1'
     } else if (typeof value === 'number' && value === 1) {
       result = true
     }
