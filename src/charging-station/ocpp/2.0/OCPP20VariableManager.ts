@@ -504,15 +504,15 @@ export class OCPP20VariableManager {
 
     // ReportingValueSize truncation (DeviceDataCtrlr authoritative)
     const reportingValueSizeKey = buildCaseInsensitiveCompositeKey(
-      OCPP20ComponentName.DeviceDataCtrlr as string,
+      OCPP20ComponentName.DeviceDataCtrlr,
       undefined,
-      OCPP20RequiredVariableName.ReportingValueSize as string
+      OCPP20RequiredVariableName.ReportingValueSize
     )
     // ValueSize truncation applied before ReportingValueSize if present
     const valueSizeKey = buildCaseInsensitiveCompositeKey(
-      OCPP20ComponentName.DeviceDataCtrlr as string,
+      OCPP20ComponentName.DeviceDataCtrlr,
       undefined,
-      OCPP20RequiredVariableName.ValueSize as string
+      OCPP20RequiredVariableName.ValueSize
     )
     let valueSize: string | undefined
     let reportingValueSize: string | undefined
@@ -877,14 +877,14 @@ export class OCPP20VariableManager {
     // 6. Reject with TooLargeElement when attributeValue length strictly exceeds effectiveLimit.
     if (resolvedAttributeType === AttributeEnumType.Actual) {
       const configurationValueSizeKey = buildCaseInsensitiveCompositeKey(
-        OCPP20ComponentName.DeviceDataCtrlr as string,
+        OCPP20ComponentName.DeviceDataCtrlr,
         undefined,
-        OCPP20RequiredVariableName.ConfigurationValueSize as string
+        OCPP20RequiredVariableName.ConfigurationValueSize
       )
       const valueSizeKey = buildCaseInsensitiveCompositeKey(
-        OCPP20ComponentName.DeviceDataCtrlr as string,
+        OCPP20ComponentName.DeviceDataCtrlr,
         undefined,
-        OCPP20RequiredVariableName.ValueSize as string
+        OCPP20RequiredVariableName.ValueSize
       )
       let configurationValueSizeRaw: string | undefined
       let valueSizeRaw: string | undefined
