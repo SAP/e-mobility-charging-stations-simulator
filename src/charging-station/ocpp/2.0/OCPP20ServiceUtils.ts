@@ -503,7 +503,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     triggerReason: OCPP20TriggerReasonEnumType,
     connectorId: number,
     transactionId: string,
-    options: OCPP20TransactionEventOptions = {}
+    options: Omit<OCPP20TransactionEventOptions, 'eventType'> = {}
   ): Promise<OCPP20TransactionEventResponse> {
     try {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
@@ -882,12 +882,6 @@ export function buildTransactionEvent (
   commandParams: OCPP20TransactionEventOptions
 ): OCPP20TransactionEventRequest {
   const eventType = commandParams.eventType
-  if (eventType == null) {
-    throw new OCPPError(
-      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
-      'eventType is required for TransactionEvent'
-    )
-  }
   const defaultTriggerReason =
     eventType === OCPP20TransactionEventEnumType.Ended
       ? OCPP20TriggerReasonEnumType.RemoteStop

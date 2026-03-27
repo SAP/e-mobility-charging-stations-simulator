@@ -276,7 +276,7 @@ export interface OCPP20TransactionEventOptions {
   chargingState?: OCPP20ChargingStateEnumType
   connectorId?: number
   customData?: CustomDataType
-  eventType?: OCPP20TransactionEventEnumType
+  eventType: OCPP20TransactionEventEnumType
   evse?: Partial<OCPP20EVSEType>
   evseId?: number
   idToken?: OCPP20IdTokenType

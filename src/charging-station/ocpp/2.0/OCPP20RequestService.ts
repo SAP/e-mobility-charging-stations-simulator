@@ -1,11 +1,11 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
+import type { CertificateSigningUseEnumType } from '../../../types/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
-  type CertificateSigningUseEnumType,
   ErrorType,
   type JsonObject,
   type JsonType,
