@@ -18,12 +18,14 @@ import type {
 } from '../../../../src/types/index.js'
 import type { OCPP20RequestCommand } from '../../../../src/types/index.js'
 
+import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   ConnectorStatusEnum,
   DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
+  OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
@@ -257,8 +259,16 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
  * @param chargingStation Charging station test instance whose configuration limits are reset.
  */
 export function resetLimits (chargingStation: ChargingStation) {
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ItemsPerMessage, '100')
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.BytesPerMessage, '10000')
+  upsertConfigurationKey(
+    chargingStation,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ItemsPerMessage),
+    '100'
+  )
+  upsertConfigurationKey(
+    chargingStation,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.BytesPerMessage),
+    '10000'
+  )
 }
 
 /**
@@ -268,7 +278,10 @@ export function resetLimits (chargingStation: ChargingStation) {
 export function resetReportingValueSize (chargingStation: ChargingStation) {
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ReportingValueSize,
+    buildConfigKey(
+      OCPP20ComponentName.DeviceDataCtrlr,
+      OCPP20RequiredVariableName.ReportingValueSize
+    ),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
 }
@@ -281,12 +294,15 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
 export function resetValueSizeLimits (chargingStation: ChargingStation) {
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ConfigurationValueSize,
+    buildConfigKey(
+      OCPP20ComponentName.DeviceDataCtrlr,
+      OCPP20RequiredVariableName.ConfigurationValueSize
+    ),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ValueSize,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
 }
@@ -299,7 +315,10 @@ export function resetValueSizeLimits (chargingStation: ChargingStation) {
 export function setConfigurationValueSize (chargingStation: ChargingStation, size: number) {
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ConfigurationValueSize,
+    buildConfigKey(
+      OCPP20ComponentName.DeviceDataCtrlr,
+      OCPP20RequiredVariableName.ConfigurationValueSize
+    ),
     size.toString()
   )
 }
@@ -312,7 +331,10 @@ export function setConfigurationValueSize (chargingStation: ChargingStation, siz
 export function setReportingValueSize (chargingStation: ChargingStation, size: number) {
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ReportingValueSize,
+    buildConfigKey(
+      OCPP20ComponentName.DeviceDataCtrlr,
+      OCPP20RequiredVariableName.ReportingValueSize
+    ),
     size.toString()
   )
 }
@@ -330,12 +352,12 @@ export function setStrictLimits (
 ) {
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.ItemsPerMessage,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ItemsPerMessage),
     itemsLimit.toString()
   )
   upsertConfigurationKey(
     chargingStation,
-    OCPP20RequiredVariableName.BytesPerMessage,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.BytesPerMessage),
     bytesLimit.toString()
   )
 }
@@ -346,7 +368,11 @@ export function setStrictLimits (
  * @param size Desired stored value size limit.
  */
 export function setValueSize (chargingStation: ChargingStation, size: number) {
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize, size.toString())
+  upsertConfigurationKey(
+    chargingStation,
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+    size.toString()
+  )
 }
 
 /**

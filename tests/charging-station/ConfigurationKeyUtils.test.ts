@@ -9,11 +9,12 @@ import type { ChargingStationOcppConfiguration } from '../../src/types/index.js'
 
 import {
   addConfigurationKey,
+  buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
-import { OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
+import { OCPP20ComponentName, OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './ChargingStationTestUtils.js'
@@ -95,7 +96,13 @@ await describe('ConfigurationKeyUtils', async () => {
       if (k == null) {
         assert.fail('Expected configuration key to be found')
       }
-      assert.strictEqual(k.key, StandardParametersKey.TxUpdatedMeasurands)
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.TxUpdatedMeasurands
+        )
+      )
       assert.strictEqual(k.value, VALUE_A)
     })
 
@@ -113,7 +120,10 @@ await describe('ConfigurationKeyUtils', async () => {
       if (k == null) {
         assert.fail('Expected configuration key to be found')
       }
-      assert.strictEqual(k.key, StandardParametersKey.EVConnectionTimeOut)
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, StandardParametersKey.EVConnectionTimeOut)
+      )
       assert.strictEqual(k.value, '30')
     })
 
@@ -384,7 +394,10 @@ await describe('ConfigurationKeyUtils', async () => {
       if (k == null) {
         assert.fail('Expected configuration key to be found')
       }
-      assert.strictEqual(k.key, StandardParametersKey.AuthorizeRemoteStart)
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.AuthorizeRemoteStart)
+      )
       assert.strictEqual(k.value, 'false')
     })
 
@@ -402,7 +415,13 @@ await describe('ConfigurationKeyUtils', async () => {
       if (k == null) {
         assert.fail('Expected configuration key to be found')
       }
-      assert.strictEqual(k.key, StandardParametersKey.TxUpdatedInterval)
+      assert.strictEqual(
+        k.key,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.TxUpdatedInterval
+        )
+      )
       assert.strictEqual(k.value, '60')
     })
   })

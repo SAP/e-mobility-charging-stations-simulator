@@ -17,10 +17,12 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 
+import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   ChargingStationEvents,
   type OCPP20BootNotificationResponse,
+  OCPP20ComponentName,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   OCPPVersion,
@@ -132,7 +134,13 @@ await describe('B01 - BootNotificationResponse handler', async () => {
       assert.fail('Expected configKey to be defined')
     }
     assert.strictEqual(configKey.length, 1)
-    assert.strictEqual(configKey[0].key, OCPP20OptionalVariableName.HeartbeatInterval)
+    assert.strictEqual(
+      configKey[0].key,
+      buildConfigKey(
+        OCPP20ComponentName.OCPPCommCtrlr,
+        OCPP20OptionalVariableName.HeartbeatInterval
+      )
+    )
     assert.strictEqual(configKey[0].value, '300')
   })
 

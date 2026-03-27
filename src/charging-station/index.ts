@@ -2,6 +2,7 @@ export { Bootstrap } from './Bootstrap.js'
 export type { ChargingStation } from './ChargingStation.js'
 export {
   addConfigurationKey,
+  buildConfigKey,
   getConfigurationKey,
   setConfigurationKeyValue,
 } from './ConfigurationKeyUtils.js'

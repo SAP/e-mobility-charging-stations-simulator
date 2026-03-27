@@ -37,7 +37,7 @@ import {
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
-import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   buildMeterValue,
   OCPPServiceUtils,
@@ -292,11 +292,17 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     try {
       const itemsCfg = getConfigurationKey(
         chargingStation,
-        OCPP20RequiredVariableName.ItemsPerMessage
+        buildConfigKey(
+          OCPP20ComponentName.DeviceDataCtrlr,
+          OCPP20RequiredVariableName.ItemsPerMessage
+        )
       )?.value
       const bytesCfg = getConfigurationKey(
         chargingStation,
-        OCPP20RequiredVariableName.BytesPerMessage
+        buildConfigKey(
+          OCPP20ComponentName.DeviceDataCtrlr,
+          OCPP20RequiredVariableName.BytesPerMessage
+        )
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
         itemsLimit = convertToIntOrNaN(itemsCfg)

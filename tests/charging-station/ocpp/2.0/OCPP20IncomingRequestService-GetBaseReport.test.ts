@@ -10,11 +10,14 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import {
   addConfigurationKey,
+  buildConfigKey,
   setConfigurationKeyValue,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
+import {
+  OCPP20VariableManager,
+} from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AttributeEnumType,
   GenericDeviceModelStatusEnumType,
@@ -273,7 +276,10 @@ await describe('B07 - Get Base Report', async () => {
   // ReportingValueSize truncation test
   await it('should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
     // Ensure ReportingValueSize is at a small value (default is Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH). We will override configuration key if absent.
-    const reportingSizeKey = StandardParametersKey.ReportingValueSize
+    const reportingSizeKey = buildConfigKey(
+      OCPP20ComponentName.DeviceDataCtrlr,
+      StandardParametersKey.ReportingValueSize
+    )
     // Add or lower configuration key to 10 to force truncation
     addConfigurationKey(station, reportingSizeKey, '10', undefined, {
       overwrite: true,

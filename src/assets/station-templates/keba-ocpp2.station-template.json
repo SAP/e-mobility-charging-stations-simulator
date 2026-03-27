@@ -17,42 +17,42 @@
   "Configuration": {
     "configurationKey": [
       {
-        "key": "TxUpdatedMeasurands",
+        "key": "SampledDataCtrlr.TxUpdatedMeasurands",
         "readonly": false,
         "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
       },
       {
-        "key": "TxUpdatedInterval",
+        "key": "SampledDataCtrlr.TxUpdatedInterval",
         "readonly": false,
         "value": "30"
       },
       {
-        "key": "AuthorizeRemoteStart",
+        "key": "AuthCtrlr.AuthorizeRemoteStart",
         "readonly": false,
         "value": "false"
       },
       {
-        "key": "LocalPreAuthorization",
+        "key": "AuthCtrlr.LocalPreAuthorization",
         "readonly": false,
         "value": "false"
       },
       {
-        "key": "OfflineTxForUnknownIdEnabled",
+        "key": "AuthCtrlr.OfflineTxForUnknownIdEnabled",
         "readonly": false,
         "value": "false"
       },
       {
-        "key": "MessageAttempts.TransactionEvent",
+        "key": "OCPPCommCtrlr.MessageAttempts.TransactionEvent",
         "readonly": false,
         "value": "3"
       },
       {
-        "key": "MessageAttemptInterval.TransactionEvent",
+        "key": "OCPPCommCtrlr.MessageAttemptInterval.TransactionEvent",
         "readonly": false,
         "value": "20"
       },
       {
-        "key": "WebSocketPingInterval",
+        "key": "ChargingStation.WebSocketPingInterval",
         "readonly": false,
         "value": "60"
       }

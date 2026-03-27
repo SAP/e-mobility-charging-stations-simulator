@@ -3,10 +3,16 @@ import type { ChargingStation } from './ChargingStation.js'
 import {
   type ConfigurationKey,
   type ConfigurationKeyType,
+  OCPP20ComponentName,
   OCPPVersion,
   StandardParametersKey,
 } from '../types/index.js'
 import { logger, once } from '../utils/index.js'
+
+export const buildConfigKey = (component: string, variable: string, instance?: string): string => {
+  const base = `${component}.${variable}`
+  return instance != null ? `${base}.${instance}` : base
+}
 
 const OCPP2_PARAMETER_KEY_MAP = new Map<
   ConfigurationKeyType,
@@ -17,15 +23,39 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
       >(
       (
         [
-          [StandardParametersKey.AuthorizeRemoteTxRequests, StandardParametersKey.AuthorizeRemoteStart],
-          [StandardParametersKey.ConnectionTimeOut, StandardParametersKey.EVConnectionTimeOut],
+          [
+            StandardParametersKey.AuthorizeRemoteTxRequests,
+            buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.AuthorizeRemoteStart),
+          ],
+          [
+            StandardParametersKey.ConnectionTimeOut,
+            buildConfigKey(OCPP20ComponentName.TxCtrlr, StandardParametersKey.EVConnectionTimeOut),
+          ],
           [
             StandardParametersKey.LocalAuthorizeOffline,
-            StandardParametersKey.LocalAuthorizationOffline,
+            buildConfigKey(
+              OCPP20ComponentName.AuthCtrlr,
+              StandardParametersKey.LocalAuthorizationOffline
+            ),
           ],
-          [StandardParametersKey.LocalPreAuthorize, StandardParametersKey.LocalPreAuthorization],
-          [StandardParametersKey.MeterValueSampleInterval, StandardParametersKey.TxUpdatedInterval],
-          [StandardParametersKey.MeterValuesSampledData, StandardParametersKey.TxUpdatedMeasurands],
+          [
+            StandardParametersKey.LocalPreAuthorize,
+            buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.LocalPreAuthorization),
+          ],
+          [
+            StandardParametersKey.MeterValueSampleInterval,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              StandardParametersKey.TxUpdatedInterval
+            ),
+          ],
+          [
+            StandardParametersKey.MeterValuesSampledData,
+            buildConfigKey(
+              OCPP20ComponentName.SampledDataCtrlr,
+              StandardParametersKey.TxUpdatedMeasurands
+            ),
+          ],
         ] as [ConfigurationKeyType, ConfigurationKeyType][]
       ).map(([from, to]) => [
         from,

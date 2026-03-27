@@ -80,6 +80,7 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
+  OCPP20OptionalVariableName,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
@@ -130,7 +131,7 @@ import {
   truncateId,
   validateUUID,
 } from '../../../utils/index.js'
-import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
   hasPendingReservation,
@@ -1251,19 +1252,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // A02.FR.16: Enforce MaxCertificateChainSize — reject if chain exceeds configured limit
-    const maxChainSizeKey = getConfigurationKey(chargingStation, 'MaxCertificateChainSize')
+    const maxChainSizeKey = getConfigurationKey(
+      chargingStation,
+      buildConfigKey(
+        OCPP20ComponentName.SecurityCtrlr,
+        OCPP20OptionalVariableName.MaxCertificateChainSize
+      )
+    )
     if (maxChainSizeKey?.value != null) {
       const maxChainSize = parseInt(maxChainSizeKey.value, 10)
       if (!isNaN(maxChainSize) && maxChainSize > 0) {
         const chainByteSize = Buffer.byteLength(certificateChain, 'utf8')
         if (chainByteSize > maxChainSize) {
           logger.warn(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain size ${chainByteSize.toString()} bytes exceeds MaxCertificateChainSize ${maxChainSize.toString()} bytes`
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain size ${chainByteSize.toString()} bytes exceeds ${OCPP20OptionalVariableName.MaxCertificateChainSize as string} ${maxChainSize.toString()} bytes`
           )
           return {
             status: GenericStatus.Rejected,
             statusInfo: {
-              additionalInfo: `Certificate chain size (${chainByteSize.toString()} bytes) exceeds MaxCertificateChainSize (${maxChainSize.toString()} bytes)`,
+              additionalInfo: `Certificate chain size (${chainByteSize.toString()} bytes) exceeds ${OCPP20OptionalVariableName.MaxCertificateChainSize as string} (${maxChainSize.toString()} bytes)`,
               reasonCode: ReasonCodeEnumType.InvalidCertificate,
             },
           }

@@ -1967,7 +1967,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Identity',
   },
-  [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr as string, 'MaxCertificateChainSize')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr as string,
+    OCPP20OptionalVariableName.MaxCertificateChainSize
+  )]: {
     component: OCPP20ComponentName.SecurityCtrlr as string,
     dataType: DataEnumType.integer,
     description:
@@ -1976,7 +1979,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'MaxCertificateChainSize',
+    variable: OCPP20OptionalVariableName.MaxCertificateChainSize as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.SecurityCtrlr as string,

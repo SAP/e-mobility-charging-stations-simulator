@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
-import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
@@ -17,6 +17,8 @@ import {
   GenericStatus,
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
+  OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
@@ -306,7 +308,14 @@ await describe('I04 - CertificateSigned', async () => {
         storeCertificateResult: true,
       })
 
-      addConfigurationKey(station, 'MaxCertificateChainSize', '10')
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20OptionalVariableName.MaxCertificateChainSize
+        ),
+        '10'
+      )
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,
@@ -321,7 +330,11 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(response.status, GenericStatus.Rejected)
       assert.notStrictEqual(response.statusInfo, undefined)
       assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidCertificate')
-      assert.ok(response.statusInfo.additionalInfo?.includes('MaxCertificateChainSize'))
+      assert.ok(
+        response.statusInfo.additionalInfo?.includes(
+          OCPP20OptionalVariableName.MaxCertificateChainSize as string
+        )
+      )
     })
 
     await it('should accept certificate chain within MaxCertificateChainSize', async () => {
@@ -330,7 +343,14 @@ await describe('I04 - CertificateSigned', async () => {
         storeCertificateResult: true,
       })
 
-      addConfigurationKey(station, 'MaxCertificateChainSize', '100000')
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20OptionalVariableName.MaxCertificateChainSize
+        ),
+        '100000'
+      )
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,

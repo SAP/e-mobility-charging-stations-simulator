@@ -34,6 +34,7 @@ export enum OCPP20DeviceInfoVariableName {
 
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
+  MaxCertificateChainSize = 'MaxCertificateChainSize',
   WebSocketPingInterval = 'WebSocketPingInterval',
 }
 

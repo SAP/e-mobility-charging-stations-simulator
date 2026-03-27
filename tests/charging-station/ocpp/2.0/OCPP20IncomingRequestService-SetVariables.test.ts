@@ -7,8 +7,7 @@ import { millisecondsToSeconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
-
+import { buildConfigKey, type ChargingStation } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
@@ -510,7 +509,10 @@ await describe('B05 - Set Variables', async () => {
     const postCalcLimit = preEstimate + 10
     upsertConfigurationKey(
       mockStation,
-      OCPP20RequiredVariableName.BytesPerMessage,
+      buildConfigKey(
+        OCPP20ComponentName.DeviceDataCtrlr,
+        OCPP20RequiredVariableName.BytesPerMessage
+      ),
       postCalcLimit.toString(),
       false
     )
@@ -541,7 +543,11 @@ await describe('B05 - Set Variables', async () => {
   await it('should enforce ConfigurationValueSize when ValueSize unset (service propagation)', () => {
     resetValueSizeLimits(mockStation)
     setConfigurationValueSize(mockStation, 100)
-    upsertConfigurationKey(mockStation, OCPP20RequiredVariableName.ValueSize, '')
+    upsertConfigurationKey(
+      mockStation,
+      buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+      ''
+    )
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'a'.repeat(100 - prefix.length)
     const overLimit = prefix + 'a'.repeat(100 - prefix.length + 1)
@@ -575,7 +581,14 @@ await describe('B05 - Set Variables', async () => {
 
   await it('should enforce ValueSize when ConfigurationValueSize unset (service propagation)', () => {
     resetValueSizeLimits(mockStation)
-    upsertConfigurationKey(mockStation, OCPP20RequiredVariableName.ConfigurationValueSize, '')
+    upsertConfigurationKey(
+      mockStation,
+      buildConfigKey(
+        OCPP20ComponentName.DeviceDataCtrlr,
+        OCPP20RequiredVariableName.ConfigurationValueSize
+      ),
+      ''
+    )
     setValueSize(mockStation, 120)
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'b'.repeat(120 - prefix.length)

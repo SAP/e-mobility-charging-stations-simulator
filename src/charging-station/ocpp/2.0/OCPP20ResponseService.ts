@@ -1,6 +1,10 @@
 import type { ValidateFunction } from 'ajv'
 
-import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
+import {
+  addConfigurationKey,
+  buildConfigKey,
+  type ChargingStation,
+} from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
   ConnectorStatusEnum,
@@ -8,6 +12,7 @@ import {
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
   type OCPP20BootNotificationResponse,
+  OCPP20ComponentName,
   type OCPP20DataTransferResponse,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20Get15118EVCertificateResponse,
@@ -37,7 +42,6 @@ import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
-
 const moduleName = 'OCPP20ResponseService'
 
 /**
@@ -199,7 +203,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
         )
         addConfigurationKey(
           chargingStation,
-          OCPP20OptionalVariableName.HeartbeatInterval,
+          buildConfigKey(
+            OCPP20ComponentName.OCPPCommCtrlr,
+            OCPP20OptionalVariableName.HeartbeatInterval
+          ),
           payload.interval.toString(),
           {},
           { overwrite: true, save: true }

@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import {
+  buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
@@ -79,12 +80,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
       ocppConfiguration: {
         configurationKey: [
           {
-            key: StandardParametersKey.HeartbeatInterval,
+            key: buildConfigKey(
+              OCPP20ComponentName.OCPPCommCtrlr,
+              StandardParametersKey.HeartbeatInterval
+            ),
             readonly: false,
             value: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
           },
           {
-            key: StandardParametersKey.WebSocketPingInterval,
+            key: buildConfigKey(
+              OCPP20ComponentName.ChargingStation,
+              StandardParametersKey.WebSocketPingInterval
+            ),
             readonly: false,
             value: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
           },
@@ -1067,7 +1074,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should avoid duplicate persistence operations when value unchanged', () => {
       const keyBefore = getConfigurationKey(
         station,
-        OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20OptionalVariableName.HeartbeatInterval
+        )
       )
       assert.notStrictEqual(keyBefore, undefined)
       const originalValue = keyBefore?.value
@@ -1089,7 +1099,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(changed.attributeStatus, SetVariableStatusEnumType.Accepted)
       const keyAfterChange = getConfigurationKey(
         station,
-        OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20OptionalVariableName.HeartbeatInterval
+        )
       )
       assert.notStrictEqual(keyAfterChange?.value, originalValue)
       const reverted = manager.setVariables(station, [
@@ -1102,7 +1115,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(reverted.attributeStatus, SetVariableStatusEnumType.Accepted)
       const keyAfterRevert = getConfigurationKey(
         station,
-        OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20OptionalVariableName.HeartbeatInterval
+        )
       )
       assert.strictEqual(keyAfterRevert?.value, originalValue)
     })
@@ -1110,12 +1126,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should add missing configuration key with default during self-check', () => {
       deleteConfigurationKey(
         station,
-        OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name'],
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut),
         { save: false }
       )
       const before = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut)
       )
       assert.strictEqual(before, undefined)
       const res = manager.getVariables(station, [
@@ -1129,7 +1145,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(res.attributeValue, Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
       const after = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut)
       )
       assert.notStrictEqual(after, undefined)
     })
@@ -1354,7 +1370,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // remove ValueSize to simulate unset
       deleteConfigurationKey(
         station,
-        OCPP20RequiredVariableName.ValueSize as unknown as VariableType['name'],
+        buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
         { save: false }
       )
       const okRes = manager.setVariables(station, [
@@ -1384,7 +1400,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       setValueSize(station, 40)
       deleteConfigurationKey(
         station,
-        OCPP20RequiredVariableName.ConfigurationValueSize as unknown as VariableType['name'],
+        buildConfigKey(
+          OCPP20ComponentName.DeviceDataCtrlr,
+          OCPP20RequiredVariableName.ConfigurationValueSize
+        ),
         { save: false }
       )
       const okRes = manager.setVariables(station, [
@@ -1552,7 +1571,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const beforeCfg = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.FileTransferProtocols
+        )
       )
       assert.strictEqual(beforeCfg?.value, 'HTTPS,FTPS,SFTP')
       const rejected = manager.setVariables(station, [
@@ -1574,7 +1596,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(afterGet.attributeValue, 'HTTPS,FTPS,SFTP')
       const afterCfg = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.FileTransferProtocols
+        )
       )
       assert.strictEqual(afterCfg?.value, beforeCfg.value)
     })
@@ -1737,7 +1762,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Ensure ReportingValueSize unset
       deleteConfigurationKey(
         station,
-        OCPP20RequiredVariableName.ReportingValueSize as unknown as VariableType['name'],
+        buildConfigKey(
+          OCPP20ComponentName.DeviceDataCtrlr,
+          OCPP20RequiredVariableName.ReportingValueSize
+        ),
         { save: false }
       )
       // Temporarily set large ValueSize to allow storing long value
@@ -1803,7 +1831,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const overLongValue = buildWsExampleUrl(3000, 'c')
       upsertConfigurationKey(
         station,
-        OCPP20VendorVariableName.ConnectionUrl as unknown as VariableType['name'],
+        buildConfigKey(OCPP20ComponentName.ChargingStation, OCPP20VendorVariableName.ConnectionUrl),
         overLongValue
       )
       // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
@@ -1862,12 +1890,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should auto-create persistent OrganizationName configuration key during self-check', () => {
       deleteConfigurationKey(
         station,
-        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name'],
+        buildConfigKey(
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20RequiredVariableName.OrganizationName
+        ),
         { save: false }
       )
       const before = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20RequiredVariableName.OrganizationName
+        )
       )
       assert.strictEqual(before, undefined)
       const res = manager.getVariables(station, [
@@ -1880,7 +1914,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(res.attributeValue, 'ChangeMeOrg')
       const after = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20RequiredVariableName.OrganizationName
+        )
       )
       assert.notStrictEqual(after, undefined)
       assert.strictEqual(after?.value, 'ChangeMeOrg')
@@ -1931,7 +1968,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Ensure no configuration key exists before operations
       const cfgBefore = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageAttemptInterval,
+          'TransactionEvent'
+        )
       )
       assert.strictEqual(cfgBefore, undefined)
       const initialGet = manager.getVariables(station, [
@@ -2043,7 +2084,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const cfgAfter = getConfigurationKey(
         station,
-        OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageAttemptInterval,
+          'TransactionEvent'
+        )
       )
       assert.notStrictEqual(cfgAfter, undefined)
       assert.strictEqual(cfgAfter?.value, '7')
@@ -2170,7 +2215,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     try {
       deleteConfigurationKey(
         stationA,
-        OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name'],
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut),
         { save: false }
       )
       VARIABLE_REGISTRY[registryKey].defaultValue = undefined
