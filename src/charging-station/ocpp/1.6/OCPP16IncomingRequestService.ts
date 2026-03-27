@@ -175,71 +175,71 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        this.handleRequestCancelReservation.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestCancelReservation.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.handleRequestChangeAvailability.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestChangeAvailability.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.handleRequestChangeConfiguration.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestChangeConfiguration.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestClearCache.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.handleRequestClearChargingProfile.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestClearChargingProfile.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        this.handleRequestDataTransfer.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestDataTransfer.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-        this.handleRequestGetCompositeSchedule.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestGetCompositeSchedule.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.handleRequestGetConfiguration.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestGetConfiguration.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.handleRequestGetDiagnostics.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestGetDiagnostics.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.handleRequestRemoteStartTransaction.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestRemoteStartTransaction.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.handleRequestRemoteStopTransaction.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestRemoteStopTransaction.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.RESERVE_NOW,
-        this.handleRequestReserveNow.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestReserveNow.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.RESET,
-        this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestReset.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.handleRequestSetChargingProfile.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestSetChargingProfile.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.handleRequestTriggerMessage.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestTriggerMessage.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.handleRequestUnlockConnector.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestUnlockConnector.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.handleRequestUpdateFirmware.bind(this) as unknown as IncomingRequestHandler,
+        this.toRequestHandler(this.handleRequestUpdateFirmware.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(

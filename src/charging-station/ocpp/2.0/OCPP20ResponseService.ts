@@ -103,59 +103,65 @@ export class OCPP20ResponseService extends OCPPResponseService {
   public constructor () {
     super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
-      [OCPP20RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
+      [
+        OCPP20RequestCommand.AUTHORIZE,
+        this.toResponseHandler(this.handleResponseAuthorize.bind(this)),
+      ],
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.handleResponseBootNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseBootNotification.bind(this)),
       ],
       [
         OCPP20RequestCommand.DATA_TRANSFER,
-        this.handleResponseDataTransfer.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseDataTransfer.bind(this)),
       ],
       [
         OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        this.handleResponseFirmwareStatusNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseFirmwareStatusNotification.bind(this)),
       ],
       [
         OCPP20RequestCommand.GET_15118_EV_CERTIFICATE,
-        this.handleResponseGet15118EVCertificate.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseGet15118EVCertificate.bind(this)),
       ],
       [
         OCPP20RequestCommand.GET_CERTIFICATE_STATUS,
-        this.handleResponseGetCertificateStatus.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseGetCertificateStatus.bind(this)),
       ],
-      [OCPP20RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this) as ResponseHandler],
+      [
+        OCPP20RequestCommand.HEARTBEAT,
+        this.toResponseHandler(this.handleResponseHeartbeat.bind(this)),
+      ],
       [
         OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-        this.handleResponseLogStatusNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseLogStatusNotification.bind(this)),
       ],
       [
         OCPP20RequestCommand.METER_VALUES,
-        this.handleResponseMeterValues.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseMeterValues.bind(this)),
       ],
       [
         OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-        this.handleResponseNotifyCustomerInformation.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseNotifyCustomerInformation.bind(this)),
       ],
       [
         OCPP20RequestCommand.NOTIFY_REPORT,
-        this.handleResponseNotifyReport.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseNotifyReport.bind(this)),
       ],
       [
         OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
-        this.handleResponseSecurityEventNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseSecurityEventNotification.bind(this)),
       ],
       [
         OCPP20RequestCommand.SIGN_CERTIFICATE,
-        this.handleResponseSignCertificate.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseSignCertificate.bind(this)),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.handleResponseStatusNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseStatusNotification.bind(this)),
       ],
       [
         OCPP20RequestCommand.TRANSACTION_EVENT,
-        this.handleResponseTransactionEvent.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseTransactionEvent.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(

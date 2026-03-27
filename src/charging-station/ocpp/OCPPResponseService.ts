@@ -140,6 +140,17 @@ export abstract class OCPPResponseService {
     commandName: RequestCommand
   ): boolean
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- bridges contravariant handler signatures into ResponseHandler
+  protected toResponseHandler<P extends JsonType, R extends JsonType>(
+    handler: (
+      chargingStation: ChargingStation,
+      payload: P,
+      requestPayload: R
+    ) => Promise<void> | void
+  ): ResponseHandler {
+    return handler as unknown as ResponseHandler
+  }
+
   /**
    * Validates incoming response payload against JSON schema
    * @param chargingStation - The charging station instance receiving the response

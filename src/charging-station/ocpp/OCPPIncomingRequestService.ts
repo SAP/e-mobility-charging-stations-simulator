@@ -158,6 +158,14 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- bridges contravariant handler signatures into IncomingRequestHandler
+  protected toRequestHandler<P extends JsonType, R extends JsonType>(
+    handler: (chargingStation: ChargingStation, commandPayload: P) => Promise<R> | R
+  ): IncomingRequestHandler {
+    return handler as unknown as IncomingRequestHandler
+  }
+
   /**
    * Validates incoming request payload against JSON schema
    * @param chargingStation - The charging station instance processing the request

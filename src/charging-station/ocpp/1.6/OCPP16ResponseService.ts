@@ -92,30 +92,33 @@ export class OCPP16ResponseService extends OCPPResponseService {
   public constructor () {
     super(OCPPVersion.VERSION_16)
     this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
-      [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
+      [
+        OCPP16RequestCommand.AUTHORIZE,
+        this.toResponseHandler(this.handleResponseAuthorize.bind(this)),
+      ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
-        this.handleResponseBootNotification.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseBootNotification.bind(this)),
       ],
       [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-        this.emptyResponseHandler.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.emptyResponseHandler.bind(this)),
       ],
       [OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, this.emptyResponseHandler],
       [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler],
       [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler],
       [
         OCPP16RequestCommand.START_TRANSACTION,
-        this.handleResponseStartTransaction.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseStartTransaction.bind(this)),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
-        this.emptyResponseHandler.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.emptyResponseHandler.bind(this)),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
-        this.handleResponseStopTransaction.bind(this) as ResponseHandler,
+        this.toResponseHandler(this.handleResponseStopTransaction.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(

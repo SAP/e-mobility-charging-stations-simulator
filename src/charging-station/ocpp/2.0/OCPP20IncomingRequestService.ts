@@ -225,77 +225,83 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
-        this.toHandler(this.handleRequestCertificateSigned.bind(this)),
+        this.toRequestHandler(this.handleRequestCertificateSigned.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.toHandler(this.handleRequestChangeAvailability.bind(this)),
+        this.toRequestHandler(this.handleRequestChangeAvailability.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.toHandler(this.handleRequestClearCache.bind(this)),
+        this.toRequestHandler(this.handleRequestClearCache.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
-        this.toHandler(this.handleRequestCustomerInformation.bind(this)),
+        this.toRequestHandler(this.handleRequestCustomerInformation.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.DATA_TRANSFER,
-        this.toHandler(this.handleRequestDataTransfer.bind(this)),
+        this.toRequestHandler(this.handleRequestDataTransfer.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
-        this.toHandler(this.handleRequestDeleteCertificate.bind(this)),
+        this.toRequestHandler(this.handleRequestDeleteCertificate.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-        this.toHandler(this.handleRequestGetBaseReport.bind(this)),
+        this.toRequestHandler(this.handleRequestGetBaseReport.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
-        this.toHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
+        this.toRequestHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
       ],
-      [OCPP20IncomingRequestCommand.GET_LOG, this.toHandler(this.handleRequestGetLog.bind(this))],
+      [
+        OCPP20IncomingRequestCommand.GET_LOG,
+        this.toRequestHandler(this.handleRequestGetLog.bind(this)),
+      ],
       [
         OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
-        this.toHandler(this.handleRequestGetTransactionStatus.bind(this)),
+        this.toRequestHandler(this.handleRequestGetTransactionStatus.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
-        this.toHandler(this.handleRequestGetVariables.bind(this)),
+        this.toRequestHandler(this.handleRequestGetVariables.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
-        this.toHandler(this.handleRequestInstallCertificate.bind(this)),
+        this.toRequestHandler(this.handleRequestInstallCertificate.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-        this.toHandler(this.handleRequestStartTransaction.bind(this)),
+        this.toRequestHandler(this.handleRequestStartTransaction.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-        this.toHandler(this.handleRequestStopTransaction.bind(this)),
+        this.toRequestHandler(this.handleRequestStopTransaction.bind(this)),
       ],
-      [OCPP20IncomingRequestCommand.RESET, this.toHandler(this.handleRequestReset.bind(this))],
+      [
+        OCPP20IncomingRequestCommand.RESET,
+        this.toRequestHandler(this.handleRequestReset.bind(this)),
+      ],
       [
         OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
-        this.toHandler(this.handleRequestSetNetworkProfile.bind(this)),
+        this.toRequestHandler(this.handleRequestSetNetworkProfile.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.SET_VARIABLES,
-        this.toHandler(this.handleRequestSetVariables.bind(this)),
+        this.toRequestHandler(this.handleRequestSetVariables.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.toHandler(this.handleRequestTriggerMessage.bind(this)),
+        this.toRequestHandler(this.handleRequestTriggerMessage.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.toHandler(this.handleRequestUnlockConnector.bind(this)),
+        this.toRequestHandler(this.handleRequestUnlockConnector.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.toHandler(this.handleRequestUpdateFirmware.bind(this)),
+        this.toRequestHandler(this.handleRequestUpdateFirmware.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
@@ -3666,13 +3672,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       reason,
       evseId
     )
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- bridges contravariant handler signatures into IncomingRequestHandler
-  private toHandler<P extends JsonType, R extends JsonType>(
-    handler: (chargingStation: ChargingStation, commandPayload: P) => Promise<R> | R
-  ): IncomingRequestHandler {
-    return handler as unknown as IncomingRequestHandler
   }
 
   private triggerAllEvseStatusNotifications (
