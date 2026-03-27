@@ -144,8 +144,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     for (const connectorId of connectorIds) {
       let response: OCPP16ChangeAvailabilityResponse =
         OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        continue
+      }
       if (connectorStatus.transactionStarted === true) {
         response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED
       }
@@ -551,8 +553,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.setChargingProfile: Trying to set a charging profile on connector id ${connectorId.toString()} with an uninitialized charging profiles array attribute, applying deferred initialization`
       )
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus != null) {
+        connectorStatus.chargingProfiles = []
+      }
     }
     if (!Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       logger.warn(
@@ -699,11 +703,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     chargingSchedule: OCPP16ChargingSchedule,
     compositeInterval: Interval
   ): OCPP16ChargingSchedule | undefined => {
+    if (chargingSchedule.startSchedule == null || chargingSchedule.duration == null) {
+      return undefined
+    }
     const chargingScheduleInterval: Interval = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      start: chargingSchedule.startSchedule!,
+      end: addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration),
+      start: chargingSchedule.startSchedule,
     }
     if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
       chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)

@@ -4,6 +4,8 @@ import type { ChargingStation } from '../charging-station/index.js'
 
 import {
   type ChargingStationData,
+  type ChargingStationInfo,
+  type ChargingStationOcppConfiguration,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
   type Statistics,
@@ -99,11 +101,10 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     connectors: buildConnectorEntries(chargingStation),
     evses: buildEvseEntries(chargingStation),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ocppConfiguration: chargingStation.ocppConfiguration!,
+    ocppConfiguration:
+      chargingStation.ocppConfiguration ?? ({} as ChargingStationOcppConfiguration),
     started: chargingStation.started,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    stationInfo: chargingStation.stationInfo!,
+    stationInfo: chargingStation.stationInfo ?? ({} as ChargingStationInfo),
     supervisionUrl: chargingStation.wsConnectionUrl.href,
     timestamp: Date.now(),
     wsState: chargingStation.wsConnection?.readyState,

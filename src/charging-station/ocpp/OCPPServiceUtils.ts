@@ -249,14 +249,12 @@ export const isIdTagAuthorized = async (
 }
 
 const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string): boolean => {
+  const idTagsFile =
+    chargingStation.stationInfo != null ? getIdTagsFile(chargingStation.stationInfo) : undefined
   return (
     chargingStation.hasIdTags() &&
-    isNotEmptyString(
-      chargingStation.idTagsCache
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-        ?.find(tag => tag === idTag)
-    )
+    idTagsFile != null &&
+    isNotEmptyString(chargingStation.idTagsCache.getIdTags(idTagsFile)?.find(tag => tag === idTag))
   )
 }
 
@@ -265,8 +263,10 @@ const isIdTagRemoteAuthorized = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (connectorStatus != null) {
+    connectorStatus.authorizeIdTag = idTag
+  }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
       return (
@@ -1997,16 +1997,15 @@ const getLimitFromSampledValueTemplateCustomValue = (
     return max(
       min(
         (!Number.isNaN(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY) *
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          options.unitMultiplier!,
+          (options.unitMultiplier ?? 1),
         maxLimit
       ),
       minLimit
     )
   }
   return (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (!Number.isNaN(parsedValue) ? parsedValue : options.fallbackValue!) * options.unitMultiplier!
+    (!Number.isNaN(parsedValue) ? parsedValue : (options.fallbackValue ?? 0)) *
+    (options.unitMultiplier ?? 1)
   )
 }
 

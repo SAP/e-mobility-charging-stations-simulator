@@ -618,14 +618,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           chargingProfile.chargingSchedule.startSchedule
         )
       }
-      if (chargingProfile.chargingSchedule.duration == null) {
+      if (
+        chargingProfile.chargingSchedule.duration == null &&
+        chargingProfile.chargingSchedule.startSchedule != null
+      ) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.composeCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
         )
         chargingProfile.chargingSchedule.duration = differenceInSeconds(
           maxTime,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingProfile.chargingSchedule.startSchedule!
+          chargingProfile.chargingSchedule.startSchedule
         )
       }
       if (
@@ -1114,14 +1116,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
           ConfigurationSection.log
         )
+        const logFile = logConfiguration.file
+        if (logFile == null) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Cannot get diagnostics: log file not configured`
+          )
+          return OCPP16Constants.OCPP_RESPONSE_EMPTY
+        }
         const logFiles = readdirSync(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          resolve((fileURLToPath(import.meta.url), '../', dirname(logConfiguration.file!)))
+          resolve((fileURLToPath(import.meta.url), '../', dirname(logFile)))
         )
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .filter(file => file.endsWith(extname(logConfiguration.file!)))
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .map(file => join(dirname(logConfiguration.file!), file))
+          .filter(file => file.endsWith(extname(logFile)))
+          .map(file => join(dirname(logFile), file))
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const diagnosticsArchive = `${chargingStation.stationInfo?.chargingStationId}_logs.tar.gz`
         create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive))
@@ -1535,11 +1541,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
     }
     if (
+      connectorId != null &&
       !OCPP16ServiceUtils.isConnectorIdValid(
         chargingStation,
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorId!
+        connectorId
       )
     ) {
       return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
@@ -1609,8 +1615,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate)!
+    commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate) ?? new Date()
     if (
       chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloading ||
       chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloaded ||

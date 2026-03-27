@@ -199,13 +199,12 @@ export class OCPP16RequestService extends OCPPRequestService {
             commandParams.connectorId as number,
             commandParams.idTag as string
           ) && {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             reservationId: chargingStation.getReservationBy(
               'connectorId',
               chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                 ? 0
                 : (commandParams.connectorId as number)
-            )!.reservationId,
+            )?.reservationId,
           }),
           ...commandParams,
         } as unknown as Request
@@ -227,15 +226,14 @@ export class OCPP16RequestService extends OCPPRequestService {
           idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
           meterStop: energyActiveImportRegister,
           timestamp: new Date(),
-          ...(chargingStation.stationInfo?.transactionDataMeterValues === true && {
+          ...(chargingStation.stationInfo?.transactionDataMeterValues === true &&
+            connectorId != null && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.getConnectorStatus(connectorId!)!
-                .transactionBeginMeterValue! as OCPP16MeterValue,
+              chargingStation.getConnectorStatus(connectorId)
+                ?.transactionBeginMeterValue as OCPP16MeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                connectorId!,
+                connectorId,
                 energyActiveImportRegister
               ) as OCPP16MeterValue
             ),

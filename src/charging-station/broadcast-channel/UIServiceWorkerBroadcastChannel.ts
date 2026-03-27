@@ -96,21 +96,21 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responsesReceived: 1,
       })
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const responses = this.responses.get(uuid)!
-      if (responses.responsesReceived < responses.responsesExpected) {
-        ++responses.responsesReceived
-        responses.responses.push(responsePayload)
-      } else {
-        logger.debug(
-          `${this.uiService.logPrefix(moduleName, 'responseHandler')} Received response after all expected responses:`,
-          { responsePayload, uuid }
-        )
+      const responses = this.responses.get(uuid)
+      if (responses != null) {
+        if (responses.responsesReceived < responses.responsesExpected) {
+          ++responses.responsesReceived
+          responses.responses.push(responsePayload)
+        } else {
+          logger.debug(
+            `${this.uiService.logPrefix(moduleName, 'responseHandler')} Received response after all expected responses:`,
+            { responsePayload, uuid }
+          )
+        }
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const responses = this.responses.get(uuid)!
-    if (responses.responsesReceived >= responses.responsesExpected) {
+    const responses = this.responses.get(uuid)
+    if (responses != null && responses.responsesReceived >= responses.responsesExpected) {
       this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
       this.responses.delete(uuid)
       this.uiService.deleteBroadcastChannelRequest(uuid)

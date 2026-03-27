@@ -127,48 +127,42 @@ export class PerformanceStatistics {
     messageType: MessageType
   ): void {
     switch (messageType) {
-      case MessageType.CALL_ERROR_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.errorCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.errorCount!
+      case MessageType.CALL_ERROR_MESSAGE: {
+        const commandStatisticsData = this.statistics.statisticsData.get(command)
+        if (commandStatisticsData?.errorCount != null) {
+          ++commandStatisticsData.errorCount
         } else {
           this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
+            ...commandStatisticsData,
             errorCount: 1,
           })
         }
         break
-      case MessageType.CALL_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.requestCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.requestCount!
+      }
+      case MessageType.CALL_MESSAGE: {
+        const commandStatisticsData = this.statistics.statisticsData.get(command)
+        if (commandStatisticsData?.requestCount != null) {
+          ++commandStatisticsData.requestCount
         } else {
           this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
+            ...commandStatisticsData,
             requestCount: 1,
           })
         }
         break
-      case MessageType.CALL_RESULT_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.responseCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.responseCount!
+      }
+      case MessageType.CALL_RESULT_MESSAGE: {
+        const commandStatisticsData = this.statistics.statisticsData.get(command)
+        if (commandStatisticsData?.responseCount != null) {
+          ++commandStatisticsData.responseCount
         } else {
           this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
+            ...commandStatisticsData,
             responseCount: 1,
           })
         }
         break
+      }
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.error(`${this.logPrefix()} wrong message type ${messageType}`)
@@ -210,62 +204,45 @@ export class PerformanceStatistics {
     if (!this.statistics.statisticsData.has(entry.name)) {
       this.statistics.statisticsData.set(entry.name, {})
     }
-    // Update current statistics
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.timeMeasurementCount =
-      (this.statistics.statisticsData.get(entry.name)?.timeMeasurementCount ?? 0) + 1
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.currentTimeMeasurement = entry.duration
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.minTimeMeasurement = min(
-      entry.duration,
-      this.statistics.statisticsData.get(entry.name)?.minTimeMeasurement ?? Number.POSITIVE_INFINITY
-    )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.maxTimeMeasurement = max(
-      entry.duration,
-      this.statistics.statisticsData.get(entry.name)?.maxTimeMeasurement ?? Number.NEGATIVE_INFINITY
-    )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.totalTimeMeasurement =
-      (this.statistics.statisticsData.get(entry.name)?.totalTimeMeasurement ?? 0) + entry.duration
-    if (
-      !(
-        this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries instanceof
-        CircularBuffer
+    const entryStatisticsData = this.statistics.statisticsData.get(entry.name)
+    if (entryStatisticsData != null) {
+      // Update current statistics
+      entryStatisticsData.timeMeasurementCount = (entryStatisticsData.timeMeasurementCount ?? 0) + 1
+      entryStatisticsData.currentTimeMeasurement = entry.duration
+      entryStatisticsData.minTimeMeasurement = min(
+        entry.duration,
+        entryStatisticsData.minTimeMeasurement ?? Number.POSITIVE_INFINITY
       )
-    ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries =
-        new CircularBuffer<TimestampedData>(
+      entryStatisticsData.maxTimeMeasurement = max(
+        entry.duration,
+        entryStatisticsData.maxTimeMeasurement ?? Number.NEGATIVE_INFINITY
+      )
+      entryStatisticsData.totalTimeMeasurement =
+        (entryStatisticsData.totalTimeMeasurement ?? 0) + entry.duration
+      if (!(entryStatisticsData.measurementTimeSeries instanceof CircularBuffer)) {
+        entryStatisticsData.measurementTimeSeries = new CircularBuffer<TimestampedData>(
           Array<TimestampedData>,
           Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
         )
+      }
+      entryStatisticsData.measurementTimeSeries.push({
+        timestamp: entry.startTime,
+        value: entry.duration,
+      })
+      const timeMeasurementValues = extractTimeSeriesValues(
+        entryStatisticsData.measurementTimeSeries
+      )
+      entryStatisticsData.avgTimeMeasurement = average(timeMeasurementValues)
+      entryStatisticsData.medTimeMeasurement = median(timeMeasurementValues)
+      entryStatisticsData.ninetyFiveThPercentileTimeMeasurement = percentile(
+        timeMeasurementValues,
+        95
+      )
+      entryStatisticsData.stdTimeMeasurement = std(
+        timeMeasurementValues,
+        entryStatisticsData.avgTimeMeasurement
+      )
     }
-    this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries?.push({
-      timestamp: entry.startTime,
-      value: entry.duration,
-    })
-    const timeMeasurementValues = extractTimeSeriesValues(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.statistics.statisticsData.get(entry.name)!
-        .measurementTimeSeries as CircularBuffer<TimestampedData>
-    )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement =
-      average(timeMeasurementValues)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.medTimeMeasurement =
-      median(timeMeasurementValues)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.ninetyFiveThPercentileTimeMeasurement =
-      percentile(timeMeasurementValues, 95)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.stdTimeMeasurement = std(
-      timeMeasurementValues,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement
-    )
     this.statistics.updatedAt = new Date()
     if (
       Configuration.getConfigurationSection<StorageConfiguration>(
@@ -307,10 +284,7 @@ export class PerformanceStatistics {
       ConfigurationSection.log
     )
     const logStatisticsInterval =
-      logConfiguration.enabled === true
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        logConfiguration.statisticsInterval!
-        : 0
+      logConfiguration.enabled === true ? (logConfiguration.statisticsInterval ?? 0) : 0
     if (logStatisticsInterval > 0 && this.displayInterval == null) {
       this.displayInterval = setInterval(() => {
         this.logStatistics()

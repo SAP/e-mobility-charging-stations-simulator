@@ -403,7 +403,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       ) => {
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
-          if (connectorId != null) {
+          if (connectorId != null && response.transactionId != null) {
             const connectorStatus = chargingStation.getConnectorStatus(connectorId)
             const startedMeterValues =
               connectorStatus != null
@@ -414,8 +414,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.RemoteStart,
               connectorId,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              response.transactionId!,
+              response.transactionId,
               startedMeterValues.length > 0 ? { meterValue: startedMeterValues } : undefined
             ).catch((error: unknown) => {
               logger.error(
@@ -1261,7 +1260,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     if (maxChainSizeKey?.value != null) {
       const maxChainSize = parseInt(maxChainSizeKey.value, 10)
-      if (!isNaN(maxChainSize) && maxChainSize > 0) {
+      if (!Number.isNaN(maxChainSize) && maxChainSize > 0) {
         const chainByteSize = Buffer.byteLength(certificateChain, 'utf8')
         if (chainByteSize > maxChainSize) {
           logger.warn(
@@ -3004,12 +3003,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     idTokenString: string
   ): boolean {
     try {
+      const idTagsFile =
+        chargingStation.stationInfo != null ? getIdTagsFile(chargingStation.stationInfo) : undefined
       return (
         chargingStation.hasIdTags() &&
-        chargingStation.idTagsCache
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-          ?.includes(idTokenString) === true
+        idTagsFile != null &&
+        chargingStation.idTagsCache.getIdTags(idTagsFile)?.includes(idTokenString) === true
       )
     } catch (error) {
       logger.error(

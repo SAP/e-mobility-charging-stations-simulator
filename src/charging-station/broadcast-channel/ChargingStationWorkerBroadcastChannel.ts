@@ -270,8 +270,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command)) {
       this.cleanRequestPayload(command, requestPayload)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const commandHandler = this.commandHandlers.get(command)!
+      const commandHandler = this.commandHandlers.get(command)
+      if (commandHandler == null) {
+        throw new BaseError(`Unknown worker broadcast channel command: '${command}'`)
+      }
       if (isAsyncFunction(commandHandler)) {
         return await commandHandler(requestPayload)
       }
@@ -394,14 +396,18 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
     const connectorId = requestPayload?.connectorId
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Missing connectorId in request payload`
+      )
+    }
     switch (this.chargingStation.stationInfo?.ocppVersion) {
       case OCPPVersion.VERSION_16: {
         const configuredMeterValueSampleInterval = getConfigurationKey(
           this.chargingStation,
           StandardParametersKey.MeterValueSampleInterval
         )
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
         return await this.chargingStation.ocppRequestService.requestHandler<
           MeterValuesRequest,
           MeterValuesResponse
@@ -426,10 +432,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       case OCPPVersion.VERSION_20:
       case OCPPVersion.VERSION_201: {
         const alignedDataInterval = OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId!)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
+        const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId)
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
         return await this.chargingStation.ocppRequestService.requestHandler<
           MeterValuesRequest,
           MeterValuesResponse
@@ -553,8 +557,14 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         return undefined
       })
       .finally(() => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.sendResponse([uuid, responsePayload!])
+        this.sendResponse([
+          uuid,
+          responsePayload ?? {
+            command,
+            hashId: this.chargingStation.stationInfo?.hashId,
+            status: ResponseStatus.FAILURE,
+          },
+        ])
       })
   }
 }

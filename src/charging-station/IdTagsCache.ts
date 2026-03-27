@@ -133,20 +133,17 @@ export class IdTagsCache {
   }
 
   private getRandomIdTag (hashId: string, file: string): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTags = this.getIdTags(file)!
+    const idTags = this.getIdTags(file) ?? []
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId)
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       Math.floor(secureRandom() * idTags.length)
     )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!]
+    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0]
   }
 
   private getRoundRobinIdTag (hashId: string, file: string): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTags = this.getIdTags(file)!
+    const idTags = this.getIdTags(file) ?? []
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId)
     const idTagIndex = this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0
     const idTag = idTags[idTagIndex]

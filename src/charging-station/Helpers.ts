@@ -590,7 +590,8 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       .map(chargingProfile => {
         const chargingSchedule = getSingleChargingSchedule(chargingProfile)
         if (chargingSchedule != null) {
-          chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)
+          chargingSchedule.startSchedule =
+            convertToDate(chargingSchedule.startSchedule) ?? new Date()
         }
         chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
         chargingProfile.validTo = convertToDate(chargingProfile.validTo)
@@ -1104,8 +1105,7 @@ const getChargingProfilesLimit = (
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
       )
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!
+      chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule) ?? new Date()
     }
     if (chargingSchedule.duration == null) {
       logger.debug(
@@ -1388,12 +1388,11 @@ const prepareRecurringChargingProfile = (
   let recurringIntervalTranslated = false
   let recurringInterval: Interval | undefined
   switch (chargingProfile.recurrencyKind) {
-    case RecurrencyKindType.DAILY:
+    case RecurrencyKindType.DAILY: {
+      const startSchedule = chargingSchedule.startSchedule ?? new Date()
       recurringInterval = {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: addDays(chargingSchedule.startSchedule!, 1),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: chargingSchedule.startSchedule!,
+        end: addDays(startSchedule, 1),
+        start: startSchedule,
       }
       checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
       if (
@@ -1412,12 +1411,12 @@ const prepareRecurringChargingProfile = (
         recurringIntervalTranslated = true
       }
       break
-    case RecurrencyKindType.WEEKLY:
+    }
+    case RecurrencyKindType.WEEKLY: {
+      const startSchedule = chargingSchedule.startSchedule ?? new Date()
       recurringInterval = {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: addWeeks(chargingSchedule.startSchedule!, 1),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: chargingSchedule.startSchedule!,
+        end: addWeeks(startSchedule, 1),
+        start: startSchedule,
       }
       checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
       if (
@@ -1436,22 +1435,26 @@ const prepareRecurringChargingProfile = (
         recurringIntervalTranslated = true
       }
       break
+    }
     default:
       logger.error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfileId} is not supported`
       )
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (recurringIntervalTranslated && !isWithinInterval(currentDate, recurringInterval!)) {
+  if (
+    recurringIntervalTranslated &&
+    recurringInterval != null &&
+    !isWithinInterval(currentDate, recurringInterval)
+  ) {
     logger.error(
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         chargingProfile.recurrencyKind
       } charging profile id ${chargingProfileId} recurrency time interval [${toDate(
-        recurringInterval?.start as Date
+        recurringInterval.start as Date
       ).toISOString()}, ${toDate(
-        recurringInterval?.end as Date
+        recurringInterval.end as Date
       ).toISOString()}] has not been properly translated to current date ${
         isDate(currentDate) ? currentDate.toISOString() : currentDate.toString()
       } `

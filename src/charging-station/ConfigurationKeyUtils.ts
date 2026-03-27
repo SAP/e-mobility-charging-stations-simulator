@@ -167,8 +167,7 @@ export const addConfigurationKey = (
     if (params.overwrite) {
       chargingStation.ocppConfiguration.configurationKey[keyIndex] = {
         ...chargingStation.ocppConfiguration.configurationKey[keyIndex],
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        readonly: options.readonly!,
+        readonly: options.readonly ?? false,
         reboot: options.reboot,
         value,
         visible: options.visible,
@@ -179,8 +178,7 @@ export const addConfigurationKey = (
         configurationKey.reboot = options.reboot
       }
       if (options.readonly != null && configurationKey.readonly !== options.readonly) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        configurationKey.readonly = options.readonly!
+        configurationKey.readonly = options.readonly
       }
       if (options.visible != null && configurationKey.visible !== options.visible) {
         configurationKey.visible = options.visible
@@ -194,8 +192,7 @@ export const addConfigurationKey = (
   } else {
     chargingStation.ocppConfiguration.configurationKey.push({
       key: resolveKey(chargingStation, key),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      readonly: options.readonly!,
+      readonly: options.readonly ?? false,
       reboot: options.reboot,
       value,
       visible: options.visible,

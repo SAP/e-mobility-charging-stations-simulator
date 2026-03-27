@@ -68,8 +68,9 @@ export class SharedLRUCache {
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash!),
+        this.getChargingStationConfigurationKey(
+          chargingStationConfiguration.configurationHash ?? ''
+        ),
         chargingStationConfiguration
       )
     }
@@ -77,8 +78,7 @@ export class SharedLRUCache {
 
   public setChargingStationTemplate (chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getChargingStationTemplateKey(chargingStationTemplate.templateHash!),
+      this.getChargingStationTemplateKey(chargingStationTemplate.templateHash ?? ''),
       chargingStationTemplate
     )
   }

@@ -173,8 +173,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
     }
     if (authorizeConnectorId != null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId)!
+      const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId)
+      if (authorizeConnectorStatus == null) {
+        return
+      }
       if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
         authorizeConnectorStatus.idTagAuthorized = true
         logger.debug(
@@ -439,8 +441,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }#${connectorId.toString()} for idTag '${truncateId(requestPayload.idTag)}'`
       )
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ++chargingStation.powerDivider!
+        if (chargingStation.powerDivider != null) {
+          ++chargingStation.powerDivider
+        } else {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: powerDivider is undefined, cannot increment`
+          )
+        }
       }
       const configuredMeterValueSampleInterval = getConfigurationKey(
         chargingStation,
@@ -517,8 +524,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
       } as OCPP16StatusNotificationRequest)
     }
     if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.powerDivider!--
+      if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
+        --chargingStation.powerDivider
+      } else {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
+            chargingStation.powerDivider?.toString() ?? 'undefined'
+          }, cannot decrement`
+        )
+      }
     }
     const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
     resetConnectorStatus(transactionConnectorStatus)

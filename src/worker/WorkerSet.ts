@@ -5,7 +5,7 @@ import { EventEmitterAsyncResource } from 'node:events'
 import { SHARE_ENV, Worker } from 'node:worker_threads'
 
 import { WorkerAbstract } from './WorkerAbstract.js'
-import { EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants.js'
+import { DEFAULT_ELEMENTS_PER_WORKER, EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants.js'
 import {
   type SetInfo,
   type UUIDv4,
@@ -33,8 +33,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
         0
       ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      elementsPerWorker: this.maxElementsPerWorker!,
+      elementsPerWorker: this.maxElementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER,
       size: this.size,
       started: this.started,
       type: 'set',
@@ -167,9 +166,12 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     worker.on('message', (message: WorkerMessage<R>) => {
       const { data, event, uuid } = message
       if (this.promiseResponseMap.has(uuid)) {
+        const responseWrapper = this.promiseResponseMap.get(uuid)
+        if (responseWrapper == null) {
+          return
+        }
         let error: Error
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { reject, resolve, workerSetElement } = this.promiseResponseMap.get(uuid)!
+        const { reject, resolve, workerSetElement } = responseWrapper
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
             ++workerSetElement.numberOfWorkerElements
@@ -241,8 +243,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   private async getWorkerSetElement (): Promise<WorkerSetElement> {
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      if (workerSetElement.numberOfWorkerElements < this.workerOptions.elementsPerWorker!) {
+      if (
+        workerSetElement.numberOfWorkerElements <
+        (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
+      ) {
         chosenWorkerSetElement = workerSetElement
         break
       }

@@ -196,10 +196,12 @@ export class Configuration {
   }
 
   public static workerPoolInUse (): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.fixedPool].includes(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-        .processType!
+    const processType = Configuration.getConfigurationSection<WorkerConfiguration>(
+      ConfigurationSection.worker
+    ).processType
+    return (
+      processType != null &&
+      [WorkerProcessType.dynamicPool, WorkerProcessType.fixedPool].includes(processType)
     )
   }
 
@@ -316,8 +318,9 @@ export class Configuration {
       ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
       ...(has(ConfigurationSection.worker, configData) && configData?.worker),
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    checkWorkerProcessType(workerConfiguration.processType!)
+    if (workerConfiguration.processType != null) {
+      checkWorkerProcessType(workerConfiguration.processType)
+    }
     checkWorkerElementsPerWorker(workerConfiguration.elementsPerWorker)
     return workerConfiguration
   }

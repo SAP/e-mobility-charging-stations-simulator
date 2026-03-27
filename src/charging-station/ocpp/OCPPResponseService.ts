@@ -85,8 +85,15 @@ export abstract class OCPPResponseService {
           logger.debug(
             `${chargingStation.logPrefix()} ${this.moduleName}.responseHandler: Handling '${commandName}' response`
           )
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const responseHandler = this.responseHandlers.get(commandName)!
+          const responseHandler = this.responseHandlers.get(commandName)
+          if (responseHandler == null) {
+            throw new OCPPError(
+              ErrorType.NOT_IMPLEMENTED,
+              `${commandName} response handler not found`,
+              commandName,
+              payload
+            )
+          }
           if (isAsyncFunction(responseHandler)) {
             await responseHandler(chargingStation, payload, requestPayload)
           } else {

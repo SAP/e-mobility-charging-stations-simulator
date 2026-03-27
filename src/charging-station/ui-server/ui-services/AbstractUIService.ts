@@ -153,8 +153,10 @@ export abstract class AbstractUIService {
       }
 
       // Call the request handler to build the response payload
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const requestHandler = this.requestHandlers.get(command)!
+      const requestHandler = this.requestHandlers.get(command)
+      if (requestHandler == null) {
+        throw new BaseError(`'${command}' request handler not found`)
+      }
       if (isAsyncFunction(requestHandler)) {
         responsePayload = await requestHandler(uuid, command, requestPayload)
       } else {

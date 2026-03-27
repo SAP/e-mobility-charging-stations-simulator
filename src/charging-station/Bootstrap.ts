@@ -44,7 +44,13 @@ import {
   logger,
   logPrefix,
 } from '../utils/index.js'
-import { DEFAULT_ELEMENTS_PER_WORKER, type WorkerAbstract, WorkerFactory } from '../worker/index.js'
+import {
+  DEFAULT_ELEMENTS_PER_WORKER,
+  DEFAULT_POOL_MAX_SIZE,
+  DEFAULT_POOL_MIN_SIZE,
+  type WorkerAbstract,
+  WorkerFactory,
+} from '../worker/index.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
 import { UIServerFactory } from './ui-server/UIServerFactory.js'
 
@@ -163,10 +169,11 @@ export class Bootstrap extends EventEmitter {
   }
 
   public getLastContiguousIndex (templateName: string): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const indexes = [...this.templateStatistics.get(templateName)!.indexes]
-      .concat(0)
-      .sort((a, b) => a - b)
+    const templateStatistics = this.templateStatistics.get(templateName)
+    if (templateStatistics == null) {
+      return 0
+    }
+    const indexes = [...templateStatistics.indexes].concat(0).sort((a, b) => a - b)
     for (let i = 0; i < indexes.length - 1; i++) {
       if (indexes[i + 1] - indexes[i] !== 1) {
         return indexes[i]
@@ -213,14 +220,12 @@ export class Bootstrap extends EventEmitter {
               ConfigurationSection.performanceStorage
             )
           if (performanceStorageConfiguration.enabled === true) {
-            this.storage = StorageFactory.getStorage(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              performanceStorageConfiguration.type!,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              performanceStorageConfiguration.uri!,
-              this.logPrefix()
-            )
-            await this.storage.open()
+            const storageType = performanceStorageConfiguration.type
+            const storageUri = performanceStorageConfiguration.uri
+            if (storageType != null && storageUri != null) {
+              this.storage = StorageFactory.getStorage(storageType, storageUri, this.logPrefix())
+              await this.storage.open()
+            }
           }
           this.uiServer.setChargingStationTemplates(
             Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
@@ -237,8 +242,7 @@ export class Bootstrap extends EventEmitter {
             this.uiServerStarted = true
           }
           // Start ChargingStation object instance in worker thread
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
+          for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
             const nbStations = stationTemplateUrl.numberOfStations
             const sequentialAdd =
               (Configuration.getConfigurationSection<WorkerConfiguration>(
@@ -365,8 +369,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeCounters (): void {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stationTemplateUrls = Configuration.getStationTemplateUrls()!
+    const stationTemplateUrls = Configuration.getStationTemplateUrls() ?? []
     if (isNotEmptyArray(stationTemplateUrls)) {
       for (const stationTemplateUrl of stationTemplateUrls) {
         const templateName = buildTemplateName(stationTemplateUrl.file)
@@ -430,6 +433,9 @@ export class Bootstrap extends EventEmitter {
       default:
         elementsPerWorker = workerConfiguration.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER
     }
+    if (workerConfiguration.processType == null) {
+      throw new BaseError('Worker process type is not defined in configuration')
+    }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<
       ChargingStationWorkerData,
       ChargingStationInfo
@@ -438,15 +444,12 @@ export class Bootstrap extends EventEmitter {
         dirname(fileURLToPath(import.meta.url)),
         `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`
       ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      workerConfiguration.processType!,
+      workerConfiguration.processType,
       {
         elementAddDelay: workerConfiguration.elementAddDelay,
         elementsPerWorker,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        poolMaxSize: workerConfiguration.poolMaxSize!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        poolMinSize: workerConfiguration.poolMinSize!,
+        poolMaxSize: workerConfiguration.poolMaxSize ?? DEFAULT_POOL_MAX_SIZE,
+        poolMinSize: workerConfiguration.poolMinSize ?? DEFAULT_POOL_MIN_SIZE,
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
           ...(workerConfiguration.resourceLimits != null && {
@@ -617,10 +620,11 @@ export class Bootstrap extends EventEmitter {
     if (this.uiServer.deleteChargingStationData(data.stationInfo.hashId)) {
       this.uiServer.scheduleClientNotification()
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)!
-    --templateStatistics.added
-    templateStatistics.indexes.delete(data.stationInfo.templateIndex)
+    const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)
+    if (templateStatistics != null) {
+      --templateStatistics.added
+      templateStatistics.indexes.delete(data.stationInfo.templateIndex)
+    }
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -650,8 +654,10 @@ export class Bootstrap extends EventEmitter {
     if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
       this.uiServer.scheduleClientNotification()
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ++this.templateStatistics.get(data.stationInfo.templateName)!.started
+    const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)
+    if (templateStatistics != null) {
+      ++templateStatistics.started
+    }
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -664,8 +670,10 @@ export class Bootstrap extends EventEmitter {
     if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
       this.uiServer.scheduleClientNotification()
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    --this.templateStatistics.get(data.stationInfo.templateName)!.started
+    const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)
+    if (templateStatistics != null) {
+      --templateStatistics.started
+    }
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

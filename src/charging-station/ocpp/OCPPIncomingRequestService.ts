@@ -99,8 +99,15 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       ) {
         try {
           this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
+          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)
+          if (incomingRequestHandler == null) {
+            throw new OCPPError(
+              ErrorType.NOT_IMPLEMENTED,
+              `${commandName} incoming request handler not found`,
+              commandName,
+              commandPayload
+            )
+          }
           if (isAsyncFunction(incomingRequestHandler)) {
             response = (await incomingRequestHandler(chargingStation, commandPayload)) as ResType
           } else {

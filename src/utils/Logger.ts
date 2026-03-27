@@ -72,8 +72,7 @@ const getLoggerInstance = (): WinstonLogger => {
   }
   const logFormat = format.combine(
     format.splat(),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (format[logConfiguration.format! as keyof FormatWrap] as FormatWrap)()
+    (format[(logConfiguration.format ?? 'simple') as keyof FormatWrap] as FormatWrap)()
   )
   loggerInstance = createLogger({
     format: logFormat,

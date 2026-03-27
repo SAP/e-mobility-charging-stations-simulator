@@ -506,8 +506,8 @@ export class ChargingStation extends EventEmitter {
     }
     const connectorMaximumPower = (this.stationInfo?.maximumPower ?? 0) / (this.powerDivider ?? 1)
     const chargingStationChargingProfilesLimit =
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getChargingStationChargingProfilesLimit(this)! / this.powerDivider!
+      (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
+      (this.powerDivider ?? 1)
     const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
@@ -555,9 +555,9 @@ export class ChargingStation extends EventEmitter {
     transactionId: number | string | undefined,
     rounded = false
   ): number {
+    const connectorId = this.getConnectorIdByTransactionId(transactionId)
     return this.getEnergyActiveImportRegister(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
+      connectorId != null ? this.getConnectorStatus(connectorId) : undefined,
       rounded
     )
   }
@@ -655,11 +655,10 @@ export class ChargingStation extends EventEmitter {
    * @returns The number of phases (3 for AC, 0 for DC)
    */
   public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const localStationInfo = stationInfo ?? this.stationInfo!
+    const localStationInfo = stationInfo ?? this.stationInfo
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
-        return localStationInfo.numberOfPhases ?? 3
+        return localStationInfo?.numberOfPhases ?? 3
       case CurrentType.DC:
         return 0
     }
@@ -721,8 +720,7 @@ export class ChargingStation extends EventEmitter {
 
   public getReserveConnectorZeroSupported (): boolean {
     return convertToBoolean(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)!.value
+      getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)?.value
     )
   }
 
@@ -751,8 +749,7 @@ export class ChargingStation extends EventEmitter {
 
   public getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {
     return (
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (stationInfo ?? this.stationInfo!).voltageOut ??
+      (stationInfo ?? this.stationInfo)?.voltageOut ??
       getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
     )
   }
@@ -776,8 +773,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   public hasIdTags (): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo!)!))
+    const idTagsFile = this.stationInfo != null ? getIdTagsFile(this.stationInfo) : undefined
+    return idTagsFile != null && isNotEmptyArray(this.idTagsCache.getIdTags(idTagsFile))
   }
 
   public inAcceptedState (): boolean {
@@ -963,12 +960,17 @@ export class ChargingStation extends EventEmitter {
     reservation: Reservation,
     reason: ReservationTerminationReason
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connector = this.getConnectorStatus(reservation.connectorId)!
+    const connectorStatus = this.getConnectorStatus(reservation.connectorId)
+    if (connectorStatus == null) {
+      logger.error(
+        `${this.logPrefix()} Trying to remove reservation on non-existent connector id ${reservation.connectorId.toString()}`
+      )
+      return
+    }
     switch (reason) {
       case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
       case ReservationTerminationReason.TRANSACTION_STARTED:
-        delete connector.reservation
+        delete connectorStatus.reservation
         break
       case ReservationTerminationReason.EXPIRED:
       case ReservationTerminationReason.REPLACE_EXISTING:
@@ -981,7 +983,7 @@ export class ChargingStation extends EventEmitter {
           } as unknown as StatusNotificationRequest,
           { send: reservation.connectorId !== 0 }
         )
-        delete connector.reservation
+        delete connectorStatus.reservation
         break
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -1071,8 +1073,11 @@ export class ChargingStation extends EventEmitter {
                     } file have changed, reload`
                   )
                   this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+                  const idTagsFile =
+                    this.stationInfo != null ? getIdTagsFile(this.stationInfo) : undefined
+                  if (idTagsFile != null) {
+                    this.idTagsCache.deleteIdTags(idTagsFile)
+                  }
                   OCPPAuthServiceFactory.clearInstance(this)
                   // Initialize
                   this.initialize()
@@ -1377,24 +1382,26 @@ export class ChargingStation extends EventEmitter {
           break
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
         case SupervisionUrlDistribution.ROUND_ROBIN:
-        default:
-          !Object.values(SupervisionUrlDistribution).includes(
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            Configuration.getSupervisionUrlDistribution()!
-          ) &&
+        default: {
+          const supervisionUrlDistribution = Configuration.getSupervisionUrlDistribution()
+          if (
+            supervisionUrlDistribution != null &&
+            !Object.values(SupervisionUrlDistribution).includes(supervisionUrlDistribution)
+          ) {
             logger.warn(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-base-to-string
-              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
+              // eslint-disable-next-line @typescript-eslint/no-base-to-string
+              `${this.logPrefix()} Unknown supervision url distribution '${supervisionUrlDistribution}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }'`
             )
+          }
           configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length
           break
+        }
       }
       configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex]
     } else if (typeof supervisionUrls === 'string') {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      configuredSupervisionUrl = supervisionUrls!
+      configuredSupervisionUrl = supervisionUrls
     }
     if (isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl)
@@ -1406,10 +1413,9 @@ export class ChargingStation extends EventEmitter {
 
   private getCurrentOutType (stationInfo?: ChargingStationInfo): CurrentType {
     return (
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (stationInfo ?? this.stationInfo!).currentOutType ??
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Constants.DEFAULT_STATION_INFO.currentOutType!
+      (stationInfo ?? this.stationInfo)?.currentOutType ??
+      Constants.DEFAULT_STATION_INFO.currentOutType ??
+      CurrentType.AC
     )
   }
 
@@ -1436,8 +1442,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getMaximumAmperage (stationInfo?: ChargingStationInfo): number | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const maximumPower = (stationInfo ?? this.stationInfo!).maximumPower!
+    const localStationInfo = stationInfo ?? this.stationInfo
+    const maximumPower = localStationInfo?.maximumPower ?? 0
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
@@ -1554,8 +1560,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfoFromTemplate (): ChargingStationInfo {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stationTemplate = this.getTemplateFromFile()!
+    const stationTemplate = this.getTemplateFromFile()
+    if (stationTemplate == null) {
+      const errorMsg = `Failed to read charging station template file ${this.templateFile}`
+      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
+    }
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
     const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation)
     warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile)
@@ -1632,8 +1642,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getUseConnectorId0 (stationTemplate?: ChargingStationTemplate): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return stationTemplate?.useConnectorId0 ?? Constants.DEFAULT_STATION_INFO.useConnectorId0!
+    return (
+      stationTemplate?.useConnectorId0 ?? Constants.DEFAULT_STATION_INFO.useConnectorId0 ?? true
+    )
   }
 
   private handleErrorMessage (errorResponse: ErrorResponse): void {
@@ -1647,8 +1658,16 @@ export class ChargingStation extends EventEmitter {
         { errorDetails, errorMessage, errorType }
       )
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!
+    const cachedRequest = this.getCachedRequest(messageType, messageId)
+    if (cachedRequest == null) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cached request for error message id '${messageId}' is nullish`,
+        undefined,
+        { errorDetails, errorMessage, errorType }
+      )
+    }
+    const [, errorCallback, requestCommandName] = cachedRequest
     logger.debug(
       `${this.logPrefix()} << Command '${requestCommandName}' received error response payload: ${JSON.stringify(
         errorResponse
@@ -1697,11 +1716,16 @@ export class ChargingStation extends EventEmitter {
       )
     }
     // Respond
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const [responseCallback, , requestCommandName, requestPayload] = this.getCachedRequest(
-      messageType,
-      messageId
-    )!
+    const cachedRequest = this.getCachedRequest(messageType, messageId)
+    if (cachedRequest == null) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cached request for response message id '${messageId}' is nullish`,
+        undefined,
+        commandPayload
+      )
+    }
+    const [responseCallback, , requestCommandName, requestPayload] = cachedRequest
     logger.debug(
       `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
         response
@@ -1718,8 +1742,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initialize (options?: ChargingStationOptions): void {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stationTemplate = this.getTemplateFromFile()!
+    const stationTemplate = this.getTemplateFromFile()
+    if (stationTemplate == null) {
+      const errorMsg = `Failed to read charging station template file ${this.templateFile}`
+      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
+    }
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
     this.configurationFile = join(
       dirname(this.templateFile.replace('station-templates', 'configurations')),
@@ -2038,8 +2066,7 @@ export class ChargingStation extends EventEmitter {
         this,
         this.stationInfo.amperageLimitationOcppKey,
         // prettier-ignore
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
+        ((this.stationInfo.maximumAmperage ?? 0) * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
       )
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
@@ -2068,18 +2095,18 @@ export class ChargingStation extends EventEmitter {
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
           for (const connectorId of evseStatus.connectors.keys()) {
-            connectorsPhaseRotation.push(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              getPhaseRotationValue(connectorId, this.getNumberOfPhases())!
-            )
+            const phaseRotation = getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+            if (phaseRotation != null) {
+              connectorsPhaseRotation.push(phaseRotation)
+            }
           }
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
-          connectorsPhaseRotation.push(
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            getPhaseRotationValue(connectorId, this.getNumberOfPhases())!
-          )
+          const phaseRotation = getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+          if (phaseRotation != null) {
+            connectorsPhaseRotation.push(phaseRotation)
+          }
         }
       }
       addConfigurationKey(
@@ -2239,10 +2266,12 @@ export class ChargingStation extends EventEmitter {
         case MessageType.CALL_ERROR_MESSAGE:
         case MessageType.CALL_RESULT_MESSAGE:
           if (this.requests.has(messageId)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            ;[, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!
-            // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
-            errorCallback(ocppError, false)
+            const cachedRequest = this.getCachedRequest(messageType, messageId)
+            if (cachedRequest != null) {
+              ;[, errorCallback, requestCommandName] = cachedRequest
+              // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
+              errorCallback(ocppError, false)
+            }
           } else {
             // Remove the request from the cache in case of error at response handling
             this.requests.delete(messageId)

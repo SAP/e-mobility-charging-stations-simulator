@@ -46,11 +46,12 @@ export class AsyncLock {
   }
 
   private static getAsyncLock (type: AsyncLockType): AsyncLock {
-    if (!AsyncLock.asyncLocks.has(type)) {
-      AsyncLock.asyncLocks.set(type, new AsyncLock())
+    let asyncLock = AsyncLock.asyncLocks.get(type)
+    if (asyncLock == null) {
+      asyncLock = new AsyncLock()
+      AsyncLock.asyncLocks.set(type, asyncLock)
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return AsyncLock.asyncLocks.get(type)!
+    return asyncLock
   }
 
   private static release (type: AsyncLockType): void {
