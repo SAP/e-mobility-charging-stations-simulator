@@ -12,7 +12,7 @@ import {
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
   type OCPP20StatusNotificationRequest,
-  type OCPP20TransactionEventRequest,
+  type OCPP20TransactionEventOptions,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -205,7 +205,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.TRANSACTION_EVENT:
         return buildTransactionEvent(
           chargingStation,
-          commandParams as unknown as OCPP20TransactionEventRequest
+          commandParams as unknown as OCPP20TransactionEventOptions
         ) as unknown as Request
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().

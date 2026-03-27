@@ -266,33 +266,28 @@ export interface OCPP20MessageContentType extends JsonObject {
   format: OCPP20MessageFormatEnumType
   language?: string
 }
+
 /**
  * Optional parameters for building and sending TransactionEvent requests.
  * Aligned with OCPP 2.0.1 TransactionEvent.req optional fields.
  */
 export interface OCPP20TransactionEventOptions {
-  /** Maximum current the cable can handle (A) */
   cableMaxCurrent?: number
-  /** Current charging state per OCPP 2.0.1 ChargingStateEnumType */
   chargingState?: OCPP20ChargingStateEnumType
-  /** Vendor-specific custom data */
+  connectorId?: number
   customData?: CustomDataType
-  /** EVSE identifier (1-based) */
+  eventType?: OCPP20TransactionEventEnumType
+  evse?: Partial<OCPP20EVSEType>
   evseId?: number
-  /** Token used for authorization */
   idToken?: OCPP20IdTokenType
-  /** Meter values associated with this event */
   meterValue?: OCPP20MeterValue[]
-  /** Number of phases used for charging */
   numberOfPhasesUsed?: number
-  /** Whether event occurred while offline */
   offline?: boolean
-  /** Remote start transaction ID */
   remoteStartId?: number
-  /** Reservation ID if applicable */
   reservationId?: number
-  /** Reason for stopping transaction */
   stoppedReason?: OCPP20ReasonEnumType
+  transactionId?: string
+  triggerReason?: OCPP20TriggerReasonEnumType
 }
 
 export interface OCPP20TransactionEventRequest extends JsonObject {

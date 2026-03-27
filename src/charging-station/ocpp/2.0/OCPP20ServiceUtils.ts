@@ -525,7 +525,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           triggerReason,
           ...options,
           offline: true,
-        } as unknown as OCPP20TransactionEventRequest)
+        })
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Station offline, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
         )
@@ -879,29 +879,28 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
  */
 export function buildTransactionEvent (
   chargingStation: ChargingStation,
-  commandParams: OCPP20TransactionEventRequest
+  commandParams: OCPP20TransactionEventOptions
 ): OCPP20TransactionEventRequest {
-  const params = commandParams as Record<string, unknown>
-  const eventType = params.eventType as OCPP20TransactionEventEnumType
-  const triggerReason =
-    params.triggerReason != null
-      ? (params.triggerReason as OCPP20TriggerReasonEnumType)
-      : eventType === OCPP20TransactionEventEnumType.Ended
-        ? OCPP20TriggerReasonEnumType.RemoteStop
-        : OCPP20TriggerReasonEnumType.Authorized
-  const inputEvse = params.evse as undefined | { connectorId?: number; id?: number }
-  const connectorId =
-    params.connectorId != null
-      ? (params.connectorId as number)
-      : (inputEvse?.connectorId ?? inputEvse?.id ?? 1)
+  const eventType = commandParams.eventType
+  if (eventType == null) {
+    throw new OCPPError(
+      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
+      'eventType is required for TransactionEvent'
+    )
+  }
+  const defaultTriggerReason =
+    eventType === OCPP20TransactionEventEnumType.Ended
+      ? OCPP20TriggerReasonEnumType.RemoteStop
+      : OCPP20TriggerReasonEnumType.Authorized
+  const triggerReason = commandParams.triggerReason ?? defaultTriggerReason
+  const inputEvse = commandParams.evse
+  const connectorId = commandParams.connectorId ?? inputEvse?.connectorId ?? inputEvse?.id ?? 1
   const transactionId =
-    params.transactionId != null
-      ? (params.transactionId as string)
-      : eventType === OCPP20TransactionEventEnumType.Ended
-        ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
-          generateUUID())
-        : generateUUID()
-  const options = params as unknown as OCPP20TransactionEventOptions
+    commandParams.transactionId ??
+    (eventType === OCPP20TransactionEventEnumType.Ended
+      ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
+        generateUUID())
+      : generateUUID())
 
   if (!validateIdentifierString(transactionId, 36)) {
     const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
@@ -909,7 +908,7 @@ export function buildTransactionEvent (
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
 
-  const evseId = options.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
+  const evseId = commandParams.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
   if (evseId == null) {
     const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
@@ -943,14 +942,14 @@ export function buildTransactionEvent (
     transactionId: transactionId as UUIDv4,
   }
 
-  if (options.chargingState !== undefined) {
-    transactionInfo.chargingState = options.chargingState
+  if (commandParams.chargingState !== undefined) {
+    transactionInfo.chargingState = commandParams.chargingState
   }
-  if (options.stoppedReason !== undefined) {
-    transactionInfo.stoppedReason = options.stoppedReason
+  if (commandParams.stoppedReason !== undefined) {
+    transactionInfo.stoppedReason = commandParams.stoppedReason
   }
-  if (options.remoteStartId !== undefined) {
-    transactionInfo.remoteStartId = options.remoteStartId
+  if (commandParams.remoteStartId !== undefined) {
+    transactionInfo.remoteStartId = commandParams.remoteStartId
   }
 
   const transactionEventRequest: OCPP20TransactionEventRequest = {
@@ -966,27 +965,27 @@ export function buildTransactionEvent (
   }
 
   // E03.FR.01: Include idToken only once per transaction
-  if (options.idToken !== undefined && connectorStatus.transactionIdTokenSent !== true) {
-    transactionEventRequest.idToken = options.idToken
+  if (commandParams.idToken !== undefined && connectorStatus.transactionIdTokenSent !== true) {
+    transactionEventRequest.idToken = commandParams.idToken
     connectorStatus.transactionIdTokenSent = true
   }
-  if (options.meterValue !== undefined && options.meterValue.length > 0) {
-    transactionEventRequest.meterValue = options.meterValue
+  if (commandParams.meterValue !== undefined && commandParams.meterValue.length > 0) {
+    transactionEventRequest.meterValue = commandParams.meterValue
   }
-  if (options.cableMaxCurrent !== undefined) {
-    transactionEventRequest.cableMaxCurrent = options.cableMaxCurrent
+  if (commandParams.cableMaxCurrent !== undefined) {
+    transactionEventRequest.cableMaxCurrent = commandParams.cableMaxCurrent
   }
-  if (options.numberOfPhasesUsed !== undefined) {
-    transactionEventRequest.numberOfPhasesUsed = options.numberOfPhasesUsed
+  if (commandParams.numberOfPhasesUsed !== undefined) {
+    transactionEventRequest.numberOfPhasesUsed = commandParams.numberOfPhasesUsed
   }
-  if (options.offline !== undefined) {
-    transactionEventRequest.offline = options.offline
+  if (commandParams.offline !== undefined) {
+    transactionEventRequest.offline = commandParams.offline
   }
-  if (options.reservationId !== undefined) {
-    transactionEventRequest.reservationId = options.reservationId
+  if (commandParams.reservationId !== undefined) {
+    transactionEventRequest.reservationId = commandParams.reservationId
   }
-  if (options.customData !== undefined) {
-    transactionEventRequest.customData = options.customData
+  if (commandParams.customData !== undefined) {
+    transactionEventRequest.customData = commandParams.customData
   }
 
   logger.debug(
