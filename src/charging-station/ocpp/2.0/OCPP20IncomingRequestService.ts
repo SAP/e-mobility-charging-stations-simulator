@@ -584,8 +584,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       (v, reason) => ({
         attributeStatus: GetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
-          additionalInfo: reason.info,
-
+          additionalInfo: reason.additionalInfo,
           reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType,
@@ -595,8 +594,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger
     )
     if (preEnforcement.rejected) {
-      getVariablesResponse.getVariableResult =
-        preEnforcement.results as typeof getVariablesResponse.getVariableResult
+      getVariablesResponse.getVariableResult = preEnforcement.results
       return getVariablesResponse
     }
 
@@ -613,16 +611,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       (v, reason) => ({
         attributeStatus: GetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
-          additionalInfo: reason.info,
-
-          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+          additionalInfo: reason.additionalInfo,
+          reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType,
         component: v.component,
         variable: v.variable,
       }),
       logger
-    ) as typeof getVariablesResponse.getVariableResult
+    )
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${commandPayload.getVariableData.length.toString()} variable requests, returning ${results.length.toString()} results`
@@ -655,8 +652,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       (v, reason) => ({
         attributeStatus: SetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
-          additionalInfo: reason.info,
-
+          additionalInfo: reason.additionalInfo,
           reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType ?? AttributeEnumType.Actual,
@@ -666,8 +662,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger
     )
     if (preEnforcement.rejected) {
-      setVariablesResponse.setVariableResult =
-        preEnforcement.results as typeof setVariablesResponse.setVariableResult
+      setVariablesResponse.setVariableResult = preEnforcement.results
       return setVariablesResponse
     }
 
@@ -682,16 +677,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       (v, reason) => ({
         attributeStatus: SetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
-          additionalInfo: reason.info,
-
-          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+          additionalInfo: reason.additionalInfo,
+          reasonCode: reason.reasonCode,
         },
         attributeType: v.attributeType ?? AttributeEnumType.Actual,
         component: v.component,
         variable: v.variable,
       }),
       logger
-    ) as typeof setVariablesResponse.setVariableResult
+    )
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${commandPayload.setVariableData.length.toString()} variable requests, returning ${results.length.toString()} results`

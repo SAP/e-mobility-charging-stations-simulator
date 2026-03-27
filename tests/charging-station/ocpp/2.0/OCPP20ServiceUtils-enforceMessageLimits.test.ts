@@ -6,7 +6,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import {
+  OCPP20ServiceUtils,
+  type RejectionReason,
+} from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { ReasonCodeEnumType } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
@@ -16,7 +19,7 @@ interface MockLogger {
 }
 
 interface RejectedResult {
-  info: string
+  additionalInfo: string
   original: TestItem
   reasonCode: ReasonCodeEnumType
 }
@@ -58,11 +61,8 @@ function makeMockStation () {
 
 /** @returns A builder function that creates rejected result objects */
 function makeRejectedBuilder () {
-  return (
-    item: TestItem,
-    reason: { info: string; reasonCode: ReasonCodeEnumType }
-  ): RejectedResult => ({
-    info: reason.info,
+  return (item: TestItem, reason: RejectionReason): RejectedResult => ({
+    additionalInfo: reason.additionalInfo,
     original: item,
     reasonCode: reason.reasonCode,
   })
@@ -173,9 +173,9 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 3)
-      for (const r of result.results as RejectedResult[]) {
+      for (const r of result.results) {
         assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
-        assert.ok(r.info.includes('ItemsPerMessage limit 2'))
+        assert.ok(r.additionalInfo.includes('ItemsPerMessage limit 2'))
       }
     })
 
@@ -197,7 +197,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 2)
-      for (const r of result.results as RejectedResult[]) {
+      for (const r of result.results) {
         assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
       }
     })
@@ -262,9 +262,9 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 1)
-      const r = (result.results as RejectedResult[])[0]
+      const r = result.results[0]
       assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooLargeElement)
-      assert.ok(r.info.includes('BytesPerMessage limit 1'))
+      assert.ok(r.additionalInfo.includes('BytesPerMessage limit 1'))
     })
 
     await it('should reject all items with TooLargeElement for multiple items over bytes limit', () => {
@@ -285,7 +285,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 2)
-      for (const r of result.results as RejectedResult[]) {
+      for (const r of result.results) {
         assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooLargeElement)
       }
     })
@@ -329,7 +329,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       )
 
       assert.strictEqual(result.rejected, true)
-      for (const r of result.results as RejectedResult[]) {
+      for (const r of result.results) {
         assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
       }
     })
@@ -364,7 +364,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
       const item = makeItem('WebSocketPingInterval', 'xyz')
-      const capturedReasons: { info: string; reasonCode: ReasonCodeEnumType }[] = []
+      const capturedReasons: RejectionReason[] = []
 
       OCPP20ServiceUtils.enforceMessageLimits(
         station,
@@ -382,8 +382,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(capturedReasons.length, 1)
       assert.strictEqual(capturedReasons[0].reasonCode, ReasonCodeEnumType.TooLargeElement)
-      assert.strictEqual(typeof capturedReasons[0].info, 'string')
-      assert.ok(capturedReasons[0].info.length > 0)
+      assert.strictEqual(typeof capturedReasons[0].additionalInfo, 'string')
+      assert.ok(capturedReasons[0].additionalInfo.length > 0)
     })
   })
 })

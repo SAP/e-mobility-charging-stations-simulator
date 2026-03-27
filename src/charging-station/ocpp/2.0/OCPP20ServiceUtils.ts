@@ -49,6 +49,11 @@ import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'
 
+export interface RejectionReason {
+  additionalInfo: string
+  reasonCode: ReasonCodeEnumType
+}
+
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP20IncomingRequestCommand,
@@ -182,7 +187,8 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     ])
 
   public static enforceMessageLimits<
-    T extends { attributeType?: unknown; component: unknown; variable: unknown }
+    T extends { attributeType?: unknown; component: unknown; variable: unknown },
+    R
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
@@ -190,13 +196,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     data: T[],
     itemsLimit: number,
     bytesLimit: number,
-    buildRejected: (item: T, reason: { info: string; reasonCode: ReasonCodeEnumType }) => unknown,
+    buildRejected: (item: T, reason: RejectionReason) => R,
     logger: { debug: (...args: unknown[]) => void }
-  ): { rejected: boolean; results: unknown[] } {
+  ): { rejected: boolean; results: R[] } {
     if (itemsLimit > 0 && data.length > itemsLimit) {
       const results = data.map(d =>
         buildRejected(d, {
-          info: `ItemsPerMessage limit ${itemsLimit.toString()} exceeded (${data.length.toString()} requested)`,
+          additionalInfo: `ItemsPerMessage limit ${itemsLimit.toString()} exceeded (${data.length.toString()} requested)`,
           reasonCode: ReasonCodeEnumType.TooManyElements,
         })
       )
@@ -210,7 +216,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       if (estimatedSize > bytesLimit) {
         const results = data.map(d =>
           buildRejected(d, {
-            info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
+            additionalInfo: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
             reasonCode: ReasonCodeEnumType.TooLargeElement,
           })
         )
@@ -224,24 +230,25 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   }
 
   public static enforcePostCalculationBytesLimit<
-    T extends { attributeType?: unknown; component: unknown; variable: unknown }
+    T extends { attributeType?: unknown; component: unknown; variable: unknown },
+    R
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
     context: string,
     originalData: T[],
-    currentResults: unknown[],
+    currentResults: R[],
     bytesLimit: number,
-    buildRejected: (item: T, reason: { info: string; reasonCode: ReasonCodeEnumType }) => unknown,
+    buildRejected: (item: T, reason: RejectionReason) => R,
     logger: { debug: (...args: unknown[]) => void }
-  ): unknown[] {
+  ): R[] {
     if (bytesLimit > 0) {
       try {
         const actualSize = Buffer.byteLength(JSON.stringify(currentResults), 'utf8')
         if (actualSize > bytesLimit) {
           const results = originalData.map(d =>
             buildRejected(d, {
-              info: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
+              additionalInfo: `BytesPerMessage limit ${bytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
               reasonCode: ReasonCodeEnumType.TooLargeElement,
             })
           )
