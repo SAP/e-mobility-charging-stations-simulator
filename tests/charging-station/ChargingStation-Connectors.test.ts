@@ -372,10 +372,11 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       assert.strictEqual(station.inPendingState(), true)
 
       // Act - transition from PENDING to ACCEPTED
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      station.bootNotificationResponse!.status = RegistrationStatusEnumType.ACCEPTED
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      station.bootNotificationResponse!.currentTime = new Date()
+      if (station.bootNotificationResponse == null) {
+        throw new Error('Expected bootNotificationResponse to be defined')
+      }
+      station.bootNotificationResponse.status = RegistrationStatusEnumType.ACCEPTED
+      station.bootNotificationResponse.currentTime = new Date()
 
       // Assert
       assert.strictEqual(station.inAcceptedState(), true)
@@ -391,10 +392,11 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       assert.strictEqual(station.inPendingState(), true)
 
       // Act - transition from PENDING to REJECTED
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      station.bootNotificationResponse!.status = RegistrationStatusEnumType.REJECTED
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      station.bootNotificationResponse!.currentTime = new Date()
+      if (station.bootNotificationResponse == null) {
+        throw new Error('Expected bootNotificationResponse to be defined')
+      }
+      station.bootNotificationResponse.status = RegistrationStatusEnumType.REJECTED
+      station.bootNotificationResponse.currentTime = new Date()
 
       // Assert
       assert.strictEqual(station.inRejectedState(), true)

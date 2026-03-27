@@ -53,14 +53,14 @@ function setupPendingTransaction (
   connectorId: number,
   txId: string
 ): void {
-  const connector = station.getConnectorStatus(connectorId)
-  if (connector == null) {
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
     throw new Error(`Connector ${String(connectorId)} not found`)
   }
-  connector.transactionPending = true
-  connector.transactionStarted = false
-  connector.transactionId = txId
-  connector.transactionStart = new Date()
+  connectorStatus.transactionPending = true
+  connectorStatus.transactionStarted = false
+  connectorStatus.transactionId = txId
+  connectorStatus.transactionStart = new Date()
 }
 
 /**
@@ -74,15 +74,15 @@ function setupTransaction (
   connectorId: number,
   txId: number | string
 ): void {
-  const connector = station.getConnectorStatus(connectorId)
-  if (connector == null) {
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
     throw new Error(`Connector ${String(connectorId)} not found`)
   }
-  connector.transactionStarted = true
-  connector.transactionId = txId
-  connector.transactionIdTag = `TAG-${String(txId)}`
-  connector.transactionStart = new Date()
-  connector.idTagAuthorized = true
+  connectorStatus.transactionStarted = true
+  connectorStatus.transactionId = txId
+  connectorStatus.transactionIdTag = `TAG-${String(txId)}`
+  connectorStatus.transactionStart = new Date()
+  connectorStatus.idTagAuthorized = true
 }
 
 await describe('OCPPServiceUtils — stop transaction functions', async () => {
@@ -262,15 +262,15 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
         Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       )
-      const connector = station.getConnectorStatus(1)
-      assert.notStrictEqual(connector, undefined)
-      assert(connector != null)
-      delete connector.transactionId
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.notStrictEqual(connectorStatus, undefined)
+      assert(connectorStatus != null)
+      delete connectorStatus.transactionId
 
       await startTransactionOnConnector(station, 1)
 
-      assert.notStrictEqual(connector.transactionId, undefined)
-      assert.strictEqual(typeof connector.transactionId, 'string')
+      assert.notStrictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(typeof connectorStatus.transactionId, 'string')
     })
   })
 
@@ -287,10 +287,10 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) => Promise.resolve({}))
-      const connector = station.getConnectorStatus(1)
-      assert.notStrictEqual(connector, undefined)
-      assert(connector != null)
-      connector.transactionEventQueue = [
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.notStrictEqual(connectorStatus, undefined)
+      assert(connectorStatus != null)
+      connectorStatus.transactionEventQueue = [
         {
           request: {
             eventType: 'Updated',
@@ -307,7 +307,7 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
 
       await flushQueuedTransactionMessages(station)
 
-      assert.strictEqual(connector.transactionEventQueue.length, 0)
+      assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
     })
   })
 

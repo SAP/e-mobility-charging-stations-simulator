@@ -160,10 +160,10 @@ await describe('MessageChannelUtils', async () => {
     assert.strictEqual(message.data.id, 'test-station-id')
     assert.strictEqual(message.data.name, 'test-station')
 
-    const heartbeatStats = message.data.statisticsData.get('Heartbeat')
-    assert.notStrictEqual(heartbeatStats, undefined)
-    assert.ok(Array.isArray(heartbeatStats?.measurementTimeSeries))
-    const timeSeries = heartbeatStats.measurementTimeSeries
+    const heartbeatStatistics = message.data.statisticsData.get('Heartbeat')
+    assert.notStrictEqual(heartbeatStatistics, undefined)
+    assert.ok(Array.isArray(heartbeatStatistics?.measurementTimeSeries))
+    const timeSeries = heartbeatStatistics.measurementTimeSeries
     assert.strictEqual(timeSeries.length, 2)
     assert.strictEqual(timeSeries[0].value, 42)
     assert.strictEqual(timeSeries[1].value, 84)

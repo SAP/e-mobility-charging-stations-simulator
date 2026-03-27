@@ -323,9 +323,9 @@ export class UIClient {
 
     if (isProtocolResponse) {
       const [uuid, responsePayload] = message as ProtocolResponse
-      if (this.responseHandlers.has(uuid)) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
+      const responseHandler = this.responseHandlers.get(uuid)
+      if (responseHandler != null) {
+        const { procedureName, reject, resolve } = responseHandler
         switch (responsePayload.status) {
           case ResponseStatus.FAILURE:
             reject(responsePayload)

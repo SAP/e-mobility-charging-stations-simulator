@@ -94,9 +94,9 @@ await describe('D01 - TransactionEvent Response', async () => {
     // Set connector transactionId to the UUID string used in request payloads
     setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     // Override with UUID string so getConnectorIdByTransactionId can find it
-    const connector = station.getConnectorStatus(1)
-    if (connector != null) {
-      connector.transactionId = TEST_TRANSACTION_ID
+    const connectorStatus = station.getConnectorStatus(1)
+    if (connectorStatus != null) {
+      connectorStatus.transactionId = TEST_TRANSACTION_ID
     }
     const responseService = new OCPP20ResponseService()
     testable = createTestableResponseService(responseService)

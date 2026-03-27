@@ -116,8 +116,11 @@ describe('CSConnector', () => {
 
   describe('transaction actions', () => {
     it('should call stopTransaction with correct params', async () => {
-      const connector = createConnectorStatus({ transactionId: 12345, transactionStarted: true })
-      const wrapper = mountCSConnector({ connector })
+      const connectorStatus = createConnectorStatus({
+        transactionId: 12345,
+        transactionStarted: true,
+      })
+      const wrapper = mountCSConnector({ connector: connectorStatus })
       const buttons = wrapper.findAll('button')
       const stopBtn = buttons.find(b => b.text() === 'Stop Transaction')
       await stopBtn?.trigger('click')
@@ -129,11 +132,11 @@ describe('CSConnector', () => {
     })
 
     it('should show error toast when no transaction to stop', async () => {
-      const connector = createConnectorStatus({
+      const connectorStatus = createConnectorStatus({
         transactionId: undefined,
         transactionStarted: true,
       })
-      const wrapper = mountCSConnector({ connector })
+      const wrapper = mountCSConnector({ connector: connectorStatus })
       const buttons = wrapper.findAll('button')
       const stopBtn = buttons.find(b => b.text() === 'Stop Transaction')
       await stopBtn?.trigger('click')
@@ -141,8 +144,8 @@ describe('CSConnector', () => {
     })
 
     it('should show success toast after stopping transaction', async () => {
-      const connector = createConnectorStatus({ transactionId: 99, transactionStarted: true })
-      const wrapper = mountCSConnector({ connector })
+      const connectorStatus = createConnectorStatus({ transactionId: 99, transactionStarted: true })
+      const wrapper = mountCSConnector({ connector: connectorStatus })
       const buttons = wrapper.findAll('button')
       const stopBtn = buttons.find(b => b.text() === 'Stop Transaction')
       await stopBtn?.trigger('click')

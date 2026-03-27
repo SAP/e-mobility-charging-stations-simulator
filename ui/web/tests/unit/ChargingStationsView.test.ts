@@ -24,11 +24,11 @@ vi.mock('@/composables', async importOriginal => {
 
 // ── Configuration fixtures ────────────────────────────────────────────────────
 
-const singleServerConfig = {
+const singleServerConfiguration = {
   uiServer: [createUIServerConfig()],
 }
 
-const multiServerConfig = {
+const multiServerConfiguration = {
   uiServer: [
     createUIServerConfig({ name: 'Server 1' }),
     createUIServerConfig({ host: 'server2', name: 'Server 2' }),
@@ -63,11 +63,15 @@ function getWSHandler (eventType: string): ((...args: unknown[]) => void) | unde
 function mountView (
   options: {
     chargingStations?: ReturnType<typeof createChargingStationData>[]
-    configuration?: typeof multiServerConfig | typeof singleServerConfig
+    configuration?: typeof multiServerConfiguration | typeof singleServerConfiguration
     templates?: string[]
   } = {}
 ) {
-  const { chargingStations = [], configuration = singleServerConfig, templates = [] } = options
+  const {
+    chargingStations = [],
+    configuration = singleServerConfiguration,
+    templates = [],
+  } = options
 
   return mount(ChargingStationsView, {
     global: {
@@ -234,27 +238,27 @@ describe('ChargingStationsView', () => {
 
   describe('UI server selector', () => {
     it('should hide server selector for single server configuration', () => {
-      const wrapper = mountView({ configuration: singleServerConfig })
+      const wrapper = mountView({ configuration: singleServerConfiguration })
       const selectorContainer = wrapper.find('#ui-server-container')
       expect(selectorContainer.exists()).toBe(true)
       expect((selectorContainer.element as HTMLElement).style.display).toBe('none')
     })
 
     it('should show server selector for multiple server configuration', () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const selectorContainer = wrapper.find('#ui-server-container')
       expect(selectorContainer.exists()).toBe(true)
       expect((selectorContainer.element as HTMLElement).style.display).not.toBe('none')
     })
 
     it('should render an option for each server', () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const options = wrapper.findAll('#ui-server-selector option')
       expect(options).toHaveLength(2)
     })
 
     it('should display server name in options', () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const options = wrapper.findAll('#ui-server-selector option')
       expect(options[0].text()).toContain('Server 1')
       expect(options[1].text()).toContain('Server 2')
@@ -347,14 +351,14 @@ describe('ChargingStationsView', () => {
 
   describe('server switching', () => {
     it('should call setConfiguration when server index changes', async () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const selector = wrapper.find('#ui-server-selector')
       await selector.setValue(1)
       expect(mockClient.setConfiguration).toHaveBeenCalled()
     })
 
     it('should register new WS event listeners after server switch', async () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       // Reset call count from initial mount registration
       vi.mocked(mockClient.registerWSEventListener).mockClear()
       const selector = wrapper.find('#ui-server-selector')
@@ -364,7 +368,7 @@ describe('ChargingStationsView', () => {
     })
 
     it('should save server index to localStorage on successful switch', async () => {
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const selector = wrapper.find('#ui-server-selector')
       await selector.setValue(1)
       // Simulate the WS open for the new connection (once-listener from server switching)
@@ -386,7 +390,7 @@ describe('ChargingStationsView', () => {
 
     it('should revert server index on connection error', async () => {
       localStorage.setItem('uiServerConfigurationIndex', '0')
-      const wrapper = mountView({ configuration: multiServerConfig })
+      const wrapper = mountView({ configuration: multiServerConfiguration })
       const selector = wrapper.find('#ui-server-selector')
       await selector.setValue(1)
       // Find the once-error listener

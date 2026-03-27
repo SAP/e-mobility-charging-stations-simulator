@@ -98,24 +98,24 @@ interface TimerTestContext {
  * @param connectorId - Connector to clear
  */
 export function clearConnectorTransaction (station: ChargingStation, connectorId: number): void {
-  const connector = station.getConnectorStatus(connectorId)
-  if (connector == null) {
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
     return
   }
 
-  connector.transactionStarted = false
-  connector.transactionId = undefined
-  connector.transactionIdTag = undefined
-  connector.transactionEnergyActiveImportRegisterValue = 0
-  connector.transactionRemoteStarted = false
-  connector.transactionStart = undefined
-  connector.idTagAuthorized = false
-  connector.idTagLocalAuthorized = false
+  connectorStatus.transactionStarted = false
+  connectorStatus.transactionId = undefined
+  connectorStatus.transactionIdTag = undefined
+  connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+  connectorStatus.transactionRemoteStarted = false
+  connectorStatus.transactionStart = undefined
+  connectorStatus.idTagAuthorized = false
+  connectorStatus.idTagLocalAuthorized = false
 
   // Clear any transaction interval
-  if (connector.transactionMeterValuesSetInterval != null) {
-    clearInterval(connector.transactionMeterValuesSetInterval)
-    connector.transactionMeterValuesSetInterval = undefined
+  if (connectorStatus.transactionMeterValuesSetInterval != null) {
+    clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+    connectorStatus.transactionMeterValuesSetInterval = undefined
   }
 }
 
@@ -267,18 +267,18 @@ export function setupConnectorWithTransaction (
     transactionId: number
   }
 ): void {
-  const connector = station.getConnectorStatus(connectorId)
-  if (connector == null) {
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
     throw new Error(`Connector ${String(connectorId)} not found`)
   }
 
-  connector.transactionStarted = true
-  connector.transactionId = options.transactionId
-  connector.transactionIdTag = options.idTag ?? `TAG-${String(options.transactionId)}`
-  connector.transactionEnergyActiveImportRegisterValue = options.energyImport ?? 0
-  connector.transactionRemoteStarted = options.remoteStarted ?? false
-  connector.transactionStart = new Date()
-  connector.idTagAuthorized = true
+  connectorStatus.transactionStarted = true
+  connectorStatus.transactionId = options.transactionId
+  connectorStatus.transactionIdTag = options.idTag ?? `TAG-${String(options.transactionId)}`
+  connectorStatus.transactionEnergyActiveImportRegisterValue = options.energyImport ?? 0
+  connectorStatus.transactionRemoteStarted = options.remoteStarted ?? false
+  connectorStatus.transactionStart = new Date()
+  connectorStatus.idTagAuthorized = true
 }
 
 /**

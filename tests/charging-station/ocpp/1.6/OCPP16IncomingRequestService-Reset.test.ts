@@ -70,10 +70,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     // Arrange
     const { testableService } = testContext
     const station = ResetFixtures.createStandardStation(1)
-    const connector = station.getConnectorStatus(1)
-    if (connector != null) {
-      connector.transactionStarted = true
-      connector.transactionId = 1
+    const connectorStatus = station.getConnectorStatus(1)
+    if (connectorStatus != null) {
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = 1
     }
 
     const resetRequest: ResetRequest = {
@@ -95,10 +95,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     // Arrange
     const { testableService } = testContext
     const station = ResetFixtures.createStandardStation(1)
-    const connector = station.getConnectorStatus(1)
-    if (connector != null) {
-      connector.transactionStarted = true
-      connector.transactionId = 1
+    const connectorStatus = station.getConnectorStatus(1)
+    if (connectorStatus != null) {
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = 1
     }
 
     const resetRequest: ResetRequest = {

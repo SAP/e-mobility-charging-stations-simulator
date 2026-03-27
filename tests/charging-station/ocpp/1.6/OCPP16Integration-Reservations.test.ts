@@ -284,15 +284,15 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       assert.strictEqual(cancelResponse.status, GenericStatus.Rejected)
 
       // Assert — original reservation still intact
-      const connector = station.getConnectorStatus(1)
-      if (connector == null) {
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus == null) {
         assert.fail('Expected connector to be defined')
       }
-      if (connector.reservation == null) {
+      if (connectorStatus.reservation == null) {
         assert.fail('Expected reservation to be defined')
       }
-      assert.strictEqual(connector.reservation.reservationId, 500)
-      assert.strictEqual(connector.reservation.idTag, 'TAG-KEEP')
+      assert.strictEqual(connectorStatus.reservation.reservationId, 500)
+      assert.strictEqual(connectorStatus.reservation.idTag, 'TAG-KEEP')
     })
   })
 })

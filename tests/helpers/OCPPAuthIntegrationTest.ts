@@ -126,7 +126,7 @@ export class OCPPAuthIntegrationTest {
   }
 
   private testConfigurationManagement (): void {
-    const originalConfig = this.authService.getConfiguration()
+    const originalConfiguration = this.authService.getConfiguration()
 
     const updates: Partial<AuthConfiguration> = {
       authorizationTimeout: 60,
@@ -136,21 +136,21 @@ export class OCPPAuthIntegrationTest {
 
     this.authService.updateConfiguration(updates)
 
-    const updatedConfig = this.authService.getConfiguration()
+    const updatedConfiguration = this.authService.getConfiguration()
 
-    if (updatedConfig.authorizationTimeout !== 60) {
+    if (updatedConfiguration.authorizationTimeout !== 60) {
       throw new Error('Configuration update failed: authorizationTimeout')
     }
 
-    if (updatedConfig.localAuthListEnabled) {
+    if (updatedConfiguration.localAuthListEnabled) {
       throw new Error('Configuration update failed: localAuthListEnabled')
     }
 
-    if (updatedConfig.maxCacheEntries !== 2000) {
+    if (updatedConfiguration.maxCacheEntries !== 2000) {
       throw new Error('Configuration update failed: maxCacheEntries')
     }
 
-    this.authService.updateConfiguration(originalConfig)
+    this.authService.updateConfiguration(originalConfiguration)
 
     logger.debug(`${this.chargingStation.logPrefix()} Configuration management test completed`)
   }
@@ -256,8 +256,8 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Invalid statistics object')
     }
 
-    const authStats = this.authService.getAuthenticationStats()
-    if (!Array.isArray(authStats.availableStrategies)) {
+    const authStatistics = this.authService.getAuthenticationStats()
+    if (!Array.isArray(authStatistics.availableStrategies)) {
       throw new Error('Invalid authentication statistics')
     }
 

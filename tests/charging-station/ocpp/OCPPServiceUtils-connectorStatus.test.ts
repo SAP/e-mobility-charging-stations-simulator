@@ -148,18 +148,18 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should restore to Reserved when connector has reservation and is not Reserved', async () => {
       const { station } = createStationWithRequestHandler()
 
-      const connector = station.getConnectorStatus(1)
-      if (connector != null) {
-        connector.reservation = {
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.reservation = {
           connectorId: 1,
           expiryDate: new Date().toISOString(),
           idTag: 'TEST-TAG',
           reservationId: 1,
         } as unknown as Reservation
-        connector.status = ConnectorStatusEnum.Occupied
+        connectorStatus.status = ConnectorStatusEnum.Occupied
       }
 
-      await restoreConnectorStatus(station, 1, connector)
+      await restoreConnectorStatus(station, 1, connectorStatus)
 
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Reserved)
     })
@@ -167,12 +167,12 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should restore to Available when connector has no reservation and is not Available', async () => {
       const { station } = createStationWithRequestHandler()
 
-      const connector = station.getConnectorStatus(1)
-      if (connector != null) {
-        connector.status = ConnectorStatusEnum.Occupied
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.status = ConnectorStatusEnum.Occupied
       }
 
-      await restoreConnectorStatus(station, 1, connector)
+      await restoreConnectorStatus(station, 1, connectorStatus)
 
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
     })
@@ -180,12 +180,12 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should not change status when connector is already Available with no reservation', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
 
-      const connector = station.getConnectorStatus(1)
-      if (connector != null) {
-        connector.status = ConnectorStatusEnum.Available
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.status = ConnectorStatusEnum.Available
       }
 
-      await restoreConnectorStatus(station, 1, connector)
+      await restoreConnectorStatus(station, 1, connectorStatus)
 
       assert.strictEqual(requestHandler.mock.calls.length, 0)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)

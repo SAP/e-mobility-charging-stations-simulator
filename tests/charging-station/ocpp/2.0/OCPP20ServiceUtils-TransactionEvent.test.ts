@@ -1419,9 +1419,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
     afterEach(() => {
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
-        const connector = mockStation.getConnectorStatus(connectorId)
-        if (connector != null) {
-          connector.transactionEventQueue = undefined
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.transactionEventQueue = undefined
         }
       }
       standardCleanup()
@@ -1448,11 +1448,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         assert.strictEqual(response.idTokenInfo, undefined)
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert(connector != null)
-        assert(connector.transactionEventQueue != null)
-        assert.strictEqual(connector.transactionEventQueue.length, 1)
-        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 0)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert(connectorStatus != null)
+        assert(connectorStatus.transactionEventQueue != null)
+        assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+        assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 0)
       })
 
       await it('should queue multiple TransactionEvents in order when offline', async () => {
@@ -1487,23 +1487,23 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.strictEqual(connector?.transactionEventQueue?.length, 3)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.strictEqual(connectorStatus?.transactionEventQueue?.length, 3)
 
-        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 0)
-        assert.strictEqual(connector.transactionEventQueue[1].seqNo, 1)
-        assert.strictEqual(connector.transactionEventQueue[2].seqNo, 2)
+        assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 0)
+        assert.strictEqual(connectorStatus.transactionEventQueue[1].seqNo, 1)
+        assert.strictEqual(connectorStatus.transactionEventQueue[2].seqNo, 2)
 
         assert.ok(
-          connector.transactionEventQueue[0].request.eventType,
+          connectorStatus.transactionEventQueue[0].request.eventType,
           OCPP20TransactionEventEnumType.Started
         )
         assert.strictEqual(
-          connector.transactionEventQueue[1].request.eventType,
+          connectorStatus.transactionEventQueue[1].request.eventType,
           OCPP20TransactionEventEnumType.Updated
         )
         assert.strictEqual(
-          connector.transactionEventQueue[2].request.eventType,
+          connectorStatus.transactionEventQueue[2].request.eventType,
           OCPP20TransactionEventEnumType.Ended
         )
       })
@@ -1547,11 +1547,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.strictEqual(connector?.transactionEventQueue?.length, 2)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.strictEqual(connectorStatus?.transactionEventQueue?.length, 2)
         // Online path with mock doesn't call buildTransactionEvent, so seqNo starts from 0
-        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 0)
-        assert.strictEqual(connector.transactionEventQueue[1].seqNo, 1)
+        assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 0)
+        assert.strictEqual(connectorStatus.transactionEventQueue[1].seqNo, 1)
       })
 
       await it('should include timestamp in queued events', async () => {
@@ -1571,13 +1571,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         const afterQueue = new Date()
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.ok(connector?.transactionEventQueue?.[0]?.timestamp instanceof Date)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus?.transactionEventQueue?.[0]?.timestamp instanceof Date)
         assert.strictEqual(
-          connector.transactionEventQueue[0].timestamp.getTime() >= beforeQueue.getTime(),
+          connectorStatus.transactionEventQueue[0].timestamp.getTime() >= beforeQueue.getTime(),
           true
         )
-        assert.ok(connector.transactionEventQueue[0].timestamp.getTime() <= afterQueue.getTime())
+        assert.ok(
+          connectorStatus.transactionEventQueue[0].timestamp.getTime() <= afterQueue.getTime()
+        )
       })
 
       await it('should set offline flag to true when queueing transaction event while station is offline', async () => {
@@ -1595,10 +1597,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.ok(connector?.transactionEventQueue != null)
-        assert.strictEqual(connector.transactionEventQueue.length, 1)
-        assert.strictEqual(connector.transactionEventQueue[0].request.offline, true)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus?.transactionEventQueue != null)
+        assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+        assert.strictEqual(connectorStatus.transactionEventQueue[0].request.offline, true)
       })
     })
 
@@ -1660,20 +1662,20 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert(connector != null)
-        connector.transactionStarted = true
-        connector.transactionId = transactionId
-        connector.locked = true
-        assert.strictEqual(connector.transactionEventQueue?.length, 2)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert(connectorStatus != null)
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.locked = true
+        assert.strictEqual(connectorStatus.transactionEventQueue?.length, 2)
 
         setOnline(true)
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
-        assert.strictEqual(connector.transactionEventQueue.length, 0)
-        assert.strictEqual(connector.transactionStarted, false)
-        assert.strictEqual(connector.transactionId, undefined)
-        assert.strictEqual(connector.locked, false)
+        assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
+        assert.strictEqual(connectorStatus.transactionStarted, false)
+        assert.strictEqual(connectorStatus.transactionId, undefined)
+        assert.strictEqual(connectorStatus.locked, false)
       })
 
       await it('should preserve FIFO order when draining queue', async () => {
@@ -1737,9 +1739,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       await it('should handle null queue gracefully', async () => {
         const connectorId = 1
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert(connector != null)
-        connector.transactionEventQueue = undefined
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert(connectorStatus != null)
+        connectorStatus.transactionEventQueue = undefined
 
         await assert.doesNotReject(
           OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
@@ -1996,10 +1998,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     afterEach(() => {
       // Clean up any running timers
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
-        const connector = mockStation.getConnectorStatus(connectorId)
-        if (connector?.transactionMeterValuesSetInterval != null) {
-          clearInterval(connector.transactionMeterValuesSetInterval)
-          connector.transactionMeterValuesSetInterval = undefined
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        if (connectorStatus?.transactionMeterValuesSetInterval != null) {
+          clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+          connectorStatus.transactionMeterValuesSetInterval = undefined
         }
       }
       standardCleanup()
@@ -2018,8 +2020,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           await startPeriodicMeterValues(ocpp16Station, 1, 60000)
 
-          const connector = ocpp16Station.getConnectorStatus(1)
-          assert.strictEqual(connector?.transactionMeterValuesSetInterval, undefined)
+          const connectorStatus = ocpp16Station.getConnectorStatus(1)
+          assert.strictEqual(connectorStatus?.transactionMeterValuesSetInterval, undefined)
         })
       })
 
@@ -2027,23 +2029,23 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
 
         // Simulate startTxUpdatedInterval with zero interval
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.notStrictEqual(connector, undefined)
-        assert(connector != null)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.notStrictEqual(connectorStatus, undefined)
+        assert(connectorStatus != null)
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
-        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should not start timer when interval is negative', () => {
         const connectorId = 1
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.notStrictEqual(connector, undefined)
-        assert(connector != null)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.notStrictEqual(connectorStatus, undefined)
+        assert(connectorStatus != null)
 
         // Negative interval should not start timer
-        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {
@@ -2117,8 +2119,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         }
 
         // Verify sequence numbers are continuous: 0, 1, 2, 3
-        const connector = mockStation.getConnectorStatus(connectorId)
-        assert.strictEqual(connector?.transactionSeqNo, 3)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
+        assert.strictEqual(connectorStatus?.transactionSeqNo, 3)
       })
 
       await it('should maintain correct eventType (Updated) for periodic events', async () => {

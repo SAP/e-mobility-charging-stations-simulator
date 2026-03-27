@@ -138,9 +138,9 @@ await describe('F05 - UnlockConnector', async () => {
       const { mockStation } = createUnlockConnectorStation()
 
       const evseStatus = mockStation.evses.get(1)
-      const connector = evseStatus?.connectors.get(1)
-      if (connector != null) {
-        connector.transactionId = 'tx-001'
+      const connectorStatus = evseStatus?.connectors.get(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = 'tx-001'
       }
 
       const request: OCPP20UnlockConnectorRequest = { connectorId: 1, evseId: 1 }

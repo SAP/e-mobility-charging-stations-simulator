@@ -93,9 +93,9 @@ function createIntegrationContext (): {
   // Add MeterValues template required by buildTransactionBeginMeterValue
   for (const [connectorId] of station.connectors) {
     if (connectorId > 0) {
-      const connector = station.getConnectorStatus(connectorId)
-      if (connector != null) {
-        connector.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
+      const connectorStatus = station.getConnectorStatus(connectorId)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
       }
     }
   }
@@ -282,12 +282,12 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     )
 
     // Assert: connector should be reset, no active transaction
-    const connector = station.getConnectorStatus(connectorId)
-    if (connector == null) {
+    const connectorStatus = station.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
       assert.fail('Expected connector to be defined')
     }
-    assert.strictEqual(connector.transactionStarted, false)
-    assert.strictEqual(connector.transactionId, undefined)
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
   })
 
   // ─── State consistency ───────────────────────────────────────────────
