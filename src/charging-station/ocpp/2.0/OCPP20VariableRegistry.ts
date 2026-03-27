@@ -2509,7 +2509,7 @@ export function validateValue (
       break
     }
     case DataEnumType.dateTime: {
-      if (isNaN(Date.parse(rawValue))) {
+      if (Number.isNaN(Date.parse(rawValue))) {
         return {
           info: 'Invalid dateTime format',
           ok: false,

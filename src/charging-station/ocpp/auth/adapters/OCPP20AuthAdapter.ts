@@ -703,7 +703,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     const parsed = parseInt(value, 10)
 
-    if (isNaN(parsed)) {
+    if (Number.isNaN(parsed)) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Invalid integer value '${value}', using default: ${defaultValue.toString()}`
       )
