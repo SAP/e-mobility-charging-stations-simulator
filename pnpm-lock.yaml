@@ -22,17 +22,17 @@ importers:
   .:
     dependencies:
       '@mikro-orm/better-sqlite':
-        specifier: ^6.6.9
-        version: 6.6.9(@mikro-orm/core@6.6.9)(mariadb@3.4.5)
+        specifier: ^6.6.10
+        version: 6.6.10(@mikro-orm/core@6.6.10)(mariadb@3.4.5)
       '@mikro-orm/core':
-        specifier: ^6.6.9
-        version: 6.6.9
+        specifier: ^6.6.10
+        version: 6.6.10
       '@mikro-orm/mariadb':
-        specifier: ^6.6.9
-        version: 6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)
+        specifier: ^6.6.10
+        version: 6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)
       '@mikro-orm/reflection':
-        specifier: ^6.6.9
-        version: 6.6.9(@mikro-orm/core@6.6.9)
+        specifier: ^6.6.10
+        version: 6.6.10(@mikro-orm/core@6.6.10)
       '@modelcontextprotocol/sdk':
         specifier: ~1.28.0
         version: 1.28.0(zod@4.3.6)
@@ -95,8 +95,8 @@ importers:
         specifier: ^9.39.4
         version: 9.39.4
       '@mikro-orm/cli':
-        specifier: ^6.6.9
-        version: 6.6.9(better-sqlite3@11.10.0)(mariadb@3.4.5)
+        specifier: ^6.6.10
+        version: 6.6.10(better-sqlite3@11.10.0)(mariadb@3.4.5)
       '@types/node':
         specifier: ^24.12.0
         version: 24.12.0
@@ -205,8 +205,8 @@ importers:
         specifier: ^5.1.5
         version: 5.1.5(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.31(typescript@6.0.2))
       '@vitest/coverage-v8':
-        specifier: ^4.1.1
-        version: 4.1.1(vitest@4.1.1(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))
+        specifier: ^4.1.2
+        version: 4.1.2(vitest@4.1.2(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -232,8 +232,8 @@ importers:
         specifier: ^8.0.3
         version: 8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
       vitest:
-        specifier: ^4.1.1
-        version: 4.1.1(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+        specifier: ^4.1.2
+        version: 4.1.2(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
       vue-tsc:
         specifier: ^3.2.6
         version: 3.2.6(typescript@6.0.2)
@@ -1052,23 +1052,23 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@mikro-orm/better-sqlite@6.6.9':
-    resolution: {integrity: sha512-vd3VF1n6FWbkR2dbDH1CR+rdM3MLgWUPMkL9nTLM3hOSLzhFQFbuVGxfSTjDMPvjZoJN6eSXMVI8mAdWjFLu2g==}
+  '@mikro-orm/better-sqlite@6.6.10':
+    resolution: {integrity: sha512-A+9F092BQNPhew1JB/cC09ZhJDP6s2Wn+hANc8LrTuS3/qRuJqQHoxxct1E73OVsJRV4qN+PiFCp0Wjm/N488Q==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/cli@6.6.9':
-    resolution: {integrity: sha512-CjYTVoVds82hTsvahq5pZedW3Wf3owt6qCbH8En3DtZCH64iSoG1XQ9LSAGJbyer+YIodeHwBv1aRALc6VoTUA==}
+  '@mikro-orm/cli@6.6.10':
+    resolution: {integrity: sha512-tKQeQUuhEf8wjeOX9VU8DPD0lN0uNa/5q+u7XHjEk5xE5dkbOzDo7zpnRmV+CdWra4dV+3EY9XAc2uLaQSpGEg==}
     engines: {node: '>= 18.12.0'}
     hasBin: true
 
-  '@mikro-orm/core@6.6.9':
-    resolution: {integrity: sha512-nKzVo5xeMVlylCLigCOqX1UAdVEcGhzvgTL3v+jitEsEzGrNUD3RP1huUKi6p9j42DRC0REw5g32H2zQfIobPg==}
+  '@mikro-orm/core@6.6.10':
+    resolution: {integrity: sha512-XdnipWmZ0BG+lzMBv6TykSKGLgBtNwqdJqh4Er+n1kTP0IZmXCtgluzHB66sNXkcYHomuIn2olIVbcVb0m/jDw==}
     engines: {node: '>= 18.12.0'}
 
-  '@mikro-orm/knex@6.6.9':
-    resolution: {integrity: sha512-ibB12R/vfKaike3VTHbKBfE3+9b0lyp7glC1U9qA8aUH9sgGA+rWXQKRi47rlRJYuSKFD1FJhoJUNC2ZWNw1xg==}
+  '@mikro-orm/knex@6.6.10':
+    resolution: {integrity: sha512-FOGkanJcHhKofjlc63YTpNtlB/7gdFRCfmbsBe2A1r36lx2aFdu2lqEAqFr8mUbOiwfTAQEBH8P9DGhd0T1j8g==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -1083,14 +1083,14 @@ packages:
       mariadb:
         optional: true
 
-  '@mikro-orm/mariadb@6.6.9':
-    resolution: {integrity: sha512-sMZWnY+dziIwDSWOG6nBIAMe2Y/UtPXEtQer9Q15J4Togef4C7C2UGXx+NJR71vRCPY0nL7do9N4ixJXvL32ng==}
+  '@mikro-orm/mariadb@6.6.10':
+    resolution: {integrity: sha512-ODihHa3gXBfR028gwrlNPCCKrXR5qCyvcuW1BsTKAWDFbWvMS1HBgrh8lBBR0rE7veLNxZhFVxMrMjNjgjGwMQ==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/reflection@6.6.9':
-    resolution: {integrity: sha512-qBKXZz4kIoODdtSK3EjPgLBf6LhVj4dsQAbpym+q/ZD7gyPvkJYZxbe7KKbit66xbHN1NyJxIupdOwh/3j3cTA==}
+  '@mikro-orm/reflection@6.6.10':
+    resolution: {integrity: sha512-Qh4PM56vXF1Qw3+b5d2BzZGEuJAHl0XgKXp4AkMjVvzbYH1WM70fKz9p9UY1UmD2O1fGABsYb1UMl3XFZmVLNw==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -1437,20 +1437,20 @@ packages:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
       vue: ^3.2.25
 
-  '@vitest/coverage-v8@4.1.1':
-    resolution: {integrity: sha512-nZ4RWwGCoGOQRMmU/Q9wlUY540RVRxJZ9lxFsFfy0QV7Zmo5VVBhB6Sl9Xa0KIp2iIs3zWfPlo9LcY1iqbpzCw==}
+  '@vitest/coverage-v8@4.1.2':
+    resolution: {integrity: sha512-sPK//PHO+kAkScb8XITeB1bf7fsk85Km7+rt4eeuRR3VS1/crD47cmV5wicisJmjNdfeokTZwjMk4Mj2d58Mgg==}
     peerDependencies:
-      '@vitest/browser': 4.1.1
-      vitest: 4.1.1
+      '@vitest/browser': 4.1.2
+      vitest: 4.1.2
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
 
-  '@vitest/expect@4.1.1':
-    resolution: {integrity: sha512-xAV0fqBTk44Rn6SjJReEQkHP3RrqbJo6JQ4zZ7/uVOiJZRarBtblzrOfFIZeYUrukp2YD6snZG6IBqhOoHTm+A==}
+  '@vitest/expect@4.1.2':
+    resolution: {integrity: sha512-gbu+7B0YgUJ2nkdsRJrFFW6X7NTP44WlhiclHniUhxADQJH5Szt9mZ9hWnJPJ8YwOK5zUOSSlSvyzRf0u1DSBQ==}
 
-  '@vitest/mocker@4.1.1':
-    resolution: {integrity: sha512-h3BOylsfsCLPeceuCPAAJ+BvNwSENgJa4hXoXu4im0bs9Lyp4URc4JYK4pWLZ4pG/UQn7AT92K6IByi6rE6g3A==}
+  '@vitest/mocker@4.1.2':
+    resolution: {integrity: sha512-Ize4iQtEALHDttPRCmN+FKqOl2vxTiNUhzobQFFt/BM1lRUTG7zRCLOykG/6Vo4E4hnUdfVLo5/eqKPukcWW7Q==}
     peerDependencies:
       msw: ^2.4.9
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -1460,20 +1460,20 @@ packages:
       vite:
         optional: true
 
-  '@vitest/pretty-format@4.1.1':
-    resolution: {integrity: sha512-GM+TEQN5WhOygr1lp7skeVjdLPqqWMHsfzXrcHAqZJi/lIVh63H0kaRCY8MDhNWikx19zBUK8ceaLB7X5AH9NQ==}
+  '@vitest/pretty-format@4.1.2':
+    resolution: {integrity: sha512-dwQga8aejqeuB+TvXCMzSQemvV9hNEtDDpgUKDzOmNQayl2OG241PSWeJwKRH3CiC+sESrmoFd49rfnq7T4RnA==}
 
-  '@vitest/runner@4.1.1':
-    resolution: {integrity: sha512-f7+FPy75vN91QGWsITueq0gedwUZy1fLtHOCMeQpjs8jTekAHeKP80zfDEnhrleviLHzVSDXIWuCIOFn3D3f8A==}
+  '@vitest/runner@4.1.2':
+    resolution: {integrity: sha512-Gr+FQan34CdiYAwpGJmQG8PgkyFVmARK8/xSijia3eTFgVfpcpztWLuP6FttGNfPLJhaZVP/euvujeNYar36OQ==}
 
-  '@vitest/snapshot@4.1.1':
-    resolution: {integrity: sha512-kMVSgcegWV2FibXEx9p9WIKgje58lcTbXgnJixfcg15iK8nzCXhmalL0ZLtTWLW9PH1+1NEDShiFFedB3tEgWg==}
+  '@vitest/snapshot@4.1.2':
+    resolution: {integrity: sha512-g7yfUmxYS4mNxk31qbOYsSt2F4m1E02LFqO53Xpzg3zKMhLAPZAjjfyl9e6z7HrW6LvUdTwAQR3HHfLjpko16A==}
 
-  '@vitest/spy@4.1.1':
-    resolution: {integrity: sha512-6Ti/KT5OVaiupdIZEuZN7l3CZcR0cxnxt70Z0//3CtwgObwA6jZhmVBA3yrXSVN3gmwjgd7oDNLlsXz526gpRA==}
+  '@vitest/spy@4.1.2':
+    resolution: {integrity: sha512-DU4fBnbVCJGNBwVA6xSToNXrkZNSiw59H8tcuUspVMsBDBST4nfvsPsEHDHGtWRRnqBERBQu7TrTKskmjqTXKA==}
 
-  '@vitest/utils@4.1.1':
-    resolution: {integrity: sha512-cNxAlaB3sHoCdL6pj6yyUXv9Gry1NHNg0kFTXdvSIZXLHsqKH7chiWOkwJ5s5+d/oMwcoG9T0bKU38JZWKusrQ==}
+  '@vitest/utils@4.1.2':
+    resolution: {integrity: sha512-xw2/TiX82lQHA06cgbqRKFb5lCAy3axQ4H4SoUFhUsg+wztiet+co86IAMDtF6Vm1hc7J6j09oh/rgDn+JdKIQ==}
 
   '@volar/language-core@2.4.28':
     resolution: {integrity: sha512-w4qhIJ8ZSitgLAkVay6AbcnC7gP3glYM3fYwKV3srj8m494E3xtrCv6E+bWviiK/8hs6e6t1ij1s2Endql7vzQ==}
@@ -4225,8 +4225,8 @@ packages:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
 
-  mikro-orm@6.6.9:
-    resolution: {integrity: sha512-3X14CKdjeHZiV4Aa2WFaDJe36f8jR4jE54dlvWLby7yZenKFoMbBjjtsakRznU2KZr8bnc0bDcL+QIAsg8AHXg==}
+  mikro-orm@6.6.10:
+    resolution: {integrity: sha512-9z+F31IYQx4sDOO+2gtTS9JUz8SxoSrMQte0p300RIzWj+KByBYkpPZLhAToyIkuUCXHf2sGah8HSpExToCm6Q==}
     engines: {node: '>= 18.12.0'}
 
   miller-rabin@4.0.1:
@@ -5889,18 +5889,18 @@ packages:
       yaml:
         optional: true
 
-  vitest@4.1.1:
-    resolution: {integrity: sha512-yF+o4POL41rpAzj5KVILUxm1GCjKnELvaqmU9TLLUbMfDzuN0UpUR9uaDs+mCtjPe+uYPksXDRLQGGPvj1cTmA==}
+  vitest@4.1.2:
+    resolution: {integrity: sha512-xjR1dMTVHlFLh98JE3i/f/WePqJsah4A0FK9cc8Ehp9Udk0AZk6ccpIZhh1qJ/yxVWRZ+Q54ocnD8TXmkhspGg==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
     hasBin: true
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@opentelemetry/api': ^1.9.0
       '@types/node': ^20.0.0 || ^22.0.0 || >=24.0.0
-      '@vitest/browser-playwright': 4.1.1
-      '@vitest/browser-preview': 4.1.1
-      '@vitest/browser-webdriverio': 4.1.1
-      '@vitest/ui': 4.1.1
+      '@vitest/browser-playwright': 4.1.2
+      '@vitest/browser-preview': 4.1.2
+      '@vitest/browser-webdriverio': 4.1.2
+      '@vitest/ui': 4.1.2
       happy-dom: '*'
       jsdom: '*'
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -7128,10 +7128,10 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@mikro-orm/better-sqlite@6.6.9(@mikro-orm/core@6.6.9)(mariadb@3.4.5)':
+  '@mikro-orm/better-sqlite@6.6.10(@mikro-orm/core@6.6.10)(mariadb@3.4.5)':
     dependencies:
-      '@mikro-orm/core': 6.6.9
-      '@mikro-orm/knex': 6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)(mariadb@3.4.5)
+      '@mikro-orm/core': 6.6.10
+      '@mikro-orm/knex': 6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)(mariadb@3.4.5)
       better-sqlite3: 11.10.0
       fs-extra: 11.3.3
       sqlstring-sqlite: 0.1.1
@@ -7146,11 +7146,11 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/cli@6.6.9(better-sqlite3@11.10.0)(mariadb@3.4.5)':
+  '@mikro-orm/cli@6.6.10(better-sqlite3@11.10.0)(mariadb@3.4.5)':
     dependencies:
       '@jercle/yargonaut': 1.1.5
-      '@mikro-orm/core': 6.6.9
-      '@mikro-orm/knex': 6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)(mariadb@3.4.5)
+      '@mikro-orm/core': 6.6.10
+      '@mikro-orm/knex': 6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)(mariadb@3.4.5)
       fs-extra: 11.3.3
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -7166,19 +7166,19 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/core@6.6.9':
+  '@mikro-orm/core@6.6.10':
     dependencies:
       dataloader: 2.2.3
       dotenv: 17.3.1
       esprima: 4.0.1
       fs-extra: 11.3.3
       globby: 11.1.0
-      mikro-orm: 6.6.9
+      mikro-orm: 6.6.10
       reflect-metadata: 0.2.2
 
-  '@mikro-orm/knex@6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)(mariadb@3.4.5)':
+  '@mikro-orm/knex@6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)(mariadb@3.4.5)':
     dependencies:
-      '@mikro-orm/core': 6.6.9
+      '@mikro-orm/core': 6.6.10
       fs-extra: 11.3.3
       knex: 3.1.0(better-sqlite3@11.10.0)
       sqlstring: 2.3.3
@@ -7194,10 +7194,10 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/mariadb@6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)':
+  '@mikro-orm/mariadb@6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)':
     dependencies:
-      '@mikro-orm/core': 6.6.9
-      '@mikro-orm/knex': 6.6.9(@mikro-orm/core@6.6.9)(better-sqlite3@11.10.0)(mariadb@3.4.5)
+      '@mikro-orm/core': 6.6.10
+      '@mikro-orm/knex': 6.6.10(@mikro-orm/core@6.6.10)(better-sqlite3@11.10.0)(mariadb@3.4.5)
       mariadb: 3.4.5
     transitivePeerDependencies:
       - better-sqlite3
@@ -7210,9 +7210,9 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/reflection@6.6.9(@mikro-orm/core@6.6.9)':
+  '@mikro-orm/reflection@6.6.10(@mikro-orm/core@6.6.10)':
     dependencies:
-      '@mikro-orm/core': 6.6.9
+      '@mikro-orm/core': 6.6.10
       globby: 11.1.0
       ts-morph: 27.0.2
 
@@ -7560,10 +7560,10 @@ snapshots:
       vite: 8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
       vue: 3.5.31(typescript@6.0.2)
 
-  '@vitest/coverage-v8@4.1.1(vitest@4.1.1(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))':
+  '@vitest/coverage-v8@4.1.2(vitest@4.1.2(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
-      '@vitest/utils': 4.1.1
+      '@vitest/utils': 4.1.2
       ast-v8-to-istanbul: 1.0.0
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
@@ -7572,46 +7572,46 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.1(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      vitest: 4.1.2(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  '@vitest/expect@4.1.1':
+  '@vitest/expect@4.1.2':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@types/chai': 5.2.3
-      '@vitest/spy': 4.1.1
-      '@vitest/utils': 4.1.1
+      '@vitest/spy': 4.1.2
+      '@vitest/utils': 4.1.2
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.1(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))':
+  '@vitest/mocker@4.1.2(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
-      '@vitest/spy': 4.1.1
+      '@vitest/spy': 4.1.2
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
       vite: 8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
 
-  '@vitest/pretty-format@4.1.1':
+  '@vitest/pretty-format@4.1.2':
     dependencies:
       tinyrainbow: 3.1.0
 
-  '@vitest/runner@4.1.1':
+  '@vitest/runner@4.1.2':
     dependencies:
-      '@vitest/utils': 4.1.1
+      '@vitest/utils': 4.1.2
       pathe: 2.0.3
 
-  '@vitest/snapshot@4.1.1':
+  '@vitest/snapshot@4.1.2':
     dependencies:
-      '@vitest/pretty-format': 4.1.1
-      '@vitest/utils': 4.1.1
+      '@vitest/pretty-format': 4.1.2
+      '@vitest/utils': 4.1.2
       magic-string: 0.30.21
       pathe: 2.0.3
 
-  '@vitest/spy@4.1.1': {}
+  '@vitest/spy@4.1.2': {}
 
-  '@vitest/utils@4.1.1':
+  '@vitest/utils@4.1.2':
     dependencies:
-      '@vitest/pretty-format': 4.1.1
+      '@vitest/pretty-format': 4.1.2
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
@@ -7747,7 +7747,7 @@ snapshots:
       alien-signals: 3.1.2
       muggle-string: 0.4.1
       path-browserify: 1.0.1
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   '@vue/reactivity@3.5.31':
     dependencies:
@@ -8720,7 +8720,7 @@ snapshots:
   cspell-glob@9.7.0:
     dependencies:
       '@cspell/url': 9.7.0
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   cspell-grammar@9.7.0:
     dependencies:
@@ -10804,7 +10804,7 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.1
 
-  mikro-orm@6.6.9: {}
+  mikro-orm@6.6.10: {}
 
   miller-rabin@4.0.1:
     dependencies:
@@ -12353,7 +12353,7 @@ snapshots:
 
   ts-declaration-location@1.0.7(typescript@6.0.2):
     dependencies:
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       typescript: 6.0.2
 
   ts-morph@27.0.2:
@@ -12533,12 +12533,12 @@ snapshots:
   unplugin-utils@0.3.1:
     dependencies:
       pathe: 2.0.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   unplugin@3.0.0:
     dependencies:
       '@jridgewell/remapping': 2.3.5
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       webpack-virtual-modules: 0.6.2
 
   update-browserslist-db@1.2.3(browserslist@4.28.1):
@@ -12629,21 +12629,21 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.8.3
 
-  vitest@4.1.1(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)):
+  vitest@4.1.2(@types/node@24.12.0)(jsdom@29.0.1)(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
-      '@vitest/expect': 4.1.1
-      '@vitest/mocker': 4.1.1(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@vitest/pretty-format': 4.1.1
-      '@vitest/runner': 4.1.1
-      '@vitest/snapshot': 4.1.1
-      '@vitest/spy': 4.1.1
-      '@vitest/utils': 4.1.1
+      '@vitest/expect': 4.1.2
+      '@vitest/mocker': 4.1.2(vite@8.0.3(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@vitest/pretty-format': 4.1.2
+      '@vitest/runner': 4.1.2
+      '@vitest/snapshot': 4.1.2
+      '@vitest/spy': 4.1.2
+      '@vitest/utils': 4.1.2
       es-module-lexer: 2.0.0
       expect-type: 1.3.0
       magic-string: 0.30.21
       obug: 2.1.1
       pathe: 2.0.3
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       std-env: 4.0.0
       tinybench: 2.9.0
       tinyexec: 1.0.4
