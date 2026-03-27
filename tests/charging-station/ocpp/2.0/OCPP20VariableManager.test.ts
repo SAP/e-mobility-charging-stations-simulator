@@ -201,7 +201,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     })
 
     await it('should reject invalid values for AuthorizeRemoteStart (AuthCtrlr)', () => {
-      const invalidValues = ['', '1', 'TRUE', 'False', 'yes']
+      const invalidValues = ['', '1', 'yes']
       for (const val of invalidValues) {
         const res = manager.setVariables(station, [
           {

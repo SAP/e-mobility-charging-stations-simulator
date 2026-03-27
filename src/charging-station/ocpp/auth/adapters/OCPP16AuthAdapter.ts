@@ -16,7 +16,7 @@ import {
   RequestCommand,
   StandardParametersKey,
 } from '../../../../types/index.js'
-import { logger, truncateId } from '../../../../utils/index.js'
+import { convertToBoolean, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -364,7 +364,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
         this.chargingStation,
         StandardParametersKey.AllowOfflineTxForUnknownId
       )
-      return configKey?.value === 'true'
+      return convertToBoolean(configKey?.value)
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineTransactionConfig: Error getting offline transaction config`,

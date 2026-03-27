@@ -937,7 +937,7 @@ export class OCPP20VariableManager {
       isOCPP20RequiredVariableName(variable.name) &&
       variable.name === OCPP20RequiredVariableName.AuthorizeRemoteStart
     ) {
-      if (attributeValue !== 'true' && attributeValue !== 'false') {
+      if (attributeValue.toLowerCase() !== 'true' && attributeValue.toLowerCase() !== 'false') {
         return this.rejectSet(
           variable,
           component,

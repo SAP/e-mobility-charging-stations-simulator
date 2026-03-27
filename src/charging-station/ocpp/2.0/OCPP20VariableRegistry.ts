@@ -2499,7 +2499,7 @@ export function validateValue (
   }
   switch (variableMetadata.dataType) {
     case DataEnumType.boolean: {
-      if (rawValue !== 'true' && rawValue !== 'false') {
+      if (rawValue.toLowerCase() !== 'true' && rawValue.toLowerCase() !== 'false') {
         return {
           info: 'Boolean must be "true" or "false"',
           ok: false,

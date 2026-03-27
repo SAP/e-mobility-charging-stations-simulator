@@ -41,6 +41,7 @@
     "configurationKey": [
       {
         "key": "AllowOfflineTxForUnknownId",
+        "readonly": false,
         "value": "True"
       },
       {
@@ -60,14 +61,17 @@
       },
       {
         "key": "MeterValueSampleInterval",
+        "readonly": false,
         "value": "300"
       },
       {
         "key": "TransactionMessageAttempts",
+        "readonly": false,
         "value": "3"
       },
       {
         "key": "TransactionMessageRetryInterval",
+        "readonly": false,
         "value": "20"
       },
       {

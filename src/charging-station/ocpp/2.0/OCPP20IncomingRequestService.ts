@@ -123,6 +123,7 @@ import {
   UploadLogStatusEnumType,
 } from '../../../types/index.js'
 import {
+  convertToBoolean,
   convertToDate,
   generateUUID,
   logger,
@@ -1901,7 +1902,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         variable: { name: 'AllowReset' },
       },
     ])
-    if (allowResetResults.length > 0 && allowResetResults[0].attributeValue === 'false') {
+    if (
+      allowResetResults.length > 0 &&
+      allowResetResults[0].attributeValue != null &&
+      !convertToBoolean(allowResetResults[0].attributeValue)
+    ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: AllowReset is false, rejecting reset request`
       )
@@ -2161,7 +2166,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           variable: { name: 'AllowSecurityProfileDowngrade' },
         },
       ])
-      const allowDowngrade = allowDowngradeResults[0]?.attributeValue?.toLowerCase() === 'true'
+      const allowDowngrade = convertToBoolean(allowDowngradeResults[0]?.attributeValue)
 
       // B09.FR.31 (errata 2025-09 §2.12): Allow downgrade except to profile 1 when enabled
       if (!allowDowngrade || newSecurityProfile <= 1) {
@@ -2302,7 +2307,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       },
     ])
     const shouldAuthorizeRemoteStart =
-      authorizeRemoteStartResults[0]?.attributeValue?.toLowerCase() !== 'false'
+      authorizeRemoteStartResults[0]?.attributeValue == null ||
+      convertToBoolean(authorizeRemoteStartResults[0].attributeValue)
 
     let isAuthorized = true
     if (shouldAuthorizeRemoteStart) {
@@ -3494,7 +3500,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           variable: { name: 'SimulateSignatureVerificationFailure' },
         },
       ])
-      const simulateFailure = verificationResults[0]?.attributeValue?.toLowerCase() === 'true'
+      const simulateFailure = convertToBoolean(verificationResults[0]?.attributeValue)
 
       if (simulateFailure) {
         // L01.FR.03: InvalidSignature + SecurityEventNotification
@@ -3556,7 +3562,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           variable: { name: 'AllowNewSessionsPendingFirmwareUpdate' },
         },
       ])
-      const allowNewSessions = allowNewSessionsResults[0]?.attributeValue?.toLowerCase() === 'true'
+      const allowNewSessions = convertToBoolean(allowNewSessionsResults[0]?.attributeValue)
       while (
         !checkAborted() &&
         [...chargingStation.evses].some(

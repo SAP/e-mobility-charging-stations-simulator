@@ -147,18 +147,18 @@ await describe('ConfigurationKeyUtils', async () => {
     await it('should not resolve unmapped keys on OCPP 2.0.1 station', () => {
       // Arrange
       const cs = createStationForVersion(OCPPVersion.VERSION_201)
-      addConfigurationKey(cs, StandardParametersKey.HeartbeatInterval, '30', undefined, {
+      addConfigurationKey(cs, StandardParametersKey.NumberOfConnectors, '2', undefined, {
         save: false,
       })
 
       // Act
-      const k = getConfigurationKey(cs, StandardParametersKey.HeartbeatInterval)
+      const k = getConfigurationKey(cs, StandardParametersKey.NumberOfConnectors)
 
       // Assert
       if (k == null) {
         assert.fail('Expected configuration key to be found')
       }
-      assert.strictEqual(k.key, StandardParametersKey.HeartbeatInterval)
+      assert.strictEqual(k.key, StandardParametersKey.NumberOfConnectors)
     })
   })
 

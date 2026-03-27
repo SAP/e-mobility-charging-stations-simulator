@@ -64,6 +64,21 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
             StandardParametersKey.ReserveConnectorZeroSupported,
             buildConfigKey(OCPP20ComponentName.ReservationCtrlr, StandardParametersKey.NonEvseSpecific),
           ],
+          [
+            StandardParametersKey.HeartbeatInterval,
+            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
+          ],
+          [
+            StandardParametersKey.HeartBeatInterval,
+            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
+          ],
+          [
+            StandardParametersKey.WebSocketPingInterval,
+            buildConfigKey(
+              OCPP20ComponentName.ChargingStation,
+              StandardParametersKey.WebSocketPingInterval
+            ),
+          ],
         ] as [ConfigurationKeyType, ConfigurationKeyType][]
       ).map(([from, to]) => [
         from,
