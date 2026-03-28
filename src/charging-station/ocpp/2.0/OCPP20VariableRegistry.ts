@@ -1455,7 +1455,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: '30',
+    defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
     description:
       '0 disables client side websocket Ping/Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed.',
     min: 0,
