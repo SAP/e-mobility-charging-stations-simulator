@@ -25,7 +25,6 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
-  StandardParametersKey,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -106,7 +105,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     try {
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.SampledDataCtrlr,
-        StandardParametersKey.TxStartedMeasurands
+        OCPP20RequiredVariableName.TxStartedMeasurands
       )
       const meterValue = buildMeterValue(
         chargingStation,
@@ -745,7 +744,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     try {
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.SampledDataCtrlr,
-        StandardParametersKey.TxEndedMeasurands
+        OCPP20RequiredVariableName.TxEndedMeasurands
       )
       const meterValue = buildMeterValue(
         chargingStation,
