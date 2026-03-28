@@ -107,14 +107,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         OCPP20ComponentName.SampledDataCtrlr,
         OCPP20RequiredVariableName.TxStartedMeasurands
       )
-      const meterValue = buildMeterValue(
+      const startedMeterValue = buildMeterValue(
         chargingStation,
         transactionId,
         0,
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
       ) as OCPP20MeterValue
-      return meterValue.sampledValue.length > 0 ? [meterValue] : []
+      return startedMeterValue.sampledValue.length > 0 ? [startedMeterValue] : []
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionStartedMeterValues: ${(error as Error).message}`
@@ -128,7 +128,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     connectorStatus: ConnectorStatus
   ): Promise<void> {
-    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     resetConnectorStatus(connectorStatus)
     connectorStatus.locked = false
     await sendAndSetConnectorStatus(chargingStation, {
@@ -290,6 +290,15 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.AlignedDataInterval,
       900
+    )
+  }
+
+  public static getTxEndedInterval (chargingStation: ChargingStation): number {
+    return OCPP20ServiceUtils.readVariableAsIntervalMs(
+      chargingStation,
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20RequiredVariableName.TxEndedInterval,
+      0
     )
   }
 
@@ -581,7 +590,46 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static startPeriodicMeterValues (
+  public static startEndedMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    interval: number
+  ): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      return
+    }
+    connectorStatus.transactionEndedMeterValues = []
+    if (interval <= 0) {
+      return
+    }
+    if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
+      OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId)
+    }
+    connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => {
+      const cs = chargingStation.getConnectorStatus(connectorId)
+      if (cs?.transactionStarted === true && cs.transactionId != null) {
+        const measurandsKey = buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20RequiredVariableName.TxEndedMeasurands
+        )
+        const meterValue = buildMeterValue(
+          chargingStation,
+          cs.transactionId,
+          interval,
+          measurandsKey
+        ) as OCPP20MeterValue
+        if (meterValue.sampledValue.length > 0) {
+          cs.transactionEndedMeterValues?.push(meterValue)
+        }
+      }
+    }, clampToSafeTimerValue(interval))
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.startEndedMeterValues: TxEndedInterval started every ${formatDurationMilliSeconds(interval)}`
+    )
+  }
+
+  public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
     interval: number
@@ -589,23 +637,23 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     const initialConnectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (initialConnectorStatus == null) {
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Connector ${connectorId.toString()} not found`
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Connector ${connectorId.toString()} not found`
       )
       return
     }
     if (interval <= 0) {
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
       )
       return
     }
-    if (initialConnectorStatus.transactionMeterValuesSetInterval != null) {
+    if (initialConnectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval already started, stopping first`
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: TxUpdatedInterval already started, stopping first`
       )
-      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     }
-    initialConnectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
+    initialConnectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
         if (
@@ -632,7 +680,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
               evseId
             ).catch((error: unknown) => {
               logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error terminating deauthorized transaction:`,
+                `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error terminating deauthorized transaction:`,
                 error
               )
             })
@@ -653,14 +701,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           { meterValue: [meterValue] }
         ).catch((error: unknown) => {
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error sending periodic TransactionEvent:`,
+            `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error sending periodic TransactionEvent:`,
             error
           )
         })
       }
     }, clampToSafeTimerValue(interval))
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
+      `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
     )
   }
 
@@ -723,43 +771,61 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static stopPeriodicMeterValues (
+  public static stopEndedMeterValues (chargingStation: ChargingStation, connectorId: number): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionEndedMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
+      delete connectorStatus.transactionEndedMeterValuesSetInterval
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.stopEndedMeterValues: TxEndedInterval stopped`
+      )
+    }
+  }
+
+  public static stopUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number
   ): void {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionMeterValuesSetInterval != null) {
-      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
-      delete connectorStatus.transactionMeterValuesSetInterval
+    if (connectorStatus?.transactionUpdatedMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
+      delete connectorStatus.transactionUpdatedMeterValuesSetInterval
       logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.stopPeriodicMeterValues: TxUpdatedInterval stopped`
+        `${chargingStation.logPrefix()} ${moduleName}.stopUpdatedMeterValues: TxUpdatedInterval stopped`
       )
     }
   }
 
   private static buildTransactionEndedMeterValues (
     chargingStation: ChargingStation,
+    connectorId: number,
     transactionId: number | string
   ): OCPP20MeterValue[] {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
+      []) as OCPP20MeterValue[]
+
     try {
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.SampledDataCtrlr,
         OCPP20RequiredVariableName.TxEndedMeasurands
       )
-      const meterValue = buildMeterValue(
+      const finalMeterValue = buildMeterValue(
         chargingStation,
         transactionId,
         0,
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_END
       ) as OCPP20MeterValue
-      return meterValue.sampledValue.length > 0 ? [meterValue] : []
+      if (finalMeterValue.sampledValue.length > 0) {
+        return [...endedMeterValues, finalMeterValue]
+      }
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${(error as Error).message}`
       )
-      return []
     }
+    return endedMeterValues.length > 0 ? endedMeterValues : []
   }
 
   private static readVariableAsBoolean (
@@ -863,7 +929,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     stoppedReason: OCPP20ReasonEnumType,
     evseId?: number
   ): Promise<OCPP20TransactionEventResponse> {
-    const endedMeterValues = this.buildTransactionEndedMeterValues(chargingStation, transactionId)
+    this.stopEndedMeterValues(chargingStation, connectorId)
+    const endedMeterValues = this.buildTransactionEndedMeterValues(
+      chargingStation,
+      connectorId,
+      transactionId
+    )
 
     const response = await this.sendTransactionEvent(
       chargingStation,

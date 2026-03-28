@@ -42,10 +42,10 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
     setMockRequestHandler(station, async () => Promise.resolve({}))
 
     // Mock startMeterValues/stopMeterValues to avoid real timer setup
-    mock.method(OCPP16ServiceUtils, 'startPeriodicMeterValues', () => {
+    mock.method(OCPP16ServiceUtils, 'startUpdatedMeterValues', () => {
       /* noop */
     })
-    mock.method(OCPP16ServiceUtils, 'stopPeriodicMeterValues', () => {
+    mock.method(OCPP16ServiceUtils, 'stopUpdatedMeterValues', () => {
       /* noop */
     })
 

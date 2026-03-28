@@ -23,7 +23,7 @@ import {
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-import { startPeriodicMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { startUpdatedMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -2000,15 +2000,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Clean up any running timers
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
         const connectorStatus = mockStation.getConnectorStatus(connectorId)
-        if (connectorStatus?.transactionMeterValuesSetInterval != null) {
-          clearInterval(connectorStatus.transactionMeterValuesSetInterval)
-          connectorStatus.transactionMeterValuesSetInterval = undefined
+        if (connectorStatus?.transactionUpdatedMeterValuesSetInterval != null) {
+          clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
+          connectorStatus.transactionUpdatedMeterValuesSetInterval = undefined
         }
       }
       standardCleanup()
     })
 
-    await describe('startPeriodicMeterValues', async () => {
+    await describe('startUpdatedMeterValues', async () => {
       await it('should not start OCPP 2.0 timer for OCPP 1.6 stations via unified dispatch', async t => {
         await withMockTimers(t, ['setInterval'], async () => {
           const { station: ocpp16Station } = createMockChargingStation({
@@ -2019,10 +2019,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             },
           })
 
-          await startPeriodicMeterValues(ocpp16Station, 1, 60000)
+          await startUpdatedMeterValues(ocpp16Station, 1, 60000)
 
           const connectorStatus = ocpp16Station.getConnectorStatus(1)
-          assert.strictEqual(connectorStatus?.transactionMeterValuesSetInterval, undefined)
+          assert.strictEqual(connectorStatus?.transactionUpdatedMeterValuesSetInterval, undefined)
         })
       })
 
@@ -2036,7 +2036,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
-        assert.strictEqual(connectorStatus.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
       })
 
       await it('should not start timer when interval is negative', () => {
@@ -2046,7 +2046,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert(connectorStatus != null)
 
         // Negative interval should not start timer
-        assert.strictEqual(connectorStatus.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {

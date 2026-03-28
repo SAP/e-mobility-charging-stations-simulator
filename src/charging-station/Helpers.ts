@@ -565,6 +565,11 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionGroupIdToken
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
+  delete connectorStatus.transactionEndedMeterValues
+  if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
+    clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
+    delete connectorStatus.transactionEndedMeterValuesSetInterval
+  }
   delete connectorStatus.transactionSeqNo
   delete connectorStatus.transactionEvseSent
   delete connectorStatus.transactionIdTokenSent

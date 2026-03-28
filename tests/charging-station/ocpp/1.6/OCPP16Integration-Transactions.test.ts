@@ -77,14 +77,14 @@ function createIntegrationContext (): {
   // Mock meter value start/stop to avoid real timer setup
   mock.method(
     OCPP16ServiceUtils,
-    'startPeriodicMeterValues',
+    'startUpdatedMeterValues',
     (_station: unknown, _connectorId: number, _interval: number) => {
       /* noop */
     }
   )
   mock.method(
     OCPP16ServiceUtils,
-    'stopPeriodicMeterValues',
+    'stopUpdatedMeterValues',
     (_station: unknown, _connectorId: number) => {
       /* noop */
     }

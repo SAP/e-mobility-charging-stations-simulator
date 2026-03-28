@@ -24,38 +24,21 @@ export interface ConnectorStatus {
   transactionBeginMeterValue?: MeterValue
   transactionDeauthorized?: boolean
   transactionDeauthorizedEnergyWh?: number
+  transactionEndedMeterValues?: MeterValue[]
+  transactionEndedMeterValuesSetInterval?: NodeJS.Timeout
   transactionEnergyActiveImportRegisterValue?: number // In Wh
-  /**
-   * OCPP 2.0.1 offline-first: Queue of TransactionEvents waiting to be sent
-   * Events are queued when station is offline (websocket disconnected)
-   * and replayed in order when reconnected, with seqNo preserved
-   */
   transactionEventQueue?: QueuedTransactionEvent[]
-  /**
-   * OCPP 2.0.1 E01.FR.16 compliance: Track if evse has been sent for current transaction.
-   * The evse field should only be provided in the first TransactionEventRequest
-   * that occurs after the EV has connected.
-   */
   transactionEvseSent?: boolean
   transactionGroupIdToken?: string
   transactionId?: number | string
   transactionIdTag?: string
-  /**
-   * OCPP 2.0.1 E03.FR.01 compliance: Track if idToken has been sent for current transaction.
-   * The idToken field should be provided once in the first TransactionEventRequest
-   * that occurs after the transaction has been authorized.
-   */
   transactionIdTokenSent?: boolean
-  transactionMeterValuesSetInterval?: NodeJS.Timeout
-  /**
-   * OCPP 2.0.1 E02 compliance: Transaction pending CSMS acknowledgment.
-   * Blocks duplicate RequestStartTransaction until response handler sets transactionStarted.
-   */
   transactionPending?: boolean
   transactionRemoteStarted?: boolean
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionUpdatedMeterValuesSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }
 

@@ -568,7 +568,7 @@ export const stopRunningTransactions = async (
   }
 }
 
-export const startPeriodicMeterValues = async (
+export const startUpdatedMeterValues = async (
   chargingStation: ChargingStation,
   connectorId: number,
   interval: number
@@ -576,37 +576,37 @@ export const startPeriodicMeterValues = async (
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
       const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      OCPP16ServiceUtils.startPeriodicMeterValues(chargingStation, connectorId, interval)
+      OCPP16ServiceUtils.startUpdatedMeterValues(chargingStation, connectorId, interval)
       break
     }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      OCPP20ServiceUtils.startPeriodicMeterValues(chargingStation, connectorId, interval)
+      OCPP20ServiceUtils.startUpdatedMeterValues(chargingStation, connectorId, interval)
       break
     }
     default:
       logger.error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} OCPPServiceUtils.startPeriodicMeterValues: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+        `${chargingStation.logPrefix()} OCPPServiceUtils.startUpdatedMeterValues: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
       )
   }
 }
 
-export const stopPeriodicMeterValues = async (
+export const stopUpdatedMeterValues = async (
   chargingStation: ChargingStation,
   connectorId: number
 ): Promise<void> => {
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
       const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
       break
     }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
       break
     }
     default:

@@ -34,7 +34,13 @@ export const buildConnectorEntries = (chargingStation: ChargingStation): Connect
   return [...chargingStation.connectors.entries()].map(
     ([
       connectorId,
-      { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
+      {
+        transactionEndedMeterValues,
+        transactionEndedMeterValuesSetInterval,
+        transactionEventQueue,
+        transactionUpdatedMeterValuesSetInterval,
+        ...connector
+      },
     ]) => ({
       connector,
       connectorId,
@@ -48,7 +54,13 @@ export const buildConnectorsStatus = (
   return [...chargingStation.connectors.entries()].map(
     ([
       connectorId,
-      { transactionEventQueue, transactionMeterValuesSetInterval, ...connectorStatus },
+      {
+        transactionEndedMeterValues,
+        transactionEndedMeterValuesSetInterval,
+        transactionEventQueue,
+        transactionUpdatedMeterValuesSetInterval,
+        ...connectorStatus
+      },
     ]) => [connectorId, connectorStatus]
   )
 }
@@ -59,7 +71,13 @@ export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] 
     connectors: [...evseStatus.connectors.entries()].map(
       ([
         connectorId,
-        { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
+        {
+          transactionEndedMeterValues,
+          transactionEndedMeterValuesSetInterval,
+          transactionEventQueue,
+          transactionUpdatedMeterValuesSetInterval,
+          ...connector
+        },
       ]) => ({
         connector,
         connectorId,
@@ -76,7 +94,13 @@ export const buildEvsesStatus = (
     const connectorsStatus: [number, ConnectorStatus][] = [...evseStatus.connectors.entries()].map(
       ([
         connectorId,
-        { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
+        {
+          transactionEndedMeterValues,
+          transactionEndedMeterValuesSetInterval,
+          transactionEventQueue,
+          transactionUpdatedMeterValuesSetInterval,
+          ...connector
+        },
       ]) => [connectorId, connector]
     )
     const { connectors: _, ...evseStatusRest } = evseStatus

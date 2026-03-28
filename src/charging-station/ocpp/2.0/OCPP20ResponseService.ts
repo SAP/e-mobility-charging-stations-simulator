@@ -415,11 +415,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
               )
             })
             const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-            OCPP20ServiceUtils.startPeriodicMeterValues(
+            OCPP20ServiceUtils.startUpdatedMeterValues(
               chargingStation,
               connectorId,
               txUpdatedInterval
             )
+            const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
+            OCPP20ServiceUtils.startEndedMeterValues(chargingStation, connectorId, txEndedInterval)
           }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} STARTED on connector ${String(connectorId)}`

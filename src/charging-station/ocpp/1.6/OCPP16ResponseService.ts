@@ -453,7 +453,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         chargingStation,
         OCPP16StandardParametersKey.MeterValueSampleInterval
       )
-      OCPP16ServiceUtils.startPeriodicMeterValues(
+      OCPP16ServiceUtils.startUpdatedMeterValues(
         chargingStation,
         connectorId,
         configuredMeterValueSampleInterval != null
@@ -542,7 +542,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ) {
       transactionConnectorStatus.locked = false
     }
-    OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, transactionConnectorId)
+    OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId
@@ -562,7 +562,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
-    OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
     await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)

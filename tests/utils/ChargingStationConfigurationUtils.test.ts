@@ -70,8 +70,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
           availability: AvailabilityType.Operative,
           bootStatus: 'Available',
           MeterValues: [],
+          transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
+          transactionEndedMeterValuesSetInterval: interval2 as unknown as NodeJS.Timeout,
           transactionEventQueue: [],
-          transactionMeterValuesSetInterval: interval1 as unknown as NodeJS.Timeout,
+          transactionUpdatedMeterValuesSetInterval: interval1 as unknown as NodeJS.Timeout,
         } as unknown as ConnectorStatus)
 
         const station = createMockStationForConfigUtils({ connectors })
@@ -79,7 +81,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
         assert.strictEqual(result.length, 2)
         for (const [, connector] of result) {
-          assert.ok(!('transactionMeterValuesSetInterval' in connector))
+          assert.ok(!('transactionEndedMeterValues' in connector))
+          assert.ok(!('transactionEndedMeterValuesSetInterval' in connector))
+          assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connector))
           assert.ok(!('transactionEventQueue' in connector))
         }
         assert.strictEqual(result[0][0], 0)
@@ -105,8 +109,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
         MeterValues: [],
         transactionEventQueue: undefined,
         transactionId: 42,
-        transactionMeterValuesSetInterval: undefined,
         transactionStarted: true,
+        transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
       const station = createMockStationForConfigUtils({ connectors })
@@ -147,7 +151,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         availability: AvailabilityType.Operative,
         MeterValues: [],
         transactionEventQueue: [],
-        transactionMeterValuesSetInterval: undefined,
+        transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
       const evses = new Map<number, EvseStatus>()
@@ -178,8 +182,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
+        transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
+        transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
-        transactionMeterValuesSetInterval: undefined,
+        transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
       const evses = new Map<number, EvseStatus>()
@@ -201,7 +207,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(connectorsStatus.length, 1)
       assert.strictEqual(connectorsStatus[0][0], 1)
       const connectorStatus = connectorsStatus[0][1]
-      assert.ok(!('transactionMeterValuesSetInterval' in connectorStatus))
+      assert.ok(!('transactionEndedMeterValues' in connectorStatus))
+      assert.ok(!('transactionEndedMeterValuesSetInterval' in connectorStatus))
+      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionEventQueue' in connectorStatus))
     })
 
@@ -390,8 +398,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       connectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
+        transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
+        transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
-        transactionMeterValuesSetInterval: undefined,
+        transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
       const station = createMockStationForConfigUtils({ connectors })
@@ -401,7 +411,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result[0].connectorId, 0)
       assert.strictEqual(result[1].connectorId, 1)
       assert.strictEqual(result[1].connector.availability, AvailabilityType.Operative)
-      assert.ok(!('transactionMeterValuesSetInterval' in result[1].connector))
+      assert.ok(!('transactionEndedMeterValues' in result[1].connector))
+      assert.ok(!('transactionEndedMeterValuesSetInterval' in result[1].connector))
+      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in result[1].connector))
       assert.ok(!('transactionEventQueue' in result[1].connector))
     })
 
@@ -443,8 +455,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
+        transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
+        transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
-        transactionMeterValuesSetInterval: undefined,
+        transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
       const evses = new Map<number, EvseStatus>()
@@ -467,7 +481,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result[1].evseId, 1)
       assert.strictEqual(result[1].connectors.length, 1)
       assert.strictEqual(result[1].connectors[0].connectorId, 1)
-      assert.ok(!('transactionMeterValuesSetInterval' in result[1].connectors[0].connector))
+      assert.ok(!('transactionEndedMeterValues' in result[1].connectors[0].connector))
+      assert.ok(!('transactionEndedMeterValuesSetInterval' in result[1].connectors[0].connector))
+      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in result[1].connectors[0].connector))
       assert.ok(!('transactionEventQueue' in result[1].connectors[0].connector))
     })
 

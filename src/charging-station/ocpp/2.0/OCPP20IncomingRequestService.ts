@@ -3045,7 +3045,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     evseId?: number
   ): Promise<void> {
-    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)

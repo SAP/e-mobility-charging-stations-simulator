@@ -149,20 +149,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SignReadings',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'TxEndedInterval')]: {
-    component: OCPP20ComponentName.AlignedDataCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: '900',
-    description:
-      'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.',
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.SECONDS,
-    variable: 'TxEndedInterval',
-  },
   [buildRegistryKey(
     OCPP20ComponentName.AlignedDataCtrlr,
     OCPP20RequiredVariableName.AlignedDataInterval
@@ -223,6 +209,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Measurands,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr,
+    OCPP20RequiredVariableName.TxEndedInterval
+  )]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: '900',
+    description:
+      'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.',
+    min: 1,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.SECONDS,
+    variable: OCPP20RequiredVariableName.TxEndedInterval,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AlignedDataCtrlr,
@@ -1689,20 +1692,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SignReadings',
   },
-  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'TxEndedInterval')]: {
-    component: OCPP20ComponentName.SampledDataCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: '60',
-    description:
-      'Interval between sampling of metering data, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.',
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.SECONDS,
-    variable: 'TxEndedInterval',
-  },
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, OCPP20MeasurandEnumType.CURRENT_IMPORT)]:
     {
       component: OCPP20ComponentName.SampledDataCtrlr,
@@ -1767,6 +1756,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SampledDataCtrlr,
+    OCPP20RequiredVariableName.TxEndedInterval
+  )]: {
+    component: OCPP20ComponentName.SampledDataCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: '60',
+    description:
+      'Interval between sampling of metering data, intended to be transmitted in the TransactionEventRequest (eventType = Ended) message.',
+    min: 1,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.SECONDS,
+    variable: OCPP20RequiredVariableName.TxEndedInterval,
   },
   [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr,

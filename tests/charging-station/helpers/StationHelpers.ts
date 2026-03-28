@@ -218,18 +218,26 @@ export function cleanupChargingStation (station: ChargingStation): void {
 
   // Clear connector transaction state and timers
   for (const connectorStatus of station.connectors.values()) {
-    if (connectorStatus.transactionMeterValuesSetInterval != null) {
-      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
-      connectorStatus.transactionMeterValuesSetInterval = undefined
+    if (connectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = undefined
+    }
+    if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
+      connectorStatus.transactionEndedMeterValuesSetInterval = undefined
     }
   }
 
   // Clear EVSE connector transaction state and timers
   for (const evseStatus of station.evses.values()) {
     for (const connectorStatus of evseStatus.connectors.values()) {
-      if (connectorStatus.transactionMeterValuesSetInterval != null) {
-        clearInterval(connectorStatus.transactionMeterValuesSetInterval)
-        connectorStatus.transactionMeterValuesSetInterval = undefined
+      if (connectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
+        clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
+        connectorStatus.transactionUpdatedMeterValuesSetInterval = undefined
+      }
+      if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
+        clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
+        connectorStatus.transactionEndedMeterValuesSetInterval = undefined
       }
     }
   }
@@ -974,9 +982,14 @@ function resetConnectorStatus (status: ConnectorStatus, isConnectorZero: boolean
   status.energyActiveImportRegisterValue = 0
   status.transactionEnergyActiveImportRegisterValue = 0
 
-  // Clear transaction interval
-  if (status.transactionMeterValuesSetInterval != null) {
-    clearInterval(status.transactionMeterValuesSetInterval)
-    status.transactionMeterValuesSetInterval = undefined
+  if (status.transactionUpdatedMeterValuesSetInterval != null) {
+    clearInterval(status.transactionUpdatedMeterValuesSetInterval)
+    status.transactionUpdatedMeterValuesSetInterval = undefined
+  }
+
+  status.transactionEndedMeterValues = undefined
+  if (status.transactionEndedMeterValuesSetInterval != null) {
+    clearInterval(status.transactionEndedMeterValuesSetInterval)
+    status.transactionEndedMeterValuesSetInterval = undefined
   }
 }

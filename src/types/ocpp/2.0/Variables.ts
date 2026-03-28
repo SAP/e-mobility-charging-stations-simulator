@@ -68,6 +68,7 @@ export enum OCPP20RequiredVariableName {
   StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',
   StopTxOnInvalidId = 'StopTxOnInvalidId',
   TimeSource = 'TimeSource',
+  TxEndedInterval = 'TxEndedInterval',
   TxEndedMeasurands = 'TxEndedMeasurands',
   TxStartedMeasurands = 'TxStartedMeasurands',
   TxStartPoint = 'TxStartPoint',

@@ -837,8 +837,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           connectorId++
         ) {
           if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
-            OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
-            OCPP16ServiceUtils.startPeriodicMeterValues(
+            OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+            OCPP16ServiceUtils.startUpdatedMeterValues(
               chargingStation,
               connectorId,
               secondsToMilliseconds(convertToInt(value))

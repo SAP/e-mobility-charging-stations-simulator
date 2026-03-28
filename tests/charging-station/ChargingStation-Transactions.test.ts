@@ -538,12 +538,12 @@ await describe('ChargingStation Transaction Management', async () => {
         }
 
         // Act
-        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 10000)
 
         // Assert - meter values interval should be created
         if (connector1 != null) {
-          assert.notStrictEqual(connector1.transactionMeterValuesSetInterval, undefined)
-          assert.strictEqual(typeof connector1.transactionMeterValuesSetInterval, 'object')
+          assert.notStrictEqual(connector1.transactionUpdatedMeterValuesSetInterval, undefined)
+          assert.strictEqual(typeof connector1.transactionUpdatedMeterValuesSetInterval, 'object')
         }
       })
     })
@@ -558,13 +558,13 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
-        const firstInterval = connector1?.transactionMeterValuesSetInterval
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 10000)
+        const firstInterval = connector1?.transactionUpdatedMeterValuesSetInterval
 
         // Act
-        OCPP16ServiceUtils.stopPeriodicMeterValues(station, 1)
-        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 15000)
-        const secondInterval = connector1?.transactionMeterValuesSetInterval
+        OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 15000)
+        const secondInterval = connector1?.transactionUpdatedMeterValuesSetInterval
 
         // Assert - interval should be different
         assert.notStrictEqual(secondInterval, undefined)
@@ -583,13 +583,13 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 10000)
 
         // Act
-        OCPP16ServiceUtils.stopPeriodicMeterValues(station, 1)
+        OCPP16ServiceUtils.stopUpdatedMeterValues(station, 1)
 
         // Assert - interval should be cleared
-        assert.strictEqual(connector1?.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connector1?.transactionUpdatedMeterValuesSetInterval, undefined)
       })
     })
 
@@ -608,12 +608,12 @@ await describe('ChargingStation Transaction Management', async () => {
         }
 
         // Act
-        OCPP20ServiceUtils.startPeriodicMeterValues(station, 1, 5000)
+        OCPP20ServiceUtils.startUpdatedMeterValues(station, 1, 5000)
 
         // Assert - transaction updated interval should be created
         if (connector1 != null) {
-          assert.notStrictEqual(connector1.transactionMeterValuesSetInterval, undefined)
-          assert.strictEqual(typeof connector1.transactionMeterValuesSetInterval, 'object')
+          assert.notStrictEqual(connector1.transactionUpdatedMeterValuesSetInterval, undefined)
+          assert.strictEqual(typeof connector1.transactionUpdatedMeterValuesSetInterval, 'object')
         }
       })
     })
@@ -631,13 +631,13 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        OCPP20ServiceUtils.startPeriodicMeterValues(station, 1, 5000)
+        OCPP20ServiceUtils.startUpdatedMeterValues(station, 1, 5000)
 
         // Act
-        OCPP20ServiceUtils.stopPeriodicMeterValues(station, 1)
+        OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
 
         // Assert - interval should be cleared
-        assert.strictEqual(connector1?.transactionMeterValuesSetInterval, undefined)
+        assert.strictEqual(connector1?.transactionUpdatedMeterValuesSetInterval, undefined)
       })
     })
   })

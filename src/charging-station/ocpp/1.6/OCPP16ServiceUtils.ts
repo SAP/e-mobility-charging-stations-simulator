@@ -589,52 +589,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
   }
 
-  public static startPeriodicMeterValues (
-    chargingStation: ChargingStation,
-    connectorId: number,
-    interval: number
-  ): void {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Connector ${connectorId.toString()} not found`
-      )
-      return
-    }
-    if (connectorStatus.transactionStarted !== true || connectorStatus.transactionId == null) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: No active transaction on connector ${connectorId.toString()}`
-      )
-      return
-    }
-    if (interval <= 0) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: MeterValueSampleInterval set to ${interval.toString()}, not sending MeterValues`
-      )
-      return
-    }
-    connectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
-      const transactionId = convertToInt(connectorStatus.transactionId)
-      const meterValue = buildMeterValue(chargingStation, transactionId, interval)
-      chargingStation.ocppRequestService
-        .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-          chargingStation,
-          RequestCommand.METER_VALUES,
-          {
-            connectorId,
-            meterValue: [meterValue],
-            transactionId,
-          } as MeterValuesRequest
-        )
-        .catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
-            error
-          )
-        })
-    }, clampToSafeTimerValue(interval))
-  }
-
   public static async startTransactionOnConnector (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -649,15 +603,50 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     })
   }
 
-  public static stopPeriodicMeterValues (
+  public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    interval: number
   ): void {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionMeterValuesSetInterval != null) {
-      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
-      delete connectorStatus.transactionMeterValuesSetInterval
+    if (connectorStatus == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Connector ${connectorId.toString()} not found`
+      )
+      return
     }
+    if (connectorStatus.transactionStarted !== true || connectorStatus.transactionId == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: No active transaction on connector ${connectorId.toString()}`
+      )
+      return
+    }
+    if (interval <= 0) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: MeterValueSampleInterval set to ${interval.toString()}, not sending MeterValues`
+      )
+      return
+    }
+    connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
+      const transactionId = convertToInt(connectorStatus.transactionId)
+      const meterValue = buildMeterValue(chargingStation, transactionId, interval)
+      chargingStation.ocppRequestService
+        .requestHandler<MeterValuesRequest, MeterValuesResponse>(
+          chargingStation,
+          RequestCommand.METER_VALUES,
+          {
+            connectorId,
+            meterValue: [meterValue],
+            transactionId,
+          } as MeterValuesRequest
+        )
+        .catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
+            error
+          )
+        })
+    }, clampToSafeTimerValue(interval))
   }
 
   public static async stopTransactionOnConnector (
@@ -697,6 +686,17 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       transactionId,
       ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
     })
+  }
+
+  public static stopUpdatedMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionUpdatedMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
+      delete connectorStatus.transactionUpdatedMeterValuesSetInterval
+    }
   }
 
   private static readonly composeChargingSchedule = (
