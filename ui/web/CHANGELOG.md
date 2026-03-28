@@ -1,5 +1,33 @@
 # Changelog
 
+## [4.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.4.0...webui@v4.0.0) (2026-03-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* connectors and evses Maps are now private on ChargingStation. Use iterateConnectors(), iterateEvses(), hasEvse(), getEvseStatus(), getConnectorStatus() instead of direct Map access.
+
+### 🚀 Features
+
+* support configurable measurands per transaction stage in OCPP 2.0 ([3196f5d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3196f5d82a28214bdc83aab5df1b0bfa31c510ad))
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1759](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1759)) ([5a31d2b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5a31d2b232a9d002b741c1f61ee8afe72e9bd363))
+* use case-insensitive boolean parsing for OCPP configuration values ([bae2346](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bae23467f97a83cd21e3632e2c337f26c4414b38))
+
+
+### ✨ Polish
+
+* align variable naming and remove non-null assertions in tests and UI ([75cb24c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/75cb24c62ff4aad77e77cc3306003454cefa29e9))
+* encapsulate connector/EVSE iteration behind generator API ([404ba5d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/404ba5d9851fbaa7eeeffe912a34e5c76bc3a6fd))
+
+
+### 🧪 Tests
+
+* add whitespace-padded value coverage for convertToBoolean ([7c9443f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7c9443f55b4130b390f8f824a5f8a71269710998))
+
 ## [3.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.3.0...webui@v3.4.0) (2026-03-26)
 
 ### 🚀 Features

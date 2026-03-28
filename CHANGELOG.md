@@ -1,5 +1,79 @@
 # Changelog
 
+## [4.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.4.0...simulator@v4.0.0) (2026-03-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* connectors and evses Maps are now private on ChargingStation. Use iterateConnectors(), iterateEvses(), hasEvse(), getEvseStatus(), getConnectorStatus() instead of direct Map access.
+
+### 🚀 Features
+
+* enrich OCPP 2.0 template with OCPP 1.6 equivalent config keys ([a2fc938](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a2fc93879a836c5a6a27789b6c372fcb9f34e6e1))
+* implement TxEnded meter value accumulator per OCPP 2.0.1 spec §2.1 ([4ca2e99](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4ca2e99eddcfbebf0ec9bd7608cbf73ed3581eb5))
+* log once per key when OCPP 1.6 configuration key is remapped to OCPP 2.0 variable ([d2ee9aa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d2ee9aa01c0eba5d06c4934b7d432da26d68f5bc))
+* resolve OCPP 1.6 configuration keys to OCPP 2.0 equivalents transparently ([66b8ba4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/66b8ba4525e4792924ca97d28a5d9d6de2ee76f9))
+* support configurable measurands per transaction stage in OCPP 2.0 ([3196f5d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3196f5d82a28214bdc83aab5df1b0bfa31c510ad))
+
+
+### 🐞 Bug Fixes
+
+* align ConnectionTimeOut semantics with OCPP spec ([97cb0e1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/97cb0e121af25342787fbd18d966ff47ff5e2b5c))
+* align OCPP 2.0 variable names to spec (LocalPreAuthorization, LocalAuthorizationOffline) ([405ad5f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/405ad5f556cf9873ecc457df7217cfaf20f470ff))
+* correct WebSocketPingInterval documentation and registry default ([06f62f7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/06f62f72908f43e3ef9bcb1cd55310830d5a612f))
+* **deps:** add security overrides for brace-expansion, picomatch, smol-toml ([816ea7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/816ea7adfec784fa1c9951c93f346c6d04cfa61c))
+* **deps:** update all non-major dependencies ([#1759](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1759)) ([5a31d2b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5a31d2b232a9d002b741c1f61ee8afe72e9bd363))
+* **docs:** use bold instead of italic for vendor-specific markers to avoid underscore conflicts ([d7c72e2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d7c72e26f69716a17838e87eb68bd7d20b92e9ff))
+* map WebSocketPingInterval to OCPPCommCtrlr per OCPP 2.0.1 spec ([12650b2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/12650b2d3c2d0741a0ae71e660230c8fd12d5926))
+* remove OrganizationName from ISO15118Ctrlr (spec says SecurityCtrlr only) ([f1107d5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f1107d55fa6670e6f4ae96a69de367c8ed4b2d2c))
+* replace incorrect zero fallbacks for maximumPower and maximumAmperage ([e5f8aed](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e5f8aeda400d3b4ada694517733ad4dd625dab50))
+* type buildRejected reasonCode as ReasonCodeEnumType instead of string ([ae9f9cd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ae9f9cd6a68dc0fd21f55a31693d67179646e40d))
+* use case-insensitive boolean parsing for OCPP configuration values ([bae2346](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bae23467f97a83cd21e3632e2c337f26c4414b38))
+* use Component.Variable[.Instance] key format for OCPP 2.0 variable persistence ([f7e682f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f7e682fd3a4cf972957a9dffb6cbc85da855a628))
+* use OCPP version-specific parameter keys for meter value measurands ([5723899](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/572389955eab4697aaa7ec38c464094b82b3a707))
+
+
+### ✨ Polish
+
+* accept enum types in registry/manager signatures, remove 429 redundant as-string casts ([436d8ef](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/436d8efe769f00427d41c553150fb9aff18d76be))
+* add Enabled to OCPP20RequiredVariableName enum and fix LocalAuthListCtrlr.Enabled mapping ([e0617e0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e0617e04295e3ebce8ef99af8f75f8ad4323bc24))
+* add SimulateSignatureVerificationFailure to OCPP20VendorVariableName enum ([15ab6c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/15ab6c8d9136c70fd413150a2690c6b6d6980f09))
+* align intermediate variable naming with codebase conventions ([ebe64c9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ebe64c903c62b00cecf248f568938ff46400aed1))
+* align variable naming and remove non-null assertions in tests and UI ([75cb24c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/75cb24c62ff4aad77e77cc3306003454cefa29e9))
+* centralize handler type bridges in OCPP base classes ([5bd5b13](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5bd5b131a8bbf0416b1db479324dde3f8edd8cab))
+* consolidate enforceMessageLimits types with generic R and RejectionReason ([e6bc461](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e6bc4615407390fa47e07af12d5a4fb9f1a4c1c4))
+* deduplicate imports ([c5545f1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c5545f1b865528bf8adbd46df04eac6f4c3148bf))
+* eliminate all non-null assertion suppressions with proper null guards ([5959eb2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5959eb2df872dbdb27032bfd114024be38c32749))
+* eliminate explicit `any` from `once()` and `toHandler()` with proper generics ([0d41439](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0d41439d7ae8ba25223ae41c70f4667f514b201f))
+* encapsulate connector/EVSE iteration behind generator API ([404ba5d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/404ba5d9851fbaa7eeeffe912a34e5c76bc3a6fd))
+* extract normalized boolean variable in validation checks ([16679b7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/16679b7a3fcd0a211cc0736df1a93709449d7d4c))
+* harmonize connector iteration to use iterateConnectors() across prod and tests ([0375fa4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0375fa40335d25d42646fff1dc9c7bf7677e9e22))
+* harmonize errMsg → errorMsg for intra-file naming consistency ([e76a841](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e76a841c7e2fce7e9f3151d0507ef94454285e79))
+* make `eventType` required in `OCPP20TransactionEventOptions` ([243cf56](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/243cf560728b40d456525a4911b1091d13fc9649))
+* move ConfigurationValueSize, ReportingValueSize, ValueSize to OCPP20OptionalVariableName ([1d0814f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1d0814fe5443c3be0322127397ba0a9b09b15042))
+* move debug param to last position in buildMeterValue ([7cd25ce](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7cd25ce497c07c35706d96c88b59217dae36c79a))
+* replace Measurands string literal with OCPP20RequiredVariableName enum ([1f2723b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f2723bb031ecccb4975b997f393c48f064fe29f))
+* type buildTransactionEvent with OCPP20TransactionEventOptions ([b6de95e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b6de95e291e521391ed4f362c8526362f34e5e47))
+* type deprecated config key maps with `keyof` to eliminate 4 casts ([29a04ab](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/29a04ab52dbd381ca34fa2e09235a13a5817d8ad))
+* use `JsonObject` and generic `OCPPAuthAdapter<TVersionId>` in auth module ([d93b534](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d93b5347015bb319d52c8b09655173c1bae9e439))
+* use `OCPP20MessageFormatEnumType` instead of string literal union ([5f24ad5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5f24ad5620a5b35d92b0db3594099eab4ffbb28a))
+* use Number.isNaN() instead of global isNaN() ([6a360ba](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6a360bac7a0685ea4a59597488a8d46a8de40e67))
+* use OCPP20RequiredVariableName for measurands in OCPP20ServiceUtils ([811f142](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/811f1428da6d747dcc7555d1bd99dc2ac38afce5))
+
+
+### 🧪 Tests
+
+* add symmetric Ended meter value tests for start/stop/zero-interval ([689e439](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/689e439da97b5e19d8c12c1eb799aba5b543ed7a))
+* add whitespace-padded value coverage for convertToBoolean ([7c9443f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7c9443f55b4130b390f8f824a5f8a71269710998))
+* isolate readCombinedLog tests from real logs directory ([1c52a65](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1c52a65e7b54213aab1a6ff811045995c2af6d4e))
+* restore and harmonize OCPP 2.0 transaction meter value assertions ([ea3eb1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ea3eb1ef8b0accd397bbe5b31d59947521ae69c1))
+
+
+### 📚 Documentation
+
+* align README OCPP 2.0.1 variable list with code registry ([ba64338](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ba643383690f11d34741b4a38842332d9a77384e))
+* list OCPP 2.0 device model variables by component in README ([9b3547f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9b3547f80459cac4a8be9ca0fa171677fa627f06))
+
 ## [3.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.3.0...simulator@v3.4.0) (2026-03-26)
 
 ### 🚀 Features
