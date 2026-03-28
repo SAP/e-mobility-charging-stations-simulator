@@ -448,10 +448,10 @@ export class ChargingStation extends EventEmitter {
     if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
       return convertToInt(
         getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
-          Constants.DEFAULT_CONNECTION_TIMEOUT
+          Constants.DEFAULT_EV_CONNECTION_TIMEOUT
       )
     }
-    return Constants.DEFAULT_CONNECTION_TIMEOUT
+    return Constants.DEFAULT_EV_CONNECTION_TIMEOUT
   }
 
   /**
@@ -904,7 +904,7 @@ export class ChargingStation extends EventEmitter {
     params?: { closeOpened?: boolean; terminateOpened?: boolean }
   ): void {
     options = {
-      handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
+      handshakeTimeout: secondsToMilliseconds(Constants.DEFAULT_WS_HANDSHAKE_TIMEOUT),
       ...this.stationInfo?.wsOptions,
       ...options,
     }
@@ -2154,7 +2154,7 @@ export class ChargingStation extends EventEmitter {
       addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
-        Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
+        Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
       )
     }
     this.saveOcppConfiguration()
@@ -2407,7 +2407,7 @@ export class ChargingStation extends EventEmitter {
       const reconnectDelay =
         this.stationInfo?.reconnectExponentialDelay === true
           ? exponentialDelay(this.wsConnectionRetryCount)
-          : secondsToMilliseconds(this.getConnectionTimeout())
+          : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY)
       const reconnectDelayWithdraw = 1000
       const reconnectTimeout =
         reconnectDelay - reconnectDelayWithdraw > 0 ? reconnectDelay - reconnectDelayWithdraw : 0

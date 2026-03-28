@@ -377,7 +377,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Third variable: MessageTimeout
       assert.strictEqual(result[2].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[2].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(result[2].attributeValue, Constants.DEFAULT_CONNECTION_TIMEOUT.toString())
+      assert.strictEqual(result[2].attributeValue, Constants.DEFAULT_MESSAGE_TIMEOUT.toString())
       assert.strictEqual(result[2].component.name, OCPP20ComponentName.OCPPCommCtrlr)
       assert.strictEqual(result[2].component.instance, 'Default')
       assert.strictEqual(result[2].variable.name, OCPP20RequiredVariableName.MessageTimeout)
@@ -1009,7 +1009,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should validate MessageTimeout positive integer >0 and reject invalid', () => {
       const okRes = manager.setVariables(station, [
         {
-          attributeValue: (Constants.DEFAULT_CONNECTION_TIMEOUT + 5).toString(),
+          attributeValue: (Constants.DEFAULT_MESSAGE_TIMEOUT + 5).toString(),
           component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },

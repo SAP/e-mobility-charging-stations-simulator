@@ -1529,7 +1529,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
+    defaultValue: Constants.DEFAULT_MESSAGE_TIMEOUT.toString(),
     description: 'Timeout (in seconds) waiting for responses to general OCPP messages.',
     instance: 'Default',
     max: 3600,
