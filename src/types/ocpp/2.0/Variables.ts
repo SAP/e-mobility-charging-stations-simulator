@@ -33,10 +33,13 @@ export enum OCPP20DeviceInfoVariableName {
 }
 
 export enum OCPP20OptionalVariableName {
+  ConfigurationValueSize = 'ConfigurationValueSize',
   HeartbeatInterval = 'HeartbeatInterval',
   MaxCertificateChainSize = 'MaxCertificateChainSize',
   MaxEnergyOnInvalidId = 'MaxEnergyOnInvalidId',
   NonEvseSpecific = 'NonEvseSpecific',
+  ReportingValueSize = 'ReportingValueSize',
+  ValueSize = 'ValueSize',
   WebSocketPingInterval = 'WebSocketPingInterval',
 }
 
@@ -45,7 +48,6 @@ export enum OCPP20RequiredVariableName {
   AuthorizeRemoteStart = 'AuthorizeRemoteStart',
   BytesPerMessage = 'BytesPerMessage',
   CertificateEntries = 'CertificateEntries',
-  ConfigurationValueSize = 'ConfigurationValueSize',
   DateTime = 'DateTime',
   Enabled = 'Enabled',
   EVConnectionTimeOut = 'EVConnectionTimeOut',
@@ -61,7 +63,6 @@ export enum OCPP20RequiredVariableName {
   NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',
   OfflineThreshold = 'OfflineThreshold',
   OrganizationName = 'OrganizationName',
-  ReportingValueSize = 'ReportingValueSize',
   ResetRetries = 'ResetRetries',
   SecurityProfile = 'SecurityProfile',
   StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',
@@ -74,7 +75,6 @@ export enum OCPP20RequiredVariableName {
   TxUpdatedInterval = 'TxUpdatedInterval',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
   UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
-  ValueSize = 'ValueSize',
 }
 
 export enum OCPP20VendorVariableName {

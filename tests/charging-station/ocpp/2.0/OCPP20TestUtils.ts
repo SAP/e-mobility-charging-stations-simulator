@@ -27,6 +27,7 @@ import {
   HashAlgorithmEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
+  OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
@@ -280,7 +281,7 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
     chargingStation,
     buildConfigKey(
       OCPP20ComponentName.DeviceDataCtrlr,
-      OCPP20RequiredVariableName.ReportingValueSize
+      OCPP20OptionalVariableName.ReportingValueSize
     ),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
@@ -296,13 +297,13 @@ export function resetValueSizeLimits (chargingStation: ChargingStation) {
     chargingStation,
     buildConfigKey(
       OCPP20ComponentName.DeviceDataCtrlr,
-      OCPP20RequiredVariableName.ConfigurationValueSize
+      OCPP20OptionalVariableName.ConfigurationValueSize
     ),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
   upsertConfigurationKey(
     chargingStation,
-    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
     Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
   )
 }
@@ -317,7 +318,7 @@ export function setConfigurationValueSize (chargingStation: ChargingStation, siz
     chargingStation,
     buildConfigKey(
       OCPP20ComponentName.DeviceDataCtrlr,
-      OCPP20RequiredVariableName.ConfigurationValueSize
+      OCPP20OptionalVariableName.ConfigurationValueSize
     ),
     size.toString()
   )
@@ -333,7 +334,7 @@ export function setReportingValueSize (chargingStation: ChargingStation, size: n
     chargingStation,
     buildConfigKey(
       OCPP20ComponentName.DeviceDataCtrlr,
-      OCPP20RequiredVariableName.ReportingValueSize
+      OCPP20OptionalVariableName.ReportingValueSize
     ),
     size.toString()
   )
@@ -370,7 +371,7 @@ export function setStrictLimits (
 export function setValueSize (chargingStation: ChargingStation, size: number) {
   upsertConfigurationKey(
     chargingStation,
-    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+    buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
     size.toString()
   )
 }

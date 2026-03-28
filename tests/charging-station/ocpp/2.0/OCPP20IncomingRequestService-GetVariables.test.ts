@@ -237,7 +237,7 @@ await describe('B06 - Get Variables', async () => {
       getVariableData: [
         {
           component: { name: OCPP20ComponentName.DeviceDataCtrlr },
-          variable: { name: OCPP20RequiredVariableName.ReportingValueSize },
+          variable: { name: OCPP20OptionalVariableName.ReportingValueSize },
         },
       ],
     }

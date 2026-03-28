@@ -545,7 +545,7 @@ await describe('B05 - Set Variables', async () => {
     setConfigurationValueSize(mockStation, 100)
     upsertConfigurationKey(
       mockStation,
-      buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+      buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
       ''
     )
     const prefix = 'wss://example.com/'
@@ -585,7 +585,7 @@ await describe('B05 - Set Variables', async () => {
       mockStation,
       buildConfigKey(
         OCPP20ComponentName.DeviceDataCtrlr,
-        OCPP20RequiredVariableName.ConfigurationValueSize
+        OCPP20OptionalVariableName.ConfigurationValueSize
       ),
       ''
     )

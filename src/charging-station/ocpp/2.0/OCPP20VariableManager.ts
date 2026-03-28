@@ -268,9 +268,9 @@ export class OCPP20VariableManager {
         // Allow size limit variables to remain intentionally unset.
         if (
           variableMetadata.variable ===
-            (OCPP20RequiredVariableName.ConfigurationValueSize as string) ||
-          variableMetadata.variable === (OCPP20RequiredVariableName.ValueSize as string) ||
-          variableMetadata.variable === (OCPP20RequiredVariableName.ReportingValueSize as string)
+            (OCPP20OptionalVariableName.ConfigurationValueSize as string) ||
+          variableMetadata.variable === (OCPP20OptionalVariableName.ValueSize as string) ||
+          variableMetadata.variable === (OCPP20OptionalVariableName.ReportingValueSize as string)
         ) {
           continue
         }
@@ -506,20 +506,20 @@ export class OCPP20VariableManager {
     const reportingValueSizeKey = buildCaseInsensitiveCompositeKey(
       OCPP20ComponentName.DeviceDataCtrlr,
       undefined,
-      OCPP20RequiredVariableName.ReportingValueSize
+      OCPP20OptionalVariableName.ReportingValueSize
     )
     // ValueSize truncation applied before ReportingValueSize if present
     const valueSizeKey = buildCaseInsensitiveCompositeKey(
       OCPP20ComponentName.DeviceDataCtrlr,
       undefined,
-      OCPP20RequiredVariableName.ValueSize
+      OCPP20OptionalVariableName.ValueSize
     )
     let valueSize: string | undefined
     let reportingValueSize: string | undefined
     if (!invalidVariables.has(valueSizeKey)) {
       valueSize = getConfigurationKey(
         chargingStation,
-        buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize)
+        buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)
       )?.value
     }
     if (!invalidVariables.has(reportingValueSizeKey)) {
@@ -527,7 +527,7 @@ export class OCPP20VariableManager {
         chargingStation,
         buildConfigKey(
           OCPP20ComponentName.DeviceDataCtrlr,
-          OCPP20RequiredVariableName.ReportingValueSize
+          OCPP20OptionalVariableName.ReportingValueSize
         )
       )?.value
     }
@@ -879,12 +879,12 @@ export class OCPP20VariableManager {
       const configurationValueSizeKey = buildCaseInsensitiveCompositeKey(
         OCPP20ComponentName.DeviceDataCtrlr,
         undefined,
-        OCPP20RequiredVariableName.ConfigurationValueSize
+        OCPP20OptionalVariableName.ConfigurationValueSize
       )
       const valueSizeKey = buildCaseInsensitiveCompositeKey(
         OCPP20ComponentName.DeviceDataCtrlr,
         undefined,
-        OCPP20RequiredVariableName.ValueSize
+        OCPP20OptionalVariableName.ValueSize
       )
       let configurationValueSizeRaw: string | undefined
       let valueSizeRaw: string | undefined
@@ -893,14 +893,14 @@ export class OCPP20VariableManager {
           chargingStation,
           buildConfigKey(
             OCPP20ComponentName.DeviceDataCtrlr,
-            OCPP20RequiredVariableName.ConfigurationValueSize
+            OCPP20OptionalVariableName.ConfigurationValueSize
           )
         )?.value
       }
       if (!invalidVariables.has(valueSizeKey)) {
         valueSizeRaw = getConfigurationKey(
           chargingStation,
-          buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize)
+          buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)
         )?.value
       }
       const cfgLimit = convertToIntOrNaN(configurationValueSizeRaw ?? '')

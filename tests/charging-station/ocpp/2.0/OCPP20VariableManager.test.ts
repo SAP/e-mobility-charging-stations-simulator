@@ -1370,7 +1370,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // remove ValueSize to simulate unset
       deleteConfigurationKey(
         station,
-        buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize),
+        buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
         { save: false }
       )
       const okRes = manager.setVariables(station, [
@@ -1402,7 +1402,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         buildConfigKey(
           OCPP20ComponentName.DeviceDataCtrlr,
-          OCPP20RequiredVariableName.ConfigurationValueSize
+          OCPP20OptionalVariableName.ConfigurationValueSize
         ),
         { save: false }
       )
@@ -1764,7 +1764,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         buildConfigKey(
           OCPP20ComponentName.DeviceDataCtrlr,
-          OCPP20RequiredVariableName.ReportingValueSize
+          OCPP20OptionalVariableName.ReportingValueSize
         ),
         { save: false }
       )

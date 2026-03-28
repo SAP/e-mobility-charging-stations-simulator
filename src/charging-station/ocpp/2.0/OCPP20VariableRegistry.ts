@@ -709,6 +709,58 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.TimeSource,
   },
 
+  // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
+  [buildRegistryKey(
+    OCPP20ComponentName.DeviceDataCtrlr,
+    OCPP20OptionalVariableName.ConfigurationValueSize
+  )]: {
+    component: OCPP20ComponentName.DeviceDataCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
+    description: 'Maximum size allowed for configuration values when setting.',
+    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
+    maxLength: 5,
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    positive: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.CHARS,
+    variable: OCPP20OptionalVariableName.ConfigurationValueSize,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.DeviceDataCtrlr,
+    OCPP20OptionalVariableName.ReportingValueSize
+  )]: {
+    component: OCPP20ComponentName.DeviceDataCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
+    description: 'Maximum size of reported values.',
+    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
+    maxLength: 5,
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    positive: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.CHARS,
+    variable: OCPP20OptionalVariableName.ReportingValueSize,
+  },
+  [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
+    component: OCPP20ComponentName.DeviceDataCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
+    description: 'Unified maximum size for any stored or reported value.',
+    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
+    maxLength: 5,
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    positive: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: OCPP20UnitEnumType.CHARS,
+    variable: OCPP20OptionalVariableName.ValueSize,
+  },
   // DeviceDataCtrlr Component
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
@@ -784,25 +836,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
-  // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
-  [buildRegistryKey(
-    OCPP20ComponentName.DeviceDataCtrlr,
-    OCPP20RequiredVariableName.ConfigurationValueSize
-  )]: {
-    component: OCPP20ComponentName.DeviceDataCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
-    description: 'Maximum size allowed for configuration values when setting.',
-    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
-    maxLength: 5,
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.CHARS,
-    variable: OCPP20RequiredVariableName.ConfigurationValueSize,
-  },
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20RequiredVariableName.ItemsPerMessage,
@@ -859,39 +892,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
-  },
-  [buildRegistryKey(
-    OCPP20ComponentName.DeviceDataCtrlr,
-    OCPP20RequiredVariableName.ReportingValueSize
-  )]: {
-    component: OCPP20ComponentName.DeviceDataCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
-    description: 'Maximum size of reported values.',
-    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
-    maxLength: 5,
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.CHARS,
-    variable: OCPP20RequiredVariableName.ReportingValueSize,
-  },
-  [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20RequiredVariableName.ValueSize)]: {
-    component: OCPP20ComponentName.DeviceDataCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
-    description: 'Unified maximum size for any stored or reported value.',
-    max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
-    maxLength: 5,
-    min: 1,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: OCPP20UnitEnumType.CHARS,
-    variable: OCPP20RequiredVariableName.ValueSize,
   },
 
   // EVSE Component
