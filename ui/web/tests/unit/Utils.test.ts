@@ -38,6 +38,14 @@ describe('Utils', () => {
       expect(convertToBoolean('True')).toBe(true)
     })
 
+    it('should return true for string "TRUE" (case-insensitive)', () => {
+      expect(convertToBoolean('TRUE')).toBe(true)
+    })
+
+    it('should return false for string "FALSE" (case-insensitive)', () => {
+      expect(convertToBoolean('FALSE')).toBe(false)
+    })
+
     it('should return true for string "1"', () => {
       expect(convertToBoolean('1')).toBe(true)
     })
@@ -76,6 +84,22 @@ describe('Utils', () => {
 
     it('should return false for numeric 2', () => {
       expect(convertToBoolean(2)).toBe(false)
+    })
+
+    it('should return true for whitespace-padded "true"', () => {
+      expect(convertToBoolean(' true ')).toBe(true)
+    })
+
+    it('should return true for whitespace-padded "1"', () => {
+      expect(convertToBoolean(' 1 ')).toBe(true)
+    })
+
+    it('should return false for whitespace-padded "false"', () => {
+      expect(convertToBoolean(' false ')).toBe(false)
+    })
+
+    it('should return true for whitespace-padded "TRUE"', () => {
+      expect(convertToBoolean(' TRUE ')).toBe(true)
     })
   })
 

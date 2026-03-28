@@ -214,6 +214,7 @@ await describe('Utils', async () => {
     assert.strictEqual(convertToBoolean('false'), false)
     assert.strictEqual(convertToBoolean('TRUE'), true)
     assert.strictEqual(convertToBoolean('FALSE'), false)
+    assert.strictEqual(convertToBoolean('True'), true)
     assert.strictEqual(convertToBoolean('1'), true)
     assert.strictEqual(convertToBoolean('0'), false)
     assert.strictEqual(convertToBoolean(1), true)
@@ -222,6 +223,11 @@ await describe('Utils', async () => {
     assert.strictEqual(convertToBoolean(false), false)
     assert.strictEqual(convertToBoolean(''), false)
     assert.strictEqual(convertToBoolean('NoNBoolean'), false)
+    assert.strictEqual(convertToBoolean(2), false)
+    assert.strictEqual(convertToBoolean(' true '), true)
+    assert.strictEqual(convertToBoolean(' 1 '), true)
+    assert.strictEqual(convertToBoolean(' false '), false)
+    assert.strictEqual(convertToBoolean(' TRUE '), true)
   })
 
   await it('should generate cryptographically secure random numbers between 0 and 1', () => {
