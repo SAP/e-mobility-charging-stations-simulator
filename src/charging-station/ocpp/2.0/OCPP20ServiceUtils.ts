@@ -112,7 +112,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         chargingStation,
         transactionId,
         0,
-        false,
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
       ) as OCPP20MeterValue
@@ -752,7 +751,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         chargingStation,
         transactionId,
         0,
-        false,
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_END
       ) as OCPP20MeterValue

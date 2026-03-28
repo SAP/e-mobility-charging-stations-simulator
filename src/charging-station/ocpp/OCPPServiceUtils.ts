@@ -1577,9 +1577,9 @@ export const buildMeterValue = (
   chargingStation: ChargingStation,
   transactionId: number | string | undefined,
   interval: number,
-  debug = false,
   measurandsKey?: ConfigurationKeyType,
-  context?: MeterValueContext
+  context?: MeterValueContext,
+  debug = false
 ): MeterValue => {
   if (transactionId == null) {
     return buildEmptyMeterValue()
