@@ -395,71 +395,49 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleMeterValues (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
-    const connectorId = requestPayload?.connectorId
+    const payloadEvseId = (requestPayload as undefined | { evseId?: number })?.evseId
+    const connectorId =
+      requestPayload?.connectorId ??
+      (payloadEvseId != null
+        ? this.chargingStation.getConnectorIdByEvseId(payloadEvseId)
+        : undefined)
     if (connectorId == null) {
       throw new BaseError(
-        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Missing connectorId in request payload`
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Missing connectorId or evseId in request payload`
       )
     }
-    switch (this.chargingStation.stationInfo?.ocppVersion) {
-      case OCPPVersion.VERSION_16: {
-        const configuredMeterValueSampleInterval = getConfigurationKey(
-          this.chargingStation,
-          StandardParametersKey.MeterValueSampleInterval
-        )
-        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
-        return await this.chargingStation.ocppRequestService.requestHandler<
-          MeterValuesRequest,
-          MeterValuesResponse
-        >(
-          this.chargingStation,
-          RequestCommand.METER_VALUES,
-          {
-            meterValue: [
-              buildMeterValue(
-                this.chargingStation,
-                convertToInt(transactionId),
-                configuredMeterValueSampleInterval != null
-                  ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
-                  : Constants.DEFAULT_METER_VALUES_INTERVAL
-              ),
-            ],
-            ...requestPayload,
-          } as MeterValuesRequest,
-          this.requestParams
-        )
-      }
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201: {
-        const alignedDataInterval = OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
-        const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId)
-        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
-        return await this.chargingStation.ocppRequestService.requestHandler<
-          MeterValuesRequest,
-          MeterValuesResponse
-        >(
-          this.chargingStation,
-          RequestCommand.METER_VALUES,
-          {
-            evseId,
-            meterValue: [
-              buildMeterValue(
-                this.chargingStation,
-
-                transactionId,
-                alignedDataInterval
-              ),
-            ],
-            ...requestPayload,
-          } as MeterValuesRequest,
-          this.requestParams
-        )
-      }
-      default:
-        throw new BaseError(
-          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Unsupported OCPP version for MeterValues`
-        )
-    }
+    const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
+    const isOcpp2 =
+      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+    const interval = isOcpp2
+      ? OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
+      : (() => {
+          const key = getConfigurationKey(
+            this.chargingStation,
+            StandardParametersKey.MeterValueSampleInterval
+          )
+          return key != null
+            ? secondsToMilliseconds(convertToInt(key.value))
+            : Constants.DEFAULT_METER_VALUES_INTERVAL
+        })()
+    return await this.chargingStation.ocppRequestService.requestHandler<
+      MeterValuesRequest,
+      MeterValuesResponse
+    >(
+      this.chargingStation,
+      RequestCommand.METER_VALUES,
+      {
+        ...(isOcpp2
+          ? {
+              evseId: payloadEvseId ?? this.chargingStation.getEvseIdByConnectorId(connectorId),
+            }
+          : { connectorId }),
+        meterValue: [buildMeterValue(this.chargingStation, transactionId, interval)],
+        ...requestPayload,
+      } as MeterValuesRequest,
+      this.requestParams
+    )
   }
 
   private async handleStopTransaction (

@@ -752,8 +752,9 @@ await describe('Helpers', async () => {
       connectorsCount: 2,
       stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
     })
-    const firstEvse = chargingStation.getEvseStatus(1)
-    const firstConnector = firstEvse?.connectors.values().next().value
+    const firstConnectorId = chargingStation.getConnectorIdByEvseId(1)
+    const firstConnector =
+      firstConnectorId != null ? chargingStation.getConnectorStatus(firstConnectorId) : undefined
     if (firstConnector != null) {
       firstConnector.reservation = createTestReservation(false)
     }
@@ -769,8 +770,9 @@ await describe('Helpers', async () => {
       connectorsCount: 2,
       stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
     })
-    const firstEvse = chargingStation.getEvseStatus(1)
-    const firstConnector = firstEvse?.connectors.values().next().value
+    const firstConnectorId = chargingStation.getConnectorIdByEvseId(1)
+    const firstConnector =
+      firstConnectorId != null ? chargingStation.getConnectorStatus(firstConnectorId) : undefined
     if (firstConnector != null) {
       firstConnector.reservation = createTestReservation(true)
     }

@@ -2256,7 +2256,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         commandPayload
       )
     }
-    const connectorId: number | undefined = evse.connectors.keys().next().value
+    const connectorId = chargingStation.getConnectorIdByEvseId(resolvedEvseId)
     const connectorStatus =
       connectorId != null ? chargingStation.getConnectorStatus(connectorId) : null
 

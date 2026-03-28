@@ -457,6 +457,15 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Resolves the first connector ID for a given EVSE ID.
+   * @param evseId - The EVSE ID
+   * @returns The connector ID or undefined if not found
+   */
+  public getConnectorIdByEvseId (evseId: number): number | undefined {
+    return this.iterateConnectors().find(({ evseId: id }) => id === evseId)?.connectorId
+  }
+
+  /**
    * Resolves the connector ID for a given transaction ID.
    * @param transactionId - The transaction ID to resolve
    * @returns The connector ID or undefined if not found
@@ -524,15 +533,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        if (evseStatus.connectors.has(connectorId)) {
-          return evseStatus.connectors.get(connectorId)
-        }
-      }
-      return undefined
-    }
-    return this.connectors.get(connectorId)
+    return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
+      ?.connectorStatus
   }
 
   /**
@@ -568,15 +570,7 @@ export class ChargingStation extends EventEmitter {
    * @returns The EVSE ID or undefined if not found
    */
   public getEvseIdByConnectorId (connectorId: number): number | undefined {
-    if (!this.hasEvses) {
-      return undefined
-    }
-    for (const [evseId, evseStatus] of this.evses) {
-      if (evseStatus.connectors.has(connectorId)) {
-        return evseId
-      }
-    }
-    return undefined
+    return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)?.evseId
   }
 
   /**
@@ -627,16 +621,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getNumberOfConnectors (): number {
-    if (this.hasEvses) {
-      let numberOfConnectors = 0
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId > 0) {
-          numberOfConnectors += evseStatus.connectors.size
-        }
-      }
-      return numberOfConnectors
-    }
-    return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size
+    return this.iterateConnectors(true).reduce(count => count + 1, 0)
   }
 
   public getNumberOfEvses (): number {
@@ -716,15 +701,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public hasConnector (connectorId: number): boolean {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        if (evseStatus.connectors.has(connectorId)) {
-          return true
-        }
-      }
-      return false
-    }
-    return this.connectors.has(connectorId)
+    return this.iterateConnectors().some(({ connectorId: id }) => id === connectorId)
   }
 
   public hasEvse (evseId: number): boolean {
@@ -1460,10 +1437,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getNumberOfReservationsOnConnectorZero (): number {
-    if (
-      (this.hasEvses && this.evses.get(0)?.connectors.get(0)?.reservation != null) ||
-      (!this.hasEvses && this.connectors.get(0)?.reservation != null)
-    ) {
+    if (this.getConnectorStatus(0)?.reservation != null) {
       return 1
     }
     return 0

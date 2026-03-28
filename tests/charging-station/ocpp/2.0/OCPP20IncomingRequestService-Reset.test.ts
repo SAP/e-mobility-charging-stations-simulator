@@ -7,7 +7,6 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
-  EvseStatus,
   OCPP20ResetRequest,
   OCPP20ResetResponse,
   Reservation,
@@ -436,13 +435,11 @@ await describe('B11 & B12 - Reset', async () => {
           }
 
           // Assign reservation to first connector
-          const evse: EvseStatus | undefined = station.getEvseStatus(1)
-          if (evse) {
-            const connectorId = [...evse.connectors.keys()][0]
-            const connectorStatus = evse.connectors.get(connectorId)
-            if (connectorStatus) {
-              connectorStatus.reservation = mockReservation as Reservation
-            }
+          const connectorId = station.getConnectorIdByEvseId(1)
+          const connectorStatus =
+            connectorId != null ? station.getConnectorStatus(connectorId) : undefined
+          if (connectorStatus != null) {
+            connectorStatus.reservation = mockReservation as Reservation
           }
 
           const resetRequest: OCPP20ResetRequest = {
@@ -469,13 +466,11 @@ await describe('B11 & B12 - Reset', async () => {
           }
 
           // Assign expired reservation to first connector
-          const evse: EvseStatus | undefined = station.getEvseStatus(1)
-          if (evse) {
-            const connectorId = [...evse.connectors.keys()][0]
-            const connectorStatus = evse.connectors.get(connectorId)
-            if (connectorStatus) {
-              connectorStatus.reservation = mockReservation as Reservation
-            }
+          const connectorId = station.getConnectorIdByEvseId(1)
+          const connectorStatus =
+            connectorId != null ? station.getConnectorStatus(connectorId) : undefined
+          if (connectorStatus != null) {
+            connectorStatus.reservation = mockReservation as Reservation
           }
 
           const resetRequest: OCPP20ResetRequest = {
@@ -550,13 +545,11 @@ await describe('B11 & B12 - Reset', async () => {
             id: 1,
             idTag: 'test-tag',
           }
-          const evse: EvseStatus | undefined = station.getEvseStatus(1)
-          if (evse) {
-            const connectorId = [...evse.connectors.keys()][0]
-            const connectorStatus = evse.connectors.get(connectorId)
-            if (connectorStatus) {
-              connectorStatus.reservation = mockReservation as Reservation
-            }
+          const connectorId = station.getConnectorIdByEvseId(1)
+          const connectorStatus =
+            connectorId != null ? station.getConnectorStatus(connectorId) : undefined
+          if (connectorStatus != null) {
+            connectorStatus.reservation = mockReservation as Reservation
           }
 
           const resetRequest: OCPP20ResetRequest = {

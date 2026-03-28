@@ -174,12 +174,11 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       })
 
       // Set an active transaction on EVSE 1's connector
-      const evse1 = evseStation.getEvseStatus(1)
-      if (evse1 != null) {
-        const firstConnector = evse1.connectors.values().next().value
-        if (firstConnector != null) {
-          firstConnector.transactionId = 'tx-active-001'
-        }
+      const evse1ConnectorId = evseStation.getConnectorIdByEvseId(1)
+      const firstConnector =
+        evse1ConnectorId != null ? evseStation.getConnectorStatus(evse1ConnectorId) : undefined
+      if (firstConnector != null) {
+        firstConnector.transactionId = 'tx-active-001'
       }
 
       const request: OCPP20UpdateFirmwareRequest = {
@@ -561,10 +560,16 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         ])
 
         // Set active transactions on EVSE 1 and EVSE 2
-        const evse1 = trackingStation.getEvseStatus(1)
-        const evse2 = trackingStation.getEvseStatus(2)
-        const evse1Connector = evse1?.connectors.values().next().value
-        const evse2Connector = evse2?.connectors.values().next().value
+        const evse1ConnectorId = trackingStation.getConnectorIdByEvseId(1)
+        const evse2ConnectorId = trackingStation.getConnectorIdByEvseId(2)
+        const evse1Connector =
+          evse1ConnectorId != null
+            ? trackingStation.getConnectorStatus(evse1ConnectorId)
+            : undefined
+        const evse2Connector =
+          evse2ConnectorId != null
+            ? trackingStation.getConnectorStatus(evse2ConnectorId)
+            : undefined
         if (evse1Connector != null) evse1Connector.transactionId = 'tx-fw-001'
         if (evse2Connector != null) evse2Connector.transactionId = 'tx-fw-002'
 

@@ -224,32 +224,16 @@ export function createTestableOCPP20RequestService (
  * @param chargingStation Charging station instance whose connector state should be reset.
  */
 export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
-  if (chargingStation.hasEvses) {
-    for (const { evseStatus } of chargingStation.iterateEvses()) {
-      for (const connectorStatus of evseStatus.connectors.values()) {
-        connectorStatus.transactionStarted = false
-        connectorStatus.transactionId = undefined
-        connectorStatus.transactionIdTag = undefined
-        connectorStatus.transactionGroupIdToken = undefined
-        connectorStatus.transactionStart = undefined
-        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-        connectorStatus.remoteStartId = undefined
-        connectorStatus.status = ConnectorStatusEnum.Available
-        connectorStatus.chargingProfiles = []
-      }
-    }
-  } else {
-    for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
-      connectorStatus.transactionStarted = false
-      connectorStatus.transactionId = undefined
-      connectorStatus.transactionIdTag = undefined
-      connectorStatus.transactionGroupIdToken = undefined
-      connectorStatus.transactionStart = undefined
-      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-      connectorStatus.remoteStartId = undefined
-      connectorStatus.status = ConnectorStatusEnum.Available
-      connectorStatus.chargingProfiles = []
-    }
+  for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionId = undefined
+    connectorStatus.transactionIdTag = undefined
+    connectorStatus.transactionGroupIdToken = undefined
+    connectorStatus.transactionStart = undefined
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+    connectorStatus.remoteStartId = undefined
+    connectorStatus.status = ConnectorStatusEnum.Available
+    connectorStatus.chargingProfiles = []
   }
 }
 
