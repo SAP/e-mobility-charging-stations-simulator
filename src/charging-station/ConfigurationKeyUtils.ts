@@ -75,7 +75,7 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
           [
             StandardParametersKey.WebSocketPingInterval,
             buildConfigKey(
-              OCPP20ComponentName.ChargingStation,
+              OCPP20ComponentName.OCPPCommCtrlr,
               StandardParametersKey.WebSocketPingInterval
             ),
           ],

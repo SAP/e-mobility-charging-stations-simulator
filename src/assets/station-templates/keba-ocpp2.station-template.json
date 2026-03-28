@@ -37,7 +37,7 @@
         "value": "false"
       },
       {
-        "key": "ChargingStation.WebSocketPingInterval",
+        "key": "OCPPCommCtrlr.WebSocketPingInterval",
         "readonly": false,
         "value": "60"
       },
