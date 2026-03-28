@@ -81,7 +81,7 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
           ],
           [
             StandardParametersKey.MeterValuesAlignedData,
-            buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, 'Measurands'),
+            buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, StandardParametersKey.Measurands),
           ],
           [
             StandardParametersKey.ClockAlignedDataInterval,

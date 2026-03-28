@@ -53,6 +53,7 @@ export enum OCPP20RequiredVariableName {
   ItemsPerMessage = 'ItemsPerMessage',
   LocalAuthorizationOffline = 'LocalAuthorizationOffline',
   LocalPreAuthorization = 'LocalPreAuthorization',
+  Measurands = 'Measurands',
   MessageAttemptInterval = 'MessageAttemptInterval',
   MessageAttempts = 'MessageAttempts',
   MessageTimeout = 'MessageTimeout',
