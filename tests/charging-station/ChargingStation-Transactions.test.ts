@@ -640,5 +640,81 @@ await describe('ChargingStation Transaction Management', async () => {
         assert.strictEqual(connector1?.transactionUpdatedMeterValuesSetInterval, undefined)
       })
     })
+
+    await it('should create transaction ended interval when startEndedMeterValues() is called for OCPP 2.0', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station = result.station
+        const connector1 = station.getConnectorStatus(1)
+        if (connector1 != null) {
+          connector1.transactionStarted = true
+          connector1.transactionId = 100
+        }
+
+        // Act
+        OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
+
+        // Assert
+        if (connector1 != null) {
+          assert.notStrictEqual(connector1.transactionEndedMeterValuesSetInterval, undefined)
+          assert.strictEqual(typeof connector1.transactionEndedMeterValuesSetInterval, 'object')
+          assert.ok(Array.isArray(connector1.transactionEndedMeterValues))
+          assert.strictEqual(connector1.transactionEndedMeterValues.length, 0)
+        }
+      })
+    })
+
+    await it('should clear transaction ended interval when stopEndedMeterValues() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station = result.station
+        const connector1 = station.getConnectorStatus(1)
+        if (connector1 != null) {
+          connector1.transactionStarted = true
+          connector1.transactionId = 100
+        }
+        OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
+
+        // Act
+        OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
+
+        // Assert
+        assert.strictEqual(connector1?.transactionEndedMeterValuesSetInterval, undefined)
+      })
+    })
+
+    await it('should initialize empty ended meter values array without timer when interval is zero', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station = result.station
+        const connector1 = station.getConnectorStatus(1)
+        if (connector1 != null) {
+          connector1.transactionStarted = true
+          connector1.transactionId = 100
+        }
+
+        // Act
+        OCPP20ServiceUtils.startEndedMeterValues(station, 1, 0)
+
+        // Assert
+        if (connector1 != null) {
+          assert.strictEqual(connector1.transactionEndedMeterValuesSetInterval, undefined)
+          assert.ok(Array.isArray(connector1.transactionEndedMeterValues))
+          assert.strictEqual(connector1.transactionEndedMeterValues.length, 0)
+        }
+      })
+    })
   })
 })
