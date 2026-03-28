@@ -984,7 +984,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // FirmwareCtrlr Component
-  [buildRegistryKey(OCPP20ComponentName.FirmwareCtrlr, 'SimulateSignatureVerificationFailure')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.FirmwareCtrlr,
+    OCPP20VendorVariableName.SimulateSignatureVerificationFailure
+  )]: {
     component: OCPP20ComponentName.FirmwareCtrlr,
     dataType: DataEnumType.boolean,
     defaultValue: 'false',
@@ -993,7 +996,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'SimulateSignatureVerificationFailure',
+    variable: OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
     vendorSpecific: true,
   },
 

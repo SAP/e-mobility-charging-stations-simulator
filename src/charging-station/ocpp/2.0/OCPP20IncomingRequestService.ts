@@ -106,6 +106,7 @@ import {
   type OCPP20UnlockConnectorResponse,
   type OCPP20UpdateFirmwareRequest,
   type OCPP20UpdateFirmwareResponse,
+  OCPP20VendorVariableName,
   OCPPVersion,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
@@ -3496,7 +3497,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         {
           attributeType: AttributeEnumType.Actual,
           component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
-          variable: { name: 'SimulateSignatureVerificationFailure' },
+          variable: {
+            name: OCPP20VendorVariableName.SimulateSignatureVerificationFailure as string,
+          },
         },
       ])
       const simulateFailure = convertToBoolean(verificationResults[0]?.attributeValue)

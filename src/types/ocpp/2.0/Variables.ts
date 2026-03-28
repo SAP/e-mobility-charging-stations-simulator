@@ -80,6 +80,7 @@ export enum OCPP20RequiredVariableName {
 export enum OCPP20VendorVariableName {
   CertificatePrivateKey = 'CertificatePrivateKey',
   ConnectionUrl = 'ConnectionUrl',
+  SimulateSignatureVerificationFailure = 'SimulateSignatureVerificationFailure',
 }
 
 export enum PersistenceEnumType {
