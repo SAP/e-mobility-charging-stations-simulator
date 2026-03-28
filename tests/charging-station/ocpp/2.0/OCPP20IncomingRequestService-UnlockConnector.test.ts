@@ -47,7 +47,7 @@ function createUnlockConnectorStation (): {
     stationInfo: {
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
   return { mockStation: station as MockChargingStation, requestHandlerMock }
 }
@@ -171,7 +171,7 @@ await describe('F05 - UnlockConnector', async () => {
         stationInfo: {
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       const multiConnectorStation = station as MockChargingStation
 

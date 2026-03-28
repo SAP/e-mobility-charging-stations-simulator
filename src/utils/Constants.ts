@@ -85,11 +85,10 @@ export class Constants {
   static readonly DEFAULT_TX_UPDATED_INTERVAL = 30 // Seconds
 
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
-
   static readonly DEFAULT_UI_SERVER_PORT = 8080
-  static readonly DEFAULT_WEBSOCKET_PING_INTERVAL = 30 // Seconds
 
   static readonly DEFAULT_WS_HANDSHAKE_TIMEOUT = 30 // Seconds
+  static readonly DEFAULT_WS_PING_INTERVAL = 30 // Seconds
   static readonly DEFAULT_WS_RECONNECT_DELAY = 30 // Seconds
 
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})

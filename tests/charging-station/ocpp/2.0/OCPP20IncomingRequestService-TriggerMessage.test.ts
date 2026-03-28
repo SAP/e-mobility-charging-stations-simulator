@@ -51,7 +51,7 @@ function createTriggerMessageStation (): {
     stationInfo: {
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
   const mockStation = station as MockChargingStation
   return { mockStation, requestHandlerMock }
@@ -571,7 +571,7 @@ await describe('F06 - TriggerMessage', async () => {
         stationInfo: {
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       const request: OCPP20TriggerMessageRequest = {

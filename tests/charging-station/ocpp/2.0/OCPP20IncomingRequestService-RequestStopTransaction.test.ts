@@ -317,7 +317,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       const failStationId = failStation.stationInfo?.chargingStationId ?? 'unknown'

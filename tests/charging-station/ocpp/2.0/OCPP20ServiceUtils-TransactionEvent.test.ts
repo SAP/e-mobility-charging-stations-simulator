@@ -103,7 +103,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       mockStation = station
       resetLimits(mockStation)
@@ -339,7 +339,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
         })
 
         const connectorId = 1
@@ -513,7 +513,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
         })
 
         const connectorId = 1
@@ -592,7 +592,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       mockStation = station
       resetLimits(mockStation)
@@ -1941,7 +1941,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
         })
 
         errorStation.isWebSocketConnectionOpened = () => false
@@ -2286,7 +2286,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
         })
 
         // Mock WebSocket as open
@@ -2718,7 +2718,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       station = s
       resetLimits(station)

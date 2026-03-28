@@ -39,7 +39,7 @@ await describe('I02 - SignCertificate Request', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = createdStation
     station.ocppConfiguration = {
@@ -350,7 +350,7 @@ await describe('I02 - SignCertificate Request', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       stationWithoutCertManager.ocppConfiguration = {

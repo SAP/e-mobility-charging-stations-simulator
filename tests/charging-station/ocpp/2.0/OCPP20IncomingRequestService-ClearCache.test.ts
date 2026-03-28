@@ -36,7 +36,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = mockStation
     incomingRequestService = new OCPP20IncomingRequestService()

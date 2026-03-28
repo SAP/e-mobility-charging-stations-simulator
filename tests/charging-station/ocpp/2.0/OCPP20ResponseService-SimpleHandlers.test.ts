@@ -35,7 +35,7 @@ function createSimpleHandlerStation (): MockChargingStation {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
   return station as MockChargingStation
 }

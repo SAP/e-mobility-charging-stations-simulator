@@ -59,7 +59,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     mockStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
@@ -109,7 +109,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
 
     const stationId = spyChargingStation.stationInfo?.chargingStationId ?? 'unknown'
@@ -543,7 +543,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       const failStationId = failStation.stationInfo?.chargingStationId ?? 'unknown'

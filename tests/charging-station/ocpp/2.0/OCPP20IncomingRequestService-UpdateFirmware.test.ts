@@ -49,7 +49,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = mockStation
     testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
@@ -91,7 +91,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       createStationWithCertificateManager(stationWithCert, certManager)
 
@@ -123,7 +123,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
       createStationWithCertificateManager(stationWithCert, certManager)
 
@@ -170,7 +170,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       // Set an active transaction on EVSE 1's connector
@@ -208,7 +208,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       const request: OCPP20UpdateFirmwareRequest = {

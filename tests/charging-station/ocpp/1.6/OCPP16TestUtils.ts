@@ -145,7 +145,7 @@ export function createOCPP16IncomingRequestTestContext (
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   return { incomingRequestService, station, testableService }
@@ -172,7 +172,7 @@ export function createOCPP16ListenerStation (baseName: string): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
   return { requestHandlerMock, station }
 }
@@ -200,7 +200,7 @@ export function createOCPP16RequestTestContext (
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   return { requestService, station, testableRequestService }
@@ -231,7 +231,7 @@ export function createOCPP16ResponseTestContext (
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   return { responseService, station }
@@ -262,7 +262,7 @@ export function createStandardStation (
       resetTime: 5000,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   return station as MockChargingStation

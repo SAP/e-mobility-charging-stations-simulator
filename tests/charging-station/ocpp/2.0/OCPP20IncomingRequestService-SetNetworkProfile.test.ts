@@ -38,7 +38,7 @@ await describe('B43 - SetNetworkProfile', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = mockStation
     testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())

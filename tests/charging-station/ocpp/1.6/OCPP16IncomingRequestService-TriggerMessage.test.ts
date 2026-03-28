@@ -283,7 +283,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
         stationInfo: {
           ocppVersion: OCPPVersion.VERSION_16,
         },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       const request: OCPP16TriggerMessageRequest = {

@@ -64,7 +64,7 @@ function createIntegrationContext (): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   // IncomingRequest service (handles RemoteStart/Stop from CSMS)

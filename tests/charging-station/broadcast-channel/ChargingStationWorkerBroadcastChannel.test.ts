@@ -183,7 +183,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -202,7 +202,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -223,7 +223,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -242,7 +242,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -263,7 +263,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -282,7 +282,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -303,7 +303,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -322,7 +322,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -341,7 +341,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -360,7 +360,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -379,7 +379,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -398,7 +398,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -417,7 +417,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -436,7 +436,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -457,7 +457,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -477,7 +477,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -497,7 +497,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
@@ -516,7 +516,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         connectorsCount: 1,
         heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
       })
 
       instance = new ChargingStationWorkerBroadcastChannel(station)

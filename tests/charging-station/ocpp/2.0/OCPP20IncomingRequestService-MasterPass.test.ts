@@ -49,7 +49,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     mockStation = station
     const incomingRequestService = new OCPP20IncomingRequestService()

@@ -93,14 +93,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
               StandardParametersKey.WebSocketPingInterval
             ),
             readonly: false,
-            value: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
+            value: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
           },
         ],
       },
       stationInfo: {
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = newStation
   })
@@ -367,10 +367,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Second variable: WebSocketPingInterval
       assert.strictEqual(result[1].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(
-        result[1].attributeValue,
-        Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString()
-      )
+      assert.strictEqual(result[1].attributeValue, Constants.DEFAULT_WS_PING_INTERVAL.toString())
       assert.strictEqual(result[1].component.name, OCPP20ComponentName.ChargingStation)
       assert.strictEqual(result[1].variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
       assert.strictEqual(result[1].attributeStatusInfo, undefined)
@@ -489,7 +486,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should accept setting writable variables (Actual default)', () => {
       const request: OCPP20SetVariableDataType[] = [
         {
-          attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 1).toString(),
+          attributeValue: (Constants.DEFAULT_WS_PING_INTERVAL + 1).toString(),
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
@@ -601,7 +598,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should handle multiple mixed SetVariables in one call', () => {
       const request: OCPP20SetVariableDataType[] = [
         {
-          attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 2).toString(),
+          attributeValue: (Constants.DEFAULT_WS_PING_INTERVAL + 2).toString(),
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
@@ -793,7 +790,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const request: OCPP20SetVariableDataType[] = [
         {
           attributeType: AttributeEnumType.Target,
-          attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 5).toString(),
+          attributeValue: (Constants.DEFAULT_WS_PING_INTERVAL + 5).toString(),
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
@@ -891,7 +888,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       ])[0]
       const posRes = manager.setVariables(station, [
         {
-          attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 10).toString(),
+          attributeValue: (Constants.DEFAULT_WS_PING_INTERVAL + 10).toString(),
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
@@ -1730,7 +1727,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       stationInfo: {
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
 
     await it('should return NotSupportedAttributeType for MinSet HeartbeatInterval', () => {
@@ -2198,7 +2195,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         hashId: 'station-a-hash',
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     const { station: stationB } = createMockChargingStation({
       baseName: 'StationB',
@@ -2209,7 +2206,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         hashId: 'station-b-hash',
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
 
     try {

@@ -143,7 +143,7 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
       ocppStrictCompliance: true,
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   station.isWebSocketConnectionOpened = () => isOnline
@@ -187,7 +187,7 @@ export function createOCPP20RequestTestContext (
       ocppVersion: OCPPVersion.VERSION_201,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
 
   return { requestService, station, testableRequestService }
@@ -508,7 +508,7 @@ export const ResetTestFixtures = {
         ocppVersion: OCPPVersion.VERSION_201,
         resetTime: 5000,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     const mockStation = station as MockChargingStation
     mockStation.getNumberOfRunningTransactions = () => runningTransactions
@@ -723,7 +723,7 @@ export function createOCPP20ListenerStation (baseName: string): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
   })
   return { requestHandlerMock, station }
 }

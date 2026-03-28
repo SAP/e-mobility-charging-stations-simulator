@@ -766,7 +766,7 @@ export class ChargingStation extends EventEmitter {
   public getWebSocketPingInterval (): number {
     return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
       ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
-      : Constants.DEFAULT_WEBSOCKET_PING_INTERVAL
+      : Constants.DEFAULT_WS_PING_INTERVAL
   }
 
   public hasConnector (connectorId: number): boolean {

@@ -50,7 +50,7 @@ await describe('B06 - Get Variables', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = newStation
     incomingRequestService = new OCPP20IncomingRequestService()
@@ -101,10 +101,7 @@ await describe('B06 - Get Variables', async () => {
     const secondResult = response.getVariableResult[1]
     assert.strictEqual(secondResult.attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
-    assert.strictEqual(
-      secondResult.attributeValue,
-      Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString()
-    )
+    assert.strictEqual(secondResult.attributeValue, Constants.DEFAULT_WS_PING_INTERVAL.toString())
     assert.strictEqual(secondResult.component.name, OCPP20ComponentName.ChargingStation)
     assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
     assert.strictEqual(secondResult.attributeStatusInfo, undefined)

@@ -592,7 +592,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.ChargingStation,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
     description:
       'Interval in seconds between WebSocket ping (keep-alive) frames. 0 disables pings.',
     max: 3600,
@@ -1458,7 +1458,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
     description:
       '0 disables client side websocket Ping/Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed.',
     min: 0,

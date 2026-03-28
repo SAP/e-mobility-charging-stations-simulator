@@ -88,7 +88,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = mockStation
     // Set connector transactionId to the UUID string used in request payloads
@@ -287,7 +287,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     setupConnectorWithTransaction(multiStation, 1, { transactionId: 10 })
     const connector1 = multiStation.getConnectorStatus(1)

@@ -52,7 +52,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_16,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
     })
     station = mockStation
   })
