@@ -5,12 +5,12 @@
 
 import { CircularBuffer } from 'mnemonist'
 import assert from 'node:assert/strict'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { Statistics, TimestampedData } from '../../src/types/index.js'
 
-import { AvailabilityType, ChargingStationWorkerMessageEvents } from '../../src/types/index.js'
+import { ChargingStationWorkerMessageEvents } from '../../src/types/index.js'
 import {
   buildAddedMessage,
   buildDeletedMessage,
@@ -19,59 +19,36 @@ import {
   buildStoppedMessage,
   buildUpdatedMessage,
 } from '../../src/utils/MessageChannelUtils.js'
+import {
+  cleanupChargingStation,
+  createMockChargingStation,
+} from '../charging-station/ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-/**
- * Creates a minimal mock station with properties needed by MessageChannelUtils builders.
- * @returns Mock charging station instance
- */
-function createMockStationForMessages (): ChargingStation {
-  return {
-    automaticTransactionGenerator: undefined,
-    bootNotificationResponse: {
-      currentTime: new Date('2024-01-01T00:00:00Z'),
-      interval: 300,
-      status: 'Accepted',
-    },
-    connectors: new Map([
-      [
-        0,
-        {
-          availability: AvailabilityType.Operative,
-          MeterValues: [],
-        },
-      ],
-      [
-        1,
-        {
-          availability: AvailabilityType.Operative,
-          MeterValues: [],
-        },
-      ],
-    ]),
-    evses: new Map(),
-    getAutomaticTransactionGeneratorConfiguration: () => undefined,
-    ocppConfiguration: { configurationKey: [] },
-    started: true,
-    stationInfo: {
-      baseName: 'CS-TEST',
-      chargingStationId: 'CS-TEST-00001',
-      hashId: 'test-hash',
-      templateIndex: 1,
-      templateName: 'test-template.json',
-    },
-    wsConnection: { readyState: 1 },
-    wsConnectionUrl: new URL('ws://localhost:8080/CS-TEST-00001'),
-  } as unknown as ChargingStation
-}
-
 await describe('MessageChannelUtils', async () => {
+  let station: ChargingStation
+
+  beforeEach(() => {
+    const result = createMockChargingStation({
+      baseName: 'CS-TEST',
+      connectorsCount: 1,
+      started: true,
+      stationInfo: { hashId: 'test-hash' },
+    })
+    station = result.station
+    // Add wsConnectionUrl getter needed by MessageChannelUtils builders
+    Object.defineProperty(station, 'wsConnectionUrl', {
+      configurable: true,
+      get: () => new URL('ws://localhost:8080/CS-TEST-00001'),
+    })
+  })
+
   afterEach(() => {
+    cleanupChargingStation(station)
     standardCleanup()
   })
 
   await it('should build added message with correct event and data', () => {
-    const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.added)
@@ -83,7 +60,6 @@ await describe('MessageChannelUtils', async () => {
   })
 
   await it('should build deleted message with correct event', () => {
-    const station = createMockStationForMessages()
     const message = buildDeletedMessage(station)
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.deleted)
@@ -92,7 +68,6 @@ await describe('MessageChannelUtils', async () => {
   })
 
   await it('should build started message with correct event', () => {
-    const station = createMockStationForMessages()
     const message = buildStartedMessage(station)
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.started)
@@ -100,7 +75,6 @@ await describe('MessageChannelUtils', async () => {
   })
 
   await it('should build stopped message with correct event', () => {
-    const station = createMockStationForMessages()
     const message = buildStoppedMessage(station)
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.stopped)
@@ -109,7 +83,6 @@ await describe('MessageChannelUtils', async () => {
   })
 
   await it('should build updated message with correct event', () => {
-    const station = createMockStationForMessages()
     const message = buildUpdatedMessage(station)
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.updated)
@@ -118,14 +91,12 @@ await describe('MessageChannelUtils', async () => {
   })
 
   await it('should include ws state in station messages', () => {
-    const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
     assert.strictEqual(message.data.wsState, 1)
   })
 
   await it('should include connectors status in station messages', () => {
-    const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
     assert.ok(Array.isArray(message.data.connectors))

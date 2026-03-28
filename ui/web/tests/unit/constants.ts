@@ -40,7 +40,7 @@ export function createChargingStationData (
       interval: 60,
       status: OCPP16RegistrationStatus.ACCEPTED,
     },
-    connectors: [{ connector: createConnectorStatus(), connectorId: 1 }],
+    connectors: [{ connectorId: 1, connectorStatus: createConnectorStatus() }],
     ocppConfiguration: { configurationKey: [] },
     started: true,
     stationInfo: createStationInfo(),
@@ -70,9 +70,11 @@ export function createConnectorStatus (overrides?: Partial<ConnectorStatus>): Co
  */
 export function createEvseEntry (overrides?: Partial<EvseEntry>): EvseEntry {
   return {
-    availability: OCPP16AvailabilityType.OPERATIVE,
-    connectors: [{ connector: createConnectorStatus(), connectorId: 1 }],
     evseId: 1,
+    evseStatus: {
+      availability: OCPP16AvailabilityType.OPERATIVE,
+      connectors: [{ connectorId: 1, connectorStatus: createConnectorStatus() }],
+    },
     ...overrides,
   }
 }

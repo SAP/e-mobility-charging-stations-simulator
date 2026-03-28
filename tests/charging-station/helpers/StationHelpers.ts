@@ -9,7 +9,9 @@ import type {
   ChargingStationInfo,
   ChargingStationOcppConfiguration,
   ChargingStationTemplate,
+  ConnectorEntry,
   ConnectorStatus,
+  EvseEntry,
   EvseStatus,
   Reservation,
   StopTransactionReason,
@@ -217,7 +219,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
   }
 
   // Clear connector transaction state and timers
-  for (const connectorStatus of station.connectors.values()) {
+  for (const { connectorStatus } of station.iterateConnectors()) {
     if (connectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
       clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
       connectorStatus.transactionUpdatedMeterValuesSetInterval = undefined
@@ -229,7 +231,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
   }
 
   // Clear EVSE connector transaction state and timers
-  for (const evseStatus of station.evses.values()) {
+  for (const { evseStatus } of station.iterateEvses()) {
     for (const connectorStatus of evseStatus.connectors.values()) {
       if (connectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
         clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
@@ -303,7 +305,7 @@ export function createConnectorStatus (
  * @example
  * ```typescript
  * const { station, mocks } = createMockChargingStation({ connectorsCount: 2 })
- * expect(station.connectors.size).toBe(3) // 0 + 2 connectors
+ * station.getNumberOfConnectors() // 2 (excludes connector 0)
  * station.wsConnection = mocks.webSocket
  * mocks.webSocket.simulateMessage('["3","uuid",{}]')
  * ```
@@ -644,6 +646,10 @@ export function createMockChargingStation (
       return connectors.has(connectorId)
     },
 
+    hasEvse (evseId: number): boolean {
+      return evses.has(evseId)
+    },
+
     // Getters
     get hasEvses (): boolean {
       return useEvses
@@ -692,6 +698,30 @@ export function createMockChargingStation (
 
     isWebSocketConnectionOpened (): boolean {
       return this.wsConnection?.readyState === WebSocketReadyState.OPEN
+    },
+
+    * iterateConnectors (skipZero = false): Generator<ConnectorEntry> {
+      if (useEvses) {
+        for (const [evseId, evseStatus] of evses) {
+          if (skipZero && evseId === 0) continue
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (skipZero && connectorId === 0) continue
+            yield { connectorId, connectorStatus, evseId }
+          }
+        }
+      } else {
+        for (const [connectorId, connectorStatus] of connectors) {
+          if (skipZero && connectorId === 0) continue
+          yield { connectorId, connectorStatus, evseId: undefined }
+        }
+      }
+    },
+
+    * iterateEvses (skipZero = false): Generator<EvseEntry> {
+      for (const [evseId, evseStatus] of evses) {
+        if (skipZero && evseId === 0) continue
+        yield { evseId, evseStatus }
+      }
     },
 
     listenerCount: () => 0,
@@ -923,12 +953,12 @@ export function resetChargingStationState (station: ChargingStation): void {
   }
 
   // Reset connector statuses
-  for (const [connectorId, connectorStatus] of station.connectors) {
+  for (const { connectorId, connectorStatus } of station.iterateConnectors()) {
     resetConnectorStatus(connectorStatus, connectorId === 0)
   }
 
   // Reset EVSE connector statuses
-  for (const evseStatus of station.evses.values()) {
+  for (const { evseStatus } of station.iterateEvses()) {
     evseStatus.availability = AvailabilityType.Operative
     for (const connectorStatus of evseStatus.connectors.values()) {
       resetConnectorStatus(connectorStatus, false)

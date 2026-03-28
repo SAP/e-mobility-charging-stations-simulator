@@ -120,7 +120,7 @@
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
             :atg-status="getATGStatus(entry.connectorId)"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
-            :connector="entry.connector"
+            :connector="entry.connectorStatus"
             :connector-id="entry.connectorId"
             :evse-id="entry.evseId"
             :hash-id="chargingStation.stationInfo.hashId"
@@ -137,7 +137,7 @@
 import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
+import type { ChargingStationData, ConnectorEntry, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
@@ -150,12 +150,6 @@ import {
   useUIClient,
 } from '@/composables'
 
-interface ConnectorTableEntry {
-  connector: ConnectorStatus
-  connectorId: number
-  evseId?: number
-}
-
 const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
@@ -164,16 +158,16 @@ const $emit = defineEmits(['need-refresh'])
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocket.OPEN)
 
-const getConnectorEntries = (): ConnectorTableEntry[] => {
+const getConnectorEntries = (): ConnectorEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const entries: ConnectorTableEntry[] = []
+    const entries: ConnectorEntry[] = []
     for (const evse of props.chargingStation.evses) {
       if (evse.evseId > 0) {
-        for (const entry of evse.connectors) {
+        for (const entry of evse.evseStatus.connectors) {
           if (entry.connectorId > 0) {
             entries.push({
-              connector: entry.connector,
               connectorId: entry.connectorId,
+              connectorStatus: entry.connectorStatus,
               evseId: evse.evseId,
             })
           }
@@ -185,8 +179,8 @@ const getConnectorEntries = (): ConnectorTableEntry[] => {
   return (props.chargingStation.connectors ?? [])
     .filter(c => c.connectorId > 0)
     .map(entry => ({
-      connector: entry.connector,
       connectorId: entry.connectorId,
+      connectorStatus: entry.connectorStatus,
     }))
 }
 const getATGStatus = (connectorId: number): Status | undefined => {

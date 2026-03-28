@@ -9,7 +9,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
-import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
+import type { ConnectorEntry, ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 
 import { AvailabilityType } from '../../src/types/index.js'
 import {
@@ -20,34 +20,29 @@ import {
   buildEvseEntries,
   buildEvsesStatus,
 } from '../../src/utils/ChargingStationConfigurationUtils.js'
+import {
+  cleanupChargingStation,
+  createMockChargingStation,
+} from '../charging-station/ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 /**
- * Creates a minimal mock ChargingStation for configuration utility tests.
- * @param options - Mock station properties.
- * @param options.automaticTransactionGenerator - ATG instance stub.
- * @param options.connectors - Connectors map.
- * @param options.evses - EVSEs map.
- * @param options.getAutomaticTransactionGeneratorConfiguration - ATG config getter.
- * @returns Partial ChargingStation cast for test use.
+ * Typed access to mock station internals that are private on ChargingStation.
+ * The mock factory creates a plain object where these are regular properties.
  */
-function createMockStationForConfigUtils (options: {
-  automaticTransactionGenerator?: undefined | { connectorsStatus?: Map<number, unknown> }
-  connectors?: Map<number, ConnectorStatus>
-  evses?: Map<number, EvseStatus>
-  getAutomaticTransactionGeneratorConfiguration?: () => unknown
-}): ChargingStation {
-  return {
-    automaticTransactionGenerator: options.automaticTransactionGenerator ?? undefined,
-    connectors: options.connectors ?? new Map(),
-    evses: options.evses ?? new Map(),
-    getAutomaticTransactionGeneratorConfiguration:
-      options.getAutomaticTransactionGeneratorConfiguration ?? (() => undefined),
-  } as unknown as ChargingStation
+interface MockStationInternals {
+  connectors: Map<number, ConnectorStatus>
+  evses: Map<number, EvseStatus>
 }
 
 await describe('ChargingStationConfigurationUtils', async () => {
+  let testStation: ChargingStation | undefined
+
   afterEach(() => {
+    if (testStation != null) {
+      cleanupChargingStation(testStation)
+      testStation = undefined
+    }
     standardCleanup()
   })
 
@@ -61,12 +56,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const interval1 = setInterval(noop, 1000)
       const interval2 = setInterval(noop, 1000)
       try {
-        const connectors = new Map<number, ConnectorStatus>()
-        connectors.set(0, {
+        const { station } = createMockChargingStation({ connectorsCount: 0 })
+        testStation = station
+        const internals = station as unknown as MockStationInternals
+        internals.connectors.clear()
+        internals.connectors.set(0, {
           availability: AvailabilityType.Operative,
           MeterValues: [],
         } as ConnectorStatus)
-        connectors.set(1, {
+        internals.connectors.set(1, {
           availability: AvailabilityType.Operative,
           bootStatus: 'Available',
           MeterValues: [],
@@ -76,7 +74,6 @@ await describe('ChargingStationConfigurationUtils', async () => {
           transactionUpdatedMeterValuesSetInterval: interval1 as unknown as NodeJS.Timeout,
         } as unknown as ConnectorStatus)
 
-        const station = createMockStationForConfigUtils({ connectors })
         const result = buildConnectorsStatus(station)
 
         assert.strictEqual(result.length, 2)
@@ -96,14 +93,19 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should handle empty connectors map', () => {
-      const station = createMockStationForConfigUtils({ connectors: new Map() })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      ;(station as unknown as MockStationInternals).connectors.clear()
       const result = buildConnectorsStatus(station)
       assert.strictEqual(result.length, 0)
     })
 
     await it('should preserve non-internal fields', () => {
-      const connectors = new Map<number, ConnectorStatus>()
-      connectors.set(1, {
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.connectors.clear()
+      internals.connectors.set(1, {
         availability: AvailabilityType.Operative,
         bootStatus: 'Available',
         MeterValues: [],
@@ -113,7 +115,6 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
-      const station = createMockStationForConfigUtils({ connectors })
       const result = buildConnectorsStatus(station)
 
       assert.strictEqual(result.length, 1)
@@ -124,17 +125,19 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should preserve non-sequential connector IDs', () => {
-      const connectors = new Map<number, ConnectorStatus>()
-      connectors.set(0, {
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.connectors.clear()
+      internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
       } as ConnectorStatus)
-      connectors.set(3, {
+      internals.connectors.set(3, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
       } as ConnectorStatus)
 
-      const station = createMockStationForConfigUtils({ connectors })
       const result = buildConnectorsStatus(station)
 
       assert.strictEqual(result.length, 2)
@@ -146,6 +149,14 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
   await describe('buildEvsesStatus', async () => {
     await it('should return configuration format with connectorsStatus and without connectors', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -154,17 +165,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: new Map<number, ConnectorStatus>(),
       })
-      evses.set(1, {
+      internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
 
       assert.strictEqual(result.length, 2)
@@ -178,6 +187,14 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should strip internal fields from evse connectors', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -188,17 +205,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: new Map<number, ConnectorStatus>(),
       })
-      evses.set(1, {
+      internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
       const evse1 = result.find(([id]) => id === 1)?.[1]
       assert.ok(evse1 != null)
@@ -214,6 +229,14 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should preserve connector IDs across serialization', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -230,17 +253,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
         MeterValues: [],
       } as ConnectorStatus)
 
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: evse0Connectors,
       })
-      evses.set(1, {
+      internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
 
       const evse0Status = result[0][1].connectorsStatus as [number, ConnectorStatus][]
@@ -255,23 +276,33 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should handle empty evses map', () => {
-      const station = createMockStationForConfigUtils({ evses: new Map() })
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      ;(station as unknown as MockStationInternals).evses.clear()
       const result = buildEvsesStatus(station)
       assert.strictEqual(result.length, 0)
     })
 
     await it('should preserve non-sequential evse IDs', () => {
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: new Map<number, ConnectorStatus>(),
       })
-      evses.set(3, {
+      internals.evses.set(3, {
         availability: AvailabilityType.Inoperative,
         connectors: new Map<number, ConnectorStatus>(),
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
 
       assert.strictEqual(result.length, 2)
@@ -284,11 +315,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
   await describe('buildChargingStationAutomaticTransactionGeneratorConfiguration', async () => {
     await it('should return ATG configuration when present', () => {
       const atgConfiguration = { enable: true, maxDuration: 120, minDuration: 60 }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: {
-          connectorsStatus: new Map([[1, { start: false }]]),
-        },
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfiguration,
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = {
+        connectorsStatus: new Map([[1, { start: false }]]),
+      } as unknown as typeof station.automaticTransactionGenerator
+      Object.defineProperty(station, 'getAutomaticTransactionGeneratorConfiguration', {
+        configurable: true,
+        value: () => atgConfiguration,
+        writable: true,
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
@@ -300,9 +335,13 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
     await it('should return ATG configuration without statuses when no ATG instance', () => {
       const atgConfiguration = { enable: false }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: undefined,
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfiguration,
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = undefined
+      Object.defineProperty(station, 'getAutomaticTransactionGeneratorConfiguration', {
+        configurable: true,
+        value: () => atgConfiguration,
+        writable: true,
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
@@ -311,9 +350,13 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should return undefined ATG config when not configured', () => {
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: undefined,
-        getAutomaticTransactionGeneratorConfiguration: () => undefined,
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = undefined
+      Object.defineProperty(station, 'getAutomaticTransactionGeneratorConfiguration', {
+        configurable: true,
+        value: () => undefined,
+        writable: true,
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
@@ -323,11 +366,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
     await it('should return ATG configuration without statuses when connectorsStatus is null', () => {
       const atgConfiguration = { enable: true }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: {
-          connectorsStatus: undefined,
-        },
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfiguration,
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = {
+        connectorsStatus: undefined,
+      } as unknown as typeof station.automaticTransactionGenerator
+      Object.defineProperty(station, 'getAutomaticTransactionGeneratorConfiguration', {
+        configurable: true,
+        value: () => atgConfiguration,
+        writable: true,
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
@@ -344,9 +391,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       connectorsStatus.set(1, { start: true })
       connectorsStatus.set(3, { start: false })
 
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: { connectorsStatus },
-      })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = {
+        connectorsStatus,
+      } as unknown as typeof station.automaticTransactionGenerator
       const result = buildATGEntries(station)
 
       assert.strictEqual(result.length, 2)
@@ -361,9 +410,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       connectorsStatus.set(2, { start: true })
       connectorsStatus.set(7, { start: false })
 
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: { connectorsStatus },
-      })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = {
+        connectorsStatus,
+      } as unknown as typeof station.automaticTransactionGenerator
       const result = buildATGEntries(station)
 
       assert.strictEqual(result.length, 2)
@@ -372,30 +423,35 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
 
     await it('should return empty array when no ATG instance', () => {
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: undefined,
-      })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = undefined
       const result = buildATGEntries(station)
       assert.strictEqual(result.length, 0)
     })
 
     await it('should return empty array when connectorsStatus is undefined', () => {
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: { connectorsStatus: undefined },
-      })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      station.automaticTransactionGenerator = {
+        connectorsStatus: undefined,
+      } as unknown as typeof station.automaticTransactionGenerator
       const result = buildATGEntries(station)
       assert.strictEqual(result.length, 0)
     })
   })
 
   await describe('buildConnectorEntries', async () => {
-    await it('should return entries with connectorId and stripped connector', () => {
-      const connectors = new Map<number, ConnectorStatus>()
-      connectors.set(0, {
+    await it('should return entries with connectorId, connectorStatus, and evseId', () => {
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.connectors.clear()
+      internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
       } as ConnectorStatus)
-      connectors.set(1, {
+      internals.connectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
         transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
@@ -404,53 +460,66 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
-      const station = createMockStationForConfigUtils({ connectors })
       const result = buildConnectorEntries(station)
 
       assert.strictEqual(result.length, 2)
       assert.strictEqual(result[0].connectorId, 0)
+      assert.strictEqual(result[0].evseId, undefined)
       assert.strictEqual(result[1].connectorId, 1)
-      assert.strictEqual(result[1].connector.availability, AvailabilityType.Operative)
-      assert.ok(!('transactionEndedMeterValues' in result[1].connector))
-      assert.ok(!('transactionEndedMeterValuesSetInterval' in result[1].connector))
-      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in result[1].connector))
-      assert.ok(!('transactionEventQueue' in result[1].connector))
+      assert.strictEqual(result[1].evseId, undefined)
+      assert.strictEqual(result[1].connectorStatus.availability, AvailabilityType.Operative)
+      assert.ok(!('transactionEndedMeterValues' in result[1].connectorStatus))
+      assert.ok(!('transactionEndedMeterValuesSetInterval' in result[1].connectorStatus))
+      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in result[1].connectorStatus))
+      assert.ok(!('transactionEventQueue' in result[1].connectorStatus))
     })
 
     await it('should handle empty connectors map', () => {
-      const station = createMockStationForConfigUtils({ connectors: new Map() })
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      ;(station as unknown as MockStationInternals).connectors.clear()
       const result = buildConnectorEntries(station)
       assert.strictEqual(result.length, 0)
     })
 
     await it('should preserve non-sequential connector IDs', () => {
-      const connectors = new Map<number, ConnectorStatus>()
-      connectors.set(0, {
+      const { station } = createMockChargingStation({ connectorsCount: 0 })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.connectors.clear()
+      internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
       } as ConnectorStatus)
-      connectors.set(3, {
+      internals.connectors.set(3, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
       } as ConnectorStatus)
-      connectors.set(7, {
+      internals.connectors.set(7, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
       } as ConnectorStatus)
 
-      const station = createMockStationForConfigUtils({ connectors })
       const result = buildConnectorEntries(station)
 
       assert.strictEqual(result.length, 3)
       assert.strictEqual(result[0].connectorId, 0)
       assert.strictEqual(result[1].connectorId, 3)
       assert.strictEqual(result[2].connectorId, 7)
-      assert.strictEqual(result[2].connector.availability, AvailabilityType.Inoperative)
+      assert.strictEqual(result[2].connectorStatus.availability, AvailabilityType.Inoperative)
     })
   })
 
   await describe('buildEvseEntries', async () => {
-    await it('should return entries with evseId, availability, and connector entries', () => {
+    await it('should return entries with evseId, evseStatus containing availability and connectors Map', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -461,39 +530,51 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionUpdatedMeterValuesSetInterval: undefined,
       } as unknown as ConnectorStatus)
 
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: new Map<number, ConnectorStatus>(),
       })
-      evses.set(1, {
+      internals.evses.set(1, {
         availability: AvailabilityType.Operative,
         connectors: evseConnectors,
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvseEntries(station)
 
       assert.strictEqual(result.length, 2)
       assert.strictEqual(result[0].evseId, 0)
-      assert.strictEqual(result[0].availability, AvailabilityType.Operative)
-      assert.strictEqual(result[0].connectors.length, 0)
+      assert.strictEqual(result[0].evseStatus.availability, AvailabilityType.Operative)
+      assert.strictEqual((result[0].evseStatus.connectors as unknown as ConnectorEntry[]).length, 0)
       assert.strictEqual(result[1].evseId, 1)
-      assert.strictEqual(result[1].connectors.length, 1)
-      assert.strictEqual(result[1].connectors[0].connectorId, 1)
-      assert.ok(!('transactionEndedMeterValues' in result[1].connectors[0].connector))
-      assert.ok(!('transactionEndedMeterValuesSetInterval' in result[1].connectors[0].connector))
-      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in result[1].connectors[0].connector))
-      assert.ok(!('transactionEventQueue' in result[1].connectors[0].connector))
+      const connectors1 = result[1].evseStatus.connectors as unknown as ConnectorEntry[]
+      assert.strictEqual(connectors1.length, 1)
+      assert.strictEqual(connectors1[0].connectorId, 1)
+      assert.ok(!('transactionEndedMeterValues' in connectors1[0].connectorStatus))
+      assert.ok(!('transactionEndedMeterValuesSetInterval' in connectors1[0].connectorStatus))
+      assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectors1[0].connectorStatus))
+      assert.ok(!('transactionEventQueue' in connectors1[0].connectorStatus))
     })
 
     await it('should handle empty evses map', () => {
-      const station = createMockStationForConfigUtils({ evses: new Map() })
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      ;(station as unknown as MockStationInternals).evses.clear()
       const result = buildEvseEntries(station)
       assert.strictEqual(result.length, 0)
     })
 
     await it('should preserve non-sequential evseId and connectorId', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      testStation = station
+      const internals = station as unknown as MockStationInternals
+      internals.evses.clear()
+
       const evse2Connectors = new Map<number, ConnectorStatus>()
       evse2Connectors.set(2, {
         availability: AvailabilityType.Operative,
@@ -504,29 +585,26 @@ await describe('ChargingStationConfigurationUtils', async () => {
         MeterValues: [],
       } as ConnectorStatus)
 
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
+      internals.evses.set(0, {
         availability: AvailabilityType.Operative,
         connectors: new Map<number, ConnectorStatus>(),
       })
-      evses.set(3, {
+      internals.evses.set(3, {
         availability: AvailabilityType.Operative,
         connectors: evse2Connectors,
       })
 
-      const station = createMockStationForConfigUtils({ evses })
       const result = buildEvseEntries(station)
 
       assert.strictEqual(result.length, 2)
       assert.strictEqual(result[0].evseId, 0)
       assert.strictEqual(result[1].evseId, 3)
-      assert.strictEqual(result[1].connectors.length, 2)
-      assert.strictEqual(result[1].connectors[0].connectorId, 2)
-      assert.strictEqual(result[1].connectors[1].connectorId, 5)
-      assert.strictEqual(
-        result[1].connectors[1].connector.availability,
-        AvailabilityType.Inoperative
-      )
+      const connectors3 = result[1].evseStatus.connectors as unknown as ConnectorEntry[]
+      assert.strictEqual(connectors3.length, 2)
+      assert.ok(connectors3.some(c => c.connectorId === 2))
+      assert.ok(connectors3.some(c => c.connectorId === 5))
+      const conn5 = connectors3.find(c => c.connectorId === 5)
+      assert.strictEqual(conn5?.connectorStatus.availability, AvailabilityType.Inoperative)
     })
   })
 })

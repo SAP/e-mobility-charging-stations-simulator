@@ -91,12 +91,10 @@ function createIntegrationContext (): {
   )
 
   // Add MeterValues template required by buildTransactionBeginMeterValue
-  for (const [connectorId] of station.connectors) {
-    if (connectorId > 0) {
-      const connectorStatus = station.getConnectorStatus(connectorId)
-      if (connectorStatus != null) {
-        connectorStatus.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
-      }
+  for (const { connectorId } of station.iterateConnectors(true)) {
+    const connectorStatus = station.getConnectorStatus(connectorId)
+    if (connectorStatus != null) {
+      connectorStatus.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
     }
   }
 

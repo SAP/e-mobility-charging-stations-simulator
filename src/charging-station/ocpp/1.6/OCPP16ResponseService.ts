@@ -150,26 +150,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
     requestPayload: OCPP16AuthorizeRequest
   ): void {
     let authorizeConnectorId: number | undefined
-    if (chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId > 0) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if (connectorStatus.authorizeIdTag === requestPayload.idTag) {
-              authorizeConnectorId = connectorId
-              break
-            }
-          }
-        }
-      }
-    } else {
-      for (const connectorId of chargingStation.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag === requestPayload.idTag
-        ) {
-          authorizeConnectorId = connectorId
-          break
-        }
+    for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+      if (connectorStatus.authorizeIdTag === requestPayload.idTag) {
+        authorizeConnectorId = connectorId
+        break
       }
     }
     if (authorizeConnectorId != null) {
@@ -344,7 +328,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       return
     }
     if (chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of chargingStation.evses) {
+      for (const { evseId, evseStatus } of chargingStation.iterateEvses()) {
         if (evseStatus.connectors.size > 1) {
           for (const [id, status] of evseStatus.connectors) {
             if (id !== connectorId && status.transactionStarted === true) {

@@ -499,29 +499,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   }
                 )
                 .catch(errorHandler)
-            } else if (chargingStation.hasEvses) {
-              for (const evseStatus of chargingStation.evses.values()) {
-                for (const [id, connectorStatus] of evseStatus.connectors) {
-                  chargingStation.ocppRequestService
-                    .requestHandler<
-                      OCPP16StatusNotificationRequest,
-                      OCPP16StatusNotificationResponse
-                    >(
-                      chargingStation,
-                      OCPP16RequestCommand.STATUS_NOTIFICATION,
-                      {
-                        connectorId: id,
-                        status: connectorStatus.status as OCPP16ChargePointStatus,
-                      } as unknown as OCPP16StatusNotificationRequest,
-                      {
-                        triggerMessage: true,
-                      }
-                    )
-                    .catch(errorHandler)
-                }
-              }
             } else {
-              for (const [id, connectorStatus] of chargingStation.connectors) {
+              for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
                 chargingStation.ocppRequestService
                   .requestHandler<
                     OCPP16StatusNotificationRequest,
@@ -530,7 +509,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     chargingStation,
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
                     {
-                      connectorId: id,
+                      connectorId,
                       status: connectorStatus.status as OCPP16ChargePointStatus,
                     } as unknown as OCPP16StatusNotificationRequest,
                     {
@@ -716,25 +695,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ? OCPP16ChargePointStatus.Available
         : OCPP16ChargePointStatus.Unavailable
     if (connectorId === 0) {
-      let response: OCPP16ChangeAvailabilityResponse | undefined
-      if (chargingStation.hasEvses) {
-        for (const evseStatus of chargingStation.evses.values()) {
-          response = await OCPP16ServiceUtils.changeAvailability(
-            chargingStation,
-            [...evseStatus.connectors.keys()],
-            chargePointStatus,
-            type
-          )
-        }
-      } else {
-        response = await OCPP16ServiceUtils.changeAvailability(
-          chargingStation,
-          [...chargingStation.connectors.keys()],
-          chargePointStatus,
-          type
-        )
-      }
-      return response ?? OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
+      const response = await OCPP16ServiceUtils.changeAvailability(
+        chargingStation,
+        chargingStation
+          .iterateConnectors()
+          .map(({ connectorId }) => connectorId)
+          .toArray(),
+        chargePointStatus,
+        type
+      )
+      return response
     } else if (
       connectorId > 0 &&
       (chargingStation.isChargingStationAvailable() ||
@@ -908,29 +878,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     } else {
       let clearedCP = false
-      if (chargingStation.hasEvses) {
-        for (const evseStatus of chargingStation.evses.values()) {
-          for (const status of evseStatus.connectors.values()) {
-            const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
-              chargingStation,
-              commandPayload,
-              status.chargingProfiles as OCPP16ChargingProfile[]
-            )
-            if (clearedConnectorCP && !clearedCP) {
-              clearedCP = true
-            }
-          }
-        }
-      } else {
-        for (const id of chargingStation.connectors.keys()) {
-          const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
-            chargingStation,
-            commandPayload,
-            chargingStation.getConnectorStatus(id)?.chargingProfiles as OCPP16ChargingProfile[]
-          )
-          if (clearedConnectorCP && !clearedCP) {
-            clearedCP = true
-          }
+      for (const { connectorStatus } of chargingStation.iterateConnectors()) {
+        const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
+          chargingStation,
+          commandPayload,
+          connectorStatus.chargingProfiles as OCPP16ChargingProfile[]
+        )
+        if (clearedConnectorCP && !clearedCP) {
+          clearedCP = true
         }
       }
       if (clearedCP) {
@@ -1683,30 +1638,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
       return
     }
-    if (chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId > 0) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if (connectorStatus.transactionStarted === false) {
-              await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
-                connectorId,
-                status: OCPP16ChargePointStatus.Unavailable,
-              } as OCPP16StatusNotificationRequest)
-            }
-          }
-        }
-      }
-    } else {
-      for (const connectorId of chargingStation.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false
-        ) {
-          await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
-            connectorId,
-            status: OCPP16ChargePointStatus.Unavailable,
-          } as OCPP16StatusNotificationRequest)
-        }
+    for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+      if (connectorStatus.transactionStarted === false) {
+        await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+          connectorId,
+          status: OCPP16ChargePointStatus.Unavailable,
+        } as OCPP16StatusNotificationRequest)
       }
     }
     await chargingStation.ocppRequestService.requestHandler<
@@ -1758,31 +1695,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = true
         wasTransactionsStarted = true
       } else {
-        if (chargingStation.hasEvses) {
-          for (const [evseId, evseStatus] of chargingStation.evses) {
-            if (evseId > 0) {
-              for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-                if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
-                  await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
-                    connectorId,
-                    status: OCPP16ChargePointStatus.Unavailable,
-                  } as OCPP16StatusNotificationRequest)
-                }
-              }
-            }
-          }
-        } else {
-          for (const connectorId of chargingStation.connectors.keys()) {
-            if (
-              connectorId > 0 &&
-              chargingStation.getConnectorStatus(connectorId)?.status !==
-                OCPP16ChargePointStatus.Unavailable
-            ) {
-              await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
-                connectorId,
-                status: OCPP16ChargePointStatus.Unavailable,
-              } as OCPP16StatusNotificationRequest)
-            }
+        for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+          if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
+            await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+              connectorId,
+              status: OCPP16ChargePointStatus.Unavailable,
+            } as OCPP16StatusNotificationRequest)
           }
         }
         transactionsStarted = false

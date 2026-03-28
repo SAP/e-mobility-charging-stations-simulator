@@ -522,33 +522,9 @@ export const stopRunningTransactions = async (
     case OCPPVersion.VERSION_16: {
       const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
       // Sequential — OCPP 1.6 behavior
-      if (chargingStation.hasEvses) {
-        for (const [evseId, evseStatus] of chargingStation.evses) {
-          if (evseId === 0) {
-            continue
-          }
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if (connectorStatus.transactionStarted === true) {
-              await OCPP16ServiceUtils.stopTransactionOnConnector(
-                chargingStation,
-                connectorId,
-                reason
-              )
-            }
-          }
-        }
-      } else {
-        for (const connectorId of chargingStation.connectors.keys()) {
-          if (
-            connectorId > 0 &&
-            chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true
-          ) {
-            await OCPP16ServiceUtils.stopTransactionOnConnector(
-              chargingStation,
-              connectorId,
-              reason
-            )
-          }
+      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+        if (connectorStatus.transactionStarted === true) {
+          await OCPP16ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
         }
       }
       break
@@ -623,35 +599,16 @@ export const flushQueuedTransactionMessages = async (
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      if (chargingStation.hasEvses) {
-        for (const evseStatus of chargingStation.evses.values()) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
-              await OCPP20ServiceUtils.sendQueuedTransactionEvents(
-                chargingStation,
-                connectorId
-              ).catch((error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
-                  error
-                )
-              })
-            }
-          }
-        }
-      } else {
-        for (const [connectorId, connectorStatus] of chargingStation.connectors) {
-          if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
-            await OCPP20ServiceUtils.sendQueuedTransactionEvents(
-              chargingStation,
-              connectorId
-            ).catch((error: unknown) => {
+      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
+        if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
+          await OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId).catch(
+            (error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
                 error
               )
-            })
-          }
+            }
+          )
         }
       }
       break

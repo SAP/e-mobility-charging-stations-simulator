@@ -186,8 +186,8 @@ await describe('ChargingStation Lifecycle', async () => {
       await station.delete(false)
 
       // Assert - connectors and evses should be cleared
-      assert.strictEqual(station.connectors.size, 0)
-      assert.strictEqual(station.evses.size, 0)
+      assert.strictEqual(station.getNumberOfConnectors(), 0)
+      assert.strictEqual(station.getNumberOfEvses(), 0)
       assert.strictEqual(station.requests.size, 0)
     })
 
@@ -203,7 +203,7 @@ await describe('ChargingStation Lifecycle', async () => {
 
       // Assert - station should be stopped and cleared
       assert.strictEqual(station.started, false)
-      assert.strictEqual(station.connectors.size, 0)
+      assert.strictEqual(station.getNumberOfConnectors(), 0)
     })
 
     await it('should handle delete operation with pending transactions', async () => {
@@ -227,8 +227,8 @@ await describe('ChargingStation Lifecycle', async () => {
 
       // Assert - Station should be stopped and resources cleared
       assert.strictEqual(station.started, false)
-      assert.strictEqual(station.connectors.size, 0)
-      assert.strictEqual(station.evses.size, 0)
+      assert.strictEqual(station.getNumberOfConnectors(), 0)
+      assert.strictEqual(station.getNumberOfEvses(), 0)
     })
   })
 })

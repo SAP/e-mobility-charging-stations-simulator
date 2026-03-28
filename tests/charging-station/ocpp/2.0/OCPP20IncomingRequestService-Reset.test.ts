@@ -436,7 +436,7 @@ await describe('B11 & B12 - Reset', async () => {
           }
 
           // Assign reservation to first connector
-          const evse: EvseStatus | undefined = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.getEvseStatus(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connectorStatus = evse.connectors.get(connectorId)
@@ -469,7 +469,7 @@ await describe('B11 & B12 - Reset', async () => {
           }
 
           // Assign expired reservation to first connector
-          const evse: EvseStatus | undefined = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.getEvseStatus(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connectorStatus = evse.connectors.get(connectorId)
@@ -550,7 +550,7 @@ await describe('B11 & B12 - Reset', async () => {
             id: 1,
             idTag: 'test-tag',
           }
-          const evse: EvseStatus | undefined = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.getEvseStatus(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connectorStatus = evse.connectors.get(connectorId)

@@ -121,19 +121,9 @@ export const hasPendingReservation = (connectorStatus: ConnectorStatus): boolean
  * @returns true if any connector has a pending reservation, false otherwise
  */
 export const hasPendingReservations = (chargingStation: ChargingStation): boolean => {
-  if (chargingStation.hasEvses) {
-    for (const evseStatus of chargingStation.evses.values()) {
-      for (const connectorStatus of evseStatus.connectors.values()) {
-        if (hasPendingReservation(connectorStatus)) {
-          return true
-        }
-      }
-    }
-  } else {
-    for (const connectorStatus of chargingStation.connectors.values()) {
-      if (hasPendingReservation(connectorStatus)) {
-        return true
-      }
+  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
+    if (hasPendingReservation(connectorStatus)) {
+      return true
     }
   }
   return false
@@ -143,25 +133,9 @@ export const removeExpiredReservations = async (
   chargingStation: ChargingStation
 ): Promise<void> => {
   const reservations: Reservation[] = []
-  if (chargingStation.hasEvses) {
-    for (const evseStatus of chargingStation.evses.values()) {
-      for (const connectorStatus of evseStatus.connectors.values()) {
-        if (
-          connectorStatus.reservation != null &&
-          hasReservationExpired(connectorStatus.reservation)
-        ) {
-          reservations.push(connectorStatus.reservation)
-        }
-      }
-    }
-  } else {
-    for (const connectorStatus of chargingStation.connectors.values()) {
-      if (
-        connectorStatus.reservation != null &&
-        hasReservationExpired(connectorStatus.reservation)
-      ) {
-        reservations.push(connectorStatus.reservation)
-      }
+  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
+    if (connectorStatus.reservation != null && hasReservationExpired(connectorStatus.reservation)) {
+      reservations.push(connectorStatus.reservation)
     }
   }
   const results = await Promise.allSettled(
@@ -275,7 +249,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   switch (chargingStation.stationInfo.ocppVersion) {
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      if (isEmpty(chargingStation.evses)) {
+      if (chargingStation.getNumberOfEvses() === 0) {
         throw new BaseError(
           `${chargingStationId}: OCPP ${chargingStation.stationInfo.ocppVersion} requires at least one EVSE defined in the charging station template/configuration`
         )

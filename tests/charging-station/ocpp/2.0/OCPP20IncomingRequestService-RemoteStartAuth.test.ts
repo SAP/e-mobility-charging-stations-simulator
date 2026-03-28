@@ -22,43 +22,33 @@ import {
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupChargingStation,
+  createMockChargingStation,
+} from '../../ChargingStationTestUtils.js'
 
 await describe('G03 - Remote Start Pre-Authorization', async () => {
   let service: OCPP20IncomingRequestService | undefined
   let mockStation: ChargingStation | undefined
 
   beforeEach(() => {
-    // Mock charging station with EVSE configuration
-    mockStation = {
-      evses: new Map([
-        [
-          1,
-          {
-            connectors: new Map([[1, { status: ConnectorStatusEnum.Available }]]),
-          },
-        ],
-      ]),
-      getConnectorStatus: (_connectorId: number): ConnectorStatus => ({
-        availability: OCPP20OperationalStatusEnumType.Operative,
-        MeterValues: [],
-        status: ConnectorStatusEnum.Available,
-        transactionId: undefined,
-        transactionIdTag: undefined,
-        transactionStart: undefined,
-        transactionStarted: false,
-      }),
-      inAcceptedState: () => true,
-      logPrefix: () => '[TEST-STATION-REMOTE-START]',
+    const { station } = createMockChargingStation({
+      connectorsCount: 1,
+      evseConfiguration: { evsesCount: 1 },
+      ocppVersion: OCPPVersion.VERSION_201,
       stationInfo: {
         chargingStationId: 'TEST-REMOTE-START',
-        ocppVersion: OCPPVersion.VERSION_201,
       },
-    } as unknown as ChargingStation
+    })
+    mockStation = station
 
     service = new OCPP20IncomingRequestService()
   })
 
   afterEach(() => {
+    if (mockStation != null) {
+      cleanupChargingStation(mockStation)
+    }
     standardCleanup()
     mockStation = undefined
     service = undefined
@@ -431,8 +421,8 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       assert(mockStation != null)
       // Then: Charging station should have required configuration
       assert.notStrictEqual(mockStation, undefined)
-      assert.notStrictEqual(mockStation.evses, undefined)
-      assert.ok(mockStation.evses.size > 0)
+      assert.notStrictEqual(mockStation.getNumberOfEvses(), 0)
+      assert.ok(mockStation.getNumberOfEvses() > 0)
       assert.strictEqual(mockStation.stationInfo?.ocppVersion, OCPPVersion.VERSION_201)
     })
   })

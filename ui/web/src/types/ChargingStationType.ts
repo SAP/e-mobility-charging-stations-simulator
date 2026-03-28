@@ -249,8 +249,9 @@ export interface ConfigurationKey extends OCPPConfigurationKey {
 }
 
 export interface ConnectorEntry extends JsonObject {
-  connector: ConnectorStatus
   connectorId: number
+  connectorStatus: ConnectorStatus
+  evseId?: number
 }
 
 export interface ConnectorStatus extends JsonObject {
@@ -276,9 +277,11 @@ export interface ConnectorStatus extends JsonObject {
 }
 
 export interface EvseEntry extends JsonObject {
-  availability: AvailabilityType
-  connectors: ConnectorEntry[]
   evseId: number
+  evseStatus: {
+    availability: AvailabilityType
+    connectors: ConnectorEntry[]
+  }
 }
 
 export interface OCPP20EVSEType extends JsonObject {

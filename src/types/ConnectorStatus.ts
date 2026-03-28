@@ -7,6 +7,12 @@ import type { MeterValue } from './ocpp/MeterValues.js'
 import type { AvailabilityType } from './ocpp/Requests.js'
 import type { Reservation } from './ocpp/Reservation.js'
 
+export interface ConnectorEntry {
+  readonly connectorId: number
+  readonly connectorStatus: ConnectorStatus
+  readonly evseId: number | undefined
+}
+
 export interface ConnectorStatus {
   authorizeIdTag?: string
   availability: AvailabilityType

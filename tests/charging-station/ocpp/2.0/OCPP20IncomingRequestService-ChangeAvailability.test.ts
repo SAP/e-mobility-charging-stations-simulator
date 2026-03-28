@@ -71,14 +71,12 @@ await describe('G03 - ChangeAvailability', async () => {
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
-    for (const [evseId, evseStatus] of station.evses) {
-      if (evseId > 0) {
-        assert.strictEqual(
-          evseStatus.availability,
-          OCPP20OperationalStatusEnumType.Inoperative,
-          `EVSE ${String(evseId)} should be Inoperative`
-        )
-      }
+    for (const { evseId, evseStatus } of station.iterateEvses(true)) {
+      assert.strictEqual(
+        evseStatus.availability,
+        OCPP20OperationalStatusEnumType.Inoperative,
+        `EVSE ${String(evseId)} should be Inoperative`
+      )
     }
   })
 
@@ -157,10 +155,8 @@ await describe('G03 - ChangeAvailability', async () => {
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
-    for (const [evseId, evseStatus] of station.evses) {
-      if (evseId > 0) {
-        assert.strictEqual(evseStatus.availability, OCPP20OperationalStatusEnumType.Inoperative)
-      }
+    for (const { evseStatus } of station.iterateEvses(true)) {
+      assert.strictEqual(evseStatus.availability, OCPP20OperationalStatusEnumType.Inoperative)
     }
   })
 })

@@ -213,7 +213,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
         'Core,SmartCharging'
       )
       // Ensure no profiles on any connector
-      for (const [connectorId] of station.connectors.entries()) {
+      for (const { connectorId } of station.iterateConnectors()) {
         const connectorStatus = station.getConnectorStatus(connectorId)
         if (connectorStatus != null) {
           connectorStatus.chargingProfiles = []

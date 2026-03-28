@@ -23,12 +23,14 @@ import {
   type ChargingStationOcppConfiguration,
   type ChargingStationOptions,
   type ChargingStationTemplate,
+  type ConnectorEntry,
   type ConnectorStatus,
   ConnectorStatusEnum,
   CurrentType,
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
+  type EvseEntry,
   type EvseStatus,
   type EvseStatusConfiguration,
   FileType,
@@ -163,8 +165,6 @@ export class ChargingStation extends EventEmitter {
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
   public bootNotificationRequest?: BootNotificationRequest
   public bootNotificationResponse?: BootNotificationResponse
-  public readonly connectors: Map<number, ConnectorStatus>
-  public readonly evses: Map<number, EvseStatus>
   public heartbeatSetInterval?: NodeJS.Timeout
   public idTagsCache: IdTagsCache
   public readonly index: number
@@ -205,7 +205,9 @@ export class ChargingStation extends EventEmitter {
   private configurationFile!: string
   private configurationFileHash!: string
   private configuredSupervisionUrl!: URL
+  private readonly connectors: Map<number, ConnectorStatus>
   private connectorsConfigurationHash!: string
+  private readonly evses: Map<number, EvseStatus>
   private evsesConfigurationHash!: string
   private flushingMessageBuffer: boolean
   private flushMessageBufferSetInterval?: NodeJS.Timeout
@@ -464,21 +466,10 @@ export class ChargingStation extends EventEmitter {
   ): number | undefined {
     if (transactionId == null) {
       return undefined
-    } else if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if (connectorStatus.transactionId === transactionId) {
-            return connectorId
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
-          return connectorId
-        }
-      }
     }
+    return this.iterateConnectors().find(
+      ({ connectorStatus }) => connectorStatus.transactionId === transactionId
+    )?.connectorId
   }
 
   /**
@@ -596,16 +587,10 @@ export class ChargingStation extends EventEmitter {
   public getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
     if (transactionId == null) {
       return undefined
-    } else if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionId === transactionId) {
-            return evseId
-          }
-        }
-      }
     }
-    return undefined
+    return this.iterateConnectors().find(
+      ({ connectorStatus }) => connectorStatus.transactionId === transactionId
+    )?.evseId
   }
 
   /**
@@ -678,26 +663,11 @@ export class ChargingStation extends EventEmitter {
    * @returns The number of running transactions
    */
   public getNumberOfRunningTransactions (): number {
-    let numberOfRunningTransactions = 0
-    if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId === 0) {
-          continue
-        }
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionStarted === true) {
-            ++numberOfRunningTransactions
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-          ++numberOfRunningTransactions
-        }
-      }
-    }
-    return numberOfRunningTransactions
+    return this.iterateConnectors(true).reduce(
+      (count, { connectorStatus }) =>
+        connectorStatus.transactionStarted === true ? count + 1 : count,
+      0
+    )
   }
 
   /**
@@ -710,21 +680,9 @@ export class ChargingStation extends EventEmitter {
     filterKey: ReservationKey,
     value: number | string
   ): Reservation | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.reservation?.[filterKey] === value) {
-            return connectorStatus.reservation
-          }
-        }
-      }
-    } else {
-      for (const connectorStatus of this.connectors.values()) {
-        if (connectorStatus.reservation?.[filterKey] === value) {
-          return connectorStatus.reservation
-        }
-      }
-    }
+    return this.iterateConnectors().find(
+      ({ connectorStatus }) => connectorStatus.reservation?.[filterKey] === value
+    )?.connectorStatus.reservation
   }
 
   public getReserveConnectorZeroSupported (): boolean {
@@ -739,21 +697,9 @@ export class ChargingStation extends EventEmitter {
    * @returns The ID tag or undefined if not found
    */
   public getTransactionIdTag (transactionId: number): string | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionId === transactionId) {
-            return connectorStatus.transactionIdTag
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
-          return this.getConnectorStatus(connectorId)?.transactionIdTag
-        }
-      }
-    }
+    return this.iterateConnectors().find(
+      ({ connectorStatus }) => connectorStatus.transactionId === transactionId
+    )?.connectorStatus.transactionIdTag
   }
 
   public getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {
@@ -779,6 +725,10 @@ export class ChargingStation extends EventEmitter {
       return false
     }
     return this.connectors.has(connectorId)
+  }
+
+  public hasEvse (evseId: number): boolean {
+    return this.evses.has(evseId)
   }
 
   public hasIdTags (): boolean {
@@ -844,6 +794,30 @@ export class ChargingStation extends EventEmitter {
 
   public isWebSocketConnectionOpened (): boolean {
     return this.wsConnection?.readyState === WebSocket.OPEN
+  }
+
+  public * iterateConnectors (skipZero = false): Generator<ConnectorEntry> {
+    if (this.hasEvses) {
+      for (const [evseId, evseStatus] of this.evses) {
+        if (skipZero && evseId === 0) continue
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (skipZero && connectorId === 0) continue
+          yield { connectorId, connectorStatus, evseId }
+        }
+      }
+    } else {
+      for (const [connectorId, connectorStatus] of this.connectors) {
+        if (skipZero && connectorId === 0) continue
+        yield { connectorId, connectorStatus, evseId: undefined }
+      }
+    }
+  }
+
+  public * iterateEvses (skipZero = false): Generator<EvseEntry> {
+    for (const [evseId, evseStatus] of this.evses) {
+      if (skipZero && evseId === 0) continue
+      yield { evseId, evseStatus }
+    }
   }
 
   public lockConnector (connectorId: number): void {
@@ -2118,21 +2092,10 @@ export class ChargingStation extends EventEmitter {
     }
     if (getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation) == null) {
       const connectorsPhaseRotation: string[] = []
-      if (this.hasEvses) {
-        for (const evseStatus of this.evses.values()) {
-          for (const connectorId of evseStatus.connectors.keys()) {
-            const phaseRotation = getPhaseRotationValue(connectorId, this.getNumberOfPhases())
-            if (phaseRotation != null) {
-              connectorsPhaseRotation.push(phaseRotation)
-            }
-          }
-        }
-      } else {
-        for (const connectorId of this.connectors.keys()) {
-          const phaseRotation = getPhaseRotationValue(connectorId, this.getNumberOfPhases())
-          if (phaseRotation != null) {
-            connectorsPhaseRotation.push(phaseRotation)
-          }
+      for (const { connectorId } of this.iterateConnectors()) {
+        const phaseRotation = getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+        if (phaseRotation != null) {
+          connectorsPhaseRotation.push(phaseRotation)
         }
       }
       addConfigurationKey(
@@ -2650,34 +2613,12 @@ export class ChargingStation extends EventEmitter {
       this.startHeartbeat()
     }
     // Initialize connectors status
-    if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId > 0) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            await sendAndSetConnectorStatus(this, {
-              connectorId,
-              evseId,
-              status: getBootConnectorStatus(this, connectorId, connectorStatus),
-            } as unknown as StatusNotificationRequest)
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0) {
-          const connectorStatus = this.getConnectorStatus(connectorId)
-          if (connectorStatus == null) {
-            logger.error(
-              `${this.logPrefix()} No connector ${connectorId.toString()} status found during message sequence start`
-            )
-            continue
-          }
-          await sendAndSetConnectorStatus(this, {
-            connectorId,
-            status: getBootConnectorStatus(this, connectorId, connectorStatus),
-          } as unknown as StatusNotificationRequest)
-        }
-      }
+    for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+      await sendAndSetConnectorStatus(this, {
+        connectorId,
+        ...(evseId != null && { evseId }),
+        status: getBootConnectorStatus(this, connectorId, connectorStatus),
+      } as unknown as StatusNotificationRequest)
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
@@ -2739,29 +2680,13 @@ export class ChargingStation extends EventEmitter {
     this.internalStopMessageSequence()
     // Stop ongoing transactions
     stopTransactions && (await stopRunningTransactions(this, reason))
-    if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId > 0) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            await sendAndSetConnectorStatus(this, {
-              connectorId,
-              evseId,
-              status: ConnectorStatusEnum.Unavailable,
-            } as unknown as StatusNotificationRequest)
-            delete connectorStatus.status
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0) {
-          await sendAndSetConnectorStatus(this, {
-            connectorId,
-            status: ConnectorStatusEnum.Unavailable,
-          } as unknown as StatusNotificationRequest)
-          delete this.getConnectorStatus(connectorId)?.status
-        }
-      }
+    for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+      await sendAndSetConnectorStatus(this, {
+        connectorId,
+        ...(evseId != null && { evseId }),
+        status: ConnectorStatusEnum.Unavailable,
+      } as unknown as StatusNotificationRequest)
+      delete connectorStatus.status
     }
   }
 

@@ -7,9 +7,9 @@ import type {
 } from './AutomaticTransactionGenerator.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js'
-import type { ConnectorStatus } from './ConnectorStatus.js'
+import type { ConnectorEntry } from './ConnectorStatus.js'
+import type { EvseEntry } from './Evse.js'
 import type { JsonObject } from './JsonType.js'
-import type { AvailabilityType } from './ocpp/Requests.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
 import type { UUIDv4 } from './UUID.js'
@@ -79,14 +79,3 @@ export const ChargingStationWorkerMessageEvents = {
 export type ChargingStationWorkerMessageEvents =
   | ChargingStationEvents
   | ChargingStationMessageEvents
-
-export interface ConnectorEntry {
-  connector: ConnectorStatus
-  connectorId: number
-}
-
-export interface EvseEntry {
-  availability: AvailabilityType
-  connectors: ConnectorEntry[]
-  evseId: number
-}

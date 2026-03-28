@@ -40,7 +40,7 @@ await describe('ChargingStation', async () => {
       const station = result.station
 
       assert.notStrictEqual(station, undefined)
-      assert.strictEqual(station.connectors.size > 0, true)
+      assert.strictEqual(station.getNumberOfConnectors() > 0, true)
       assert.notStrictEqual(station.stationInfo, undefined)
 
       cleanupChargingStation(station)
@@ -50,8 +50,8 @@ await describe('ChargingStation', async () => {
       const result = createMockChargingStation({ connectorsCount: 5 })
       const station = result.station
 
-      // 5 connectors + connector 0 = 6 total
-      assert.strictEqual(station.connectors.size, 6)
+      // 5 connectors (excluding connector 0)
+      assert.strictEqual(station.getNumberOfConnectors(), 5)
       assert.strictEqual(station.hasConnector(5), true)
 
       cleanupChargingStation(station)

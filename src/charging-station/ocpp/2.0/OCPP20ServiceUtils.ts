@@ -742,27 +742,26 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         }
       }
     } else {
-      for (const [iteratedEvseId, evseStatus] of chargingStation.evses) {
-        if (iteratedEvseId === 0) {
-          continue
-        }
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if (connectorStatus.transactionId != null) {
-            terminationPromises.push(
-              OCPP20ServiceUtils.requestStopTransaction(
-                chargingStation,
-                connectorId,
-                iteratedEvseId,
-                triggerReason,
-                stoppedReason
-              ).catch((error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} ${moduleName}.stopAllTransactions: Error stopping transaction on connector ${connectorId.toString()}:`,
-                  error
-                )
-              })
-            )
-          }
+      for (const {
+        connectorId,
+        connectorStatus,
+        evseId: connectorEvseId,
+      } of chargingStation.iterateConnectors(true)) {
+        if (connectorStatus.transactionId != null) {
+          terminationPromises.push(
+            OCPP20ServiceUtils.requestStopTransaction(
+              chargingStation,
+              connectorId,
+              connectorEvseId,
+              triggerReason,
+              stoppedReason
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.stopAllTransactions: Error stopping transaction on connector ${connectorId.toString()}:`,
+                error
+              )
+            })
+          )
         }
       }
     }

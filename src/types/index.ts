@@ -32,8 +32,6 @@ export {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
-  type ConnectorEntry,
-  type EvseEntry,
 } from './ChargingStationWorker.js'
 export {
   ApplicationProtocolVersion,
@@ -47,10 +45,10 @@ export {
   type UIServerConfiguration,
   type WorkerConfiguration,
 } from './ConfigurationData.js'
-export type { ConnectorStatus } from './ConnectorStatus.js'
+export type { ConnectorEntry, ConnectorStatus } from './ConnectorStatus.js'
 export type { EmptyObject } from './EmptyObject.js'
 export type { HandleErrorParams } from './Error.js'
-export type { EvseStatus, EvseTemplate } from './Evse.js'
+export type { EvseEntry, EvseStatus, EvseTemplate } from './Evse.js'
 export { FileType } from './FileType.js'
 export type { JsonObject, JsonType } from './JsonType.js'
 export { MapStringifyFormat } from './MapStringifyFormat.js'

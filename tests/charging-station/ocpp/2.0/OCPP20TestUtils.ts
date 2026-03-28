@@ -225,7 +225,7 @@ export function createTestableOCPP20RequestService (
  */
 export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
   if (chargingStation.hasEvses) {
-    for (const evseStatus of chargingStation.evses.values()) {
+    for (const { evseStatus } of chargingStation.iterateEvses()) {
       for (const connectorStatus of evseStatus.connectors.values()) {
         connectorStatus.transactionStarted = false
         connectorStatus.transactionId = undefined
@@ -239,8 +239,7 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
       }
     }
   } else {
-    for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
-      if (connectorId === 0) continue // Skip connector 0 (charging station itself)
+    for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
       connectorStatus.transactionStarted = false
       connectorStatus.transactionId = undefined
       connectorStatus.transactionIdTag = undefined

@@ -10,6 +10,7 @@ import {
   CertificateSigningUseEnumType,
   ChangeAvailabilityStatusEnumType,
   ConnectorEnumType,
+  type ConnectorStatus,
   ConnectorStatusEnum,
   CustomerInformationStatusEnumType,
   DataEnumType,
@@ -416,7 +417,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               OCPP20TriggerReasonEnumType.RemoteStart,
               connectorId,
               response.transactionId,
-              startedMeterValues.length > 0 ? { meterValue: startedMeterValues } : undefined
+              {
+                ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
+                remoteStartId: request.remoteStartId,
+              }
             ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,
@@ -510,10 +514,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             if (evse?.id != null && evse.id > 0) {
               targetEvseIds.push(evse.id)
             } else {
-              for (const [eId] of chargingStation.evses) {
-                if (eId > 0) {
-                  targetEvseIds.push(eId)
-                }
+              for (const { evseId } of chargingStation.iterateEvses(true)) {
+                targetEvseIds.push(evseId)
               }
             }
             let hasSentTransactionEvent = false
@@ -918,60 +920,43 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
 
         if (chargingStation.hasEvses) {
-          for (const [evseId, evse] of chargingStation.evses) {
+          for (const { evseId, evseStatus } of chargingStation.iterateEvses()) {
             reportData.push({
               component: {
                 evse: { id: evseId },
                 name: OCPP20ComponentName.EVSE,
               },
               variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
-              variableAttribute: [{ type: AttributeEnumType.Actual, value: evse.availability }],
+              variableAttribute: [
+                { type: AttributeEnumType.Actual, value: evseStatus.availability },
+              ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
             })
-            if (evse.connectors.size > 0) {
-              for (const [connectorId, connector] of evse.connectors) {
-                reportData.push({
-                  component: {
-                    evse: { connectorId, id: evseId },
-                    name: OCPP20ComponentName.EVSE,
-                  },
-                  variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
-                  variableAttribute: [
-                    {
-                      type: AttributeEnumType.Actual,
-                      value: connector.type ?? ConnectorEnumType.Unknown,
-                    },
-                  ],
-                  variableCharacteristics: {
-                    dataType: DataEnumType.string,
-                    supportsMonitoring: false,
-                  },
-                })
-              }
-            }
           }
-        } else {
-          for (const [connectorId, connector] of chargingStation.connectors) {
-            if (connectorId > 0) {
-              reportData.push({
-                component: {
-                  evse: { connectorId, id: 1 },
-                  name: OCPP20ComponentName.Connector,
-                },
-                variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
-                variableAttribute: [
-                  {
-                    type: AttributeEnumType.Actual,
-                    value: connector.type ?? ConnectorEnumType.Unknown,
-                  },
-                ],
-                variableCharacteristics: {
-                  dataType: DataEnumType.string,
-                  supportsMonitoring: false,
-                },
-              })
-            }
-          }
+        }
+        for (const {
+          connectorId,
+          connectorStatus,
+          evseId,
+        } of chargingStation.iterateConnectors()) {
+          if (evseId == null && connectorId === 0) continue
+          reportData.push({
+            component: {
+              evse: { connectorId, id: evseId ?? 1 },
+              name: evseId != null ? OCPP20ComponentName.EVSE : OCPP20ComponentName.Connector,
+            },
+            variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
+            variableAttribute: [
+              {
+                type: AttributeEnumType.Actual,
+                value: connectorStatus.type ?? ConnectorEnumType.Unknown,
+              },
+            ],
+            variableCharacteristics: {
+              dataType: DataEnumType.string,
+              supportsMonitoring: false,
+            },
+          })
         }
         break
 
@@ -993,38 +978,38 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         })
 
         if (chargingStation.hasEvses) {
-          for (const [evseId, evse] of chargingStation.evses) {
+          for (const { evseId, evseStatus } of chargingStation.iterateEvses()) {
             reportData.push({
               component: {
                 evse: { id: evseId },
                 name: OCPP20ComponentName.EVSE,
               },
               variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
-              variableAttribute: [{ type: AttributeEnumType.Actual, value: evse.availability }],
+              variableAttribute: [
+                { type: AttributeEnumType.Actual, value: evseStatus.availability },
+              ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
             })
           }
         } else {
-          for (const [connectorId, connector] of chargingStation.connectors) {
-            if (connectorId > 0) {
-              reportData.push({
-                component: {
-                  evse: { connectorId, id: 1 },
-                  name: OCPP20ComponentName.Connector,
+          for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+            reportData.push({
+              component: {
+                evse: { connectorId, id: 1 },
+                name: OCPP20ComponentName.Connector,
+              },
+              variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
+              variableAttribute: [
+                {
+                  type: AttributeEnumType.Actual,
+                  value: connectorStatus.status ?? ConnectorStatusEnum.Unavailable,
                 },
-                variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
-                variableAttribute: [
-                  {
-                    type: AttributeEnumType.Actual,
-                    value: connector.status ?? ConnectorStatusEnum.Unavailable,
-                  },
-                ],
-                variableCharacteristics: {
-                  dataType: DataEnumType.string,
-                  supportsMonitoring: true,
-                },
-              })
-            }
+              ],
+              variableCharacteristics: {
+                dataType: DataEnumType.string,
+                supportsMonitoring: true,
+              },
+            })
           }
         }
         break
@@ -1045,6 +1030,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       stationState.activeFirmwareUpdateAbortController = undefined
       stationState.activeFirmwareUpdateRequestId = undefined
     }
+  }
+
+  private connectorHasQueuedEvents (
+    connectorStatus: ConnectorStatus,
+    transactionId?: string
+  ): boolean {
+    const queue = connectorStatus.transactionEventQueue
+    if (queue == null || queue.length === 0) {
+      return false
+    }
+    if (transactionId == null) {
+      return true
+    }
+    return queue.some(({ request }) => request.transactionInfo.transactionId === transactionId)
   }
 
   private getRestoredConnectorStatus (
@@ -1079,7 +1078,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     operationalStatus: OCPP20OperationalStatusEnumType,
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse {
-    if (!chargingStation.evses.has(evseId)) {
+    if (!chargingStation.hasEvse(evseId)) {
       return {
         status: ChangeAvailabilityStatusEnumType.Rejected,
         statusInfo: {
@@ -1129,10 +1128,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse | undefined {
     let hasActiveTransactions = false
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId === 0) {
-        continue
-      }
+    for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       if (this.hasEvseActiveTransactions(evseStatus)) {
         hasActiveTransactions = true
         logger.info(
@@ -1146,8 +1142,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
     if (hasActiveTransactions) {
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId > 0 && !this.hasEvseActiveTransactions(evseStatus)) {
+      for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+        if (!this.hasEvseActiveTransactions(evseStatus)) {
           this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
         }
       }
@@ -1167,7 +1163,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     operationalStatus: OCPP20OperationalStatusEnumType,
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse {
-    if (!chargingStation.evses.has(evseId)) {
+    if (!chargingStation.hasEvse(evseId)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} not found, rejecting`
       )
@@ -1421,10 +1417,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Apply availability change to all EVSEs (for Operative, or Inoperative with no active transactions)
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId > 0) {
-        evseStatus.availability = operationalStatus
-      }
+    for (const { evseStatus } of chargingStation.iterateEvses(true)) {
+      evseStatus.availability = operationalStatus
     }
     if (operationalStatus === OCPP20OperationalStatusEnumType.Operative) {
       this.sendRestoredAllConnectorsStatusNotifications(chargingStation)
@@ -1775,16 +1769,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // E14.FR.06: When transactionId is omitted, ongoingIndicator SHALL NOT be set
     if (transactionId == null) {
       return {
-        // Simulator has no persistent offline message buffer
-        messagesInQueue: false,
+        messagesInQueue: this.hasQueuedTransactionEvents(chargingStation),
       }
     }
 
     const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
 
     return {
-      // Simulator has no persistent offline message buffer
-      messagesInQueue: false,
+      messagesInQueue: this.hasQueuedTransactionEvents(chargingStation, transactionId),
       ongoingIndicator: evseId != null,
     }
   }
@@ -1946,7 +1938,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      const evseExists = chargingStation.evses.has(evseId)
+      const evseExists = chargingStation.hasEvse(evseId)
       if (!evseExists) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: EVSE ${evseId.toString()} not found, rejecting reset request`
@@ -2676,7 +2668,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      if (!chargingStation.evses.has(evseId)) {
+      if (!chargingStation.hasEvse(evseId)) {
         return {
           status: UnlockStatusEnumType.UnknownConnector,
           statusInfo: {
@@ -2784,9 +2776,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const hasActiveTransactions = [...chargingStation.evses].some(
-      ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
-    )
+    const hasActiveTransactions = chargingStation
+      .iterateEvses(true)
+      .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
     if (hasActiveTransactions) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Active transactions detected — installation will be deferred until idle`
@@ -2858,6 +2850,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       firmwareStatus === OCPP20FirmwareStatusEnumType.InstallRebooting ||
       firmwareStatus === OCPP20FirmwareStatusEnumType.SignatureVerified
     )
+  }
+
+  private hasQueuedTransactionEvents (
+    chargingStation: ChargingStation,
+    transactionId?: string
+  ): boolean {
+    for (const { connectorStatus } of chargingStation.iterateConnectors()) {
+      if (this.connectorHasQueuedEvents(connectorStatus, transactionId)) {
+        return true
+      }
+    }
+    return false
   }
 
   private isAuthorizedToStopTransaction (
@@ -3061,7 +3065,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evseIds =
       evseId != null && evseId > 0
         ? [evseId]
-        : [...chargingStation.evses.keys()].filter(id => id > 0)
+        : chargingStation
+          .iterateEvses(true)
+          .map(({ evseId }) => evseId)
+          .toArray()
     for (const id of evseIds) {
       const evseStatus = chargingStation.getEvseStatus(id)
       if (evseStatus != null) {
@@ -3167,10 +3174,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId === 0) {
-        continue
-      }
+    for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       if (
         evseStatus.availability !== OCPP20OperationalStatusEnumType.Inoperative &&
         !this.hasEvseActiveTransactions(evseStatus)
@@ -3185,18 +3189,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     status: OCPP20ConnectorStatusEnumType
   ): void {
-    for (const [, evse] of chargingStation.evses) {
-      for (const [connectorId] of evse.connectors) {
-        sendAndSetConnectorStatus(chargingStation, {
-          connectorId,
-          connectorStatus: status,
-        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.sendAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
-            error
-          )
-        })
-      }
+    for (const { connectorId } of chargingStation.iterateConnectors()) {
+      sendAndSetConnectorStatus(chargingStation, {
+        connectorId,
+        connectorStatus: status,
+      } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.sendAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
+          error
+        )
+      })
     }
   }
 
@@ -3347,21 +3349,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private sendRestoredAllConnectorsStatusNotifications (chargingStation: ChargingStation): void {
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId > 0) {
-        for (const [connectorId] of evseStatus.connectors) {
-          const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
-          sendAndSetConnectorStatus(chargingStation, {
-            connectorId,
-            connectorStatus: restoredStatus,
-          } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.sendRestoredAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
-              error
-            )
-          })
-        }
-      }
+    for (const { connectorId } of chargingStation.iterateConnectors(true)) {
+      const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
+      sendAndSetConnectorStatus(chargingStation, {
+        connectorId,
+        connectorStatus: restoredStatus,
+      } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.sendRestoredAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
+          error
+        )
+      })
     }
   }
 
@@ -3552,9 +3550,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // L01.FR.06: Wait for active transactions to end before installing
     // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
-    const hasActiveTransactionsBeforeInstall = [...chargingStation.evses].some(
-      ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
-    )
+    const hasActiveTransactionsBeforeInstall = chargingStation
+      .iterateEvses(true)
+      .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
     if (hasActiveTransactionsBeforeInstall) {
       const variableManager = OCPP20VariableManager.getInstance()
       const allowNewSessionsResults = variableManager.getVariables(chargingStation, [
@@ -3567,17 +3565,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const allowNewSessions = convertToBoolean(allowNewSessionsResults[0]?.attributeValue)
       while (
         !checkAborted() &&
-        [...chargingStation.evses].some(
-          ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
-        )
+        chargingStation
+          .iterateEvses(true)
+          .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
       ) {
         // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
         if (!allowNewSessions) {
-          for (const [fwEvseId, fwEvseStatus] of chargingStation.evses) {
-            if (fwEvseId > 0 && !this.hasEvseActiveTransactions(fwEvseStatus)) {
+          for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+            if (!this.hasEvseActiveTransactions(evseStatus)) {
               this.sendEvseStatusNotifications(
                 chargingStation,
-                fwEvseId,
+                evseId,
                 OCPP20ConnectorStatusEnumType.Unavailable
               )
             }
@@ -3685,18 +3683,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     errorHandler: (error: unknown) => void
   ): void {
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId > 0) {
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
-          chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20StatusNotificationRequest,
-              OCPP20StatusNotificationResponse
-            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
-            .catch(errorHandler)
-        }
-      }
+    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors(
+      true
+    )) {
+      const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
+      chargingStation.ocppRequestService
+        .requestHandler<
+          OCPP20StatusNotificationRequest,
+          OCPP20StatusNotificationResponse
+        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        .catch(errorHandler)
     }
   }
 
@@ -3706,7 +3702,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     errorHandler: (error: unknown) => void
   ): void {
     if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
-      const evseStatus = chargingStation.evses.get(evse.id)
+      const evseStatus = chargingStation.getEvseStatus(evse.id)
       const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
       const resolvedStatus = connectorStatus?.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
@@ -4040,7 +4036,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
       }
     }
-    if (!chargingStation.evses.has(evse.id)) {
+    if (!chargingStation.hasEvse(evse.id)) {
       return {
         status: TriggerMessageStatusEnumType.Rejected,
         statusInfo: {

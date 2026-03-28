@@ -118,7 +118,7 @@ await describe('ChargingStation Resilience', async () => {
       mocks.webSocket.simulateMessage('invalid json')
 
       // Assert - Station should still be operational (not crashed)
-      assert.strictEqual(station.connectors.size > 0, true)
+      assert.strictEqual(station.getNumberOfConnectors() > 0, true)
     })
 
     await it('should handle WebSocket error event gracefully', () => {
@@ -196,7 +196,7 @@ await describe('ChargingStation Resilience', async () => {
       mocks.webSocket.simulateClose(1006, 'Server unreachable')
 
       // Assert - Station should remain in valid state
-      assert.strictEqual(station.connectors.size > 0, true)
+      assert.strictEqual(station.getNumberOfConnectors() > 0, true)
       assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
     })
 

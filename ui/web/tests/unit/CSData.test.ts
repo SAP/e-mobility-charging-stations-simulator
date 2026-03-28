@@ -242,9 +242,9 @@ describe('CSData', () => {
     it('should generate entries from connectors array for OCPP 1.6', () => {
       const station = createChargingStationData({
         connectors: [
-          { connector: createConnectorStatus(), connectorId: 0 },
-          { connector: createConnectorStatus(), connectorId: 1 },
-          { connector: createConnectorStatus(), connectorId: 2 },
+          { connectorId: 0, connectorStatus: createConnectorStatus() },
+          { connectorId: 1, connectorStatus: createConnectorStatus() },
+          { connectorId: 2, connectorStatus: createConnectorStatus() },
         ],
       })
       const wrapper = mountCSData(station)
@@ -253,7 +253,7 @@ describe('CSData', () => {
 
     it('should filter out connector 0', () => {
       const station = createChargingStationData({
-        connectors: [{ connector: createConnectorStatus(), connectorId: 0 }],
+        connectors: [{ connectorId: 0, connectorStatus: createConnectorStatus() }],
       })
       const wrapper = mountCSData(station)
       expect(wrapper.findAllComponents(CSConnector)).toHaveLength(0)
@@ -264,16 +264,25 @@ describe('CSData', () => {
         connectors: [],
         evses: [
           createEvseEntry({
-            connectors: [{ connector: createConnectorStatus(), connectorId: 0 }],
             evseId: 0,
+            evseStatus: {
+              availability: 'Operative' as never,
+              connectors: [{ connectorId: 0, connectorStatus: createConnectorStatus() }],
+            },
           }),
           createEvseEntry({
-            connectors: [{ connector: createConnectorStatus(), connectorId: 1 }],
             evseId: 1,
+            evseStatus: {
+              availability: 'Operative' as never,
+              connectors: [{ connectorId: 1, connectorStatus: createConnectorStatus() }],
+            },
           }),
           createEvseEntry({
-            connectors: [{ connector: createConnectorStatus(), connectorId: 1 }],
             evseId: 2,
+            evseStatus: {
+              availability: 'Operative' as never,
+              connectors: [{ connectorId: 1, connectorStatus: createConnectorStatus() }],
+            },
           }),
         ],
         stationInfo: createStationInfo({ ocppVersion: OCPPVersion.VERSION_201 }),
@@ -287,8 +296,11 @@ describe('CSData', () => {
         connectors: [],
         evses: [
           createEvseEntry({
-            connectors: [{ connector: createConnectorStatus(), connectorId: 0 }],
             evseId: 0,
+            evseStatus: {
+              availability: 'Operative' as never,
+              connectors: [{ connectorId: 0, connectorStatus: createConnectorStatus() }],
+            },
           }),
         ],
         stationInfo: createStationInfo({ ocppVersion: OCPPVersion.VERSION_201 }),

@@ -13,6 +13,7 @@ import type {
   OCPP20ChargingRateUnitEnumType,
   OCPP20RequestStartTransactionRequest,
   OCPP20RequestStartTransactionResponse,
+  OCPP20TransactionEventOptions,
   OCPP20TransactionEventRequest,
 } from '../../../../src/types/index.js'
 
@@ -521,6 +522,11 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       ]
       const transactionEvent = args[2]
       assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStart)
+      // F01.FR.25: remoteStartId SHALL be included in TransactionEventRequest
+      assert.strictEqual(
+        (transactionEvent as unknown as OCPP20TransactionEventOptions).remoteStartId,
+        3
+      )
     })
 
     await it('should handle TransactionEvent failure gracefully', async () => {

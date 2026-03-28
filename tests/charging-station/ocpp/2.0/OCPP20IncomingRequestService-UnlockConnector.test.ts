@@ -137,7 +137,7 @@ await describe('F05 - UnlockConnector', async () => {
     await it('should return OngoingAuthorizedTransaction when specified connector has active transaction', async () => {
       const { mockStation } = createUnlockConnectorStation()
 
-      const evseStatus = mockStation.evses.get(1)
+      const evseStatus = mockStation.getEvseStatus(1)
       const connectorStatus = evseStatus?.connectors.get(1)
       if (connectorStatus != null) {
         connectorStatus.transactionId = 'tx-001'
@@ -175,7 +175,7 @@ await describe('F05 - UnlockConnector', async () => {
       })
       const multiConnectorStation = station as MockChargingStation
 
-      const evseStatus = multiConnectorStation.evses.get(1)
+      const evseStatus = multiConnectorStation.getEvseStatus(1)
       const connector2 = evseStatus?.connectors.get(2)
       if (connector2 != null) {
         connector2.transactionId = 'tx-other'

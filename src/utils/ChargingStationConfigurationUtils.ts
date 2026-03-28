@@ -31,85 +31,105 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
 }
 
 export const buildConnectorEntries = (chargingStation: ChargingStation): ConnectorEntry[] => {
-  return [...chargingStation.connectors.entries()].map(
-    ([
-      connectorId,
-      {
-        transactionEndedMeterValues,
-        transactionEndedMeterValuesSetInterval,
-        transactionEventQueue,
-        transactionUpdatedMeterValuesSetInterval,
-        ...connector
-      },
-    ]) => ({
-      connector,
-      connectorId,
-    })
-  )
+  if (chargingStation.hasEvses) {
+    return []
+  }
+  return chargingStation
+    .iterateConnectors()
+    .map(
+      ({
+        connectorId,
+        connectorStatus: {
+          transactionEndedMeterValues,
+          transactionEndedMeterValuesSetInterval,
+          transactionEventQueue,
+          transactionUpdatedMeterValuesSetInterval,
+          ...connectorStatus
+        },
+      }) => ({
+        connectorId,
+        connectorStatus,
+        evseId: undefined,
+      })
+    )
+    .toArray()
 }
 
 export const buildConnectorsStatus = (
   chargingStation: ChargingStation
 ): [number, ConnectorStatus][] => {
-  return [...chargingStation.connectors.entries()].map(
-    ([
-      connectorId,
-      {
-        transactionEndedMeterValues,
-        transactionEndedMeterValuesSetInterval,
-        transactionEventQueue,
-        transactionUpdatedMeterValuesSetInterval,
-        ...connectorStatus
-      },
-    ]) => [connectorId, connectorStatus]
-  )
-}
-
-export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] => {
-  return [...chargingStation.evses.entries()].map(([evseId, evseStatus]) => ({
-    availability: evseStatus.availability,
-    connectors: [...evseStatus.connectors.entries()].map(
-      ([
+  if (chargingStation.hasEvses) {
+    return []
+  }
+  return chargingStation
+    .iterateConnectors()
+    .map(
+      ({
         connectorId,
-        {
+        connectorStatus: {
           transactionEndedMeterValues,
           transactionEndedMeterValuesSetInterval,
           transactionEventQueue,
           transactionUpdatedMeterValuesSetInterval,
-          ...connector
+          ...connectorStatus
         },
-      ]) => ({
-        connector,
-        connectorId,
-      })
-    ),
-    evseId,
-  }))
+      }) => [connectorId, connectorStatus] as [number, ConnectorStatus]
+    )
+    .toArray()
+}
+
+export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] => {
+  return chargingStation
+    .iterateEvses()
+    .map(({ evseId, evseStatus }) => ({
+      evseId,
+      evseStatus: {
+        availability: evseStatus.availability,
+        connectors: [...evseStatus.connectors.entries()].map(
+          ([
+            connectorId,
+            {
+              transactionEndedMeterValues,
+              transactionEndedMeterValuesSetInterval,
+              transactionEventQueue,
+              transactionUpdatedMeterValuesSetInterval,
+              ...connectorStatus
+            },
+          ]) => ({ connectorId, connectorStatus, evseId })
+        ),
+      },
+    }))
+    .toArray() as unknown as EvseEntry[]
 }
 
 export const buildEvsesStatus = (
   chargingStation: ChargingStation
 ): [number, EvseStatusConfiguration][] => {
-  return [...chargingStation.evses.entries()].map(([evseId, evseStatus]) => {
-    const connectorsStatus: [number, ConnectorStatus][] = [...evseStatus.connectors.entries()].map(
-      ([
-        connectorId,
+  return chargingStation
+    .iterateEvses()
+    .map(({ evseId, evseStatus }) => {
+      const connectorsStatus: [number, ConnectorStatus][] = [
+        ...evseStatus.connectors.entries(),
+      ].map(
+        ([
+          connectorId,
+          {
+            transactionEndedMeterValues,
+            transactionEndedMeterValuesSetInterval,
+            transactionEventQueue,
+            transactionUpdatedMeterValuesSetInterval,
+            ...connector
+          },
+        ]) => [connectorId, connector]
+      )
+      const { connectors: _, ...evseStatusRest } = evseStatus
+      return [
+        evseId,
         {
-          transactionEndedMeterValues,
-          transactionEndedMeterValuesSetInterval,
-          transactionEventQueue,
-          transactionUpdatedMeterValuesSetInterval,
-          ...connector
-        },
-      ]) => [connectorId, connector]
-    )
-    const { connectors: _, ...evseStatusRest } = evseStatus
-    return [
-      evseId,
-      {
-        ...evseStatusRest,
-        connectorsStatus,
-      } as EvseStatusConfiguration,
-    ]
-  })
+          ...evseStatusRest,
+          connectorsStatus,
+        } as EvseStatusConfiguration,
+      ] as [number, EvseStatusConfiguration]
+    })
+    .toArray()
 }

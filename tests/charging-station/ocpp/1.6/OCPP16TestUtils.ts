@@ -298,8 +298,7 @@ export async function dispatchResponse (
  * @param chargingStation - Charging station instance whose connector state should be reset
  */
 export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
-  for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
-    if (connectorId === 0) continue
+  for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
     connectorStatus.transactionStarted = false
     connectorStatus.transactionId = undefined
     connectorStatus.transactionIdTag = undefined

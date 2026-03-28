@@ -174,7 +174,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       })
 
       // Set an active transaction on EVSE 1's connector
-      const evse1 = evseStation.evses.get(1)
+      const evse1 = evseStation.getEvseStatus(1)
       if (evse1 != null) {
         const firstConnector = evse1.connectors.values().next().value
         if (firstConnector != null) {

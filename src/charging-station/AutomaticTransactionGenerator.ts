@@ -255,20 +255,8 @@ export class AutomaticTransactionGenerator {
   }
 
   private initializeConnectorsStatus (): void {
-    if (this.chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of this.chargingStation.evses) {
-        if (evseId > 0) {
-          for (const connectorId of evseStatus.connectors.keys()) {
-            this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId))
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.chargingStation.connectors.keys()) {
-        if (connectorId > 0) {
-          this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId))
-        }
-      }
+    for (const { connectorId } of this.chargingStation.iterateConnectors(true)) {
+      this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId))
     }
   }
 
@@ -400,20 +388,8 @@ export class AutomaticTransactionGenerator {
       this.connectorsStatus.clear()
       this.initializeConnectorsStatus()
     }
-    if (this.chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of this.chargingStation.evses) {
-        if (evseId > 0) {
-          for (const connectorId of evseStatus.connectors.keys()) {
-            this.startConnector(connectorId, stopAbsoluteDuration)
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.chargingStation.connectors.keys()) {
-        if (connectorId > 0) {
-          this.startConnector(connectorId, stopAbsoluteDuration)
-        }
-      }
+    for (const { connectorId } of this.chargingStation.iterateConnectors(true)) {
+      this.startConnector(connectorId, stopAbsoluteDuration)
     }
   }
 
@@ -466,20 +442,8 @@ export class AutomaticTransactionGenerator {
   }
 
   private stopConnectors (): void {
-    if (this.chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of this.chargingStation.evses) {
-        if (evseId > 0) {
-          for (const connectorId of evseStatus.connectors.keys()) {
-            this.stopConnector(connectorId)
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.chargingStation.connectors.keys()) {
-        if (connectorId > 0) {
-          this.stopConnector(connectorId)
-        }
-      }
+    for (const { connectorId } of this.chargingStation.iterateConnectors(true)) {
+      this.stopConnector(connectorId)
     }
   }
 
