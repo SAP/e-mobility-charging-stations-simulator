@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.2...simulator@v4.0.3) (2026-03-29)
+
+
+### ✨ Polish
+
+* simplify getNumberOfReservableConnectors using iterateConnectors ([58012bc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/58012bcb63273480005bd42a80842d636ade3ae5))
+
 ## [4.0.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.1...simulator@v4.0.2) (2026-03-29)
 
 ### 🐞 Bug Fixes
