@@ -27,11 +27,15 @@ export class Constants {
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
+
   static readonly DEFAULT_EV_CONNECTION_TIMEOUT = 180 // Seconds
+
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
+
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
 
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000 // Ms
+
   static readonly DEFAULT_IDTAG = '00000000'
 
   static readonly DEFAULT_LOG_STATISTICS_INTERVAL = 60 // Seconds
