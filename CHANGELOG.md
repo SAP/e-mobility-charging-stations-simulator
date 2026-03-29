@@ -2,10 +2,9 @@
 
 ## [4.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.0...simulator@v4.0.1) (2026-03-29)
 
-
 ### 🐞 Bug Fixes
 
-* improve OCPP 2.0.1 TransactionEvent spec compliance ([1ce9dee](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1ce9deebbd681c05059abda20d7658a37d418992))
+- improve OCPP 2.0.1 TransactionEvent spec compliance ([1ce9dee](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1ce9deebbd681c05059abda20d7658a37d418992))
 
 ## [4.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.4.0...simulator@v4.0.0) (2026-03-28)
 
