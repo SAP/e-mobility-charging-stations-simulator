@@ -1244,11 +1244,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // idTag authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() &&
-      !(await OCPPServiceUtils.isIdTagAuthorizedUnified(
-        chargingStation,
-        transactionConnectorId,
-        idTag
-      ))
+      !(await OCPPServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -1323,7 +1319,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    if (!(await OCPPServiceUtils.isIdTagAuthorizedUnified(chargingStation, connectorId, idTag))) {
+    if (!(await OCPPServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)

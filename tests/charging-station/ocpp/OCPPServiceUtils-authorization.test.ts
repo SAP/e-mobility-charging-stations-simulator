@@ -1,10 +1,9 @@
 /**
- * @file Tests for OCPPServiceUtils authorization wrapper functions
- * @description Verifies isIdTagAuthorized and isIdTagAuthorizedUnified functions
+ * @file Tests for OCPPServiceUtils authorization wrapper function
+ * @description Verifies isIdTagAuthorized unified authorization function
  *
  * Covers:
- * - isIdTagAuthorized — OCPP 1.6 legacy authorization (local auth list + remote authorization)
- * - isIdTagAuthorizedUnified — OCPP 2.0+ unified auth system with fallback
+ * - isIdTagAuthorized — unified auth system for all OCPP versions
  *
  * Note: The unified auth subsystem (OCPPAuthService, strategies, adapters) has its own
  * dedicated test suite in tests/charging-station/ocpp/auth/. These tests verify the
@@ -15,10 +14,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { getIdTagsFile } from '../../../src/charging-station/Helpers.js'
-import {
-  isIdTagAuthorized,
-  isIdTagAuthorizedUnified,
-} from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { AuthorizationStatus, OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
@@ -129,14 +125,14 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
     })
   })
 
-  await describe('isIdTagAuthorizedUnified', async () => {
-    await it('should fall back to legacy auth for OCPP 1.6 station', async () => {
+  await describe('isIdTagAuthorized (unified, OCPP 2.0+)', async () => {
+    await it('should use unified auth for OCPP 1.6 station', async () => {
       const { mocks, station } = createMockChargingStation({
         stationInfo: { idTagsFile: 'test-idtags.json' },
       })
       setupLocalAuth(station, mocks, ['TAG-001'])
 
-      const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
       assert.strictEqual(result, true)
     })
 
@@ -145,7 +141,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
 
-      const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
       assert.strictEqual(result, false)
     })
 
@@ -154,7 +150,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
         ocppVersion: OCPPVersion.VERSION_201,
       })
 
-      const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
       assert.strictEqual(result, false)
     })
   })
