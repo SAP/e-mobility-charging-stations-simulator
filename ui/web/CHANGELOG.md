@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.0.0...webui@v4.0.1) (2026-03-29)
+
+### 🧹 Chores
+
+- **webui:** Synchronize simulator-ui-ocpp-server versions
+
 ## [4.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.4.0...webui@v4.0.0) (2026-03-28)
 
 ### ⚠ BREAKING CHANGES
