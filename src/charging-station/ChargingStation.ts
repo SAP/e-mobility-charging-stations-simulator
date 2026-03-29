@@ -133,7 +133,6 @@ import {
   getIdTagsFile,
   getMaxNumberOfEvses,
   getMessageTypeString,
-  getNumberOfReservableConnectors,
   getPhaseRotationValue,
   hasFeatureProfile,
   hasReservationExpired,
@@ -1425,15 +1424,13 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getNumberOfReservableConnectors (): number {
-    let numberOfReservableConnectors = 0
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        numberOfReservableConnectors += getNumberOfReservableConnectors(evseStatus.connectors)
-      }
-    } else {
-      numberOfReservableConnectors = getNumberOfReservableConnectors(this.connectors)
-    }
-    return numberOfReservableConnectors - this.getNumberOfReservationsOnConnectorZero()
+    return (
+      this.iterateConnectors(true).reduce(
+        (count, { connectorStatus }) =>
+          connectorStatus.status === ConnectorStatusEnum.Available ? count + 1 : count,
+        0
+      ) - this.getNumberOfReservationsOnConnectorZero()
+    )
   }
 
   private getNumberOfReservationsOnConnectorZero (): number {

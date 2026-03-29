@@ -159,21 +159,6 @@ export const removeExpiredReservations = async (
   }
 }
 
-export const getNumberOfReservableConnectors = (
-  connectors: Map<number, ConnectorStatus>
-): number => {
-  let numberOfReservableConnectors = 0
-  for (const [connectorId, connectorStatus] of connectors) {
-    if (connectorId === 0) {
-      continue
-    }
-    if (connectorStatus.status === ConnectorStatusEnum.Available) {
-      ++numberOfReservableConnectors
-    }
-  }
-  return numberOfReservableConnectors
-}
-
 export const getHashId = (index: number, stationTemplate: ChargingStationTemplate): string => {
   const chargingStationInfo = {
     chargePointModel: stationTemplate.chargePointModel,
