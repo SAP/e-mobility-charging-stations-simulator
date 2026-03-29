@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.1...simulator@v4.0.2) (2026-03-29)
+
+
+### 🐞 Bug Fixes
+
+* harmonize idToken type to ISO14443 between Authorize and TransactionEvent Started ([65db82b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/65db82b9f94bf0ae240aa6548752ea50f95532c7))
+
 ## [4.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.0...simulator@v4.0.1) (2026-03-29)
 
 ### 🐞 Bug Fixes
