@@ -452,7 +452,7 @@ export const startTransactionOnConnector = async (
         transactionId,
         {
           idToken:
-            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Local } : undefined,
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
           ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
         }
       )
