@@ -397,6 +397,11 @@ export const mapStopReasonToOCPP20 = (
         stoppedReason: OCPP20ReasonEnumType.Remote,
         triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
       }
+    case OCPP20ReasonEnumType.TimeLimitReached:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.TimeLimitReached,
+        triggerReason: OCPP20TriggerReasonEnumType.TimeLimitReached,
+      }
     case OCPP16StopTransactionReason.LOCAL:
     case OCPP20ReasonEnumType.Local:
     case undefined:
@@ -447,7 +452,7 @@ export const startTransactionOnConnector = async (
         transactionId,
         {
           idToken:
-            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Central } : undefined,
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Local } : undefined,
           ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
         }
       )

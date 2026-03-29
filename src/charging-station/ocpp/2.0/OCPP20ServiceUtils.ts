@@ -1018,8 +1018,15 @@ export function buildTransactionEvent (
     transactionId: transactionId as UUIDv4,
   }
 
-  if (commandParams.chargingState !== undefined) {
-    transactionInfo.chargingState = commandParams.chargingState
+  const chargingState =
+    commandParams.chargingState ??
+    (eventType === OCPP20TransactionEventEnumType.Ended
+      ? undefined
+      : connectorStatus.transactionStarted === true
+        ? OCPP20ChargingStateEnumType.Charging
+        : OCPP20ChargingStateEnumType.EVConnected)
+  if (chargingState !== undefined) {
+    transactionInfo.chargingState = chargingState
   }
   if (commandParams.stoppedReason !== undefined) {
     transactionInfo.stoppedReason = commandParams.stoppedReason
