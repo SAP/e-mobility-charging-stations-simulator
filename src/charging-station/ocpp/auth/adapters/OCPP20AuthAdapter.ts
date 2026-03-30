@@ -31,7 +31,9 @@ import {
   AuthorizationStatus,
   IdentifierType,
   mapOCPP20AuthorizationStatus,
+  mapOCPP20TokenType,
   mapToOCPP20Status,
+  mapToOCPP20TokenType,
 } from '../types/AuthTypes.js'
 
 const moduleName = 'OCPP20AuthAdapter'
@@ -183,7 +185,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    */
   convertFromIdentifier (identifier: Identifier): OCPP20IdTokenType {
     // Map type back to OCPP 2.0 type
-    const ocpp20Type = this.mapFromIdentifierType(identifier.type)
+    const ocpp20Type = mapToOCPP20TokenType(identifier.type)
 
     // Convert additionalInfo back to OCPP 2.0 format
     const additionalInfo: AdditionalInfoType[] | undefined = identifier.additionalInfo
@@ -232,8 +234,12 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       idToken = identifier
     }
 
-    // Map OCPP 2.0 IdToken type to identifier type
-    const identifierType = this.mapToIdentifierType(idToken.type)
+    // Map OCPP 2.0 IdToken type to identifier type, normalizing Central/Local to ID_TAG
+    const rawType = mapOCPP20TokenType(idToken.type)
+    const identifierType =
+      rawType === IdentifierType.CENTRAL || rawType === IdentifierType.LOCAL
+        ? IdentifierType.ID_TAG
+        : rawType
 
     return {
       additionalInfo: {
@@ -600,63 +606,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   }
 
   /**
-   * Map identifier type to OCPP 2.0 IdToken type
-   * @param identifierType - Identifier type to convert
-   * @returns Corresponding OCPP 2.0 IdTokenEnumType value
-   */
-  private mapFromIdentifierType (identifierType: IdentifierType): OCPP20IdTokenEnumType {
-    switch (identifierType) {
-      case IdentifierType.CENTRAL:
-        return OCPP20IdTokenEnumType.Central
-      case IdentifierType.E_MAID:
-        return OCPP20IdTokenEnumType.eMAID
-      case IdentifierType.ID_TAG:
-        return OCPP20IdTokenEnumType.Local
-      case IdentifierType.ISO14443:
-        return OCPP20IdTokenEnumType.ISO14443
-      case IdentifierType.ISO15693:
-        return OCPP20IdTokenEnumType.ISO15693
-      case IdentifierType.KEY_CODE:
-        return OCPP20IdTokenEnumType.KeyCode
-      case IdentifierType.LOCAL:
-        return OCPP20IdTokenEnumType.Local
-      case IdentifierType.MAC_ADDRESS:
-        return OCPP20IdTokenEnumType.MacAddress
-      case IdentifierType.NO_AUTHORIZATION:
-        return OCPP20IdTokenEnumType.NoAuthorization
-      default:
-        return OCPP20IdTokenEnumType.Central
-    }
-  }
-
-  /**
-   * Map OCPP 2.0 IdToken type to identifier type
-   * @param ocpp20Type - OCPP 2.0 IdTokenEnumType to convert
-   * @returns Corresponding IdentifierType value
-   */
-  private mapToIdentifierType (ocpp20Type: OCPP20IdTokenEnumType): IdentifierType {
-    switch (ocpp20Type) {
-      case OCPP20IdTokenEnumType.Central:
-      case OCPP20IdTokenEnumType.Local:
-        return IdentifierType.ID_TAG
-      case OCPP20IdTokenEnumType.eMAID:
-        return IdentifierType.E_MAID
-      case OCPP20IdTokenEnumType.ISO14443:
-        return IdentifierType.ISO14443
-      case OCPP20IdTokenEnumType.ISO15693:
-        return IdentifierType.ISO15693
-      case OCPP20IdTokenEnumType.KeyCode:
-        return IdentifierType.KEY_CODE
-      case OCPP20IdTokenEnumType.MacAddress:
-        return IdentifierType.MAC_ADDRESS
-      case OCPP20IdTokenEnumType.NoAuthorization:
-        return IdentifierType.NO_AUTHORIZATION
-      default:
-        return IdentifierType.ID_TAG
-    }
-  }
-
-  /**
    * Parse and validate a boolean variable value
    * @param value - String value to parse ('true', 'false', '1', '0')
    * @param defaultValue - Fallback value when parsing fails or value is undefined
@@ -681,50 +630,5 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       `${this.chargingStation.logPrefix()} ${moduleName}.parseBooleanVariable: Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
     )
     return defaultValue
-  }
-
-  /**
-   * Parse and validate an integer variable value
-   * @param value - String value to parse as integer
-   * @param defaultValue - Fallback value when parsing fails or value is undefined
-   * @param min - Optional minimum allowed value (clamped if exceeded)
-   * @param max - Optional maximum allowed value (clamped if exceeded)
-   * @returns Parsed integer value clamped to min/max bounds, or defaultValue if parsing fails
-   */
-  private parseIntegerVariable (
-    value: string | undefined,
-    defaultValue: number,
-    min?: number,
-    max?: number
-  ): number {
-    if (value == null) {
-      return defaultValue
-    }
-
-    const parsed = parseInt(value, 10)
-
-    if (Number.isNaN(parsed)) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Invalid integer value '${value}', using default: ${defaultValue.toString()}`
-      )
-      return defaultValue
-    }
-
-    // Validate range
-    if (min != null && parsed < min) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
-      )
-      return min
-    }
-
-    if (max != null && parsed > max) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
-      )
-      return max
-    }
-
-    return parsed
   }
 }

@@ -1,6 +1,5 @@
 import type { OCPP20IdTokenInfoType } from '../../../../types/index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
-import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
@@ -280,8 +279,8 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     )
 
     // Clear cache in local strategy
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    const localAuthCache = localStrategy?.getAuthCache()
+    const localStrategy = this.strategies.get('local')
+    const localAuthCache = localStrategy?.getAuthCache?.()
     if (localAuthCache) {
       localAuthCache.clear()
       logger.info(
@@ -428,9 +427,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     )
 
     // Invalidate in local strategy
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    if (localStrategy) {
-      localStrategy.invalidateCache(identifier.value)
+    const localStrategy = this.strategies.get('local')
+    const localAuthCache = localStrategy?.getAuthCache?.()
+    if (localAuthCache) {
+      localAuthCache.remove(identifier.value)
       logger.info(
         `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
       )
@@ -542,8 +542,8 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    const authCache = localStrategy?.getAuthCache()
+    const localStrategy = this.strategies.get('local')
+    const authCache = localStrategy?.getAuthCache?.()
     if (authCache == null) {
       logger.debug(
         `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: No auth cache available`

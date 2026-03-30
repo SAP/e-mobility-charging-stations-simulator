@@ -545,3 +545,19 @@ export const mapToOCPP20TokenType = (type: IdentifierType): OCPP20IdTokenEnumTyp
       return OCPP20IdTokenEnumType.Local
   }
 }
+
+export const enhanceAuthResult = (
+  result: AuthorizationResult,
+  method: AuthenticationMethod,
+  strategyName: string,
+  startTime: number
+): AuthorizationResult => ({
+  ...result,
+  additionalInfo: {
+    ...result.additionalInfo,
+    responseTimeMs: Date.now() - startTime,
+    strategy: strategyName,
+  },
+  method,
+  timestamp: new Date(),
+})

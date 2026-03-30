@@ -13,6 +13,7 @@ import {
   AuthenticationMethod,
   AuthErrorCode,
   AuthorizationStatus,
+  enhanceAuthResult,
 } from '../types/AuthTypes.js'
 
 const moduleName = 'LocalAuthStrategy'
@@ -87,7 +88,12 @@ export class LocalAuthStrategy implements AuthStrategy {
             )
             return undefined
           }
-          return this.enhanceResult(localResult, AuthenticationMethod.LOCAL_LIST, startTime)
+          return enhanceAuthResult(
+            localResult,
+            AuthenticationMethod.LOCAL_LIST,
+            this.name,
+            startTime
+          )
         }
       }
 
@@ -104,7 +110,7 @@ export class LocalAuthStrategy implements AuthStrategy {
             )
             return undefined
           }
-          return this.enhanceResult(cacheResult, AuthenticationMethod.CACHE, startTime)
+          return enhanceAuthResult(cacheResult, AuthenticationMethod.CACHE, this.name, startTime)
         }
       }
 
@@ -114,7 +120,12 @@ export class LocalAuthStrategy implements AuthStrategy {
         if (offlineResult) {
           logger.debug(`${moduleName}: Offline fallback: ${offlineResult.status}`)
           this.stats.offlineDecisions++
-          return this.enhanceResult(offlineResult, AuthenticationMethod.OFFLINE_FALLBACK, startTime)
+          return enhanceAuthResult(
+            offlineResult,
+            AuthenticationMethod.OFFLINE_FALLBACK,
+            this.name,
+            startTime
+          )
         }
       }
 
@@ -412,32 +423,6 @@ export class LocalAuthStrategy implements AuthStrategy {
           identifier: request.identifier.value,
         }
       )
-    }
-  }
-
-  /**
-   * Enhance authorization result with method and timing info
-   * @param result - Original authorization result to enhance
-   * @param method - Authentication method used to obtain the result
-   * @param startTime - Request start timestamp for response time calculation
-   * @returns Enhanced authorization result with strategy metadata and timing
-   */
-  private enhanceResult (
-    result: AuthorizationResult,
-    method: AuthenticationMethod,
-    startTime: number
-  ): AuthorizationResult {
-    const responseTime = Date.now() - startTime
-
-    return {
-      ...result,
-      additionalInfo: {
-        ...result.additionalInfo,
-        responseTimeMs: responseTime,
-        strategy: this.name,
-      },
-      method,
-      timestamp: new Date(),
     }
   }
 

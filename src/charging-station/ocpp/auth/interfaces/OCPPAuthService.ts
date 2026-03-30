@@ -157,6 +157,12 @@ export interface AuthStrategy {
   configure?(config: Partial<AuthConfiguration>): Promise<void>
 
   /**
+   * Get the authorization cache if available
+   * @returns The authorization cache, or undefined if not available
+   */
+  getAuthCache?(): AuthCache | undefined
+
+  /**
    * Get strategy-specific statistics
    */
   getStats(): JsonObject | Promise<JsonObject>
