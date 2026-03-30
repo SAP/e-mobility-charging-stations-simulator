@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { StopTransactionReason } from '../../types/index.js'
-import type { AuthContext } from './auth/types/AuthTypes.js'
+import type { AuthContext } from './auth/index.js'
 
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
@@ -156,13 +156,13 @@ export const isIdTagAuthorized = async (
     )
 
     // Dynamic import to avoid circular dependencies
-    const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
+    const { OCPPAuthServiceFactory } = await import('./auth/index.js')
     const {
       AuthContext,
       AuthenticationMethod,
       AuthorizationStatus: UnifiedAuthorizationStatus,
       IdentifierType,
-    } = await import('./auth/types/AuthTypes.js')
+    } = await import('./auth/index.js')
 
     const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
 

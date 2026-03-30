@@ -2331,13 +2331,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       try {
-        const { OCPPAuthServiceFactory } =
-          await import('../auth/services/OCPPAuthServiceFactory.js')
+        const { OCPPAuthServiceFactory } = await import('../auth/index.js')
         const {
           AuthContext,
           AuthorizationStatus: UnifiedAuthorizationStatus,
           IdentifierType,
-        } = await import('../auth/types/AuthTypes.js')
+        } = await import('../auth/index.js')
         const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
         const authResult = await authService.authorize({
           allowOffline: false,
@@ -2387,13 +2386,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        const { OCPPAuthServiceFactory } =
-          await import('../auth/services/OCPPAuthServiceFactory.js')
+        const { OCPPAuthServiceFactory } = await import('../auth/index.js')
         const {
           AuthContext,
           AuthorizationStatus: UnifiedAuthorizationStatus,
           IdentifierType,
-        } = await import('../auth/types/AuthTypes.js')
+        } = await import('../auth/index.js')
         const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
         const groupAuthResult = await authService.authorize({
           allowOffline: false,

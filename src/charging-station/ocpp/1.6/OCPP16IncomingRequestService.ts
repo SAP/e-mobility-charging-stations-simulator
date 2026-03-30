@@ -115,7 +115,7 @@ import {
   sleep,
   truncateId,
 } from '../../../utils/index.js'
-import { AuthContext } from '../auth/types/AuthTypes.js'
+import { AuthContext } from '../auth/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
