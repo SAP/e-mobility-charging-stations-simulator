@@ -234,12 +234,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       idToken = identifier
     }
 
-    // Map OCPP 2.0 IdToken type to identifier type, normalizing Central/Local to ID_TAG
-    const rawType = mapOCPP20TokenType(idToken.type)
-    const identifierType =
-      rawType === IdentifierType.CENTRAL || rawType === IdentifierType.LOCAL
-        ? IdentifierType.ID_TAG
-        : rawType
+    const identifierType = mapOCPP20TokenType(idToken.type)
 
     return {
       additionalInfo: {

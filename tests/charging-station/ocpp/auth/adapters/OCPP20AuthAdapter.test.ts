@@ -61,16 +61,15 @@ await describe('OCPP20AuthAdapter', async () => {
       const expected = createMockIdentifier('TEST_TOKEN')
 
       assert.strictEqual(result.value, expected.value)
-      assert.strictEqual(result.type, IdentifierType.ID_TAG)
+      assert.strictEqual(result.type, IdentifierType.CENTRAL)
       assert.strictEqual(result.additionalInfo?.ocpp20Type, OCPP20IdTokenEnumType.Central)
     })
 
     await it('should convert string to identifier', () => {
       const result = adapter.convertToIdentifier('STRING_TOKEN')
-      const expected = createMockIdentifier('STRING_TOKEN')
 
-      assert.strictEqual(result.value, expected.value)
-      assert.strictEqual(result.type, expected.type)
+      assert.strictEqual(result.value, 'STRING_TOKEN')
+      assert.strictEqual(result.type, IdentifierType.CENTRAL)
     })
 
     await it('should handle eMAID type correctly', () => {
