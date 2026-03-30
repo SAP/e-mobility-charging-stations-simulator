@@ -141,7 +141,12 @@ import {
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../Helpers.js'
-import { type AuthContext, OCPPAuthServiceFactory } from '../auth/index.js'
+import {
+  AuthContext,
+  AuthorizationStatus,
+  mapOCPP20TokenType,
+  OCPPAuthServiceFactory,
+} from '../auth/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
@@ -729,11 +734,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns Promise resolving to ClearCacheResponse
    */
-  protected async handleRequestClearCache (
-    chargingStation: ChargingStation
-  ): Promise<OCPP20ClearCacheResponse> {
+  protected handleRequestClearCache (chargingStation: ChargingStation): OCPP20ClearCacheResponse {
     try {
-      const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       // C11.FR.04: IF AuthCacheEnabled is false, CS SHALL send ClearCacheResponse with status Rejected
       const config = authService.getConfiguration()
       if (!config.authorizationCacheEnabled) {
@@ -774,9 +777,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     ocpp20TokenType: OCPP20IdTokenEnumType,
     context?: AuthContext
   ): Promise<boolean> {
-    const { AuthContext, AuthorizationStatus, mapOCPP20TokenType } =
-      await import('../auth/index.js')
-    const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+    const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
     const authResult = await authService.authorize({
       allowOffline: false,
       connectorId,

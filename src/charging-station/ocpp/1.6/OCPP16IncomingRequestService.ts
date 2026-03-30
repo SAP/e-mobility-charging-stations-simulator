@@ -116,9 +116,10 @@ import {
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext } from '../auth/index.js'
+import { isIdTagAuthorized } from '../IdTagAuthorization.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import { buildMeterValue } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -1245,7 +1246,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // idTag authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() &&
-      !(await OCPPServiceUtils.isIdTagAuthorized(
+      !(await isIdTagAuthorized(
         chargingStation,
         transactionConnectorId,
         idTag,
@@ -1325,14 +1326,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    if (
-      !(await OCPPServiceUtils.isIdTagAuthorized(
-        chargingStation,
-        connectorId,
-        idTag,
-        AuthContext.RESERVATION
-      ))
-    ) {
+    if (!(await isIdTagAuthorized(chargingStation, connectorId, idTag, AuthContext.RESERVATION))) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)

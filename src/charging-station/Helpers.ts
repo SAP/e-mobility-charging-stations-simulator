@@ -45,7 +45,6 @@ import {
   ConnectorStatusEnum,
   CurrentType,
   type EvseTemplate,
-  MessageType,
   OCPPVersion,
   RecurrencyKindType,
   type Reservation,
@@ -1479,17 +1478,4 @@ const getRandomSerialNumberSuffix = (params?: {
     return randomSerialNumberSuffix.toUpperCase()
   }
   return randomSerialNumberSuffix
-}
-
-export const getMessageTypeString = (messageType: MessageType | undefined): string => {
-  switch (messageType) {
-    case MessageType.CALL_ERROR_MESSAGE:
-      return 'error'
-    case MessageType.CALL_MESSAGE:
-      return 'request'
-    case MessageType.CALL_RESULT_MESSAGE:
-      return 'response'
-    default:
-      return 'unknown'
-  }
 }

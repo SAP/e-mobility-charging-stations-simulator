@@ -220,7 +220,7 @@ await describe('OCPP Authentication', async () => {
 
   await describe('Cache Spec Compliance Integration', async () => {
     // C10.INT.01 - Cache wiring regression
-    await it('C10.INT.01: OCPPAuthServiceImpl wires auth cache into local strategy', async () => {
+    await it('C10.INT.01: OCPPAuthServiceImpl wires auth cache into local strategy', () => {
       const result16 = createMockChargingStation({
         baseName: 'TEST_CACHE_WIRING',
         connectorsCount: 1,
@@ -231,7 +231,7 @@ await describe('OCPP Authentication', async () => {
         },
       })
       const service = new OCPPAuthServiceImpl(result16.station)
-      await service.initialize()
+      service.initialize()
 
       const localStrategy = service.getStrategy('local') as LocalAuthStrategy | undefined
       assert.notStrictEqual(localStrategy, undefined)

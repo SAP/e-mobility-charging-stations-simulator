@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPPServiceUtils authorization wrapper function
+ * @file Tests for IdTagAuthorization
  * @description Verifies isIdTagAuthorized authorization function
  *
  * Covers:
@@ -20,7 +20,7 @@ import {
   AuthorizationStatus,
   OCPPAuthServiceFactory,
 } from '../../../src/charging-station/ocpp/auth/index.js'
-import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/IdTagAuthorization.js'
 import { OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
@@ -45,7 +45,7 @@ function injectMockAuthService (
   return mockService
 }
 
-await describe('OCPPServiceUtils — authorization wrappers', async () => {
+await describe('IdTagAuthorization', async () => {
   afterEach(() => {
     OCPPAuthServiceFactory.clearAllInstances()
     standardCleanup()

@@ -98,9 +98,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation20 = createMockAuthServiceTestStation('isSupported-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should check if identifier type is supported for OCPP 1.6', async () => {
+    await it('should check if identifier type is supported for OCPP 1.6', () => {
       const authService = new OCPPAuthServiceImpl(mockStation16)
-      await authService.initialize()
+      authService.initialize()
 
       const idTagIdentifier: Identifier = {
         type: IdentifierType.ID_TAG,
@@ -110,9 +110,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       assert.strictEqual(authService.isSupported(idTagIdentifier), true)
     })
 
-    await it('should check if identifier type is supported for OCPP 2.0', async () => {
+    await it('should check if identifier type is supported for OCPP 2.0', () => {
       const authService = new OCPPAuthServiceImpl(mockStation20)
-      await authService.initialize()
+      authService.initialize()
 
       const centralIdentifier: Identifier = {
         type: IdentifierType.CENTRAL,
@@ -416,9 +416,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('cache-wiring')
     })
 
-    await it('should have a defined authCache after initialization', async () => {
+    await it('should have a defined authCache after initialization', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
-      await authService.initialize()
+      authService.initialize()
 
       const localStrategy = authService.getStrategy('local')
       assert.notStrictEqual(localStrategy, undefined)

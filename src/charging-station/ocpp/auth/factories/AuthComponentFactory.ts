@@ -1,4 +1,4 @@
-import type { ChargingStation } from '../../../ChargingStation.js'
+import type { ChargingStation } from '../../../index.js'
 import type {
   AuthCache,
   AuthStrategy,
@@ -9,7 +9,12 @@ import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
+import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
+import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
+import { CertificateAuthStrategy } from '../strategies/CertificateAuthStrategy.js'
+import { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
+import { RemoteAuthStrategy } from '../strategies/RemoteAuthStrategy.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
 /**
@@ -36,7 +41,7 @@ export class AuthComponentFactory {
    * @returns Single version-specific adapter (OCPP 1.6 or 2.0.x)
    * @throws {Error} When OCPP version is not found or unsupported
    */
-  static async createAdapter (chargingStation: ChargingStation): Promise<OCPPAuthAdapter> {
+  static createAdapter (chargingStation: ChargingStation): OCPPAuthAdapter {
     const ocppVersion = chargingStation.stationInfo?.ocppVersion
 
     if (!ocppVersion) {
@@ -44,17 +49,11 @@ export class AuthComponentFactory {
     }
 
     switch (ocppVersion) {
-      case OCPPVersion.VERSION_16: {
-        // Use static import - circular dependency is acceptable here
-        const { OCPP16AuthAdapter } = await import('../adapters/OCPP16AuthAdapter.js')
+      case OCPPVersion.VERSION_16:
         return new OCPP16AuthAdapter(chargingStation)
-      }
       case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201: {
-        // Use static import - circular dependency is acceptable here
-        const { OCPP20AuthAdapter } = await import('../adapters/OCPP20AuthAdapter.js')
+      case OCPPVersion.VERSION_201:
         return new OCPP20AuthAdapter(chargingStation)
-      }
       default:
         throw new OCPPError(
           ErrorType.INTERNAL_ERROR,
@@ -82,13 +81,11 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration with certificate settings
    * @returns Initialized certificate-based authentication strategy
    */
-  static async createCertificateStrategy (
+  static createCertificateStrategy (
     chargingStation: ChargingStation,
     adapter: OCPPAuthAdapter,
     config: AuthConfiguration
-  ): Promise<AuthStrategy> {
-    // Use static import - circular dependency is acceptable here
-    const { CertificateAuthStrategy } = await import('../strategies/CertificateAuthStrategy.js')
+  ): AuthStrategy {
     const strategy = new CertificateAuthStrategy(chargingStation, adapter)
     strategy.initialize(config)
     return strategy
@@ -121,11 +118,11 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration controlling local auth behavior
    * @returns Local strategy instance or undefined if local auth disabled
    */
-  static async createLocalStrategy (
+  static createLocalStrategy (
     manager: LocalAuthListManager | undefined,
     cache: AuthCache | undefined,
     config: AuthConfiguration
-  ): Promise<AuthStrategy | undefined> {
+  ): AuthStrategy | undefined {
     if (
       !config.localAuthListEnabled &&
       !config.authorizationCacheEnabled &&
@@ -134,8 +131,6 @@ export class AuthComponentFactory {
       return undefined
     }
 
-    // Use static import - circular dependency is acceptable here
-    const { LocalAuthStrategy } = await import('../strategies/LocalAuthStrategy.js')
     const strategy = new LocalAuthStrategy(manager, cache)
     strategy.initialize(config)
     return strategy
@@ -149,18 +144,16 @@ export class AuthComponentFactory {
    * @param localAuthListManager - Optional local auth list manager for C13.FR.01 cache exclusion
    * @returns Remote strategy instance or undefined if remote auth disabled
    */
-  static async createRemoteStrategy (
+  static createRemoteStrategy (
     adapter: OCPPAuthAdapter,
     cache: AuthCache | undefined,
     config: AuthConfiguration,
     localAuthListManager?: LocalAuthListManager
-  ): Promise<AuthStrategy | undefined> {
+  ): AuthStrategy | undefined {
     if (!config.remoteAuthorization) {
       return undefined
     }
 
-    // Use static import - circular dependency is acceptable here
-    const { RemoteAuthStrategy } = await import('../strategies/RemoteAuthStrategy.js')
     const strategy = new RemoteAuthStrategy(adapter, cache, localAuthListManager)
     strategy.initialize(config)
     return strategy
@@ -175,29 +168,29 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration controlling strategy creation
    * @returns Array of initialized strategies sorted by priority (lowest first)
    */
-  static async createStrategies (
+  static createStrategies (
     chargingStation: ChargingStation,
     adapter: OCPPAuthAdapter,
     manager: LocalAuthListManager | undefined,
     cache: AuthCache | undefined,
     config: AuthConfiguration
-  ): Promise<AuthStrategy[]> {
+  ): AuthStrategy[] {
     const strategies: AuthStrategy[] = []
 
     // Add local strategy if enabled
-    const localStrategy = await this.createLocalStrategy(manager, cache, config)
+    const localStrategy = this.createLocalStrategy(manager, cache, config)
     if (localStrategy) {
       strategies.push(localStrategy)
     }
 
     // Add remote strategy if enabled
-    const remoteStrategy = await this.createRemoteStrategy(adapter, cache, config, manager)
+    const remoteStrategy = this.createRemoteStrategy(adapter, cache, config, manager)
     if (remoteStrategy) {
       strategies.push(remoteStrategy)
     }
 
     // Always add certificate strategy
-    const certStrategy = await this.createCertificateStrategy(chargingStation, adapter, config)
+    const certStrategy = this.createCertificateStrategy(chargingStation, adapter, config)
     strategies.push(certStrategy)
 
     // Sort by priority

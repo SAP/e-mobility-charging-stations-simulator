@@ -17,6 +17,7 @@ import { env } from 'node:process'
 import {
   type JsonType,
   MapStringifyFormat,
+  MessageType,
   type TimestampedData,
   type UUIDv4,
   WebSocketCloseEventStatusString,
@@ -513,4 +514,17 @@ export const truncateId = (identifier: string, maxLen = 8): string => {
     return identifier
   }
   return `${identifier.slice(0, maxLen)}...`
+}
+
+export const getMessageTypeString = (messageType: MessageType | undefined): string => {
+  switch (messageType) {
+    case MessageType.CALL_ERROR_MESSAGE:
+      return 'error'
+    case MessageType.CALL_MESSAGE:
+      return 'request'
+    case MessageType.CALL_RESULT_MESSAGE:
+      return 'response'
+    default:
+      return 'unknown'
+  }
 }

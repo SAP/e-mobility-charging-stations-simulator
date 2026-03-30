@@ -165,7 +165,7 @@ export interface AuthStrategy {
    * Initialize the strategy with configuration
    * @param config - Authentication configuration
    */
-  initialize(config: AuthConfiguration): Promise<void> | void
+  initialize(config: AuthConfiguration): void
 
   /**
    * Strategy name for identification

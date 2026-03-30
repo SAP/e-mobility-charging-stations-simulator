@@ -476,17 +476,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
         const idTokenValue = requestPayload.idToken.idToken
         const idTokenInfo = payload.idTokenInfo
         const identifierType = mapOCPP20TokenType(requestPayload.idToken.type)
-        OCPPAuthServiceFactory.getInstance(chargingStation)
-          .then(authService => {
-            authService.updateCacheEntry(idTokenValue, idTokenInfo, identifierType)
-            return undefined
-          })
-          .catch((error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error updating auth cache:`,
-              error
-            )
-          })
+        try {
+          const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+          authService.updateCacheEntry(idTokenValue, idTokenInfo, identifierType)
+        } catch (error: unknown) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error updating auth cache:`,
+            error
+          )
+        }
       }
     }
     if (payload.updatedPersonalMessage != null) {

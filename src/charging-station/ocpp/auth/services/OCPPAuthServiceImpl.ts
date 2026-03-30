@@ -11,7 +11,7 @@ import {
   logger,
   truncateId,
 } from '../../../../utils/index.js'
-import { type ChargingStation } from '../../../ChargingStation.js'
+import { type ChargingStation } from '../../../index.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
   type AuthStats,
@@ -413,9 +413,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Async initialization of adapters and strategies
    * Must be called after construction
    */
-  public async initialize (): Promise<void> {
-    await this.initializeAdapter()
-    await this.initializeStrategies()
+  public initialize (): void {
+    this.initializeAdapter()
+    this.initializeStrategies()
   }
 
   /**
@@ -665,14 +665,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Initialize OCPP adapter using AuthComponentFactory
    */
-  private async initializeAdapter (): Promise<void> {
-    this.adapter = await AuthComponentFactory.createAdapter(this.chargingStation)
+  private initializeAdapter (): void {
+    this.adapter = AuthComponentFactory.createAdapter(this.chargingStation)
   }
 
   /**
    * Initialize all authentication strategies using AuthComponentFactory
    */
-  private async initializeStrategies (): Promise<void> {
+  private initializeStrategies (): void {
     const ocppVersion = this.chargingStation.stationInfo?.ocppVersion
 
     if (this.adapter == null) {
@@ -683,7 +683,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const authCache = AuthComponentFactory.createAuthCache(this.config)
 
     // Create strategies using factory
-    const strategies = await AuthComponentFactory.createStrategies(
+    const strategies = AuthComponentFactory.createStrategies(
       this.chargingStation,
       this.adapter,
       undefined, // manager - delegated to OCPPAuthServiceImpl
