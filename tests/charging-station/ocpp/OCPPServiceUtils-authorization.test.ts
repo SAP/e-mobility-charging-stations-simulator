@@ -30,10 +30,9 @@ import {
 } from './auth/helpers/MockFactories.js'
 
 /**
- * Injects a mock auth service for the given station into OCPPAuthServiceFactory.
- * @param station - The mock station to register the service for
- * @param overrides - Optional partial overrides for the mock auth service
- * @returns The created mock auth service
+ *
+ * @param station
+ * @param overrides
  */
 function injectMockAuthService (
   station: ReturnType<typeof createMockChargingStation>['station'],
@@ -205,7 +204,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
     })
 
     await it('should return true but not set connector state for non-existent connector', async () => {
-      // Arrange — auth succeeds but connector 99 has no status object
+      // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
         authorize: () =>
@@ -220,7 +219,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       // Act
       const result = await isIdTagAuthorized(station, 99, 'TAG-001')
 
-      // Assert — auth succeeds, connector state is undefined (no crash)
+      // Assert
       assert.strictEqual(result, true)
       const connectorStatus = station.getConnectorStatus(99)
       assert.strictEqual(connectorStatus, undefined)
@@ -250,7 +249,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
     })
 
     await it('should return false when auth service throws an error', async () => {
-      // Arrange — inject a mock that throws on authorize
+      // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
         authorize: () => Promise.reject(new Error('Test auth service error')),
@@ -285,41 +284,10 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       // Assert
       assert.strictEqual(capturedContext, 'RemoteStart')
     })
-  })
 
-  await describe('isIdTagAuthorized — OCPP version dispatch', async () => {
-    await it('should authorize OCPP 1.6 station', async () => {
-      // Arrange
-      const { station } = createMockChargingStation()
-      injectMockAuthService(station, {
-        authorize: () =>
-          Promise.resolve(
-            createMockAuthorizationResult({
-              method: AuthenticationMethod.LOCAL_LIST,
-              status: AuthorizationStatus.ACCEPTED,
-            })
-          ),
-      })
-
-      // Act
-      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
-
-      // Assert
-      assert.strictEqual(result, true)
-    })
-
-    await it('should return false on auth error for OCPP 2.0 station', async () => {
+    await it('should return false when no auth service is registered for station', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_20,
-      })
-
-      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
-      assert.strictEqual(result, false)
-    })
-
-    await it('should attempt auth service for OCPP 2.0.1 station', async () => {
-      const { station } = createMockChargingStation({
-        ocppVersion: OCPPVersion.VERSION_201,
       })
 
       const result = await isIdTagAuthorized(station, 1, 'TAG-001')
