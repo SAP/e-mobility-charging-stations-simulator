@@ -21,6 +21,10 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
+  AuthenticationMethod,
+  AuthorizationStatus,
+} from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import {
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
   OCPP20IdTokenEnumType,
@@ -35,7 +39,10 @@ import { Constants } from '../../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import { createMockAuthService } from '../auth/helpers/MockFactories.js'
+import {
+  createMockAuthorizationResult,
+  createMockAuthService,
+} from '../auth/helpers/MockFactories.js'
 import {
   createOCPP20ListenerStation,
   resetConnectorTransactionState,
@@ -94,6 +101,89 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.notStrictEqual(response.transactionId, undefined)
     assert.strictEqual(typeof response.transactionId, 'string')
+  })
+
+  // G03.FR.03 — Reject when unified auth returns non-ACCEPTED status
+  await it('should reject RequestStartTransaction when unified auth returns INVALID status', async () => {
+    // Arrange: Override mock auth service to return INVALID
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    const rejectingAuthService = createMockAuthService({
+      authorize: () =>
+        Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.INVALID,
+          })
+        ),
+    })
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, rejectingAuthService)
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      idToken: {
+        idToken: 'INVALID_TOKEN_001',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 50,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response.transactionId, undefined)
+  })
+
+  // G03.FR.03 — Reject when unified auth returns BLOCKED for groupIdToken
+  await it('should reject RequestStartTransaction when groupIdToken auth returns BLOCKED', async () => {
+    // Arrange: Primary token accepted, group token blocked
+    let callCount = 0
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    const mixedAuthService = createMockAuthService({
+      authorize: () => {
+        callCount++
+        if (callCount === 1) {
+          // First call: idToken → accepted
+          return Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          )
+        }
+        // Second call: groupIdToken → blocked
+        return Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.BLOCKED,
+          })
+        )
+      },
+    })
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, mixedAuthService)
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 2,
+      groupIdToken: {
+        idToken: 'BLOCKED_GROUP_TOKEN',
+        type: OCPP20IdTokenEnumType.Central,
+      },
+      idToken: {
+        idToken: 'VALID_TOKEN_002',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 51,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
