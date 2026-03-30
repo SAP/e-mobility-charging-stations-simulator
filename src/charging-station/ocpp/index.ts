@@ -17,9 +17,4 @@ export {
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from './OCPPServiceOperations.js'
-export {
-  buildMeterValue,
-  buildStatusNotificationRequest,
-  buildTransactionEndMeterValue,
-  sendAndSetConnectorStatus,
-} from './OCPPServiceUtils.js'
+export { buildMeterValue, sendAndSetConnectorStatus } from './OCPPServiceUtils.js'

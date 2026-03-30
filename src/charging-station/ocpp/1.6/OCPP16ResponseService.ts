@@ -19,7 +19,6 @@ import {
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
   OCPP16ChargePointStatus,
-  type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -38,7 +37,6 @@ import {
 import { Constants, convertToInt, logger, truncateId } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import {
-  buildTransactionEndMeterValue,
   createPayloadValidatorMap,
   isRequestCommandSupported,
   restoreConnectorStatus,
@@ -497,11 +495,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
       >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
         connectorId: transactionConnectorId,
         meterValue: [
-          buildTransactionEndMeterValue(
+          OCPP16ServiceUtils.buildTransactionEndMeterValue(
             chargingStation,
             transactionConnectorId,
             requestPayload.meterStop
-          ) as OCPP16MeterValue,
+          ),
         ],
         transactionId: requestPayload.transactionId,
       }))

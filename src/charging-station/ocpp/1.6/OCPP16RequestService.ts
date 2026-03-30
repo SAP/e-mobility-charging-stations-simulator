@@ -19,8 +19,6 @@ import {
 import { Constants, generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import {
-  buildStatusNotificationRequest,
-  buildTransactionEndMeterValue,
   createPayloadValidatorMap,
   isRequestCommandSupported,
   sendAndSetConnectorStatus,
@@ -215,8 +213,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        return buildStatusNotificationRequest(
-          chargingStation,
+        return OCPP16ServiceUtils.buildStatusNotificationRequest(
           commandParams as unknown as OCPP16StatusNotificationRequest
         ) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
@@ -237,11 +234,11 @@ export class OCPP16RequestService extends OCPPRequestService {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               chargingStation.getConnectorStatus(connectorId)
                 ?.transactionBeginMeterValue as OCPP16MeterValue,
-              buildTransactionEndMeterValue(
+              OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 connectorId,
                 energyActiveImportRegister
-              ) as OCPP16MeterValue
+              )
             ),
           }),
           ...commandParams,

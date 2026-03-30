@@ -18,11 +18,7 @@ import {
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import {
-  buildStatusNotificationRequest,
-  createPayloadValidatorMap,
-  isRequestCommandSupported,
-} from '../OCPPServiceUtils.js'
+import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { buildTransactionEvent, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -202,7 +198,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         return requestPayload as unknown as Request
       }
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
-        return buildStatusNotificationRequest(
+        return OCPP20ServiceUtils.buildStatusNotificationRequest(
           chargingStation,
           commandParams as unknown as OCPP20StatusNotificationRequest
         ) as unknown as Request

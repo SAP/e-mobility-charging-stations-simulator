@@ -1,7 +1,8 @@
 /**
- * @file Tests for OCPPServiceUtils stop transaction functions
- * @description Verifies stopTransactionOnConnector and stopRunningTransactions
- *              version-dispatching functions
+ * @file Tests for OCPPServiceOperations version-dispatching functions
+ * @description Verifies startTransactionOnConnector, stopTransactionOnConnector,
+ *              stopRunningTransactions, and flushQueuedTransactionMessages
+ *              cross-version dispatchers
  */
 
 import assert from 'node:assert/strict'
@@ -16,12 +17,7 @@ import {
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
-import { mapStopReasonToOCPP20 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import {
-  type OCPP20TransactionEventRequest,
-  OCPPVersion,
-  type StopTransactionReason,
-} from '../../../src/types/index.js'
+import { type OCPP20TransactionEventRequest, OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 
@@ -85,7 +81,7 @@ function setupTransaction (
   connectorStatus.idTagAuthorized = true
 }
 
-await describe('OCPPServiceUtils — stop transaction functions', async () => {
+await describe('OCPPServiceOperations', async () => {
   afterEach(() => {
     standardCleanup()
   })
@@ -308,29 +304,6 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
       await flushQueuedTransactionMessages(station)
 
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
-    })
-  })
-
-  await describe('mapStopReasonToOCPP20', async () => {
-    await it('should map Other to Other/AbnormalCondition', () => {
-      const result = mapStopReasonToOCPP20('Other' as StopTransactionReason)
-
-      assert.strictEqual(result.stoppedReason, 'Other')
-      assert.strictEqual(result.triggerReason, 'AbnormalCondition')
-    })
-
-    await it('should map undefined to Local/StopAuthorized', () => {
-      const result = mapStopReasonToOCPP20(undefined)
-
-      assert.strictEqual(result.stoppedReason, 'Local')
-      assert.strictEqual(result.triggerReason, 'StopAuthorized')
-    })
-
-    await it('should map Remote to Remote/RemoteStop', () => {
-      const result = mapStopReasonToOCPP20('Remote' as StopTransactionReason)
-
-      assert.strictEqual(result.stoppedReason, 'Remote')
-      assert.strictEqual(result.triggerReason, 'RemoteStop')
     })
   })
 })

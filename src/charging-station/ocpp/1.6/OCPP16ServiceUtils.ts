@@ -13,7 +13,9 @@ import {
   hasFeatureProfile,
   hasReservationExpired,
 } from '../../../charging-station/index.js'
+import { BaseError } from '../../../exception/index.js'
 import {
+  ChargePointErrorCode,
   type ConfigurationKey,
   type GenericResponse,
   type MeterValuesRequest,
@@ -28,6 +30,7 @@ import {
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
+  OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   type OCPP16SampledValue,
@@ -55,7 +58,6 @@ import {
   buildEmptyMeterValue,
   buildMeterValue,
   buildSampledValue,
-  buildTransactionEndMeterValue,
   getSampledValueTemplate,
   PayloadValidatorConfig,
   PayloadValidatorOptions,
@@ -104,6 +106,20 @@ export class OCPP16ServiceUtils {
   ]
 
   /**
+   * @param commandParams - Status notification parameters
+   * @returns Formatted OCPP 1.6 StatusNotification request payload
+   */
+  public static buildStatusNotificationRequest (
+    commandParams: OCPP16StatusNotificationRequest
+  ): OCPP16StatusNotificationRequest {
+    return {
+      connectorId: commandParams.connectorId,
+      errorCode: ChargePointErrorCode.NO_ERROR,
+      status: commandParams.status,
+    } satisfies OCPP16StatusNotificationRequest
+  }
+
+  /**
    * Builds a meter value for the beginning of a transaction.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
@@ -147,6 +163,36 @@ export class OCPP16ServiceUtils {
     meterValues.push(transactionBeginMeterValue)
     meterValues.push(transactionEndMeterValue)
     return meterValues
+  }
+
+  /**
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector ID associated with the transaction
+   * @param meterStop - Final meter reading in Wh at transaction end
+   * @returns MeterValue containing the transaction end energy reading
+   */
+  public static buildTransactionEndMeterValue (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    meterStop: number | undefined
+  ): OCPP16MeterValue {
+    const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
+    if (sampledValueTemplate == null) {
+      throw new BaseError(
+        `Missing MeterValues for default measurand '${OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}' in template on connector id ${connectorId.toString()}`
+      )
+    }
+    const unitDivider = sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+    const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
+    meterValue.sampledValue.push(
+      buildSampledValue(
+        OCPPVersion.VERSION_16,
+        sampledValueTemplate,
+        roundTo((meterStop ?? 0) / unitDivider, 4),
+        OCPP16MeterValueContext.TRANSACTION_END
+      ) as OCPP16SampledValue
+    )
+    return meterValue
   }
 
   /**
@@ -749,7 +795,7 @@ export class OCPP16ServiceUtils {
       chargingStation.stationInfo.ocppStrictCompliance === true &&
       chargingStation.stationInfo.outOfOrderEndMeterValues === false
     ) {
-      const transactionEndMeterValue = buildTransactionEndMeterValue(
+      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
         chargingStation,
         connectorId,
         chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)

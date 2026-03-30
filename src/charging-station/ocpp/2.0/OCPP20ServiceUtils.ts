@@ -8,6 +8,7 @@ import {
   ErrorType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
+  type OCPP20ConnectorStatusEnumType,
   type OCPP20EVSEType,
   OCPP20IncomingRequestCommand,
   type OCPP20MeterValue,
@@ -25,6 +26,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
+  RequestCommand,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -99,6 +101,35 @@ export class OCPP20ServiceUtils {
     [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
+
+  /**
+   * @param chargingStation - Target charging station for EVSE resolution
+   * @param commandParams - Status notification parameters
+   * @returns Formatted OCPP 2.0 StatusNotification request payload
+   */
+  public static buildStatusNotificationRequest (
+    chargingStation: ChargingStation,
+    commandParams: OCPP20StatusNotificationRequest
+  ): OCPP20StatusNotificationRequest {
+    const params = commandParams as Record<string, unknown>
+    const connectorId = params.connectorId as number
+    const connectorStatus = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
+    const evseId = params.evseId as number | undefined
+    const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
+    if (resolvedEvseId === undefined) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cannot build status notification payload: evseId is undefined for connector ${connectorId.toString()}`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
+    }
+    return {
+      connectorId,
+      connectorStatus: connectorStatus as OCPP20ConnectorStatusEnumType,
+      evseId: resolvedEvseId,
+      timestamp: new Date(),
+    } satisfies OCPP20StatusNotificationRequest
+  }
 
   /**
    * Build meter values for the start of a transaction.

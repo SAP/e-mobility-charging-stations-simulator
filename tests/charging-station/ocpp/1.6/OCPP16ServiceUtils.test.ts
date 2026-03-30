@@ -11,11 +11,12 @@ import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
-  buildTransactionEndMeterValue,
   isIncomingRequestCommandSupported,
   isRequestCommandSupported,
 } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  ChargePointErrorCode,
+  OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfileKindType,
   OCPP16ChargingProfilePurposeType,
@@ -29,6 +30,7 @@ import {
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   OCPP16StandardParametersKey,
+  type OCPP16StatusNotificationRequest,
   OCPP16SupportedFeatureProfiles,
   OCPPVersion,
 } from '../../../../src/types/index.js'
@@ -233,7 +235,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       }
 
       // Act
-      const meterValue = buildTransactionEndMeterValue(station, 1, 10000)
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 10000)
 
       // Assert
       assert.notStrictEqual(meterValue, undefined)
@@ -263,7 +265,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       }
 
       // Act
-      const meterValue = buildTransactionEndMeterValue(station, 1, 3000)
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 3000)
 
       // Assert — kWh divider: 3000 / 1000 = 3
       assert.strictEqual(meterValue.sampledValue[0].value, '3')
@@ -664,6 +666,58 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       assert.strictEqual(result, false)
+    })
+  })
+
+  // ─── buildStatusNotificationRequest ─────────────────────────────────────
+
+  await describe('buildStatusNotificationRequest', async () => {
+    await it('should return payload with NO_ERROR error code', () => {
+      const input: OCPP16StatusNotificationRequest = {
+        connectorId: 1,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+        status: OCPP16ChargePointStatus.Available,
+      }
+
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
+
+      assert.strictEqual(result.errorCode, ChargePointErrorCode.NO_ERROR)
+    })
+
+    await it('should preserve connectorId from input', () => {
+      const input: OCPP16StatusNotificationRequest = {
+        connectorId: 2,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+        status: OCPP16ChargePointStatus.Charging,
+      }
+
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
+
+      assert.strictEqual(result.connectorId, 2)
+    })
+
+    await it('should preserve status from input', () => {
+      const input: OCPP16StatusNotificationRequest = {
+        connectorId: 1,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+        status: OCPP16ChargePointStatus.Charging,
+      }
+
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
+
+      assert.strictEqual(result.status, OCPP16ChargePointStatus.Charging)
+    })
+
+    await it('should always set errorCode to NO_ERROR regardless of input errorCode', () => {
+      const input: OCPP16StatusNotificationRequest = {
+        connectorId: 1,
+        errorCode: ChargePointErrorCode.CONNECTOR_LOCK_FAILURE,
+        status: OCPP16ChargePointStatus.Faulted,
+      }
+
+      const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
+
+      assert.strictEqual(result.errorCode, ChargePointErrorCode.NO_ERROR)
     })
   })
 
