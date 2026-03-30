@@ -1,3 +1,4 @@
+import type { IBootstrap } from '../IBootstrap.js'
 import type { AbstractUIServer } from './AbstractUIServer.js'
 
 import { BaseError } from '../../exception/index.js'
@@ -21,7 +22,8 @@ export class UIServerFactory {
   }
 
   public static getUIServerImplementation (
-    uiServerConfiguration: UIServerConfiguration
+    uiServerConfiguration: UIServerConfiguration,
+    bootstrap: IBootstrap
   ): AbstractUIServer {
     if (
       uiServerConfiguration.authentication?.enabled === true &&
@@ -70,10 +72,10 @@ export class UIServerFactory {
         const logMsg = `Application protocol type '${uiServerConfiguration.type}' is deprecated in '${ConfigurationSection.uiServer}' configuration section. Use '${ApplicationProtocol.MCP}' instead`
         logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
         // eslint-disable-next-line @typescript-eslint/no-deprecated
-        return new UIHttpServer(uiServerConfiguration)
+        return new UIHttpServer(uiServerConfiguration, bootstrap)
       }
       case ApplicationProtocol.MCP:
-        return new UIMCPServer(uiServerConfiguration)
+        return new UIMCPServer(uiServerConfiguration, bootstrap)
       case ApplicationProtocol.WS:
       default:
         if (
@@ -90,7 +92,7 @@ export class UIServerFactory {
           }'`
           logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
         }
-        return new UIWebSocketServer(uiServerConfiguration)
+        return new UIWebSocketServer(uiServerConfiguration, bootstrap)
     }
   }
 

@@ -12,7 +12,12 @@ import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import type { ProtocolResponse, RequestPayload, ResponsePayload } from '../../../src/types/index.js'
+import type {
+  ProtocolResponse,
+  RequestPayload,
+  ResponsePayload,
+  UIServerConfiguration,
+} from '../../../src/types/index.js'
 
 import {
   mcpToolSchemas,
@@ -36,11 +41,16 @@ import {
 } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import {
+  createMockBootstrap,
   createMockChargingStationDataWithVersion,
   createMockUIServerConfiguration,
 } from './UIServerTestUtils.js'
 
 class TestableUIMCPServer extends UIMCPServer {
+  public constructor (config: UIServerConfiguration) {
+    super(config, createMockBootstrap())
+  }
+
   public callCheckVersionCompatibility (
     hashIds: string[] | undefined,
     ocpp16Payload: Record<string, unknown> | undefined,

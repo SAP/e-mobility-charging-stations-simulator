@@ -6,6 +6,7 @@ import type { IncomingMessage } from 'node:http'
 
 import { EventEmitter } from 'node:events'
 
+import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
 import type {
   ChargingStationData,
   ProcedureName,
@@ -29,9 +30,26 @@ import {
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
 
 /**
+ * Create a mock IBootstrap for testing.
+ * @returns Mock IBootstrap instance with no-op methods
+ */
+export const createMockBootstrap = (): IBootstrap => ({
+  addChargingStation: () => Promise.resolve(undefined),
+  getLastContiguousIndex: () => 0,
+  getPerformanceStatistics: () => undefined,
+  getState: () => ({ started: false, templateStatistics: new Map(), version: '0.0.0' }) as never,
+  start: () => Promise.resolve(),
+  stop: () => Promise.resolve(),
+})
+
+/**
  * Testable UIWebSocketServer that exposes protected members for testing.
  */
 export class TestableUIWebSocketServer extends UIWebSocketServer {
+  public constructor (config: UIServerConfiguration, bootstrap: IBootstrap = createMockBootstrap()) {
+    super(config, bootstrap)
+  }
+
   /**
    * Add a response handler for testing.
    * @param uuid - Unique identifier for the response handler

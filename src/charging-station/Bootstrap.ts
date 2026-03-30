@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { isMainThread } from 'node:worker_threads'
 import { availableParallelism, type MessageHandler } from 'poolifier'
 
+import type { IBootstrap } from './IBootstrap.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
@@ -64,7 +65,7 @@ enum exitCodes {
   gracefulShutdownError = 4,
 }
 
-export class Bootstrap extends EventEmitter {
+export class Bootstrap extends EventEmitter implements IBootstrap {
   private static instance: Bootstrap | null = null
   public get numberOfChargingStationTemplates (): number {
     return this.templateStatistics.size
@@ -122,7 +123,8 @@ export class Bootstrap extends EventEmitter {
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
     this.uiServer = UIServerFactory.getUIServerImplementation(
-      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
+      this
     )
     this.initializeCounters()
     this.initializeWorkerImplementation(

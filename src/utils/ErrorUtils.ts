@@ -12,9 +12,8 @@ import type {
   RequestCommand,
 } from '../types/index.js'
 
-import { getMessageTypeString } from '../charging-station/index.js'
 import { logger } from './Logger.js'
-import { isNotEmptyString } from './Utils.js'
+import { getMessageTypeString, isNotEmptyString } from './Utils.js'
 
 const moduleName = 'ErrorUtils'
 

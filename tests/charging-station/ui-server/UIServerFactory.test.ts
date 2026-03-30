@@ -12,7 +12,9 @@ import { UIServerFactory } from '../../../src/charging-station/ui-server/UIServe
 import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import { ApplicationProtocol, ApplicationProtocolVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
+import { createMockBootstrap, createMockUIServerConfiguration } from './UIServerTestUtils.js'
+
+const mockBootstrap = createMockBootstrap()
 
 await describe('UIServerFactory', async () => {
   afterEach(() => {
@@ -21,7 +23,7 @@ await describe('UIServerFactory', async () => {
 
   await it('should create UIHttpServer for HTTP protocol', () => {
     const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config, mockBootstrap)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     assert.ok(server instanceof UIHttpServer)
     server.stop()
@@ -29,14 +31,14 @@ await describe('UIServerFactory', async () => {
 
   await it('should create UIWebSocketServer for WS protocol', () => {
     const config = createMockUIServerConfiguration({ type: ApplicationProtocol.WS })
-    const server = UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config, mockBootstrap)
     assert.ok(server instanceof UIWebSocketServer)
     server.stop()
   })
 
   await it('should create UIMCPServer for MCP protocol', () => {
     const config = createMockUIServerConfiguration({ type: ApplicationProtocol.MCP })
-    const server = UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config, mockBootstrap)
     assert.ok(server instanceof UIMCPServer)
     server.stop()
   })
@@ -46,7 +48,7 @@ await describe('UIServerFactory', async () => {
       type: ApplicationProtocol.MCP,
       version: ApplicationProtocolVersion.VERSION_20,
     })
-    const server = UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config, mockBootstrap)
     assert.strictEqual(config.version, ApplicationProtocolVersion.VERSION_11)
     server.stop()
   })
@@ -56,7 +58,7 @@ await describe('UIServerFactory', async () => {
       type: ApplicationProtocol.WS,
       version: ApplicationProtocolVersion.VERSION_20,
     })
-    const server = UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config, mockBootstrap)
     assert.strictEqual(config.version, ApplicationProtocolVersion.VERSION_11)
     server.stop()
   })

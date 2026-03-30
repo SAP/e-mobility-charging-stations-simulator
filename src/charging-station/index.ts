@@ -1,5 +1,3 @@
-// FIXME: cross-component re-export needed to preserve ESM evaluation order — remove after fixing AbstractUIServer ↔ UIServiceFactory cycle
-export { getMessageTypeString } from '../utils/index.js'
 export { Bootstrap } from './Bootstrap.js'
 export type { ChargingStation } from './ChargingStation.js'
 export {
@@ -22,3 +20,4 @@ export {
   resetAuthorizeConnectorStatus,
   resetConnectorStatus,
 } from './Helpers.js'
+export type { IBootstrap } from './IBootstrap.js'

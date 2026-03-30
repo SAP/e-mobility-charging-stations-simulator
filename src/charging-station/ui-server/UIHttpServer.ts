@@ -3,6 +3,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StatusCodes } from 'http-status-codes'
 import { createGzip } from 'node:zlib'
 
+import type { IBootstrap } from '../IBootstrap.js'
+
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
@@ -41,8 +43,11 @@ export class UIHttpServer extends AbstractUIServer {
 
   private readonly acceptsGzip: Map<UUIDv4, boolean>
 
-  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
-    super(uiServerConfiguration)
+  public constructor (
+    protected override readonly uiServerConfiguration: UIServerConfiguration,
+    bootstrap: IBootstrap
+  ) {
+    super(uiServerConfiguration, bootstrap)
     this.acceptsGzip = new Map<UUIDv4, boolean>()
   }
 
