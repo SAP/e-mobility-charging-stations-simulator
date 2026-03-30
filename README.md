@@ -884,7 +884,7 @@ Protocol to control the simulator via the UI server. Three transport types are a
 
 ### MCP Protocol (Model Context Protocol)
 
-The recommended transport for programmatic access. [MCP](https://spec.modelcontextprotocol.io) enables LLM agents and AI tools to discover and use the simulator's capabilities automatically.
+The recommended transport for programmatic access. [MCP](https://modelcontextprotocol.io/specification) enables LLM agents and AI tools to discover and use the simulator's capabilities automatically.
 
 #### Agent configuration
 

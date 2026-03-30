@@ -1,0 +1,72 @@
+// Zed project settings for e-mobility-charging-stations-simulator
+//
+// JS/TS/Vue: Prettier → ESLint --fix
+// Python: Ruff check --fix → Ruff format
+// JSON, JSONC, Markdown, YAML, CSS, HTML: Prettier
+{
+  "format_on_save": "on",
+  "language_servers": ["!biome", "..."],
+
+  "languages": {
+    // ── TypeScript (covers .ts and .tsx) ──────────────────────
+    "TypeScript": {
+      "formatter": ["prettier", { "code_action": "source.fixAll.eslint" }]
+    },
+    // ── JavaScript (covers .js, .jsx, .cjs, .mjs) ────────────
+    "JavaScript": {
+      "formatter": ["prettier", { "code_action": "source.fixAll.eslint" }]
+    },
+    // ── Vue ───────────────────────────────────────────────────
+    "Vue.js": {
+      "formatter": ["prettier", { "code_action": "source.fixAll.eslint" }]
+    },
+    // ── JSON / JSONC ──────────────────────────────────────────
+    "JSON": {
+      "formatter": "prettier"
+    },
+    "JSONC": {
+      "formatter": "prettier"
+    },
+    // ── Markdown ──────────────────────────────────────────────
+    "Markdown": {
+      "formatter": "prettier"
+    },
+    // ── YAML ──────────────────────────────────────────────────
+    "YAML": {
+      "formatter": "prettier"
+    },
+    // ── CSS ───────────────────────────────────────────────────
+    "CSS": {
+      "formatter": "prettier"
+    },
+    // ── HTML ──────────────────────────────────────────────────
+    "HTML": {
+      "formatter": "prettier"
+    },
+    // ── Python ────────────────────────────────────────────────
+    "Python": {
+      "formatter": [
+        { "code_action": "source.fixAll.ruff" },
+        { "language_server": { "name": "ruff" } }
+      ]
+    }
+  },
+
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "workingDirectory": {
+          "mode": "auto"
+        }
+      }
+    },
+    "vue": {
+      "settings": {
+        "vue.inlayHints.inlineHandlerLeading": true,
+        "vue.inlayHints.missingProps": true,
+        "vue.inlayHints.optionsWrapper": true,
+        "vue.inlayHints.vBindShorthand": true
+      }
+    }
+  }
+}
