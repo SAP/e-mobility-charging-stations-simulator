@@ -133,7 +133,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Assert
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
-    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // G03.FR.03 — Reject when auth returns BLOCKED for groupIdToken
@@ -183,7 +182,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Assert
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
-    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent

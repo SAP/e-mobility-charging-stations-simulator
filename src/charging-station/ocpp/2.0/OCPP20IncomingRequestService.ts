@@ -765,6 +765,35 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
+  private async authorizeToken (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    tokenValue: string,
+    tokenLabel: string
+  ): Promise<boolean> {
+    const { OCPPAuthServiceFactory } = await import('../auth/index.js')
+    const { AuthContext, AuthorizationStatus, IdentifierType } = await import('../auth/index.js')
+    const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+    const authResult = await authService.authorize({
+      allowOffline: false,
+      connectorId,
+      context: AuthContext.REMOTE_START,
+      identifier: {
+        type: IdentifierType.ID_TAG,
+        value: tokenValue,
+      },
+      timestamp: new Date(),
+    })
+
+    if (authResult.status !== AuthorizationStatus.ACCEPTED) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${tokenLabel} ${truncateId(tokenValue)} is not authorized`
+      )
+    }
+
+    return authResult.status === AuthorizationStatus.ACCEPTED
+  }
+
   private buildReportData (
     chargingStation: ChargingStation,
     reportBase: ReportBaseEnumType
@@ -2331,21 +2360,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       try {
-        const { OCPPAuthServiceFactory } = await import('../auth/index.js')
-        const { AuthContext, AuthorizationStatus, IdentifierType } =
-          await import('../auth/index.js')
-        const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
-        const authResult = await authService.authorize({
-          allowOffline: false,
+        isAuthorized = await this.authorizeToken(
+          chargingStation,
           connectorId,
-          context: AuthContext.REMOTE_START,
-          identifier: {
-            type: IdentifierType.ID_TAG,
-            value: idToken.idToken,
-          },
-          timestamp: new Date(),
-        })
-        isAuthorized = authResult.status === AuthorizationStatus.ACCEPTED
+          idToken.idToken,
+          'IdToken'
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${truncateId(idToken.idToken)}:`,
@@ -2367,9 +2387,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     if (!isAuthorized) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken ${truncateId(idToken.idToken)} is not authorized`
-      )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
@@ -2383,21 +2400,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        const { OCPPAuthServiceFactory } = await import('../auth/index.js')
-        const { AuthContext, AuthorizationStatus, IdentifierType } =
-          await import('../auth/index.js')
-        const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
-        const groupAuthResult = await authService.authorize({
-          allowOffline: false,
+        isGroupAuthorized = await this.authorizeToken(
+          chargingStation,
           connectorId,
-          context: AuthContext.REMOTE_START,
-          identifier: {
-            type: IdentifierType.ID_TAG,
-            value: groupIdToken.idToken,
-          },
-          timestamp: new Date(),
-        })
-        isGroupAuthorized = groupAuthResult.status === AuthorizationStatus.ACCEPTED
+          groupIdToken.idToken,
+          'GroupIdToken'
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${truncateId(groupIdToken.idToken)}:`,
@@ -2412,11 +2420,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           transactionId: generateUUID(),
         }
       }
-
       if (!isGroupAuthorized) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: GroupIdToken ${truncateId(groupIdToken.idToken)} is not authorized`
-        )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
