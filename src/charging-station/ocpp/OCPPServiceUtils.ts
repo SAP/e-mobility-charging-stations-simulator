@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { StopTransactionReason } from '../../types/index.js'
+import type { AuthContext } from './auth/types/AuthTypes.js'
 
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
@@ -140,12 +141,14 @@ export const buildStatusNotificationRequest = (
  * @param chargingStation - The charging station instance
  * @param connectorId - The connector ID for authorization context
  * @param idTag - The identifier to authorize
+ * @param context - The authorization context (defaults to TRANSACTION_START)
  * @returns Promise resolving to authorization result
  */
 export const isIdTagAuthorized = async (
   chargingStation: ChargingStation,
   connectorId: number,
-  idTag: string
+  idTag: string,
+  context?: AuthContext
 ): Promise<boolean> => {
   try {
     logger.debug(
@@ -166,7 +169,7 @@ export const isIdTagAuthorized = async (
     const authResult = await authService.authorize({
       allowOffline: false,
       connectorId,
-      context: AuthContext.TRANSACTION_START,
+      context: context ?? AuthContext.TRANSACTION_START,
       identifier: {
         type: IdentifierType.ID_TAG,
         value: idTag,

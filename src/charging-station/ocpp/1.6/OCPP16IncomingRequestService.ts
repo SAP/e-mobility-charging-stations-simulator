@@ -115,6 +115,7 @@ import {
   sleep,
   truncateId,
 } from '../../../utils/index.js'
+import { AuthContext } from '../auth/types/AuthTypes.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
@@ -1244,7 +1245,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // idTag authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() &&
-      !(await OCPPServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
+      !(await OCPPServiceUtils.isIdTagAuthorized(
+        chargingStation,
+        transactionConnectorId,
+        idTag,
+        AuthContext.REMOTE_START
+      ))
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -1319,7 +1325,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    if (!(await OCPPServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
+    if (
+      !(await OCPPServiceUtils.isIdTagAuthorized(
+        chargingStation,
+        connectorId,
+        idTag,
+        AuthContext.RESERVATION
+      ))
+    ) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
