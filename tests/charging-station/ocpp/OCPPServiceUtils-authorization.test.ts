@@ -30,9 +30,10 @@ import {
 } from './auth/helpers/MockFactories.js'
 
 /**
- *
- * @param station
- * @param overrides
+ * Registers a mock auth service for the given station in OCPPAuthServiceFactory.
+ * @param station - Mock charging station instance
+ * @param overrides - Partial overrides for the mock auth service methods
+ * @returns The created mock auth service
  */
 function injectMockAuthService (
   station: ReturnType<typeof createMockChargingStation>['station'],

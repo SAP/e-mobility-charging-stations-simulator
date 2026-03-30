@@ -156,9 +156,13 @@ export const isIdTagAuthorized = async (
     )
 
     // Dynamic import to avoid circular dependencies
-    const { OCPPAuthServiceFactory } = await import('./auth/index.js')
-    const { AuthContext, AuthenticationMethod, AuthorizationStatus, IdentifierType } =
-      await import('./auth/index.js')
+    const {
+      AuthContext,
+      AuthenticationMethod,
+      AuthorizationStatus,
+      IdentifierType,
+      OCPPAuthServiceFactory,
+    } = await import('./auth/index.js')
 
     const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
 
@@ -186,17 +190,12 @@ export const isIdTagAuthorized = async (
           case AuthenticationMethod.CACHE:
           case AuthenticationMethod.LOCAL_LIST:
           case AuthenticationMethod.OFFLINE_FALLBACK:
-            // Local authorization — set local auth fields
             connectorStatus.localAuthorizeIdTag = idTag
             connectorStatus.idTagLocalAuthorized = true
             break
+          case AuthenticationMethod.CERTIFICATE_BASED:
+          case AuthenticationMethod.NONE:
           case AuthenticationMethod.REMOTE_AUTHORIZATION:
-            // Remote authorization — OCPP16AuthAdapter.authorizeRemote() already set
-            // connectorStatus.authorizeIdTag during the Authorize.req flow.
-            // idTagAuthorized is set by OCPP16ResponseService.handleResponseAuthorize().
-            // No additional state needed here.
-            break
-          default:
             break
         }
       }

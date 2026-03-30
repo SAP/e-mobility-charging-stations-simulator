@@ -140,7 +140,7 @@ import {
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../Helpers.js'
-import { OCPPAuthServiceFactory } from '../auth/index.js'
+import { type AuthContext, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
@@ -769,15 +769,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     connectorId: number,
     tokenValue: string,
-    tokenLabel: string
+    tokenLabel: string,
+    context?: AuthContext
   ): Promise<boolean> {
-    const { OCPPAuthServiceFactory } = await import('../auth/index.js')
-    const { AuthContext, AuthorizationStatus, IdentifierType } = await import('../auth/index.js')
+    const { AuthContext, AuthorizationStatus, IdentifierType, OCPPAuthServiceFactory } =
+      await import('../auth/index.js')
     const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
     const authResult = await authService.authorize({
       allowOffline: false,
       connectorId,
-      context: AuthContext.REMOTE_START,
+      context: context ?? AuthContext.REMOTE_START,
       identifier: {
         type: IdentifierType.ID_TAG,
         value: tokenValue,
