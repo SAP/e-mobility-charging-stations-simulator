@@ -341,7 +341,7 @@ assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 
 | Utility                           | Purpose                     |
 | --------------------------------- | --------------------------- |
-| `createMockIdentifier()`          | UnifiedIdentifier factory   |
+| `createMockIdentifier()`          | Identifier factory          |
 | `createMockAuthRequest()`         | AuthRequest factory         |
 | `createMockAuthorizationResult()` | AuthorizationResult factory |
 

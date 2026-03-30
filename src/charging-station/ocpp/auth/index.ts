@@ -21,7 +21,7 @@ export { OCPP16AuthAdapter } from './adapters/OCPP16AuthAdapter.js'
 export { OCPP20AuthAdapter } from './adapters/OCPP20AuthAdapter.js'
 
 // ============================================================================
-// Type Guards & Mappers (Pure Functions)
+// Adapters
 // ============================================================================
 
 export type {
@@ -37,26 +37,21 @@ export type {
   OCPPAuthAdapter,
   OCPPAuthService,
 } from './interfaces/OCPPAuthService.js'
-
-// ============================================================================
-// Adapters
-// ============================================================================
-
 export { OCPPAuthServiceFactory } from './services/OCPPAuthServiceFactory.js'
-export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
 
 // ============================================================================
 // Strategies
 // ============================================================================
 
+export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
 export { CertificateAuthStrategy } from './strategies/CertificateAuthStrategy.js'
 export { LocalAuthStrategy } from './strategies/LocalAuthStrategy.js'
-export { RemoteAuthStrategy } from './strategies/RemoteAuthStrategy.js'
 
 // ============================================================================
 // Services
 // ============================================================================
 
+export { RemoteAuthStrategy } from './strategies/RemoteAuthStrategy.js'
 export {
   type AuthConfiguration,
   AuthContext,

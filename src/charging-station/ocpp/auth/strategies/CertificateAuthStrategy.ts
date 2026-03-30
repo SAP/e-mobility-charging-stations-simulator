@@ -1,5 +1,5 @@
 import type { JsonObject } from '../../../../types/index.js'
-import type { ChargingStation } from '../../../ChargingStation.js'
+import type { ChargingStation } from '../../../index.js'
 import type { AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
   AuthConfiguration,
