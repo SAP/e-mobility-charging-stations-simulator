@@ -4,7 +4,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
@@ -14,9 +14,13 @@ import { ApplicationProtocol, ApplicationProtocolVersion } from '../../../src/ty
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockBootstrap, createMockUIServerConfiguration } from './UIServerTestUtils.js'
 
-const mockBootstrap = createMockBootstrap()
-
 await describe('UIServerFactory', async () => {
+  let mockBootstrap: ReturnType<typeof createMockBootstrap>
+
+  beforeEach(() => {
+    mockBootstrap = createMockBootstrap()
+  })
+
   afterEach(() => {
     standardCleanup()
   })

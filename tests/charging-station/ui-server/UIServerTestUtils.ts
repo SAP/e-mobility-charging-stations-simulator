@@ -29,15 +29,16 @@ import {
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
 
-/**
- * Create a mock IBootstrap for testing.
- * @returns Mock IBootstrap instance with no-op methods
- */
 export const createMockBootstrap = (): IBootstrap => ({
   addChargingStation: () => Promise.resolve(undefined),
   getLastContiguousIndex: () => 0,
   getPerformanceStatistics: () => undefined,
-  getState: () => ({ started: false, templateStatistics: new Map(), version: '0.0.0' }) as never,
+  getState: () => ({
+    configuration: undefined,
+    started: false,
+    templateStatistics: new Map(),
+    version: '0.0.0',
+  }),
   start: () => Promise.resolve(),
   stop: () => Promise.resolve(),
 })
