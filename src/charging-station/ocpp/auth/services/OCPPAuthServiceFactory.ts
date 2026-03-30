@@ -37,14 +37,14 @@ const getSharedInstances = (): Map<string, OCPPAuthService> => {
  */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPAuthServiceFactory {
-  private static get instances(): Map<string, OCPPAuthService> {
+  private static get instances (): Map<string, OCPPAuthService> {
     return getSharedInstances()
   }
 
   /**
    * Clear all cached instances
    */
-  static clearAllInstances(): void {
+  static clearAllInstances (): void {
     const count = this.instances.size
     this.instances.clear()
     logger.debug(
@@ -56,7 +56,7 @@ export class OCPPAuthServiceFactory {
    * Clear cached instance for a charging station
    * @param chargingStation - The charging station to clear cache for
    */
-  static clearInstance(chargingStation: ChargingStation): void {
+  static clearInstance (chargingStation: ChargingStation): void {
     const stationId = chargingStation.stationInfo?.chargingStationId ?? 'unknown'
 
     if (this.instances.has(stationId)) {
@@ -72,7 +72,7 @@ export class OCPPAuthServiceFactory {
    * @param chargingStation - The charging station to create the service for
    * @returns New OCPPAuthService instance (initialized)
    */
-  static async createInstance(chargingStation: ChargingStation): Promise<OCPPAuthService> {
+  static async createInstance (chargingStation: ChargingStation): Promise<OCPPAuthService> {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.createInstance: Creating new uncached auth service`
     )
@@ -87,7 +87,7 @@ export class OCPPAuthServiceFactory {
    * Get the number of cached instances
    * @returns Number of cached instances
    */
-  static getCachedInstanceCount(): number {
+  static getCachedInstanceCount (): number {
     return this.instances.size
   }
 
@@ -96,7 +96,7 @@ export class OCPPAuthServiceFactory {
    * @param chargingStation - The charging station to create the service for
    * @returns Configured OCPPAuthService instance (initialized)
    */
-  static async getInstance(chargingStation: ChargingStation): Promise<OCPPAuthService> {
+  static async getInstance (chargingStation: ChargingStation): Promise<OCPPAuthService> {
     const stationId = chargingStation.stationInfo?.chargingStationId ?? 'unknown'
 
     // Return existing instance if available
@@ -136,7 +136,7 @@ export class OCPPAuthServiceFactory {
    * Get statistics about factory usage
    * @returns Factory usage statistics
    */
-  static getStatistics(): {
+  static getStatistics (): {
     cachedInstances: number
     stationIds: string[]
   } {
@@ -152,7 +152,7 @@ export class OCPPAuthServiceFactory {
    * @param stationId - The station identifier to cache the instance for
    * @param instance - The auth service instance to cache
    */
-  static setInstanceForTesting(stationId: string, instance: OCPPAuthService): void {
+  static setInstanceForTesting (stationId: string, instance: OCPPAuthService): void {
     this.instances.set(stationId, instance)
     logger.debug(
       `${moduleName}.setInstanceForTesting: Set mock auth service for station ${stationId}`

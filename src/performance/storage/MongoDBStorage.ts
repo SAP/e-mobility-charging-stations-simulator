@@ -11,14 +11,14 @@ export class MongoDBStorage extends Storage {
   private readonly client: MongoClient
   private opened: boolean
 
-  constructor(storageUri: string, logPrefix: string) {
+  constructor (storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix)
     this.client = new MongoClient(this.storageUri.toString())
     this.opened = false
     this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  public async close(): Promise<void> {
+  public async close (): Promise<void> {
     this.clearPerformanceStatistics()
     try {
       if (this.opened) {
@@ -30,7 +30,7 @@ export class MongoDBStorage extends Storage {
     }
   }
 
-  public async open(): Promise<void> {
+  public async open (): Promise<void> {
     try {
       if (!this.opened) {
         await this.client.connect()
@@ -41,7 +41,7 @@ export class MongoDBStorage extends Storage {
     }
   }
 
-  public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
+  public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
       this.setPerformanceStatistics(performanceStatistics)
       this.checkDBConnection()
@@ -62,7 +62,7 @@ export class MongoDBStorage extends Storage {
     }
   }
 
-  private checkDBConnection(): void {
+  private checkDBConnection (): void {
     if (!this.opened) {
       throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB) ?? 'Unknown'} connection not opened while trying to issue a request`

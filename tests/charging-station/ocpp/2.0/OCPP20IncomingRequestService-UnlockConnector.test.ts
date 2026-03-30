@@ -31,7 +31,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * (sendAndSetConnectorStatus calls requestHandler internally for StatusNotification).
  * @returns The mock station and its request handler spy
  */
-function createUnlockConnectorStation(): {
+function createUnlockConnectorStation (): {
   mockStation: MockChargingStation
   requestHandlerMock: ReturnType<typeof mock.fn>
 } {

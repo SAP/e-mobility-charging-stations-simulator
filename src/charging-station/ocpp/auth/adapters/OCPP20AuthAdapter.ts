@@ -45,7 +45,7 @@ const moduleName = 'OCPP20AuthAdapter'
 export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   readonly ocppVersion = OCPPVersion.VERSION_20
 
-  constructor(private readonly chargingStation: ChargingStation) {}
+  constructor (private readonly chargingStation: ChargingStation) {}
 
   /**
    * Perform remote authorization using OCPP 2.0 Authorize request.
@@ -54,7 +54,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param transactionId - Optional existing transaction ID for ongoing transactions
    * @returns Authorization result with status, method, and OCPP 2.0 specific metadata
    */
-  async authorizeRemote(
+  async authorizeRemote (
     identifier: UnifiedIdentifier,
     connectorId?: number,
     transactionId?: number | string
@@ -181,25 +181,25 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param identifier - Unified identifier to convert to OCPP 2.0 format
    * @returns OCPP 2.0 IdTokenType with mapped type and additionalInfo
    */
-  convertFromUnifiedIdentifier(identifier: UnifiedIdentifier): OCPP20IdTokenType {
+  convertFromUnifiedIdentifier (identifier: UnifiedIdentifier): OCPP20IdTokenType {
     // Map unified type back to OCPP 2.0 type
     const ocpp20Type = this.mapFromUnifiedIdentifierType(identifier.type)
 
     // Convert unified additionalInfo back to OCPP 2.0 format
     const additionalInfo: AdditionalInfoType[] | undefined = identifier.additionalInfo
       ? Object.entries(identifier.additionalInfo)
-          .filter(([key]) => key.startsWith('info_'))
-          .map(([, value]) => {
-            try {
-              return JSON.parse(value) as AdditionalInfoType
-            } catch {
-              // Fallback for non-JSON values
-              return {
-                additionalIdToken: value,
-                type: 'string',
-              } as AdditionalInfoType
-            }
-          })
+        .filter(([key]) => key.startsWith('info_'))
+        .map(([, value]) => {
+          try {
+            return JSON.parse(value) as AdditionalInfoType
+          } catch {
+            // Fallback for non-JSON values
+            return {
+              additionalIdToken: value,
+              type: 'string',
+            } as AdditionalInfoType
+          }
+        })
       : undefined
 
     return {
@@ -214,7 +214,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param result - Unified authorization result to convert
    * @returns OCPP 2.0 RequestStartStopStatusEnumType for transaction responses
    */
-  convertToOCPP20Response(result: AuthorizationResult): RequestStartStopStatusEnumType {
+  convertToOCPP20Response (result: AuthorizationResult): RequestStartStopStatusEnumType {
     return mapToOCPP20Status(result.status)
   }
 
@@ -224,7 +224,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param additionalData - Optional metadata to include in the unified identifier
    * @returns Unified identifier with normalized type and metadata
    */
-  convertToUnifiedIdentifier(
+  convertToUnifiedIdentifier (
     identifier: OCPP20IdTokenType | string,
     additionalData?: Record<string, unknown>
   ): UnifiedIdentifier {
@@ -249,11 +249,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         ocpp20Type: idToken.type,
         ...(idToken.additionalInfo
           ? Object.fromEntries(
-              idToken.additionalInfo.map((item, index) => [
+            idToken.additionalInfo.map((item, index) => [
                 `info_${String(index)}`,
                 JSON.stringify(item),
-              ])
-            )
+            ])
+          )
           : {}),
         ...(additionalData
           ? Object.fromEntries(Object.entries(additionalData).map(([k, v]) => [k, String(v)]))
@@ -273,7 +273,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param context - Optional context string (e.g., 'start', 'stop', 'remote_start')
    * @returns AuthRequest with unified identifier, context, and station metadata
    */
-  createAuthRequest(
+  createAuthRequest (
     idTokenOrString: OCPP20IdTokenType | string,
     connectorId?: number,
     transactionId?: string,
@@ -322,7 +322,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Get OCPP 2.0 specific configuration schema
    * @returns Configuration schema object for OCPP 2.0 authorization settings
    */
-  getConfigurationSchema(): JsonObject {
+  getConfigurationSchema (): JsonObject {
     return {
       properties: {
         authCacheEnabled: {
@@ -365,7 +365,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Get adapter-specific status information
    * @returns Status object containing adapter state and capabilities
    */
-  getStatus(): JsonObject {
+  getStatus (): JsonObject {
     return {
       isOnline: this.chargingStation.inAcceptedState(),
       localAuthEnabled: true, // Configuration dependent
@@ -388,7 +388,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Check if remote authorization is available for OCPP 2.0
    * @returns True if remote authorization is available and enabled
    */
-  isRemoteAvailable(): boolean {
+  isRemoteAvailable (): boolean {
     try {
       // Check if station supports remote authorization via variables
       // OCPP 2.0 uses variables instead of configuration keys
@@ -418,7 +418,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param identifier - Unified identifier to validate against OCPP 2.0 rules
    * @returns True if identifier meets OCPP 2.0 format requirements (max 36 chars, valid type)
    */
-  isValidIdentifier(identifier: UnifiedIdentifier): boolean {
+  isValidIdentifier (identifier: UnifiedIdentifier): boolean {
     // OCPP 2.0 idToken validation
     if (!identifier.value || typeof identifier.value !== 'string') {
       return false
@@ -450,7 +450,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param config - Authentication configuration to validate
    * @returns Promise resolving to true if configuration is valid for OCPP 2.0 operations
    */
-  validateConfiguration(config: AuthConfiguration): boolean {
+  validateConfiguration (config: AuthConfiguration): boolean {
     try {
       // Check that at least one authorization method is enabled
       const hasRemoteAuth = config.remoteAuthorization === true
@@ -489,7 +489,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param useFallback - Whether to return fallback values when variable is not configured
    * @returns Default value according to OCPP 2.0.1 spec, or undefined if no default exists
    */
-  private getDefaultVariableValue(
+  private getDefaultVariableValue (
     component: string,
     variable: string,
     useFallback: boolean
@@ -530,7 +530,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Check if offline authorization is allowed
    * @returns True if offline authorization is enabled
    */
-  private getOfflineAuthorizationConfig(): boolean {
+  private getOfflineAuthorizationConfig (): boolean {
     try {
       const value = this.getVariableValue(
         OCPP20ComponentName.AuthCtrlr,
@@ -553,7 +553,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
    * @returns Promise resolving to variable value as string, or undefined if not available
    */
-  private getVariableValue(
+  private getVariableValue (
     component: string,
     variable: string,
     useDefaultFallback = true
@@ -604,7 +604,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param unifiedType - Unified identifier type to convert
    * @returns Corresponding OCPP 2.0 IdTokenEnumType value
    */
-  private mapFromUnifiedIdentifierType(unifiedType: IdentifierType): OCPP20IdTokenEnumType {
+  private mapFromUnifiedIdentifierType (unifiedType: IdentifierType): OCPP20IdTokenEnumType {
     switch (unifiedType) {
       case IdentifierType.CENTRAL:
         return OCPP20IdTokenEnumType.Central
@@ -634,7 +634,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param ocpp20Type - OCPP 2.0 IdTokenEnumType to convert
    * @returns Corresponding unified IdentifierType value
    */
-  private mapToUnifiedIdentifierType(ocpp20Type: OCPP20IdTokenEnumType): IdentifierType {
+  private mapToUnifiedIdentifierType (ocpp20Type: OCPP20IdTokenEnumType): IdentifierType {
     switch (ocpp20Type) {
       case OCPP20IdTokenEnumType.Central:
       case OCPP20IdTokenEnumType.Local:
@@ -662,7 +662,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param defaultValue - Fallback value when parsing fails or value is undefined
    * @returns Parsed boolean value, or defaultValue if parsing fails
    */
-  private parseBooleanVariable(value: string | undefined, defaultValue: boolean): boolean {
+  private parseBooleanVariable (value: string | undefined, defaultValue: boolean): boolean {
     if (value == null) {
       return defaultValue
     }
@@ -691,7 +691,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param max - Optional maximum allowed value (clamped if exceeded)
    * @returns Parsed integer value clamped to min/max bounds, or defaultValue if parsing fails
    */
-  private parseIntegerVariable(
+  private parseIntegerVariable (
     value: string | undefined,
     defaultValue: number,
     min?: number,

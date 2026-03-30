@@ -12,13 +12,13 @@ export class MikroOrmStorage extends Storage {
   private orm?: MariaDbORM | SqliteORM
   private readonly storageType: StorageType
 
-  constructor(storageUri: string, logPrefix: string, storageType: StorageType) {
+  constructor (storageUri: string, logPrefix: string, storageType: StorageType) {
     super(storageUri, logPrefix)
     this.storageType = storageType
     this.dbName = this.getDBName()
   }
 
-  public async close(): Promise<void> {
+  public async close (): Promise<void> {
     this.clearPerformanceStatistics()
     try {
       if (this.orm != null) {
@@ -30,7 +30,7 @@ export class MikroOrmStorage extends Storage {
     }
   }
 
-  public async open(): Promise<void> {
+  public async open (): Promise<void> {
     try {
       if (this.orm == null) {
         let orm: MariaDbORM | SqliteORM | undefined
@@ -59,7 +59,7 @@ export class MikroOrmStorage extends Storage {
     }
   }
 
-  public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
+  public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
       this.setPerformanceStatistics(performanceStatistics)
       this.checkDBConnection()
@@ -77,7 +77,7 @@ export class MikroOrmStorage extends Storage {
     }
   }
 
-  private checkDBConnection(): void {
+  private checkDBConnection (): void {
     if (this.orm == null) {
       throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(this.storageType) ?? 'Unknown'} ORM not initialized while trying to issue a request`
@@ -85,7 +85,7 @@ export class MikroOrmStorage extends Storage {
     }
   }
 
-  private getClientUrl(): string | undefined {
+  private getClientUrl (): string | undefined {
     switch (this.storageType) {
       case StorageType.MARIA_DB:
       case StorageType.MYSQL:
@@ -94,14 +94,14 @@ export class MikroOrmStorage extends Storage {
     }
   }
 
-  private getDBName(): string {
+  private getDBName (): string {
     if (this.storageType === StorageType.SQLITE) {
       return `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
     }
     return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  private getOptions(): MariaDbOptions | SqliteOptions {
+  private getOptions (): MariaDbOptions | SqliteOptions {
     return {
       clientUrl: this.getClientUrl(),
       dbName: this.dbName,

@@ -27,7 +27,7 @@ interface ResponseWrapper<R extends WorkerData> {
 export class WorkerSet<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<D, R> {
   public readonly emitter: EventEmitterAsyncResource | undefined
 
-  get info(): SetInfo {
+  get info (): SetInfo {
     return {
       elementsExecuting: [...this.workerSet].reduce(
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
@@ -42,11 +42,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
-  get maxElementsPerWorker(): number | undefined {
+  get maxElementsPerWorker (): number | undefined {
     return this.workerOptions.elementsPerWorker
   }
 
-  get size(): number {
+  get size (): number {
     return this.workerSet.size
   }
 
@@ -61,7 +61,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
    * @param workerScript - Path to the worker script file
    * @param workerOptions - Worker set configuration options
    */
-  constructor(workerScript: string, workerOptions: WorkerOptions) {
+  constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)
     if (this.workerOptions.elementsPerWorker == null) {
       throw new TypeError('Elements per worker is not defined')
@@ -82,7 +82,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /** @inheritDoc */
-  public async addElement(elementData: D): Promise<R> {
+  public async addElement (elementData: D): Promise<R> {
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
@@ -109,7 +109,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /** @inheritDoc */
-  public async start(): Promise<void> {
+  public async start (): Promise<void> {
     this.addWorkerSetElement()
     // Add worker set element sequentially to optimize memory at startup
     if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
@@ -120,7 +120,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /** @inheritDoc */
-  public async stop(): Promise<void> {
+  public async stop (): Promise<void> {
     for (const workerSetElement of this.workerSet) {
       const worker = workerSetElement.worker
       const waitWorkerExit = new Promise<void>(resolve => {
@@ -156,7 +156,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
    * Adds a new `WorkerSetElement`.
    * @returns The new `WorkerSetElement`.
    */
-  private addWorkerSetElement(): WorkerSetElement {
+  private addWorkerSetElement (): WorkerSetElement {
     this.workerStartup = true
     const worker = new Worker(this.workerScript, {
       env: SHARE_ENV,
@@ -240,7 +240,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElement
   }
 
-  private async getWorkerSetElement(): Promise<WorkerSetElement> {
+  private async getWorkerSetElement (): Promise<WorkerSetElement> {
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (
@@ -261,7 +261,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return chosenWorkerSetElement
   }
 
-  private getWorkerSetElementByWorker(worker: Worker): undefined | WorkerSetElement {
+  private getWorkerSetElementByWorker (worker: Worker): undefined | WorkerSetElement {
     let workerSetElementFound: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (workerSetElement.worker.threadId === worker.threadId) {
@@ -272,7 +272,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElementFound
   }
 
-  private rejectPendingPromiseForWorker(workerSetElement: WorkerSetElement, reason: unknown): void {
+  private rejectPendingPromiseForWorker (workerSetElement: WorkerSetElement, reason: unknown): void {
     for (const [uuid, responseWrapper] of this.promiseResponseMap) {
       if (responseWrapper.workerSetElement === workerSetElement) {
         try {
@@ -286,14 +286,14 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
-  private removeWorkerSetElement(workerSetElement: undefined | WorkerSetElement): void {
+  private removeWorkerSetElement (workerSetElement: undefined | WorkerSetElement): void {
     if (workerSetElement == null) {
       return
     }
     this.workerSet.delete(workerSetElement)
   }
 
-  private safeEmit(event: WorkerSetEvents, ...args: unknown[]): void {
+  private safeEmit (event: WorkerSetEvents, ...args: unknown[]): void {
     if (this.emitter != null && this.emitter.listenerCount(event) > 0) {
       this.emitter.emit(event, ...args)
     }

@@ -34,7 +34,7 @@ const SCHEMA_DIR = join(
  * @param filename - Schema filename (e.g. 'BootNotification.json')
  * @returns Parsed JSON schema object
  */
-function loadSchema(filename: string): Record<string, unknown> {
+function loadSchema (filename: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(SCHEMA_DIR, filename), 'utf8')) as Record<string, unknown>
 }
 
@@ -43,7 +43,7 @@ function loadSchema(filename: string): Record<string, unknown> {
  * @param schemaFile - Schema filename (e.g. 'BootNotification.json')
  * @returns Compiled AJV validate function
  */
-function makeValidator(schemaFile: string): ValidateFunction {
+function makeValidator (schemaFile: string): ValidateFunction {
   const ajv = new AjvConstructor({ keywords: ['javaType'], multipleOfPrecision: 2, strict: false })
   ajvFormats(ajv)
   return ajv.compile(loadSchema(schemaFile))

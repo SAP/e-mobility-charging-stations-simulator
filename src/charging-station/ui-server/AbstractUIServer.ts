@@ -39,7 +39,7 @@ export abstract class AbstractUIServer {
   private readonly chargingStationTemplates: Set<string>
   private clientNotificationDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
-  public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
     this.chargingStationTemplates = new Set<string>()
     switch (this.uiServerConfiguration.version) {
@@ -59,7 +59,7 @@ export abstract class AbstractUIServer {
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 
-  public buildProtocolRequest(
+  public buildProtocolRequest (
     uuid: UUIDv4,
     procedureName: ProcedureName,
     requestPayload: RequestPayload
@@ -67,44 +67,44 @@ export abstract class AbstractUIServer {
     return [uuid, procedureName, requestPayload]
   }
 
-  public buildProtocolResponse(uuid: UUIDv4, responsePayload: ResponsePayload): ProtocolResponse {
+  public buildProtocolResponse (uuid: UUIDv4, responsePayload: ResponsePayload): ProtocolResponse {
     return [uuid, responsePayload]
   }
 
-  public clearCaches(): void {
+  public clearCaches (): void {
     this.chargingStations.clear()
     this.chargingStationTemplates.clear()
   }
 
-  public deleteChargingStationData(hashId: string): boolean {
+  public deleteChargingStationData (hashId: string): boolean {
     return this.chargingStations.delete(hashId)
   }
 
-  public getChargingStationData(hashId: string): ChargingStationData | undefined {
+  public getChargingStationData (hashId: string): ChargingStationData | undefined {
     return this.chargingStations.get(hashId)
   }
 
-  public getChargingStationsCount(): number {
+  public getChargingStationsCount (): number {
     return this.chargingStations.size
   }
 
-  public getChargingStationTemplates(): string[] {
+  public getChargingStationTemplates (): string[] {
     return [...this.chargingStationTemplates.values()]
   }
 
-  public hasChargingStationData(hashId: string): boolean {
+  public hasChargingStationData (hashId: string): boolean {
     return this.chargingStations.has(hashId)
   }
 
-  public hasChargingStationTemplates(template: string): boolean {
+  public hasChargingStationTemplates (template: string): boolean {
     return this.chargingStationTemplates.has(template)
   }
 
-  public hasResponseHandler(uuid: UUIDv4): boolean {
+  public hasResponseHandler (uuid: UUIDv4): boolean {
     return this.responseHandlers.has(uuid)
   }
 
-  public listChargingStationData(): ChargingStationData[] {
+  public listChargingStationData (): ChargingStationData[] {
     return [...this.chargingStations.values()]
   }
 
@@ -118,7 +118,7 @@ export abstract class AbstractUIServer {
     return logPrefix(logMsg)
   }
 
-  public scheduleClientNotification(): void {
+  public scheduleClientNotification (): void {
     if (this.clientNotificationDebounceTimer != null) {
       clearTimeout(this.clientNotificationDebounceTimer)
     }
@@ -128,7 +128,7 @@ export abstract class AbstractUIServer {
     }, 500)
   }
 
-  public async sendInternalRequest(request: ProtocolRequest): Promise<ProtocolResponse> {
+  public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
     const protocolVersion = ProtocolVersion['0.0.1']
     this.registerProtocolVersionUIService(protocolVersion)
     return await (this.uiServices
@@ -136,11 +136,11 @@ export abstract class AbstractUIServer {
       ?.requestHandler(request) as Promise<ProtocolResponse>)
   }
 
-  public abstract sendRequest(request: ProtocolRequest): void
+  public abstract sendRequest (request: ProtocolRequest): void
 
-  public abstract sendResponse(response: ProtocolResponse): void
+  public abstract sendResponse (response: ProtocolResponse): void
 
-  public setChargingStationData(hashId: string, data: ChargingStationData): boolean {
+  public setChargingStationData (hashId: string, data: ChargingStationData): boolean {
     const cachedData = this.chargingStations.get(hashId)
     if (cachedData == null || data.timestamp >= cachedData.timestamp) {
       this.chargingStations.set(hashId, data)
@@ -149,7 +149,7 @@ export abstract class AbstractUIServer {
     return false
   }
 
-  public setChargingStationTemplates(templates: string[] | undefined): void {
+  public setChargingStationTemplates (templates: string[] | undefined): void {
     if (templates == null) {
       return
     }
@@ -158,9 +158,9 @@ export abstract class AbstractUIServer {
     }
   }
 
-  public abstract start(): void
+  public abstract start (): void
 
-  public stop(): void {
+  public stop (): void {
     clearTimeout(this.clientNotificationDebounceTimer)
     this.stopHttpServer()
     for (const uiService of this.uiServices.values()) {
@@ -171,7 +171,7 @@ export abstract class AbstractUIServer {
     this.clearCaches()
   }
 
-  protected authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
+  protected authenticate (req: IncomingMessage, next: (err?: Error) => void): void {
     if (this.uiServerConfiguration.authentication?.enabled !== true) {
       next()
       return
@@ -185,17 +185,17 @@ export abstract class AbstractUIServer {
     next(ok ? undefined : new BaseError('Unauthorized'))
   }
 
-  protected notifyClients(): void {
+  protected notifyClients (): void {
     // No-op by default — subclasses with push capability override this
   }
 
-  protected registerProtocolVersionUIService(version: ProtocolVersion): void {
+  protected registerProtocolVersionUIService (version: ProtocolVersion): void {
     if (!this.uiServices.has(version)) {
       this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this))
     }
   }
 
-  protected startHttpServer(): void {
+  protected startHttpServer (): void {
     this.httpServer.on('error', error => {
       logger.error(
         `${this.logPrefix(moduleName, 'start.httpServer.on.error')} HTTP server error:`,
@@ -207,21 +207,21 @@ export abstract class AbstractUIServer {
     }
   }
 
-  private isBasicAuthEnabled(): boolean {
+  private isBasicAuthEnabled (): boolean {
     return (
       this.uiServerConfiguration.authentication?.enabled === true &&
       this.uiServerConfiguration.authentication.type === AuthenticationType.BASIC_AUTH
     )
   }
 
-  private isProtocolBasicAuthEnabled(): boolean {
+  private isProtocolBasicAuthEnabled (): boolean {
     return (
       this.uiServerConfiguration.authentication?.enabled === true &&
       this.uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
     )
   }
 
-  private isValidBasicAuth(req: IncomingMessage, next: (err?: Error) => void): boolean {
+  private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
       req.headers.authorization?.split(/\s+/).pop() ?? '',
       next
@@ -233,7 +233,7 @@ export abstract class AbstractUIServer {
     return this.isValidUsernameAndPassword(username, password)
   }
 
-  private isValidProtocolBasicAuth(req: IncomingMessage, next: (err?: Error) => void): boolean {
+  private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
     if (authorizationProtocol == null || isEmpty(authorizationProtocol)) {
       return false
@@ -253,14 +253,14 @@ export abstract class AbstractUIServer {
     return this.isValidUsernameAndPassword(username, password)
   }
 
-  private isValidUsernameAndPassword(username: string, password: string): boolean {
+  private isValidUsernameAndPassword (username: string, password: string): boolean {
     return (
       isValidCredential(username, this.uiServerConfiguration.authentication?.username ?? '') &&
       isValidCredential(password, this.uiServerConfiguration.authentication?.password ?? '')
     )
   }
 
-  private stopHttpServer(): void {
+  private stopHttpServer (): void {
     if (this.httpServer.listening) {
       this.httpServer.close()
       this.httpServer.removeAllListeners()

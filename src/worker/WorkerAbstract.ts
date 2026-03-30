@@ -19,7 +19,7 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
    * @param workerScript - Path to the worker script file
    * @param workerOptions - Worker configuration options
    */
-  constructor(workerScript: string | undefined, workerOptions: WorkerOptions) {
+  constructor (workerScript: string | undefined, workerOptions: WorkerOptions) {
     if (workerScript == null) {
       throw new TypeError('Worker script is not defined')
     }
@@ -44,13 +44,13 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
    * Adds a task element to the worker pool/set.
    * @param elementData - The element data to process
    */
-  public abstract addElement(elementData: D): Promise<R>
+  public abstract addElement (elementData: D): Promise<R>
   /**
    * Starts the worker pool/set.
    */
-  public abstract start(): Promise<void> | void
+  public abstract start (): Promise<void> | void
   /**
    * Stops the worker pool/set.
    */
-  public abstract stop(): Promise<void>
+  public abstract stop (): Promise<void>
 }

@@ -31,7 +31,7 @@ type ConnectorStatus = ReturnType<AutomaticTransactionGenerator['connectorsStatu
  * Adds required ATG configuration methods to a mock station.
  * @param station - The station to augment with ATG methods
  */
-function addATGMethodsToStation(station: ChargingStation): void {
+function addATGMethodsToStation (station: ChargingStation): void {
   const stationExt = station as unknown as {
     getAutomaticTransactionGeneratorConfiguration: () => Record<string, unknown> | undefined
     getAutomaticTransactionGeneratorStatuses: () => undefined | unknown[]
@@ -56,7 +56,7 @@ function addATGMethodsToStation(station: ChargingStation): void {
  * @param started - Whether the station should be in started state (default: true)
  * @returns A mock ChargingStation with ATG methods configured
  */
-function createStationForATG(started = true): ChargingStation {
+function createStationForATG (started = true): ChargingStation {
   const { station } = createMockChargingStation({ started })
   addATGMethodsToStation(station)
   return station
@@ -68,7 +68,7 @@ function createStationForATG(started = true): ChargingStation {
  * @param connectorId - The connector ID to look up
  * @returns The non-null connector status
  */
-function getConnectorStatus(
+function getConnectorStatus (
   atg: AutomaticTransactionGenerator,
   connectorId: number
 ): NonNullable<ConnectorStatus> {
@@ -85,7 +85,7 @@ function getConnectorStatus(
  * @param station - The station to get the ATG instance for
  * @returns The non-null ATG instance
  */
-function getDefinedATG(station: ChargingStation): AutomaticTransactionGenerator {
+function getDefinedATG (station: ChargingStation): AutomaticTransactionGenerator {
   const atg = AutomaticTransactionGenerator.getInstance(station)
   assert.notStrictEqual(atg, undefined)
   if (atg == null) {
@@ -99,7 +99,7 @@ function getDefinedATG(station: ChargingStation): AutomaticTransactionGenerator 
  * @param atg - The ATG instance to extract the method from
  * @returns The bound handleStartTransactionResult method
  */
-function getHandleStartTransactionResult(
+function getHandleStartTransactionResult (
   atg: AutomaticTransactionGenerator
 ): (connectorId: number, result: StartTransactionResult) => void {
   return (
@@ -113,7 +113,7 @@ function getHandleStartTransactionResult(
  * Replaces the async internalStartConnector with a no-op to avoid real timer usage.
  * @param atg - The ATG instance to mock
  */
-function mockInternalStartConnector(atg: AutomaticTransactionGenerator): void {
+function mockInternalStartConnector (atg: AutomaticTransactionGenerator): void {
   const atgPrivate = atg as unknown as {
     internalStartConnector: (...args: unknown[]) => Promise<void>
   }
@@ -125,7 +125,7 @@ function mockInternalStartConnector(atg: AutomaticTransactionGenerator): void {
 /**
  * Clears all ATG singleton instances to prevent test pollution.
  */
-function resetATGInstances(): void {
+function resetATGInstances (): void {
   const atgClass = AutomaticTransactionGenerator as unknown as {
     instances: Map<string, AutomaticTransactionGenerator>
   }

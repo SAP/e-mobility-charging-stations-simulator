@@ -436,12 +436,12 @@ export const JSONStringify = <
     | JsonType
     | Map<string, Record<string, unknown>>
     | Record<string, unknown>[]
-    | Set<Record<string, unknown>>,
+    | Set<Record<string, unknown>>
 >(
-  object: T,
-  space?: number | string,
-  mapFormat?: MapStringifyFormat
-): string => {
+    object: T,
+    space?: number | string,
+    mapFormat?: MapStringifyFormat
+  ): string => {
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {

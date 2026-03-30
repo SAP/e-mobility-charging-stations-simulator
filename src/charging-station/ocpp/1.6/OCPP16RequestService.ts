@@ -53,7 +53,7 @@ export class OCPP16RequestService extends OCPPRequestService {
    * - AJV validation setup with proper error handling
    * @param ocppResponseService - The response service instance for handling responses
    */
-  public constructor(ocppResponseService: OCPPResponseService) {
+  public constructor (ocppResponseService: OCPPResponseService) {
     super(OCPPVersion.VERSION_16, ocppResponseService)
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createRequestPayloadConfigs(),
@@ -228,16 +228,16 @@ export class OCPP16RequestService extends OCPPRequestService {
           timestamp: new Date(),
           ...(chargingStation.stationInfo?.transactionDataMeterValues === true &&
             connectorId != null && {
-              transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-                chargingStation.getConnectorStatus(connectorId)
-                  ?.transactionBeginMeterValue as OCPP16MeterValue,
-                OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                  chargingStation,
-                  connectorId,
-                  energyActiveImportRegister
-                ) as OCPP16MeterValue
-              ),
-            }),
+            transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
+              chargingStation.getConnectorStatus(connectorId)
+                ?.transactionBeginMeterValue as OCPP16MeterValue,
+              OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                chargingStation,
+                connectorId,
+                energyActiveImportRegister
+              ) as OCPP16MeterValue
+            ),
+          }),
           ...commandParams,
         } as unknown as Request
       default: {

@@ -89,7 +89,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
 
   protected readonly responseHandlers: Map<RequestCommand, ResponseHandler>
 
-  public constructor() {
+  public constructor () {
     super(OCPPVersion.VERSION_16)
     this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
       [
@@ -134,7 +134,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
   }
 
-  protected isRequestCommandSupported(
+  protected isRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean {
@@ -144,7 +144,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseAuthorize(
+  private handleResponseAuthorize (
     chargingStation: ChargingStation,
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest
@@ -186,7 +186,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseBootNotification(
+  private handleResponseBootNotification (
     chargingStation: ChargingStation,
     payload: OCPP16BootNotificationResponse
   ): void {
@@ -243,7 +243,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private async handleResponseStartTransaction(
+  private async handleResponseStartTransaction (
     chargingStation: ChargingStation,
     payload: OCPP16StartTransactionResponse,
     requestPayload: OCPP16StartTransactionRequest
@@ -462,7 +462,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private async handleResponseStopTransaction(
+  private async handleResponseStopTransaction (
     chargingStation: ChargingStation,
     payload: OCPP16StopTransactionResponse,
     requestPayload: OCPP16StopTransactionRequest
@@ -542,7 +542,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private async resetConnectorOnStartTransactionError(
+  private async resetConnectorOnStartTransactionError (
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {

@@ -16,11 +16,11 @@ import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerFactory {
-  private constructor() {
+  private constructor () {
     // This is intentional
   }
 
-  public static getUIServerImplementation(
+  public static getUIServerImplementation (
     uiServerConfiguration: UIServerConfiguration
   ): AbstractUIServer {
     if (

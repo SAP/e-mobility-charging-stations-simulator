@@ -36,7 +36,7 @@ export class AuthComponentFactory {
    * @returns Single version-specific adapter (OCPP 1.6 or 2.0.x)
    * @throws {Error} When OCPP version is not found or unsupported
    */
-  static async createAdapter(chargingStation: ChargingStation): Promise<OCPPAuthAdapter> {
+  static async createAdapter (chargingStation: ChargingStation): Promise<OCPPAuthAdapter> {
     const ocppVersion = chargingStation.stationInfo?.ocppVersion
 
     if (!ocppVersion) {
@@ -68,7 +68,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration specifying cache TTL and size limits
    * @returns In-memory cache instance with configured TTL and rate limiting
    */
-  static createAuthCache(config: AuthConfiguration): AuthCache {
+  static createAuthCache (config: AuthConfiguration): AuthCache {
     return new InMemoryAuthCache({
       defaultTtl: config.authorizationCacheLifetime ?? 3600,
       maxEntries: config.maxCacheEntries ?? 1000,
@@ -82,7 +82,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration with certificate settings
    * @returns Initialized certificate-based authentication strategy
    */
-  static async createCertificateStrategy(
+  static async createCertificateStrategy (
     chargingStation: ChargingStation,
     adapter: OCPPAuthAdapter,
     config: AuthConfiguration
@@ -105,7 +105,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration (unused, reserved for future use)
    * @returns Always undefined as manager creation is not yet implemented
    */
-  static createLocalAuthListManager(
+  static createLocalAuthListManager (
     chargingStation: ChargingStation,
     config: AuthConfiguration
   ): undefined {
@@ -121,7 +121,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration controlling local auth behavior
    * @returns Local strategy instance or undefined if local auth disabled
    */
-  static async createLocalStrategy(
+  static async createLocalStrategy (
     manager: LocalAuthListManager | undefined,
     cache: AuthCache | undefined,
     config: AuthConfiguration
@@ -149,7 +149,7 @@ export class AuthComponentFactory {
    * @param localAuthListManager - Optional local auth list manager for C13.FR.01 cache exclusion
    * @returns Remote strategy instance or undefined if remote auth disabled
    */
-  static async createRemoteStrategy(
+  static async createRemoteStrategy (
     adapter: OCPPAuthAdapter,
     cache: AuthCache | undefined,
     config: AuthConfiguration,
@@ -175,7 +175,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration controlling strategy creation
    * @returns Array of initialized strategies sorted by priority (lowest first)
    */
-  static async createStrategies(
+  static async createStrategies (
     chargingStation: ChargingStation,
     adapter: OCPPAuthAdapter,
     manager: LocalAuthListManager | undefined,
@@ -209,7 +209,7 @@ export class AuthComponentFactory {
    * @param config - Authentication configuration to validate against schema
    * @throws {Error} When configuration contains invalid or missing required values
    */
-  static validateConfiguration(config: AuthConfiguration): void {
+  static validateConfiguration (config: AuthConfiguration): void {
     AuthConfigValidator.validate(config)
   }
 }

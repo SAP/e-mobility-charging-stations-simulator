@@ -35,7 +35,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * Uses a mock requestHandler to avoid network calls from fire-and-forget paths.
  * @returns The mock station and its request handler spy
  */
-function createTriggerMessageStation(): {
+function createTriggerMessageStation (): {
   mockStation: MockChargingStation
   requestHandlerMock: ReturnType<typeof mock.fn>
 } {
@@ -509,7 +509,7 @@ await describe('F06 - TriggerMessage', async () => {
           unknown,
           string,
           Partial<OCPP20StatusNotificationRequest>,
-          RequestParams,
+          RequestParams
         ]
         const [, command, payload, options] = args
         assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
@@ -547,7 +547,7 @@ await describe('F06 - TriggerMessage', async () => {
         unknown,
         string,
         Partial<OCPP20StatusNotificationRequest>,
-        RequestParams,
+        RequestParams
       ]
       const [, command, payload, options] = args
       assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)

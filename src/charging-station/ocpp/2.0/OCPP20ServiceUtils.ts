@@ -56,29 +56,29 @@ export interface RejectionReason {
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP20IncomingRequestCommand,
-    string,
+    string
   ][] = [
-    [OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED, 'CertificateSigned'],
-    [OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
-    [OCPP20IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
-    [OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, 'CustomerInformation'],
-    [OCPP20IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
-    [OCPP20IncomingRequestCommand.DELETE_CERTIFICATE, 'DeleteCertificate'],
-    [OCPP20IncomingRequestCommand.GET_BASE_REPORT, 'GetBaseReport'],
-    [OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS, 'GetInstalledCertificateIds'],
-    [OCPP20IncomingRequestCommand.GET_LOG, 'GetLog'],
-    [OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS, 'GetTransactionStatus'],
-    [OCPP20IncomingRequestCommand.GET_VARIABLES, 'GetVariables'],
-    [OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE, 'InstallCertificate'],
-    [OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION, 'RequestStartTransaction'],
-    [OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION, 'RequestStopTransaction'],
-    [OCPP20IncomingRequestCommand.RESET, 'Reset'],
-    [OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE, 'SetNetworkProfile'],
-    [OCPP20IncomingRequestCommand.SET_VARIABLES, 'SetVariables'],
-    [OCPP20IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
-    [OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
-    [OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
-  ]
+      [OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED, 'CertificateSigned'],
+      [OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
+      [OCPP20IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
+      [OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, 'CustomerInformation'],
+      [OCPP20IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
+      [OCPP20IncomingRequestCommand.DELETE_CERTIFICATE, 'DeleteCertificate'],
+      [OCPP20IncomingRequestCommand.GET_BASE_REPORT, 'GetBaseReport'],
+      [OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS, 'GetInstalledCertificateIds'],
+      [OCPP20IncomingRequestCommand.GET_LOG, 'GetLog'],
+      [OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS, 'GetTransactionStatus'],
+      [OCPP20IncomingRequestCommand.GET_VARIABLES, 'GetVariables'],
+      [OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE, 'InstallCertificate'],
+      [OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION, 'RequestStartTransaction'],
+      [OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION, 'RequestStopTransaction'],
+      [OCPP20IncomingRequestCommand.RESET, 'Reset'],
+      [OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE, 'SetNetworkProfile'],
+      [OCPP20IncomingRequestCommand.SET_VARIABLES, 'SetVariables'],
+      [OCPP20IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
+      [OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
+      [OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
+    ]
 
   private static readonly outgoingRequestSchemaNames: readonly [OCPP20RequestCommand, string][] = [
     [OCPP20RequestCommand.AUTHORIZE, 'Authorize'],
@@ -98,7 +98,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
-  static buildTransactionStartedMeterValues(
+  static buildTransactionStartedMeterValues (
     chargingStation: ChargingStation,
     transactionId: number | string
   ): OCPP20MeterValue[] {
@@ -123,7 +123,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static async cleanupEndedTransaction(
+  public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     connectorStatus: ConnectorStatus
@@ -143,7 +143,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
-    { schemaPath: string },
+    { schemaPath: string }
   ][] =>
     OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -156,7 +156,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
-    { schemaPath: string },
+    { schemaPath: string }
   ][] =>
     OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -183,7 +183,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createRequestPayloadConfigs = (): [
     OCPP20RequestCommand,
-    { schemaPath: string },
+    { schemaPath: string }
   ][] =>
     OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -196,7 +196,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createResponsePayloadConfigs = (): [
     OCPP20RequestCommand,
-    { schemaPath: string },
+    { schemaPath: string }
   ][] =>
     OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -205,7 +205,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
   public static enforceMessageLimits<
     T extends { attributeType?: unknown; component: unknown; variable: unknown },
-    R,
+    R
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
@@ -248,7 +248,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
   public static enforcePostCalculationBytesLimit<
     T extends { attributeType?: unknown; component: unknown; variable: unknown },
-    R,
+    R
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
@@ -284,7 +284,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return currentResults
   }
 
-  public static getAlignedDataInterval(chargingStation: ChargingStation): number {
+  public static getAlignedDataInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
       OCPP20ComponentName.AlignedDataCtrlr,
@@ -293,7 +293,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static getTxEndedInterval(chargingStation: ChargingStation): number {
+  public static getTxEndedInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
       OCPP20ComponentName.SampledDataCtrlr,
@@ -302,7 +302,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static getTxUpdatedInterval(chargingStation: ChargingStation): number {
+  public static getTxUpdatedInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
       OCPP20ComponentName.SampledDataCtrlr,
@@ -318,7 +318,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @param chargingStation - The charging station instance
    * @returns Object with itemsLimit and bytesLimit (both fallback to 0 if not configured or invalid)
    */
-  public static readMessageLimits(chargingStation: ChargingStation): {
+  public static readMessageLimits (chargingStation: ChargingStation): {
     bytesLimit: number
     itemsLimit: number
   } {
@@ -354,7 +354,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { bytesLimit, itemsLimit }
   }
 
-  public static async requestDeauthorizeTransaction(
+  public static async requestDeauthorizeTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
@@ -431,7 +431,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static async requestStopTransaction(
+  public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number,
@@ -461,7 +461,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @param chargingStation - The charging station instance
    * @param connectorId - The connector ID for which to reset the transaction state
    */
-  public static resetTransactionSequenceNumber(
+  public static resetTransactionSequenceNumber (
     chargingStation: ChargingStation,
     connectorId: number
   ): void {
@@ -476,7 +476,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static async sendQueuedTransactionEvents(
+  public static async sendQueuedTransactionEvents (
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
@@ -523,7 +523,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static async sendTransactionEvent(
+  public static async sendTransactionEvent (
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     triggerReason: OCPP20TriggerReasonEnumType,
@@ -590,7 +590,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static startEndedMeterValues(
+  public static startEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
     interval: number
@@ -629,7 +629,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static startUpdatedMeterValues(
+  public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
     interval: number
@@ -712,7 +712,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static async stopAllTransactions(
+  public static async stopAllTransactions (
     chargingStation: ChargingStation,
     triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
     stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote,
@@ -770,7 +770,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static stopEndedMeterValues(chargingStation: ChargingStation, connectorId: number): void {
+  public static stopEndedMeterValues (chargingStation: ChargingStation, connectorId: number): void {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionEndedMeterValuesSetInterval != null) {
       clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
@@ -781,7 +781,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static stopUpdatedMeterValues(
+  public static stopUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number
   ): void {
@@ -795,7 +795,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  private static buildTransactionEndedMeterValues(
+  private static buildTransactionEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
     transactionId: number | string
@@ -827,7 +827,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return endedMeterValues.length > 0 ? endedMeterValues : []
   }
 
-  private static readVariableAsBoolean(
+  private static readVariableAsBoolean (
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
@@ -837,7 +837,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return value != null ? convertToBoolean(value) : defaultValue
   }
 
-  private static readVariableAsInteger(
+  private static readVariableAsInteger (
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
@@ -857,7 +857,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return defaultValue
   }
 
-  private static readVariableAsIntervalMs(
+  private static readVariableAsIntervalMs (
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
@@ -874,7 +874,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       : secondsToMilliseconds(defaultSeconds)
   }
 
-  private static readVariableValue(
+  private static readVariableValue (
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string
@@ -892,7 +892,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return undefined
   }
 
-  private static resolveActiveTransaction(
+  private static resolveActiveTransaction (
     chargingStation: ChargingStation,
     connectorId: number
   ): { connectorStatus: ConnectorStatus; transactionId: string } {
@@ -919,7 +919,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  private static async terminateTransaction(
+  private static async terminateTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     connectorStatus: ConnectorStatus,
@@ -959,7 +959,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
  * @param commandParams - Transaction event request parameters
  * @returns Built TransactionEventRequest
  */
-export function buildTransactionEvent(
+export function buildTransactionEvent (
   chargingStation: ChargingStation,
   commandParams: OCPP20TransactionEventOptions
 ): OCPP20TransactionEventRequest {

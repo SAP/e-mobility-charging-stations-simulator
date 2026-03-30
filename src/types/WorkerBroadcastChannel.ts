@@ -35,7 +35,7 @@ export enum BroadcastChannelProcedureName {
 export type BroadcastChannelRequest = [
   UUIDv4,
   BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload,
+  BroadcastChannelRequestPayload
 ]
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {

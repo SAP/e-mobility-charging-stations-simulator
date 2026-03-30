@@ -34,7 +34,7 @@ import { dispatchResponse } from './OCPP16TestUtils.js'
  * Uses ocppStrictCompliance: false to bypass AJV validation.
  * @returns A mock station configured for simple handler tests
  */
-function createSimpleHandlerStation(): MockChargingStation {
+function createSimpleHandlerStation (): MockChargingStation {
   const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 1,

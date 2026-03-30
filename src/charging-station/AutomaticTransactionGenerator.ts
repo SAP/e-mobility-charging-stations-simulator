@@ -44,7 +44,7 @@ export class AutomaticTransactionGenerator {
   private starting: boolean
   private stopping: boolean
 
-  private constructor(chargingStation: ChargingStation) {
+  private constructor (chargingStation: ChargingStation) {
     this.started = false
     this.starting = false
     this.stopping = false
@@ -53,7 +53,7 @@ export class AutomaticTransactionGenerator {
     this.initializeConnectorsStatus()
   }
 
-  public static deleteInstance(chargingStation: ChargingStation): boolean {
+  public static deleteInstance (chargingStation: ChargingStation): boolean {
     const hashId = chargingStation.stationInfo?.hashId
     if (hashId == null) {
       return false
@@ -61,7 +61,7 @@ export class AutomaticTransactionGenerator {
     return AutomaticTransactionGenerator.instances.delete(hashId)
   }
 
-  public static getInstance(
+  public static getInstance (
     chargingStation: ChargingStation
   ): AutomaticTransactionGenerator | undefined {
     const hashId = chargingStation.stationInfo?.hashId
@@ -77,7 +77,7 @@ export class AutomaticTransactionGenerator {
     return AutomaticTransactionGenerator.instances.get(hashId)
   }
 
-  public start(stopAbsoluteDuration?: boolean): void {
+  public start (stopAbsoluteDuration?: boolean): void {
     if (!checkChargingStationState(this.chargingStation, this.logPrefix())) {
       return
     }
@@ -95,7 +95,7 @@ export class AutomaticTransactionGenerator {
     this.starting = false
   }
 
-  public startConnector(connectorId: number, stopAbsoluteDuration?: boolean): void {
+  public startConnector (connectorId: number, stopAbsoluteDuration?: boolean): void {
     if (!checkChargingStationState(this.chargingStation, this.logPrefix(connectorId))) {
       return
     }
@@ -112,7 +112,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  public stop(): void {
+  public stop (): void {
     if (!this.started) {
       logger.warn(`${this.logPrefix()} is already stopped`)
       return
@@ -127,7 +127,7 @@ export class AutomaticTransactionGenerator {
     this.stopping = false
   }
 
-  public stopConnector(connectorId: number): void {
+  public stopConnector (connectorId: number): void {
     if (!this.connectorsStatus.has(connectorId)) {
       logger.error(`${this.logPrefix(connectorId)} stopping on non existing connector`)
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
@@ -140,7 +140,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private canStartConnector(connectorId: number): boolean {
+  private canStartConnector (connectorId: number): boolean {
     const stopDate = this.connectorsStatus.get(connectorId)?.stopDate
     if (stopDate != null && new Date() > stopDate) {
       logger.info(
@@ -185,7 +185,7 @@ export class AutomaticTransactionGenerator {
     return true
   }
 
-  private getConnectorStatus(connectorId: number): Status {
+  private getConnectorStatus (connectorId: number): Status {
     const statusIndex = connectorId - 1
     if (statusIndex < 0) {
       logger.error(`${this.logPrefix(connectorId)} invalid connector id`)
@@ -234,13 +234,13 @@ export class AutomaticTransactionGenerator {
     )
   }
 
-  private getRequireAuthorize(): boolean {
+  private getRequireAuthorize (): boolean {
     return (
       this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.requireAuthorize ?? true
     )
   }
 
-  private handleStartTransactionResult(connectorId: number, result: StartTransactionResult): void {
+  private handleStartTransactionResult (connectorId: number, result: StartTransactionResult): void {
     const connectorStatus = this.connectorsStatus.get(connectorId)
     if (connectorStatus == null) {
       return
@@ -254,13 +254,13 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private initializeConnectorsStatus(): void {
+  private initializeConnectorsStatus (): void {
     for (const { connectorId } of this.chargingStation.iterateConnectors(true)) {
       this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId))
     }
   }
 
-  private async internalStartConnector(
+  private async internalStartConnector (
     connectorId: number,
     stopAbsoluteDuration?: boolean
   ): Promise<void> {
@@ -355,7 +355,7 @@ export class AutomaticTransactionGenerator {
     )
   }
 
-  private setStartConnectorStatus(
+  private setStartConnectorStatus (
     connectorId: number,
     stopAbsoluteDuration = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
       ?.stopAbsoluteDuration
@@ -380,7 +380,7 @@ export class AutomaticTransactionGenerator {
     this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
-  private startConnectors(stopAbsoluteDuration?: boolean): void {
+  private startConnectors (stopAbsoluteDuration?: boolean): void {
     if (
       this.connectorsStatus.size > 0 &&
       this.connectorsStatus.size !== this.chargingStation.getNumberOfConnectors()
@@ -393,7 +393,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private async startTransaction(connectorId: number): Promise<StartTransactionResult | undefined> {
+  private async startTransaction (connectorId: number): Promise<StartTransactionResult | undefined> {
     const measureId = 'StartTransaction with ATG'
     const beginId = PerformanceStatistics.beginMeasure(measureId)
     let result: StartTransactionResult | undefined
@@ -441,13 +441,13 @@ export class AutomaticTransactionGenerator {
     return result
   }
 
-  private stopConnectors(): void {
+  private stopConnectors (): void {
     for (const { connectorId } of this.chargingStation.iterateConnectors(true)) {
       this.stopConnector(connectorId)
     }
   }
 
-  private async stopTransaction(
+  private async stopTransaction (
     connectorId: number,
     reason = StopTransactionReason.LOCAL
   ): Promise<StopTransactionResult | undefined> {
@@ -483,7 +483,7 @@ export class AutomaticTransactionGenerator {
     return result
   }
 
-  private async waitChargingStationAvailable(connectorId: number): Promise<void> {
+  private async waitChargingStationAvailable (connectorId: number): Promise<void> {
     let logged = false
     while (!this.chargingStation.isChargingStationAvailable()) {
       if (!logged) {
@@ -498,7 +498,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private async waitConnectorAvailable(connectorId: number): Promise<void> {
+  private async waitConnectorAvailable (connectorId: number): Promise<void> {
     let logged = false
     while (!this.chargingStation.isConnectorAvailable(connectorId)) {
       if (!logged) {
@@ -513,7 +513,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private async waitRunningTransactionStopped(connectorId: number): Promise<void> {
+  private async waitRunningTransactionStopped (connectorId: number): Promise<void> {
     const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
     let logged = false
     while (connectorStatus?.transactionStarted === true) {

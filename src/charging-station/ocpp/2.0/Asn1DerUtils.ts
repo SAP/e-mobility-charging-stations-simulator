@@ -7,7 +7,7 @@ import { createSign, generateKeyPairSync } from 'node:crypto'
  * @param value - Integer value to encode
  * @returns DER-encoded INTEGER
  */
-export function derInteger(value: number): Buffer {
+export function derInteger (value: number): Buffer {
   if (value < 0 || value > 127) {
     throw new RangeError(`derInteger: value ${String(value)} out of supported range [0, 127]`)
   }
@@ -19,7 +19,7 @@ export function derInteger(value: number): Buffer {
  * @param length - Length value to encode
  * @returns DER-encoded length bytes
  */
-export function derLength(length: number): Buffer {
+export function derLength (length: number): Buffer {
   if (length < 0x80) {
     return Buffer.from([length])
   }
@@ -34,7 +34,7 @@ export function derLength(length: number): Buffer {
  * @param items - DER-encoded items to include in the sequence
  * @returns DER-encoded SEQUENCE
  */
-export function derSequence(...items: Buffer[]): Buffer {
+export function derSequence (...items: Buffer[]): Buffer {
   const content = Buffer.concat(items)
   return Buffer.concat([Buffer.from([0x30]), derLength(content.length), content])
 }
@@ -46,7 +46,7 @@ export function derSequence(...items: Buffer[]): Buffer {
  * @param org - Organization attribute value
  * @returns DER-encoded X.501 Name
  */
-function buildSubjectDn(cn: string, org: string): Buffer {
+function buildSubjectDn (cn: string, org: string): Buffer {
   const cnRdn = derSet(derSequence(derOid(OID_COMMON_NAME), derUtf8String(cn)))
   const orgRdn = derSet(derSequence(derOid(OID_ORGANIZATION), derUtf8String(org)))
   return derSequence(cnRdn, orgRdn)
@@ -57,7 +57,7 @@ function buildSubjectDn(cn: string, org: string): Buffer {
  * @param data - Raw bit string content
  * @returns DER-encoded BIT STRING
  */
-function derBitString(data: Buffer): Buffer {
+function derBitString (data: Buffer): Buffer {
   const content = Buffer.concat([Buffer.from([0x00]), data])
   return Buffer.concat([Buffer.from([0x03]), derLength(content.length), content])
 }
@@ -68,7 +68,7 @@ function derBitString(data: Buffer): Buffer {
  * @param content - Content to wrap
  * @returns DER-encoded context-tagged content
  */
-function derContextTag(tagNumber: number, content: Buffer): Buffer {
+function derContextTag (tagNumber: number, content: Buffer): Buffer {
   const tag = 0xa0 | tagNumber
   return Buffer.concat([Buffer.from([tag]), derLength(content.length), content])
 }
@@ -78,7 +78,7 @@ function derContextTag(tagNumber: number, content: Buffer): Buffer {
  * @param oidBytes - Pre-encoded OID byte values
  * @returns DER-encoded OBJECT IDENTIFIER
  */
-function derOid(oidBytes: number[]): Buffer {
+function derOid (oidBytes: number[]): Buffer {
   return Buffer.concat([Buffer.from([0x06, oidBytes.length]), Buffer.from(oidBytes)])
 }
 
@@ -87,7 +87,7 @@ function derOid(oidBytes: number[]): Buffer {
  * @param items - DER-encoded items to include in the set
  * @returns DER-encoded SET
  */
-function derSet(...items: Buffer[]): Buffer {
+function derSet (...items: Buffer[]): Buffer {
   const content = Buffer.concat(items)
   return Buffer.concat([Buffer.from([0x31]), derLength(content.length), content])
 }
@@ -97,7 +97,7 @@ function derSet(...items: Buffer[]): Buffer {
  * @param str - String to encode
  * @returns DER-encoded UTF8String
  */
-function derUtf8String(str: string): Buffer {
+function derUtf8String (str: string): Buffer {
   const strBuf = Buffer.from(str, 'utf-8')
   return Buffer.concat([Buffer.from([0x0c]), derLength(strBuf.length), strBuf])
 }
@@ -121,7 +121,7 @@ const OID_ORGANIZATION = [0x55, 0x04, 0x0a]
  * @param org - Organization name
  * @returns PEM-encoded CSR string with BEGIN/END CERTIFICATE REQUEST markers
  */
-export function generatePkcs10Csr(cn: string, org: string): string {
+export function generatePkcs10Csr (cn: string, org: string): string {
   const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 
   const publicKeyDer = publicKey.export({ format: 'der', type: 'spki' })

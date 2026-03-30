@@ -54,7 +54,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     totalResponseTimeMs: 0,
   }
 
-  constructor(
+  constructor (
     adapter?: OCPPAuthAdapter,
     authCache?: AuthCache,
     localAuthListManager?: LocalAuthListManager
@@ -70,7 +70,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration with timeout and cache settings
    * @returns Authorization result from CSMS, or undefined if remote service unavailable
    */
-  public async authenticate(
+  public async authenticate (
     request: AuthRequest,
     config: AuthConfiguration
   ): Promise<AuthorizationResult | undefined> {
@@ -173,7 +173,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration with remote authorization settings
    * @returns True if an adapter is available and remote auth is enabled
    */
-  public canHandle(request: AuthRequest, config: AuthConfiguration): boolean {
+  public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Can handle if we have an adapter
     const hasAdapter = this.adapter != null
 
@@ -186,7 +186,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   /**
    * Cleanup strategy resources
    */
-  public cleanup(): void {
+  public cleanup (): void {
     logger.info(`${moduleName}: Cleaning up...`)
 
     // Reset internal state
@@ -208,7 +208,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   /**
    * Clear the OCPP adapter
    */
-  public clearAdapter(): void {
+  public clearAdapter (): void {
     this.adapter = undefined
     logger.debug(`${moduleName}: Cleared OCPP adapter`)
   }
@@ -217,7 +217,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including success rates, response times, and error counts
    */
-  public async getStats(): Promise<JsonObject> {
+  public async getStats (): Promise<JsonObject> {
     const cacheStatistics = this.authCache ? this.authCache.getStats() : null
 
     let adapterAvailable = false
@@ -255,7 +255,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Initialize strategy with configuration and adapter
    * @param config - Authentication configuration for adapter validation
    */
-  public initialize(config: AuthConfiguration): void {
+  public initialize (config: AuthConfiguration): void {
     try {
       logger.info(`${moduleName}: Initializing...`)
 
@@ -304,7 +304,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Set the OCPP adapter
    * @param adapter - OCPP authentication adapter instance for remote operations
    */
-  public setAdapter(adapter: OCPPAuthAdapter): void {
+  public setAdapter (adapter: OCPPAuthAdapter): void {
     this.adapter = adapter
     logger.debug(`${moduleName}: Set OCPP adapter`)
   }
@@ -313,7 +313,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Set auth cache (for dependency injection)
    * @param cache - Authorization cache instance for storing successful authorizations
    */
-  public setAuthCache(cache: AuthCache): void {
+  public setAuthCache (cache: AuthCache): void {
     this.authCache = cache
   }
 
@@ -321,7 +321,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Set local auth list manager (for dependency injection)
    * @param manager - LocalAuthListManager instance for checking if identifier is in local list
    */
-  public setLocalAuthListManager(manager: LocalAuthListManager): void {
+  public setLocalAuthListManager (manager: LocalAuthListManager): void {
     this.localAuthListManager = manager
   }
 
@@ -329,7 +329,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Test connectivity to remote authorization service
    * @returns True if the OCPP adapter can reach its remote service
    */
-  public async testConnectivity(): Promise<boolean> {
+  public async testConnectivity (): Promise<boolean> {
     if (!this.isInitialized || this.adapter == null) {
       return false
     }
@@ -348,7 +348,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param ttl - Optional time-to-live in seconds for cache entry
    * @param identifierType - Identifier type to filter non-cacheable types (C02.FR.03, C03.FR.02)
    */
-  private cacheResult(
+  private cacheResult (
     identifier: string,
     result: AuthorizationResult,
     ttl?: number,
@@ -388,7 +388,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration with timeout settings
    * @returns True if the remote service responds within timeout
    */
-  private async checkRemoteAvailability(
+  private async checkRemoteAvailability (
     adapter: OCPPAuthAdapter,
     config: AuthConfiguration
   ): Promise<boolean> {
@@ -412,7 +412,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param startTime - Request start timestamp for response time calculation
    * @returns Enhanced authorization result with strategy metadata and timing
    */
-  private enhanceResult(result: AuthorizationResult, startTime: number): AuthorizationResult {
+  private enhanceResult (result: AuthorizationResult, startTime: number): AuthorizationResult {
     const responseTime = Date.now() - startTime
 
     return {
@@ -435,7 +435,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param startTime - Request start timestamp for logging
    * @returns Authorization result from remote service, or undefined on timeout
    */
-  private async performRemoteAuthorization(
+  private async performRemoteAuthorization (
     request: AuthRequest,
     adapter: OCPPAuthAdapter,
     config: AuthConfiguration,
@@ -489,7 +489,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Update response time statistics
    * @param startTime - Request start timestamp for calculating elapsed time
    */
-  private updateResponseTimeStats(startTime: number): void {
+  private updateResponseTimeStats (startTime: number): void {
     const responseTime = Date.now() - startTime
     this.stats.totalResponseTimeMs += responseTime
     this.stats.avgResponseTimeMs =

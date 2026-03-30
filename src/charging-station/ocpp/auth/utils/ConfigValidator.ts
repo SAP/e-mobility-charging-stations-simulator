@@ -7,7 +7,7 @@ const moduleName = 'AuthConfigValidator'
  * Warn if no authentication method is enabled in the configuration.
  * @param config - Authentication configuration to check
  */
-function checkAuthMethodsEnabled(config: AuthConfiguration): void {
+function checkAuthMethodsEnabled (config: AuthConfiguration): void {
   const hasLocalList = config.localAuthListEnabled
   const hasCache = config.authorizationCacheEnabled
   const hasRemote = config.remoteAuthorization ?? false
@@ -37,7 +37,7 @@ function checkAuthMethodsEnabled(config: AuthConfiguration): void {
  * @param config - Configuration to validate
  * @throws {AuthenticationError} If configuration is invalid
  */
-function validate(config: AuthConfiguration): void {
+function validate (config: AuthConfiguration): void {
   if (config.authorizationCacheEnabled) {
     validateCacheConfig(config)
   }
@@ -53,7 +53,7 @@ function validate(config: AuthConfiguration): void {
  * Validate cache-related configuration values.
  * @param config - Authentication configuration with cache settings
  */
-function validateCacheConfig(config: AuthConfiguration): void {
+function validateCacheConfig (config: AuthConfiguration): void {
   if (config.authorizationCacheLifetime !== undefined) {
     if (!Number.isInteger(config.authorizationCacheLifetime)) {
       throw new AuthenticationError(
@@ -109,7 +109,7 @@ function validateCacheConfig(config: AuthConfiguration): void {
  * Validate offline authorization configuration consistency.
  * @param config - Authentication configuration with offline settings
  */
-function validateOfflineConfig(config: AuthConfiguration): void {
+function validateOfflineConfig (config: AuthConfiguration): void {
   if (config.allowOfflineTxForUnknownId && !config.offlineAuthorizationEnabled) {
     logger.warn(
       `${moduleName}: allowOfflineTxForUnknownId is true but offlineAuthorizationEnabled is false. Unknown IDs will not be authorized.`
@@ -131,7 +131,7 @@ function validateOfflineConfig(config: AuthConfiguration): void {
  * Validate authorization timeout value.
  * @param config - Authentication configuration with timeout setting
  */
-function validateTimeout(config: AuthConfiguration): void {
+function validateTimeout (config: AuthConfiguration): void {
   if (!Number.isInteger(config.authorizationTimeout)) {
     throw new AuthenticationError(
       'authorizationTimeout must be an integer',

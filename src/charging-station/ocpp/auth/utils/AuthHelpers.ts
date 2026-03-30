@@ -13,7 +13,7 @@ import { AuthorizationStatus } from '../types/AuthTypes.js'
  * @param expiryDate - Expiry timestamp to compute TTL from
  * @returns TTL in seconds, or undefined if already expired or no date provided
  */
-function calculateTTL(expiryDate?: Date): number | undefined {
+function calculateTTL (expiryDate?: Date): number | undefined {
   if (!expiryDate) {
     return undefined
   }
@@ -36,7 +36,7 @@ function calculateTTL(expiryDate?: Date): number | undefined {
  * @param metadata - Optional additional metadata
  * @returns Fully populated AuthRequest
  */
-function createAuthRequest(
+function createAuthRequest (
   identifier: UnifiedIdentifier,
   context: AuthContext,
   connectorId?: number,
@@ -59,7 +59,7 @@ function createAuthRequest(
  * @param reason - Optional human-readable rejection reason
  * @returns AuthorizationResult with isOffline=false
  */
-function createRejectedResult(
+function createRejectedResult (
   status: AuthorizationStatus,
   method: AuthenticationMethod,
   reason?: string
@@ -79,7 +79,7 @@ function createRejectedResult(
  * @param identifier - Identifier involved in the failed auth attempt
  * @returns Formatted error string with truncated identifier
  */
-function formatAuthError(error: Error, identifier: UnifiedIdentifier): string {
+function formatAuthError (error: Error, identifier: UnifiedIdentifier): string {
   return `Authentication failed for identifier ${truncateId(identifier.value)} (${identifier.type}): ${error.message}`
 }
 
@@ -88,7 +88,7 @@ function formatAuthError(error: Error, identifier: UnifiedIdentifier): string {
  * @param status - Authorization status to describe
  * @returns Descriptive message for the status
  */
-function getStatusMessage(status: AuthorizationStatus): string {
+function getStatusMessage (status: AuthorizationStatus): string {
   switch (status) {
     case AuthorizationStatus.ACCEPTED:
       return 'Authorization accepted'
@@ -118,7 +118,7 @@ function getStatusMessage(status: AuthorizationStatus): string {
  * @param result - Authorization result to evaluate
  * @returns True if BLOCKED, EXPIRED, or INVALID
  */
-function isPermanentFailure(result: AuthorizationResult): boolean {
+function isPermanentFailure (result: AuthorizationResult): boolean {
   return [
     AuthorizationStatus.BLOCKED,
     AuthorizationStatus.EXPIRED,
@@ -131,7 +131,7 @@ function isPermanentFailure(result: AuthorizationResult): boolean {
  * @param result - Authorization result to evaluate
  * @returns True if ACCEPTED and expiry date has not passed
  */
-function isResultValid(result: AuthorizationResult): boolean {
+function isResultValid (result: AuthorizationResult): boolean {
   if (result.status !== AuthorizationStatus.ACCEPTED) {
     return false
   }
@@ -149,7 +149,7 @@ function isResultValid(result: AuthorizationResult): boolean {
  * @param result - Authorization result to evaluate
  * @returns True if PENDING or UNKNOWN
  */
-function isTemporaryFailure(result: AuthorizationResult): boolean {
+function isTemporaryFailure (result: AuthorizationResult): boolean {
   if (result.status === AuthorizationStatus.PENDING) {
     return true
   }
@@ -166,7 +166,7 @@ function isTemporaryFailure(result: AuthorizationResult): boolean {
  * @param results - Array of results to merge
  * @returns The first ACCEPTED result, or the first result with merged metadata
  */
-function mergeAuthResults(results: AuthorizationResult[]): AuthorizationResult | undefined {
+function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult | undefined {
   if (results.length === 0) {
     return undefined
   }
@@ -196,7 +196,7 @@ function mergeAuthResults(results: AuthorizationResult[]): AuthorizationResult |
  * @param result - Authorization result to sanitize
  * @returns Object with only safe-to-log fields
  */
-function sanitizeForLogging(result: AuthorizationResult): Record<string, unknown> {
+function sanitizeForLogging (result: AuthorizationResult): Record<string, unknown> {
   return {
     hasExpiryDate: !!result.expiryDate,
     hasGroupId: !!result.groupId,

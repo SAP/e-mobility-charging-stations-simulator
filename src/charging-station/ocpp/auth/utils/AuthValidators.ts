@@ -24,7 +24,7 @@ const MAX_IDTOKEN_LENGTH = 36
  * @param ttl - Cache time-to-live duration in seconds, or undefined for optional parameter
  * @returns True if the TTL is undefined or a valid non-negative finite number, false otherwise
  */
-function isValidCacheTTL(ttl: number | undefined): boolean {
+function isValidCacheTTL (ttl: number | undefined): boolean {
   if (ttl === undefined) {
     return true // Optional parameter
   }
@@ -37,7 +37,7 @@ function isValidCacheTTL(ttl: number | undefined): boolean {
  * @param connectorId - Charging connector identifier (0 or positive integer), or undefined for optional parameter
  * @returns True if the connector ID is undefined or a valid non-negative integer, false otherwise
  */
-function isValidConnectorId(connectorId: number | undefined): boolean {
+function isValidConnectorId (connectorId: number | undefined): boolean {
   if (connectorId === undefined) {
     return true // Optional parameter
   }
@@ -50,7 +50,7 @@ function isValidConnectorId(connectorId: number | undefined): boolean {
  * @param value - Authentication identifier string to validate (idTag or IdToken value)
  * @returns True if the value is a non-empty string with at least one non-whitespace character, false otherwise
  */
-function isValidIdentifierValue(value: string): boolean {
+function isValidIdentifierValue (value: string): boolean {
   if (typeof value !== 'string' || value.length === 0) {
     return false
   }
@@ -64,7 +64,7 @@ function isValidIdentifierValue(value: string): boolean {
  * @param idTag - Raw idTag input to sanitize (may be any type)
  * @returns Trimmed and truncated idTag string conforming to OCPP 1.6 length limit, or empty string for non-string input
  */
-function sanitizeIdTag(idTag: unknown): string {
+function sanitizeIdTag (idTag: unknown): string {
   // Return empty string for non-string input
   if (typeof idTag !== 'string') {
     return ''
@@ -80,7 +80,7 @@ function sanitizeIdTag(idTag: unknown): string {
  * @param idToken - Raw IdToken input to sanitize (may be any type)
  * @returns Trimmed and truncated IdToken string conforming to OCPP 2.0 length limit, or empty string for non-string input
  */
-function sanitizeIdToken(idToken: unknown): string {
+function sanitizeIdToken (idToken: unknown): string {
   // Return empty string for non-string input
   if (typeof idToken !== 'string') {
     return ''
@@ -96,7 +96,7 @@ function sanitizeIdToken(idToken: unknown): string {
  * @param config - Authentication configuration object to validate (may be any type)
  * @returns True if the configuration has valid required fields and constraints, false otherwise
  */
-function validateAuthConfiguration(config: unknown): boolean {
+function validateAuthConfiguration (config: unknown): boolean {
   if (!config || typeof config !== 'object') {
     return false
   }
@@ -150,7 +150,7 @@ function validateAuthConfiguration(config: unknown): boolean {
  * @param identifier - Unified identifier object to validate (may be any type)
  * @returns True if the identifier has a valid type and value within OCPP length constraints, false otherwise
  */
-function validateIdentifier(identifier: unknown): boolean {
+function validateIdentifier (identifier: unknown): boolean {
   // Check if identifier itself is valid
   if (!identifier || typeof identifier !== 'object') {
     return false

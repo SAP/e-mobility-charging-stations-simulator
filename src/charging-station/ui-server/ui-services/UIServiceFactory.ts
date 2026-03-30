@@ -6,11 +6,11 @@ import { UIService001 } from './UIService001.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServiceFactory {
-  private constructor() {
+  private constructor () {
     // This is intentional
   }
 
-  public static getUIServiceImplementation(
+  public static getUIServiceImplementation (
     version: ProtocolVersion,
     uiServer: AbstractUIServer
   ): AbstractUIService {

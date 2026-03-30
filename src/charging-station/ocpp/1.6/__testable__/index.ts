@@ -243,7 +243,7 @@ export interface TestableOCPP16RequestService {
  * const response = await testable.handleRequestReset(station, request)
  * ```
  */
-export function createTestableIncomingRequestService(
+export function createTestableIncomingRequestService (
   service: OCPP16IncomingRequestService
 ): TestableOCPP16IncomingRequestService {
   // Cast to unknown first to satisfy TypeScript while preserving runtime behavior
@@ -283,7 +283,7 @@ export function createTestableIncomingRequestService(
  * const payload = testable.buildRequestPayload(station, OCPP16RequestCommand.HEARTBEAT)
  * ```
  */
-export function createTestableOCPP16RequestService(
+export function createTestableOCPP16RequestService (
   requestService: OCPP16RequestService
 ): TestableOCPP16RequestService {
   // Use type assertion at the boundary only, providing type-safe interface to tests

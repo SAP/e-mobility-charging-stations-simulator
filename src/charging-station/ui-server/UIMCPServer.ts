@@ -60,34 +60,34 @@ export class UIMCPServer extends AbstractUIServer {
 
   private service: AbstractUIService | undefined
 
-  public constructor(protected override readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.pendingMcpRequests = new Map()
     this.ocppSchemaCache = new Map()
   }
 
-  private static createToolErrorResponse(error: string): CallToolResult {
+  private static createToolErrorResponse (error: string): CallToolResult {
     return {
       content: [{ text: JSON.stringify({ error, status: 'failure' }), type: 'text' as const }],
       isError: true,
     }
   }
 
-  private static createToolResponse(payload: unknown): CallToolResult {
+  private static createToolResponse (payload: unknown): CallToolResult {
     return { content: [{ text: JSON.stringify(payload), type: 'text' as const }] }
   }
 
-  public override hasResponseHandler(uuid: UUIDv4): boolean {
+  public override hasResponseHandler (uuid: UUIDv4): boolean {
     return super.hasResponseHandler(uuid) || this.pendingMcpRequests.has(uuid)
   }
 
-  public sendRequest(_request: ProtocolRequest): void {
+  public sendRequest (_request: ProtocolRequest): void {
     logger.warn(
       `${this.logPrefix(moduleName, 'sendRequest')} Server-initiated requests not supported in stateless MCP mode`
     )
   }
 
-  public sendResponse(response: ProtocolResponse): void {
+  public sendResponse (response: ProtocolResponse): void {
     const [uuid, payload] = response
     const pending = this.pendingMcpRequests.get(uuid)
     if (pending != null) {
@@ -101,7 +101,7 @@ export class UIMCPServer extends AbstractUIServer {
     }
   }
 
-  public start(): void {
+  public start (): void {
     const version = ProtocolVersion['0.0.1']
     this.registerProtocolVersionUIService(version)
     this.service = this.uiServices.get(version)
@@ -149,7 +149,7 @@ export class UIMCPServer extends AbstractUIServer {
     this.startHttpServer()
   }
 
-  public override stop(): void {
+  public override stop (): void {
     for (const [uuid, pending] of [...this.pendingMcpRequests]) {
       clearTimeout(pending.timeout)
       this.pendingMcpRequests.delete(uuid)
@@ -158,11 +158,11 @@ export class UIMCPServer extends AbstractUIServer {
     super.stop()
   }
 
-  protected getSchemaBaseDir(): string {
+  protected getSchemaBaseDir (): string {
     return join(dirname(fileURLToPath(import.meta.url)), 'assets', 'json-schemas', 'ocpp')
   }
 
-  private checkVersionCompatibility(
+  private checkVersionCompatibility (
     hashIds: string[] | undefined,
     ocpp16Payload: Record<string, unknown> | undefined,
     ocpp20Payload: Record<string, unknown> | undefined,
@@ -177,17 +177,17 @@ export class UIMCPServer extends AbstractUIServer {
     const stationsToCheck =
       hashIds != null
         ? hashIds
-            .map(id => {
-              const data = this.getChargingStationData(id)
-              return data != null
-                ? { hashId: id, version: data.stationInfo.ocppVersion }
-                : undefined
-            })
-            .filter(s => s != null)
+          .map(id => {
+            const data = this.getChargingStationData(id)
+            return data != null
+              ? { hashId: id, version: data.stationInfo.ocppVersion }
+              : undefined
+          })
+          .filter(s => s != null)
         : this.listChargingStationData().map(data => ({
-            hashId: data.stationInfo.hashId,
-            version: data.stationInfo.ocppVersion,
-          }))
+          hashId: data.stationInfo.hashId,
+          version: data.stationInfo.ocppVersion,
+        }))
     const mismatched = stationsToCheck.filter(s => {
       if (expectedVersion === OCPPVersion.VERSION_16) {
         return s.version !== OCPPVersion.VERSION_16
@@ -205,7 +205,7 @@ export class UIMCPServer extends AbstractUIServer {
     return undefined
   }
 
-  private closeTransportSafely(transport: StreamableHTTPServerTransport): void {
+  private closeTransportSafely (transport: StreamableHTTPServerTransport): void {
     transport.close().catch((error: unknown) => {
       logger.error(
         `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
@@ -217,7 +217,7 @@ export class UIMCPServer extends AbstractUIServer {
   // Per the MCP SDK design, McpServer.connect() overwrites a single internal _transport field.
   // A new McpServer must be created per request to avoid transport cross-talk under concurrency.
   // Tool registration is ~12µs for 33 tools (Map.set + closure allocation) — negligible.
-  private createMcpServer(): McpServer {
+  private createMcpServer (): McpServer {
     const mcpServer = new McpServer({
       name: 'e-mobility-charging-stations-simulator',
       version: ProtocolVersion['0.0.1'],
@@ -244,7 +244,7 @@ export class UIMCPServer extends AbstractUIServer {
     return mcpServer
   }
 
-  private async handleMcpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  private async handleMcpRequest (req: IncomingMessage, res: ServerResponse): Promise<void> {
     const mcpServer = this.createMcpServer()
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
     try {
@@ -287,7 +287,7 @@ export class UIMCPServer extends AbstractUIServer {
     }
   }
 
-  private injectOcppJsonSchemas(mcpServer: McpServer): void {
+  private injectOcppJsonSchemas (mcpServer: McpServer): void {
     if (this.ocppSchemaCache.size === 0) {
       return
     }
@@ -333,7 +333,7 @@ export class UIMCPServer extends AbstractUIServer {
     })
   }
 
-  private async invokeProcedure(
+  private async invokeProcedure (
     procedureName: ProcedureName,
     input: RequestPayload,
     service: AbstractUIService | undefined
@@ -416,7 +416,7 @@ export class UIMCPServer extends AbstractUIServer {
     })
   }
 
-  private loadOcppSchemas(): Map<string, { ocpp16?: unknown; ocpp20?: unknown }> {
+  private loadOcppSchemas (): Map<string, { ocpp16?: unknown; ocpp20?: unknown }> {
     const cache = new Map<string, { ocpp16?: unknown; ocpp20?: unknown }>()
     const baseDir = this.getSchemaBaseDir()
     for (const [procedureName, mapping] of ocppSchemaMapping) {
@@ -455,7 +455,7 @@ export class UIMCPServer extends AbstractUIServer {
     return cache
   }
 
-  private async readRequestBody(req: IncomingMessage): Promise<unknown> {
+  private async readRequestBody (req: IncomingMessage): Promise<unknown> {
     const chunks: Buffer[] = []
     let received = 0
     for await (const chunk of req) {
@@ -468,7 +468,7 @@ export class UIMCPServer extends AbstractUIServer {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'))
   }
 
-  private sendErrorResponse(res: ServerResponse, statusCode: number): void {
+  private sendErrorResponse (res: ServerResponse, statusCode: number): void {
     if (res.headersSent) return
     const messages: Record<number, string> = {
       400: '400 Bad Request',

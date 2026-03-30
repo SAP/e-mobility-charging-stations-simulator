@@ -42,7 +42,7 @@ export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
   IncomingRequestCommand | RequestCommand,
-  JsonType,
+  JsonType
 ]
 
 export type DataTransferRequest = OCPP16DataTransferRequest | OCPP20DataTransferRequest

@@ -41,12 +41,12 @@ export class UIHttpServer extends AbstractUIServer {
 
   private readonly acceptsGzip: Map<UUIDv4, boolean>
 
-  public constructor(protected override readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.acceptsGzip = new Map<UUIDv4, boolean>()
   }
 
-  public sendRequest(request: ProtocolRequest): void {
+  public sendRequest (request: ProtocolRequest): void {
     switch (this.uiServerConfiguration.version) {
       case ApplicationProtocolVersion.VERSION_20:
         this.httpServer.emit('request', request)
@@ -54,7 +54,7 @@ export class UIHttpServer extends AbstractUIServer {
     }
   }
 
-  public sendResponse(response: ProtocolResponse): void {
+  public sendResponse (response: ProtocolResponse): void {
     const [uuid, payload] = response
     try {
       if (this.hasResponseHandler(uuid)) {
@@ -99,12 +99,12 @@ export class UIHttpServer extends AbstractUIServer {
   /**
    * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
    */
-  public start(): void {
+  public start (): void {
     this.httpServer.on('request', this.requestListener.bind(this))
     this.startHttpServer()
   }
 
-  private requestListener(req: IncomingMessage, res: ServerResponse): void {
+  private requestListener (req: IncomingMessage, res: ServerResponse): void {
     // Rate limiting check
     const clientIp = req.socket.remoteAddress ?? 'unknown'
     if (!rateLimiter(clientIp)) {
@@ -153,7 +153,7 @@ export class UIHttpServer extends AbstractUIServer {
         const [protocol, version, procedureName] = parts as [
           Protocol,
           ProtocolVersion,
-          ProcedureName,
+          ProcedureName
         ]
         const fullProtocol = `${protocol}${version}`
         if (!isProtocolAndVersionSupported(fullProtocol)) {
@@ -248,7 +248,7 @@ export class UIHttpServer extends AbstractUIServer {
     })
   }
 
-  private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {
+  private responseStatusToStatusCode (status: ResponseStatus): StatusCodes {
     switch (status) {
       case ResponseStatus.FAILURE:
         return StatusCodes.BAD_REQUEST
