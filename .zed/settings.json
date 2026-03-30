@@ -5,6 +5,7 @@
 // JSON, JSONC, Markdown, YAML, CSS, HTML: Prettier
 {
   "format_on_save": "on",
+  "language_servers": ["!biome", "..."],
 
   "languages": {
     // ── TypeScript (covers .ts and .tsx) ──────────────────────
@@ -57,6 +58,14 @@
         "workingDirectory": {
           "mode": "auto"
         }
+      }
+    },
+    "vue": {
+      "settings": {
+        "vue.inlayHints.inlineHandlerLeading": true,
+        "vue.inlayHints.missingProps": true,
+        "vue.inlayHints.optionsWrapper": true,
+        "vue.inlayHints.vBindShorthand": true
       }
     }
   }
