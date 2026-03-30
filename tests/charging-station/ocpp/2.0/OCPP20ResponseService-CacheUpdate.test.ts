@@ -8,15 +8,15 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthorizationStatus,
   IdentifierType,
-} from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+  OCPPAuthServiceFactory,
+  OCPPAuthServiceImpl,
+} from '../../../../src/charging-station/ocpp/auth/index.js'
 import { OCPP20AuthorizationStatusEnumType, OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'

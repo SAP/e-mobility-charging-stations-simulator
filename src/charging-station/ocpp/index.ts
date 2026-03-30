@@ -7,7 +7,7 @@ export { OCPP20RequestService } from './2.0/OCPP20RequestService.js'
 export { OCPP20ResponseService } from './2.0/OCPP20ResponseService.js'
 export { buildTransactionEvent, OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
 export { OCPP20VariableManager } from './2.0/OCPP20VariableManager.js'
-export { OCPPAuthServiceFactory } from './auth/services/OCPPAuthServiceFactory.js'
+export { OCPPAuthServiceFactory } from './auth/index.js'
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
 export {

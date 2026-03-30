@@ -14,11 +14,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { OCPPAuthServiceFactory } from '../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   AuthenticationMethod,
+  OCPPAuthServiceFactory,
   AuthorizationStatus as UnifiedAuthorizationStatus,
-} from '../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+} from '../../../src/charging-station/ocpp/auth/index.js'
 import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'

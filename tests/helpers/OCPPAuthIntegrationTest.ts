@@ -4,15 +4,15 @@ import type {
   AuthorizationResult,
   AuthRequest,
   UnifiedIdentifier,
-} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+} from '../../src/charging-station/ocpp/auth/index.js'
 
-import { OCPPAuthServiceImpl } from '../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthContext,
   AuthenticationMethod,
   AuthorizationStatus,
   IdentifierType,
-} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+  OCPPAuthServiceImpl,
+} from '../../src/charging-station/ocpp/auth/index.js'
 import { logger } from '../../src/utils/index.js'
 
 export class OCPPAuthIntegrationTest {
