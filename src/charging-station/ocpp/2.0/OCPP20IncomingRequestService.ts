@@ -3,6 +3,7 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
+import type { OCPP20IdTokenEnumType } from '../../../types/index.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -770,9 +771,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     tokenValue: string,
     tokenLabel: string,
+    ocpp20TokenType: OCPP20IdTokenEnumType,
     context?: AuthContext
   ): Promise<boolean> {
-    const { AuthContext, AuthorizationStatus, IdentifierType, OCPPAuthServiceFactory } =
+    const { AuthContext, AuthorizationStatus, mapOCPP20TokenType } =
       await import('../auth/index.js')
     const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
     const authResult = await authService.authorize({
@@ -780,7 +782,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorId,
       context: context ?? AuthContext.REMOTE_START,
       identifier: {
-        type: IdentifierType.ID_TAG,
+        type: mapOCPP20TokenType(ocpp20TokenType),
         value: tokenValue,
       },
       timestamp: new Date(),
@@ -788,7 +790,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (authResult.status !== AuthorizationStatus.ACCEPTED) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${tokenLabel} ${truncateId(tokenValue)} is not authorized`
+        `${chargingStation.logPrefix()} ${moduleName}.authorizeToken: ${tokenLabel} ${truncateId(tokenValue)} is not authorized`
       )
     }
 
@@ -2365,7 +2367,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           chargingStation,
           connectorId,
           idToken.idToken,
-          'IdToken'
+          'IdToken',
+          idToken.type
         )
       } catch (error) {
         logger.error(
@@ -2405,7 +2408,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           chargingStation,
           connectorId,
           groupIdToken.idToken,
-          'GroupIdToken'
+          'GroupIdToken',
+          groupIdToken.type
         )
       } catch (error) {
         logger.error(
