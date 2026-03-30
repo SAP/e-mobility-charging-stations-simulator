@@ -48,7 +48,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * along with both IncomingRequest and Response service contexts.
  * @returns Integration context with station, testable incoming request service, and response service
  */
-function createIntegrationContext (): {
+function createIntegrationContext(): {
   responseService: OCPP16ResponseService
   station: ChargingStation
   testableService: TestableOCPP16IncomingRequestService

@@ -16,12 +16,12 @@ import { Storage } from './Storage.js'
 export class JsonFileStorage extends Storage {
   private fd?: number
 
-  constructor (storageUri: string, logPrefix: string) {
+  constructor(storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix)
     this.dbName = this.storageUri.pathname
   }
 
-  public close (): void {
+  public close(): void {
     this.clearPerformanceStatistics()
     try {
       if (this.fd != null) {
@@ -38,7 +38,7 @@ export class JsonFileStorage extends Storage {
     }
   }
 
-  public open (): void {
+  public open(): void {
     try {
       if (this.fd == null) {
         this.ensureDBDirectory()
@@ -54,7 +54,7 @@ export class JsonFileStorage extends Storage {
     }
   }
 
-  public storePerformanceStatistics (performanceStatistics: Statistics): void {
+  public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.setPerformanceStatistics(performanceStatistics)
     const fd = this.checkPerformanceRecordsFile()
     AsyncLock.runExclusive(AsyncLockType.performance, () => {
@@ -74,7 +74,7 @@ export class JsonFileStorage extends Storage {
     })
   }
 
-  private checkPerformanceRecordsFile (): number {
+  private checkPerformanceRecordsFile(): number {
     if (this.fd == null) {
       throw new BaseError(
         `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`

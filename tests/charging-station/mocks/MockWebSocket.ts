@@ -53,7 +53,7 @@ export class MockWebSocket extends EventEmitter {
   /** URL this socket was connected to */
   public readonly url: string
 
-  constructor (url: string | URL, _protocols?: string | string[]) {
+  constructor(url: string | URL, _protocols?: string | string[]) {
     super()
     this.url = typeof url === 'string' ? url : url.toString()
   }
@@ -61,7 +61,7 @@ export class MockWebSocket extends EventEmitter {
   /**
    * Clear all captured messages
    */
-  public clearMessages (): void {
+  public clearMessages(): void {
     this.sentMessages = []
     this.sentBinaryMessages = []
   }
@@ -71,7 +71,7 @@ export class MockWebSocket extends EventEmitter {
    * @param code - Close status code
    * @param reason - Close reason string
    */
-  public close (code?: number, reason?: string): void {
+  public close(code?: number, reason?: string): void {
     this.closeCode = code
     this.closeReason = reason
     this.readyState = WebSocketReadyState.CLOSING
@@ -86,7 +86,7 @@ export class MockWebSocket extends EventEmitter {
    * Get the last message sent
    * @returns The last sent message or undefined if none
    */
-  public getLastSentMessage (): string | undefined {
+  public getLastSentMessage(): string | undefined {
     return this.sentMessages[this.sentMessages.length - 1]
   }
 
@@ -94,21 +94,21 @@ export class MockWebSocket extends EventEmitter {
    * Get all sent messages parsed as JSON
    * @returns Array of parsed JSON messages
    */
-  public getSentMessagesAsJson (): unknown[] {
+  public getSentMessagesAsJson(): unknown[] {
     return this.sentMessages.map(msg => JSON.parse(msg) as unknown)
   }
 
   /**
    * Ping the server (no-op in mock)
    */
-  public ping (): void {
+  public ping(): void {
     // No-op for tests
   }
 
   /**
    * Pong response (no-op in mock)
    */
-  public pong (): void {
+  public pong(): void {
     // No-op for tests
   }
 
@@ -116,7 +116,7 @@ export class MockWebSocket extends EventEmitter {
    * Send a message through the WebSocket
    * @param data - Message to send
    */
-  public send (data: Buffer | string): void {
+  public send(data: Buffer | string): void {
     if (this.readyState !== WebSocketReadyState.OPEN) {
       throw new Error('WebSocket is not open')
     }
@@ -132,7 +132,7 @@ export class MockWebSocket extends EventEmitter {
    * @param code - Close code
    * @param reason - Close reason
    */
-  public simulateClose (code = 1000, reason = ''): void {
+  public simulateClose(code = 1000, reason = ''): void {
     this.readyState = WebSocketReadyState.CLOSED
     this.emit('close', code, Buffer.from(reason))
   }
@@ -141,7 +141,7 @@ export class MockWebSocket extends EventEmitter {
    * Simulate a WebSocket error
    * @param error - Error to emit
    */
-  public simulateError (error: Error): void {
+  public simulateError(error: Error): void {
     this.emit('error', error)
   }
 
@@ -149,7 +149,7 @@ export class MockWebSocket extends EventEmitter {
    * Simulate receiving a message from the server
    * @param data - Message data to receive
    */
-  public simulateMessage (data: RawData | string): void {
+  public simulateMessage(data: RawData | string): void {
     const buffer = typeof data === 'string' ? Buffer.from(data) : data
     this.emit('message', buffer, false)
   }
@@ -157,7 +157,7 @@ export class MockWebSocket extends EventEmitter {
   /**
    * Simulate the connection opening
    */
-  public simulateOpen (): void {
+  public simulateOpen(): void {
     this.readyState = WebSocketReadyState.OPEN
     this.emit('open')
   }
@@ -166,7 +166,7 @@ export class MockWebSocket extends EventEmitter {
    * Simulate a ping from the server
    * @param data - Optional ping data buffer
    */
-  public simulatePing (data?: Buffer): void {
+  public simulatePing(data?: Buffer): void {
     this.emit('ping', data ?? Buffer.alloc(0))
   }
 
@@ -174,14 +174,14 @@ export class MockWebSocket extends EventEmitter {
    * Simulate a pong from the server
    * @param data - Optional pong data buffer
    */
-  public simulatePong (data?: Buffer): void {
+  public simulatePong(data?: Buffer): void {
     this.emit('pong', data ?? Buffer.alloc(0))
   }
 
   /**
    * Terminate the connection immediately
    */
-  public terminate (): void {
+  public terminate(): void {
     this.readyState = WebSocketReadyState.CLOSED
     this.emit('close', 1006, Buffer.from('Connection terminated'))
   }

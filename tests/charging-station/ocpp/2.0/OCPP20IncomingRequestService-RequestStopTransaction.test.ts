@@ -71,7 +71,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
    * @param skipReset - Whether to skip resetting mock call counts
    * @returns The transaction ID of the started transaction
    */
-  async function startTransaction (
+  async function startTransaction(
     station: ChargingStation,
     evseId = 1,
     remoteStartId = 1,
@@ -273,7 +273,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
         const args = requestHandlerMock.mock.calls[0].arguments as [
           unknown,
           string,
-          OCPP20TransactionEventRequest
+          OCPP20TransactionEventRequest,
         ]
         assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       }
@@ -367,7 +367,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Partial<OCPP20TransactionEventRequest>
+        Partial<OCPP20TransactionEventRequest>,
       ]
       const minimalParams = args[2]
 
@@ -405,7 +405,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        OCPP20TransactionEventRequest
+        OCPP20TransactionEventRequest,
       ]
       const transactionEvent = args[2]
 

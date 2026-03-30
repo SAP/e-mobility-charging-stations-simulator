@@ -58,7 +58,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    * - Support for advanced OCPP 2.0.1 features like variable management and enhanced security
    * @param ocppResponseService - The response service instance for handling OCPP 2.0.1 responses
    */
-  public constructor (ocppResponseService: OCPPResponseService) {
+  public constructor(ocppResponseService: OCPPResponseService) {
     super(OCPPVersion.VERSION_201, ocppResponseService)
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),

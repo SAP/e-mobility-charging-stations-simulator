@@ -671,8 +671,8 @@ export const createSerialNumber = (
   }
   const serialNumberSuffix = params.randomSerialNumber
     ? getRandomSerialNumberSuffix({
-      upperCase: params.randomSerialNumberUpperCase,
-    })
+        upperCase: params.randomSerialNumberUpperCase,
+      })
     : ''
   isNotEmptyString(stationTemplate.chargePointSerialNumberPrefix) &&
     (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`)
@@ -855,10 +855,10 @@ const buildChargingProfilesLimit = (
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
         : ACElectricUtils.powerTotal(
-          chargingStation.getNumberOfPhases(),
-          chargingStation.getVoltageOut(),
-          limit
-        )
+            chargingStation.getNumberOfPhases(),
+            chargingStation.getVoltageOut(),
+            limit
+          )
     case CurrentType.DC:
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit

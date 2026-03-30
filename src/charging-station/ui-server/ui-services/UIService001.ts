@@ -4,7 +4,7 @@ import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types/ind
 import { AbstractUIService } from './AbstractUIService.js'
 
 export class UIService001 extends AbstractUIService {
-  constructor (uiServer: AbstractUIServer) {
+  constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1'])
     for (const procedureName of AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.keys()) {
       this.requestHandlers.set(

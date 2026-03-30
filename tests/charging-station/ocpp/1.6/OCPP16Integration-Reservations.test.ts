@@ -34,7 +34,7 @@ import {
  * Enable the Reservation feature profile and mock auth to accept requests.
  * @param context - Test context with station and service
  */
-function enableReservationProfile (context: OCPP16IncomingRequestTestContext): void {
+function enableReservationProfile(context: OCPP16IncomingRequestTestContext): void {
   const { station } = context
   upsertConfigurationKey(
     station,

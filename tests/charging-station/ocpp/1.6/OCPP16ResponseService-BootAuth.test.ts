@@ -49,7 +49,7 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
    * Helper to dispatch a BootNotificationResponse through the public responseHandler.
    * @param payload - The BootNotificationResponse payload to dispatch
    */
-  async function dispatchBootNotification (payload: OCPP16BootNotificationResponse): Promise<void> {
+  async function dispatchBootNotification(payload: OCPP16BootNotificationResponse): Promise<void> {
     await dispatchResponse(
       ctx.responseService,
       ctx.station,
@@ -63,7 +63,7 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
    * @param payload - The AuthorizeResponse payload to dispatch
    * @param requestPayload - The original AuthorizeRequest (contains idTag)
    */
-  async function dispatchAuthorize (
+  async function dispatchAuthorize(
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest
   ): Promise<void> {

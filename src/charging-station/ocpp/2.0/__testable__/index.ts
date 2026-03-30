@@ -264,7 +264,7 @@ export interface TestableOCPP20IncomingRequestService {
  * const response = await testable.handleRequestReset(station, request)
  * ```
  */
-export function createTestableIncomingRequestService (
+export function createTestableIncomingRequestService(
   service: OCPP20IncomingRequestService
 ): TestableOCPP20IncomingRequestService {
   // Cast to unknown first to satisfy TypeScript while preserving runtime behavior

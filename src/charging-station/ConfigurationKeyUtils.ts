@@ -20,103 +20,103 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<
     resolved: ConfigurationKeyType
     warnOnce: (chargingStation: ChargingStation) => void
   }
-      >(
-      (
-        [
-          [
-            StandardParametersKey.AuthorizeRemoteTxRequests,
-            buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.AuthorizeRemoteStart),
-          ],
-          [
-            StandardParametersKey.ConnectionTimeOut,
-            buildConfigKey(OCPP20ComponentName.TxCtrlr, StandardParametersKey.EVConnectionTimeOut),
-          ],
-          [
-            StandardParametersKey.LocalAuthorizeOffline,
-            buildConfigKey(
-              OCPP20ComponentName.AuthCtrlr,
-              StandardParametersKey.LocalAuthorizationOffline
-            ),
-          ],
-          [
-            StandardParametersKey.LocalAuthListEnabled,
-            buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, StandardParametersKey.Enabled),
-          ],
-          [
-            StandardParametersKey.LocalPreAuthorize,
-            buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.LocalPreAuthorization),
-          ],
-          [
-            StandardParametersKey.MeterValueSampleInterval,
-            buildConfigKey(
-              OCPP20ComponentName.SampledDataCtrlr,
-              StandardParametersKey.TxUpdatedInterval
-            ),
-          ],
-          [
-            StandardParametersKey.MeterValuesSampledData,
-            buildConfigKey(
-              OCPP20ComponentName.SampledDataCtrlr,
-              StandardParametersKey.TxUpdatedMeasurands
-            ),
-          ],
-          [
-            StandardParametersKey.ReserveConnectorZeroSupported,
-            buildConfigKey(OCPP20ComponentName.ReservationCtrlr, StandardParametersKey.NonEvseSpecific),
-          ],
-          [
-            StandardParametersKey.HeartbeatInterval,
-            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
-          ],
-          [
-            StandardParametersKey.HeartBeatInterval,
-            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
-          ],
-          [
-            StandardParametersKey.WebSocketPingInterval,
-            buildConfigKey(
-              OCPP20ComponentName.OCPPCommCtrlr,
-              StandardParametersKey.WebSocketPingInterval
-            ),
-          ],
-          [
-            StandardParametersKey.MeterValuesAlignedData,
-            buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, StandardParametersKey.Measurands),
-          ],
-          [
-            StandardParametersKey.ClockAlignedDataInterval,
-            buildConfigKey(
-              OCPP20ComponentName.AlignedDataCtrlr,
-              StandardParametersKey.AlignedDataInterval
-            ),
-          ],
-          [
-            StandardParametersKey.StopTxnSampledData,
-            buildConfigKey(
-              OCPP20ComponentName.SampledDataCtrlr,
-              StandardParametersKey.TxEndedMeasurands
-            ),
-          ],
-          [
-            StandardParametersKey.StopTxnAlignedData,
-            buildConfigKey(
-              OCPP20ComponentName.AlignedDataCtrlr,
-              StandardParametersKey.TxEndedMeasurands
-            ),
-          ],
-        ] as [ConfigurationKeyType, ConfigurationKeyType][]
-      ).map(([from, to]) => [
-        from,
-        {
-          resolved: to,
-          warnOnce: once((cs: ChargingStation) => {
-            logger.warn(
+>(
+  (
+    [
+      [
+        StandardParametersKey.AuthorizeRemoteTxRequests,
+        buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.AuthorizeRemoteStart),
+      ],
+      [
+        StandardParametersKey.ConnectionTimeOut,
+        buildConfigKey(OCPP20ComponentName.TxCtrlr, StandardParametersKey.EVConnectionTimeOut),
+      ],
+      [
+        StandardParametersKey.LocalAuthorizeOffline,
+        buildConfigKey(
+          OCPP20ComponentName.AuthCtrlr,
+          StandardParametersKey.LocalAuthorizationOffline
+        ),
+      ],
+      [
+        StandardParametersKey.LocalAuthListEnabled,
+        buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, StandardParametersKey.Enabled),
+      ],
+      [
+        StandardParametersKey.LocalPreAuthorize,
+        buildConfigKey(OCPP20ComponentName.AuthCtrlr, StandardParametersKey.LocalPreAuthorization),
+      ],
+      [
+        StandardParametersKey.MeterValueSampleInterval,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.TxUpdatedInterval
+        ),
+      ],
+      [
+        StandardParametersKey.MeterValuesSampledData,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.TxUpdatedMeasurands
+        ),
+      ],
+      [
+        StandardParametersKey.ReserveConnectorZeroSupported,
+        buildConfigKey(OCPP20ComponentName.ReservationCtrlr, StandardParametersKey.NonEvseSpecific),
+      ],
+      [
+        StandardParametersKey.HeartbeatInterval,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
+      ],
+      [
+        StandardParametersKey.HeartBeatInterval,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.HeartbeatInterval),
+      ],
+      [
+        StandardParametersKey.WebSocketPingInterval,
+        buildConfigKey(
+          OCPP20ComponentName.OCPPCommCtrlr,
+          StandardParametersKey.WebSocketPingInterval
+        ),
+      ],
+      [
+        StandardParametersKey.MeterValuesAlignedData,
+        buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, StandardParametersKey.Measurands),
+      ],
+      [
+        StandardParametersKey.ClockAlignedDataInterval,
+        buildConfigKey(
+          OCPP20ComponentName.AlignedDataCtrlr,
+          StandardParametersKey.AlignedDataInterval
+        ),
+      ],
+      [
+        StandardParametersKey.StopTxnSampledData,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.TxEndedMeasurands
+        ),
+      ],
+      [
+        StandardParametersKey.StopTxnAlignedData,
+        buildConfigKey(
+          OCPP20ComponentName.AlignedDataCtrlr,
+          StandardParametersKey.TxEndedMeasurands
+        ),
+      ],
+    ] as [ConfigurationKeyType, ConfigurationKeyType][]
+  ).map(([from, to]) => [
+    from,
+    {
+      resolved: to,
+      warnOnce: once((cs: ChargingStation) => {
+        logger.warn(
           `${cs.logPrefix()} OCPP 1.6 configuration key '${from}' remapped to OCPP 2.0 variable '${to}'`
-            )
-          }),
-        },
-      ])
-      )
+        )
+      }),
+    },
+  ])
+)
 
 const resolveKey = (
   chargingStation: ChargingStation,

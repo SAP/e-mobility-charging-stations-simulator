@@ -58,7 +58,7 @@ export abstract class OCPPRequestService {
   private readonly ocppResponseService: OCPPResponseService
   private readonly version: OCPPVersion
 
-  protected constructor (version: OCPPVersion, ocppResponseService: OCPPResponseService) {
+  protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
@@ -95,7 +95,7 @@ export abstract class OCPPRequestService {
     params?: RequestParams
   ): Promise<ResType>
 
-  public async sendError (
+  public async sendError(
     chargingStation: ChargingStation,
     messageId: string,
     ocppError: OCPPError,
@@ -121,7 +121,7 @@ export abstract class OCPPRequestService {
     }
   }
 
-  public async sendResponse (
+  public async sendResponse(
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
@@ -150,7 +150,7 @@ export abstract class OCPPRequestService {
     }
   }
 
-  protected async sendMessage (
+  protected async sendMessage(
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
@@ -261,7 +261,7 @@ export abstract class OCPPRequestService {
     )
   }
 
-  private buildMessageToSend (
+  private buildMessageToSend(
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType | OCPPError,
@@ -318,7 +318,7 @@ export abstract class OCPPRequestService {
     return messageToSend
   }
 
-  private async internalSendMessage (
+  private async internalSendMessage(
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType | OCPPError,
@@ -512,7 +512,7 @@ export abstract class OCPPRequestService {
     )
   }
 
-  private setCachedRequest (
+  private setCachedRequest(
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,

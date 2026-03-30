@@ -178,11 +178,11 @@ export class ChargingStation extends EventEmitter {
   public readonly templateFile: string
   public wsConnection: null | WebSocket
 
-  public get hasEvses (): boolean {
+  public get hasEvses(): boolean {
     return isEmpty(this.connectors) && this.evses.size > 0
   }
 
-  public get wsConnectionUrl (): URL {
+  public get wsConnectionUrl(): URL {
     const wsConnectionBaseUrlStr = `${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
@@ -219,7 +219,7 @@ export class ChargingStation extends EventEmitter {
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
 
-  constructor (index: number, templateFile: string, options?: ChargingStationOptions) {
+  constructor(index: number, templateFile: string, options?: ChargingStationOptions) {
     super()
     this.started = false
     this.starting = false
@@ -297,7 +297,7 @@ export class ChargingStation extends EventEmitter {
    * Adds a reservation to the specified connector.
    * @param reservation - The reservation to add
    */
-  public async addReservation (reservation: Reservation): Promise<void> {
+  public async addReservation(reservation: Reservation): Promise<void> {
     const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
     if (reservationFound != null) {
       await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
@@ -324,13 +324,13 @@ export class ChargingStation extends EventEmitter {
    * Buffers an OCPP message for deferred sending when connection is unavailable.
    * @param message - The OCPP message to buffer
    */
-  public bufferMessage (message: string): void {
+  public bufferMessage(message: string): void {
     this.messageQueue.push(message)
     this.setIntervalFlushMessageBuffer()
   }
 
   /** Closes the WebSocket connection to the central server. */
-  public closeWSConnection (): void {
+  public closeWSConnection(): void {
     if (this.wsConnection != null) {
       if (this.isWebSocketConnectionOpened()) {
         this.wsConnection.close()
@@ -343,7 +343,7 @@ export class ChargingStation extends EventEmitter {
    * Deletes the charging station instance and optionally its persisted configuration.
    * @param deleteConfiguration - Whether to delete the persisted configuration file
    */
-  public async delete (deleteConfiguration = true): Promise<void> {
+  public async delete(deleteConfiguration = true): Promise<void> {
     if (this.started) {
       try {
         await this.stop()
@@ -390,13 +390,13 @@ export class ChargingStation extends EventEmitter {
    * @param event - The ChargingStation event to emit
    * @param args - Arguments to pass to the event listeners
    */
-  public emitChargingStationEvent (event: ChargingStationEvents, ...args: unknown[]): void {
+  public emitChargingStationEvent(event: ChargingStationEvents, ...args: unknown[]): void {
     if (this.listenerCount(event) > 0) {
       this.emit(event, ...args)
     }
   }
 
-  public getAuthorizeRemoteTxRequests (): boolean {
+  public getAuthorizeRemoteTxRequests(): boolean {
     const authorizeRemoteTxRequests = getConfigurationKey(
       this,
       StandardParametersKey.AuthorizeRemoteTxRequests
@@ -410,7 +410,7 @@ export class ChargingStation extends EventEmitter {
    * Gets the automatic transaction generator configuration.
    * @returns The ATG configuration or undefined if not available
    */
-  public getAutomaticTransactionGeneratorConfiguration ():
+  public getAutomaticTransactionGeneratorConfiguration():
     | AutomaticTransactionGeneratorConfiguration
     | undefined {
     if (this.automaticTransactionGeneratorConfiguration == null) {
@@ -441,11 +441,11 @@ export class ChargingStation extends EventEmitter {
    * Gets the status of each ATG connector.
    * @returns Array of ATG connector statuses or undefined
    */
-  public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
+  public getAutomaticTransactionGeneratorStatuses(): Status[] | undefined {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
   }
 
-  public getConnectionTimeout (): number {
+  public getConnectionTimeout(): number {
     if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
       return convertToInt(
         getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
@@ -460,7 +460,7 @@ export class ChargingStation extends EventEmitter {
    * @param evseId - The EVSE ID
    * @returns The connector ID or undefined if not found
    */
-  public getConnectorIdByEvseId (evseId: number): number | undefined {
+  public getConnectorIdByEvseId(evseId: number): number | undefined {
     return this.iterateConnectors().find(({ evseId: id }) => id === evseId)?.connectorId
   }
 
@@ -469,7 +469,7 @@ export class ChargingStation extends EventEmitter {
    * @param transactionId - The transaction ID to resolve
    * @returns The connector ID or undefined if not found
    */
-  public getConnectorIdByTransactionId (
+  public getConnectorIdByTransactionId(
     transactionId: number | string | undefined
   ): number | undefined {
     if (transactionId == null) {
@@ -485,7 +485,7 @@ export class ChargingStation extends EventEmitter {
    * @param connectorId - The connector ID
    * @returns The maximum available power in watts
    */
-  public getConnectorMaximumAvailablePower (connectorId: number): number {
+  public getConnectorMaximumAvailablePower(connectorId: number): number {
     let connectorAmperageLimitationLimit: number | undefined
     const amperageLimitation = this.getAmperageLimitation()
     if (
@@ -496,11 +496,11 @@ export class ChargingStation extends EventEmitter {
       connectorAmperageLimitationLimit =
         (this.stationInfo?.currentOutType === CurrentType.AC
           ? ACElectricUtils.powerTotal(
-            this.getNumberOfPhases(),
-            voltageOut,
-            amperageLimitation *
+              this.getNumberOfPhases(),
+              voltageOut,
+              amperageLimitation *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
-          )
+            )
           : DCElectricUtils.power(voltageOut, amperageLimitation)) / (this.powerDivider ?? 1)
     }
     const maximumPower = this.stationInfo?.maximumPower
@@ -531,7 +531,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  public getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+  public getConnectorStatus(connectorId: number): ConnectorStatus | undefined {
     return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
       ?.connectorStatus
   }
@@ -542,7 +542,7 @@ export class ChargingStation extends EventEmitter {
    * @param rounded - Whether to round the value
    * @returns The cumulative active energy imported in watt-hours
    */
-  public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number, rounded = false): number {
     return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
   }
 
@@ -552,7 +552,7 @@ export class ChargingStation extends EventEmitter {
    * @param rounded - Whether to round the value
    * @returns The cumulative active energy imported in watt-hours
    */
-  public getEnergyActiveImportRegisterByTransactionId (
+  public getEnergyActiveImportRegisterByTransactionId(
     transactionId: number | string | undefined,
     rounded = false
   ): number {
@@ -568,7 +568,7 @@ export class ChargingStation extends EventEmitter {
    * @param connectorId - The connector ID
    * @returns The EVSE ID or undefined if not found
    */
-  public getEvseIdByConnectorId (connectorId: number): number | undefined {
+  public getEvseIdByConnectorId(connectorId: number): number | undefined {
     return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)?.evseId
   }
 
@@ -577,7 +577,7 @@ export class ChargingStation extends EventEmitter {
    * @param transactionId - The transaction ID
    * @returns The EVSE ID or undefined if not found
    */
-  public getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
+  public getEvseIdByTransactionId(transactionId: number | string | undefined): number | undefined {
     if (transactionId == null) {
       return undefined
     }
@@ -591,11 +591,11 @@ export class ChargingStation extends EventEmitter {
    * @param evseId - The EVSE ID to look up
    * @returns The EvseStatus if found, undefined otherwise
    */
-  public getEvseStatus (evseId: number): EvseStatus | undefined {
+  public getEvseStatus(evseId: number): EvseStatus | undefined {
     return this.evses.get(evseId)
   }
 
-  public getHeartbeatInterval (): number {
+  public getHeartbeatInterval(): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
     if (HeartbeatInterval != null) {
       return secondsToMilliseconds(convertToInt(HeartbeatInterval.value))
@@ -611,7 +611,7 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_HEARTBEAT_INTERVAL
   }
 
-  public getLocalAuthListEnabled (): boolean {
+  public getLocalAuthListEnabled(): boolean {
     const localAuthListEnabled = getConfigurationKey(
       this,
       StandardParametersKey.LocalAuthListEnabled
@@ -619,11 +619,11 @@ export class ChargingStation extends EventEmitter {
     return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
   }
 
-  public getNumberOfConnectors (): number {
+  public getNumberOfConnectors(): number {
     return this.iterateConnectors(true).reduce(count => count + 1, 0)
   }
 
-  public getNumberOfEvses (): number {
+  public getNumberOfEvses(): number {
     return this.evses.has(0) ? this.evses.size - 1 : this.evses.size
   }
 
@@ -632,7 +632,7 @@ export class ChargingStation extends EventEmitter {
    * @param stationInfo - Optional station info to use instead of this.stationInfo
    * @returns The number of phases (3 for AC, 0 for DC)
    */
-  public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
+  public getNumberOfPhases(stationInfo?: ChargingStationInfo): number {
     const localStationInfo = stationInfo ?? this.stationInfo
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
@@ -646,7 +646,7 @@ export class ChargingStation extends EventEmitter {
    * Counts currently active transactions across all connectors.
    * @returns The number of running transactions
    */
-  public getNumberOfRunningTransactions (): number {
+  public getNumberOfRunningTransactions(): number {
     return this.iterateConnectors(true).reduce(
       (count, { connectorStatus }) =>
         connectorStatus.transactionStarted === true ? count + 1 : count,
@@ -660,7 +660,7 @@ export class ChargingStation extends EventEmitter {
    * @param value - The value to match
    * @returns The matching reservation or undefined
    */
-  public getReservationBy (
+  public getReservationBy(
     filterKey: ReservationKey,
     value: number | string
   ): Reservation | undefined {
@@ -669,7 +669,7 @@ export class ChargingStation extends EventEmitter {
     )?.connectorStatus.reservation
   }
 
-  public getReserveConnectorZeroSupported (): boolean {
+  public getReserveConnectorZeroSupported(): boolean {
     return convertToBoolean(
       getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)?.value
     )
@@ -680,59 +680,59 @@ export class ChargingStation extends EventEmitter {
    * @param transactionId - The transaction ID
    * @returns The ID tag or undefined if not found
    */
-  public getTransactionIdTag (transactionId: number): string | undefined {
+  public getTransactionIdTag(transactionId: number): string | undefined {
     return this.iterateConnectors().find(
       ({ connectorStatus }) => connectorStatus.transactionId === transactionId
     )?.connectorStatus.transactionIdTag
   }
 
-  public getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {
+  public getVoltageOut(stationInfo?: ChargingStationInfo): Voltage {
     return (
       (stationInfo ?? this.stationInfo)?.voltageOut ??
       getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
     )
   }
 
-  public getWebSocketPingInterval (): number {
+  public getWebSocketPingInterval(): number {
     return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
       ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
       : Constants.DEFAULT_WS_PING_INTERVAL
   }
 
-  public hasConnector (connectorId: number): boolean {
+  public hasConnector(connectorId: number): boolean {
     return this.iterateConnectors().some(({ connectorId: id }) => id === connectorId)
   }
 
-  public hasEvse (evseId: number): boolean {
+  public hasEvse(evseId: number): boolean {
     return this.evses.has(evseId)
   }
 
-  public hasIdTags (): boolean {
+  public hasIdTags(): boolean {
     const idTagsFile = this.stationInfo != null ? getIdTagsFile(this.stationInfo) : undefined
     return idTagsFile != null && isNotEmptyArray(this.idTagsCache.getIdTags(idTagsFile))
   }
 
-  public inAcceptedState (): boolean {
+  public inAcceptedState(): boolean {
     return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
   }
 
-  public inPendingState (): boolean {
+  public inPendingState(): boolean {
     return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
   }
 
-  public inRejectedState (): boolean {
+  public inRejectedState(): boolean {
     return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
   }
 
-  public inUnknownState (): boolean {
+  public inUnknownState(): boolean {
     return this.bootNotificationResponse?.status == null
   }
 
-  public isChargingStationAvailable (): boolean {
+  public isChargingStationAvailable(): boolean {
     return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
   }
 
-  public isConnectorAvailable (connectorId: number): boolean {
+  public isConnectorAvailable(connectorId: number): boolean {
     return (
       connectorId > 0 &&
       this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
@@ -746,7 +746,7 @@ export class ChargingStation extends EventEmitter {
    * @param connectorId - Optional connector ID to check availability
    * @returns True if the connector can accept a reservation
    */
-  public isConnectorReservable (
+  public isConnectorReservable(
     reservationId: number,
     idTag?: string,
     connectorId?: number
@@ -768,11 +768,11 @@ export class ChargingStation extends EventEmitter {
     return false
   }
 
-  public isWebSocketConnectionOpened (): boolean {
+  public isWebSocketConnectionOpened(): boolean {
     return this.wsConnection?.readyState === WebSocket.OPEN
   }
 
-  public * iterateConnectors (skipZero = false): Generator<ConnectorEntry> {
+  public *iterateConnectors(skipZero = false): Generator<ConnectorEntry> {
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (skipZero && evseId === 0) continue
@@ -789,14 +789,14 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public * iterateEvses (skipZero = false): Generator<EvseEntry> {
+  public *iterateEvses(skipZero = false): Generator<EvseEntry> {
     for (const [evseId, evseStatus] of this.evses) {
       if (skipZero && evseId === 0) continue
       yield { evseId, evseStatus }
     }
   }
 
-  public lockConnector (connectorId: number): void {
+  public lockConnector(connectorId: number): void {
     if (connectorId === 0) {
       logger.warn(`${this.logPrefix()} lockConnector: connector id 0 is not a physical connector`)
       return
@@ -849,7 +849,7 @@ export class ChargingStation extends EventEmitter {
    * @param params.closeOpened - Whether to close an existing connection
    * @param params.terminateOpened - Whether to terminate an existing connection
    */
-  public openWSConnection (
+  public openWSConnection(
     options?: WsOptions,
     params?: { closeOpened?: boolean; terminateOpened?: boolean }
   ): void {
@@ -915,7 +915,7 @@ export class ChargingStation extends EventEmitter {
    * @param reservation - The reservation to remove
    * @param reason - The reason for removing the reservation
    */
-  public async removeReservation (
+  public async removeReservation(
     reservation: Reservation,
     reason: ReservationTerminationReason
   ): Promise<void> {
@@ -955,7 +955,7 @@ export class ChargingStation extends EventEmitter {
    * @param reason - Optional reason for the reset
    * @param graceful - Whether to perform a graceful shutdown
    */
-  public async reset (reason?: StopTransactionReason, graceful = true): Promise<void> {
+  public async reset(reason?: StopTransactionReason, graceful = true): Promise<void> {
     try {
       await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
     } catch (error) {
@@ -969,7 +969,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   /** Restarts the periodic heartbeat to the central server. */
-  public restartHeartbeat (): void {
+  public restartHeartbeat(): void {
     // Stop heartbeat
     this.stopHeartbeat()
     // Start heartbeat
@@ -977,7 +977,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   /** Restarts the WebSocket ping interval. */
-  public restartWebSocketPing (): void {
+  public restartWebSocketPing(): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
     // Start WebSocket ping
@@ -985,7 +985,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   /** Persists the current OCPP configuration to storage. */
-  public saveOcppConfiguration (): void {
+  public saveOcppConfiguration(): void {
     if (this.stationInfo?.ocppPersistentConfiguration === true) {
       this.saveConfiguration()
     }
@@ -995,7 +995,7 @@ export class ChargingStation extends EventEmitter {
    * Updates the supervision server URL in configuration or station info.
    * @param url - The new supervision server URL
    */
-  public setSupervisionUrl (url: string): void {
+  public setSupervisionUrl(url: string): void {
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
@@ -1009,7 +1009,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   /** Starts the charging station, initializes connectors, and connects to the central server. */
-  public start (): void {
+  public start(): void {
     if (!this.started) {
       if (!this.starting) {
         this.starting = true
@@ -1086,7 +1086,7 @@ export class ChargingStation extends EventEmitter {
    * @param connectorIds - Optional array of connector IDs to start ATG on
    * @param stopAbsoluteDuration - Whether to use absolute duration for stopping
    */
-  public startAutomaticTransactionGenerator (
+  public startAutomaticTransactionGenerator(
     connectorIds?: number[],
     stopAbsoluteDuration?: boolean
   ): void {
@@ -1103,7 +1103,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   /** Starts the periodic heartbeat to the central server. */
-  public startHeartbeat (): void {
+  public startHeartbeat(): void {
     const heartbeatInterval = this.getHeartbeatInterval()
     if (heartbeatInterval > 0 && this.heartbeatSetInterval == null) {
       this.heartbeatSetInterval = setInterval(() => {
@@ -1139,7 +1139,7 @@ export class ChargingStation extends EventEmitter {
    * @param reason - Optional reason for stopping
    * @param stopTransactions - Whether to stop active transactions
    */
-  public async stop (
+  public async stop(
     reason?: StopTransactionReason,
     stopTransactions = this.stationInfo?.stopTransactionsOnStopped
   ): Promise<void> {
@@ -1182,7 +1182,7 @@ export class ChargingStation extends EventEmitter {
    * Stops automatic transaction generation on the specified connectors.
    * @param connectorIds - Optional array of connector IDs to stop ATG on
    */
-  public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
+  public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId)
@@ -1194,7 +1194,7 @@ export class ChargingStation extends EventEmitter {
     this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
-  public unlockConnector (connectorId: number): void {
+  public unlockConnector(connectorId: number): void {
     if (connectorId === 0) {
       logger.warn(`${this.logPrefix()} unlockConnector: connector id 0 is not a physical connector`)
       return
@@ -1221,18 +1221,18 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private add (): void {
+  private add(): void {
     this.emitChargingStationEvent(ChargingStationEvents.added)
   }
 
-  private clearIntervalFlushMessageBuffer (): void {
+  private clearIntervalFlushMessageBuffer(): void {
     if (this.flushMessageBufferSetInterval != null) {
       clearInterval(this.flushMessageBufferSetInterval)
       delete this.flushMessageBufferSetInterval
     }
   }
 
-  private flushMessageBuffer (): void {
+  private flushMessageBuffer(): void {
     if (!this.flushingMessageBuffer && this.messageQueue.length > 0) {
       this.flushingMessageBuffer = true
       this.sendMessageBuffer(() => {
@@ -1241,7 +1241,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private getAmperageLimitation (): number | undefined {
+  private getAmperageLimitation(): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) != null
@@ -1253,7 +1253,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private getCachedRequest (
+  private getCachedRequest(
     messageType: MessageType | undefined,
     messageId: string
   ): CachedRequest | undefined {
@@ -1271,7 +1271,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private getConfigurationFromFile (): ChargingStationConfiguration | undefined {
+  private getConfigurationFromFile(): ChargingStationConfiguration | undefined {
     let configuration: ChargingStationConfiguration | undefined
     if (isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
       try {
@@ -1330,7 +1330,7 @@ export class ChargingStation extends EventEmitter {
     return configuration
   }
 
-  private getConfiguredSupervisionUrl (): URL {
+  private getConfiguredSupervisionUrl(): URL {
     let configuredSupervisionUrl: string | undefined
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls()
     if (isNotEmptyArray(supervisionUrls)) {
@@ -1370,7 +1370,7 @@ export class ChargingStation extends EventEmitter {
     throw new BaseError(errorMsg)
   }
 
-  private getCurrentOutType (stationInfo?: ChargingStationInfo): CurrentType {
+  private getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
     return (
       (stationInfo ?? this.stationInfo)?.currentOutType ??
       Constants.DEFAULT_STATION_INFO.currentOutType ??
@@ -1378,7 +1378,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private getEnergyActiveImportRegister (
+  private getEnergyActiveImportRegister(
     connectorStatus: ConnectorStatus | undefined,
     rounded = false
   ): number {
@@ -1400,7 +1400,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private getMaximumAmperage (stationInfo?: ChargingStationInfo): number | undefined {
+  private getMaximumAmperage(stationInfo?: ChargingStationInfo): number | undefined {
     const localStationInfo = stationInfo ?? this.stationInfo
     const maximumPower = localStationInfo?.maximumPower
     if (maximumPower == null || maximumPower <= 0) {
@@ -1423,7 +1423,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private getNumberOfReservableConnectors (): number {
+  private getNumberOfReservableConnectors(): number {
     return (
       this.iterateConnectors(true).reduce(
         (count, { connectorStatus }) =>
@@ -1433,14 +1433,14 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private getNumberOfReservationsOnConnectorZero (): number {
+  private getNumberOfReservationsOnConnectorZero(): number {
     if (this.getConnectorStatus(0)?.reservation != null) {
       return 1
     }
     return 0
   }
 
-  private getOcppConfiguration (
+  private getOcppConfiguration(
     ocppPersistentConfiguration: boolean | undefined = this.stationInfo?.ocppPersistentConfiguration
   ): ChargingStationOcppConfiguration | undefined {
     let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
@@ -1449,7 +1449,7 @@ export class ChargingStation extends EventEmitter {
     return ocppConfiguration
   }
 
-  private getOcppConfigurationFromFile (
+  private getOcppConfigurationFromFile(
     ocppPersistentConfiguration?: boolean
   ): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey
@@ -1459,11 +1459,11 @@ export class ChargingStation extends EventEmitter {
     return undefined
   }
 
-  private getOcppConfigurationFromTemplate (): ChargingStationOcppConfiguration | undefined {
+  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration | undefined {
     return this.getTemplateFromFile()?.Configuration
   }
 
-  private getPowerDivider (): number {
+  private getPowerDivider(): number {
     let powerDivider = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()
     if (this.stationInfo?.powerSharedByConnectors === true) {
       powerDivider = this.getNumberOfRunningTransactions()
@@ -1471,7 +1471,7 @@ export class ChargingStation extends EventEmitter {
     return powerDivider
   }
 
-  private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
+  private getStationInfo(options?: ChargingStationOptions): ChargingStationInfo {
     const stationInfoFromTemplate = this.getStationInfoFromTemplate()
     options?.persistentConfiguration != null &&
       (stationInfoFromTemplate.stationInfoPersistentConfiguration = options.persistentConfiguration)
@@ -1501,7 +1501,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private getStationInfoFromFile (
+  private getStationInfoFromFile(
     stationInfoPersistentConfiguration: boolean | undefined = Constants.DEFAULT_STATION_INFO
       .stationInfoPersistentConfiguration
   ): ChargingStationInfo | undefined {
@@ -1521,7 +1521,7 @@ export class ChargingStation extends EventEmitter {
     return stationInfo
   }
 
-  private getStationInfoFromTemplate (): ChargingStationInfo {
+  private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate = this.getTemplateFromFile()
     if (stationTemplate == null) {
       const errorMsg = `Failed to read charging station template file ${this.templateFile}`
@@ -1574,7 +1574,7 @@ export class ChargingStation extends EventEmitter {
     return stationInfo
   }
 
-  private getTemplateFromFile (): ChargingStationTemplate | undefined {
+  private getTemplateFromFile(): ChargingStationTemplate | undefined {
     let template: ChargingStationTemplate | undefined
     try {
       if (this.sharedLRUCache.hasChargingStationTemplate(this.templateFileHash)) {
@@ -1603,13 +1603,13 @@ export class ChargingStation extends EventEmitter {
     return template
   }
 
-  private getUseConnectorId0 (stationTemplate?: ChargingStationTemplate): boolean {
+  private getUseConnectorId0(stationTemplate?: ChargingStationTemplate): boolean {
     return (
       stationTemplate?.useConnectorId0 ?? Constants.DEFAULT_STATION_INFO.useConnectorId0 ?? true
     )
   }
 
-  private handleErrorMessage (errorResponse: ErrorResponse): void {
+  private handleErrorMessage(errorResponse: ErrorResponse): void {
     const [messageType, messageId, errorType, errorMessage, errorDetails] = errorResponse
     if (!this.requests.has(messageId)) {
       // Error
@@ -1638,7 +1638,7 @@ export class ChargingStation extends EventEmitter {
     errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails))
   }
 
-  private async handleIncomingMessage (request: IncomingRequest): Promise<void> {
+  private async handleIncomingMessage(request: IncomingRequest): Promise<void> {
     const [messageType, messageId, commandName, commandPayload] = request
     if (this.requests.has(messageId)) {
       throw new OCPPError(
@@ -1666,7 +1666,7 @@ export class ChargingStation extends EventEmitter {
     this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
-  private handleResponseMessage (response: Response): void {
+  private handleResponseMessage(response: Response): void {
     const [messageType, messageId, commandPayload] = response
     if (!this.requests.has(messageId)) {
       // Error
@@ -1696,14 +1696,14 @@ export class ChargingStation extends EventEmitter {
     responseCallback(commandPayload, requestPayload)
   }
 
-  private handleUnsupportedVersion (version: OCPPVersion | undefined): void {
+  private handleUnsupportedVersion(version: OCPPVersion | undefined): void {
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`
     logger.error(`${this.logPrefix()} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
 
-  private initialize (options?: ChargingStationOptions): void {
+  private initialize(options?: ChargingStationOptions): void {
     const stationTemplate = this.getTemplateFromFile()
     if (stationTemplate == null) {
       const errorMsg = `Failed to read charging station template file ${this.templateFile}`
@@ -1777,7 +1777,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private initializeConnectorsFromTemplate (stationTemplate: ChargingStationTemplate): void {
+  private initializeConnectorsFromTemplate(stationTemplate: ChargingStationTemplate): void {
     if (stationTemplate.Connectors == null && isEmpty(this.connectors)) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
@@ -1845,7 +1845,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
+  private initializeConnectorsOrEvsesFromFile(configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       const isTupleFormat =
         configuration.connectorsStatus.length > 0 &&
@@ -1904,7 +1904,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private initializeConnectorsOrEvsesFromTemplate (stationTemplate: ChargingStationTemplate): void {
+  private initializeConnectorsOrEvsesFromTemplate(stationTemplate: ChargingStationTemplate): void {
     if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
       this.initializeConnectorsFromTemplate(stationTemplate)
     } else if (stationTemplate.Evses != null && stationTemplate.Connectors == null) {
@@ -1920,7 +1920,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private initializeEvsesFromTemplate (stationTemplate: ChargingStationTemplate): void {
+  private initializeEvsesFromTemplate(stationTemplate: ChargingStationTemplate): void {
     if (stationTemplate.Evses == null && isEmpty(this.evses)) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
@@ -1991,7 +1991,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private initializeOcppConfiguration (): void {
+  private initializeOcppConfiguration(): void {
     if (getConfigurationKey(this, StandardParametersKey.HeartbeatInterval) == null) {
       addConfigurationKey(this, StandardParametersKey.HeartbeatInterval, '0')
     }
@@ -2094,7 +2094,7 @@ export class ChargingStation extends EventEmitter {
     this.saveOcppConfiguration()
   }
 
-  private initializeOcppServices (): void {
+  private initializeOcppServices(): void {
     const ocppVersion = this.stationInfo?.ocppVersion
     switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
@@ -2118,7 +2118,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private internalStopMessageSequence (): void {
+  private internalStopMessageSequence(): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
     // Stop heartbeat
@@ -2129,7 +2129,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
+  private onClose(code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
     switch (code) {
@@ -2163,12 +2163,12 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onError (error: WSError): void {
+  private onError(error: WSError): void {
     this.closeWSConnection()
     logger.error(`${this.logPrefix()} WebSocket error:`, error)
   }
 
-  private async onMessage (data: RawData): Promise<void> {
+  private async onMessage(data: RawData): Promise<void> {
     let request: ErrorResponse | IncomingRequest | Response | undefined
     let messageType: MessageType | undefined
     let errorMsg: string
@@ -2268,7 +2268,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async onOpen (): Promise<void> {
+  private async onOpen(): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
       this.emitChargingStationEvent(ChargingStationEvents.connected)
       this.emitChargingStationEvent(ChargingStationEvents.updated)
@@ -2324,15 +2324,15 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onPing (): void {
+  private onPing(): void {
     logger.debug(`${this.logPrefix()} Received a WS ping (rfc6455) from the server`)
   }
 
-  private onPong (): void {
+  private onPong(): void {
     logger.debug(`${this.logPrefix()} Received a WS pong (rfc6455) from the server`)
   }
 
-  private async reconnect (): Promise<void> {
+  private async reconnect(): Promise<void> {
     if (
       this.stationInfo?.autoReconnectMaxRetries === -1 ||
       this.wsConnectionRetryCount < (this.stationInfo?.autoReconnectMaxRetries ?? 0)
@@ -2369,13 +2369,13 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private saveAutomaticTransactionGeneratorConfiguration (): void {
+  private saveAutomaticTransactionGeneratorConfiguration(): void {
     if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true) {
       this.saveConfiguration()
     }
   }
 
-  private saveConfiguration (): void {
+  private saveConfiguration(): void {
     if (isNotEmptyString(this.configurationFile)) {
       try {
         if (!existsSync(dirname(this.configurationFile))) {
@@ -2481,15 +2481,15 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private saveConnectorsStatus (): void {
+  private saveConnectorsStatus(): void {
     this.saveConfiguration()
   }
 
-  private saveEvsesStatus (): void {
+  private saveEvsesStatus(): void {
     this.saveConfiguration()
   }
 
-  private saveStationInfo (): void {
+  private saveStationInfo(): void {
     if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
       this.saveConfiguration()
     }
@@ -2555,7 +2555,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private setIntervalFlushMessageBuffer (): void {
+  private setIntervalFlushMessageBuffer(): void {
     this.flushMessageBufferSetInterval ??= setInterval(() => {
       if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
         this.flushMessageBuffer()
@@ -2566,7 +2566,7 @@ export class ChargingStation extends EventEmitter {
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
   }
 
-  private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {
+  private async startMessageSequence(ATGStopAbsoluteDuration?: boolean): Promise<void> {
     if (this.stationInfo?.autoRegister === true) {
       await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
@@ -2608,7 +2608,7 @@ export class ChargingStation extends EventEmitter {
     this.flushMessageBuffer()
   }
 
-  private startWebSocketPing (): void {
+  private startWebSocketPing(): void {
     const webSocketPingInterval = this.getWebSocketPingInterval()
     if (webSocketPingInterval > 0 && this.wsPingSetInterval == null) {
       this.wsPingSetInterval = setInterval(
@@ -2637,14 +2637,14 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private stopHeartbeat (): void {
+  private stopHeartbeat(): void {
     if (this.heartbeatSetInterval != null) {
       clearInterval(this.heartbeatSetInterval)
       delete this.heartbeatSetInterval
     }
   }
 
-  private async stopMessageSequence (
+  private async stopMessageSequence(
     reason?: StopTransactionReason,
     stopTransactions?: boolean
   ): Promise<void> {
@@ -2661,14 +2661,14 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private stopWebSocketPing (): void {
+  private stopWebSocketPing(): void {
     if (this.wsPingSetInterval != null) {
       clearInterval(this.wsPingSetInterval)
       delete this.wsPingSetInterval
     }
   }
 
-  private terminateWSConnection (): void {
+  private terminateWSConnection(): void {
     if (this.isWebSocketConnectionOpened()) {
       this.wsConnection?.terminate()
       this.wsConnection = null

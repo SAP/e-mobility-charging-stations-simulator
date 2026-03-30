@@ -27,7 +27,7 @@ if (Configuration.workerPoolInUse()) {
 } else {
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   class ChargingStationWorker<Data extends ChargingStationWorkerData> {
-    constructor () {
+    constructor() {
       parentPort?.on('message', (message: WorkerMessage<Data>) => {
         const { data, event, uuid } = message
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

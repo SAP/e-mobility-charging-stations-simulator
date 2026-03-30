@@ -122,11 +122,11 @@ export class Configuration {
     ])
   }
 
-  private constructor () {
+  private constructor() {
     // This is intentional
   }
 
-  public static getConfigurationData (): ConfigurationData | undefined {
+  public static getConfigurationData(): ConfigurationData | undefined {
     if (
       Configuration.configurationData == null &&
       Configuration.configurationFile != null &&
@@ -160,7 +160,7 @@ export class Configuration {
     return Configuration.configurationSectionCache.get(sectionName) as T
   }
 
-  public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
+  public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
     const checkDeprecatedConfigurationKeysOnce = once(
       Configuration.checkDeprecatedConfigurationKeys.bind(Configuration)
     )
@@ -168,13 +168,13 @@ export class Configuration {
     return Configuration.getConfigurationData()?.stationTemplateUrls
   }
 
-  public static getSupervisionUrlDistribution (): SupervisionUrlDistribution | undefined {
+  public static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
     return has('supervisionUrlDistribution', Configuration.getConfigurationData())
       ? Configuration.getConfigurationData()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN
   }
 
-  public static getSupervisionUrls (): string | string[] | undefined {
+  public static getSupervisionUrls(): string | string[] | undefined {
     if (
       Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
     ) {
@@ -188,14 +188,14 @@ export class Configuration {
     return Configuration.getConfigurationData()?.supervisionUrls
   }
 
-  public static workerDynamicPoolInUse (): boolean {
+  public static workerDynamicPoolInUse(): boolean {
     return (
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
         .processType === WorkerProcessType.dynamicPool
     )
   }
 
-  public static workerPoolInUse (): boolean {
+  public static workerPoolInUse(): boolean {
     const processType = Configuration.getConfigurationSection<WorkerConfiguration>(
       ConfigurationSection.worker
     ).processType
@@ -205,7 +205,7 @@ export class Configuration {
     )
   }
 
-  private static buildLogSection (): LogConfiguration {
+  private static buildLogSection(): LogConfiguration {
     const configurationData = Configuration.getConfigurationData()
     const deprecatedLogKeyMap: [keyof ConfigurationData, keyof LogConfiguration][] = [
       ['logEnabled', 'enabled'],
@@ -233,7 +233,7 @@ export class Configuration {
     return logConfiguration
   }
 
-  private static buildPerformanceStorageSection (): StorageConfiguration {
+  private static buildPerformanceStorageSection(): StorageConfiguration {
     let storageConfiguration: StorageConfiguration
     switch (Configuration.getConfigurationData()?.performanceStorage?.type) {
       case StorageType.JSON_FILE:
@@ -263,16 +263,16 @@ export class Configuration {
           StorageType.JSON_FILE ||
           Configuration.getConfigurationData()?.performanceStorage?.type === StorageType.SQLITE) &&
           Configuration.getConfigurationData()?.performanceStorage?.uri != null && {
-          uri: buildPerformanceUriFilePath(
-            new URL(Configuration.getConfigurationData()?.performanceStorage?.uri ?? '').pathname
-          ),
-        }),
+            uri: buildPerformanceUriFilePath(
+              new URL(Configuration.getConfigurationData()?.performanceStorage?.uri ?? '').pathname
+            ),
+          }),
       }
     }
     return storageConfiguration
   }
 
-  private static buildUIServerSection (): UIServerConfiguration {
+  private static buildUIServerSection(): UIServerConfiguration {
     let uiServerConfiguration: UIServerConfiguration = defaultUIServerConfiguration
     if (has(ConfigurationSection.uiServer, Configuration.getConfigurationData())) {
       uiServerConfiguration = mergeDeepRight<UIServerConfiguration, Partial<UIServerConfiguration>>(
@@ -289,7 +289,7 @@ export class Configuration {
     return uiServerConfiguration
   }
 
-  private static buildWorkerSection (): WorkerConfiguration {
+  private static buildWorkerSection(): WorkerConfiguration {
     const configurationData = Configuration.getConfigurationData()
     const deprecatedWorkerKeyMap: [keyof ConfigurationData, keyof WorkerConfiguration][] = [
       ['workerProcess', 'processType'],
@@ -325,7 +325,7 @@ export class Configuration {
     return workerConfiguration
   }
 
-  private static cacheConfigurationSection (sectionName: ConfigurationSection): void {
+  private static cacheConfigurationSection(sectionName: ConfigurationSection): void {
     switch (sectionName) {
       case ConfigurationSection.log:
         Configuration.configurationSectionCache.set(sectionName, Configuration.buildLogSection())
@@ -351,7 +351,7 @@ export class Configuration {
     }
   }
 
-  private static checkDeprecatedConfigurationKeys (): void {
+  private static checkDeprecatedConfigurationKeys(): void {
     const deprecatedKeys: [string, ConfigurationSection | undefined, string][] = [
       // connection timeout
       [
@@ -522,7 +522,7 @@ export class Configuration {
     }
   }
 
-  private static getConfigurationFileWatcher (): FSWatcher | undefined {
+  private static getConfigurationFileWatcher(): FSWatcher | undefined {
     if (
       Configuration.configurationFile == null ||
       Configuration.configurationFile.trim().length === 0
@@ -570,11 +570,11 @@ export class Configuration {
     }
   }
 
-  private static isConfigurationSectionCached (sectionName: ConfigurationSection): boolean {
+  private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName)
   }
 
-  private static warnDeprecatedConfigurationKey (
+  private static warnDeprecatedConfigurationKey(
     key: string,
     configurationSection?: ConfigurationSection,
     logMsgToAppend = ''

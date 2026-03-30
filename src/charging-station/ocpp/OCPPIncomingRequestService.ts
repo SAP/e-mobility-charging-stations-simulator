@@ -44,7 +44,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
   protected abstract readonly pendingStateBlockedCommands: IncomingRequestCommand[]
   private readonly version: OCPPVersion
 
-  protected constructor (version: OCPPVersion) {
+  protected constructor(version: OCPPVersion) {
     super()
     this.version = version
     this.ajv = new Ajv({
@@ -159,9 +159,9 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     }
   }
 
-  public abstract stop (chargingStation: ChargingStation): void
+  public abstract stop(chargingStation: ChargingStation): void
 
-  protected abstract isIncomingRequestCommandSupported (
+  protected abstract isIncomingRequestCommandSupported(
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean

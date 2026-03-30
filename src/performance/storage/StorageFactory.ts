@@ -11,11 +11,11 @@ import { None } from './None.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StorageFactory {
-  private constructor () {
+  private constructor() {
     // This is intentional
   }
 
-  public static getStorage (type: StorageType, connectionUri: string, logPrefix: string): Storage {
+  public static getStorage(type: StorageType, connectionUri: string, logPrefix: string): Storage {
     let storageInstance: Storage
     switch (type) {
       case StorageType.JSON_FILE:

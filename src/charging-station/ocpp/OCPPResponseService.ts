@@ -39,7 +39,7 @@ export abstract class OCPPResponseService {
   protected abstract readonly responseHandlers: Map<RequestCommand, ResponseHandler>
   private readonly version: OCPPVersion
 
-  protected constructor (version: OCPPVersion) {
+  protected constructor(version: OCPPVersion) {
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
@@ -142,7 +142,7 @@ export abstract class OCPPResponseService {
     }
   }
 
-  protected abstract isRequestCommandSupported (
+  protected abstract isRequestCommandSupported(
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean

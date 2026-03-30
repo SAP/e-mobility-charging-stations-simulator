@@ -536,7 +536,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        OCPP20TransactionEventRequest
+        OCPP20TransactionEventRequest,
       ]
       assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       assert.strictEqual(args[2].eventType, OCPP20TransactionEventEnumType.Started)
@@ -608,7 +608,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        OCPP20TransactionEventRequest
+        OCPP20TransactionEventRequest,
       ]
       const transactionEvent = args[2]
       assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStart)

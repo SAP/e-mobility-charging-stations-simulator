@@ -22,7 +22,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly responses: Map<string, Responses>
   private readonly uiService: AbstractUIService
 
-  constructor (uiService: AbstractUIService) {
+  constructor(uiService: AbstractUIService) {
     super()
     this.uiService = uiService
     this.onmessage = this.responseHandler.bind(this) as (message: unknown) => void
@@ -30,7 +30,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     this.responses = new Map<string, Responses>()
   }
 
-  private buildResponsePayload (uuid: string): ResponsePayload {
+  private buildResponsePayload(uuid: string): ResponsePayload {
     const responsesArray = this.responses.get(uuid)?.responses ?? []
     const responsesStatus =
       responsesArray.length > 0 &&
@@ -73,14 +73,14 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     }
   }
 
-  private messageErrorHandler (messageEvent: MessageEvent): void {
+  private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.uiService.logPrefix(moduleName, 'messageErrorHandler')} Error at handling message:`,
       messageEvent
     )
   }
 
-  private responseHandler (messageEvent: MessageEvent): void {
+  private responseHandler(messageEvent: MessageEvent): void {
     const validatedMessageEvent = this.validateMessageEvent(messageEvent)
     if (validatedMessageEvent === false) {
       return

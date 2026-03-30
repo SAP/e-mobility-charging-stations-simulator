@@ -112,7 +112,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
    * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
    */
-  constructor (options?: {
+  constructor(options?: {
     cleanupIntervalSeconds?: number
     defaultTtl?: number
     maxAbsoluteLifetimeMs?: number
@@ -146,7 +146,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Clear all cached entries and rate limits
    */
-  public clear (): void {
+  public clear(): void {
     const entriesCleared = this.cache.size
     this.cache.clear()
     this.lruOrder.clear()
@@ -155,7 +155,7 @@ export class InMemoryAuthCache implements AuthCache {
     logger.info(`${moduleName}: Cleared ${String(entriesCleared)} entries`)
   }
 
-  public dispose (): void {
+  public dispose(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval)
       this.cleanupInterval = undefined
@@ -167,7 +167,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param identifier - Identifier to look up
    * @returns Cached result or undefined if not found/expired/rate-limited
    */
-  public get (identifier: string): AuthorizationResult | undefined {
+  public get(identifier: string): AuthorizationResult | undefined {
     // Check rate limiting first
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
@@ -224,7 +224,7 @@ export class InMemoryAuthCache implements AuthCache {
    * Get cache statistics including rate limiting stats
    * @returns Cache statistics with rate limiting metrics
    */
-  public getStats (): CacheStats & { rateLimit: RateLimitStats } {
+  public getStats(): CacheStats & { rateLimit: RateLimitStats } {
     const totalAccess = this.stats.hits + this.stats.misses
     const hitRate = totalAccess > 0 ? (this.stats.hits / totalAccess) * 100 : 0
 
@@ -251,7 +251,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
   }
 
-  public hasCleanupInterval (): boolean {
+  public hasCleanupInterval(): boolean {
     return this.cleanupInterval !== undefined
   }
 
@@ -259,7 +259,7 @@ export class InMemoryAuthCache implements AuthCache {
    * Remove a cached entry
    * @param identifier - Identifier to remove
    */
-  public remove (identifier: string): void {
+  public remove(identifier: string): void {
     const deleted = this.cache.delete(identifier)
     this.lruOrder.delete(identifier)
 
@@ -271,7 +271,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Reset statistics counters
    */
-  public resetStats (): void {
+  public resetStats(): void {
     this.stats = {
       evictions: 0,
       expired: 0,
@@ -283,7 +283,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
   }
 
-  public runCleanup (): void {
+  public runCleanup(): void {
     const now = Date.now()
     for (const [key, entry] of this.cache.entries()) {
       if (now >= entry.expiresAt) {
@@ -313,7 +313,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param result - Authorization result to cache
    * @param ttl - Optional TTL override in seconds
    */
-  public set (identifier: string, result: AuthorizationResult, ttl?: number): void {
+  public set(identifier: string, result: AuthorizationResult, ttl?: number): void {
     // Check rate limiting
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
@@ -348,7 +348,7 @@ export class InMemoryAuthCache implements AuthCache {
     )
   }
 
-  private boundRateLimitsMap (): void {
+  private boundRateLimitsMap(): void {
     const threshold = this.maxEntries * 2
     while (this.rateLimits.size > threshold) {
       const firstKey = this.rateLimits.keys().next().value
@@ -364,7 +364,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param identifier - Identifier to check
    * @returns true if within rate limit, false if exceeded
    */
-  private checkRateLimit (identifier: string): boolean {
+  private checkRateLimit(identifier: string): boolean {
     if (!this.rateLimit.enabled) {
       return true
     }
@@ -404,7 +404,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Remove expired rate limit entries (older than 2x window)
    */
-  private cleanupExpiredRateLimits (): void {
+  private cleanupExpiredRateLimits(): void {
     const now = Date.now()
     const expirationThreshold = this.rateLimit.windowMs * 2
 
@@ -418,7 +418,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Evict least recently used entry
    */
-  private evictLRU (): void {
+  private evictLRU(): void {
     if (this.lruOrder.size === 0) {
       return
     }

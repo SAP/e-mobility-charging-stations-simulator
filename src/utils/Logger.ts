@@ -98,25 +98,25 @@ const getLoggerInstance = (): WinstonLogger => {
 }
 
 export const logger = new Proxy({} as WinstonLogger, {
-  get (target, property, receiver): unknown {
+  get(target, property, receiver): unknown {
     if (Reflect.has(target, property)) {
       return Reflect.get(target, property, receiver) as unknown
     }
     return Reflect.get(getLoggerInstance(), property, receiver) as unknown
   },
-  getOwnPropertyDescriptor (target, property) {
+  getOwnPropertyDescriptor(target, property) {
     return (
       Reflect.getOwnPropertyDescriptor(target, property) ??
       Reflect.getOwnPropertyDescriptor(getLoggerInstance(), property)
     )
   },
-  getPrototypeOf () {
+  getPrototypeOf() {
     return Reflect.getPrototypeOf(getLoggerInstance())
   },
-  has (target, property) {
+  has(target, property) {
     return Reflect.has(target, property) || Reflect.has(getLoggerInstance(), property)
   },
-  set (target, property, value, receiver) {
+  set(target, property, value, receiver) {
     return Reflect.set(target, property, value, receiver)
   },
 })

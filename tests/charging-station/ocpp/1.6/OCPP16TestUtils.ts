@@ -93,7 +93,7 @@ export interface OCPP16ResponseTestContextOptions {
  * @param config.outgoingCommands - Partial map of outgoing request command support
  * @returns A `commandsSupport` value suitable for `stationInfo`
  */
-export function createCommandsSupport (config: {
+export function createCommandsSupport(config: {
   incomingCommands?: Record<string, boolean>
   outgoingCommands?: Record<string, boolean>
 }): NonNullable<ChargingStationInfo['commandsSupport']> {
@@ -115,7 +115,7 @@ export function createCommandsSupport (config: {
  * @param entries - Array of OCPP 1.6 sampled value objects
  * @returns The entries typed as `SampledValueTemplate[]`
  */
-export function createMeterValuesTemplate (entries: OCPP16SampledValue[]): SampledValueTemplate[] {
+export function createMeterValuesTemplate(entries: OCPP16SampledValue[]): SampledValueTemplate[] {
   return entries as unknown as SampledValueTemplate[]
 }
 
@@ -125,7 +125,7 @@ export function createMeterValuesTemplate (entries: OCPP16SampledValue[]): Sampl
  * @param options - Optional overrides for base name, connectors, and station info
  * @returns OCPP16IncomingRequestTestContext with all objects needed for testing
  */
-export function createOCPP16IncomingRequestTestContext (
+export function createOCPP16IncomingRequestTestContext(
   options: OCPP16IncomingRequestTestContextOptions = {}
 ): OCPP16IncomingRequestTestContext {
   const {
@@ -156,7 +156,7 @@ export function createOCPP16IncomingRequestTestContext (
  * @param baseName - Base name for the charging station
  * @returns Object containing the mock request handler and charging station
  */
-export function createOCPP16ListenerStation (baseName: string): {
+export function createOCPP16ListenerStation(baseName: string): {
   requestHandlerMock: ReturnType<typeof mock.fn>
   station: ChargingStation
 } {
@@ -183,7 +183,7 @@ export function createOCPP16ListenerStation (baseName: string): {
  * @param options - Optional overrides for base name and station info
  * @returns OCPP16RequestTestContext with all objects needed for testing
  */
-export function createOCPP16RequestTestContext (
+export function createOCPP16RequestTestContext(
   options: OCPP16RequestTestContextOptions = {}
 ): OCPP16RequestTestContext {
   const { baseName = TEST_CHARGING_STATION_BASE_NAME, stationInfo = {} } = options
@@ -216,7 +216,7 @@ export function createOCPP16RequestTestContext (
  * @param options - Optional overrides for base name and station info
  * @returns OCPP16ResponseTestContext with all objects needed for testing
  */
-export function createOCPP16ResponseTestContext (
+export function createOCPP16ResponseTestContext(
   options: OCPP16ResponseTestContextOptions = {}
 ): OCPP16ResponseTestContext {
   const { baseName = TEST_CHARGING_STATION_BASE_NAME, stationInfo = {} } = options
@@ -243,7 +243,7 @@ export function createOCPP16ResponseTestContext (
  * @param options - Optional overrides for station configuration
  * @returns MockChargingStation ready for testing
  */
-export function createStandardStation (
+export function createStandardStation(
   options: OCPP16IncomingRequestTestContextOptions = {}
 ): MockChargingStation {
   const {
@@ -277,7 +277,7 @@ export function createStandardStation (
  * @param payload - Response payload (specific OCPP type widened to JsonObject)
  * @param requestPayload - Original request payload (defaults to empty object)
  */
-export async function dispatchResponse (
+export async function dispatchResponse(
   responseService: OCPP16ResponseService,
   station: ChargingStation,
   command: OCPP16RequestCommand,
@@ -297,7 +297,7 @@ export async function dispatchResponse (
  * Ensures test isolation by clearing any transaction state from previous tests.
  * @param chargingStation - Charging station instance whose connector state should be reset
  */
-export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
+export function resetConnectorTransactionState(chargingStation: ChargingStation): void {
   for (const { connectorStatus } of chargingStation.iterateConnectors(true)) {
     connectorStatus.transactionStarted = false
     connectorStatus.transactionId = undefined
@@ -318,7 +318,7 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
  * Specifically resets MeterValueSampleInterval and HeartbeatInterval to default values.
  * @param chargingStation - Charging station test instance whose interval configuration is reset
  */
-export function resetLimits (chargingStation: ChargingStation) {
+export function resetLimits(chargingStation: ChargingStation) {
   upsertConfigurationKey(
     chargingStation,
     OCPP16StandardParametersKey.MeterValueSampleInterval,
@@ -341,7 +341,7 @@ export function resetLimits (chargingStation: ChargingStation) {
  * @param station - Charging station whose request service to mock
  * @param handler - Async handler function to assign
  */
-export function setMockRequestHandler (
+export function setMockRequestHandler(
   station: ChargingStation,
   handler: (...args: unknown[]) => Promise<unknown>
 ): void {
@@ -355,7 +355,7 @@ export function setMockRequestHandler (
  * @param value - Configuration key value as string
  * @param readonly - Whether the key is read-only (default false)
  */
-export function upsertConfigurationKey (
+export function upsertConfigurationKey(
   chargingStation: ChargingStation,
   key: string,
   value: string,
@@ -376,7 +376,7 @@ export function upsertConfigurationKey (
  * @param chargingStation - Charging station instance to ensure configuration for
  * @returns The configuration key array
  */
-function ensureConfig (chargingStation: ChargingStation): ConfigurationKey[] {
+function ensureConfig(chargingStation: ChargingStation): ConfigurationKey[] {
   chargingStation.ocppConfiguration ??= { configurationKey: [] }
   chargingStation.ocppConfiguration.configurationKey ??= []
   return chargingStation.ocppConfiguration.configurationKey

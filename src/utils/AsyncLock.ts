@@ -16,7 +16,7 @@ export class AsyncLock {
   private acquired: boolean
   private readonly resolveQueue: Queue<ResolveType>
 
-  private constructor () {
+  private constructor() {
     this.acquired = false
     this.resolveQueue = new Queue<ResolveType>()
   }
@@ -34,7 +34,7 @@ export class AsyncLock {
     }
   }
 
-  private static async acquire (type: AsyncLockType): Promise<void> {
+  private static async acquire(type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type)
     if (!asyncLock.acquired) {
       asyncLock.acquired = true
@@ -45,7 +45,7 @@ export class AsyncLock {
     })
   }
 
-  private static getAsyncLock (type: AsyncLockType): AsyncLock {
+  private static getAsyncLock(type: AsyncLockType): AsyncLock {
     let asyncLock = AsyncLock.asyncLocks.get(type)
     if (asyncLock == null) {
       asyncLock = new AsyncLock()
@@ -54,7 +54,7 @@ export class AsyncLock {
     return asyncLock
   }
 
-  private static release (type: AsyncLockType): void {
+  private static release(type: AsyncLockType): void {
     const asyncLock = AsyncLock.getAsyncLock(type)
     const nextResolve = asyncLock.resolveQueue.dequeue()
     if (nextResolve != null) {

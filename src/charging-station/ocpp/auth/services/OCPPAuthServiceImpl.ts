@@ -52,7 +52,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   private readonly strategies: Map<string, AuthStrategy>
   private readonly strategyPriority: string[]
 
-  constructor (chargingStation: ChargingStation) {
+  constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation
     this.strategies = new Map()
     this.strategyPriority = ['local', 'remote', 'certificate']
@@ -81,7 +81,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param request - Authorization request containing identifier, context, and options
    * @returns Promise resolving to the authorization result with status and metadata
    */
-  public async authenticate (request: AuthRequest): Promise<AuthorizationResult> {
+  public async authenticate(request: AuthRequest): Promise<AuthorizationResult> {
     const startTime = Date.now()
     let lastError: Error | undefined
 
@@ -201,7 +201,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param request - Authorization request containing identifier, context, and options
    * @returns Promise resolving to the authorization result with status and metadata
    */
-  public async authorize (request: AuthRequest): Promise<AuthorizationResult> {
+  public async authorize(request: AuthRequest): Promise<AuthorizationResult> {
     return this.authenticate(request)
   }
 
@@ -211,7 +211,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param request - Authorization request containing identifier, context, and options
    * @returns Promise resolving to the authorization result with status and metadata
    */
-  public async authorizeWithStrategy (
+  public async authorizeWithStrategy(
     strategyName: string,
     request: AuthRequest
   ): Promise<AuthorizationResult> {
@@ -274,7 +274,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Clear all cached authorizations
    */
-  public clearCache (): void {
+  public clearCache(): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: Clearing all cached authorizations`
     )
@@ -298,7 +298,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Get authentication statistics
    * @returns Authentication statistics including version and supported identifier types
    */
-  public getAuthenticationStats (): {
+  public getAuthenticationStats(): {
     availableStrategies: string[]
     ocppVersion: string
     supportedIdentifierTypes: string[]
@@ -335,7 +335,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Get all available strategies
    * @returns Array of registered strategy names
    */
-  public getAvailableStrategies (): string[] {
+  public getAvailableStrategies(): string[] {
     return Array.from(this.strategies.keys())
   }
 
@@ -343,7 +343,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Get current authentication configuration
    * @returns Copy of the current authentication configuration
    */
-  public getConfiguration (): AuthConfiguration {
+  public getConfiguration(): AuthConfiguration {
     return { ...this.config }
   }
 
@@ -351,7 +351,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Get authentication statistics
    * @returns Authentication statistics including cache and rate limiting metrics
    */
-  public async getStats (): Promise<AuthStats> {
+  public async getStats(): Promise<AuthStats> {
     const avgResponseTime =
       this.metrics.totalRequests > 0
         ? this.metrics.totalResponseTime / this.metrics.totalRequests
@@ -405,7 +405,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param strategyName - Name of the authentication strategy to retrieve (e.g., 'local', 'remote', 'certificate')
    * @returns The requested authentication strategy, or undefined if not found
    */
-  public getStrategy (strategyName: string): AuthStrategy | undefined {
+  public getStrategy(strategyName: string): AuthStrategy | undefined {
     return this.strategies.get(strategyName)
   }
 
@@ -413,7 +413,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Async initialization of adapters and strategies
    * Must be called after construction
    */
-  public async initialize (): Promise<void> {
+  public async initialize(): Promise<void> {
     await this.initializeAdapter()
     await this.initializeStrategies()
   }
@@ -422,7 +422,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Invalidate cached authorization for an identifier
    * @param identifier - Unified identifier whose cached authorization should be invalidated
    */
-  public invalidateCache (identifier: UnifiedIdentifier): void {
+  public invalidateCache(identifier: UnifiedIdentifier): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${truncateId(identifier.value)}`
     )
@@ -447,7 +447,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param connectorId - Optional connector ID for context-specific authorization
    * @returns Promise resolving to the authorization result if locally authorized, or undefined if not found
    */
-  public async isLocallyAuthorized (
+  public async isLocallyAuthorized(
     identifier: UnifiedIdentifier,
     connectorId?: number
   ): Promise<AuthorizationResult | undefined> {
@@ -483,7 +483,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param identifier - Unified identifier to check for support
    * @returns True if at least one strategy can handle the identifier type, false otherwise
    */
-  public isSupported (identifier: UnifiedIdentifier): boolean {
+  public isSupported(identifier: UnifiedIdentifier): boolean {
     // Create a minimal request to check applicability
     const testRequest: AuthRequest = {
       allowOffline: false,
@@ -503,7 +503,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Test connectivity to remote authorization service
    * @returns True if remote authorization service is reachable
    */
-  public testConnectivity (): boolean {
+  public testConnectivity(): boolean {
     const remoteStrategy = this.strategies.get('remote')
     if (!remoteStrategy) {
       return false
@@ -523,7 +523,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     return false
   }
 
-  public updateCacheEntry (
+  public updateCacheEntry(
     identifier: string,
     idTokenInfo: OCPP20IdTokenInfoType,
     identifierType?: IdentifierType
@@ -585,7 +585,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param config - Partial configuration object with values to update
    * @throws {OCPPError} If configuration validation fails
    */
-  public updateConfiguration (config: Partial<AuthConfiguration>): void {
+  public updateConfiguration(config: Partial<AuthConfiguration>): void {
     // Merge new config with existing
     const newConfiguration = { ...this.config, ...config }
 
@@ -605,7 +605,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param strategyName - Name of the authentication strategy to configure (e.g., 'local', 'remote', 'certificate')
    * @param config - Configuration options to apply to the strategy
    */
-  public updateStrategyConfiguration (strategyName: string, config: Record<string, unknown>): void {
+  public updateStrategyConfiguration(strategyName: string, config: Record<string, unknown>): void {
     const strategy = this.strategies.get(strategyName)
 
     if (!strategy) {
@@ -642,7 +642,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Create default authentication configuration
    * @returns Default authentication configuration object
    */
-  private createDefaultConfiguration (): AuthConfiguration {
+  private createDefaultConfiguration(): AuthConfiguration {
     return {
       allowOfflineTxForUnknownId: false,
       authKeyManagementEnabled: false,
@@ -665,14 +665,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Initialize OCPP adapter using AuthComponentFactory
    */
-  private async initializeAdapter (): Promise<void> {
+  private async initializeAdapter(): Promise<void> {
     this.adapter = await AuthComponentFactory.createAdapter(this.chargingStation)
   }
 
   /**
    * Initialize all authentication strategies using AuthComponentFactory
    */
-  private async initializeStrategies (): Promise<void> {
+  private async initializeStrategies(): Promise<void> {
     const ocppVersion = this.chargingStation.stationInfo?.ocppVersion
 
     if (this.adapter == null) {
@@ -706,7 +706,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param error - Error to evaluate for criticality
    * @returns True if the error should halt authentication attempts, false to continue trying other strategies
    */
-  private isCriticalError (error: Error): boolean {
+  private isCriticalError(error: Error): boolean {
     // Critical errors that should stop trying other strategies
     if (error instanceof OCPPError) {
       return [
@@ -733,7 +733,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param strategyName - Name of the strategy that produced the result
    * @param duration - Time taken for authentication in milliseconds
    */
-  private updateMetricsForResult (
+  private updateMetricsForResult(
     result: AuthorizationResult,
     strategyName: string,
     duration: number

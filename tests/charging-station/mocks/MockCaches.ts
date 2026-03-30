@@ -14,24 +14,24 @@ export class MockIdTagsCache {
   private static instance: MockIdTagsCache | null = null
   private readonly idTagsMap = new Map<string, string[]>()
 
-  public static getInstance (): MockIdTagsCache {
+  public static getInstance(): MockIdTagsCache {
     MockIdTagsCache.instance ??= new MockIdTagsCache()
     return MockIdTagsCache.instance
   }
 
-  public static resetInstance (): void {
+  public static resetInstance(): void {
     MockIdTagsCache.instance = null
   }
 
-  public deleteIdTags (file: string): void {
+  public deleteIdTags(file: string): void {
     this.idTagsMap.delete(file)
   }
 
-  public getIdTags (file: string): string[] | undefined {
+  public getIdTags(file: string): string[] | undefined {
     return this.idTagsMap.get(file)
   }
 
-  public setIdTags (file: string, idTags: string[]): void {
+  public setIdTags(file: string, idTags: string[]): void {
     this.idTagsMap.set(file, idTags)
   }
 }
@@ -45,12 +45,12 @@ export class MockSharedLRUCache {
   private static instance: MockSharedLRUCache | null = null
   private readonly _brand = 'MockSharedLRUCache' as const
 
-  public static getInstance (): MockSharedLRUCache {
+  public static getInstance(): MockSharedLRUCache {
     MockSharedLRUCache.instance ??= new MockSharedLRUCache()
     return MockSharedLRUCache.instance
   }
 
-  public static resetInstance (): void {
+  public static resetInstance(): void {
     MockSharedLRUCache.instance = null
   }
 }

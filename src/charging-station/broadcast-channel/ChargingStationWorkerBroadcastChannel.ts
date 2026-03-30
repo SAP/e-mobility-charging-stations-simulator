@@ -75,28 +75,28 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private static readonly acceptedStatusCommands = new Map<
     BroadcastChannelProcedureName,
     (response: CommandResponse) => boolean
-      >([
-        [
-          BroadcastChannelProcedureName.BOOT_NOTIFICATION,
-          r => r.status === RegistrationStatusEnumType.ACCEPTED,
-        ],
-        [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
-        [
-          BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-          r =>
-            (r as OCPP20Get15118EVCertificateResponse).status ===
+  >([
+    [
+      BroadcastChannelProcedureName.BOOT_NOTIFICATION,
+      r => r.status === RegistrationStatusEnumType.ACCEPTED,
+    ],
+    [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
+    [
+      BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+      r =>
+        (r as OCPP20Get15118EVCertificateResponse).status ===
         Iso15118EVCertificateStatusEnumType.Accepted,
-        ],
-        [
-          BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
-          r =>
-            (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
-        ],
-        [
-          BroadcastChannelProcedureName.SIGN_CERTIFICATE,
-          r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
-        ],
-      ])
+    ],
+    [
+      BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
+      r =>
+        (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
+    ],
+    [
+      BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+      r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
+    ],
+  ])
 
   private static readonly emptyResponseCommands = new Set<BroadcastChannelProcedureName>([
     BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
@@ -115,7 +115,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     throwError: true,
   }
 
-  constructor (chargingStation: ChargingStation) {
+  constructor(chargingStation: ChargingStation) {
     super()
     this.chargingStation = chargingStation
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
@@ -251,7 +251,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void
   }
 
-  private cleanRequestPayload (
+  private cleanRequestPayload(
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload
   ): void {
@@ -263,7 +263,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     ].includes(command) && delete requestPayload.connectorIds
   }
 
-  private async commandHandler (
+  private async commandHandler(
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
@@ -287,7 +287,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     throw new BaseError(`Unknown worker broadcast channel command: '${command}'`)
   }
 
-  private commandResponseToResponsePayload (
+  private commandResponseToResponsePayload(
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload,
     commandResponse: CommandResponse
@@ -308,7 +308,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
   }
 
-  private commandResponseToResponseStatus (
+  private commandResponseToResponseStatus(
     command: BroadcastChannelProcedureName,
     commandResponse: CommandResponse
   ): ResponseStatus {
@@ -372,7 +372,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
   }
 
-  private async handleBootNotification (
+  private async handleBootNotification(
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<BootNotificationResponse> {
     return await this.chargingStation.ocppRequestService.requestHandler<
@@ -392,7 +392,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     )
   }
 
-  private async handleMeterValues (
+  private async handleMeterValues(
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
     const payloadEvseId = (requestPayload as undefined | { evseId?: number })?.evseId
@@ -440,7 +440,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     )
   }
 
-  private async handleStopTransaction (
+  private async handleStopTransaction(
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<StopTransactionResponse> {
     return await this.chargingStation.ocppRequestService.requestHandler<
@@ -460,14 +460,14 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     )
   }
 
-  private messageErrorHandler (messageEvent: MessageEvent): void {
+  private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
       messageEvent
     )
   }
 
-  private passthrough (command: RequestCommand): CommandHandler {
+  private passthrough(command: RequestCommand): CommandHandler {
     return async (requestPayload?: BroadcastChannelRequestPayload): Promise<CommandResponse> => {
       const result = await this.chargingStation.ocppRequestService.requestHandler(
         this.chargingStation,
@@ -479,7 +479,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
   }
 
-  private requestHandler (messageEvent: MessageEvent): void {
+  private requestHandler(messageEvent: MessageEvent): void {
     const validatedMessageEvent = this.validateMessageEvent(messageEvent)
     if (validatedMessageEvent === false) {
       return

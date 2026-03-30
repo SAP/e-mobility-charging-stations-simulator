@@ -279,7 +279,7 @@ export class AuthenticationError extends Error {
 
   public readonly ocppVersion?: OCPPVersion
 
-  constructor (
+  constructor(
     message: string,
     code: AuthErrorCode,
     options?: {

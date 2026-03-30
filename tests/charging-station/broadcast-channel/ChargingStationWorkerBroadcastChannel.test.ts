@@ -69,7 +69,7 @@ interface TestableWorkerBroadcastChannel {
  * @param instance - The instance to wrap
  * @returns Testable interface with access to private members
  */
-function createTestableWorkerBroadcastChannel (
+function createTestableWorkerBroadcastChannel(
   instance: ChargingStationWorkerBroadcastChannel
 ): TestableWorkerBroadcastChannel {
   const testable = instance as unknown as TestableWorkerBroadcastChannel
@@ -85,7 +85,7 @@ function createTestableWorkerBroadcastChannel (
  * Get the protected static ProcedureNameToBroadCastChannelProcedureNameMapping.
  * @returns The mapping from ProcedureName to BroadcastChannelProcedureName
  */
-function getProcedureNameMapping (): Map<ProcedureName, BroadcastChannelProcedureName> {
+function getProcedureNameMapping(): Map<ProcedureName, BroadcastChannelProcedureName> {
   return (AbstractUIService as unknown as TestableAbstractUIService)
     .ProcedureNameToBroadCastChannelProcedureNameMapping
 }

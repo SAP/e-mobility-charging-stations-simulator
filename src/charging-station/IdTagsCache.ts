@@ -24,17 +24,17 @@ export class IdTagsCache {
   private readonly idTagsCaches: Map<string, IdTagsCacheValueType>
   private readonly idTagsCachesAddressableIndexes: Map<string, number>
 
-  private constructor () {
+  private constructor() {
     this.idTagsCaches = new Map<string, IdTagsCacheValueType>()
     this.idTagsCachesAddressableIndexes = new Map<string, number>()
   }
 
-  public static getInstance (): IdTagsCache {
+  public static getInstance(): IdTagsCache {
     IdTagsCache.instance ??= new IdTagsCache()
     return IdTagsCache.instance
   }
 
-  public deleteIdTags (file: string): boolean {
+  public deleteIdTags(file: string): boolean {
     return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file)
   }
 
@@ -46,7 +46,7 @@ export class IdTagsCache {
    * @param connectorId - The connector identifier
    * @returns Selected idtag string
    */
-  public getIdTag (
+  public getIdTag(
     distribution: IdTagDistribution,
     chargingStation: ChargingStation,
     connectorId: number
@@ -74,19 +74,19 @@ export class IdTagsCache {
    * @param file - The idtags file path
    * @returns Array of idtag strings or undefined if not cached
    */
-  public getIdTags (file: string): string[] | undefined {
+  public getIdTags(file: string): string[] | undefined {
     if (!this.hasIdTagsCache(file)) {
       this.setIdTagsCache(file, this.getIdTagsFromFile(file))
     }
     return this.getIdTagsCache(file)
   }
 
-  private deleteIdTagsCache (file: string): boolean {
+  private deleteIdTagsCache(file: string): boolean {
     this.idTagsCaches.get(file)?.idTagsFileWatcher?.close()
     return this.idTagsCaches.delete(file)
   }
 
-  private deleteIdTagsCacheIndexes (file: string): boolean {
+  private deleteIdTagsCacheIndexes(file: string): boolean {
     const deleted: boolean[] = []
     for (const [key] of this.idTagsCachesAddressableIndexes) {
       if (key.startsWith(file)) {
@@ -96,7 +96,7 @@ export class IdTagsCache {
     return !deleted.some(value => !value)
   }
 
-  private getConnectorAffinityIdTag (chargingStation: ChargingStation, connectorId: number): string {
+  private getConnectorAffinityIdTag(chargingStation: ChargingStation, connectorId: number): string {
     if (chargingStation.stationInfo == null) {
       return ''
     }
@@ -113,15 +113,15 @@ export class IdTagsCache {
     return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0]
   }
 
-  private getIdTagsCache (file: string): string[] | undefined {
+  private getIdTagsCache(file: string): string[] | undefined {
     return this.idTagsCaches.get(file)?.idTags
   }
 
-  private getIdTagsCacheIndexesAddressableKey (prefix: string, uid: string): string {
+  private getIdTagsCacheIndexesAddressableKey(prefix: string, uid: string): string {
     return `${prefix}${uid}`
   }
 
-  private getIdTagsFromFile (file: string): string[] {
+  private getIdTagsFromFile(file: string): string[] {
     if (isNotEmptyString(file)) {
       try {
         return JSON.parse(readFileSync(file, 'utf8')) as string[]
@@ -132,7 +132,7 @@ export class IdTagsCache {
     return []
   }
 
-  private getRandomIdTag (hashId: string, file: string): string {
+  private getRandomIdTag(hashId: string, file: string): string {
     const idTags = this.getIdTags(file) ?? []
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId)
     this.idTagsCachesAddressableIndexes.set(
@@ -142,7 +142,7 @@ export class IdTagsCache {
     return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0]
   }
 
-  private getRoundRobinIdTag (hashId: string, file: string): string {
+  private getRoundRobinIdTag(hashId: string, file: string): string {
     const idTags = this.getIdTags(file) ?? []
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId)
     const idTagIndex = this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0
@@ -154,7 +154,7 @@ export class IdTagsCache {
     return idTag
   }
 
-  private hasIdTagsCache (file: string): boolean {
+  private hasIdTagsCache(file: string): boolean {
     return this.idTagsCaches.has(file)
   }
 
@@ -162,7 +162,7 @@ export class IdTagsCache {
     return logPrefix(` Id tags cache for id tags file '${file}' |`)
   }
 
-  private setIdTagsCache (file: string, idTags: string[]): Map<string, IdTagsCacheValueType> {
+  private setIdTagsCache(file: string, idTags: string[]): Map<string, IdTagsCacheValueType> {
     return this.idTagsCaches.set(file, {
       idTags,
       idTagsFileWatcher: watchJsonFile(

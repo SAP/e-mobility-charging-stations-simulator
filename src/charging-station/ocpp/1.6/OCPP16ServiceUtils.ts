@@ -64,26 +64,26 @@ const moduleName = 'OCPP16ServiceUtils'
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP16IncomingRequestCommand,
-    string
+    string,
   ][] = [
-      [OCPP16IncomingRequestCommand.CANCEL_RESERVATION, 'CancelReservation'],
-      [OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
-      [OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION, 'ChangeConfiguration'],
-      [OCPP16IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
-      [OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE, 'ClearChargingProfile'],
-      [OCPP16IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
-      [OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE, 'GetCompositeSchedule'],
-      [OCPP16IncomingRequestCommand.GET_CONFIGURATION, 'GetConfiguration'],
-      [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, 'GetDiagnostics'],
-      [OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION, 'RemoteStartTransaction'],
-      [OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION, 'RemoteStopTransaction'],
-      [OCPP16IncomingRequestCommand.RESERVE_NOW, 'ReserveNow'],
-      [OCPP16IncomingRequestCommand.RESET, 'Reset'],
-      [OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE, 'SetChargingProfile'],
-      [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
-      [OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
-      [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
-    ]
+    [OCPP16IncomingRequestCommand.CANCEL_RESERVATION, 'CancelReservation'],
+    [OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
+    [OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION, 'ChangeConfiguration'],
+    [OCPP16IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
+    [OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE, 'ClearChargingProfile'],
+    [OCPP16IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
+    [OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE, 'GetCompositeSchedule'],
+    [OCPP16IncomingRequestCommand.GET_CONFIGURATION, 'GetConfiguration'],
+    [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, 'GetDiagnostics'],
+    [OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION, 'RemoteStartTransaction'],
+    [OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION, 'RemoteStopTransaction'],
+    [OCPP16IncomingRequestCommand.RESERVE_NOW, 'ReserveNow'],
+    [OCPP16IncomingRequestCommand.RESET, 'Reset'],
+    [OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE, 'SetChargingProfile'],
+    [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
+    [OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
+    [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
+  ]
 
   private static readonly outgoingRequestSchemaNames: readonly [OCPP16RequestCommand, string][] = [
     [OCPP16RequestCommand.AUTHORIZE, 'Authorize'],
@@ -98,7 +98,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
   ]
 
-  public static buildTransactionBeginMeterValue (
+  public static buildTransactionBeginMeterValue(
     chargingStation: ChargingStation,
     connectorId: number,
     meterStart: number | undefined
@@ -124,7 +124,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return meterValue
   }
 
-  public static buildTransactionDataMeterValues (
+  public static buildTransactionDataMeterValues(
     transactionBeginMeterValue: OCPP16MeterValue,
     transactionEndMeterValue: OCPP16MeterValue
   ): OCPP16MeterValue[] {
@@ -166,7 +166,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
   }
 
-  public static checkFeatureProfile (
+  public static checkFeatureProfile(
     chargingStation: ChargingStation,
     featureProfile: OCPP16SupportedFeatureProfiles,
     command: OCPP16IncomingRequestCommand | OCPP16RequestCommand
@@ -306,13 +306,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         ].sort((a, b) => a.startPeriod - b.startPeriod),
         duration: higherFirst
           ? differenceInSeconds(
-            compositeChargingScheduleLowerInterval.end,
-            compositeChargingScheduleHigherInterval.start
-          )
+              compositeChargingScheduleLowerInterval.end,
+              compositeChargingScheduleHigherInterval.start
+            )
           : differenceInSeconds(
-            compositeChargingScheduleHigherInterval.end,
-            compositeChargingScheduleLowerInterval.start
-          ),
+              compositeChargingScheduleHigherInterval.end,
+              compositeChargingScheduleLowerInterval.start
+            ),
         startSchedule: higherFirst
           ? (compositeChargingScheduleHigherInterval.start as Date)
           : (compositeChargingScheduleLowerInterval.start as Date),
@@ -412,13 +412,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       ].sort((a, b) => a.startPeriod - b.startPeriod),
       duration: higherFirst
         ? differenceInSeconds(
-          compositeChargingScheduleLowerInterval.end,
-          compositeChargingScheduleHigherInterval.start
-        )
+            compositeChargingScheduleLowerInterval.end,
+            compositeChargingScheduleHigherInterval.start
+          )
         : differenceInSeconds(
-          compositeChargingScheduleHigherInterval.end,
-          compositeChargingScheduleLowerInterval.start
-        ),
+            compositeChargingScheduleHigherInterval.end,
+            compositeChargingScheduleLowerInterval.start
+          ),
       startSchedule: higherFirst
         ? (compositeChargingScheduleHigherInterval.start as Date)
         : (compositeChargingScheduleLowerInterval.start as Date),
@@ -431,7 +431,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] =>
     OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -444,7 +444,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] =>
     OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -471,7 +471,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
    */
   public static createRequestPayloadConfigs = (): [
     OCPP16RequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] =>
     OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -484,7 +484,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
    */
   public static createResponsePayloadConfigs = (): [
     OCPP16RequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] =>
     OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
@@ -518,7 +518,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return false
   }
 
-  public static isConfigurationKeyVisible (key: ConfigurationKey): boolean {
+  public static isConfigurationKeyVisible(key: ConfigurationKey): boolean {
     if (key.visible == null) {
       return true
     }
@@ -544,7 +544,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
-  public static setChargingProfile (
+  public static setChargingProfile(
     chargingStation: ChargingStation,
     connectorId: number,
     cp: OCPP16ChargingProfile
@@ -589,7 +589,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
   }
 
-  public static async startTransactionOnConnector (
+  public static async startTransactionOnConnector(
     chargingStation: ChargingStation,
     connectorId: number,
     idTag?: string
@@ -603,7 +603,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     })
   }
 
-  public static startUpdatedMeterValues (
+  public static startUpdatedMeterValues(
     chargingStation: ChargingStation,
     connectorId: number,
     interval: number
@@ -649,7 +649,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }, clampToSafeTimerValue(interval))
   }
 
-  public static async stopTransactionOnConnector (
+  public static async stopTransactionOnConnector(
     chargingStation: ChargingStation,
     connectorId: number,
     reason?: StopTransactionReason
@@ -688,7 +688,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     })
   }
 
-  public static stopUpdatedMeterValues (
+  public static stopUpdatedMeterValues(
     chargingStation: ChargingStation,
     connectorId: number
   ): void {

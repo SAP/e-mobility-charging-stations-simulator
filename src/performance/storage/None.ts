@@ -5,19 +5,19 @@ import type { Statistics } from '../../types/index.js'
 import { Storage } from './Storage.js'
 
 export class None extends Storage {
-  constructor () {
+  constructor() {
     super('none://none', 'none')
   }
 
-  public close (): void {
+  public close(): void {
     this.clearPerformanceStatistics()
   }
 
-  public open (): void {
+  public open(): void {
     /** Intentionally empty */
   }
 
-  public storePerformanceStatistics (performanceStatistics: Statistics): void {
+  public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.setPerformanceStatistics(performanceStatistics)
   }
 }

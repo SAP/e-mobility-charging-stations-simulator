@@ -66,18 +66,18 @@ enum exitCodes {
 
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
-  public get numberOfChargingStationTemplates (): number {
+  public get numberOfChargingStationTemplates(): number {
     return this.templateStatistics.size
   }
 
-  public get numberOfConfiguredChargingStations (): number {
+  public get numberOfConfiguredChargingStations(): number {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.configured,
       0
     )
   }
 
-  public get numberOfProvisionedChargingStations (): number {
+  public get numberOfProvisionedChargingStations(): number {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.provisioned,
       0
@@ -94,21 +94,21 @@ export class Bootstrap extends EventEmitter {
   private readonly version: string = packageJson.version
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
 
-  private get numberOfAddedChargingStations (): number {
+  private get numberOfAddedChargingStations(): number {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.added,
       0
     )
   }
 
-  private get numberOfStartedChargingStations (): number {
+  private get numberOfStartedChargingStations(): number {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.started,
       0
     )
   }
 
-  private constructor () {
+  private constructor() {
     super()
     for (const signal of ['SIGINT', 'SIGQUIT', 'SIGTERM']) {
       process.on(signal, this.gracefulShutdown.bind(this))
@@ -135,12 +135,12 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public static getInstance (): Bootstrap {
+  public static getInstance(): Bootstrap {
     Bootstrap.instance ??= new Bootstrap()
     return Bootstrap.instance
   }
 
-  public async addChargingStation (
+  public async addChargingStation(
     index: number,
     templateFile: string,
     options?: ChargingStationOptions
@@ -168,7 +168,7 @@ export class Bootstrap extends EventEmitter {
     return stationInfo
   }
 
-  public getLastContiguousIndex (templateName: string): number {
+  public getLastContiguousIndex(templateName: string): number {
     const templateStatistics = this.templateStatistics.get(templateName)
     if (templateStatistics == null) {
       return 0
@@ -182,11 +182,11 @@ export class Bootstrap extends EventEmitter {
     return indexes[indexes.length - 1]
   }
 
-  public getPerformanceStatistics (): IterableIterator<Statistics> | undefined {
+  public getPerformanceStatistics(): IterableIterator<Statistics> | undefined {
     return this.storage?.getPerformanceStatistics()
   }
 
-  public getState (): SimulatorState {
+  public getState(): SimulatorState {
     return {
       configuration: Configuration.getConfigurationData(),
       started: this.started,
@@ -195,7 +195,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async start (): Promise<void> {
+  public async start(): Promise<void> {
     if (!this.started) {
       if (!this.starting) {
         this.starting = true
@@ -322,7 +322,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async stop (): Promise<void> {
+  public async stop(): Promise<void> {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
@@ -352,7 +352,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  private gracefulShutdown (): void {
+  private gracefulShutdown(): void {
     this.stop()
       .then(() => {
         console.info(chalk.green('Graceful shutdown'))
@@ -368,7 +368,7 @@ export class Bootstrap extends EventEmitter {
       })
   }
 
-  private initializeCounters (): void {
+  private initializeCounters(): void {
     const stationTemplateUrls = Configuration.getStationTemplateUrls() ?? []
     if (isNotEmptyArray(stationTemplateUrls)) {
       for (const stationTemplateUrl of stationTemplateUrls) {
@@ -409,7 +409,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  private initializeWorkerImplementation (workerConfiguration: WorkerConfiguration): void {
+  private initializeWorkerImplementation(workerConfiguration: WorkerConfiguration): void {
     if (!isMainThread) {
       return
     }
@@ -424,10 +424,10 @@ export class Bootstrap extends EventEmitter {
           this.numberOfConfiguredChargingStations + this.numberOfProvisionedChargingStations >
           availableParallelism()
             ? Math.round(
-              (this.numberOfConfiguredChargingStations +
+                (this.numberOfConfiguredChargingStations +
                   this.numberOfProvisionedChargingStations) /
                   (availableParallelism() * 1.5)
-            )
+              )
             : 1
         break
       default:
@@ -467,7 +467,7 @@ export class Bootstrap extends EventEmitter {
     return logPrefix(' Bootstrap |')
   }
 
-  private messageHandler (
+  private messageHandler(
     msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
   ): void {
     // logger.debug(
@@ -561,7 +561,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  private async restart (): Promise<void> {
+  private async restart(): Promise<void> {
     await this.stop()
     if (
       this.uiServerStarted &&
@@ -579,7 +579,7 @@ export class Bootstrap extends EventEmitter {
     await this.start()
   }
 
-  private async waitChargingStationsStopped (): Promise<string> {
+  private async waitChargingStationsStopped(): Promise<string> {
     return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
       const waitTimeout = setTimeout(() => {
         const timeoutMessage = `Timeout ${formatDurationMilliSeconds(

@@ -16,7 +16,7 @@ export class SharedLRUCache {
   private static instance: null | SharedLRUCache = null
   private readonly lruCache: LRUCache<string, CacheValueType>
 
-  private constructor () {
+  private constructor() {
     this.lruCache = new LRUCache<string, CacheValueType>(
       Bootstrap.getInstance().numberOfChargingStationTemplates +
         Bootstrap.getInstance().numberOfConfiguredChargingStations +
@@ -24,24 +24,24 @@ export class SharedLRUCache {
     )
   }
 
-  public static getInstance (): SharedLRUCache {
+  public static getInstance(): SharedLRUCache {
     SharedLRUCache.instance ??= new SharedLRUCache()
     return SharedLRUCache.instance
   }
 
-  public clear (): void {
+  public clear(): void {
     this.lruCache.clear()
   }
 
-  public deleteChargingStationConfiguration (chargingStationConfigurationHash: string): void {
+  public deleteChargingStationConfiguration(chargingStationConfigurationHash: string): void {
     this.delete(this.getChargingStationConfigurationKey(chargingStationConfigurationHash))
   }
 
-  public deleteChargingStationTemplate (chargingStationTemplateHash: string): void {
+  public deleteChargingStationTemplate(chargingStationTemplateHash: string): void {
     this.delete(this.getChargingStationTemplateKey(chargingStationTemplateHash))
   }
 
-  public getChargingStationConfiguration (
+  public getChargingStationConfiguration(
     chargingStationConfigurationHash: string
   ): ChargingStationConfiguration {
     return this.get(
@@ -49,21 +49,21 @@ export class SharedLRUCache {
     ) as ChargingStationConfiguration
   }
 
-  public getChargingStationTemplate (chargingStationTemplateHash: string): ChargingStationTemplate {
+  public getChargingStationTemplate(chargingStationTemplateHash: string): ChargingStationTemplate {
     return this.get(
       this.getChargingStationTemplateKey(chargingStationTemplateHash)
     ) as ChargingStationTemplate
   }
 
-  public hasChargingStationConfiguration (chargingStationConfigurationHash: string): boolean {
+  public hasChargingStationConfiguration(chargingStationConfigurationHash: string): boolean {
     return this.has(this.getChargingStationConfigurationKey(chargingStationConfigurationHash))
   }
 
-  public hasChargingStationTemplate (chargingStationTemplateHash: string): boolean {
+  public hasChargingStationTemplate(chargingStationTemplateHash: string): boolean {
     return this.has(this.getChargingStationTemplateKey(chargingStationTemplateHash))
   }
 
-  public setChargingStationConfiguration (
+  public setChargingStationConfiguration(
     chargingStationConfiguration: ChargingStationConfiguration
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
@@ -76,34 +76,34 @@ export class SharedLRUCache {
     }
   }
 
-  public setChargingStationTemplate (chargingStationTemplate: ChargingStationTemplate): void {
+  public setChargingStationTemplate(chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
       this.getChargingStationTemplateKey(chargingStationTemplate.templateHash ?? ''),
       chargingStationTemplate
     )
   }
 
-  private delete (key: string): void {
+  private delete(key: string): void {
     this.lruCache.delete(key)
   }
 
-  private get (key: string): CacheValueType | undefined {
+  private get(key: string): CacheValueType | undefined {
     return this.lruCache.get(key)
   }
 
-  private getChargingStationConfigurationKey (hash: string): string {
+  private getChargingStationConfigurationKey(hash: string): string {
     return `${CacheType.chargingStationConfiguration}${hash}`
   }
 
-  private getChargingStationTemplateKey (hash: string): string {
+  private getChargingStationTemplateKey(hash: string): string {
     return `${CacheType.chargingStationTemplate}${hash}`
   }
 
-  private has (key: string): boolean {
+  private has(key: string): boolean {
     return this.lruCache.has(key)
   }
 
-  private isChargingStationConfigurationCacheable (
+  private isChargingStationConfigurationCacheable(
     chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
@@ -118,7 +118,7 @@ export class SharedLRUCache {
     )
   }
 
-  private set (key: string, value: CacheValueType): void {
+  private set(key: string, value: CacheValueType): void {
     this.lruCache.set(key, value)
   }
 }

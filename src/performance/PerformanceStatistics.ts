@@ -50,7 +50,7 @@ export class PerformanceStatistics {
   private performanceObserver!: PerformanceObserver
   private readonly statistics: Statistics
 
-  private constructor (objId: string, objName: string, uri: URL) {
+  private constructor(objId: string, objName: string, uri: URL) {
     this.objId = objId
     this.objName = objName
     this.initializePerformanceObserver()
@@ -63,13 +63,13 @@ export class PerformanceStatistics {
     }
   }
 
-  public static beginMeasure (id: string): string {
+  public static beginMeasure(id: string): string {
     const markId = `${id.charAt(0).toUpperCase()}${id.slice(1)}~${generateUUID()}`
     performance.mark(markId)
     return markId
   }
 
-  public static deleteInstance (objId: string | undefined): boolean {
+  public static deleteInstance(objId: string | undefined): boolean {
     if (objId == null) {
       const errorMsg = 'Cannot delete performance statistics instance without specifying object id'
       logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
@@ -78,7 +78,7 @@ export class PerformanceStatistics {
     return PerformanceStatistics.instances.delete(objId)
   }
 
-  public static endMeasure (name: string, markId: string): void {
+  public static endMeasure(name: string, markId: string): void {
     try {
       performance.measure(name, markId)
     } catch (error) {
@@ -92,7 +92,7 @@ export class PerformanceStatistics {
     performance.clearMeasures(name)
   }
 
-  public static getInstance (
+  public static getInstance(
     objId: string | undefined,
     objName: string | undefined,
     uri: undefined | URL
@@ -122,7 +122,7 @@ export class PerformanceStatistics {
     return logPrefix(' Performance statistics')
   }
 
-  public addRequestStatistic (
+  public addRequestStatistic(
     command: IncomingRequestCommand | RequestCommand,
     messageType: MessageType
   ): void {
@@ -170,12 +170,12 @@ export class PerformanceStatistics {
     }
   }
 
-  public restart (): void {
+  public restart(): void {
     this.stop()
     this.start()
   }
 
-  public start (): void {
+  public start(): void {
     this.startLogStatisticsInterval()
     const performanceStorageConfiguration =
       Configuration.getConfigurationSection<StorageConfiguration>(
@@ -192,14 +192,14 @@ export class PerformanceStatistics {
     }
   }
 
-  public stop (): void {
+  public stop(): void {
     this.stopLogStatisticsInterval()
     performance.clearMarks()
     performance.clearMeasures()
     this.performanceObserver.disconnect()
   }
 
-  private addPerformanceEntryToStatistics (entry: PerformanceEntry): void {
+  private addPerformanceEntryToStatistics(entry: PerformanceEntry): void {
     // Initialize command statistics
     if (!this.statistics.statisticsData.has(entry.name)) {
       this.statistics.statisticsData.set(entry.name, {})
@@ -253,7 +253,7 @@ export class PerformanceStatistics {
     }
   }
 
-  private initializePerformanceObserver (): void {
+  private initializePerformanceObserver(): void {
     this.performanceObserver = new PerformanceObserver(performanceObserverList => {
       const lastPerformanceEntry = performanceObserverList.getEntries()[0]
       // logger.debug(
@@ -270,7 +270,7 @@ export class PerformanceStatistics {
     return logPrefix(` ${this.objName} | Performance statistics`)
   }
 
-  private logStatistics (): void {
+  private logStatistics(): void {
     logger.info(this.logPrefix(), {
       ...this.statistics,
       statisticsData: JSON.parse(
@@ -279,7 +279,7 @@ export class PerformanceStatistics {
     })
   }
 
-  private startLogStatisticsInterval (): void {
+  private startLogStatisticsInterval(): void {
     const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
       ConfigurationSection.log
     )
@@ -303,7 +303,7 @@ export class PerformanceStatistics {
     }
   }
 
-  private stopLogStatisticsInterval (): void {
+  private stopLogStatisticsInterval(): void {
     if (this.displayInterval != null) {
       clearInterval(this.displayInterval)
       delete this.displayInterval

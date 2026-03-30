@@ -119,7 +119,7 @@ export class Constants {
     | IncomingRequestCommand
     | RequestCommand
 
-  private constructor () {
+  private constructor() {
     // This is intentional
   }
 }

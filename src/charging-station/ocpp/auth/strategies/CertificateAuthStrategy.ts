@@ -40,7 +40,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     totalRequests: 0,
   }
 
-  constructor (chargingStation: ChargingStation, adapter: OCPPAuthAdapter) {
+  constructor(chargingStation: ChargingStation, adapter: OCPPAuthAdapter) {
     this.chargingStation = chargingStation
     this.adapter = adapter
   }
@@ -51,7 +51,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration settings
    * @returns Authorization result with certificate validation status, or undefined if validation fails early
    */
-  async authenticate (
+  async authenticate(
     request: AuthRequest,
     config: AuthConfiguration
   ): Promise<AuthorizationResult | undefined> {
@@ -107,7 +107,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration with certificate settings
    * @returns True if the request contains valid certificate data and certificate auth is enabled
    */
-  canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
+  canHandle(request: AuthRequest, config: AuthConfiguration): boolean {
     // Only handle certificate-based authentication
     if (request.identifier.type !== IdentifierType.CERTIFICATE) {
       return false
@@ -127,19 +127,19 @@ export class CertificateAuthStrategy implements AuthStrategy {
     return certAuthEnabled && hasCertificateData && this.isInitialized
   }
 
-  cleanup (): void {
+  cleanup(): void {
     this.isInitialized = false
     logger.debug(`${moduleName}: Certificate authentication strategy cleaned up`)
   }
 
-  getStats (): JsonObject {
+  getStats(): JsonObject {
     return {
       ...this.stats,
       isInitialized: this.isInitialized,
     }
   }
 
-  initialize (config: AuthConfiguration): void {
+  initialize(config: AuthConfiguration): void {
     if (!config.certificateAuthEnabled) {
       logger.info(`${moduleName}: Certificate authentication disabled`)
       return
@@ -154,7 +154,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param identifier - Unified identifier containing certificate hash data
    * @returns Expiry date extracted from certificate, or undefined if not determinable
    */
-  private calculateCertificateExpiry (identifier: UnifiedIdentifier): Date | undefined {
+  private calculateCertificateExpiry(identifier: UnifiedIdentifier): Date | undefined {
     // In a real implementation, this would parse the actual certificate
     // and extract the notAfter field. For simulation, we'll use a placeholder.
 
@@ -179,7 +179,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param startTime - Request start timestamp for response time calculation
    * @returns Authorization result with failure status and diagnostic information
    */
-  private createFailureResult (
+  private createFailureResult(
     status: AuthorizationStatus,
     reason: string,
     identifier: UnifiedIdentifier,
@@ -206,7 +206,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param identifier - Unified identifier to check for certificate hash data
    * @returns True if all required certificate hash fields are present and non-empty
    */
-  private hasCertificateData (identifier: UnifiedIdentifier): boolean {
+  private hasCertificateData(identifier: UnifiedIdentifier): boolean {
     const certData = identifier.certificateHashData
     if (!certData) return false
 
@@ -224,7 +224,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration with validation strictness settings
    * @returns True if the certificate passes simulated validation checks
    */
-  private async simulateCertificateValidation (
+  private async simulateCertificateValidation(
     request: AuthRequest,
     config: AuthConfiguration
   ): Promise<boolean> {
@@ -273,7 +273,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param result - Authorization result to record in statistics
    * @param startTime - Request start timestamp for response time calculation
    */
-  private updateStatistics (result: AuthorizationResult, startTime: number): void {
+  private updateStatistics(result: AuthorizationResult, startTime: number): void {
     if (result.status === AuthorizationStatus.ACCEPTED) {
       this.stats.successfulAuths++
     } else {
@@ -292,7 +292,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param identifier - Unified identifier containing certificate hash data to validate
    * @returns Validation result with isValid flag and optional reason on failure
    */
-  private validateCertificateData (identifier: UnifiedIdentifier): {
+  private validateCertificateData(identifier: UnifiedIdentifier): {
     isValid: boolean
     reason?: string
   } {
@@ -346,7 +346,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration settings
    * @returns Authorization result indicating certificate validation outcome
    */
-  private async validateCertificateWithOCPP20 (
+  private async validateCertificateWithOCPP20(
     request: AuthRequest,
     adapter: OCPPAuthAdapter,
     config: AuthConfiguration

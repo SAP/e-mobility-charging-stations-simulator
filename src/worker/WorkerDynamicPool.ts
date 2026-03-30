@@ -11,19 +11,19 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
   D,
   R
 > {
-  get emitter (): EventEmitterAsyncResource | undefined {
+  get emitter(): EventEmitterAsyncResource | undefined {
     return this.pool.emitter
   }
 
-  get info (): PoolInfo {
+  get info(): PoolInfo {
     return this.pool.info
   }
 
-  get maxElementsPerWorker (): number | undefined {
+  get maxElementsPerWorker(): number | undefined {
     return undefined
   }
 
-  get size (): number {
+  get size(): number {
     return this.pool.info.workerNodes
   }
 
@@ -34,7 +34,7 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
    * @param workerScript - Path to the worker script file
    * @param workerOptions - Worker pool configuration options
    */
-  constructor (workerScript: string, workerOptions: WorkerOptions) {
+  constructor(workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)
     this.pool = new DynamicThreadPool<D, R>(
       this.workerOptions.poolMinSize,
@@ -45,7 +45,7 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
   }
 
   /** @inheritDoc */
-  public async addElement (elementData: D): Promise<R> {
+  public async addElement(elementData: D): Promise<R> {
     const response = await this.pool.execute(elementData)
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
@@ -55,12 +55,12 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
   }
 
   /** @inheritDoc */
-  public start (): void {
+  public start(): void {
     this.pool.start()
   }
 
   /** @inheritDoc */
-  public async stop (): Promise<void> {
+  public async stop(): Promise<void> {
     await this.pool.destroy()
   }
 }

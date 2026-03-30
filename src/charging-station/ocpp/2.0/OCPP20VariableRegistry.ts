@@ -98,7 +98,7 @@ export interface VariableMetadata {
  * @param instance - Optional instance qualifier.
  * @returns Primary registry key string.
  */
-function buildRegistryKey (
+function buildRegistryKey(
   component: OCPP20ComponentName | string,
   variable: string,
   instance?: string
@@ -2368,7 +2368,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
  * @param variable - Variable name.
  * @returns Lower-case composite key for lookup.
  */
-export function buildCaseInsensitiveCompositeKey (
+export function buildCaseInsensitiveCompositeKey(
   component: OCPP20ComponentName | string,
   instance: string | undefined,
   variable: string
@@ -2391,7 +2391,7 @@ const VARIABLE_REGISTRY_LOOKUP_CI: Record<string, VariableMetadata> = Object.val
  * @param value - Resolved raw value.
  * @returns Post-processed value (or original when no postProcess defined).
  */
-export function applyPostProcess (
+export function applyPostProcess(
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata,
   value: string
@@ -2408,7 +2408,7 @@ export function applyPostProcess (
  * @param sizeLimitRaw - Raw size limit value (string form).
  * @returns Possibly truncated value respecting size limit.
  */
-export function enforceReportingValueSize (value: string, sizeLimitRaw: string): string {
+export function enforceReportingValueSize(value: string, sizeLimitRaw: string): string {
   const sizeLimit = convertToIntOrNaN(sizeLimitRaw)
   if (!Number.isNaN(sizeLimit) && sizeLimit > 0 && value.length > sizeLimit) {
     return value.slice(0, sizeLimit)
@@ -2423,7 +2423,7 @@ export function enforceReportingValueSize (value: string, sizeLimitRaw: string):
  * @param instance - Optional instance qualifier.
  * @returns Matching variable metadata or undefined.
  */
-export function getVariableMetadata (
+export function getVariableMetadata(
   component: string,
   variable: string,
   instance?: string
@@ -2450,7 +2450,7 @@ export function getVariableMetadata (
  * @param variableMetadata - Variable metadata entry.
  * @returns True when persistence is Persistent.
  */
-export function isPersistent (variableMetadata: VariableMetadata): boolean {
+export function isPersistent(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.persistence === PersistenceEnumType.Persistent
 }
 
@@ -2459,7 +2459,7 @@ export function isPersistent (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata - Variable metadata entry.
  * @returns True when mutability is ReadOnly.
  */
-export function isReadOnly (variableMetadata: VariableMetadata): boolean {
+export function isReadOnly(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.ReadOnly
 }
 
@@ -2468,7 +2468,7 @@ export function isReadOnly (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata - Variable metadata entry.
  * @returns True when mutability is WriteOnly.
  */
-export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
+export function isWriteOnly(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.WriteOnly
 }
 
@@ -2478,7 +2478,7 @@ export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata - Variable metadata entry.
  * @returns Resolved value string (empty when no default).
  */
-export function resolveValue (
+export function resolveValue(
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata
 ): string {
@@ -2495,7 +2495,7 @@ export function resolveValue (
  * @param rawValue - Raw value string to validate.
  * @returns Validation result with ok flag and optional reason/info.
  */
-export function validateValue (
+export function validateValue(
   variableMetadata: VariableMetadata,
   rawValue: string
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
@@ -2713,7 +2713,7 @@ export function validateValue (
  * @param value - Raw URL string.
  * @returns Validation result with ok flag and optional reason/info.
  */
-function validateGenericUrl (value: string): {
+function validateGenericUrl(value: string): {
   info?: string
   ok: boolean
   reason?: ReasonCodeEnumType
@@ -2730,7 +2730,7 @@ function validateGenericUrl (value: string): {
  * @param allowedSchemes - Allowed protocol schemes (with trailing colon).
  * @returns Validation result with ok flag and optional reason/info.
  */
-function validateUrlScheme (
+function validateUrlScheme(
   value: string,
   allowedSchemes: string[]
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {

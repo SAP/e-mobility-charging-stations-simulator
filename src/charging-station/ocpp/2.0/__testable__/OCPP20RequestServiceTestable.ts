@@ -109,7 +109,7 @@ export interface TestableRequestServiceResult {
  * expect(sendMessageMock.mock.calls.length).toBe(1)
  * ```
  */
-export function createTestableRequestService<T extends JsonType = JsonType> (
+export function createTestableRequestService<T extends JsonType = JsonType>(
   options: TestableRequestServiceOptions<T> = {}
 ): TestableRequestServiceResult {
   const responseService = new OCPP20ResponseService()

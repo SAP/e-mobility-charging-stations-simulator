@@ -276,7 +276,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
      * @param stackLevel - Stack level
      * @returns Charging profile fixture
      */
-    function makeProfile (
+    function makeProfile(
       id: number,
       purpose: OCPP16ChargingProfilePurposeType,
       stackLevel: number
@@ -396,7 +396,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
      * @param limit - Power limit in watts
      * @returns Charging schedule fixture
      */
-    function makeSchedule (
+    function makeSchedule(
       startSeconds: number,
       durationSeconds: number,
       limit: number

@@ -159,7 +159,7 @@ export class OCPPConstants {
 
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000 // Ms
 
-  protected constructor () {
+  protected constructor() {
     // This is intentional
   }
 }

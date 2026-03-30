@@ -56,7 +56,7 @@ export interface TestableOCPP20VariableManager {
  * const isValid = testable.isComponentValid(station, component)
  * ```
  */
-export function createTestableVariableManager (
+export function createTestableVariableManager(
   manager: OCPP20VariableManager
 ): TestableOCPP20VariableManager {
   // Cast to unknown first to satisfy TypeScript while preserving runtime behavior

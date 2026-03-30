@@ -11,7 +11,7 @@ import { type WorkerData, type WorkerOptions, WorkerProcessType } from './Worker
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class WorkerFactory {
-  private constructor () {
+  private constructor() {
     // This is intentional
   }
 

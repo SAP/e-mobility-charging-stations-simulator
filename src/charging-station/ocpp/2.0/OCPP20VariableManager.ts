@@ -61,16 +61,16 @@ export class OCPP20VariableManager {
   private readonly runtimeOverrides = new Map<string, Map<string, string>>() // stationId → composite key → value
   private readonly validatedStations = new Set<string>() // stationId
 
-  private constructor () {
+  private constructor() {
     /* This is intentional */
   }
 
-  public static getInstance (): OCPP20VariableManager {
+  public static getInstance(): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
   }
 
-  public getVariables (
+  public getVariables(
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
@@ -100,7 +100,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public invalidateMappingsCache (stationId?: string): void {
+  public invalidateMappingsCache(stationId?: string): void {
     if (stationId != null) {
       this.validatedStations.delete(stationId)
       this.invalidVariables.delete(stationId)
@@ -110,7 +110,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  public resetRuntimeOverrides (stationId?: string): void {
+  public resetRuntimeOverrides(stationId?: string): void {
     if (stationId != null) {
       this.runtimeOverrides.delete(stationId)
       this.minSetOverrides.delete(stationId)
@@ -122,7 +122,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  public setVariables (
+  public setVariables(
     chargingStation: ChargingStation,
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
@@ -242,7 +242,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public validatePersistentMappings (chargingStation: ChargingStation): void {
+  public validatePersistentMappings(chargingStation: ChargingStation): void {
     const stationId = this.getStationId(chargingStation)
     if (this.validatedStations.has(stationId)) return
     const invalidVariables = this.getInvalidVariables(stationId)
@@ -304,7 +304,7 @@ export class OCPP20VariableManager {
     this.validatedStations.add(stationId)
   }
 
-  private getInvalidVariables (stationId: string): Set<string> {
+  private getInvalidVariables(stationId: string): Set<string> {
     let set = this.invalidVariables.get(stationId)
     if (set == null) {
       set = new Set<string>()
@@ -313,7 +313,7 @@ export class OCPP20VariableManager {
     return set
   }
 
-  private getMaxSetOverrides (stationId: string): Map<string, string> {
+  private getMaxSetOverrides(stationId: string): Map<string, string> {
     let map = this.maxSetOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -322,7 +322,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getMinSetOverrides (stationId: string): Map<string, string> {
+  private getMinSetOverrides(stationId: string): Map<string, string> {
     let map = this.minSetOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -331,7 +331,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getRuntimeOverrides (stationId: string): Map<string, string> {
+  private getRuntimeOverrides(stationId: string): Map<string, string> {
     let map = this.runtimeOverrides.get(stationId)
     if (map == null) {
       map = new Map<string, string>()
@@ -340,7 +340,7 @@ export class OCPP20VariableManager {
     return map
   }
 
-  private getStationId (chargingStation: ChargingStation): string {
+  private getStationId(chargingStation: ChargingStation): string {
     const stationId = chargingStation.stationInfo?.hashId
     if (stationId == null) {
       throw new BaseError('ChargingStation has no stationInfo.hashId, cannot identify station')
@@ -348,7 +348,7 @@ export class OCPP20VariableManager {
     return stationId
   }
 
-  private getVariable (
+  private getVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
   ): OCPP20GetVariableResultType {
@@ -552,18 +552,18 @@ export class OCPP20VariableManager {
     }
   }
 
-  private isComponentValid (_chargingStation: ChargingStation, component: ComponentType): boolean {
+  private isComponentValid(_chargingStation: ChargingStation, component: ComponentType): boolean {
     return this.#validComponentNames.has(component.name)
   }
 
-  private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
+  private isVariableSupported(component: ComponentType, variable: VariableType): boolean {
     return (
       getVariableMetadata(component.name, variable.name, variable.instance ?? component.instance) !=
         null || getVariableMetadata(component.name, variable.name) != null
     )
   }
 
-  private rejectGet (
+  private rejectGet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType | undefined,
@@ -584,7 +584,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private rejectSet (
+  private rejectSet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType,
@@ -605,7 +605,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private resolveVariableValue (
+  private resolveVariableValue(
     chargingStation: ChargingStation,
     component: ComponentType,
     variable: VariableType
@@ -684,7 +684,7 @@ export class OCPP20VariableManager {
     return value
   }
 
-  private setVariable (
+  private setVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20SetVariableDataType
   ): OCPP20SetVariableResultType {

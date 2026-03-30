@@ -106,7 +106,7 @@ export abstract class AbstractUIService {
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
   private readonly version: ProtocolVersion
 
-  constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
+  constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.uiServer = uiServer
     this.version = version
     this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
@@ -122,11 +122,11 @@ export abstract class AbstractUIService {
     this.broadcastChannelRequests = new Map<UUIDv4, number>()
   }
 
-  public deleteBroadcastChannelRequest (uuid: UUIDv4): void {
+  public deleteBroadcastChannelRequest(uuid: UUIDv4): void {
     this.broadcastChannelRequests.delete(uuid)
   }
 
-  public getBroadcastChannelExpectedResponses (uuid: UUIDv4): number {
+  public getBroadcastChannelExpectedResponses(uuid: UUIDv4): number {
     return this.broadcastChannelRequests.get(uuid) ?? 0
   }
 
@@ -134,7 +134,7 @@ export abstract class AbstractUIService {
     return this.uiServer.logPrefix(modName, methodName, this.version)
   }
 
-  public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
+  public async requestHandler(request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
     let uuid: undefined | UUIDv4
     let command: ProcedureName | undefined
     let requestPayload: RequestPayload | undefined
@@ -204,7 +204,7 @@ export abstract class AbstractUIService {
   //   )
   // }
 
-  public sendResponse (uuid: UUIDv4, responsePayload: ResponsePayload): void {
+  public sendResponse(uuid: UUIDv4, responsePayload: ResponsePayload): void {
     if (this.uiServer.hasResponseHandler(uuid)) {
       this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
     } else {
@@ -215,12 +215,12 @@ export abstract class AbstractUIService {
     }
   }
 
-  public stop (): void {
+  public stop(): void {
     this.broadcastChannelRequests.clear()
     this.uiServiceWorkerBroadcastChannel.close()
   }
 
-  protected handleProtocolRequest (
+  protected handleProtocolRequest(
     uuid: UUIDv4,
     procedureName: ProcedureName,
     payload: RequestPayload
@@ -233,7 +233,7 @@ export abstract class AbstractUIService {
     this.sendBroadcastChannelRequest(uuid, broadCastChannelProcedureName, payload)
   }
 
-  private async handleAddChargingStations (
+  private async handleAddChargingStations(
     _uuid?: UUIDv4,
     _procedureName?: ProcedureName,
     requestPayload?: RequestPayload
@@ -303,21 +303,21 @@ export abstract class AbstractUIService {
     } satisfies ResponsePayload
   }
 
-  private handleListChargingStations (): ResponsePayload {
+  private handleListChargingStations(): ResponsePayload {
     return {
       chargingStations: this.uiServer.listChargingStationData() as JsonType[],
       status: ResponseStatus.SUCCESS,
     } satisfies ResponsePayload
   }
 
-  private handleListTemplates (): ResponsePayload {
+  private handleListTemplates(): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
       templates: this.uiServer.getChargingStationTemplates(),
     } satisfies ResponsePayload
   }
 
-  private handlePerformanceStatistics (): ResponsePayload {
+  private handlePerformanceStatistics(): ResponsePayload {
     if (
       Configuration.getConfigurationSection<StorageConfiguration>(
         ConfigurationSection.performanceStorage
@@ -344,7 +344,7 @@ export abstract class AbstractUIService {
     }
   }
 
-  private handleSimulatorState (): ResponsePayload {
+  private handleSimulatorState(): ResponsePayload {
     try {
       return {
         state: Bootstrap.getInstance().getState() as unknown as JsonObject,
@@ -359,7 +359,7 @@ export abstract class AbstractUIService {
     }
   }
 
-  private async handleStartSimulator (): Promise<ResponsePayload> {
+  private async handleStartSimulator(): Promise<ResponsePayload> {
     try {
       await Bootstrap.getInstance().start()
       return { status: ResponseStatus.SUCCESS }
@@ -372,7 +372,7 @@ export abstract class AbstractUIService {
     }
   }
 
-  private async handleStopSimulator (): Promise<ResponsePayload> {
+  private async handleStopSimulator(): Promise<ResponsePayload> {
     try {
       await Bootstrap.getInstance().stop()
       return { status: ResponseStatus.SUCCESS }
@@ -385,7 +385,7 @@ export abstract class AbstractUIService {
     }
   }
 
-  private sendBroadcastChannelRequest (
+  private sendBroadcastChannelRequest(
     uuid: UUIDv4,
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload

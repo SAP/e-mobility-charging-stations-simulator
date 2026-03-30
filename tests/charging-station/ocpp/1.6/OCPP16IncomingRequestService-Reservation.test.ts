@@ -34,7 +34,7 @@ import {
  * @param context - Test context with station and service
  * @param reserveConnectorZeroSupported - Whether connector 0 reservation is supported
  */
-function enableReservationProfile (
+function enableReservationProfile(
   context: OCPP16IncomingRequestTestContext,
   reserveConnectorZeroSupported = false
 ): void {

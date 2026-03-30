@@ -19,34 +19,34 @@ export abstract class Storage {
   protected readonly logPrefix: string
   protected readonly storageUri: URL
 
-  constructor (storageUri: string, logPrefix: string) {
+  constructor(storageUri: string, logPrefix: string) {
     this.storageUri = new URL(storageUri)
     this.logPrefix = logPrefix
   }
 
-  public abstract close (): Promise<void> | void
+  public abstract close(): Promise<void> | void
 
-  public getPerformanceStatistics (): IterableIterator<Statistics> {
+  public getPerformanceStatistics(): IterableIterator<Statistics> {
     return Storage.performanceStatistics.values()
   }
 
-  public abstract open (): Promise<void> | void
+  public abstract open(): Promise<void> | void
 
-  public abstract storePerformanceStatistics (
+  public abstract storePerformanceStatistics(
     performanceStatistics: Statistics
   ): Promise<void> | void
 
-  protected clearPerformanceStatistics (): void {
+  protected clearPerformanceStatistics(): void {
     Storage.performanceStatistics.clear()
   }
 
-  protected ensureDBDirectory (): void {
+  protected ensureDBDirectory(): void {
     if (!existsSync(dirname(this.dbName))) {
       mkdirSync(dirname(this.dbName), { recursive: true })
     }
   }
 
-  protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
+  protected getDBNameFromStorageType(type: StorageType): DBName | undefined {
     switch (type) {
       case StorageType.MARIA_DB:
         return DBName.MARIA_DB
@@ -59,7 +59,7 @@ export abstract class Storage {
     }
   }
 
-  protected handleDBStorageError (
+  protected handleDBStorageError(
     type: StorageType,
     error: Error,
     table?: string,
@@ -78,7 +78,7 @@ export abstract class Storage {
     }
   }
 
-  protected serializePerformanceStatistics (
+  protected serializePerformanceStatistics(
     performanceStatistics: Statistics
   ): Record<string, unknown> {
     return {
@@ -92,7 +92,7 @@ export abstract class Storage {
     }
   }
 
-  protected setPerformanceStatistics (performanceStatistics: Statistics): void {
+  protected setPerformanceStatistics(performanceStatistics: Statistics): void {
     Storage.performanceStatistics.set(performanceStatistics.id, performanceStatistics)
   }
 }

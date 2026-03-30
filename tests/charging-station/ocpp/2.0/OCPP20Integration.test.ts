@@ -31,7 +31,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { resetLimits } from './OCPP20TestUtils.js'
 
 /** @returns A mock station configured for integration tests */
-function createIntegrationStation (): ChargingStation {
+function createIntegrationStation(): ChargingStation {
   const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,

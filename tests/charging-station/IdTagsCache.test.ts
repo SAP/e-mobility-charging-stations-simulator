@@ -37,7 +37,7 @@ interface IdTagsCacheInternal {
  * @param file - The file path key to use
  * @param idTags - Array of id tags to cache
  */
-function populateCache (cache: IdTagsCache, file: string, idTags: string[]): void {
+function populateCache(cache: IdTagsCache, file: string, idTags: string[]): void {
   const internal = cache as unknown as IdTagsCacheInternal
   internal.idTagsCaches.set(file, { idTags, idTagsFileWatcher: undefined })
 }
@@ -45,7 +45,7 @@ function populateCache (cache: IdTagsCache, file: string, idTags: string[]): voi
 /**
  * Resets the IdTagsCache singleton so subsequent getInstance() creates a fresh cache.
  */
-function resetIdTagsCache (): void {
+function resetIdTagsCache(): void {
   ;(IdTagsCache as unknown as { instance: null }).instance = null
 }
 
@@ -54,7 +54,7 @@ function resetIdTagsCache (): void {
  * @param station - The station whose stationInfo is used
  * @returns The resolved file path string
  */
-function resolveIdTagsFile (station: ChargingStation): string {
+function resolveIdTagsFile(station: ChargingStation): string {
   const stationInfo = station.stationInfo
   if (stationInfo == null) {
     throw new Error('stationInfo is undefined')

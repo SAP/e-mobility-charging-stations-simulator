@@ -34,7 +34,7 @@ export class UIWebSocketServer extends AbstractUIServer {
 
   private readonly webSocketServer: WebSocketServer
 
-  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor(protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
@@ -58,11 +58,11 @@ export class UIWebSocketServer extends AbstractUIServer {
     })
   }
 
-  public sendRequest (request: ProtocolRequest): void {
+  public sendRequest(request: ProtocolRequest): void {
     this.broadcastToClients(JSON.stringify(request))
   }
 
-  public sendResponse (response: ProtocolResponse): void {
+  public sendResponse(response: ProtocolResponse): void {
     const responseId = response[0]
     try {
       if (this.hasResponseHandler(responseId)) {
@@ -98,7 +98,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  public start (): void {
+  public start(): void {
     this.webSocketServer.on('connection', (ws: WebSocket, _req: IncomingMessage): void => {
       const protocol = ws.protocol
       const protocolAndVersion = getProtocolAndVersion(protocol)
@@ -200,12 +200,12 @@ export class UIWebSocketServer extends AbstractUIServer {
     this.startHttpServer()
   }
 
-  protected override notifyClients (): void {
+  protected override notifyClients(): void {
     const notification: ProtocolNotification = [ServerNotification.REFRESH]
     this.broadcastToClients(JSON.stringify(notification))
   }
 
-  private broadcastToClients (message: string): void {
+  private broadcastToClients(message: string): void {
     for (const client of this.webSocketServer.clients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message)
@@ -213,7 +213,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  private validateRawDataRequest (rawData: RawData): false | ProtocolRequest {
+  private validateRawDataRequest(rawData: RawData): false | ProtocolRequest {
     // logger.debug(
     //   `${this.logPrefix(
     //     moduleName,
