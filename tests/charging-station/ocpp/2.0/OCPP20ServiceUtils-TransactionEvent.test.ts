@@ -2009,7 +2009,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     })
 
     await describe('startUpdatedMeterValues', async () => {
-      await it('should not start OCPP 2.0 timer for OCPP 1.6 stations via unified dispatch', async t => {
+      await it('should not start OCPP 2.0 timer for OCPP 1.6 stations via dispatch', async t => {
         await withMockTimers(t, ['setInterval'], async () => {
           const { station: ocpp16Station } = createMockChargingStation({
             baseName: TEST_CHARGING_STATION_BASE_NAME,

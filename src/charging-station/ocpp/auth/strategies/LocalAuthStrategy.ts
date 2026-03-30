@@ -490,9 +490,9 @@ export class LocalAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Map local auth list entry status to unified authorization status
+   * Map local auth list entry status to authorization status
    * @param status - Status string from local auth list entry
-   * @returns Unified authorization status corresponding to the entry status
+   * @returns Authorization status corresponding to the entry status
    */
   private mapEntryStatus (status: string): AuthorizationStatus {
     switch (status.toLowerCase()) {

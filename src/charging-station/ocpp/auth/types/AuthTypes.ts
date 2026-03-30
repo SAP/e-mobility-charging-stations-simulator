@@ -49,7 +49,7 @@ export enum AuthErrorCode {
 }
 
 /**
- * Unified authorization status combining OCPP 1.6 and 2.0 statuses
+ * Authorization status combining OCPP 1.6 and 2.0 statuses
  */
 export enum AuthorizationStatus {
   // Common statuses across versions
@@ -67,13 +67,13 @@ export enum AuthorizationStatus {
   NOT_ALLOWED_TYPE_EVSE = 'NotAllowedTypeEVSE',
   NOT_AT_THIS_LOCATION = 'NotAtThisLocation',
   NOT_AT_THIS_TIME = 'NotAtThisTime',
-  // Internal statuses for unified handling
+  // Internal statuses
   PENDING = 'Pending',
   UNKNOWN = 'Unknown',
 }
 
 /**
- * Unified identifier types combining OCPP 1.6 and 2.0 token types
+ * Identifier types combining OCPP 1.6 and 2.0 token types
  */
 export enum IdentifierType {
   BIOMETRIC = 'Biometric',
@@ -210,7 +210,7 @@ export interface AuthRequest {
   readonly evseId?: number
 
   /** Identifier to authenticate */
-  readonly identifier: UnifiedIdentifier
+  readonly identifier: Identifier
 
   /** Additional context data */
   readonly metadata?: Record<string, unknown>
@@ -246,9 +246,9 @@ export interface CertificateHashData {
 }
 
 /**
- * Unified identifier that works across OCPP versions
+ * Identifier that works across OCPP versions
  */
-export interface UnifiedIdentifier {
+export interface Identifier {
   /** Additional info for OCPP 2.0 tokens */
   readonly additionalInfo?: Record<string, string>
 
@@ -345,7 +345,7 @@ export const requiresAdditionalInfo = (type: IdentifierType): boolean => {
 /**
  * Type mappers for OCPP version compatibility
  *
- * Provides bidirectional mapping between OCPP version-specific types and unified types.
+ * Provides bidirectional mapping between OCPP version-specific types and auth types.
  * This allows the authentication system to work seamlessly across OCPP 1.6 and 2.0.
  * @remarks
  * **Edge cases and limitations:**
@@ -353,16 +353,16 @@ export const requiresAdditionalInfo = (type: IdentifierType): boolean => {
  *   map to INVALID when converting to OCPP 1.6
  * - OCPP 2.0 IdToken types have more granularity than OCPP 1.6 IdTag
  * - Certificate-based auth (IdentifierType.CERTIFICATE) is only available in OCPP 2.0+
- * - When mapping from unified to OCPP 2.0, unsupported types default to Local
+ * - When mapping to OCPP 2.0, unsupported types default to Local
  */
 
 /**
- * Maps OCPP 1.6 authorization status to unified status
+ * Maps OCPP 1.6 authorization status to authorization status
  * @param status - OCPP 1.6 authorization status
- * @returns Unified authorization status
+ * @returns Authorization status
  * @example
  * ```typescript
- * const unifiedStatus = mapOCPP16Status(OCPP16AuthorizationStatus.ACCEPTED)
+ * const status = mapOCPP16Status(OCPP16AuthorizationStatus.ACCEPTED)
  * // Returns: AuthorizationStatus.ACCEPTED
  * ```
  */
@@ -384,12 +384,12 @@ export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): Authorizatio
 }
 
 /**
- * Maps OCPP 2.0 authorization status enum to unified authorization status
+ * Maps OCPP 2.0 authorization status enum to authorization status
  * @param status - OCPP 2.0 authorization status
- * @returns Unified authorization status
+ * @returns Authorization status
  * @example
  * ```typescript
- * const unifiedStatus = mapOCPP20AuthorizationStatus(OCPP20AuthorizationStatusEnumType.Accepted)
+ * const status = mapOCPP20AuthorizationStatus(OCPP20AuthorizationStatusEnumType.Accepted)
  * // Returns: AuthorizationStatus.ACCEPTED
  * ```
  */
@@ -423,12 +423,12 @@ export const mapOCPP20AuthorizationStatus = (
 }
 
 /**
- * Maps OCPP 2.0 token type to unified identifier type
+ * Maps OCPP 2.0 token type to identifier type
  * @param type - OCPP 2.0 token type
- * @returns Unified identifier type
+ * @returns Identifier type
  * @example
  * ```typescript
- * const unifiedType = mapOCPP20TokenType(OCPP20IdTokenEnumType.ISO14443)
+ * const identifierType = mapOCPP20TokenType(OCPP20IdTokenEnumType.ISO14443)
  * // Returns: IdentifierType.ISO14443
  * ```
  */
@@ -456,8 +456,8 @@ export const mapOCPP20TokenType = (type: OCPP20IdTokenEnumType): IdentifierType 
 }
 
 /**
- * Maps unified authorization status to OCPP 1.6 status
- * @param status - Unified authorization status
+ * Maps authorization status to OCPP 1.6 status
+ * @param status - Authorization status
  * @returns OCPP 1.6 authorization status
  * @example
  * ```typescript
@@ -486,8 +486,8 @@ export const mapToOCPP16Status = (status: AuthorizationStatus): OCPP16Authorizat
 }
 
 /**
- * Maps unified authorization status to OCPP 2.0 RequestStartStopStatus
- * @param status - Unified authorization status
+ * Maps authorization status to OCPP 2.0 RequestStartStopStatus
+ * @param status - Authorization status
  * @returns OCPP 2.0 RequestStartStopStatus
  * @example
  * ```typescript
@@ -513,8 +513,8 @@ export const mapToOCPP20Status = (status: AuthorizationStatus): RequestStartStop
 }
 
 /**
- * Maps unified identifier type to OCPP 2.0 token type
- * @param type - Unified identifier type
+ * Maps identifier type to OCPP 2.0 token type
+ * @param type - Identifier type
  * @returns OCPP 2.0 token type
  * @example
  * ```typescript

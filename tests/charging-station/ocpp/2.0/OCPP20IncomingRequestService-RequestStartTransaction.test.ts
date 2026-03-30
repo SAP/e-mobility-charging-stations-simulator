@@ -103,8 +103,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(typeof response.transactionId, 'string')
   })
 
-  // G03.FR.03 — Reject when unified auth returns non-ACCEPTED status
-  await it('should reject RequestStartTransaction when unified auth returns INVALID status', async () => {
+  // G03.FR.03 — Reject when auth returns non-ACCEPTED status
+  await it('should reject RequestStartTransaction when auth returns INVALID status', async () => {
     // Arrange: Override mock auth service to return INVALID
     const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
     const rejectingAuthService = createMockAuthService({
@@ -136,7 +136,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response.transactionId, undefined)
   })
 
-  // G03.FR.03 — Reject when unified auth returns BLOCKED for groupIdToken
+  // G03.FR.03 — Reject when auth returns BLOCKED for groupIdToken
   await it('should reject RequestStartTransaction when groupIdToken auth returns BLOCKED', async () => {
     // Arrange: Primary token accepted, group token blocked
     let callCount = 0

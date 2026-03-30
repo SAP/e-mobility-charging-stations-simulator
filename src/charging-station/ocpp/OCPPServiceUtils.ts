@@ -136,8 +136,8 @@ export const buildStatusNotificationRequest = (
 }
 
 /**
- * Unified authorization function that routes all OCPP versions through the
- * unified authentication system (strategy chain: Local → Remote → Certificate)
+ * Authorization function that routes all OCPP versions through the
+ * authentication system (strategy chain: Local → Remote → Certificate)
  * @param chargingStation - The charging station instance
  * @param connectorId - The connector ID for authorization context
  * @param idTag - The identifier to authorize
@@ -152,17 +152,13 @@ export const isIdTagAuthorized = async (
 ): Promise<boolean> => {
   try {
     logger.debug(
-      `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} Authorizing idTag '${idTag}' on connector ${connectorId.toString()}`
     )
 
     // Dynamic import to avoid circular dependencies
     const { OCPPAuthServiceFactory } = await import('./auth/index.js')
-    const {
-      AuthContext,
-      AuthenticationMethod,
-      AuthorizationStatus: UnifiedAuthorizationStatus,
-      IdentifierType,
-    } = await import('./auth/index.js')
+    const { AuthContext, AuthenticationMethod, AuthorizationStatus, IdentifierType } =
+      await import('./auth/index.js')
 
     const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
 
@@ -178,10 +174,10 @@ export const isIdTagAuthorized = async (
     })
 
     logger.debug(
-      `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
+      `${chargingStation.logPrefix()} Authorization result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
     )
 
-    if (authResult.status === UnifiedAuthorizationStatus.ACCEPTED) {
+    if (authResult.status === AuthorizationStatus.ACCEPTED) {
       // Set connector state fields based on the authentication method used
       // CRITICAL: OCPP16ResponseService reads these fields to validate the transaction
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
@@ -209,7 +205,7 @@ export const isIdTagAuthorized = async (
 
     return false
   } catch (error) {
-    logger.error(`${chargingStation.logPrefix()} Unified auth failed`, error)
+    logger.error(`${chargingStation.logPrefix()} Authorization failed`, error)
     return false
   }
 }

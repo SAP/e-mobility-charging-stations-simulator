@@ -20,8 +20,8 @@ import {
   type AuthorizationResult,
   AuthorizationStatus,
   type AuthRequest,
+  type Identifier,
   IdentifierType,
-  type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType, type OCPP20IdTokenType } from '../../../../../src/types/index.js'
@@ -32,15 +32,15 @@ import { OCPP20IdTokenEnumType, type OCPP20IdTokenType } from '../../../../../sr
  */
 
 /**
- * Create a mock UnifiedIdentifier for any OCPP version.
+ * Create a mock Identifier for any OCPP version.
  * @param value - Identifier token value (defaults to 'TEST-TAG-001')
  * @param type - Identifier type enum value (defaults to ID_TAG)
- * @returns Mock UnifiedIdentifier configured for testing
+ * @returns Mock Identifier configured for testing
  */
 export const createMockIdentifier = (
   value = 'TEST-TAG-001',
   type: IdentifierType = IdentifierType.ID_TAG
-): UnifiedIdentifier => ({
+): Identifier => ({
   type,
   value,
 })
@@ -137,7 +137,7 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
     invalidateCache: () => {
       /* empty */
     },
-    isLocallyAuthorized: (_identifier: UnifiedIdentifier, _connectorId?: number) =>
+    isLocallyAuthorized: (_identifier: Identifier, _connectorId?: number) =>
       new Promise<AuthorizationResult | undefined>(resolve => {
         resolve(undefined)
       }),
@@ -194,7 +194,7 @@ export const createMockOCPPAdapter = (
   ocppVersion: OCPPVersion,
   overrides?: Partial<OCPPAuthAdapter>
 ): OCPPAuthAdapter => ({
-  authorizeRemote: (_identifier: UnifiedIdentifier) =>
+  authorizeRemote: (_identifier: Identifier) =>
     new Promise<AuthorizationResult>(resolve => {
       resolve(
         createMockAuthorizationResult({
@@ -202,11 +202,11 @@ export const createMockOCPPAdapter = (
         })
       )
     }),
-  convertFromUnifiedIdentifier: (identifier: UnifiedIdentifier) =>
+  convertFromIdentifier: (identifier: Identifier) =>
     ocppVersion === OCPPVersion.VERSION_16
       ? identifier.value
       : { idToken: identifier.value, type: OCPP20IdTokenEnumType.Central },
-  convertToUnifiedIdentifier: (identifier: OCPP20IdTokenType | string) => ({
+  convertToIdentifier: (identifier: OCPP20IdTokenType | string) => ({
     type: IdentifierType.ID_TAG,
     value: typeof identifier === 'string' ? identifier : identifier.idToken,
   }),

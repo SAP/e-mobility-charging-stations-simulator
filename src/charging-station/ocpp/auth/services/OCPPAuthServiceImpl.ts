@@ -25,9 +25,9 @@ import {
   type AuthorizationResult,
   AuthorizationStatus,
   type AuthRequest,
+  type Identifier,
   IdentifierType,
   mapOCPP20AuthorizationStatus,
-  type UnifiedIdentifier,
 } from '../types/AuthTypes.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
@@ -308,7 +308,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const supportedTypes = new Set<string>()
 
     // Test common identifier types
-    const testIdentifiers: UnifiedIdentifier[] = [
+    const testIdentifiers: Identifier[] = [
       { type: IdentifierType.ISO14443, value: 'test' },
       { type: IdentifierType.ISO15693, value: 'test' },
       { type: IdentifierType.KEY_CODE, value: 'test' },
@@ -420,9 +420,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Invalidate cached authorization for an identifier
-   * @param identifier - Unified identifier whose cached authorization should be invalidated
+   * @param identifier - Identifier whose cached authorization should be invalidated
    */
-  public invalidateCache (identifier: UnifiedIdentifier): void {
+  public invalidateCache (identifier: Identifier): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${truncateId(identifier.value)}`
     )
@@ -443,12 +443,12 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Check if an identifier is locally authorized (cache/local list)
-   * @param identifier - Unified identifier to check for local authorization
+   * @param identifier - Identifier to check for local authorization
    * @param connectorId - Optional connector ID for context-specific authorization
    * @returns Promise resolving to the authorization result if locally authorized, or undefined if not found
    */
   public async isLocallyAuthorized (
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number
   ): Promise<AuthorizationResult | undefined> {
     // Try local strategy first for quick cache/list lookup
@@ -480,10 +480,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Check if authentication is supported for given identifier type
-   * @param identifier - Unified identifier to check for support
+   * @param identifier - Identifier to check for support
    * @returns True if at least one strategy can handle the identifier type, false otherwise
    */
-  public isSupported (identifier: UnifiedIdentifier): boolean {
+  public isSupported (identifier: Identifier): boolean {
     // Create a minimal request to check applicability
     const testRequest: AuthRequest = {
       allowOffline: false,
@@ -551,12 +551,12 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const unifiedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
+    const mappedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
 
     const result: AuthorizationResult = {
       isOffline: false,
       method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-      status: unifiedStatus,
+      status: mappedStatus,
       timestamp: new Date(),
     }
 
@@ -576,7 +576,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     authCache.set(identifier, result, ttl)
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${unifiedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
+      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${mappedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
     )
   }
 

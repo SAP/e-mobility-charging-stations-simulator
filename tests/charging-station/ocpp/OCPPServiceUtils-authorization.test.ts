@@ -1,12 +1,12 @@
 /**
  * @file Tests for OCPPServiceUtils authorization wrapper function
- * @description Verifies isIdTagAuthorized unified authorization function
+ * @description Verifies isIdTagAuthorized authorization function
  *
  * Covers:
- * - isIdTagAuthorized — unified auth system for all OCPP versions
+ * - isIdTagAuthorized — auth system for all OCPP versions
  * - Connector state management based on authentication method
  *
- * Note: The unified auth subsystem (OCPPAuthService, strategies, adapters) has its own
+ * Note: The auth subsystem (OCPPAuthService, strategies, adapters) has its own
  * dedicated test suite in tests/charging-station/ocpp/auth/. These tests verify the
  * wrapper/dispatch layer only — no overlap.
  */
@@ -16,8 +16,8 @@ import { afterEach, describe, it } from 'node:test'
 
 import {
   AuthenticationMethod,
+  AuthorizationStatus,
   OCPPAuthServiceFactory,
-  AuthorizationStatus as UnifiedAuthorizationStatus,
 } from '../../../src/charging-station/ocpp/auth/index.js'
 import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { OCPPVersion } from '../../../src/types/index.js'
@@ -50,7 +50,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
     standardCleanup()
   })
 
-  await describe('isIdTagAuthorized — unified auth', async () => {
+  await describe('isIdTagAuthorized', async () => {
     await it('should return false when auth service rejects the tag', async () => {
       // Arrange
       const { station } = createMockChargingStation({
@@ -58,9 +58,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       })
       injectMockAuthService(station, {
         authorize: () =>
-          Promise.resolve(
-            createMockAuthorizationResult({ status: UnifiedAuthorizationStatus.INVALID })
-          ),
+          Promise.resolve(createMockAuthorizationResult({ status: AuthorizationStatus.INVALID })),
       })
 
       // Act
@@ -78,7 +76,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -90,7 +88,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       assert.strictEqual(result, true)
     })
 
-    await it('should set localAuthorizeIdTag when unified auth returns LOCAL_LIST method', async () => {
+    await it('should set localAuthorizeIdTag when auth returns LOCAL_LIST method', async () => {
       // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
@@ -98,7 +96,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -113,7 +111,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
     })
 
-    await it('should set idTagLocalAuthorized when unified auth returns CACHE method', async () => {
+    await it('should set idTagLocalAuthorized when auth returns CACHE method', async () => {
       // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
@@ -121,7 +119,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.CACHE,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -146,7 +144,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -168,7 +166,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -193,7 +191,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: UnifiedAuthorizationStatus.BLOCKED,
+              status: AuthorizationStatus.BLOCKED,
             })
           ),
       })
@@ -206,14 +204,14 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
     })
 
     await it('should return true but not set connector state for non-existent connector', async () => {
-      // Arrange — unified auth succeeds but connector 99 has no status object
+      // Arrange — auth succeeds but connector 99 has no status object
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
         authorize: () =>
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -227,7 +225,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       assert.strictEqual(connectorStatus, undefined)
     })
 
-    await it('should set localAuthorizeIdTag when unified auth returns OFFLINE_FALLBACK method', async () => {
+    await it('should set localAuthorizeIdTag when auth returns OFFLINE_FALLBACK method', async () => {
       // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
@@ -235,7 +233,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.OFFLINE_FALLBACK,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -252,7 +250,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
   })
 
   await describe('isIdTagAuthorized — OCPP version dispatch', async () => {
-    await it('should use unified auth for OCPP 1.6 station', async () => {
+    await it('should authorize OCPP 1.6 station', async () => {
       // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
@@ -260,7 +258,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: UnifiedAuthorizationStatus.ACCEPTED,
+              status: AuthorizationStatus.ACCEPTED,
             })
           ),
       })
@@ -281,7 +279,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       assert.strictEqual(result, false)
     })
 
-    await it('should attempt unified auth service for OCPP 2.0.1 station', async () => {
+    await it('should attempt auth service for OCPP 2.0.1 station', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_201,
       })

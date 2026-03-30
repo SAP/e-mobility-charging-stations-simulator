@@ -1,7 +1,7 @@
 /**
  * OCPP Authentication System
  *
- * Unified authentication layer for OCPP 1.6 and 2.0 protocols.
+ * Authentication layer for OCPP 1.6 and 2.0 protocols.
  * This module provides a consistent API for handling authentication
  * across different OCPP versions, with support for multiple authentication
  * strategies including local lists, remote authorization, and certificate-based auth.
@@ -67,6 +67,7 @@ export {
   AuthorizationStatus,
   type AuthRequest,
   type CertificateHashData,
+  type Identifier,
   IdentifierType,
   isCertificateBased,
   isOCPP16Type,
@@ -78,7 +79,6 @@ export {
   mapToOCPP20Status,
   mapToOCPP20TokenType,
   requiresAdditionalInfo,
-  type UnifiedIdentifier,
 } from './types/AuthTypes.js'
 
 // ============================================================================

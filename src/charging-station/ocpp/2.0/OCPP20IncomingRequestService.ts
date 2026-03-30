@@ -2332,11 +2332,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       try {
         const { OCPPAuthServiceFactory } = await import('../auth/index.js')
-        const {
-          AuthContext,
-          AuthorizationStatus: UnifiedAuthorizationStatus,
-          IdentifierType,
-        } = await import('../auth/index.js')
+        const { AuthContext, AuthorizationStatus, IdentifierType } =
+          await import('../auth/index.js')
         const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
         const authResult = await authService.authorize({
           allowOffline: false,
@@ -2348,7 +2345,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           },
           timestamp: new Date(),
         })
-        isAuthorized = authResult.status === UnifiedAuthorizationStatus.ACCEPTED
+        isAuthorized = authResult.status === AuthorizationStatus.ACCEPTED
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${truncateId(idToken.idToken)}:`,
@@ -2387,11 +2384,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       let isGroupAuthorized = false
       try {
         const { OCPPAuthServiceFactory } = await import('../auth/index.js')
-        const {
-          AuthContext,
-          AuthorizationStatus: UnifiedAuthorizationStatus,
-          IdentifierType,
-        } = await import('../auth/index.js')
+        const { AuthContext, AuthorizationStatus, IdentifierType } =
+          await import('../auth/index.js')
         const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
         const groupAuthResult = await authService.authorize({
           allowOffline: false,
@@ -2403,7 +2397,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           },
           timestamp: new Date(),
         })
-        isGroupAuthorized = groupAuthResult.status === UnifiedAuthorizationStatus.ACCEPTED
+        isGroupAuthorized = groupAuthResult.status === AuthorizationStatus.ACCEPTED
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${truncateId(groupIdToken.idToken)}:`,

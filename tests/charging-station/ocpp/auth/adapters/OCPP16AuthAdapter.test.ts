@@ -64,20 +64,20 @@ await describe('OCPP16AuthAdapter', async () => {
     })
   })
 
-  await describe('convertToUnifiedIdentifier', async () => {
-    await it('should convert OCPP 1.6 idTag to unified identifier', () => {
+  await describe('convertToIdentifier', async () => {
+    await it('should convert OCPP 1.6 idTag to identifier', () => {
       const idTag = 'TEST_ID_TAG'
-      const result = adapter.convertToUnifiedIdentifier(idTag)
+      const result = adapter.convertToIdentifier(idTag)
 
       const expected = createMockIdentifier(idTag)
       assert.strictEqual(result.value, expected.value)
       assert.strictEqual(result.type, expected.type)
     })
 
-    await it('should include additional data in unified identifier', () => {
+    await it('should include additional data in identifier', () => {
       const idTag = 'TEST_ID_TAG'
       const additionalData = { customField: 'customValue', parentId: 'PARENT_TAG' }
-      const result = adapter.convertToUnifiedIdentifier(idTag, additionalData)
+      const result = adapter.convertToIdentifier(idTag, additionalData)
 
       assert.strictEqual(result.value, idTag)
       assert.strictEqual(result.parentId, 'PARENT_TAG')
@@ -85,11 +85,11 @@ await describe('OCPP16AuthAdapter', async () => {
     })
   })
 
-  await describe('convertFromUnifiedIdentifier', async () => {
-    await it('should convert unified identifier to OCPP 1.6 idTag', () => {
+  await describe('convertFromIdentifier', async () => {
+    await it('should convert identifier to OCPP 1.6 idTag', () => {
       const identifier = createMockIdentifier('TEST_ID_TAG')
 
-      const result = adapter.convertFromUnifiedIdentifier(identifier)
+      const result = adapter.convertFromIdentifier(identifier)
       assert.strictEqual(result, 'TEST_ID_TAG')
     })
   })
@@ -276,7 +276,7 @@ await describe('OCPP16AuthAdapter', async () => {
   })
 
   await describe('convertToOCPP16Response', async () => {
-    await it('should convert unified result to OCPP 1.6 response', () => {
+    await it('should convert result to OCPP 1.6 response', () => {
       const expiryDate = new Date()
       const result = createMockAuthorizationResult({
         expiryDate,
