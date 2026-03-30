@@ -18,7 +18,11 @@ import {
 } from '../../../types/index.js'
 import { Constants, generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import { buildStatusNotificationRequest } from '../OCPPServiceUtils.js'
+import {
+  buildStatusNotificationRequest,
+  buildTransactionEndMeterValue,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -110,7 +114,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         // Pre request actions hook
         switch (commandName) {
           case OCPP16RequestCommand.START_TRANSACTION:
-            await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+            await sendAndSetConnectorStatus(chargingStation, {
               connectorId: (commandParams as OCPP16StartTransactionRequest).connectorId,
               status: OCPP16ChargePointStatus.Preparing,
             } as OCPP16StatusNotificationRequest)
@@ -231,7 +235,7 @@ export class OCPP16RequestService extends OCPPRequestService {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               chargingStation.getConnectorStatus(connectorId)
                 ?.transactionBeginMeterValue as OCPP16MeterValue,
-              OCPP16ServiceUtils.buildTransactionEndMeterValue(
+              buildTransactionEndMeterValue(
                 chargingStation,
                 connectorId,
                 energyActiveImportRegister

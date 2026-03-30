@@ -10,7 +10,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
-import { OCPPServiceUtils } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { buildTransactionEndMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   type OCPP16ChargingProfile,
   OCPP16ChargingProfileKindType,
@@ -229,7 +229,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       }
 
       // Act
-      const meterValue = OCPPServiceUtils.buildTransactionEndMeterValue(station, 1, 10000)
+      const meterValue = buildTransactionEndMeterValue(station, 1, 10000)
 
       // Assert
       assert.notStrictEqual(meterValue, undefined)
@@ -259,7 +259,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       }
 
       // Act
-      const meterValue = OCPPServiceUtils.buildTransactionEndMeterValue(station, 1, 3000)
+      const meterValue = buildTransactionEndMeterValue(station, 1, 3000)
 
       // Assert — kWh divider: 3000 / 1000 = 3
       assert.strictEqual(meterValue.sampledValue[0].value, '3')

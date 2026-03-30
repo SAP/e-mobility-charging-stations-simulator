@@ -119,7 +119,7 @@ import { AuthContext } from '../auth/index.js'
 import { isIdTagAuthorized } from '../IdTagAuthorization.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { buildMeterValue } from '../OCPPServiceUtils.js'
+import { buildMeterValue, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -724,7 +724,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (connectorStatus != null) {
         connectorStatus.availability = type
       }
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+      await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: chargePointStatus,
       } as OCPP16StatusNotificationRequest)
@@ -1549,7 +1549,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED
     }
-    await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+    await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: OCPP16ChargePointStatus.Available,
     } as OCPP16StatusNotificationRequest)
@@ -1643,7 +1643,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
       if (connectorStatus.transactionStarted === false) {
-        await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+        await sendAndSetConnectorStatus(chargingStation, {
           connectorId,
           status: OCPP16ChargePointStatus.Unavailable,
         } as OCPP16StatusNotificationRequest)
@@ -1700,7 +1700,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
           if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
-            await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+            await sendAndSetConnectorStatus(chargingStation, {
               connectorId,
               status: OCPP16ChargePointStatus.Unavailable,
             } as OCPP16StatusNotificationRequest)

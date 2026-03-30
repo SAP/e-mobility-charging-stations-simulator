@@ -37,6 +37,11 @@ import {
 } from '../../../types/index.js'
 import { Constants, convertToInt, logger, truncateId } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
+import {
+  buildTransactionEndMeterValue,
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'
@@ -414,7 +419,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           meterValue: [connectorStatus.transactionBeginMeterValue],
           transactionId: payload.transactionId,
         } satisfies OCPP16MeterValuesRequest))
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+      await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: OCPP16ChargePointStatus.Charging,
       } as OCPP16StatusNotificationRequest)
@@ -485,7 +490,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
         connectorId: transactionConnectorId,
         meterValue: [
-          OCPP16ServiceUtils.buildTransactionEndMeterValue(
+          buildTransactionEndMeterValue(
             chargingStation,
             transactionConnectorId,
             requestPayload.meterStop
@@ -497,12 +502,12 @@ export class OCPP16ResponseService extends OCPPResponseService {
       !chargingStation.isChargingStationAvailable() ||
       !chargingStation.isConnectorAvailable(transactionConnectorId)
     ) {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+      await sendAndSetConnectorStatus(chargingStation, {
         connectorId: transactionConnectorId,
         status: OCPP16ChargePointStatus.Unavailable,
       } as OCPP16StatusNotificationRequest)
     } else {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+      await sendAndSetConnectorStatus(chargingStation, {
         connectorId: transactionConnectorId,
         status: OCPP16ChargePointStatus.Available,
       } as OCPP16StatusNotificationRequest)
@@ -549,6 +554,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
     OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
-    await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
+    await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 }

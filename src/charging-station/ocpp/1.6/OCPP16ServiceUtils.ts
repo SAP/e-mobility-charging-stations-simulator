@@ -54,8 +54,11 @@ import {
 import {
   buildEmptyMeterValue,
   buildMeterValue,
+  buildSampledValue,
   buildTransactionEndMeterValue,
+  getSampledValueTemplate,
   OCPPServiceUtils,
+  sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
@@ -105,15 +108,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ): OCPP16MeterValue {
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
-      chargingStation,
-      connectorId
-    )
+    const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
     if (sampledValueTemplate != null) {
       const unitDivider =
         sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
       meterValue.sampledValue.push(
-        OCPP16ServiceUtils.buildSampledValue(
+        buildSampledValue(
           chargingStation.stationInfo?.ocppVersion,
           sampledValueTemplate,
           roundTo((meterStart ?? 0) / unitDivider, 4),
@@ -153,7 +153,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
       connectorStatus.availability = availabilityType
       if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-        await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+        await sendAndSetConnectorStatus(chargingStation, {
           connectorId,
           status: chargePointStatus,
         } as OCPP16StatusNotificationRequest)
@@ -529,7 +529,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<GenericResponse> => {
-    await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+    await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: OCPP16ChargePointStatus.Finishing,
     } as OCPP16StatusNotificationRequest)

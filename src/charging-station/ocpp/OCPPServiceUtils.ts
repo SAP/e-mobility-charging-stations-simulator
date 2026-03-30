@@ -1900,7 +1900,7 @@ const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
   return supportedMeasurands.includes(measurand as string)
 }
 
-const getSampledValueTemplate = (
+export const getSampledValueTemplate = (
   chargingStation: ChargingStation,
   connectorId: number,
   measurandsKey: ConfigurationKeyType = StandardParametersKey.MeterValuesSampledData,
@@ -1997,7 +1997,7 @@ const getSampledValueTemplate = (
  * @param phase - Optional phase information for multi-phase electrical measurements
  * @returns A sampled value object formatted according to the specified OCPP version
  */
-function buildSampledValue (
+export function buildSampledValue (
   ocppVersion: OCPPVersion | undefined,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
@@ -2237,15 +2237,6 @@ const getMeasurandDefaultUnit = (
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
-  public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
-  public static readonly mapStopReasonToOCPP20 = mapStopReasonToOCPP20
-  public static readonly restoreConnectorStatus = restoreConnectorStatus
-  public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
-  public static readonly stopRunningTransactions = stopRunningTransactions
-
-  protected static buildSampledValue = buildSampledValue
-  protected static getSampledValueTemplate = getSampledValueTemplate
-
   protected constructor () {
     // This is intentional
   }
