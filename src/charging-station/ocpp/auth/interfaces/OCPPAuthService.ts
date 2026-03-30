@@ -165,7 +165,7 @@ export interface AuthStrategy {
   /**
    * Get strategy-specific statistics
    */
-  getStats(): JsonObject | Promise<JsonObject>
+  getStats(): JsonObject
 
   /**
    * Initialize the strategy with configuration
@@ -370,7 +370,7 @@ export interface OCPPAuthAdapter<TVersionId = OCPP20IdTokenType | string> {
   /**
    * Check if remote authorization is available
    */
-  isRemoteAvailable(): boolean | Promise<boolean>
+  isRemoteAvailable(): boolean
 
   /**
    * The OCPP version this adapter handles
@@ -410,7 +410,7 @@ export interface OCPPAuthService {
   /**
    * Get authentication statistics
    */
-  getStats(): Promise<AuthStats>
+  getStats(): AuthStats
 
   /**
    * Invalidate cached authorization for an identifier

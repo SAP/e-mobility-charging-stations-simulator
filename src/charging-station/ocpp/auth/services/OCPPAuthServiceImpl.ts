@@ -350,7 +350,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Get authentication statistics
    * @returns Authentication statistics including cache and rate limiting metrics
    */
-  public async getStats (): Promise<AuthStats> {
+  public getStats (): AuthStats {
     const avgResponseTime =
       this.metrics.totalRequests > 0
         ? this.metrics.totalResponseTime / this.metrics.totalRequests
@@ -373,7 +373,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       | { blockedRequests: number; rateLimitedIdentifiers: number; totalChecks: number }
     const remoteStrategy = this.strategies.get('remote')
     if (remoteStrategy?.getStats) {
-      const strategyStatistics = await remoteStrategy.getStats()
+      const strategyStatistics = remoteStrategy.getStats()
       if ('cache' in strategyStatistics) {
         const cacheStatistics = strategyStatistics.cache as {
           rateLimit?: {

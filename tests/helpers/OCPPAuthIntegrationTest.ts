@@ -251,7 +251,7 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Invalid connectivity test result')
     }
 
-    const stats = await this.authService.getStats()
+    const stats = this.authService.getStats()
     if (typeof stats.totalRequests !== 'number') {
       throw new Error('Invalid statistics object')
     }

@@ -121,19 +121,16 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
       /* empty */
     },
     getConfiguration: () => ({}) as AuthConfiguration,
-    getStats: () =>
-      new Promise<Record<string, unknown>>(resolve => {
-        resolve({
-          avgResponseTime: 0,
-          cacheHitRate: 0,
-          failedAuth: 0,
-          lastUpdatedDate: new Date(),
-          localUsageRate: 1,
-          remoteSuccessRate: 0,
-          successfulAuth: 0,
-          totalRequests: 0,
-        })
-      }),
+    getStats: () => ({
+      avgResponseTime: 0,
+      cacheHitRate: 0,
+      failedAuth: 0,
+      lastUpdatedDate: new Date(),
+      localUsageRate: 1,
+      remoteSuccessRate: 0,
+      successfulAuth: 0,
+      totalRequests: 0,
+    }),
     invalidateCache: () => {
       /* empty */
     },

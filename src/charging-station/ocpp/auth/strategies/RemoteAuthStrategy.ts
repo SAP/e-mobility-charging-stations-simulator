@@ -99,7 +99,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       // Check if remote service is available
-      const isAvailable = await this.checkRemoteAvailability(adapter, config)
+      const isAvailable = this.checkRemoteAvailability(adapter, config)
       if (!isAvailable) {
         logger.debug(`${moduleName}: Remote service unavailable`)
         return undefined
@@ -223,13 +223,13 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including success rates, response times, and error counts
    */
-  public async getStats (): Promise<JsonObject> {
+  public getStats (): JsonObject {
     const cacheStatistics = this.authCache ? this.authCache.getStats() : null
 
     let adapterAvailable = false
     if (this.adapter) {
       try {
-        adapterAvailable = await this.adapter.isRemoteAvailable()
+        adapterAvailable = this.adapter.isRemoteAvailable()
       } catch {
         adapterAvailable = false
       }
@@ -335,13 +335,13 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Test connectivity to remote authorization service
    * @returns True if the OCPP adapter can reach its remote service
    */
-  public async testConnectivity (): Promise<boolean> {
+  public testConnectivity (): boolean {
     if (!this.isInitialized || this.adapter == null) {
       return false
     }
 
     try {
-      return await this.adapter.isRemoteAvailable()
+      return this.adapter.isRemoteAvailable()
     } catch {
       return false
     }
@@ -391,20 +391,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
   /**
    * Check if remote authorization service is available
    * @param adapter - OCPP adapter to check for remote service availability
-   * @param config - Authentication configuration with timeout settings
-   * @returns True if the remote service responds within timeout
+   * @param _config - Authentication configuration (unused)
+   * @returns True if the remote service responds
    */
-  private async checkRemoteAvailability (
-    adapter: OCPPAuthAdapter,
-    config: AuthConfiguration
-  ): Promise<boolean> {
+  private checkRemoteAvailability (adapter: OCPPAuthAdapter, _config: AuthConfiguration): boolean {
     try {
-      const timeout = (config.authorizationTimeout * 1000) / 2
-      return await promiseWithTimeout(
-        Promise.resolve(adapter.isRemoteAvailable()),
-        timeout,
-        new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT)
-      )
+      return adapter.isRemoteAvailable()
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.debug(`${moduleName}: Remote availability check failed: ${errorMessage}`)

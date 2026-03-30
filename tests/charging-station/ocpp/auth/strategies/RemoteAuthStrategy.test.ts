@@ -416,30 +416,30 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   await describe('testConnectivity', async () => {
-    await it('should test connectivity successfully', async () => {
+    await it('should test connectivity successfully', () => {
       strategy.initialize(createTestAuthConfig())
-      const result = await strategy.testConnectivity()
+      const result = strategy.testConnectivity()
       assert.strictEqual(result, true)
     })
 
-    await it('should return false when not initialized', async () => {
+    await it('should return false when not initialized', () => {
       const newStrategy = new RemoteAuthStrategy()
-      const result = await newStrategy.testConnectivity()
+      const result = newStrategy.testConnectivity()
       assert.strictEqual(result, false)
     })
 
-    await it('should return false when adapter unavailable', async () => {
+    await it('should return false when adapter unavailable', () => {
       mockOCPP16Adapter.isRemoteAvailable = () => false
 
       strategy.initialize(createTestAuthConfig())
-      const result = await strategy.testConnectivity()
+      const result = strategy.testConnectivity()
       assert.strictEqual(result, false)
     })
   })
 
   await describe('getStats', async () => {
-    await it('should return strategy statistics', async () => {
-      const stats = await strategy.getStats()
+    await it('should return strategy statistics', () => {
+      const stats = strategy.getStats()
       assert.strictEqual(stats.hasAdapter, true)
       assert.strictEqual(stats.failedRemoteAuth, 0)
       assert.strictEqual(stats.hasAuthCache, true)
@@ -448,9 +448,9 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(stats.totalRequests, 0)
     })
 
-    await it('should include adapter statistics', async () => {
+    await it('should include adapter statistics', () => {
       strategy.initialize(createTestAuthConfig())
-      const stats = await strategy.getStats()
+      const stats = strategy.getStats()
       assert.strictEqual(typeof stats.adapterAvailable, 'boolean')
     })
 
@@ -463,7 +463,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
       await strategy.authenticate(successRequest, createTestAuthConfig())
 
-      const statsAfterSuccess = await strategy.getStats()
+      const statsAfterSuccess = strategy.getStats()
       assert.strictEqual(statsAfterSuccess.totalRequests, 1)
       assert.strictEqual(statsAfterSuccess.successfulRemoteAuth, 1)
       assert.strictEqual(statsAfterSuccess.failedRemoteAuth, 0)
@@ -477,7 +477,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
       await strategy.authenticate(failRequest, createTestAuthConfig())
 
-      const statsAfterFailure = await strategy.getStats()
+      const statsAfterFailure = strategy.getStats()
       assert.strictEqual(statsAfterFailure.totalRequests, 2)
       assert.strictEqual(statsAfterFailure.successfulRemoteAuth, 1)
       assert.strictEqual(statsAfterFailure.failedRemoteAuth, 1)
@@ -485,9 +485,9 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   await describe('cleanup', async () => {
-    await it('should reset strategy state', async () => {
+    await it('should reset strategy state', () => {
       strategy.cleanup()
-      const stats = await strategy.getStats()
+      const stats = strategy.getStats()
       assert.strictEqual(stats.isInitialized, false)
       assert.strictEqual(stats.totalRequests, 0)
     })

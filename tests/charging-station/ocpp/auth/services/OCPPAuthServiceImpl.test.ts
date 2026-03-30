@@ -182,9 +182,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('getStats')
     })
 
-    await it('should return authentication statistics', async () => {
+    await it('should return authentication statistics', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
-      const stats = await authService.getStats()
+      const stats = authService.getStats()
 
       assert.notStrictEqual(stats, undefined)
       assert.notStrictEqual(stats.totalRequests, undefined)
