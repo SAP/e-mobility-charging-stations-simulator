@@ -1,6 +1,5 @@
 import type { OCPP20IdTokenInfoType } from '../../../../types/index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
-import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
@@ -11,7 +10,7 @@ import {
   logger,
   truncateId,
 } from '../../../../utils/index.js'
-import { type ChargingStation } from '../../../ChargingStation.js'
+import { type ChargingStation } from '../../../index.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
   type AuthStats,
@@ -25,9 +24,9 @@ import {
   type AuthorizationResult,
   AuthorizationStatus,
   type AuthRequest,
+  type Identifier,
   IdentifierType,
   mapOCPP20AuthorizationStatus,
-  type UnifiedIdentifier,
 } from '../types/AuthTypes.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
@@ -280,8 +279,8 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     )
 
     // Clear cache in local strategy
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    const localAuthCache = localStrategy?.getAuthCache()
+    const localStrategy = this.strategies.get('local')
+    const localAuthCache = localStrategy?.getAuthCache?.()
     if (localAuthCache) {
       localAuthCache.clear()
       logger.info(
@@ -308,7 +307,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const supportedTypes = new Set<string>()
 
     // Test common identifier types
-    const testIdentifiers: UnifiedIdentifier[] = [
+    const testIdentifiers: Identifier[] = [
       { type: IdentifierType.ISO14443, value: 'test' },
       { type: IdentifierType.ISO15693, value: 'test' },
       { type: IdentifierType.KEY_CODE, value: 'test' },
@@ -413,24 +412,25 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Async initialization of adapters and strategies
    * Must be called after construction
    */
-  public async initialize (): Promise<void> {
-    await this.initializeAdapter()
-    await this.initializeStrategies()
+  public initialize (): void {
+    this.initializeAdapter()
+    this.initializeStrategies()
   }
 
   /**
    * Invalidate cached authorization for an identifier
-   * @param identifier - Unified identifier whose cached authorization should be invalidated
+   * @param identifier - Identifier whose cached authorization should be invalidated
    */
-  public invalidateCache (identifier: UnifiedIdentifier): void {
+  public invalidateCache (identifier: Identifier): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${truncateId(identifier.value)}`
     )
 
     // Invalidate in local strategy
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    if (localStrategy) {
-      localStrategy.invalidateCache(identifier.value)
+    const localStrategy = this.strategies.get('local')
+    const localAuthCache = localStrategy?.getAuthCache?.()
+    if (localAuthCache) {
+      localAuthCache.remove(identifier.value)
       logger.info(
         `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
       )
@@ -443,12 +443,12 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Check if an identifier is locally authorized (cache/local list)
-   * @param identifier - Unified identifier to check for local authorization
+   * @param identifier - Identifier to check for local authorization
    * @param connectorId - Optional connector ID for context-specific authorization
    * @returns Promise resolving to the authorization result if locally authorized, or undefined if not found
    */
   public async isLocallyAuthorized (
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number
   ): Promise<AuthorizationResult | undefined> {
     // Try local strategy first for quick cache/list lookup
@@ -480,10 +480,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Check if authentication is supported for given identifier type
-   * @param identifier - Unified identifier to check for support
+   * @param identifier - Identifier to check for support
    * @returns True if at least one strategy can handle the identifier type, false otherwise
    */
-  public isSupported (identifier: UnifiedIdentifier): boolean {
+  public isSupported (identifier: Identifier): boolean {
     // Create a minimal request to check applicability
     const testRequest: AuthRequest = {
       allowOffline: false,
@@ -542,8 +542,8 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    const authCache = localStrategy?.getAuthCache()
+    const localStrategy = this.strategies.get('local')
+    const authCache = localStrategy?.getAuthCache?.()
     if (authCache == null) {
       logger.debug(
         `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: No auth cache available`
@@ -551,12 +551,12 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const unifiedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
+    const mappedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
 
     const result: AuthorizationResult = {
       isOffline: false,
       method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-      status: unifiedStatus,
+      status: mappedStatus,
       timestamp: new Date(),
     }
 
@@ -576,7 +576,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     authCache.set(identifier, result, ttl)
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${unifiedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
+      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${mappedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
     )
   }
 
@@ -665,14 +665,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Initialize OCPP adapter using AuthComponentFactory
    */
-  private async initializeAdapter (): Promise<void> {
-    this.adapter = await AuthComponentFactory.createAdapter(this.chargingStation)
+  private initializeAdapter (): void {
+    this.adapter = AuthComponentFactory.createAdapter(this.chargingStation)
   }
 
   /**
    * Initialize all authentication strategies using AuthComponentFactory
    */
-  private async initializeStrategies (): Promise<void> {
+  private initializeStrategies (): void {
     const ocppVersion = this.chargingStation.stationInfo?.ocppVersion
 
     if (this.adapter == null) {
@@ -683,7 +683,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const authCache = AuthComponentFactory.createAuthCache(this.config)
 
     // Create strategies using factory
-    const strategies = await AuthComponentFactory.createStrategies(
+    const strategies = AuthComponentFactory.createStrategies(
       this.chargingStation,
       this.adapter,
       undefined, // manager - delegated to OCPPAuthServiceImpl

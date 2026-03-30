@@ -1,4 +1,4 @@
-import type { AuthConfiguration, UnifiedIdentifier } from '../types/AuthTypes.js'
+import type { AuthConfiguration, Identifier } from '../types/AuthTypes.js'
 
 import { IdentifierType } from '../types/AuthTypes.js'
 
@@ -146,8 +146,8 @@ function validateAuthConfiguration (config: unknown): boolean {
 }
 
 /**
- * Validate unified identifier format and constraints
- * @param identifier - Unified identifier object to validate (may be any type)
+ * Validate identifier format and constraints
+ * @param identifier - Identifier object to validate (may be any type)
  * @returns True if the identifier has a valid type and value within OCPP length constraints, false otherwise
  */
 function validateIdentifier (identifier: unknown): boolean {
@@ -156,14 +156,14 @@ function validateIdentifier (identifier: unknown): boolean {
     return false
   }
 
-  const unifiedIdentifier = identifier as UnifiedIdentifier
+  const typedIdentifier = identifier as Identifier
 
-  if (!unifiedIdentifier.value) {
+  if (!typedIdentifier.value) {
     return false
   }
 
   // Check length constraints based on identifier type
-  switch (unifiedIdentifier.type) {
+  switch (typedIdentifier.type) {
     case IdentifierType.BIOMETRIC:
     // Fallthrough intentional: all these OCPP 2.0 types share the same validation
     case IdentifierType.CENTRAL:
@@ -177,13 +177,9 @@ function validateIdentifier (identifier: unknown): boolean {
     case IdentifierType.MOBILE_APP:
     case IdentifierType.NO_AUTHORIZATION:
       // OCPP 2.0 types - use IdToken max length
-      return (
-        unifiedIdentifier.value.length > 0 && unifiedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
-      )
+      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
     case IdentifierType.ID_TAG:
-      return (
-        unifiedIdentifier.value.length > 0 && unifiedIdentifier.value.length <= MAX_IDTAG_LENGTH
-      )
+      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTAG_LENGTH
 
     default:
       return false

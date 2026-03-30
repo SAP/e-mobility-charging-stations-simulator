@@ -14,7 +14,7 @@ import type {
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
   GetVariableStatusEnumType,
   OCPP20IdTokenEnumType,

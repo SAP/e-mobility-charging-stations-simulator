@@ -3,16 +3,16 @@ import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
-} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+  Identifier,
+} from '../../src/charging-station/ocpp/auth/index.js'
 
-import { OCPPAuthServiceImpl } from '../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthContext,
   AuthenticationMethod,
   AuthorizationStatus,
   IdentifierType,
-} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+  OCPPAuthServiceImpl,
+} from '../../src/charging-station/ocpp/auth/index.js'
 import { logger } from '../../src/utils/index.js'
 
 export class OCPPAuthIntegrationTest {
@@ -113,7 +113,7 @@ export class OCPPAuthIntegrationTest {
   }
 
   private async testCacheOperations (): Promise<void> {
-    const testIdentifier: UnifiedIdentifier = {
+    const testIdentifier: Identifier = {
       type: IdentifierType.LOCAL,
       value: 'CACHE_TEST_ID',
     }
@@ -156,7 +156,7 @@ export class OCPPAuthIntegrationTest {
   }
 
   private async testErrorHandling (): Promise<void> {
-    const invalidIdentifier: UnifiedIdentifier = {
+    const invalidIdentifier: Identifier = {
       type: IdentifierType.ISO14443,
       value: '',
     }
@@ -188,7 +188,7 @@ export class OCPPAuthIntegrationTest {
   }
 
   private async testOCPP16AuthFlow (): Promise<void> {
-    const identifier: UnifiedIdentifier = {
+    const identifier: Identifier = {
       type: IdentifierType.ISO14443,
       value: 'VALID_ID_123',
     }
@@ -216,7 +216,7 @@ export class OCPPAuthIntegrationTest {
   }
 
   private async testOCPP20AuthFlow (): Promise<void> {
-    const identifier: UnifiedIdentifier = {
+    const identifier: Identifier = {
       type: IdentifierType.ISO15693,
       value: 'VALID_ID_456',
     }
@@ -261,7 +261,7 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Invalid authentication statistics')
     }
 
-    const identifier: UnifiedIdentifier = {
+    const identifier: Identifier = {
       type: IdentifierType.ISO14443,
       value: 'PERF_TEST_ID',
     }
@@ -327,7 +327,7 @@ export class OCPPAuthIntegrationTest {
       }
     }
 
-    const testIdentifier: UnifiedIdentifier = {
+    const testIdentifier: Identifier = {
       type: IdentifierType.ISO14443,
       value: 'TEST123',
     }

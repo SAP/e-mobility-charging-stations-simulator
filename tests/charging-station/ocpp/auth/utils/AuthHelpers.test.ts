@@ -10,8 +10,8 @@ import {
   AuthenticationMethod,
   type AuthorizationResult,
   AuthorizationStatus,
+  type Identifier,
   IdentifierType,
-  type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthHelpers } from '../../../../../src/charging-station/ocpp/auth/utils/AuthHelpers.js'
 import { OCPP20MessageFormatEnumType } from '../../../../../src/types/index.js'
@@ -52,7 +52,7 @@ await describe('AuthHelpers', async () => {
 
   await describe('createAuthRequest', async () => {
     await it('should create basic auth request with minimal parameters', () => {
-      const identifier: UnifiedIdentifier = {
+      const identifier: Identifier = {
         type: IdentifierType.ID_TAG,
         value: 'TEST123',
       }
@@ -69,7 +69,7 @@ await describe('AuthHelpers', async () => {
     })
 
     await it('should create auth request with connector ID', () => {
-      const identifier: UnifiedIdentifier = {
+      const identifier: Identifier = {
         type: IdentifierType.LOCAL,
         value: 'LOCAL001',
       }
@@ -82,7 +82,7 @@ await describe('AuthHelpers', async () => {
     })
 
     await it('should create auth request with metadata', () => {
-      const identifier: UnifiedIdentifier = {
+      const identifier: Identifier = {
         type: IdentifierType.CENTRAL,
         value: 'CENTRAL001',
       }
@@ -125,7 +125,7 @@ await describe('AuthHelpers', async () => {
   await describe('formatAuthError', async () => {
     await it('should format error message with truncated identifier', () => {
       const error = new Error('Connection timeout')
-      const identifier: UnifiedIdentifier = {
+      const identifier: Identifier = {
         type: IdentifierType.ID_TAG,
         value: 'VERY_LONG_IDENTIFIER_VALUE_12345',
       }
@@ -139,7 +139,7 @@ await describe('AuthHelpers', async () => {
 
     await it('should handle short identifiers correctly', () => {
       const error = new Error('Invalid format')
-      const identifier: UnifiedIdentifier = {
+      const identifier: Identifier = {
         type: IdentifierType.LOCAL,
         value: 'SHORT',
       }

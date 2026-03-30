@@ -28,41 +28,44 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('getInstance-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should create a new instance for a charging station', async () => {
-      const authService = await OCPPAuthServiceFactory.getInstance(mockStation16)
+    await it('should create a new instance for a charging station', () => {
+      const authService = OCPPAuthServiceFactory.getInstance(mockStation16)
 
       assert.notStrictEqual(authService, undefined)
       assert.strictEqual(typeof authService.authorize, 'function')
       assert.strictEqual(typeof authService.getConfiguration, 'function')
     })
 
-    await it('should return cached instance for same charging station', async () => {
-      const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation20)
-      const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation20)
+    await it('should return cached instance for same charging station', () => {
+      const authService1 = OCPPAuthServiceFactory.getInstance(mockStation20)
+      const authService2 = OCPPAuthServiceFactory.getInstance(mockStation20)
 
       assert.strictEqual(authService1, authService2)
     })
 
-    await it('should create different instances for different charging stations', async () => {
-      const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation16)
-      const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation20)
+    await it('should create different instances for different charging stations', () => {
+      const authService1 = OCPPAuthServiceFactory.getInstance(mockStation16)
+      const authService2 = OCPPAuthServiceFactory.getInstance(mockStation20)
 
       assert.notStrictEqual(authService1, authService2)
     })
 
-    await it('should throw error for charging station without stationInfo', async () => {
+    await it('should throw error for charging station without stationInfo', () => {
       const mockStation = {
         logPrefix: () => '[TEST-CS-UNKNOWN]',
         stationInfo: undefined,
       } as unknown as ChargingStation
 
-      try {
-        await OCPPAuthServiceFactory.getInstance(mockStation)
-        assert.fail('Expected getInstance to throw for station without stationInfo')
-      } catch (error) {
-        assert.ok(error instanceof Error)
-        assert.ok(error.message.includes('OCPP version not found in charging station'))
-      }
+      assert.throws(
+        () => {
+          OCPPAuthServiceFactory.getInstance(mockStation)
+        },
+        (error: unknown) => {
+          assert.ok(error instanceof Error)
+          assert.ok(error.message.includes('OCPP version not found in charging station'))
+          return true
+        }
+      )
     })
   })
 
@@ -75,18 +78,18 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('createInstance-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should create a new uncached instance', async () => {
-      const authService1 = await OCPPAuthServiceFactory.createInstance(mockStation16)
-      const authService2 = await OCPPAuthServiceFactory.createInstance(mockStation16)
+    await it('should create a new uncached instance', () => {
+      const authService1 = OCPPAuthServiceFactory.createInstance(mockStation16)
+      const authService2 = OCPPAuthServiceFactory.createInstance(mockStation16)
 
       assert.notStrictEqual(authService1, undefined)
       assert.notStrictEqual(authService2, undefined)
       assert.notStrictEqual(authService1, authService2)
     })
 
-    await it('should not cache created instances', async () => {
+    await it('should not cache created instances', () => {
       const initialCount = OCPPAuthServiceFactory.getCachedInstanceCount()
-      await OCPPAuthServiceFactory.createInstance(mockStation20)
+      OCPPAuthServiceFactory.createInstance(mockStation20)
       const finalCount = OCPPAuthServiceFactory.getCachedInstanceCount()
 
       assert.strictEqual(finalCount, initialCount)
@@ -102,15 +105,15 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('clearInstance-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should clear cached instance for a charging station', async () => {
+    await it('should clear cached instance for a charging station', () => {
       // Create and cache instance
-      const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation16)
+      const authService1 = OCPPAuthServiceFactory.getInstance(mockStation16)
 
       // Clear the cache
       OCPPAuthServiceFactory.clearInstance(mockStation16)
 
       // Get instance again - should be a new instance
-      const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation16)
+      const authService2 = OCPPAuthServiceFactory.getInstance(mockStation16)
 
       assert.notStrictEqual(authService1, authService2)
     })
@@ -131,10 +134,10 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('clearAll-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should clear all cached instances', async () => {
+    await it('should clear all cached instances', () => {
       // Create multiple instances
-      await OCPPAuthServiceFactory.getInstance(mockStation16)
-      await OCPPAuthServiceFactory.getInstance(mockStation20)
+      OCPPAuthServiceFactory.getInstance(mockStation16)
+      OCPPAuthServiceFactory.getInstance(mockStation20)
 
       // Clear all
       OCPPAuthServiceFactory.clearAllInstances()
@@ -155,17 +158,17 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('count-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should return the number of cached instances', async () => {
+    await it('should return the number of cached instances', () => {
       assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 0)
 
-      await OCPPAuthServiceFactory.getInstance(mockStation16)
+      OCPPAuthServiceFactory.getInstance(mockStation16)
       assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 1)
 
-      await OCPPAuthServiceFactory.getInstance(mockStation20)
+      OCPPAuthServiceFactory.getInstance(mockStation20)
       assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 2)
 
       // Getting same instance should not increase count
-      await OCPPAuthServiceFactory.getInstance(mockStation16)
+      OCPPAuthServiceFactory.getInstance(mockStation16)
       assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 2)
     })
   })
@@ -180,9 +183,9 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('stats-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should return factory statistics', async () => {
-      await OCPPAuthServiceFactory.getInstance(mockStation16)
-      await OCPPAuthServiceFactory.getInstance(mockStation20)
+    await it('should return factory statistics', () => {
+      OCPPAuthServiceFactory.getInstance(mockStation16)
+      OCPPAuthServiceFactory.getInstance(mockStation20)
 
       const stats = OCPPAuthServiceFactory.getStatistics()
 
@@ -212,16 +215,16 @@ await describe('OCPPAuthServiceFactory', async () => {
       mockStation20 = createMockAuthServiceTestStation('version-20', OCPPVersion.VERSION_20)
     })
 
-    await it('should create service for OCPP 1.6 station', async () => {
-      const authService = await OCPPAuthServiceFactory.getInstance(mockStation16)
+    await it('should create service for OCPP 1.6 station', () => {
+      const authService = OCPPAuthServiceFactory.getInstance(mockStation16)
 
       assert.notStrictEqual(authService, undefined)
       assert.strictEqual(typeof authService.authorize, 'function')
       assert.strictEqual(typeof authService.getConfiguration, 'function')
     })
 
-    await it('should create service for OCPP 2.0 station', async () => {
-      const authService = await OCPPAuthServiceFactory.getInstance(mockStation20)
+    await it('should create service for OCPP 2.0 station', () => {
+      const authService = OCPPAuthServiceFactory.getInstance(mockStation20)
 
       assert.notStrictEqual(authService, undefined)
       assert.strictEqual(typeof authService.authorize, 'function')
@@ -242,10 +245,10 @@ await describe('OCPPAuthServiceFactory', async () => {
       )
     })
 
-    await it('should properly manage instance lifecycle', async () => {
+    await it('should properly manage instance lifecycle', () => {
       // Create instances
       for (const station of mockStations) {
-        await OCPPAuthServiceFactory.getInstance(station)
+        OCPPAuthServiceFactory.getInstance(station)
       }
 
       assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 5)

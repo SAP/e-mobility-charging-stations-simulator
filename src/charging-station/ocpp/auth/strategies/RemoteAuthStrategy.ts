@@ -18,6 +18,7 @@ import {
   AuthenticationError,
   AuthenticationMethod,
   AuthErrorCode,
+  enhanceAuthResult,
   IdentifierType,
 } from '../types/AuthTypes.js'
 
@@ -137,7 +138,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
           )
         }
 
-        return this.enhanceResult(result, startTime)
+        return enhanceAuthResult(
+          result,
+          AuthenticationMethod.REMOTE_AUTHORIZATION,
+          this.name,
+          startTime
+        )
       }
 
       logger.debug(
@@ -403,27 +409,6 @@ export class RemoteAuthStrategy implements AuthStrategy {
       const errorMessage = getErrorMessage(error)
       logger.debug(`${moduleName}: Remote availability check failed: ${errorMessage}`)
       return false
-    }
-  }
-
-  /**
-   * Enhance authorization result with method and timing info
-   * @param result - Original authorization result from remote service
-   * @param startTime - Request start timestamp for response time calculation
-   * @returns Enhanced authorization result with strategy metadata and timing
-   */
-  private enhanceResult (result: AuthorizationResult, startTime: number): AuthorizationResult {
-    const responseTime = Date.now() - startTime
-
-    return {
-      ...result,
-      additionalInfo: {
-        ...result.additionalInfo,
-        responseTimeMs: responseTime,
-        strategy: this.name,
-      },
-      method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-      timestamp: new Date(),
     }
   }
 

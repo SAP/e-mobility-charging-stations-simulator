@@ -13,6 +13,7 @@ import {
   AuthenticationMethod,
   AuthErrorCode,
   AuthorizationStatus,
+  enhanceAuthResult,
 } from '../types/AuthTypes.js'
 
 const moduleName = 'LocalAuthStrategy'
@@ -87,7 +88,12 @@ export class LocalAuthStrategy implements AuthStrategy {
             )
             return undefined
           }
-          return this.enhanceResult(localResult, AuthenticationMethod.LOCAL_LIST, startTime)
+          return enhanceAuthResult(
+            localResult,
+            AuthenticationMethod.LOCAL_LIST,
+            this.name,
+            startTime
+          )
         }
       }
 
@@ -104,7 +110,7 @@ export class LocalAuthStrategy implements AuthStrategy {
             )
             return undefined
           }
-          return this.enhanceResult(cacheResult, AuthenticationMethod.CACHE, startTime)
+          return enhanceAuthResult(cacheResult, AuthenticationMethod.CACHE, this.name, startTime)
         }
       }
 
@@ -114,7 +120,12 @@ export class LocalAuthStrategy implements AuthStrategy {
         if (offlineResult) {
           logger.debug(`${moduleName}: Offline fallback: ${offlineResult.status}`)
           this.stats.offlineDecisions++
-          return this.enhanceResult(offlineResult, AuthenticationMethod.OFFLINE_FALLBACK, startTime)
+          return enhanceAuthResult(
+            offlineResult,
+            AuthenticationMethod.OFFLINE_FALLBACK,
+            this.name,
+            startTime
+          )
         }
       }
 
@@ -416,32 +427,6 @@ export class LocalAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Enhance authorization result with method and timing info
-   * @param result - Original authorization result to enhance
-   * @param method - Authentication method used to obtain the result
-   * @param startTime - Request start timestamp for response time calculation
-   * @returns Enhanced authorization result with strategy metadata and timing
-   */
-  private enhanceResult (
-    result: AuthorizationResult,
-    method: AuthenticationMethod,
-    startTime: number
-  ): AuthorizationResult {
-    const responseTime = Date.now() - startTime
-
-    return {
-      ...result,
-      additionalInfo: {
-        ...result.additionalInfo,
-        responseTimeMs: responseTime,
-        strategy: this.name,
-      },
-      method,
-      timestamp: new Date(),
-    }
-  }
-
-  /**
    * Handle offline fallback behavior when remote services unavailable
    * @param request - Authorization request with context information
    * @param config - Authentication configuration with offline settings
@@ -490,9 +475,9 @@ export class LocalAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Map local auth list entry status to unified authorization status
+   * Map local auth list entry status to authorization status
    * @param status - Status string from local auth list entry
-   * @returns Unified authorization status corresponding to the entry status
+   * @returns Authorization status corresponding to the entry status
    */
   private mapEntryStatus (status: string): AuthorizationStatus {
     switch (status.toLowerCase()) {

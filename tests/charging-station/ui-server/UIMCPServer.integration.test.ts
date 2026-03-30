@@ -17,7 +17,7 @@ import { HttpMethod } from '../../../src/charging-station/ui-server/UIServerUtil
 import { ApplicationProtocol, ConfigurationSection } from '../../../src/types/index.js'
 import { Configuration } from '../../../src/utils/Configuration.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
+import { createMockBootstrap, createMockUIServerConfiguration } from './UIServerTestUtils.js'
 
 /**
  * Parse SSE events from raw response body.
@@ -118,7 +118,8 @@ await describe('UIMCPServer HTTP Integration', async () => {
       createMockUIServerConfiguration({
         options: { host: 'localhost', port: 0 },
         type: ApplicationProtocol.MCP,
-      })
+      }),
+      createMockBootstrap()
     )
     server.start()
     const httpServer = Reflect.get(server, 'httpServer') as Server

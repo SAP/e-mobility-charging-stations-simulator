@@ -14,7 +14,7 @@ import { satisfies } from 'semver'
 import type { TimestampedData } from '../../src/types/index.js'
 
 import { JSRuntime, runtime } from '../../scripts/runtime.js'
-import { MapStringifyFormat } from '../../src/types/index.js'
+import { MapStringifyFormat, MessageType } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
 import {
   clampToSafeTimerValue,
@@ -29,6 +29,7 @@ import {
   formatDurationMilliSeconds,
   formatDurationSeconds,
   generateUUID,
+  getMessageTypeString,
   getRandomFloat,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
@@ -884,6 +885,24 @@ await describe('Utils', async () => {
           return true
         }
       )
+    })
+  })
+
+  await describe('getMessageTypeString', async () => {
+    await it('should return "request" for MessageType.CALL_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_MESSAGE), 'request')
+    })
+
+    await it('should return "response" for MessageType.CALL_RESULT_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_RESULT_MESSAGE), 'response')
+    })
+
+    await it('should return "error" for MessageType.CALL_ERROR_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_ERROR_MESSAGE), 'error')
+    })
+
+    await it('should return "unknown" for undefined', () => {
+      assert.strictEqual(getMessageTypeString(undefined), 'unknown')
     })
   })
 })

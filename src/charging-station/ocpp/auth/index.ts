@@ -1,7 +1,7 @@
 /**
  * OCPP Authentication System
  *
- * Unified authentication layer for OCPP 1.6 and 2.0 protocols.
+ * Authentication layer for OCPP 1.6 and 2.0 protocols.
  * This module provides a consistent API for handling authentication
  * across different OCPP versions, with support for multiple authentication
  * strategies including local lists, remote authorization, and certificate-based auth.
@@ -21,7 +21,7 @@ export { OCPP16AuthAdapter } from './adapters/OCPP16AuthAdapter.js'
 export { OCPP20AuthAdapter } from './adapters/OCPP20AuthAdapter.js'
 
 // ============================================================================
-// Type Guards & Mappers (Pure Functions)
+// Adapters
 // ============================================================================
 
 export type {
@@ -37,26 +37,21 @@ export type {
   OCPPAuthAdapter,
   OCPPAuthService,
 } from './interfaces/OCPPAuthService.js'
-
-// ============================================================================
-// Adapters
-// ============================================================================
-
 export { OCPPAuthServiceFactory } from './services/OCPPAuthServiceFactory.js'
-export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
 
 // ============================================================================
 // Strategies
 // ============================================================================
 
+export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
 export { CertificateAuthStrategy } from './strategies/CertificateAuthStrategy.js'
 export { LocalAuthStrategy } from './strategies/LocalAuthStrategy.js'
-export { RemoteAuthStrategy } from './strategies/RemoteAuthStrategy.js'
 
 // ============================================================================
 // Services
 // ============================================================================
 
+export { RemoteAuthStrategy } from './strategies/RemoteAuthStrategy.js'
 export {
   type AuthConfiguration,
   AuthContext,
@@ -67,6 +62,7 @@ export {
   AuthorizationStatus,
   type AuthRequest,
   type CertificateHashData,
+  type Identifier,
   IdentifierType,
   isCertificateBased,
   isOCPP16Type,
@@ -78,7 +74,6 @@ export {
   mapToOCPP20Status,
   mapToOCPP20TokenType,
   requiresAdditionalInfo,
-  type UnifiedIdentifier,
 } from './types/AuthTypes.js'
 
 // ============================================================================

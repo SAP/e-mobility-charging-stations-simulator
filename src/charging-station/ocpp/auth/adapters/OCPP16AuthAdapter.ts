@@ -5,7 +5,7 @@ import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
+  Identifier,
 } from '../types/AuthTypes.js'
 
 import { getConfigurationKey } from '../../../../charging-station/ConfigurationKeyUtils.js'
@@ -33,7 +33,7 @@ const moduleName = 'OCPP16AuthAdapter'
  * OCPP 1.6 Authentication Adapter
  *
  * Handles authentication for OCPP 1.6 charging stations by translating
- * between unified auth types and OCPP 1.6 specific types and protocols.
+ * between auth types and OCPP 1.6 specific types and protocols.
  */
 export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   readonly ocppVersion = OCPPVersion.VERSION_16
@@ -42,13 +42,13 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
 
   /**
    * Perform remote authorization using OCPP 1.6 Authorize message
-   * @param identifier - Unified identifier containing the idTag to authorize
+   * @param identifier - Identifier containing the idTag to authorize
    * @param connectorId - Connector ID where authorization is requested
    * @param transactionId - Active transaction ID if authorizing during a transaction
-   * @returns Authorization result with OCPP 1.6 status mapped to unified format
+   * @returns Authorization result with OCPP 1.6 status mapped to auth format
    */
   async authorizeRemote (
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number,
     transactionId?: number | string
   ): Promise<AuthorizationResult> {
@@ -75,7 +75,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
         idTag: identifier.value,
       })
 
-      // Convert response to unified format
+      // Convert response to auth format
       const result: AuthorizationResult = {
         additionalInfo: {
           connectorId,
@@ -117,18 +117,35 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   }
 
   /**
-   * Convert unified identifier to OCPP 1.6 idTag string
-   * @param identifier - Unified identifier to convert
+   * Convert identifier to OCPP 1.6 idTag string
+   * @param identifier - Identifier to convert
    * @returns OCPP 1.6 idTag string value
    */
-  convertFromUnifiedIdentifier (identifier: UnifiedIdentifier): string {
+  convertFromIdentifier (identifier: Identifier): string {
     // For OCPP 1.6, we always return the string value
     return identifier.value
   }
 
   /**
-   * Convert unified authorization result to OCPP 1.6 response format
-   * @param result - Unified authorization result to convert
+   * Convert OCPP 1.6 idTag to identifier
+   * @param identifier - OCPP 1.6 idTag string to convert
+   * @param additionalData - Optional metadata to include in identifier
+   * @returns Identifier with ID_TAG type
+   */
+  convertToIdentifier (identifier: string, additionalData?: Record<string, unknown>): Identifier {
+    return {
+      additionalInfo: additionalData
+        ? Object.fromEntries(Object.entries(additionalData).map(([k, v]) => [k, String(v)]))
+        : undefined,
+      parentId: additionalData?.parentId as string | undefined,
+      type: IdentifierType.ID_TAG,
+      value: identifier,
+    }
+  }
+
+  /**
+   * Convert authorization result to OCPP 1.6 response format
+   * @param result - Authorization result to convert
    * @returns OCPP 1.6 AuthorizeResponse with idTagInfo structure
    */
   convertToOCPP16Response (result: AuthorizationResult): OCPP16AuthorizeResponse {
@@ -142,32 +159,12 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   }
 
   /**
-   * Convert OCPP 1.6 idTag to unified identifier
-   * @param identifier - OCPP 1.6 idTag string to convert
-   * @param additionalData - Optional metadata to include in unified identifier
-   * @returns Unified identifier with ID_TAG type
-   */
-  convertToUnifiedIdentifier (
-    identifier: string,
-    additionalData?: Record<string, unknown>
-  ): UnifiedIdentifier {
-    return {
-      additionalInfo: additionalData
-        ? Object.fromEntries(Object.entries(additionalData).map(([k, v]) => [k, String(v)]))
-        : undefined,
-      parentId: additionalData?.parentId as string | undefined,
-      type: IdentifierType.ID_TAG,
-      value: identifier,
-    }
-  }
-
-  /**
    * Create authorization request from OCPP 1.6 context
    * @param idTag - OCPP 1.6 idTag string for authorization
    * @param connectorId - Connector where authorization is requested
    * @param transactionId - Transaction ID if in transaction context
    * @param context - Authorization context string (e.g., 'start', 'stop', 'remote_start')
-   * @returns Unified auth request with identifier and context information
+   * @returns Auth request with identifier and context information
    */
   createAuthRequest (
     idTag: string,
@@ -175,7 +172,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
     transactionId?: number,
     context?: string
   ): AuthRequest {
-    const identifier = this.convertToUnifiedIdentifier(idTag)
+    const identifier = this.convertToIdentifier(idTag)
 
     // Map context string to AuthContext enum
     let authContext: AuthContext
@@ -293,10 +290,10 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
 
   /**
    * Check if identifier is valid for OCPP 1.6
-   * @param identifier - Unified identifier to validate
+   * @param identifier - Identifier to validate
    * @returns True if identifier has valid ID_TAG type and length within OCPP 1.6 limits
    */
-  isValidIdentifier (identifier: UnifiedIdentifier): boolean {
+  isValidIdentifier (identifier: Identifier): boolean {
     // OCPP 1.6 idTag validation
     if (!identifier.value || typeof identifier.value !== 'string') {
       return false

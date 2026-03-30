@@ -8,15 +8,15 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthorizationStatus,
   IdentifierType,
-} from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+  OCPPAuthServiceFactory,
+  OCPPAuthServiceImpl,
+} from '../../../../src/charging-station/ocpp/auth/index.js'
 import { OCPP20AuthorizationStatusEnumType, OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -29,7 +29,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   let authService: OCPPAuthServiceImpl
   let authCache: AuthCache
 
-  beforeEach(async () => {
+  beforeEach(() => {
     const { station: mockStation } = createMockChargingStation({
       baseName: TEST_STATION_ID,
       connectorsCount: 1,
@@ -41,7 +41,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     station = mockStation
 
     authService = new OCPPAuthServiceImpl(station)
-    await authService.initialize()
+    authService.initialize()
 
     const localStrategy = authService.getStrategy('local') as LocalAuthStrategy | undefined
     const cache = localStrategy?.getAuthCache()
@@ -152,7 +152,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     assert.strictEqual(cachedExpired.status, AuthorizationStatus.EXPIRED)
   })
 
-  await it('should not update cache when authorizationCacheEnabled is false', async () => {
+  await it('should not update cache when authorizationCacheEnabled is false', () => {
     // Arrange — create service with cache disabled
     const { station: disabledStation } = createMockChargingStation({
       baseName: 'CS_CACHE_DISABLED',
@@ -163,7 +163,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
       },
     })
     const disabledService = new OCPPAuthServiceImpl(disabledStation)
-    await disabledService.initialize()
+    disabledService.initialize()
     disabledService.updateConfiguration({ authorizationCacheEnabled: false })
 
     const idTokenInfo = {

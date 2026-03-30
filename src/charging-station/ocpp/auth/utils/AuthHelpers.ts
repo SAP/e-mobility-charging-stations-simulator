@@ -3,7 +3,7 @@ import type {
   AuthenticationMethod,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
+  Identifier,
 } from '../types/AuthTypes.js'
 
 import { truncateId } from '../../../../utils/index.js'
@@ -30,14 +30,14 @@ function calculateTTL (expiryDate?: Date): number | undefined {
 
 /**
  * Build an AuthRequest with sensible defaults.
- * @param identifier - Unified identifier for the request
+ * @param identifier - Identifier for the request
  * @param context - Authentication context
  * @param connectorId - Optional connector ID
  * @param metadata - Optional additional metadata
  * @returns Fully populated AuthRequest
  */
 function createAuthRequest (
-  identifier: UnifiedIdentifier,
+  identifier: Identifier,
   context: AuthContext,
   connectorId?: number,
   metadata?: Record<string, unknown>
@@ -79,7 +79,7 @@ function createRejectedResult (
  * @param identifier - Identifier involved in the failed auth attempt
  * @returns Formatted error string with truncated identifier
  */
-function formatAuthError (error: Error, identifier: UnifiedIdentifier): string {
+function formatAuthError (error: Error, identifier: Identifier): string {
   return `Authentication failed for identifier ${truncateId(identifier.value)} (${identifier.type}): ${error.message}`
 }
 

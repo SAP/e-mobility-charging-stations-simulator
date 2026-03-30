@@ -3,6 +3,7 @@ import type { WebSocket } from 'ws'
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
 import { createServer, type Http2Server } from 'node:http2'
 
+import type { IBootstrap } from '../IBootstrap.js'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import { BaseError } from '../../exception/index.js'
@@ -35,11 +36,16 @@ export abstract class AbstractUIServer {
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
+  private readonly bootstrap: IBootstrap
   private readonly chargingStations: Map<string, ChargingStationData>
   private readonly chargingStationTemplates: Set<string>
   private clientNotificationDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
-  public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (
+    protected readonly uiServerConfiguration: UIServerConfiguration,
+    bootstrap: IBootstrap
+  ) {
+    this.bootstrap = bootstrap
     this.chargingStations = new Map<string, ChargingStationData>()
     this.chargingStationTemplates = new Set<string>()
     switch (this.uiServerConfiguration.version) {
@@ -78,6 +84,10 @@ export abstract class AbstractUIServer {
 
   public deleteChargingStationData (hashId: string): boolean {
     return this.chargingStations.delete(hashId)
+  }
+
+  public getBootstrap (): IBootstrap {
+    return this.bootstrap
   }
 
   public getChargingStationData (hashId: string): ChargingStationData | undefined {

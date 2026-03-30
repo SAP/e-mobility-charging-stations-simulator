@@ -4,6 +4,8 @@ import type { Duplex } from 'node:stream'
 import { StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
+import type { IBootstrap } from '../IBootstrap.js'
+
 import {
   MapStringifyFormat,
   type ProtocolNotification,
@@ -34,8 +36,11 @@ export class UIWebSocketServer extends AbstractUIServer {
 
   private readonly webSocketServer: WebSocketServer
 
-  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
-    super(uiServerConfiguration)
+  public constructor (
+    protected override readonly uiServerConfiguration: UIServerConfiguration,
+    bootstrap: IBootstrap
+  ) {
+    super(uiServerConfiguration, bootstrap)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
       maxPayload: DEFAULT_MAX_PAYLOAD_SIZE,

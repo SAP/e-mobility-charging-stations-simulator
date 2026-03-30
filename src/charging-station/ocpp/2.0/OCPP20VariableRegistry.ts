@@ -753,7 +753,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
     defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
-    description: 'Unified maximum size for any stored or reported value.',
+    description: 'Maximum size for any stored or reported value.',
     max: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH,
     maxLength: 5,
     min: 1,

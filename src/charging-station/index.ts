@@ -11,7 +11,6 @@ export {
   checkChargingStationState,
   getConnectorChargingProfiles,
   getIdTagsFile,
-  getMessageTypeString,
   hasFeatureProfile,
   hasPendingReservation,
   hasPendingReservations,
@@ -21,3 +20,4 @@ export {
   resetAuthorizeConnectorStatus,
   resetConnectorStatus,
 } from './Helpers.js'
+export type { IBootstrap } from './IBootstrap.js'

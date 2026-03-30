@@ -7,15 +7,10 @@ import { fileURLToPath } from 'node:url'
 
 import type { StopTransactionReason } from '../../types/index.js'
 
-import {
-  type ChargingStation,
-  getConfigurationKey,
-  getIdTagsFile,
-} from '../../charging-station/index.js'
+import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
-  type AuthorizeRequest,
   ChargePointErrorCode,
   ChargingStationEvents,
   type ConfigurationKeyType,
@@ -35,13 +30,11 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type OCPP16AuthorizeResponse,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   OCPP20AuthorizationStatusEnumType,
-  type OCPP20AuthorizeResponse,
   type OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
@@ -78,6 +71,8 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
+import { OCPP16Constants } from './1.6/OCPP16Constants.js'
+import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
 const moduleName = 'OCPPServiceUtils'
@@ -141,162 +136,6 @@ export const buildStatusNotificationRequest = (
   }
 }
 
-/**
- * Unified authorization function that uses the new OCPP authentication system
- * when enabled, with automatic fallback to legacy system
- * @param chargingStation - The charging station instance
- * @param connectorId - The connector ID for authorization context
- * @param idTag - The identifier to authorize
- * @returns Promise resolving to authorization result
- */
-export const isIdTagAuthorizedUnified = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  idTag: string
-): Promise<boolean> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      try {
-        logger.debug(
-          `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-        )
-
-        // Dynamic import to avoid circular dependencies
-        const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
-        const {
-          AuthContext,
-          AuthorizationStatus: UnifiedAuthorizationStatus,
-          IdentifierType,
-        } = await import('./auth/types/AuthTypes.js')
-
-        // Get unified auth service
-        const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
-
-        // Create auth request with unified types
-        const authResult = await authService.authorize({
-          allowOffline: false,
-          connectorId,
-          context: AuthContext.TRANSACTION_START,
-          identifier: {
-            type: IdentifierType.ID_TAG,
-            value: idTag,
-          },
-          timestamp: new Date(),
-        })
-
-        logger.debug(
-          `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
-        )
-
-        return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
-      } catch (error) {
-        logger.error(`${chargingStation.logPrefix()} Unified auth failed for OCPP 2.0`, error)
-        return false
-      }
-    case OCPPVersion.VERSION_16:
-      logger.debug(
-        `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-      )
-      return isIdTagAuthorized(chargingStation, connectorId, idTag)
-    default:
-      return false
-  }
-}
-
-/**
- * Legacy authorization function - used for OCPP 1.6 only
- * OCPP 2.0+ always uses the unified system via isIdTagAuthorizedUnified
- * @param chargingStation - The charging station instance
- * @param connectorId - The connector ID for authorization context
- * @param idTag - The identifier to authorize
- * @returns Promise resolving to authorization result
- */
-export const isIdTagAuthorized = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  idTag: string
-): Promise<boolean> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      if (
-        !chargingStation.getLocalAuthListEnabled() &&
-        chargingStation.stationInfo.remoteAuthorization === false
-      ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
-        )
-      }
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-      if (
-        connectorStatus != null &&
-        chargingStation.getLocalAuthListEnabled() &&
-        isIdTagLocalAuthorized(chargingStation, idTag)
-      ) {
-        connectorStatus.localAuthorizeIdTag = idTag
-        connectorStatus.idTagLocalAuthorized = true
-        return true
-      } else if (chargingStation.stationInfo.remoteAuthorization === true) {
-        return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag)
-      }
-      return false
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
-    default:
-      return false
-  }
-}
-
-const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string): boolean => {
-  const idTagsFile =
-    chargingStation.stationInfo != null ? getIdTagsFile(chargingStation.stationInfo) : undefined
-  return (
-    chargingStation.hasIdTags() &&
-    idTagsFile != null &&
-    isNotEmptyString(chargingStation.idTagsCache.getIdTags(idTagsFile)?.find(tag => tag === idTag))
-  )
-}
-
-const isIdTagRemoteAuthorized = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  idTag: string
-): Promise<boolean> => {
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  if (connectorStatus != null) {
-    connectorStatus.authorizeIdTag = idTag
-  }
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
-      return (
-        (
-          await chargingStation.ocppRequestService.requestHandler<
-            AuthorizeRequest,
-            OCPP16AuthorizeResponse
-          >(chargingStation, RequestCommand.AUTHORIZE, {
-            idTag,
-          })
-        ).idTagInfo.status === AuthorizationStatus.ACCEPTED
-      )
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      return (
-        (
-          await chargingStation.ocppRequestService.requestHandler<
-            AuthorizeRequest,
-            OCPP20AuthorizeResponse
-          >(chargingStation, RequestCommand.AUTHORIZE, {
-            idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-          })
-        ).idTokenInfo.status === AuthorizationStatus.Accepted
-      )
-    default:
-      return false
-  }
-}
-
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationRequest,
@@ -311,7 +150,7 @@ export const sendAndSetConnectorStatus = async (
     return
   }
   if (options.send) {
-    await checkConnectorStatusTransition(chargingStation, connectorId, status)
+    checkConnectorStatusTransition(chargingStation, connectorId, status)
     await chargingStation.ocppRequestService.requestHandler<
       StatusNotificationRequest,
       StatusNotificationResponse
@@ -623,16 +462,15 @@ export const flushQueuedTransactionMessages = async (
   }
 }
 
-const checkConnectorStatusTransition = async (
+const checkConnectorStatusTransition = (
   chargingStation: ChargingStation,
   connectorId: number,
   status: ConnectorStatusEnum
-): Promise<boolean> => {
+): boolean => {
   const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
   let transitionAllowed = false
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
-      const { OCPP16Constants } = await import('./1.6/OCPP16Constants.js')
       if (
         (connectorId === 0 &&
           OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
@@ -649,7 +487,6 @@ const checkConnectorStatusTransition = async (
     }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
-      const { OCPP20Constants } = await import('./2.0/OCPP20Constants.js')
       if (
         (connectorId === 0 &&
           OCPP20Constants.ChargingStationStatusTransitions.findIndex(
@@ -2401,8 +2238,6 @@ const getMeasurandDefaultUnit = (
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
-  public static readonly isIdTagAuthorized = isIdTagAuthorized
-  public static readonly isIdTagAuthorizedUnified = isIdTagAuthorizedUnified
   public static readonly mapStopReasonToOCPP20 = mapStopReasonToOCPP20
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus

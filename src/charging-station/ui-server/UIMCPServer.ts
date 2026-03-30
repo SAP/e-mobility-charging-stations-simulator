@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { IBootstrap } from '../IBootstrap.js'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import { BaseError } from '../../exception/index.js'
@@ -60,8 +61,11 @@ export class UIMCPServer extends AbstractUIServer {
 
   private service: AbstractUIService | undefined
 
-  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
-    super(uiServerConfiguration)
+  public constructor (
+    protected override readonly uiServerConfiguration: UIServerConfiguration,
+    bootstrap: IBootstrap
+  ) {
+    super(uiServerConfiguration, bootstrap)
     this.pendingMcpRequests = new Map()
     this.ocppSchemaCache = new Map()
   }

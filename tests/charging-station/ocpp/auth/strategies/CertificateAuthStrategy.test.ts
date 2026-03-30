@@ -47,7 +47,7 @@ await describe('CertificateAuthStrategy', async () => {
             })
           )
         }),
-      convertToUnifiedIdentifier: identifier => ({
+      convertToIdentifier: identifier => ({
         type: IdentifierType.CERTIFICATE,
         value: typeof identifier === 'string' ? identifier : JSON.stringify(identifier),
       }),

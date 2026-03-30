@@ -1,11 +1,11 @@
 import type { JsonObject } from '../../../../types/index.js'
-import type { ChargingStation } from '../../../ChargingStation.js'
+import type { ChargingStation } from '../../../index.js'
 import type { AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
+  Identifier,
 } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/index.js'
@@ -151,10 +151,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Calculate certificate expiry information
-   * @param identifier - Unified identifier containing certificate hash data
+   * @param identifier - Identifier containing certificate hash data
    * @returns Expiry date extracted from certificate, or undefined if not determinable
    */
-  private calculateCertificateExpiry (identifier: UnifiedIdentifier): Date | undefined {
+  private calculateCertificateExpiry (identifier: Identifier): Date | undefined {
     // In a real implementation, this would parse the actual certificate
     // and extract the notAfter field. For simulation, we'll use a placeholder.
 
@@ -175,14 +175,14 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * Create a failure result with consistent format
    * @param status - Authorization status indicating the failure type
    * @param reason - Human-readable description of why authorization failed
-   * @param identifier - Unified identifier from the original request
+   * @param identifier - Identifier from the original request
    * @param startTime - Request start timestamp for response time calculation
    * @returns Authorization result with failure status and diagnostic information
    */
   private createFailureResult (
     status: AuthorizationStatus,
     reason: string,
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     startTime: number
   ): AuthorizationResult {
     const result: AuthorizationResult = {
@@ -203,10 +203,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Check if the identifier contains certificate data
-   * @param identifier - Unified identifier to check for certificate hash data
+   * @param identifier - Identifier to check for certificate hash data
    * @returns True if all required certificate hash fields are present and non-empty
    */
-  private hasCertificateData (identifier: UnifiedIdentifier): boolean {
+  private hasCertificateData (identifier: Identifier): boolean {
     const certData = identifier.certificateHashData
     if (!certData) return false
 
@@ -289,10 +289,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Validate certificate data structure and content
-   * @param identifier - Unified identifier containing certificate hash data to validate
+   * @param identifier - Identifier containing certificate hash data to validate
    * @returns Validation result with isValid flag and optional reason on failure
    */
-  private validateCertificateData (identifier: UnifiedIdentifier): {
+  private validateCertificateData (identifier: Identifier): {
     isValid: boolean
     reason?: string
   } {

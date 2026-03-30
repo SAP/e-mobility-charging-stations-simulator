@@ -8,7 +8,7 @@ import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
+  Identifier,
 } from '../types/AuthTypes.js'
 import type { IdentifierType } from '../types/AuthTypes.js'
 
@@ -157,6 +157,12 @@ export interface AuthStrategy {
   configure?(config: Partial<AuthConfiguration>): Promise<void>
 
   /**
+   * Get the authorization cache if available
+   * @returns The authorization cache, or undefined if not available
+   */
+  getAuthCache?(): AuthCache | undefined
+
+  /**
    * Get strategy-specific statistics
    */
   getStats(): JsonObject | Promise<JsonObject>
@@ -165,7 +171,7 @@ export interface AuthStrategy {
    * Initialize the strategy with configuration
    * @param config - Authentication configuration
    */
-  initialize(config: AuthConfiguration): Promise<void> | void
+  initialize(config: AuthConfiguration): void
 
   /**
    * Strategy name for identification
@@ -324,40 +330,37 @@ export interface LocalAuthListManager {
 /**
  * OCPP version-specific adapter interface
  *
- * Adapters handle the translation between unified auth types
+ * Adapters handle the translation between auth types
  * and version-specific OCPP types and protocols.
  */
 export interface OCPPAuthAdapter<TVersionId = OCPP20IdTokenType | string> {
   /**
    * Perform remote authorization using version-specific protocol
-   * @param identifier - Unified identifier to authorize
+   * @param identifier - Identifier to authorize
    * @param connectorId - Optional connector ID
    * @param transactionId - Optional transaction ID for stop auth
    * @returns Promise resolving to authorization result
    */
   authorizeRemote(
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number,
     transactionId?: number | string
   ): Promise<AuthorizationResult>
 
   /**
-   * Convert unified identifier to version-specific format
-   * @param identifier - Unified identifier
+   * Convert identifier to version-specific format
+   * @param identifier - Identifier
    * @returns Version-specific identifier
    */
-  convertFromUnifiedIdentifier(identifier: UnifiedIdentifier): TVersionId
+  convertFromIdentifier(identifier: Identifier): TVersionId
 
   /**
-   * Convert a version-specific identifier to unified format
+   * Convert a version-specific identifier to common format
    * @param identifier - Version-specific identifier
    * @param additionalData - Optional additional context data
-   * @returns Unified identifier
+   * @returns Identifier
    */
-  convertToUnifiedIdentifier(
-    identifier: TVersionId,
-    additionalData?: Record<string, unknown>
-  ): UnifiedIdentifier
+  convertToIdentifier(identifier: TVersionId, additionalData?: Record<string, unknown>): Identifier
 
   /**
    * Get adapter-specific configuration requirements
@@ -383,7 +386,7 @@ export interface OCPPAuthAdapter<TVersionId = OCPP20IdTokenType | string> {
 /**
  * Main OCPP Authentication Service interface
  *
- * This is the primary interface that provides unified authentication
+ * This is the primary interface that provides authentication
  * capabilities across different OCPP versions and strategies.
  */
 export interface OCPPAuthService {
@@ -413,7 +416,7 @@ export interface OCPPAuthService {
    * Invalidate cached authorization for an identifier
    * @param identifier - Identifier to invalidate
    */
-  invalidateCache(identifier: UnifiedIdentifier): void
+  invalidateCache(identifier: Identifier): void
 
   /**
    * Check if an identifier is locally authorized (cache/local list)
@@ -422,7 +425,7 @@ export interface OCPPAuthService {
    * @returns Promise resolving to local authorization result, undefined if not found
    */
   isLocallyAuthorized(
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number
   ): Promise<AuthorizationResult | undefined>
 

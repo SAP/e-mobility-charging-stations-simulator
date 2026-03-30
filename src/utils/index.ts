@@ -43,6 +43,7 @@ export {
   formatDurationMilliSeconds,
   formatDurationSeconds,
   generateUUID,
+  getMessageTypeString,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   getWebSocketCloseEventStatusString,

@@ -10,7 +10,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/index.js'
 import { GenericStatus, OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -81,7 +81,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+        getInstance: (): typeof mockAuthService => mockAuthService,
       })
 
       try {
@@ -132,7 +132,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+        getInstance: (): typeof mockAuthService => mockAuthService,
       })
 
       try {
@@ -159,7 +159,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+        getInstance: (): typeof mockAuthService => mockAuthService,
       })
 
       try {
@@ -186,7 +186,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+        getInstance: (): typeof mockAuthService => mockAuthService,
       })
 
       try {
@@ -213,7 +213,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+        getInstance: (): typeof mockAuthService => mockAuthService,
       })
 
       try {
@@ -234,8 +234,9 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Mock factory to throw error (simulates no Authorization Cache support)
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): Promise<never> =>
-          Promise.reject(new Error('Authorization Cache not supported')),
+        getInstance: (): never => {
+          throw new Error('Authorization Cache not supported')
+        },
       })
 
       try {

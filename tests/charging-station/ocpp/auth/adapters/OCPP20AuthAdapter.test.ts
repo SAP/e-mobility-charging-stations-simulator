@@ -50,27 +50,26 @@ await describe('OCPP20AuthAdapter', async () => {
     })
   })
 
-  await describe('convertToUnifiedIdentifier', async () => {
-    await it('should convert OCPP 2.0 IdToken object to unified identifier', () => {
+  await describe('convertToIdentifier', async () => {
+    await it('should convert OCPP 2.0 IdToken object to identifier', () => {
       const idToken = {
         idToken: 'TEST_TOKEN',
         type: OCPP20IdTokenEnumType.Central,
       }
 
-      const result = adapter.convertToUnifiedIdentifier(idToken)
+      const result = adapter.convertToIdentifier(idToken)
       const expected = createMockIdentifier('TEST_TOKEN')
 
       assert.strictEqual(result.value, expected.value)
-      assert.strictEqual(result.type, IdentifierType.ID_TAG)
+      assert.strictEqual(result.type, IdentifierType.CENTRAL)
       assert.strictEqual(result.additionalInfo?.ocpp20Type, OCPP20IdTokenEnumType.Central)
     })
 
-    await it('should convert string to unified identifier', () => {
-      const result = adapter.convertToUnifiedIdentifier('STRING_TOKEN')
-      const expected = createMockIdentifier('STRING_TOKEN')
+    await it('should convert string to identifier', () => {
+      const result = adapter.convertToIdentifier('STRING_TOKEN')
 
-      assert.strictEqual(result.value, expected.value)
-      assert.strictEqual(result.type, expected.type)
+      assert.strictEqual(result.value, 'STRING_TOKEN')
+      assert.strictEqual(result.type, IdentifierType.CENTRAL)
     })
 
     await it('should handle eMAID type correctly', () => {
@@ -79,7 +78,7 @@ await describe('OCPP20AuthAdapter', async () => {
         type: OCPP20IdTokenEnumType.eMAID,
       }
 
-      const result = adapter.convertToUnifiedIdentifier(idToken)
+      const result = adapter.convertToIdentifier(idToken)
 
       assert.strictEqual(result.value, 'EMAID123')
       assert.strictEqual(result.type, IdentifierType.E_MAID)
@@ -95,7 +94,7 @@ await describe('OCPP20AuthAdapter', async () => {
         type: OCPP20IdTokenEnumType.Local,
       }
 
-      const result = adapter.convertToUnifiedIdentifier(idToken)
+      const result = adapter.convertToIdentifier(idToken)
 
       assert.notStrictEqual(result.additionalInfo, undefined)
       assert.notStrictEqual(result.additionalInfo?.info_0, undefined)
@@ -103,11 +102,11 @@ await describe('OCPP20AuthAdapter', async () => {
     })
   })
 
-  await describe('convertFromUnifiedIdentifier', async () => {
-    await it('should convert unified identifier to OCPP 2.0 IdToken', () => {
+  await describe('convertFromIdentifier', async () => {
+    await it('should convert identifier to OCPP 2.0 IdToken', () => {
       const identifier = createMockIdentifier('CENTRAL_TOKEN', IdentifierType.CENTRAL)
 
-      const result = adapter.convertFromUnifiedIdentifier(identifier)
+      const result = adapter.convertFromIdentifier(identifier)
 
       assert.strictEqual(result.idToken, 'CENTRAL_TOKEN')
       assert.strictEqual(result.type, OCPP20IdTokenEnumType.Central)
@@ -116,7 +115,7 @@ await describe('OCPP20AuthAdapter', async () => {
     await it('should map E_MAID type correctly', () => {
       const identifier = createMockIdentifier('EMAID_TOKEN', IdentifierType.E_MAID)
 
-      const result = adapter.convertFromUnifiedIdentifier(identifier)
+      const result = adapter.convertFromIdentifier(identifier)
 
       assert.strictEqual(result.idToken, 'EMAID_TOKEN')
       assert.strictEqual(result.type, OCPP20IdTokenEnumType.eMAID)
@@ -125,7 +124,7 @@ await describe('OCPP20AuthAdapter', async () => {
     await it('should handle ID_TAG to Local mapping', () => {
       const identifier = createMockIdentifier('LOCAL_TAG')
 
-      const result = adapter.convertFromUnifiedIdentifier(identifier)
+      const result = adapter.convertFromIdentifier(identifier)
 
       assert.strictEqual(result.type, OCPP20IdTokenEnumType.Local)
     })
@@ -341,7 +340,7 @@ await describe('OCPP20AuthAdapter', async () => {
   })
 
   await describe('convertToOCPP20Response', async () => {
-    await it('should convert unified ACCEPTED status to OCPP 2.0 Accepted', () => {
+    await it('should convert ACCEPTED status to OCPP 2.0 Accepted', () => {
       const result = createMockAuthorizationResult({
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
       })
@@ -350,7 +349,7 @@ await describe('OCPP20AuthAdapter', async () => {
       assert.strictEqual(response, RequestStartStopStatusEnumType.Accepted)
     })
 
-    await it('should convert unified rejection statuses to OCPP 2.0 Rejected', () => {
+    await it('should convert rejection statuses to OCPP 2.0 Rejected', () => {
       const statuses = [
         AuthorizationStatus.BLOCKED,
         AuthorizationStatus.INVALID,

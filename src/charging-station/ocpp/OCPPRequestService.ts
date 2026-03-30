@@ -27,10 +27,10 @@ import {
   ensureError,
   formatDurationMilliSeconds,
   getErrorMessage,
+  getMessageTypeString,
   handleSendMessageError,
   logger,
 } from '../../utils/index.js'
-import { getMessageTypeString } from '../index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import { ajvErrorsToErrorType, convertDateToISOString } from './OCPPServiceUtils.js'
 

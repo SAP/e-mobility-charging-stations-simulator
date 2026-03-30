@@ -19,13 +19,21 @@ import type {
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
+  AuthenticationMethod,
+  AuthorizationStatus,
+  OCPPAuthServiceFactory,
+} from '../../../../src/charging-station/ocpp/auth/index.js'
+import {
+  AttributeEnumType,
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
+  OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -35,7 +43,10 @@ import { Constants } from '../../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import { createMockAuthService } from '../auth/helpers/MockFactories.js'
+import {
+  createMockAuthorizationResult,
+  createMockAuthService,
+} from '../auth/helpers/MockFactories.js'
 import {
   createOCPP20ListenerStation,
   resetConnectorTransactionState,
@@ -94,6 +105,87 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.notStrictEqual(response.transactionId, undefined)
     assert.strictEqual(typeof response.transactionId, 'string')
+  })
+
+  // G03.FR.03 — Reject when auth returns non-ACCEPTED status
+  await it('should reject RequestStartTransaction when auth returns INVALID status', async () => {
+    // Arrange: Override mock auth service to return INVALID
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    const rejectingAuthService = createMockAuthService({
+      authorize: () =>
+        Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.INVALID,
+          })
+        ),
+    })
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, rejectingAuthService)
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      idToken: {
+        idToken: 'INVALID_TOKEN_001',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 50,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+  })
+
+  // G03.FR.03 — Reject when auth returns BLOCKED for groupIdToken
+  await it('should reject RequestStartTransaction when groupIdToken auth returns BLOCKED', async () => {
+    // Arrange: Primary token accepted, group token blocked
+    let callCount = 0
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    const mixedAuthService = createMockAuthService({
+      authorize: () => {
+        callCount++
+        if (callCount === 1) {
+          // First call: idToken → accepted
+          return Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          )
+        }
+        // Second call: groupIdToken → blocked
+        return Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.BLOCKED,
+          })
+        )
+      },
+    })
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, mixedAuthService)
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 2,
+      groupIdToken: {
+        idToken: 'BLOCKED_GROUP_TOKEN',
+        type: OCPP20IdTokenEnumType.Central,
+      },
+      idToken: {
+        idToken: 'VALID_TOKEN_002',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 51,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
@@ -340,6 +432,61 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response.transactionId, undefined)
+  })
+
+  await it('should reject RequestStartTransaction when authorization throws an error', async () => {
+    // Arrange
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
+    const throwingAuthService = createMockAuthService({
+      authorize: () => Promise.reject(new Error('Auth service unavailable')),
+    })
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, throwingAuthService)
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      idToken: {
+        idToken: 'ERROR_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 99,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+  })
+
+  await it('should accept RequestStartTransaction when AuthorizeRemoteStart is false', async () => {
+    // Arrange
+    const variableManager = OCPP20VariableManager.getInstance()
+    variableManager.setVariables(mockStation, [
+      {
+        attributeType: AttributeEnumType.Actual,
+        attributeValue: 'false',
+        component: { name: OCPP20ComponentName.AuthCtrlr },
+        variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+      },
+    ])
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      idToken: {
+        idToken: 'SKIP_AUTH_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 77,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.notStrictEqual(response.transactionId, undefined)
   })
 

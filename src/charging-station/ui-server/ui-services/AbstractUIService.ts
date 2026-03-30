@@ -28,7 +28,6 @@ import {
   isNotEmptyArray,
   logger,
 } from '../../../utils/index.js'
-import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
 
@@ -240,7 +239,7 @@ export abstract class AbstractUIService {
   ): Promise<ResponsePayload> {
     const { numberOfStations, options, template } =
       requestPayload as AddChargingStationsRequestPayload
-    if (!Bootstrap.getInstance().getState().started) {
+    if (!this.uiServer.getBootstrap().getState().started) {
       return {
         errorMessage:
           'Cannot add charging station(s) while the charging stations simulator is not started',
@@ -276,11 +275,13 @@ export abstract class AbstractUIService {
     for (let i = 0; i < numberOfStations; i++) {
       let stationInfo: ChargingStationInfo | undefined
       try {
-        stationInfo = await Bootstrap.getInstance().addChargingStation(
-          Bootstrap.getInstance().getLastContiguousIndex(template) + 1,
-          `${template}.json`,
-          options
-        )
+        stationInfo = await this.uiServer
+          .getBootstrap()
+          .addChargingStation(
+            this.uiServer.getBootstrap().getLastContiguousIndex(template) + 1,
+            `${template}.json`,
+            options
+          )
         if (stationInfo != null) {
           succeededStationInfos.push(stationInfo)
         }
@@ -331,7 +332,7 @@ export abstract class AbstractUIService {
     try {
       return {
         performanceStatistics: [
-          ...(Bootstrap.getInstance().getPerformanceStatistics() ?? []),
+          ...(this.uiServer.getBootstrap().getPerformanceStatistics() ?? []),
         ] as JsonType[],
         status: ResponseStatus.SUCCESS,
       } satisfies ResponsePayload
@@ -347,7 +348,7 @@ export abstract class AbstractUIService {
   private handleSimulatorState (): ResponsePayload {
     try {
       return {
-        state: Bootstrap.getInstance().getState() as unknown as JsonObject,
+        state: this.uiServer.getBootstrap().getState() as unknown as JsonObject,
         status: ResponseStatus.SUCCESS,
       } satisfies ResponsePayload
     } catch (error) {
@@ -361,7 +362,7 @@ export abstract class AbstractUIService {
 
   private async handleStartSimulator (): Promise<ResponsePayload> {
     try {
-      await Bootstrap.getInstance().start()
+      await this.uiServer.getBootstrap().start()
       return { status: ResponseStatus.SUCCESS }
     } catch (error) {
       return {
@@ -374,7 +375,7 @@ export abstract class AbstractUIService {
 
   private async handleStopSimulator (): Promise<ResponsePayload> {
     try {
-      await Bootstrap.getInstance().stop()
+      await this.uiServer.getBootstrap().stop()
       return { status: ResponseStatus.SUCCESS }
     } catch (error) {
       return {

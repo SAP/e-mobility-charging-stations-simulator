@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
-import type { UUIDv4 } from '../../../src/types/index.js'
+import type { UIServerConfiguration, UUIDv4 } from '../../../src/types/index.js'
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
 import { DEFAULT_COMPRESSION_THRESHOLD } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
@@ -15,6 +15,7 @@ import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
 import {
+  createMockBootstrap,
   createMockUIServerConfiguration,
   MockServerResponse,
   waitForStreamFlush,
@@ -22,6 +23,11 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 class TestableUIHttpServer extends UIHttpServer {
+  public constructor (config: UIServerConfiguration) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    super(config, createMockBootstrap())
+  }
+
   public addResponseHandler (uuid: UUIDv4, res: MockServerResponse): void {
     this.responseHandlers.set(uuid, res as never)
   }
@@ -182,7 +188,8 @@ await describe('UIHttpServer', async () => {
           port: 9090,
         },
         type: ApplicationProtocol.HTTP,
-      })
+      }),
+      createMockBootstrap()
     )
 
     assert.notStrictEqual(serverCustom, undefined)

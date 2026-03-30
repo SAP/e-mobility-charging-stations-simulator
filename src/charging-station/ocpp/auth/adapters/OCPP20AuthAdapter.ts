@@ -11,7 +11,7 @@ import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
-  UnifiedIdentifier,
+  Identifier,
 } from '../types/AuthTypes.js'
 
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
@@ -31,7 +31,9 @@ import {
   AuthorizationStatus,
   IdentifierType,
   mapOCPP20AuthorizationStatus,
+  mapOCPP20TokenType,
   mapToOCPP20Status,
+  mapToOCPP20TokenType,
 } from '../types/AuthTypes.js'
 
 const moduleName = 'OCPP20AuthAdapter'
@@ -40,7 +42,7 @@ const moduleName = 'OCPP20AuthAdapter'
  * OCPP 2.0 Authentication Adapter
  *
  * Handles authentication for OCPP 2.0/2.1 charging stations by translating
- * between unified auth types and OCPP 2.0 specific types and protocols.
+ * between auth types and OCPP 2.0 specific types and protocols.
  */
 export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   readonly ocppVersion = OCPPVersion.VERSION_20
@@ -49,13 +51,13 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Perform remote authorization using OCPP 2.0 Authorize request.
-   * @param identifier - Unified identifier containing the IdToken to authorize
+   * @param identifier - Identifier containing the IdToken to authorize
    * @param connectorId - EVSE/connector ID for the authorization context
    * @param transactionId - Optional existing transaction ID for ongoing transactions
    * @returns Authorization result with status, method, and OCPP 2.0 specific metadata
    */
   async authorizeRemote (
-    identifier: UnifiedIdentifier,
+    identifier: Identifier,
     connectorId?: number,
     transactionId?: number | string
   ): Promise<AuthorizationResult> {
@@ -83,7 +85,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       }
 
       try {
-        const idToken = this.convertFromUnifiedIdentifier(identifier)
+        const idToken = this.convertFromIdentifier(identifier)
 
         // Validate token format
         const isValidToken = this.isValidIdentifier(identifier)
@@ -117,11 +119,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         const authStatus = response.idTokenInfo.status
         const cacheExpiryDateTime = response.idTokenInfo.cacheExpiryDateTime
 
-        // Map OCPP 2.0 authorization status to unified status
-        const unifiedStatus = mapOCPP20AuthorizationStatus(authStatus)
+        // Map OCPP 2.0 authorization status
+        const mappedStatus = mapOCPP20AuthorizationStatus(authStatus)
 
         logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (unified: ${unifiedStatus})`
+          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (mapped: ${mappedStatus})`
         )
 
         return {
@@ -135,7 +137,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
           },
           isOffline: false,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: unifiedStatus,
+          status: mappedStatus,
           timestamp: new Date(),
         }
       } catch (error) {
@@ -177,15 +179,15 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   }
 
   /**
-   * Convert unified identifier to OCPP 2.0 IdToken
-   * @param identifier - Unified identifier to convert to OCPP 2.0 format
+   * Convert identifier to OCPP 2.0 IdToken
+   * @param identifier - Identifier to convert to OCPP 2.0 format
    * @returns OCPP 2.0 IdTokenType with mapped type and additionalInfo
    */
-  convertFromUnifiedIdentifier (identifier: UnifiedIdentifier): OCPP20IdTokenType {
-    // Map unified type back to OCPP 2.0 type
-    const ocpp20Type = this.mapFromUnifiedIdentifierType(identifier.type)
+  convertFromIdentifier (identifier: Identifier): OCPP20IdTokenType {
+    // Map type back to OCPP 2.0 type
+    const ocpp20Type = mapToOCPP20TokenType(identifier.type)
 
-    // Convert unified additionalInfo back to OCPP 2.0 format
+    // Convert additionalInfo back to OCPP 2.0 format
     const additionalInfo: AdditionalInfoType[] | undefined = identifier.additionalInfo
       ? Object.entries(identifier.additionalInfo)
         .filter(([key]) => key.startsWith('info_'))
@@ -210,24 +212,15 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   }
 
   /**
-   * Convert unified authorization result to OCPP 2.0 response format
-   * @param result - Unified authorization result to convert
-   * @returns OCPP 2.0 RequestStartStopStatusEnumType for transaction responses
-   */
-  convertToOCPP20Response (result: AuthorizationResult): RequestStartStopStatusEnumType {
-    return mapToOCPP20Status(result.status)
-  }
-
-  /**
-   * Convert OCPP 2.0 IdToken to unified identifier
+   * Convert OCPP 2.0 IdToken to identifier
    * @param identifier - OCPP 2.0 IdToken or raw string identifier
-   * @param additionalData - Optional metadata to include in the unified identifier
-   * @returns Unified identifier with normalized type and metadata
+   * @param additionalData - Optional metadata to include in the identifier
+   * @returns Identifier with normalized type and metadata
    */
-  convertToUnifiedIdentifier (
+  convertToIdentifier (
     identifier: OCPP20IdTokenType | string,
     additionalData?: Record<string, unknown>
-  ): UnifiedIdentifier {
+  ): Identifier {
     let idToken: OCPP20IdTokenType
 
     // Handle both string and object formats
@@ -241,8 +234,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       idToken = identifier
     }
 
-    // Map OCPP 2.0 IdToken type to unified type
-    const unifiedType = this.mapToUnifiedIdentifierType(idToken.type)
+    const identifierType = mapOCPP20TokenType(idToken.type)
 
     return {
       additionalInfo: {
@@ -260,9 +252,18 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
           : {}),
       },
       parentId: additionalData?.parentId as string | undefined,
-      type: unifiedType,
+      type: identifierType,
       value: idToken.idToken,
     }
+  }
+
+  /**
+   * Convert authorization result to OCPP 2.0 response format
+   * @param result - Authorization result to convert
+   * @returns OCPP 2.0 RequestStartStopStatusEnumType for transaction responses
+   */
+  convertToOCPP20Response (result: AuthorizationResult): RequestStartStopStatusEnumType {
+    return mapToOCPP20Status(result.status)
   }
 
   /**
@@ -271,7 +272,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param connectorId - Optional EVSE/connector ID for the request
    * @param transactionId - Optional transaction ID for ongoing transactions
    * @param context - Optional context string (e.g., 'start', 'stop', 'remote_start')
-   * @returns AuthRequest with unified identifier, context, and station metadata
+   * @returns AuthRequest with identifier, context, and station metadata
    */
   createAuthRequest (
     idTokenOrString: OCPP20IdTokenType | string,
@@ -279,7 +280,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     transactionId?: string,
     context?: string
   ): AuthRequest {
-    const identifier = this.convertToUnifiedIdentifier(idTokenOrString)
+    const identifier = this.convertToIdentifier(idTokenOrString)
 
     // Map context string to AuthContext enum
     let authContext: AuthContext
@@ -415,10 +416,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if identifier is valid for OCPP 2.0
-   * @param identifier - Unified identifier to validate against OCPP 2.0 rules
+   * @param identifier - Identifier to validate against OCPP 2.0 rules
    * @returns True if identifier meets OCPP 2.0 format requirements (max 36 chars, valid type)
    */
-  isValidIdentifier (identifier: UnifiedIdentifier): boolean {
+  isValidIdentifier (identifier: Identifier): boolean {
     // OCPP 2.0 idToken validation
     if (!identifier.value || typeof identifier.value !== 'string') {
       return false
@@ -600,63 +601,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   }
 
   /**
-   * Map unified identifier type to OCPP 2.0 IdToken type
-   * @param unifiedType - Unified identifier type to convert
-   * @returns Corresponding OCPP 2.0 IdTokenEnumType value
-   */
-  private mapFromUnifiedIdentifierType (unifiedType: IdentifierType): OCPP20IdTokenEnumType {
-    switch (unifiedType) {
-      case IdentifierType.CENTRAL:
-        return OCPP20IdTokenEnumType.Central
-      case IdentifierType.E_MAID:
-        return OCPP20IdTokenEnumType.eMAID
-      case IdentifierType.ID_TAG:
-        return OCPP20IdTokenEnumType.Local
-      case IdentifierType.ISO14443:
-        return OCPP20IdTokenEnumType.ISO14443
-      case IdentifierType.ISO15693:
-        return OCPP20IdTokenEnumType.ISO15693
-      case IdentifierType.KEY_CODE:
-        return OCPP20IdTokenEnumType.KeyCode
-      case IdentifierType.LOCAL:
-        return OCPP20IdTokenEnumType.Local
-      case IdentifierType.MAC_ADDRESS:
-        return OCPP20IdTokenEnumType.MacAddress
-      case IdentifierType.NO_AUTHORIZATION:
-        return OCPP20IdTokenEnumType.NoAuthorization
-      default:
-        return OCPP20IdTokenEnumType.Central
-    }
-  }
-
-  /**
-   * Map OCPP 2.0 IdToken type to unified identifier type
-   * @param ocpp20Type - OCPP 2.0 IdTokenEnumType to convert
-   * @returns Corresponding unified IdentifierType value
-   */
-  private mapToUnifiedIdentifierType (ocpp20Type: OCPP20IdTokenEnumType): IdentifierType {
-    switch (ocpp20Type) {
-      case OCPP20IdTokenEnumType.Central:
-      case OCPP20IdTokenEnumType.Local:
-        return IdentifierType.ID_TAG
-      case OCPP20IdTokenEnumType.eMAID:
-        return IdentifierType.E_MAID
-      case OCPP20IdTokenEnumType.ISO14443:
-        return IdentifierType.ISO14443
-      case OCPP20IdTokenEnumType.ISO15693:
-        return IdentifierType.ISO15693
-      case OCPP20IdTokenEnumType.KeyCode:
-        return IdentifierType.KEY_CODE
-      case OCPP20IdTokenEnumType.MacAddress:
-        return IdentifierType.MAC_ADDRESS
-      case OCPP20IdTokenEnumType.NoAuthorization:
-        return IdentifierType.NO_AUTHORIZATION
-      default:
-        return IdentifierType.ID_TAG
-    }
-  }
-
-  /**
    * Parse and validate a boolean variable value
    * @param value - String value to parse ('true', 'false', '1', '0')
    * @param defaultValue - Fallback value when parsing fails or value is undefined
@@ -681,50 +625,5 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       `${this.chargingStation.logPrefix()} ${moduleName}.parseBooleanVariable: Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
     )
     return defaultValue
-  }
-
-  /**
-   * Parse and validate an integer variable value
-   * @param value - String value to parse as integer
-   * @param defaultValue - Fallback value when parsing fails or value is undefined
-   * @param min - Optional minimum allowed value (clamped if exceeded)
-   * @param max - Optional maximum allowed value (clamped if exceeded)
-   * @returns Parsed integer value clamped to min/max bounds, or defaultValue if parsing fails
-   */
-  private parseIntegerVariable (
-    value: string | undefined,
-    defaultValue: number,
-    min?: number,
-    max?: number
-  ): number {
-    if (value == null) {
-      return defaultValue
-    }
-
-    const parsed = parseInt(value, 10)
-
-    if (Number.isNaN(parsed)) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Invalid integer value '${value}', using default: ${defaultValue.toString()}`
-      )
-      return defaultValue
-    }
-
-    // Validate range
-    if (min != null && parsed < min) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
-      )
-      return min
-    }
-
-    if (max != null && parsed > max) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
-      )
-      return max
-    }
-
-    return parsed
   }
 }
