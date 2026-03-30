@@ -1604,7 +1604,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should reject removed TimeSource members RTC and Manual', () => {
       const res = manager.setVariables(station, [
         {
-          attributeValue: 'NTP,GPS,RTC,Manual', // RTC & Manual no longer valid
+          attributeValue: 'NTP,GPS,RTC,Manual', // RTC and Manual are invalid TimeSource values
           component: { name: OCPP20ComponentName.ClockCtrlr },
           variable: { name: OCPP20RequiredVariableName.TimeSource },
         },

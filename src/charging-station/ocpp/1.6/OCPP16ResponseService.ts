@@ -71,7 +71,7 @@ const moduleName = 'OCPP16ResponseService'
  * is processed by dedicated handler methods that manage charging station state updates.
  *
  * Response Validation Workflow:
- * 1. Response received from Central System for previously sent request
+ * 1. Response received from Central System for the corresponding request
  * 2. Response payload validated against OCPP 1.6 JSON schema
  * 3. Response routed to appropriate handler based on original request type
  * 4. Charging station state updated based on response content

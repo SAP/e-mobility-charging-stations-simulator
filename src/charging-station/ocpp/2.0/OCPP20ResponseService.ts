@@ -80,7 +80,7 @@ const moduleName = 'OCPP20ResponseService'
  * components to provide comprehensive protocol support with enhanced features.
  *
  * Response Validation Workflow:
- * 1. Response received from CSMS for previously sent request
+ * 1. Response received from CSMS for the corresponding request
  * 2. Response payload validated against OCPP 2.0+ JSON schema
  * 3. Response routed to appropriate handler based on original request type
  * 4. Charging station state and variable model updated based on response content

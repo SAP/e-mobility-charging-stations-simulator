@@ -335,7 +335,7 @@ export class LocalAuthStrategy implements AuthStrategy {
   /**
    * Check authorization cache for identifier
    * @param request - Authorization request containing identifier to look up
-   * @param config - Authentication configuration (unused but required by interface)
+   * @param config - Authentication configuration (unused in cache check)
    * @returns Cached authorization result if found and not expired; undefined otherwise
    */
   private checkAuthCache (
@@ -371,7 +371,7 @@ export class LocalAuthStrategy implements AuthStrategy {
   /**
    * Check local authorization list for identifier
    * @param request - Authorization request containing identifier to look up
-   * @param config - Authentication configuration (unused but required by interface)
+   * @param config - Authentication configuration (unused in local list check)
    * @returns Authorization result from local list if found; undefined otherwise
    */
   private async checkLocalAuthList (

@@ -243,7 +243,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
  * Create a connector status object with default values
  *
  * This is the canonical factory for creating ConnectorStatus objects in tests.
- * @param _connectorId - Connector ID (unused, kept for API consistency)
+ * @param _connectorId - Connector ID (unused; factory creates default connector status)
  * @param options - Optional overrides for default values
  * @returns ConnectorStatus with default or customized values
  * @example
