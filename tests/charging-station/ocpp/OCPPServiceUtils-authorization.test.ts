@@ -15,6 +15,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
+  AuthContext,
   AuthenticationMethod,
   AuthorizationStatus,
   OCPPAuthServiceFactory,
@@ -246,6 +247,43 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       assert.ok(connectorStatus != null)
       assert.strictEqual(connectorStatus.localAuthorizeIdTag, 'TAG-OFFLINE')
       assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
+    })
+
+    await it('should return false when auth service throws an error', async () => {
+      // Arrange — inject a mock that throws on authorize
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () => Promise.reject(new Error('Test auth service error')),
+      })
+
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-ERROR')
+
+      // Assert
+      assert.strictEqual(result, false)
+    })
+
+    await it('should accept explicit auth context parameter', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      let capturedContext: string | undefined
+      injectMockAuthService(station, {
+        authorize: (request: { context?: string }) => {
+          capturedContext = request.context
+          return Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.LOCAL_LIST,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          )
+        },
+      })
+
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-001', AuthContext.REMOTE_START)
+
+      // Assert
+      assert.strictEqual(capturedContext, 'RemoteStart')
     })
   })
 
