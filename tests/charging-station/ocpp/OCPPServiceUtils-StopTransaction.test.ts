@@ -12,11 +12,11 @@ import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
   flushQueuedTransactionMessages,
-  mapStopReasonToOCPP20,
   startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
-} from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+} from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import { mapStopReasonToOCPP20 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   type OCPP20TransactionEventRequest,
   OCPPVersion,

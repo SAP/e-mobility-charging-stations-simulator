@@ -18,7 +18,7 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 import {
   ajvErrorsToErrorType,
   convertDateToISOString,
-  OCPPServiceUtils,
+  isConnectorIdValid,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { ErrorType, IncomingRequestCommand, type JsonType } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
@@ -136,7 +136,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
 
   await describe('OCPPServiceUtils.isConnectorIdValid', async () => {
     await it('should return true for connector ID greater than zero', () => {
-      const result = OCPPServiceUtils.isConnectorIdValid(
+      const result = isConnectorIdValid(
         makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         1
@@ -145,7 +145,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
     })
 
     await it('should return true for connector ID zero', () => {
-      const result = OCPPServiceUtils.isConnectorIdValid(
+      const result = isConnectorIdValid(
         makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         0
@@ -154,7 +154,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
     })
 
     await it('should return false for negative connector ID', () => {
-      const result = OCPPServiceUtils.isConnectorIdValid(
+      const result = isConnectorIdValid(
         makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         -1

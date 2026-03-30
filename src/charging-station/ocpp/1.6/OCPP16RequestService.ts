@@ -21,6 +21,8 @@ import { OCPPRequestService } from '../OCPPRequestService.js'
 import {
   buildStatusNotificationRequest,
   buildTransactionEndMeterValue,
+  createPayloadValidatorMap,
+  isRequestCommandSupported,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
@@ -59,7 +61,7 @@ export class OCPP16RequestService extends OCPPRequestService {
    */
   public constructor (ocppResponseService: OCPPResponseService) {
     super(OCPPVersion.VERSION_16, ocppResponseService)
-    this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP16ServiceUtils.createRequestPayloadConfigs(),
       OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
@@ -98,7 +100,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
     )
-    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
+    if (isRequestCommandSupported(chargingStation, commandName)) {
       try {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`

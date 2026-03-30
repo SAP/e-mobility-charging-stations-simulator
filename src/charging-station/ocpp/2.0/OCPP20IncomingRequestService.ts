@@ -150,6 +150,8 @@ import {
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
+  createPayloadValidatorMap,
+  isIncomingRequestCommandSupported,
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
@@ -312,7 +314,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.toRequestHandler(this.handleRequestUpdateFirmware.bind(this)),
       ],
     ])
-    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP20ServiceUtils.createIncomingRequestPayloadConfigs(),
       OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
@@ -573,6 +575,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
+  /**
+   * Handle OCPP 2.0.1 GetVariables request from the CSMS.
+   * @param chargingStation - Target charging station
+   * @param commandPayload - GetVariables request payload
+   * @returns GetVariables response with variable results
+   */
   public handleRequestGetVariables (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetVariablesRequest
@@ -641,6 +649,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return getVariablesResponse
   }
 
+  /**
+   * Handle OCPP 2.0.1 SetVariables request from the CSMS.
+   * @param chargingStation - Target charging station
+   * @param commandPayload - SetVariables request payload
+   * @returns SetVariables response with variable results
+   */
   public handleRequestSetVariables (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetVariablesRequest
@@ -707,6 +721,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return setVariablesResponse
   }
 
+  /**
+   * Stop the incoming request service and clean up per-station state.
+   * @param chargingStation - Target charging station to stop
+   */
   public override stop (chargingStation: ChargingStation): void {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
@@ -759,11 +777,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  /**
+   * Check whether an incoming request command is supported by the charging station.
+   * @param chargingStation - Target charging station
+   * @param commandName - Incoming request command to check
+   * @returns Whether the command is supported
+   */
   protected isIncomingRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean {
-    return OCPP20ServiceUtils.isIncomingRequestCommandSupported(
+    return isIncomingRequestCommandSupported(
       chargingStation,
       commandName as OCPP20IncomingRequestCommand
     )

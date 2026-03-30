@@ -146,6 +146,7 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
+  flushQueuedTransactionMessages,
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,
@@ -156,8 +157,8 @@ import {
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   sendAndSetConnectorStatus,
+  stopRunningTransactions,
 } from './ocpp/index.js'
-import { flushQueuedTransactionMessages, stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {

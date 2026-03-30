@@ -12,6 +12,12 @@ export { isIdTagAuthorized } from './IdTagAuthorization.js'
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
 export {
+  flushQueuedTransactionMessages,
+  startTransactionOnConnector,
+  stopRunningTransactions,
+  stopTransactionOnConnector,
+} from './OCPPServiceOperations.js'
+export {
   buildMeterValue,
   buildStatusNotificationRequest,
   buildTransactionEndMeterValue,

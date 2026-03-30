@@ -40,7 +40,11 @@ import {
 import { convertToDate, logger } from '../../../utils/index.js'
 import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
-import { sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  createPayloadValidatorMap,
+  isRequestCommandSupported,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'
 
@@ -164,27 +168,29 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.toResponseHandler(this.handleResponseTransactionEvent.bind(this)),
       ],
     ])
-    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP20ServiceUtils.createResponsePayloadConfigs(),
       OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
-    this.incomingRequestResponsePayloadValidateFunctions =
-      OCPP20ServiceUtils.createPayloadValidatorMap(
-        OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
-        this.ajvIncomingRequest
-      )
+    this.incomingRequestResponsePayloadValidateFunctions = createPayloadValidatorMap(
+      OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
+      OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
+      this.ajvIncomingRequest
+    )
   }
 
+  /**
+   * Check whether a request command is supported by the charging station.
+   * @param chargingStation - Target charging station
+   * @param commandName - Request command to check
+   * @returns Whether the command is supported
+   */
   protected isRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean {
-    return OCPP20ServiceUtils.isRequestCommandSupported(
-      chargingStation,
-      commandName as OCPP20RequestCommand
-    )
+    return isRequestCommandSupported(chargingStation, commandName as OCPP20RequestCommand)
   }
 
   private handleResponseAuthorize (

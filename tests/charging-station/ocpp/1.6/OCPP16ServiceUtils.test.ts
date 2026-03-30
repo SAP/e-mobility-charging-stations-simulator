@@ -10,7 +10,11 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
-import { buildTransactionEndMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import {
+  buildTransactionEndMeterValue,
+  isIncomingRequestCommandSupported,
+  isRequestCommandSupported,
+} from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   type OCPP16ChargingProfile,
   OCPP16ChargingProfileKindType,
@@ -568,10 +572,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
 
       // Act
-      const result = OCPP16ServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT
-      )
+      const result = isRequestCommandSupported(station, OCPP16RequestCommand.HEARTBEAT)
 
       // Assert
       assert.strictEqual(result, true)
@@ -590,10 +591,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         },
       })
 
-      const result = OCPP16ServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT
-      )
+      const result = isRequestCommandSupported(station, OCPP16RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -611,10 +609,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         },
       })
 
-      const result = OCPP16ServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT
-      )
+      const result = isRequestCommandSupported(station, OCPP16RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, false)
     })
@@ -629,10 +624,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         stationInfo: { commandsSupport: undefined },
       })
 
-      const result = OCPP16ServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        OCPP16IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, OCPP16IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, true)
     })
@@ -649,10 +641,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         },
       })
 
-      const result = OCPP16ServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        OCPP16IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, OCPP16IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, true)
     })
@@ -669,7 +658,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         },
       })
 
-      const result = OCPP16ServiceUtils.isIncomingRequestCommandSupported(
+      const result = isIncomingRequestCommandSupported(
         station,
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION
       )

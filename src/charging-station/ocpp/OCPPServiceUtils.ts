@@ -10,7 +10,6 @@ import type { StopTransactionReason } from '../../types/index.js'
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
-  AuthorizationStatus,
   ChargePointErrorCode,
   ChargingStationEvents,
   type ConfigurationKeyType,
@@ -34,24 +33,19 @@ import {
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
-  OCPP20AuthorizationStatusEnumType,
   type OCPP20ConnectorStatusEnumType,
-  OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
   type OCPP20StatusNotificationRequest,
-  OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
-  type StartTransactionResult,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
-  type StopTransactionResult,
 } from '../../types/index.js'
 import {
   ACElectricUtils,
@@ -59,7 +53,6 @@ import {
   convertToFloat,
   convertToInt,
   DCElectricUtils,
-  generateUUID,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
@@ -92,6 +85,12 @@ interface SingleValueMeasurandData {
   value: number
 }
 
+/**
+ * Builds a StatusNotification request payload for the appropriate OCPP version.
+ * @param chargingStation - Target charging station
+ * @param commandParams - Status notification parameters including connector ID and status
+ * @returns Formatted StatusNotification request payload
+ */
 export const buildStatusNotificationRequest = (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationRequest
@@ -136,6 +135,13 @@ export const buildStatusNotificationRequest = (
   }
 }
 
+/**
+ * Sends a StatusNotification request and updates the connector status locally.
+ * @param chargingStation - Target charging station
+ * @param commandParams - Status notification parameters including connector ID and status
+ * @param options - Optional settings to control whether the request is actually sent
+ * @param options.send - Whether to actually send the status notification
+ */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationRequest,
@@ -163,6 +169,12 @@ export const sendAndSetConnectorStatus = async (
   })
 }
 
+/**
+ * Restores a connector status to Reserved or Available based on its current state.
+ * @param chargingStation - Target charging station
+ * @param connectorId - Connector ID to restore
+ * @param connectorStatus - Current connector status to evaluate
+ */
 export const restoreConnectorStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -184,6 +196,11 @@ export const restoreConnectorStatus = async (
   }
 }
 
+/**
+ * Maps an OCPP 1.6 or generic stop transaction reason to OCPP 2.0 stopped and trigger reasons.
+ * @param reason - Stop transaction reason to map
+ * @returns Object containing the OCPP 2.0 stoppedReason and triggerReason
+ */
 export const mapStopReasonToOCPP20 = (
   reason?: StopTransactionReason
 ): {
@@ -252,216 +269,6 @@ export const mapStopReasonToOCPP20 = (
   }
 }
 
-export const startTransactionOnConnector = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  idTag?: string
-): Promise<StartTransactionResult> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      const response = await OCPP16ServiceUtils.startTransactionOnConnector(
-        chargingStation,
-        connectorId,
-        idTag
-      )
-      return { accepted: response.idTagInfo.status === AuthorizationStatus.ACCEPTED }
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-      let transactionId = connectorStatus?.transactionId as string | undefined
-      if (transactionId == null) {
-        transactionId = generateUUID()
-        if (connectorStatus != null) {
-          connectorStatus.transactionId = transactionId
-        }
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
-      }
-      const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
-        chargingStation,
-        transactionId
-      )
-      const response = await OCPP20ServiceUtils.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Started,
-        OCPP20TriggerReasonEnumType.Authorized,
-        connectorId,
-        transactionId,
-        {
-          idToken:
-            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
-          ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
-        }
-      )
-      return {
-        accepted:
-          response.idTokenInfo == null ||
-          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
-      }
-    }
-    default:
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `startTransactionOnConnector: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
-      )
-  }
-}
-
-export const stopTransactionOnConnector = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  reason?: StopTransactionReason
-): Promise<StopTransactionResult> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      const response = await OCPP16ServiceUtils.stopTransactionOnConnector(
-        chargingStation,
-        connectorId,
-        reason
-      )
-      return { accepted: response.idTagInfo?.status === AuthorizationStatus.ACCEPTED }
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
-      if (evseId == null) {
-        logger.warn(
-          `${chargingStation.logPrefix()} stopTransactionOnConnector: cannot resolve EVSE ID for connector ${connectorId.toString()}, skipping`
-        )
-        return { accepted: false }
-      }
-      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
-      const response = await OCPP20ServiceUtils.requestStopTransaction(
-        chargingStation,
-        connectorId,
-        evseId,
-        triggerReason,
-        stoppedReason
-      )
-      return {
-        accepted:
-          response.idTokenInfo == null ||
-          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
-      }
-    }
-    default:
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `stopTransactionOnConnector: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
-      )
-  }
-}
-
-export const stopRunningTransactions = async (
-  chargingStation: ChargingStation,
-  reason?: StopTransactionReason
-): Promise<void> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      // Sequential — OCPP 1.6 behavior
-      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-        if (connectorStatus.transactionStarted === true) {
-          await OCPP16ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
-        }
-      }
-      break
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
-      await OCPP20ServiceUtils.stopAllTransactions(chargingStation, triggerReason, stoppedReason)
-      break
-    }
-    default:
-      logger.warn(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}, no transactions stopped`
-      )
-  }
-}
-
-export const startUpdatedMeterValues = async (
-  chargingStation: ChargingStation,
-  connectorId: number,
-  interval: number
-): Promise<void> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      OCPP16ServiceUtils.startUpdatedMeterValues(chargingStation, connectorId, interval)
-      break
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      OCPP20ServiceUtils.startUpdatedMeterValues(chargingStation, connectorId, interval)
-      break
-    }
-    default:
-      logger.error(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} OCPPServiceUtils.startUpdatedMeterValues: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
-      )
-  }
-}
-
-export const stopUpdatedMeterValues = async (
-  chargingStation: ChargingStation,
-  connectorId: number
-): Promise<void> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16: {
-      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
-      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
-      break
-    }
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
-      break
-    }
-    default:
-      break
-  }
-}
-
-export const flushQueuedTransactionMessages = async (
-  chargingStation: ChargingStation
-): Promise<void> => {
-  switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
-      break
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
-        if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
-          await OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
-                error
-              )
-            }
-          )
-        }
-      }
-      break
-    }
-    default:
-      break
-  }
-}
-
 const checkConnectorStatusTransition = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -522,6 +329,11 @@ const checkConnectorStatusTransition = (
   return transitionAllowed
 }
 
+/**
+ * Converts Ajv validation errors to the corresponding OCPP error type.
+ * @param errors - Array of Ajv validation error objects
+ * @returns OCPP ErrorType corresponding to the validation failure
+ */
 export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): ErrorType => {
   if (isNotEmptyArray(errors)) {
     for (const error of errors) {
@@ -540,6 +352,10 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
   return ErrorType.FORMAT_VIOLATION
 }
 
+/**
+ * Recursively converts Date values to ISO 8601 strings within a JSON-compatible object.
+ * @param object - Object whose Date properties will be converted in-place
+ */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const convertDateToISOString = <T extends JsonType>(object: T): void => {
   for (const [key, value] of Object.entries(object as Record<string, unknown>)) {
@@ -1367,11 +1183,25 @@ const buildCurrentMeasurandValue = (
   }
 }
 
+/**
+ * Builds an empty MeterValue with no sampled values and the current timestamp.
+ * @returns Empty MeterValue object
+ */
 export const buildEmptyMeterValue = (): MeterValue => ({
   sampledValue: [],
   timestamp: new Date(),
 })
 
+/**
+ * Builds a complete MeterValue with all configured measurands for a transaction.
+ * @param chargingStation - Target charging station
+ * @param transactionId - Active transaction identifier
+ * @param interval - Meter value sampling interval in milliseconds
+ * @param measurandsKey - Configuration key for the sampled measurands list
+ * @param context - Meter value reading context
+ * @param debug - Enable debug logging for measurand validation
+ * @returns Populated MeterValue object
+ */
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   transactionId: number | string | undefined,
@@ -1795,6 +1625,13 @@ export const buildMeterValue = (
   }
 }
 
+/**
+ * Builds a MeterValue for the end of a transaction with the final energy register value.
+ * @param chargingStation - Target charging station
+ * @param connectorId - Connector ID associated with the transaction
+ * @param meterStop - Final meter reading in Wh at transaction end
+ * @returns MeterValue containing the transaction end energy reading
+ */
 export const buildTransactionEndMeterValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1900,6 +1737,16 @@ const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
   return supportedMeasurands.includes(measurand as string)
 }
 
+/**
+ * Retrieves the sampled value template matching the given measurand and phase from configuration.
+ * @param chargingStation - Target charging station
+ * @param connectorId - Connector ID to look up templates for
+ * @param measurandsKey - Configuration key containing the list of sampled measurands
+ * @param measurand - Meter value measurand to match
+ * @param evseId - Optional EVSE ID for OCPP 2.0 template lookup
+ * @param phase - Optional phase to match in the template
+ * @returns Matching sampled value template, or undefined if not found
+ */
 export const getSampledValueTemplate = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -2210,228 +2057,213 @@ const getMeasurandDefaultUnit = (
 }
 
 /**
- * Utility class providing core OCPP (Open Charge Point Protocol) service functionality
- * and common operations across all OCPP versions and protocol implementations.
- *
- * This class serves as the foundation for OCPP protocol handling, providing:
- * - JSON schema-based payload validation using AJV (Another JSON Schema Validator)
- * - Common OCPP operations like connector status management and transaction handling
- * - Utility functions for meter value processing and ID tag authorization
- * - Shared functionality between OCPP 1.6 and OCPP 2.0+ implementations
- *
- * Key Features:
- * - **Schema Validation**: Centralized JSON schema loading and validation functions
- * - **Protocol Agnostic**: Provides utilities that work across OCPP versions
- * - **Transaction Management**: Utilities for transaction lifecycle and meter values
- * - **Status Management**: Connector and charging station status operations
- * - **Static Interface**: All functionality exposed as static methods for easy access
- *
- * Usage Pattern:
- * This class is typically used by other OCPP service classes (incoming request services,
- * response services) to perform common operations and validation. It acts as a shared
- * utility layer that prevents code duplication across OCPP version-specific implementations.
- * @see {@link parseJsonSchemaFile} Core JSON schema parsing functionality
- * @see {@link validateIncomingRequestPayload} Payload validation methods in service classes
- * @see {@link validateResponsePayload} Payload validation methods in service classes
+ * Creates a Map of compiled OCPP payload validators from configurations.
+ * Reduces code duplication across OCPP services.
+ * @param configs - Array of tuples containing command and validator configuration
+ * @param options - Factory options including OCPP version, schema directory, etc.
+ * @param options.ocppVersion - The OCPP version for schema validation
+ * @param options.schemaDir - Directory path containing JSON schemas
+ * @param options.moduleName - Name of the module for logging
+ * @param options.methodName - Name of the method for logging
+ * @param ajvInstance - Configured Ajv instance for validation
+ * @returns Map of commands to their compiled validation functions
  */
-
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class OCPPServiceUtils {
-  protected constructor () {
-    // This is intentional
-  }
-
-  /**
-   * Creates a Map of compiled OCPP payload validators from configurations.
-   * Reduces code duplication across OCPP services.
-   * @param configs - Array of tuples containing command and validator configuration
-   * @param options - Factory options including OCPP version, schema directory, etc.
-   * @param options.ocppVersion - The OCPP version for schema validation
-   * @param options.schemaDir - Directory path containing JSON schemas
-   * @param options.moduleName - Name of the module for logging
-   * @param options.methodName - Name of the method for logging
-   * @param ajvInstance - Configured Ajv instance for validation
-   * @returns Map of commands to their compiled validation functions
-   */
-  public static createPayloadValidatorMap<Command extends JsonType>(
-    configs: [Command, { schemaPath: string }][],
-    options: {
-      methodName: string
-      moduleName: string
-      ocppVersion: OCPPVersion
-      schemaDir: string
-    },
-    ajvInstance: Ajv
-  ): Map<Command, ValidateFunction<JsonType>> {
-    return new Map<Command, ValidateFunction<JsonType>>(
-      configs.map(([command, config]) => {
-        const fullSchemaPath = `${options.schemaDir}/${config.schemaPath}`
-        const schema = OCPPServiceUtils.parseJsonSchemaFile<JsonType>(
-          fullSchemaPath,
-          options.ocppVersion,
-          options.moduleName,
-          options.methodName
-        )
-        return [command, ajvInstance.compile(schema)]
-      })
-    )
-  }
-
-  public static isConnectorIdValid (
-    chargingStation: ChargingStation,
-    ocppCommand: IncomingRequestCommand,
-    connectorId: number
-  ): boolean {
-    if (connectorId < 0) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector id ${connectorId.toString()}`
-      )
-      return false
-    }
-    return true
-  }
-
-  public static isIncomingRequestCommandSupported (
-    chargingStation: ChargingStation,
-    command: IncomingRequestCommand
-  ): boolean {
-    const isIncomingRequestCommand =
-      Object.values<IncomingRequestCommand>(IncomingRequestCommand).includes(command)
-    if (
-      isIncomingRequestCommand &&
-      chargingStation.stationInfo?.commandsSupport?.incomingCommands == null
-    ) {
-      return true
-    } else if (
-      isIncomingRequestCommand &&
-      chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] != null
-    ) {
-      return chargingStation.stationInfo.commandsSupport.incomingCommands[command]
-    }
-    logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`)
-    return false
-  }
-
-  public static isMessageTriggerSupported (
-    chargingStation: ChargingStation,
-    messageTrigger: MessageTrigger
-  ): boolean {
-    const isMessageTrigger = (Object.values(MessageTrigger) as MessageTrigger[]).includes(
-      messageTrigger
-    )
-    if (isMessageTrigger && chargingStation.stationInfo?.messageTriggerSupport == null) {
-      return true
-    } else if (
-      isMessageTrigger &&
-      chargingStation.stationInfo?.messageTriggerSupport?.[messageTrigger] != null
-    ) {
-      return chargingStation.stationInfo.messageTriggerSupport[messageTrigger]
-    }
-    logger.error(
-      `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`
-    )
-    return false
-  }
-
-  public static isRequestCommandSupported (
-    chargingStation: ChargingStation,
-    command: RequestCommand
-  ): boolean {
-    const isRequestCommand = Object.values<RequestCommand>(RequestCommand).includes(command)
-    if (
-      isRequestCommand &&
-      chargingStation.stationInfo?.commandsSupport?.outgoingCommands == null
-    ) {
-      return true
-    } else if (
-      isRequestCommand &&
-      chargingStation.stationInfo?.commandsSupport?.outgoingCommands?.[command] != null
-    ) {
-      return chargingStation.stationInfo.commandsSupport.outgoingCommands[command]
-    }
-    logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`)
-    return false
-  }
-
-  /**
-   * Configuration for a single payload validator.
-   * @param schemaPath - Path to the JSON schema file
-   * @returns Configuration object for payload validator creation
-   */
-  public static readonly PayloadValidatorConfig = (schemaPath: string) =>
-    ({
-      schemaPath,
-    }) as const
-
-  /**
-   * Options for payload validator creation.
-   * @param ocppVersion - The OCPP version
-   * @param schemaDir - Directory containing JSON schemas
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Options object for payload validator creation
-   */
-  public static readonly PayloadValidatorOptions = (
-    ocppVersion: OCPPVersion,
-    schemaDir: string,
-    moduleName: string,
+export function createPayloadValidatorMap<Command extends JsonType> (
+  configs: [Command, { schemaPath: string }][],
+  options: {
     methodName: string
-  ) =>
-    ({
-      methodName,
-      moduleName,
-      ocppVersion,
-      schemaDir,
-    }) as const
+    moduleName: string
+    ocppVersion: OCPPVersion
+    schemaDir: string
+  },
+  ajvInstance: Ajv
+): Map<Command, ValidateFunction<JsonType>> {
+  return new Map<Command, ValidateFunction<JsonType>>(
+    configs.map(([command, config]) => {
+      const fullSchemaPath = `${options.schemaDir}/${config.schemaPath}`
+      const schema = parseJsonSchemaFile<JsonType>(
+        fullSchemaPath,
+        options.ocppVersion,
+        options.moduleName,
+        options.methodName
+      )
+      return [command, ajvInstance.compile(schema)]
+    })
+  )
+}
 
-  /**
-   * Parses and loads a JSON schema file for OCPP payload validation.
-   * Handles file reading and JSON parsing for schema validation.
-   * @param relativePath - Path to the schema file relative to the OCPP utils directory
-   * @param ocppVersion - The OCPP version for error logging context
-   * @param moduleName - Optional module name for error logging
-   * @param methodName - Optional method name for error logging
-   * @returns Parsed JSON schema object
-   * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
-   */
-  protected static parseJsonSchemaFile<T extends JsonType>(
-    relativePath: string,
-    ocppVersion: OCPPVersion,
-    moduleName?: string,
-    methodName?: string
-  ): JSONSchemaType<T> {
-    const baseDir = dirname(fileURLToPath(import.meta.url))
-    // Primary: resolve from file directory (production esbuild bundle)
-    const primaryPath = join(baseDir, relativePath)
+/**
+ * @param chargingStation - Target charging station
+ * @param ocppCommand - OCPP command triggering the validation
+ * @param connectorId - Connector ID to validate
+ * @returns Whether the connector ID is valid (>= 0)
+ */
+export function isConnectorIdValid (
+  chargingStation: ChargingStation,
+  ocppCommand: IncomingRequestCommand,
+  connectorId: number
+): boolean {
+  if (connectorId < 0) {
+    logger.error(
+      `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector id ${connectorId.toString()}`
+    )
+    return false
+  }
+  return true
+}
+
+/**
+ * @param chargingStation - Target charging station
+ * @param command - Incoming request command to check
+ * @returns Whether the command is supported by the station configuration
+ */
+export function isIncomingRequestCommandSupported (
+  chargingStation: ChargingStation,
+  command: IncomingRequestCommand
+): boolean {
+  const isIncomingRequestCommand =
+    Object.values<IncomingRequestCommand>(IncomingRequestCommand).includes(command)
+  if (
+    isIncomingRequestCommand &&
+    chargingStation.stationInfo?.commandsSupport?.incomingCommands == null
+  ) {
+    return true
+  } else if (
+    isIncomingRequestCommand &&
+    chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] != null
+  ) {
+    return chargingStation.stationInfo.commandsSupport.incomingCommands[command]
+  }
+  logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`)
+  return false
+}
+
+/**
+ * @param chargingStation - Target charging station
+ * @param messageTrigger - Message trigger to check
+ * @returns Whether the trigger is supported by the station configuration
+ */
+export function isMessageTriggerSupported (
+  chargingStation: ChargingStation,
+  messageTrigger: MessageTrigger
+): boolean {
+  const isMessageTrigger = (Object.values(MessageTrigger) as MessageTrigger[]).includes(
+    messageTrigger
+  )
+  if (isMessageTrigger && chargingStation.stationInfo?.messageTriggerSupport == null) {
+    return true
+  } else if (
+    isMessageTrigger &&
+    chargingStation.stationInfo?.messageTriggerSupport?.[messageTrigger] != null
+  ) {
+    return chargingStation.stationInfo.messageTriggerSupport[messageTrigger]
+  }
+  logger.error(
+    `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`
+  )
+  return false
+}
+
+/**
+ * @param chargingStation - Target charging station
+ * @param command - Outgoing request command to check
+ * @returns Whether the command is supported by the station configuration
+ */
+export function isRequestCommandSupported (
+  chargingStation: ChargingStation,
+  command: RequestCommand
+): boolean {
+  const isRequestCommand = Object.values<RequestCommand>(RequestCommand).includes(command)
+  if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands == null) {
+    return true
+  } else if (
+    isRequestCommand &&
+    chargingStation.stationInfo?.commandsSupport?.outgoingCommands?.[command] != null
+  ) {
+    return chargingStation.stationInfo.commandsSupport.outgoingCommands[command]
+  }
+  logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`)
+  return false
+}
+
+/**
+ * Configuration for a single payload validator.
+ * @param schemaPath - Path to the JSON schema file
+ * @returns Configuration object for payload validator creation
+ */
+export const PayloadValidatorConfig = (schemaPath: string) =>
+  ({
+    schemaPath,
+  }) as const
+
+/**
+ * Options for payload validator creation.
+ * @param ocppVersion - The OCPP version
+ * @param schemaDir - Directory containing JSON schemas
+ * @param moduleName - Name of the OCPP module
+ * @param methodName - Name of the method/command
+ * @returns Options object for payload validator creation
+ */
+export const PayloadValidatorOptions = (
+  ocppVersion: OCPPVersion,
+  schemaDir: string,
+  moduleName: string,
+  methodName: string
+) =>
+  ({
+    methodName,
+    moduleName,
+    ocppVersion,
+    schemaDir,
+  }) as const
+
+/**
+ * Parses and loads a JSON schema file for OCPP payload validation.
+ * Handles file reading and JSON parsing for schema validation.
+ * @param relativePath - Path to the schema file relative to the OCPP utils directory
+ * @param ocppVersion - The OCPP version for error logging context
+ * @param moduleName - Optional module name for error logging
+ * @param methodName - Optional method name for error logging
+ * @returns Parsed JSON schema object
+ * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
+ */
+export function parseJsonSchemaFile<T extends JsonType> (
+  relativePath: string,
+  ocppVersion: OCPPVersion,
+  moduleName?: string,
+  methodName?: string
+): JSONSchemaType<T> {
+  const baseDir = dirname(fileURLToPath(import.meta.url))
+  // Primary: resolve from file directory (production esbuild bundle)
+  const primaryPath = join(baseDir, relativePath)
+  try {
+    return JSON.parse(readFileSync(primaryPath, 'utf8')) as JSONSchemaType<T>
+  } catch (primaryError) {
+    // Fallback: resolve from source root (development/test with tsx)
+    const fallbackPath = join(baseDir, '..', '..', relativePath)
     try {
-      return JSON.parse(readFileSync(primaryPath, 'utf8')) as JSONSchemaType<T>
-    } catch (primaryError) {
-      // Fallback: resolve from source root (development/test with tsx)
-      const fallbackPath = join(baseDir, '..', '..', relativePath)
-      try {
-        return JSON.parse(readFileSync(fallbackPath, 'utf8')) as JSONSchemaType<T>
-      } catch {
-        handleFileException(
-          primaryPath,
-          FileType.JsonSchema,
-          primaryError as NodeJS.ErrnoException,
-          OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName)
-        )
-        // handleFileException throws by default; this satisfies the compiler
-        throw primaryError
-      }
+      return JSON.parse(readFileSync(fallbackPath, 'utf8')) as JSONSchemaType<T>
+    } catch {
+      handleFileException(
+        primaryPath,
+        FileType.JsonSchema,
+        primaryError as NodeJS.ErrnoException,
+        ocppServiceUtilsLogPrefix(ocppVersion, moduleName, methodName)
+      )
+      // handleFileException throws by default; this satisfies the compiler
+      throw primaryError
     }
   }
+}
 
-  private static readonly logPrefix = (
-    ocppVersion: OCPPVersion,
-    moduleName?: string,
-    methodName?: string
-  ): string => {
-    const logMsg =
-      isNotEmptyString(moduleName) && isNotEmptyString(methodName)
-        ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
-        : ` OCPP ${ocppVersion} |`
-    return logPrefix(logMsg)
-  }
+const ocppServiceUtilsLogPrefix = (
+  ocppVersion: OCPPVersion,
+  moduleName?: string,
+  methodName?: string
+): string => {
+  const logMsg =
+    isNotEmptyString(moduleName) && isNotEmptyString(methodName)
+      ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
+      : ` OCPP ${ocppVersion} |`
+  return logPrefix(logMsg)
 }

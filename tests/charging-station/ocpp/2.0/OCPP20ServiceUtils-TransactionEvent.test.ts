@@ -23,7 +23,7 @@ import {
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-import { startUpdatedMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { startUpdatedMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -2010,7 +2010,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
     await describe('startUpdatedMeterValues', async () => {
       await it('should not start OCPP 2.0 timer for OCPP 1.6 stations via dispatch', async t => {
-        await withMockTimers(t, ['setInterval'], async () => {
+        await withMockTimers(t, ['setInterval'], () => {
           const { station: ocpp16Station } = createMockChargingStation({
             baseName: TEST_CHARGING_STATION_BASE_NAME,
             connectorsCount: 1,
@@ -2019,7 +2019,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             },
           })
 
-          await startUpdatedMeterValues(ocpp16Station, 1, 60000)
+          startUpdatedMeterValues(ocpp16Station, 1, 60000)
 
           const connectorStatus = ocpp16Station.getConnectorStatus(1)
           assert.strictEqual(connectorStatus?.transactionUpdatedMeterValuesSetInterval, undefined)

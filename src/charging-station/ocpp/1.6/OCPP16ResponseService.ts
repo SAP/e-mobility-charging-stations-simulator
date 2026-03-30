@@ -39,6 +39,8 @@ import { Constants, convertToInt, logger, truncateId } from '../../../utils/inde
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import {
   buildTransactionEndMeterValue,
+  createPayloadValidatorMap,
+  isRequestCommandSupported,
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
@@ -94,6 +96,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
 
   protected readonly responseHandlers: Map<RequestCommand, ResponseHandler>
 
+  /**
+   * Constructs an OCPP 1.6 Response Service instance with response handlers and validators.
+   */
   public constructor () {
     super(OCPPVersion.VERSION_16)
     this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
@@ -126,27 +131,29 @@ export class OCPP16ResponseService extends OCPPResponseService {
         this.toResponseHandler(this.handleResponseStopTransaction.bind(this)),
       ],
     ])
-    this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP16ServiceUtils.createResponsePayloadConfigs(),
       OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
-    this.incomingRequestResponsePayloadValidateFunctions =
-      OCPP16ServiceUtils.createPayloadValidatorMap(
-        OCPP16ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
-        this.ajvIncomingRequest
-      )
+    this.incomingRequestResponsePayloadValidateFunctions = createPayloadValidatorMap(
+      OCPP16ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
+      OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
+      this.ajvIncomingRequest
+    )
   }
 
+  /**
+   * Checks whether the given request command is supported by the charging station.
+   * @param chargingStation - Target charging station
+   * @param commandName - Request command to check
+   * @returns Whether the command is supported
+   */
   protected isRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean {
-    return OCPP16ServiceUtils.isRequestCommandSupported(
-      chargingStation,
-      commandName as OCPP16RequestCommand
-    )
+    return isRequestCommandSupported(chargingStation, commandName as OCPP16RequestCommand)
   }
 
   private handleResponseAuthorize (

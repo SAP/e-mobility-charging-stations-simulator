@@ -80,4 +80,5 @@ export {
 // Utils
 // ============================================================================
 
-export * from './utils/index.js'
+export { AuthValidators } from './utils/AuthValidators.js'
+export { AuthConfigValidator } from './utils/ConfigValidator.js'

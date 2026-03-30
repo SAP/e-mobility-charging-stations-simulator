@@ -14,7 +14,11 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
 
-import { OCPPServiceUtils } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import {
+  isIncomingRequestCommandSupported,
+  isMessageTriggerSupported,
+  isRequestCommandSupported,
+} from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { IncomingRequestCommand, MessageTrigger, RequestCommand } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
@@ -45,10 +49,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, true)
     })
@@ -62,10 +63,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, false)
     })
@@ -73,10 +71,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when commandsSupport is undefined', () => {
       const station = makeStationMock({})
 
-      const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, true)
     })
@@ -86,10 +81,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         commandsSupport: {},
       })
 
-      const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
-        station,
-        IncomingRequestCommand.RESET
-      )
+      const result = isIncomingRequestCommandSupported(station, IncomingRequestCommand.RESET)
 
       assert.strictEqual(result, true)
     })
@@ -105,7 +97,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
+      const result = isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -119,7 +111,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
+      const result = isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, false)
     })
@@ -127,7 +119,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when commandsSupport is undefined', () => {
       const station = makeStationMock({})
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
+      const result = isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -137,7 +129,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         commandsSupport: {},
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
+      const result = isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -151,7 +143,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
+      const result = isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })
@@ -163,7 +155,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         },
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
+      const result = isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, false)
     })
@@ -171,7 +163,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when messageTriggerSupport is undefined', () => {
       const station = makeStationMock({})
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
+      const result = isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })
@@ -181,7 +173,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         messageTriggerSupport: null,
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
+      const result = isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })

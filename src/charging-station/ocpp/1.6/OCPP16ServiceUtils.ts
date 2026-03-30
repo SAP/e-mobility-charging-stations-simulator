@@ -57,14 +57,16 @@ import {
   buildSampledValue,
   buildTransactionEndMeterValue,
   getSampledValueTemplate,
-  OCPPServiceUtils,
+  PayloadValidatorConfig,
+  PayloadValidatorOptions,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
 const moduleName = 'OCPP16ServiceUtils'
 
-export class OCPP16ServiceUtils extends OCPPServiceUtils {
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class OCPP16ServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP16IncomingRequestCommand,
     string
@@ -101,6 +103,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
   ]
 
+  /**
+   * Builds a meter value for the beginning of a transaction.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   * @param meterStart - Initial meter reading in Wh
+   * @returns Meter value with the transaction begin context
+   */
   public static buildTransactionBeginMeterValue (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -124,6 +133,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return meterValue
   }
 
+  /**
+   * Builds an array of transaction data meter values from begin and end values.
+   * @param transactionBeginMeterValue - Meter value at transaction start
+   * @param transactionEndMeterValue - Meter value at transaction end
+   * @returns Array containing the begin and end meter values
+   */
   public static buildTransactionDataMeterValues (
     transactionBeginMeterValue: OCPP16MeterValue,
     transactionEndMeterValue: OCPP16MeterValue
@@ -134,6 +149,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return meterValues
   }
 
+  /**
+   * Changes the availability of connectors and updates their status.
+   * @param chargingStation - Target charging station
+   * @param connectorIds - Array of connector identifiers to update
+   * @param chargePointStatus - New charge point status to set
+   * @param availabilityType - Operative or inoperative availability type
+   * @returns Accepted or scheduled availability change response
+   */
   public static changeAvailability = async (
     chargingStation: ChargingStation,
     connectorIds: number[],
@@ -166,6 +189,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
   }
 
+  /**
+   * Checks whether a feature profile is enabled on the charging station.
+   * @param chargingStation - Target charging station
+   * @param featureProfile - Feature profile to check
+   * @param command - OCPP command requiring the feature profile
+   * @returns Whether the feature profile is enabled
+   */
   public static checkFeatureProfile (
     chargingStation: ChargingStation,
     featureProfile: OCPP16SupportedFeatureProfiles,
@@ -182,6 +212,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return true
   }
 
+  /**
+   * Clears charging profiles matching the given criteria from the profiles array.
+   * @param chargingStation - Target charging station
+   * @param commandPayload - Clear charging profile request with filter criteria
+   * @param chargingProfiles - Array of charging profiles to filter
+   * @returns Whether any charging profiles were cleared
+   */
   public static clearChargingProfiles = (
     chargingStation: ChargingStation,
     commandPayload: OCPP16ClearChargingProfileRequest,
@@ -223,6 +260,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return clearedCP
   }
 
+  /**
+   * Composes a composite charging schedule from higher and lower priority schedules.
+   * @param chargingScheduleHigher - Higher priority charging schedule
+   * @param chargingScheduleLower - Lower priority charging schedule
+   * @param compositeInterval - Time interval for the composite schedule
+   * @returns Composed charging schedule or undefined if both inputs are null
+   */
   public static composeChargingSchedules = (
     chargingScheduleHigher: OCPP16ChargingSchedule | undefined,
     chargingScheduleLower: OCPP16ChargingSchedule | undefined,
@@ -435,7 +479,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}.json`),
+      PayloadValidatorConfig(`${schemaBase}.json`),
     ])
 
   /**
@@ -448,7 +492,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+      PayloadValidatorConfig(`${schemaBase}Response.json`),
     ])
 
   /**
@@ -458,7 +502,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
    * @returns Factory options object for OCPP 1.6 validators
    */
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
-    OCPP16ServiceUtils.PayloadValidatorOptions(
+    PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
       'assets/json-schemas/ocpp/1.6',
       moduleName,
@@ -475,7 +519,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}.json`),
+      PayloadValidatorConfig(`${schemaBase}.json`),
     ])
 
   /**
@@ -488,9 +532,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+      PayloadValidatorConfig(`${schemaBase}Response.json`),
     ])
 
+  /**
+   * Checks whether a connector or the charging station has a valid reservation for the given idTag.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier to check
+   * @param idTag - RFID tag to match against the reservation
+   * @returns Whether a valid reservation exists for the idTag
+   */
   public static hasReservation = (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -518,6 +569,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return false
   }
 
+  /**
+   * Determines whether a configuration key should be visible in GetConfiguration responses.
+   * @param key - Configuration key to check
+   * @returns Whether the key is visible
+   */
   public static isConfigurationKeyVisible (key: ConfigurationKey): boolean {
     if (key.visible == null) {
       return true
@@ -525,6 +581,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return key.visible
   }
 
+  /**
+   * Stops a transaction remotely on the given connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier with the active transaction
+   * @returns Accepted or rejected generic response
+   */
   public static remoteStopTransaction = async (
     chargingStation: ChargingStation,
     connectorId: number
@@ -544,6 +606,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
+  /**
+   * Sets or replaces a charging profile on a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier to set the profile on
+   * @param cp - Charging profile to set
+   */
   public static setChargingProfile (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -589,6 +657,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
   }
 
+  /**
+   * Sends a StartTransaction request to the central system for the given connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier to start the transaction on
+   * @param idTag - Optional RFID tag for the transaction
+   * @returns Start transaction response from the central system
+   */
   public static async startTransactionOnConnector (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -603,6 +678,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     })
   }
 
+  /**
+   * Starts periodic meter value updates for an active transaction on a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier with the active transaction
+   * @param interval - Meter value sample interval in milliseconds
+   */
   public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -649,6 +730,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }, clampToSafeTimerValue(interval))
   }
 
+  /**
+   * Sends a StopTransaction request to the central system for the given connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier with the active transaction
+   * @param reason - Optional stop transaction reason
+   * @returns Stop transaction response from the central system
+   */
   public static async stopTransactionOnConnector (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -688,6 +776,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     })
   }
 
+  /**
+   * Stops periodic meter value updates for a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier to stop updates for
+   */
   public static stopUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number

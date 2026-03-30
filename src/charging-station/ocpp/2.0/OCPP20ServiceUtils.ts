@@ -41,7 +41,8 @@ import {
 import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   buildMeterValue,
-  OCPPServiceUtils,
+  PayloadValidatorConfig,
+  PayloadValidatorOptions,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
@@ -53,7 +54,8 @@ export interface RejectionReason {
   reasonCode: ReasonCodeEnumType
 }
 
-export class OCPP20ServiceUtils extends OCPPServiceUtils {
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class OCPP20ServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP20IncomingRequestCommand,
     string
@@ -98,6 +100,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
+  /**
+   * Build meter values for the start of a transaction.
+   * @param chargingStation - Target charging station
+   * @param transactionId - Transaction identifier
+   * @returns Array of OCPP 2.0 meter values at transaction begin
+   */
   static buildTransactionStartedMeterValues (
     chargingStation: ChargingStation,
     transactionId: number | string
@@ -123,6 +131,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Clean up connector state after a transaction has ended.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   * @param connectorStatus - Connector status to reset
+   */
   public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -147,7 +161,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Request.json`),
+      PayloadValidatorConfig(`${schemaBase}Request.json`),
     ])
 
   /**
@@ -160,7 +174,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+      PayloadValidatorConfig(`${schemaBase}Response.json`),
     ])
 
   /**
@@ -170,7 +184,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @returns Factory options object for OCPP 2.0 validators
    */
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
-    OCPP20ServiceUtils.PayloadValidatorOptions(
+    PayloadValidatorOptions(
       OCPPVersion.VERSION_201,
       'assets/json-schemas/ocpp/2.0',
       moduleName,
@@ -187,7 +201,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Request.json`),
+      PayloadValidatorConfig(`${schemaBase}Request.json`),
     ])
 
   /**
@@ -200,9 +214,23 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ][] =>
     OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
       command,
-      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+      PayloadValidatorConfig(`${schemaBase}Response.json`),
     ])
 
+  /**
+   * Enforce ItemsPerMessage and BytesPerMessage limits on request data.
+   * @param chargingStation - Charging station providing log prefix
+   * @param chargingStation.logPrefix - Log prefix function
+   * @param moduleName - Module name for logging context
+   * @param context - Method name for logging context
+   * @param data - Array of variable data items to validate
+   * @param itemsLimit - Maximum allowed items per message (0 = unlimited)
+   * @param bytesLimit - Maximum allowed bytes per message (0 = unlimited)
+   * @param buildRejected - Factory function to build rejection results
+   * @param logger - Logger instance for debug output
+   * @param logger.debug - Debug logging function
+   * @returns Object indicating whether data was rejected and the rejection results
+   */
   public static enforceMessageLimits<
     T extends { attributeType?: unknown; component: unknown; variable: unknown },
     R
@@ -246,6 +274,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { rejected: false, results: [] }
   }
 
+  /**
+   * Enforce BytesPerMessage limit after results have been computed.
+   * @param chargingStation - Charging station providing log prefix
+   * @param chargingStation.logPrefix - Log prefix function
+   * @param moduleName - Module name for logging context
+   * @param context - Method name for logging context
+   * @param originalData - Original variable data items
+   * @param currentResults - Computed results to check against byte limit
+   * @param bytesLimit - Maximum allowed bytes per message (0 = unlimited)
+   * @param buildRejected - Factory function to build rejection results
+   * @param logger - Logger instance for debug output
+   * @param logger.debug - Debug logging function
+   * @returns Original results if within limit, or rejection results if exceeded
+   */
   public static enforcePostCalculationBytesLimit<
     T extends { attributeType?: unknown; component: unknown; variable: unknown },
     R
@@ -284,6 +326,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return currentResults
   }
 
+  /**
+   * Retrieve the AlignedDataCtrlr interval in milliseconds.
+   * @param chargingStation - Target charging station
+   * @returns Aligned data interval in milliseconds
+   */
   public static getAlignedDataInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
@@ -293,6 +340,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Retrieve the SampledDataCtrlr TxEndedInterval in milliseconds.
+   * @param chargingStation - Target charging station
+   * @returns Transaction ended meter values interval in milliseconds
+   */
   public static getTxEndedInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
@@ -302,6 +354,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Retrieve the SampledDataCtrlr TxUpdatedInterval in milliseconds.
+   * @param chargingStation - Target charging station
+   * @returns Transaction updated meter values interval in milliseconds
+   */
   public static getTxUpdatedInterval (chargingStation: ChargingStation): number {
     return OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
@@ -354,6 +411,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { bytesLimit, itemsLimit }
   }
 
+  /**
+   * Deauthorize an active transaction per OCPP 2.0.1 E05 requirements.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier with the active transaction
+   * @param evseId - Optional EVSE identifier
+   * @returns Promise resolving to the TransactionEvent response
+   */
   public static async requestDeauthorizeTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -431,6 +495,15 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Stop an active transaction by sending a TransactionEvent(Ended).
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier with the active transaction
+   * @param evseId - Optional EVSE identifier
+   * @param triggerReason - Trigger reason for the stop event
+   * @param stoppedReason - Reason the transaction was stopped
+   * @returns Promise resolving to the TransactionEvent response
+   */
   public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -476,6 +549,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Send queued TransactionEvent requests accumulated while offline.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier whose queue to drain
+   */
   public static async sendQueuedTransactionEvents (
     chargingStation: ChargingStation,
     connectorId: number
@@ -523,6 +601,16 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Send a TransactionEvent request to the CSMS, or queue it if offline.
+   * @param chargingStation - Target charging station
+   * @param eventType - Transaction event type (Started, Updated, Ended)
+   * @param triggerReason - Reason that triggered the event
+   * @param connectorId - Connector identifier
+   * @param transactionId - Transaction identifier
+   * @param options - Additional transaction event options
+   * @returns Promise resolving to the TransactionEvent response
+   */
   public static async sendTransactionEvent (
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
@@ -590,6 +678,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Start periodic collection of TxEnded meter values for a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   * @param interval - Collection interval in milliseconds
+   */
   public static startEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -629,6 +723,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Start periodic TransactionEvent(Updated) with meter values for a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   * @param interval - Sending interval in milliseconds
+   */
   public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -712,6 +812,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Stop all active transactions on the charging station or a specific EVSE.
+   * @param chargingStation - Target charging station
+   * @param triggerReason - Trigger reason for stop events
+   * @param stoppedReason - Reason the transactions were stopped
+   * @param evseId - Optional EVSE identifier to limit scope
+   */
   public static async stopAllTransactions (
     chargingStation: ChargingStation,
     triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
@@ -770,6 +877,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Stop periodic TxEnded meter value collection for a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   */
   public static stopEndedMeterValues (chargingStation: ChargingStation, connectorId: number): void {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionEndedMeterValuesSetInterval != null) {
@@ -781,6 +893,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  /**
+   * Stop periodic TransactionEvent(Updated) sending for a connector.
+   * @param chargingStation - Target charging station
+   * @param connectorId - Connector identifier
+   */
   public static stopUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number

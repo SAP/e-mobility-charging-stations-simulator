@@ -119,7 +119,14 @@ import { AuthContext } from '../auth/index.js'
 import { isIdTagAuthorized } from '../IdTagAuthorization.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { buildMeterValue, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  buildMeterValue,
+  createPayloadValidatorMap,
+  isConnectorIdValid,
+  isIncomingRequestCommandSupported,
+  isMessageTriggerSupported,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -172,6 +179,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
   ]
 
+  /**
+   * Constructs an OCPP 1.6 Incoming Request Service with request handlers, validators, and event listeners.
+   */
   public constructor () {
     super(OCPPVersion.VERSION_16)
     this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
@@ -244,7 +254,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         this.toRequestHandler(this.handleRequestUpdateFirmware.bind(this)),
       ],
     ])
-    this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP16ServiceUtils.createIncomingRequestPayloadConfigs(),
       OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
@@ -556,15 +566,25 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
+  /**
+   * Stops the incoming request service for the given charging station.
+   * @param chargingStation - Target charging station
+   */
   public override stop (chargingStation: ChargingStation): void {
     /* no-op for OCPP 1.6 */
   }
 
+  /**
+   * Checks whether the given incoming request command is supported by the charging station.
+   * @param chargingStation - Target charging station
+   * @param commandName - Incoming request command to check
+   * @returns Whether the command is supported
+   */
   protected isIncomingRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean {
-    return OCPP16ServiceUtils.isIncomingRequestCommandSupported(
+    return isIncomingRequestCommandSupported(
       chargingStation,
       commandName as OCPP16IncomingRequestCommand
     )
@@ -1494,13 +1514,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16SupportedFeatureProfiles.RemoteTrigger,
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE
       ) ||
-      !OCPP16ServiceUtils.isMessageTriggerSupported(chargingStation, requestedMessage)
+      !isMessageTriggerSupported(chargingStation, requestedMessage)
     ) {
       return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
     }
     if (
       connectorId != null &&
-      !OCPP16ServiceUtils.isConnectorIdValid(
+      !isConnectorIdValid(
         chargingStation,
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
         connectorId

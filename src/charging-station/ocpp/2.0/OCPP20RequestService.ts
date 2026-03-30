@@ -18,7 +18,11 @@ import {
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import { buildStatusNotificationRequest } from '../OCPPServiceUtils.js'
+import {
+  buildStatusNotificationRequest,
+  createPayloadValidatorMap,
+  isRequestCommandSupported,
+} from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { buildTransactionEvent, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -60,7 +64,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    */
   public constructor (ocppResponseService: OCPPResponseService) {
     super(OCPPVersion.VERSION_201, ocppResponseService)
-    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+    this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),
       OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
@@ -101,7 +105,7 @@ export class OCPP20RequestService extends OCPPRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
     )
-    if (OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
+    if (isRequestCommandSupported(chargingStation, commandName)) {
       try {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
