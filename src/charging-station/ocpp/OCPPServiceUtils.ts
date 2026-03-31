@@ -67,7 +67,7 @@ import { OCPPConstants } from './OCPPConstants.js'
 
 const moduleName = 'OCPPServiceUtils'
 
-type Ajv = _Ajv.default
+export type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
 const ajvFormats = _ajvFormats.default

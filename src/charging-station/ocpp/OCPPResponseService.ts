@@ -1,4 +1,4 @@
-import type { default as _Ajv, ValidateFunction } from 'ajv'
+import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../charging-station/index.js'
 
@@ -12,9 +12,7 @@ import {
   type ResponseHandler,
 } from '../../types/index.js'
 import { Constants, isAsyncFunction, logger } from '../../utils/index.js'
-import { ajvErrorsToErrorType, createAjv } from './OCPPServiceUtils.js'
-
-type Ajv = _Ajv.default
+import { type Ajv, ajvErrorsToErrorType, createAjv } from './OCPPServiceUtils.js'
 
 const moduleName = 'OCPPResponseService'
 

@@ -1,4 +1,4 @@
-import type { default as _Ajv, ValidateFunction } from 'ajv'
+import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { OCPPResponseService } from './OCPPResponseService.js'
@@ -31,9 +31,12 @@ import {
   logger,
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { ajvErrorsToErrorType, convertDateToISOString, createAjv } from './OCPPServiceUtils.js'
-
-type Ajv = _Ajv.default
+import {
+  type Ajv,
+  ajvErrorsToErrorType,
+  convertDateToISOString,
+  createAjv,
+} from './OCPPServiceUtils.js'
 
 const moduleName = 'OCPPRequestService'
 
