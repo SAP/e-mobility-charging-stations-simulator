@@ -19,6 +19,7 @@ import type {
 } from '../../../../src/types/index.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
+import { OCPP20Constants } from '../../../../src/charging-station/ocpp/2.0/OCPP20Constants.js'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -266,7 +267,7 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
       OCPP20ComponentName.DeviceDataCtrlr,
       OCPP20OptionalVariableName.ReportingValueSize
     ),
-    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
   )
 }
 
@@ -282,12 +283,12 @@ export function resetValueSizeLimits (chargingStation: ChargingStation) {
       OCPP20ComponentName.DeviceDataCtrlr,
       OCPP20OptionalVariableName.ConfigurationValueSize
     ),
-    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
   )
   upsertConfigurationKey(
     chargingStation,
     buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
-    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
   )
 }
 

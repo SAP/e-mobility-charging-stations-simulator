@@ -5,10 +5,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import { OCPPConstants } from '../../src/charging-station/ocpp/OCPPConstants.js'
 import { BaseError } from '../../src/exception/BaseError.js'
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType, RequestCommand } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('OCPPError', async () => {
@@ -22,7 +22,7 @@ await describe('OCPPError', async () => {
     assert.strictEqual(ocppError.name, 'OCPPError')
     assert.strictEqual(ocppError.message, '')
     assert.strictEqual(ocppError.code, ErrorType.GENERIC_ERROR)
-    assert.strictEqual(ocppError.command, Constants.UNKNOWN_OCPP_COMMAND)
+    assert.strictEqual(ocppError.command, OCPPConstants.UNKNOWN_OCPP_COMMAND)
     assert.strictEqual(ocppError.details, undefined)
     assert.ok(typeof ocppError.stack === 'string')
     assert.notStrictEqual(ocppError.stack, '')

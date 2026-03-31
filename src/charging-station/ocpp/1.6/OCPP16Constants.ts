@@ -288,4 +288,6 @@ export class OCPP16Constants extends OCPPConstants {
       },
       // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
     ])
+
+  static readonly DEFAULT_IDTAG = '00000000'
 }

@@ -16,7 +16,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
-import { Constants, generateUUID, logger } from '../../../utils/index.js'
+import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import {
   createPayloadValidatorMap,
@@ -179,7 +179,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
         return {
-          idTag: Constants.DEFAULT_IDTAG,
+          idTag: OCPP16Constants.DEFAULT_IDTAG,
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
@@ -192,7 +192,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
-          idTag: Constants.DEFAULT_IDTAG,
+          idTag: OCPP16Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
             commandParams.connectorId as number,
             true

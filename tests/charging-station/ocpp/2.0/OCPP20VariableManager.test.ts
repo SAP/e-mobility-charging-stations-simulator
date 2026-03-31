@@ -1831,7 +1831,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         buildConfigKey(OCPP20ComponentName.ChargingStation, OCPP20VendorVariableName.ConnectionUrl),
         overLongValue
       )
-      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
+      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH)
       setValueSize(station, 1500)
       setReportingValueSize(station, 1400)
       const getRes = manager.getVariables(station, [

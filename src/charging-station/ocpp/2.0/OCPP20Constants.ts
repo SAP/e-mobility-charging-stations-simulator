@@ -141,9 +141,9 @@ export class OCPP20Constants extends OCPPConstants {
   static readonly DEFAULT_CONNECTION_URL = 'ws://localhost'
 
   static readonly FIRMWARE_INSTALL_DELAY_MS = 5000
+
   static readonly FIRMWARE_STATUS_DELAY_MS = 2000
   static readonly FIRMWARE_VERIFY_DELAY_MS = 500
-
   /**
    * Default timeout in milliseconds for async OCPP 2.0 handler operations
    * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
@@ -152,8 +152,14 @@ export class OCPP20Constants extends OCPPConstants {
 
   static readonly LOG_UPLOAD_STEP_DELAY_MS = 1000
 
+  static readonly MAX_SECURITY_EVENT_SEND_ATTEMPTS = 3
+
+  static readonly MAX_VARIABLE_VALUE_LENGTH = 2500
+
   static readonly RESET_DELAY_MS = 1000
   static readonly RESET_IDLE_MONITOR_INTERVAL_MS = 5000
+
+  static readonly SECURITY_EVENT_RETRY_DELAY_MS = 5000
 
   /**
    * Set of MessageTriggerEnumType values that the charging station supports

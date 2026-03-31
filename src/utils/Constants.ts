@@ -2,9 +2,7 @@ import {
   type AutomaticTransactionGeneratorConfiguration,
   type ChargingStationInfo,
   CurrentType,
-  type IncomingRequestCommand,
   OCPPVersion,
-  type RequestCommand,
   VendorParametersKey,
 } from '../types/index.js'
 
@@ -35,8 +33,6 @@ export class Constants {
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
 
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000 // Ms
-
-  static readonly DEFAULT_IDTAG = '00000000'
 
   static readonly DEFAULT_LOG_STATISTICS_INTERVAL = 60 // Seconds
 
@@ -94,6 +90,7 @@ export class Constants {
   static readonly DEFAULT_WS_HANDSHAKE_TIMEOUT = 30 // Seconds
   static readonly DEFAULT_WS_PING_INTERVAL = 30 // Seconds
   static readonly DEFAULT_WS_RECONNECT_DELAY = 30 // Seconds
+  static readonly DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET = 1000 // Ms
 
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})
 
@@ -107,19 +104,9 @@ export class Constants {
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY = 2147483647 // Ms
 
-  static readonly OCPP_VALUE_ABSOLUTE_MAX_LENGTH = 2500
-
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
 
   static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT = 30000 // Ms
-
-  static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
-    | IncomingRequestCommand
-    | RequestCommand
-
-  private constructor () {
-    // This is intentional
-  }
 }

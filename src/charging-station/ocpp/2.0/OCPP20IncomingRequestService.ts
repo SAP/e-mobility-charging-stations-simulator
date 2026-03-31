@@ -3370,7 +3370,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         })
         .catch((error: unknown) => {
           const retryCount = (event.retryCount ?? 0) + 1
-          if (retryCount >= 3) {
+          if (retryCount >= OCPP20Constants.MAX_SECURITY_EVENT_SEND_ATTEMPTS) {
             logger.warn(
               `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Discarding event '${event.type}' after ${retryCount.toString()} failed attempts`,
               error
@@ -3379,14 +3379,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             return
           }
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Failed to send queued event '${event.type}' (attempt ${retryCount.toString()}/3)`,
+            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Failed to send queued event '${event.type}' (attempt ${retryCount.toString()}/${OCPP20Constants.MAX_SECURITY_EVENT_SEND_ATTEMPTS.toString()})`,
             error
           )
           queue.unshift({ ...event, retryCount })
           stationState.isDrainingSecurityEvents = false
           setTimeout(() => {
             this.sendQueuedSecurityEvents(chargingStation)
-          }, 5000)
+          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS)
         })
     }
     drainNextEvent()

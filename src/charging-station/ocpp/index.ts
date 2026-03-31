@@ -9,6 +9,7 @@ export { buildTransactionEvent, OCPP20ServiceUtils } from './2.0/OCPP20ServiceUt
 export { OCPP20VariableManager } from './2.0/OCPP20VariableManager.js'
 export { OCPPAuthServiceFactory } from './auth/index.js'
 export { isIdTagAuthorized } from './IdTagAuthorization.js'
+export { OCPPConstants } from './OCPPConstants.js'
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
 export { createOCPPServices } from './OCPPServiceFactory.js'

@@ -31,6 +31,8 @@ import {
 } from './UIServerSecurity.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
+const CLIENT_NOTIFICATION_DEBOUNCE_MS = 500
+
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
@@ -142,7 +144,7 @@ export abstract class AbstractUIServer {
     this.clientNotificationDebounceTimer = setTimeout(() => {
       this.notifyClients()
       this.clientNotificationDebounceTimer = undefined
-    }, 500)
+    }, CLIENT_NOTIFICATION_DEBOUNCE_MS)
   }
 
   public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {

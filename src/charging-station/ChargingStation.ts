@@ -151,6 +151,7 @@ import {
   flushQueuedTransactionMessages,
   OCPP20ServiceUtils,
   OCPPAuthServiceFactory,
+  OCPPConstants,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   sendAndSetConnectorStatus,
@@ -2233,7 +2234,7 @@ export class ChargingStation extends EventEmitter {
                 // eslint-disable-next-line @typescript-eslint/no-base-to-string
                 { rawMessage: typeof data === 'string' ? data : data.toString() }
               ),
-              Constants.UNKNOWN_OCPP_COMMAND
+              OCPPConstants.UNKNOWN_OCPP_COMMAND
             )
             .catch((sendError: unknown) => {
               logger.error(
@@ -2276,7 +2277,7 @@ export class ChargingStation extends EventEmitter {
       if (!(error instanceof OCPPError)) {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command ${
-            commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
+            commandName ?? requestCommandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
             // eslint-disable-next-line @typescript-eslint/no-base-to-string
           } message '${data.toString()}' handling is not an OCPPError:`,
           error
@@ -2284,7 +2285,7 @@ export class ChargingStation extends EventEmitter {
       }
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
-          commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
+          commandName ?? requestCommandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
           this.requests.has(messageId)
@@ -2371,9 +2372,10 @@ export class ChargingStation extends EventEmitter {
     ) {
       ++this.wsConnectionRetryCount
       const reconnectDelay = this.getReconnectDelay()
-      const reconnectDelayWithdraw = 1000
       const reconnectTimeout =
-        reconnectDelay - reconnectDelayWithdraw > 0 ? reconnectDelay - reconnectDelayWithdraw : 0
+        reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET > 0
+          ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET
+          : 0
       logger.error(
         `${this.logPrefix()} WebSocket connection retry in ${roundTo(
           reconnectDelay,
