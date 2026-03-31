@@ -2,10 +2,11 @@ import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
+  AuthorizationStatus,
   AuthRequest,
   Identifier,
+  IdentifierType,
 } from '../types/AuthTypes.js'
-import type { AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
 /**
  * Authorization cache interface

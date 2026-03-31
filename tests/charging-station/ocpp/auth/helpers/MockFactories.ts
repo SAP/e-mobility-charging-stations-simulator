@@ -23,8 +23,11 @@ import {
   type Identifier,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType, type OCPP20IdTokenType } from '../../../../../src/types/index.js'
+import {
+  OCPP20IdTokenEnumType,
+  type OCPP20IdTokenType,
+  OCPPVersion,
+} from '../../../../../src/types/index.js'
 
 /**
  * Factory functions for creating test mocks and fixtures

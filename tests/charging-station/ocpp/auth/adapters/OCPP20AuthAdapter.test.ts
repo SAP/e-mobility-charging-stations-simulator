@@ -18,9 +18,9 @@ import {
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
+  OCPPVersion,
   RequestStartStopStatusEnumType,
 } from '../../../../../src/types/index.js'
-import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
 

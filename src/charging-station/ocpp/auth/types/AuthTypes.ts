@@ -1,5 +1,8 @@
-import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
-import type { OCPP20MessageFormatEnumType } from '../../../../types/index.js'
+import type {
+  JsonObject,
+  OCPP20MessageFormatEnumType,
+  OCPPVersion,
+} from '../../../../types/index.js'
 
 import {
   OCPP16AuthorizationStatus,

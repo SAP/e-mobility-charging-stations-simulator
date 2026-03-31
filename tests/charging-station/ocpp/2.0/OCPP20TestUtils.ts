@@ -14,9 +14,9 @@ import type {
   GetCertificateIdUseEnumType,
   JsonType,
   OCPP20IdTokenType,
+  OCPP20RequestCommand,
   OCSPRequestDataType,
 } from '../../../../src/types/index.js'
-import type { OCPP20RequestCommand } from '../../../../src/types/index.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'

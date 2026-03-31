@@ -1,5 +1,4 @@
-import type { ValidateFunction } from 'ajv'
-import type _Ajv from 'ajv'
+import type { default as _Ajv, ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../charging-station/index.js'
 
