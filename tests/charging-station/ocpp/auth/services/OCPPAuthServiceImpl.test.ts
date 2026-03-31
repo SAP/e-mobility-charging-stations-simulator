@@ -9,7 +9,6 @@ import type { ChargingStation } from '../../../../../src/charging-station/index.
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
-import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -19,7 +18,7 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
-import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
+import { createMockAuthServiceTestStation, getTestAuthCache } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceImpl', async () => {
   afterEach(() => {
@@ -420,12 +419,8 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       authService.initialize()
 
-      const localStrategy = authService.getStrategy('local')
-      assert.notStrictEqual(localStrategy, undefined)
-      assert.ok(localStrategy instanceof LocalAuthStrategy)
-
-      const local = localStrategy
-      assert.notStrictEqual(local.getAuthCache(), undefined)
+      const authCache = getTestAuthCache(authService)
+      assert.notStrictEqual(authCache, undefined)
     })
   })
 })

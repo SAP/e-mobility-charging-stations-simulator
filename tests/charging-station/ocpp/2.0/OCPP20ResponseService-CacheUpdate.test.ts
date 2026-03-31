@@ -8,7 +8,6 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import {
@@ -20,6 +19,7 @@ import {
 import { OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 
 const TEST_IDENTIFIER = 'TEST_RFID_TOKEN_001'
 const TEST_STATION_ID = 'CS_CACHE_UPDATE_TEST'
@@ -43,10 +43,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     authService = new OCPPAuthServiceImpl(station)
     authService.initialize()
 
-    const localStrategy = authService.getStrategy('local') as LocalAuthStrategy | undefined
-    const cache = localStrategy?.getAuthCache()
-    assert.ok(cache != null, 'Auth cache must be available after initialization')
-    authCache = cache
+    authCache = getTestAuthCache(authService)
   })
 
   afterEach(() => {
@@ -195,9 +192,8 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     )
 
     // Assert
-    const localStrategy = disabledService.getStrategy('local') as LocalAuthStrategy | undefined
-    const cache = localStrategy?.getAuthCache()
-    const cached = cache?.get(TEST_IDENTIFIER)
+    const disabledCache = getTestAuthCache(disabledService)
+    const cached = disabledCache.get(TEST_IDENTIFIER)
     assert.strictEqual(cached, undefined, 'Cache entry should not exist when cache is disabled')
   })
 })

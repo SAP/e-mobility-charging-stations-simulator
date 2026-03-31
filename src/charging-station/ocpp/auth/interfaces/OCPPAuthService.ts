@@ -153,12 +153,6 @@ export interface AuthStrategy {
   configure?(config: Partial<AuthConfiguration>): Promise<void>
 
   /**
-   * Get the authorization cache if available
-   * @returns The authorization cache, or undefined if caching is disabled or unavailable
-   */
-  getAuthCache(): AuthCache | undefined
-
-  /**
    * Get strategy-specific statistics
    */
   getStats(): JsonObject
@@ -397,12 +391,6 @@ export interface OCPPAuthService {
    * Clear all cached authorizations
    */
   clearCache(): void
-
-  /**
-   * Get the authorization cache if available
-   * @returns The authorization cache, or undefined if caching is disabled or unavailable
-   */
-  getAuthCache(): AuthCache | undefined
 
   /**
    * Get current authentication configuration

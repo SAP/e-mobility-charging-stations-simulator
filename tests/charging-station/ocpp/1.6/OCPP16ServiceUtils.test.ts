@@ -44,6 +44,7 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 import { createCommandsSupport, createMeterValuesTemplate } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ServiceUtils — pure functions', async () => {
@@ -879,8 +880,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       // Assert
       const authService = OCPPAuthServiceFactory.getInstance(station)
-      const authCache = authService.getAuthCache()
-      assert.ok(authCache != null)
+      const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null)
       assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
@@ -904,8 +904,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       // Assert
       const authService = OCPPAuthServiceFactory.getInstance(station)
-      const authCache = authService.getAuthCache()
-      assert.ok(authCache != null)
+      const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null)
       assert.strictEqual(cached.status, AuthorizationStatus.BLOCKED)
@@ -931,8 +930,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       // Assert
       const authService = OCPPAuthServiceFactory.getInstance(station)
-      const authCache = authService.getAuthCache()
-      assert.ok(authCache != null)
+      const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null, 'Cache entry should exist with future TTL')
       assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
@@ -958,8 +956,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       // Assert
       const authService = OCPPAuthServiceFactory.getInstance(station)
-      const authCache = authService.getAuthCache()
-      assert.ok(authCache != null)
+      const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.strictEqual(cached, undefined, 'Expired entry must not be cached')
     })
@@ -982,8 +979,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       // Assert
       const authService = OCPPAuthServiceFactory.getInstance(station)
-      const authCache = authService.getAuthCache()
-      assert.ok(authCache != null)
+      const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null, 'Cache entry should exist without TTL')
       assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)

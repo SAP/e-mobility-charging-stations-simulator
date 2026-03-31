@@ -15,6 +15,8 @@ import {
 } from '../../src/charging-station/ocpp/auth/index.js'
 import { logger } from '../../src/utils/index.js'
 
+const KNOWN_STRATEGIES = ['local', 'remote', 'certificate'] as const
+
 export class OCPPAuthIntegrationTest {
   private authService: OCPPAuthServiceImpl
   private chargingStation: ChargingStation
@@ -256,11 +258,6 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Invalid statistics object')
     }
 
-    const authStatistics = this.authService.getAuthenticationStats()
-    if (!Array.isArray(authStatistics.availableStrategies)) {
-      throw new Error('Invalid authentication statistics')
-    }
-
     const identifier: Identifier = {
       type: IdentifierType.ISO14443,
       value: 'PERF_TEST_ID',
@@ -297,8 +294,10 @@ export class OCPPAuthIntegrationTest {
   }
 
   private testServiceInitialization (): void {
-    const strategies = this.authService.getAvailableStrategies()
-    if (strategies.length === 0) {
+    const availableStrategies = KNOWN_STRATEGIES.filter(
+      name => this.authService.getStrategy(name) != null
+    )
+    if (availableStrategies.length === 0) {
       throw new Error('No authentication strategies available')
     }
 
@@ -307,24 +306,23 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Invalid configuration object')
     }
 
-    const stats = this.authService.getAuthenticationStats()
-    if (!stats.ocppVersion) {
+    const stats = this.authService.getStats()
+    if (typeof stats.totalRequests !== 'number') {
       throw new Error('Invalid authentication statistics')
     }
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} Service initialized with ${String(strategies.length)} strategies`
+      `${this.chargingStation.logPrefix()} Service initialized with ${String(availableStrategies.length)} strategies`
     )
   }
 
   private testStrategySelection (): void {
-    const strategies = this.authService.getAvailableStrategies()
+    const availableStrategies = KNOWN_STRATEGIES.filter(
+      name => this.authService.getStrategy(name) != null
+    )
 
-    for (const strategyName of strategies) {
-      const strategy = this.authService.getStrategy(strategyName)
-      if (!strategy) {
-        throw new Error(`Strategy '${strategyName}' not found`)
-      }
+    if (availableStrategies.length === 0) {
+      throw new Error('No authentication strategies available')
     }
 
     const testIdentifier: Identifier = {

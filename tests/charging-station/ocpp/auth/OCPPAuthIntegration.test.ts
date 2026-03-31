@@ -26,6 +26,7 @@ import {
   createMockIdentifier,
   createMockLocalAuthListManager,
   createTestAuthConfig,
+  getTestAuthCache,
 } from './helpers/MockFactories.js'
 
 await describe('OCPP Authentication', async () => {
@@ -233,10 +234,7 @@ await describe('OCPP Authentication', async () => {
       const service = new OCPPAuthServiceImpl(result16.station)
       service.initialize()
 
-      const localStrategy = service.getStrategy('local') as LocalAuthStrategy | undefined
-      assert.notStrictEqual(localStrategy, undefined)
-
-      const authCache = localStrategy?.getAuthCache()
+      const authCache = getTestAuthCache(service)
       assert.notStrictEqual(authCache, undefined)
     })
 

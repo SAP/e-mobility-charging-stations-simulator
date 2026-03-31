@@ -8,7 +8,6 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/index.js'
 import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -25,6 +24,7 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 
 const TEST_STATION_ID = 'CS_AUTH_CACHE_UTILS_TEST'
 const TEST_TOKEN_VALUE = 'RFID_AUTH_CACHE_001'
@@ -49,10 +49,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
     authService.initialize()
     OCPPAuthServiceFactory.setInstanceForTesting(TEST_STATION_ID, authService)
 
-    const localStrategy = authService.getStrategy('local') as LocalAuthStrategy | undefined
-    const cache = localStrategy?.getAuthCache()
-    assert.ok(cache != null, 'Auth cache must be available after initialization')
-    authCache = cache
+    authCache = getTestAuthCache(authService)
   })
 
   afterEach(() => {

@@ -33,6 +33,7 @@ const moduleName = 'OCPPAuthServiceImpl'
 
 export class OCPPAuthServiceImpl implements OCPPAuthService {
   private adapter?: OCPPAuthAdapter
+  private authCache?: AuthCache
   private readonly chargingStation: ChargingStation
   private config: AuthConfiguration
   private readonly metrics: {
@@ -273,76 +274,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Clear all cached authorizations
    */
   public clearCache (): void {
-    logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: Clearing all cached authorizations`
+    if (this.authCache == null) {
+      return
+    }
+    this.authCache.clear()
+    logger.info(
+      `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: Authorization cache cleared`
     )
-
-    // Clear cache in local strategy
-    const localStrategy = this.strategies.get('local')
-    const localAuthCache = localStrategy?.getAuthCache()
-    if (localAuthCache) {
-      localAuthCache.clear()
-      logger.info(
-        `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: Authorization cache cleared`
-      )
-    } else {
-      logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: No authorization cache available to clear`
-      )
-    }
-  }
-
-  public getAuthCache (): AuthCache | undefined {
-    if (!this.config.authorizationCacheEnabled) {
-      return undefined
-    }
-    const localStrategy = this.strategies.get('local')
-    return localStrategy?.getAuthCache()
-  }
-
-  /**
-   * Get authentication statistics
-   * @returns Authentication statistics including version and supported identifier types
-   */
-  public getAuthenticationStats (): {
-    availableStrategies: string[]
-    ocppVersion: string
-    supportedIdentifierTypes: string[]
-    totalStrategies: number
-  } {
-    // Determine supported identifier types by testing each strategy
-    const supportedTypes = new Set<string>()
-
-    // Test common identifier types
-    const testIdentifiers: Identifier[] = [
-      { type: IdentifierType.ISO14443, value: 'test' },
-      { type: IdentifierType.ISO15693, value: 'test' },
-      { type: IdentifierType.KEY_CODE, value: 'test' },
-      { type: IdentifierType.LOCAL, value: 'test' },
-      { type: IdentifierType.MAC_ADDRESS, value: 'test' },
-      { type: IdentifierType.NO_AUTHORIZATION, value: 'test' },
-    ]
-
-    testIdentifiers.forEach(identifier => {
-      if (this.isSupported(identifier)) {
-        supportedTypes.add(identifier.type)
-      }
-    })
-
-    return {
-      availableStrategies: this.getAvailableStrategies(),
-      ocppVersion: this.chargingStation.stationInfo?.ocppVersion ?? 'unknown',
-      supportedIdentifierTypes: Array.from(supportedTypes),
-      totalStrategies: this.strategies.size,
-    }
-  }
-
-  /**
-   * Get all available strategies
-   * @returns Array of registered strategy names
-   */
-  public getAvailableStrategies (): string[] {
-    return Array.from(this.strategies.keys())
   }
 
   /**
@@ -429,23 +367,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param identifier - Identifier whose cached authorization should be invalidated
    */
   public invalidateCache (identifier: Identifier): void {
-    logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${truncateId(identifier.value)}`
-    )
-
-    // Invalidate in local strategy
-    const localStrategy = this.strategies.get('local')
-    const localAuthCache = localStrategy?.getAuthCache()
-    if (localAuthCache) {
-      localAuthCache.remove(identifier.value)
-      logger.info(
-        `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
-      )
-    } else {
-      logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: No local strategy available for cache invalidation`
-      )
+    if (this.authCache == null) {
+      return
     }
+    this.authCache.remove(identifier.value)
+    logger.info(
+      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
+    )
   }
 
   /**
@@ -550,9 +478,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const localStrategy = this.strategies.get('local')
-    const authCache = localStrategy?.getAuthCache()
-    if (authCache == null) {
+    if (this.authCache == null) {
       logger.debug(
         `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: No auth cache available`
       )
@@ -582,7 +508,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       timestamp: new Date(),
     }
 
-    authCache.set(identifier, result, effectiveTtl)
+    this.authCache.set(identifier, result, effectiveTtl)
 
     logger.debug(
       `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${status}${effectiveTtl != null ? `, ttl=${effectiveTtl.toString()}s` : ''}`
@@ -688,15 +614,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       throw new OCPPError(ErrorType.INTERNAL_ERROR, 'Adapter must be initialized before strategies')
     }
 
-    // Create auth cache for strategy injection
-    const authCache = AuthComponentFactory.createAuthCache(this.config)
+    this.authCache = AuthComponentFactory.createAuthCache(this.config)
 
-    // Create strategies using factory
     const strategies = AuthComponentFactory.createStrategies(
       this.chargingStation,
       this.adapter,
       undefined, // manager - delegated to OCPPAuthServiceImpl
-      authCache,
+      this.authCache,
       this.config
     )
 
