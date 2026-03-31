@@ -1,16 +1,11 @@
-import type {
-  JsonObject,
-  OCPP20IdTokenInfoType,
-  OCPP20IdTokenType,
-  OCPPVersion,
-} from '../../../../types/index.js'
+import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
   Identifier,
 } from '../types/AuthTypes.js'
-import type { IdentifierType } from '../types/AuthTypes.js'
+import type { AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
 /**
  * Authorization cache interface
@@ -333,7 +328,7 @@ export interface LocalAuthListManager {
  * Adapters handle the translation between auth types
  * and version-specific OCPP types and protocols.
  */
-export interface OCPPAuthAdapter<TVersionId = OCPP20IdTokenType | string> {
+export interface OCPPAuthAdapter<TVersionId = unknown> {
   /**
    * Perform remote authorization using version-specific protocol
    * @param identifier - Identifier to authorize
@@ -441,14 +436,16 @@ export interface OCPPAuthService {
   testConnectivity(): boolean
 
   /**
-   * Update a cache entry from TransactionEventResponse idTokenInfo (C10.FR.01/04/05)
+   * Update a cache entry from a CSMS authorization response (C10.FR.01/04/05)
    * @param identifier - The idToken string to cache
-   * @param idTokenInfo - The idTokenInfo from the CSMS response
+   * @param status - The authorization status (mapped from OCPP version-specific types)
+   * @param expiryDate - Optional expiry date from the CSMS response
    * @param identifierType - Optional identifier type for cache skip logic (C02.FR.03/C03.FR.02)
    */
   updateCacheEntry(
     identifier: string,
-    idTokenInfo: OCPP20IdTokenInfoType,
+    status: AuthorizationStatus,
+    expiryDate?: Date | string,
     identifierType?: IdentifierType
   ): void
 

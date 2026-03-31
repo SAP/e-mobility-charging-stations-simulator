@@ -1,7 +1,7 @@
 /**
- * @file Tests for OCPP20ResponseService cache update on TransactionEventResponse
- * @description Unit tests for auth cache auto-update from TransactionEventResponse idTokenInfo
- * per OCPP 2.0.1 C10.FR.01/05, C12.FR.06, C02.FR.03, C03.FR.02
+ * @file Tests for OCPPAuthServiceImpl.updateCacheEntry
+ * @description Unit tests for auth cache updates per OCPP 2.0.1
+ * C10.FR.01/05, C12.FR.06, C02.FR.03, C03.FR.02
  */
 
 import assert from 'node:assert/strict'
@@ -17,7 +17,7 @@ import {
   OCPPAuthServiceFactory,
   OCPPAuthServiceImpl,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
-import { OCPP20AuthorizationStatusEnumType, OCPPVersion } from '../../../../src/types/index.js'
+import { OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
@@ -55,13 +55,13 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   })
 
   await it('C10.FR.05 - should update cache on TransactionEventResponse with Accepted idTokenInfo', () => {
-    // Arrange
-    const idTokenInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
-
     // Act
-    authService.updateCacheEntry(TEST_IDENTIFIER, idTokenInfo, IdentifierType.ISO14443)
+    authService.updateCacheEntry(
+      TEST_IDENTIFIER,
+      AuthorizationStatus.ACCEPTED,
+      undefined,
+      IdentifierType.ISO14443
+    )
 
     // Assert
     const cached = authCache.get(TEST_IDENTIFIER)
@@ -72,43 +72,44 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   await it('C10.FR.09 - should use cacheExpiryDateTime as TTL when present in idTokenInfo', () => {
     // Arrange — expiry 600 seconds from now
     const futureDate = new Date(Date.now() + 600_000)
-    const idTokenInfo = {
-      cacheExpiryDateTime: futureDate,
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
 
     // Act
-    authService.updateCacheEntry(TEST_IDENTIFIER, idTokenInfo, IdentifierType.ISO14443)
+    authService.updateCacheEntry(
+      TEST_IDENTIFIER,
+      AuthorizationStatus.ACCEPTED,
+      futureDate,
+      IdentifierType.ISO14443
+    )
 
-    // Assert — entry is cached (TTL is explicit, checked via presence)
+    // Assert
     const cached = authCache.get(TEST_IDENTIFIER)
     assert.ok(cached != null, 'Cache entry should exist with explicit TTL')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
 
   await it('C10.FR.08 - should use AuthCacheLifeTime as TTL when cacheExpiryDateTime absent', () => {
-    // Arrange — no cacheExpiryDateTime
-    const idTokenInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
+    // Act — no expiryDate, uses config.authorizationCacheLifetime
+    authService.updateCacheEntry(
+      TEST_IDENTIFIER,
+      AuthorizationStatus.ACCEPTED,
+      undefined,
+      IdentifierType.ISO14443
+    )
 
-    // Act
-    authService.updateCacheEntry(TEST_IDENTIFIER, idTokenInfo, IdentifierType.ISO14443)
-
-    // Assert — entry is cached (uses config.authorizationCacheLifetime as default TTL)
+    // Assert
     const cached = authCache.get(TEST_IDENTIFIER)
     assert.ok(cached != null, 'Cache entry should exist with default TTL')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
 
   await it('C02.FR.03 - should NOT cache NoAuthorization token type', () => {
-    // Arrange
-    const idTokenInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
-
     // Act
-    authService.updateCacheEntry('', idTokenInfo, IdentifierType.NO_AUTHORIZATION)
+    authService.updateCacheEntry(
+      '',
+      AuthorizationStatus.ACCEPTED,
+      undefined,
+      IdentifierType.NO_AUTHORIZATION
+    )
 
     // Assert
     const cached = authCache.get('')
@@ -116,13 +117,13 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   })
 
   await it('C03.FR.02 - should NOT cache Central token type', () => {
-    // Arrange
-    const idTokenInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
-
     // Act
-    authService.updateCacheEntry('CENTRAL_TOKEN_001', idTokenInfo, IdentifierType.CENTRAL)
+    authService.updateCacheEntry(
+      'CENTRAL_TOKEN_001',
+      AuthorizationStatus.ACCEPTED,
+      undefined,
+      IdentifierType.CENTRAL
+    )
 
     // Assert
     const cached = authCache.get('CENTRAL_TOKEN_001')
@@ -130,17 +131,19 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   })
 
   await it('C10.FR.01 - should cache non-Accepted status (Blocked, Expired, etc.)', () => {
-    // Arrange — multiple non-Accepted statuses per C10.FR.01: cache ALL statuses
-    const blockedInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Blocked,
-    }
-    const expiredInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Expired,
-    }
-
     // Act
-    authService.updateCacheEntry('BLOCKED_TOKEN', blockedInfo, IdentifierType.ISO14443)
-    authService.updateCacheEntry('EXPIRED_TOKEN', expiredInfo, IdentifierType.ISO14443)
+    authService.updateCacheEntry(
+      'BLOCKED_TOKEN',
+      AuthorizationStatus.BLOCKED,
+      undefined,
+      IdentifierType.ISO14443
+    )
+    authService.updateCacheEntry(
+      'EXPIRED_TOKEN',
+      AuthorizationStatus.EXPIRED,
+      undefined,
+      IdentifierType.ISO14443
+    )
 
     // Assert
     const cachedBlocked = authCache.get('BLOCKED_TOKEN')
@@ -150,6 +153,23 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     const cachedExpired = authCache.get('EXPIRED_TOKEN')
     assert.ok(cachedExpired != null, 'Expired status should be cached')
     assert.strictEqual(cachedExpired.status, AuthorizationStatus.EXPIRED)
+  })
+
+  await it('should skip caching when expiryDate is in the past', () => {
+    // Arrange
+    const pastDate = new Date(Date.now() - 60_000)
+
+    // Act
+    authService.updateCacheEntry(
+      TEST_IDENTIFIER,
+      AuthorizationStatus.ACCEPTED,
+      pastDate,
+      IdentifierType.ISO14443
+    )
+
+    // Assert
+    const cached = authCache.get(TEST_IDENTIFIER)
+    assert.strictEqual(cached, undefined, 'Expired entry must not be cached')
   })
 
   await it('should not update cache when authorizationCacheEnabled is false', () => {
@@ -166,14 +186,15 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     disabledService.initialize()
     disabledService.updateConfiguration({ authorizationCacheEnabled: false })
 
-    const idTokenInfo = {
-      status: OCPP20AuthorizationStatusEnumType.Accepted,
-    }
-
     // Act
-    disabledService.updateCacheEntry(TEST_IDENTIFIER, idTokenInfo, IdentifierType.ISO14443)
+    disabledService.updateCacheEntry(
+      TEST_IDENTIFIER,
+      AuthorizationStatus.ACCEPTED,
+      undefined,
+      IdentifierType.ISO14443
+    )
 
-    // Assert — cache should not have been written to
+    // Assert
     const localStrategy = disabledService.getStrategy('local') as LocalAuthStrategy | undefined
     const cache = localStrategy?.getAuthCache()
     const cached = cache?.get(TEST_IDENTIFIER)

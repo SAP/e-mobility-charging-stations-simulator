@@ -58,12 +58,7 @@ import {
   roundTo,
   truncateId,
 } from '../../../utils/index.js'
-import {
-  AuthenticationMethod,
-  type AuthorizationResult,
-  mapOCPP16Status,
-  OCPPAuthServiceFactory,
-} from '../auth/index.js'
+import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import {
   buildEmptyMeterValue,
   buildMeterValue,
@@ -863,34 +858,7 @@ export class OCPP16ServiceUtils {
   ): void {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-      const authCache = authService.getAuthCache()
-      if (authCache == null) {
-        return
-      }
-      const result: AuthorizationResult = {
-        isOffline: false,
-        method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: mapOCPP16Status(idTagInfo.status),
-        timestamp: new Date(),
-      }
-      let ttl: number | undefined
-      if (idTagInfo.expiryDate != null) {
-        const expiryDate = convertToDate(idTagInfo.expiryDate)
-        if (expiryDate != null) {
-          const ttlSeconds = Math.ceil((expiryDate.getTime() - Date.now()) / 1000)
-          if (ttlSeconds <= 0) {
-            logger.debug(
-              `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Skipping expired entry for '${truncateId(idTag)}'`
-            )
-            return
-          }
-          ttl = ttlSeconds
-        }
-      }
-      authCache.set(idTag, result, ttl)
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Updated cache for '${truncateId(idTag)}' status=${result.status}${ttl != null ? `, ttl=${ttl.toString()}s` : ''}`
-      )
+      authService.updateCacheEntry(idTag, mapOCPP16Status(idTagInfo.status), idTagInfo.expiryDate)
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Cache update failed for '${truncateId(idTag)}':`,

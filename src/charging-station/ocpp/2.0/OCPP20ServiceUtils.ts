@@ -47,7 +47,11 @@ import {
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
+import {
+  mapOCPP20AuthorizationStatus,
+  mapOCPP20TokenType,
+  OCPPAuthServiceFactory,
+} from '../auth/index.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
@@ -1008,7 +1012,12 @@ export class OCPP20ServiceUtils {
   ): void {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-      authService.updateCacheEntry(idToken.idToken, idTokenInfo, mapOCPP20TokenType(idToken.type))
+      authService.updateCacheEntry(
+        idToken.idToken,
+        mapOCPP20AuthorizationStatus(idTokenInfo.status),
+        idTokenInfo.cacheExpiryDateTime,
+        mapOCPP20TokenType(idToken.type)
+      )
     } catch (error: unknown) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Error updating auth cache:`,

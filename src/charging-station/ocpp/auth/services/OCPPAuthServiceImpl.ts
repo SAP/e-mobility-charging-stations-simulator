@@ -1,4 +1,3 @@
-import type { OCPP20IdTokenInfoType } from '../../../../types/index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 
 import { OCPPError } from '../../../../exception/index.js'
@@ -27,7 +26,6 @@ import {
   type AuthRequest,
   type Identifier,
   IdentifierType,
-  mapOCPP20AuthorizationStatus,
 } from '../types/AuthTypes.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
@@ -534,7 +532,8 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   public updateCacheEntry (
     identifier: string,
-    idTokenInfo: OCPP20IdTokenInfoType,
+    status: AuthorizationStatus,
+    expiryDate?: Date | string,
     identifierType?: IdentifierType
   ): void {
     if (!this.config.authorizationCacheEnabled) {
@@ -560,32 +559,33 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return
     }
 
-    const mappedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
+    let ttl: number | undefined
+    if (expiryDate != null) {
+      const parsed = convertToDate(expiryDate)
+      if (parsed != null) {
+        const ttlSeconds = Math.ceil((parsed.getTime() - Date.now()) / 1000)
+        if (ttlSeconds <= 0) {
+          logger.debug(
+            `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for ${truncateId(identifier)}`
+          )
+          return
+        }
+        ttl = ttlSeconds
+      }
+    }
+    const effectiveTtl = ttl ?? this.config.authorizationCacheLifetime
 
     const result: AuthorizationResult = {
       isOffline: false,
       method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-      status: mappedStatus,
+      status,
       timestamp: new Date(),
     }
 
-    let ttl: number | undefined
-    if (idTokenInfo.cacheExpiryDateTime != null) {
-      const expiryDate = convertToDate(idTokenInfo.cacheExpiryDateTime)
-      if (expiryDate != null) {
-        const expiryMs = expiryDate.getTime()
-        const ttlSeconds = Math.ceil((expiryMs - Date.now()) / 1000)
-        if (ttlSeconds > 0) {
-          ttl = ttlSeconds
-        }
-      }
-    }
-    ttl ??= this.config.authorizationCacheLifetime
-
-    authCache.set(identifier, result, ttl)
+    authCache.set(identifier, result, effectiveTtl)
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${mappedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
+      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${status}${effectiveTtl != null ? `, ttl=${effectiveTtl.toString()}s` : ''}`
     )
   }
 

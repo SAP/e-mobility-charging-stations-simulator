@@ -44,7 +44,7 @@ const moduleName = 'OCPP20AuthAdapter'
  * Handles authentication for OCPP 2.0/2.1 charging stations by translating
  * between auth types and OCPP 2.0 specific types and protocols.
  */
-export class OCPP20AuthAdapter implements OCPPAuthAdapter {
+export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   readonly ocppVersion = OCPPVersion.VERSION_20
 
   constructor (private readonly chargingStation: ChargingStation) {}
