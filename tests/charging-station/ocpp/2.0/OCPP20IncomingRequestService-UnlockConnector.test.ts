@@ -15,6 +15,7 @@ import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
+  OCPP20RequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
   UnlockStatusEnumType,
@@ -206,7 +207,9 @@ await describe('F05 - UnlockConnector', async () => {
       await testableService.handleRequestUnlockConnector(mockStation, request)
 
       // sendAndSetConnectorStatus calls requestHandler internally for StatusNotification
-      assert.ok(requestHandlerMock.mock.calls.length > 0)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string]
+      assert.strictEqual(args[1], OCPP20RequestCommand.STATUS_NOTIFICATION)
     })
 
     await it('should return a Promise from async handler', async () => {

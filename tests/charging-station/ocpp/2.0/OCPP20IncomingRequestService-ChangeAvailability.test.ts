@@ -3,6 +3,8 @@
  * @description Unit tests for OCPP 2.0.1 ChangeAvailability command handling (G03)
  */
 
+import type { mock } from 'node:test'
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -13,37 +15,26 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   ChangeAvailabilityStatusEnumType,
   OCPP20OperationalStatusEnumType,
-  OCPPVersion,
+  OCPP20RequestCommand,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
 import {
+  flushMicrotasks,
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createOCPP20ListenerStation } from './OCPP20TestUtils.js'
 
 await describe('G03 - ChangeAvailability', async () => {
   let station: ChargingStation
+  let requestHandlerMock: ReturnType<typeof mock.fn>
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    const { station: mockStation } = createMockChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-      ocppRequestService: {
-        requestHandler: async () => await Promise.resolve({}),
-      },
-      stationInfo: {
-        ocppStrictCompliance: false,
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
-    })
-    station = mockStation
+    ;({ requestHandlerMock, station } = createOCPP20ListenerStation(
+      TEST_CHARGING_STATION_BASE_NAME
+    ))
     const incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
   })
@@ -53,7 +44,7 @@ await describe('G03 - ChangeAvailability', async () => {
   })
 
   // FR: G03.FR.01
-  await it('should accept EVSE-level Inoperative when no ongoing transaction', () => {
+  await it('should accept EVSE-level Inoperative when no ongoing transaction', async () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
       operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
@@ -62,6 +53,10 @@ await describe('G03 - ChangeAvailability', async () => {
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
     const evseStatus = station.getEvseStatus(1)
     assert.strictEqual(evseStatus?.availability, OCPP20OperationalStatusEnumType.Inoperative)
+    await flushMicrotasks()
+    assert.ok(requestHandlerMock.mock.callCount() >= 1)
+    const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string]
+    assert.strictEqual(args[1], OCPP20RequestCommand.STATUS_NOTIFICATION)
   })
 
   // FR: G03.FR.02
@@ -107,7 +102,7 @@ await describe('G03 - ChangeAvailability', async () => {
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Scheduled)
   })
 
-  await it('should reject when EVSE does not exist', () => {
+  await it('should reject when EVSE does not exist', async () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 999 },
       operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
@@ -116,6 +111,8 @@ await describe('G03 - ChangeAvailability', async () => {
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Rejected)
     assert.notStrictEqual(response.statusInfo, undefined)
     assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnknownEvse)
+    await flushMicrotasks()
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
   })
 
   await it('should accept when already in requested state (idempotent)', () => {

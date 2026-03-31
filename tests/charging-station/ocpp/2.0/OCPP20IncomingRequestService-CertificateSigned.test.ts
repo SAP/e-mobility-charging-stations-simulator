@@ -41,6 +41,7 @@ import {
 await describe('I04 - CertificateSigned', async () => {
   let station: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
+  let closeWSConnectionMock: ReturnType<typeof mock.fn>
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -60,7 +61,8 @@ await describe('I04 - CertificateSigned', async () => {
       station,
       createMockCertificateManager()
     )
-    station.closeWSConnection = mock.fn()
+    closeWSConnectionMock = mock.fn()
+    station.closeWSConnection = closeWSConnectionMock as unknown as () => void
     testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
   })
 
@@ -86,6 +88,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.notStrictEqual(response.status, undefined)
       assert.strictEqual(typeof response.status, 'string')
       assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(closeWSConnectionMock.mock.callCount(), 1)
     })
 
     await it('should accept single certificate (no chain)', async () => {
@@ -104,6 +107,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, GenericStatus.Accepted)
       assert.strictEqual(response.statusInfo, undefined)
+      assert.strictEqual(closeWSConnectionMock.mock.callCount(), 0)
     })
   })
 
@@ -122,6 +126,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.notStrictEqual(response.statusInfo, undefined)
       assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
       assert.strictEqual(typeof response.statusInfo?.reasonCode, 'string')
+      assert.strictEqual(closeWSConnectionMock.mock.callCount(), 0)
     })
   })
 
@@ -143,8 +148,7 @@ await describe('I04 - CertificateSigned', async () => {
         await testableService.handleRequestCertificateSigned(station, request)
 
       assert.strictEqual(response.status, GenericStatus.Accepted)
-      // Verify closeWSConnection was called to trigger reconnect
-      assert.ok(mockCloseWSConnection.mock.calls.length > 0)
+      assert.strictEqual(mockCloseWSConnection.mock.callCount(), 1)
     })
   })
 
@@ -166,10 +170,8 @@ await describe('I04 - CertificateSigned', async () => {
         await testableService.handleRequestCertificateSigned(station, request)
 
       assert.strictEqual(response.status, GenericStatus.Accepted)
-      // Verify storeCertificate was called
-      assert.ok(mockCertManager.storeCertificate.mock.calls.length > 0)
-      // Verify closeWSConnection was NOT called for V2GCertificate
-      assert.strictEqual(mockCloseWSConnection.mock.calls.length, 0)
+      assert.strictEqual(mockCertManager.storeCertificate.mock.callCount(), 1)
+      assert.strictEqual(mockCloseWSConnection.mock.callCount(), 0)
     })
   })
 
