@@ -23,7 +23,7 @@ export class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
     }
-    workerOptions = mergeDeepRight<WorkerOptions, WorkerOptions>(
+    workerOptions = mergeDeepRight(
       DEFAULT_WORKER_OPTIONS,
       (workerOptions ?? {}) as WorkerOptions
     )

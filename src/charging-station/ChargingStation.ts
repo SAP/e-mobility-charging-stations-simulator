@@ -1489,7 +1489,7 @@ export class ChargingStation extends EventEmitter {
         propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
     return setChargingStationOptions(
-      mergeDeepRight<ChargingStationInfo, ChargingStationInfo>(
+      mergeDeepRight(
         Constants.DEFAULT_STATION_INFO as ChargingStationInfo,
         stationInfo
       ),
@@ -1820,7 +1820,7 @@ export class ChargingStation extends EventEmitter {
               this.logPrefix(),
               this.templateFile
             )
-            this.connectors.set(connectorId, clone<ConnectorStatus>(connectorStatus))
+            this.connectors.set(connectorId, clone(connectorStatus))
           }
           initializeConnectorsMapStatus(this.connectors, this.logPrefix())
           this.saveConnectorsStatus()
@@ -1855,7 +1855,7 @@ export class ChargingStation extends EventEmitter {
       for (const [connectorId, connectorStatus] of entries) {
         this.connectors.set(
           connectorId,
-          prepareConnectorStatus(clone<ConnectorStatus>(connectorStatus))
+          prepareConnectorStatus(clone(connectorStatus))
         )
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
@@ -1868,7 +1868,7 @@ export class ChargingStation extends EventEmitter {
             status,
           ])
       for (const [evseId, evseStatusConfiguration] of evseEntries) {
-        const evseStatus = clone<EvseStatusConfiguration>(evseStatusConfiguration)
+        const evseStatus = clone(evseStatusConfiguration)
         delete evseStatus.connectorsStatus
         const connIsTupleFormat =
           evseStatusConfiguration.connectorsStatus != null &&
@@ -2374,7 +2374,7 @@ export class ChargingStation extends EventEmitter {
         const configurationFromFile = this.getConfigurationFromFile()
         let configurationData: ChargingStationConfiguration =
           configurationFromFile != null
-            ? clone<ChargingStationConfiguration>(configurationFromFile)
+            ? clone(configurationFromFile)
             : {}
         if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
           configurationData.stationInfo = this.stationInfo
@@ -2389,10 +2389,7 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.configurationKey
         }
-        configurationData = mergeDeepRight<
-          ChargingStationConfiguration,
-          Partial<ChargingStationConfiguration>
-        >(
+        configurationData = mergeDeepRight(
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(
             this

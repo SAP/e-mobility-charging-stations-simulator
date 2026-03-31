@@ -364,7 +364,7 @@ export const extractTimeSeriesValues = (timeSeries: CircularBuffer<TimestampedDa
 }
 
 export const clone = <T>(object: T): T => {
-  return structuredClone<T>(object)
+  return structuredClone(object)
 }
 
 type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>

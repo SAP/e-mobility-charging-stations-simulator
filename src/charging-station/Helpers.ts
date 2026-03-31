@@ -460,7 +460,7 @@ export const buildConnectorsMap = (
     for (const [connectorKey, connectorStatus] of Object.entries(connectors)) {
       const connectorId = convertToInt(connectorKey)
       checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
-      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
+      connectorsMap.set(connectorId, clone(connectorStatus))
     }
   } else {
     logger.warn(
@@ -588,7 +588,7 @@ export const warnTemplateKeysDeprecation = (
 export const stationTemplateToStationInfo = (
   stationTemplate: ChargingStationTemplate
 ): ChargingStationInfo => {
-  stationTemplate = clone<ChargingStationTemplate>(stationTemplate)
+  stationTemplate = clone(stationTemplate)
   delete stationTemplate.power
   delete stationTemplate.powerUnit
   delete stationTemplate.Connectors
