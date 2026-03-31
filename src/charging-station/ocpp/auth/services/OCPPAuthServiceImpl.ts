@@ -563,7 +563,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (expiryDate != null) {
       const expiry = convertToDate(expiryDate)
       if (expiry != null) {
-        const ttlSeconds = Math.ceil((expiry.getTime() - Date.now()) / 1000)
+        const ttlSeconds = Math.floor((expiry.getTime() - Date.now()) / 1000)
         if (ttlSeconds <= 0) {
           logger.debug(
             `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for ${truncateId(identifier)}`
