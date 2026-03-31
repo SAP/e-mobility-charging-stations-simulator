@@ -68,7 +68,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
         `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 2.0 Authorize`
       )
 
-      // Check if remote authorization is configured
       const isRemoteAuth = this.isRemoteAvailable()
       if (!isRemoteAuth) {
         return {
@@ -84,72 +83,14 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
         }
       }
 
-      try {
-        const idToken = this.convertFromIdentifier(identifier)
+      const idToken = this.convertFromIdentifier(identifier)
 
-        // Validate token format
-        const isValidToken = this.isValidIdentifier(identifier)
-        if (!isValidToken) {
-          return {
-            additionalInfo: {
-              connectorId,
-              error: 'Invalid token format for OCPP 2.0',
-              transactionId,
-            },
-            isOffline: false,
-            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.INVALID,
-            timestamp: new Date(),
-          }
-        }
-
-        logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending Authorize request (idToken: ${idToken.idToken})`
-        )
-
-        // Send Authorize request
-        const response = await this.chargingStation.ocppRequestService.requestHandler<
-          OCPP20AuthorizeRequest,
-          OCPP20AuthorizeResponse
-        >(this.chargingStation, OCPP20RequestCommand.AUTHORIZE, {
-          idToken,
-        })
-
-        // Extract authorization status from response
-        const authStatus = response.idTokenInfo.status
-        const cacheExpiryDateTime = response.idTokenInfo.cacheExpiryDateTime
-
-        // Map OCPP 2.0 authorization status
-        const mappedStatus = mapOCPP20AuthorizationStatus(authStatus)
-
-        logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (mapped: ${mappedStatus})`
-        )
-
-        return {
-          additionalInfo: {
-            cacheExpiryDateTime,
-            chargingPriority: response.idTokenInfo.chargingPriority,
-            connectorId,
-            ocpp20Status: authStatus,
-            tokenType: idToken.type,
-            tokenValue: idToken.idToken,
-          },
-          isOffline: false,
-          method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: mappedStatus,
-          timestamp: new Date(),
-        }
-      } catch (error) {
-        logger.error(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorize request failed`,
-          error
-        )
-
+      const isValidToken = this.isValidIdentifier(identifier)
+      if (!isValidToken) {
         return {
           additionalInfo: {
             connectorId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: 'Invalid token format for OCPP 2.0',
             transactionId,
           },
           isOffline: false,
@@ -157,6 +98,41 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
           status: AuthorizationStatus.INVALID,
           timestamp: new Date(),
         }
+      }
+
+      logger.debug(
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending Authorize request (idToken: ${idToken.idToken})`
+      )
+
+      const response = await this.chargingStation.ocppRequestService.requestHandler<
+        OCPP20AuthorizeRequest,
+        OCPP20AuthorizeResponse
+      >(this.chargingStation, OCPP20RequestCommand.AUTHORIZE, {
+        idToken,
+      })
+
+      const authStatus = response.idTokenInfo.status
+      const cacheExpiryDateTime = response.idTokenInfo.cacheExpiryDateTime
+
+      const mappedStatus = mapOCPP20AuthorizationStatus(authStatus)
+
+      logger.debug(
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (mapped: ${mappedStatus})`
+      )
+
+      return {
+        additionalInfo: {
+          cacheExpiryDateTime,
+          chargingPriority: response.idTokenInfo.chargingPriority,
+          connectorId,
+          ocpp20Status: authStatus,
+          tokenType: idToken.type,
+          tokenValue: idToken.idToken,
+        },
+        isOffline: false,
+        method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+        status: mappedStatus,
+        timestamp: new Date(),
       }
     } catch (error) {
       logger.error(

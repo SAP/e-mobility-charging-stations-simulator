@@ -114,7 +114,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   })
 
   await describe('default behavior', async () => {
-    await it('should be no-op when DisablePostAuthorize not configured (default behavior preserved)', async () => {
+    await it('should trigger re-auth when DisablePostAuthorize not configured (defaults to enabled)', async () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
@@ -135,9 +135,8 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       // Act
       const result = await strategy.authenticate(request, config)
 
-      // Assert - returns cached result as-is (disablePostAuthorize not in config)
-      assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      // Assert - undefined signals orchestrator should try remote strategy (C10.FR.03)
+      assert.strictEqual(result, undefined)
     })
   })
 })

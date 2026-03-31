@@ -516,6 +516,6 @@ export class LocalAuthStrategy implements AuthStrategy {
     result: AuthorizationResult,
     config: AuthConfiguration
   ): boolean {
-    return result.status !== AuthorizationStatus.ACCEPTED && config.disablePostAuthorize === false
+    return result.status !== AuthorizationStatus.ACCEPTED && config.disablePostAuthorize !== true
   }
 }
