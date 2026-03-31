@@ -112,6 +112,7 @@ import {
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
+  warnOnOCPP16TemplateKeys,
 } from './ConfigurationKeyUtils.js'
 import {
   buildConnectorsMap,
@@ -1776,6 +1777,7 @@ export class ChargingStation extends EventEmitter {
     this.powerDivider = this.getPowerDivider()
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration(options?.persistentConfiguration)
+    warnOnOCPP16TemplateKeys(this)
     this.initializeOcppConfiguration()
     this.initializeOcppServices()
     if (this.stationInfo.autoRegister === true) {
