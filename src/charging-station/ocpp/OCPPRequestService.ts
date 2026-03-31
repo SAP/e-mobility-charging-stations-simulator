@@ -1,5 +1,5 @@
-import _Ajv, { type ValidateFunction } from 'ajv'
-import _ajvFormats from 'ajv-formats'
+import type { ValidateFunction } from 'ajv'
+import type _Ajv from 'ajv'
 
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { OCPPResponseService } from './OCPPResponseService.js'
@@ -32,12 +32,9 @@ import {
   logger,
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { ajvErrorsToErrorType, convertDateToISOString } from './OCPPServiceUtils.js'
+import { ajvErrorsToErrorType, convertDateToISOString, createAjv } from './OCPPServiceUtils.js'
 
 type Ajv = _Ajv.default
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-const Ajv = _Ajv.default
-const ajvFormats = _ajvFormats.default
 
 const moduleName = 'OCPPRequestService'
 
@@ -60,11 +57,7 @@ export abstract class OCPPRequestService {
 
   protected constructor (version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version
-    this.ajv = new Ajv({
-      keywords: ['javaType'],
-      multipleOfPrecision: 2,
-    })
-    ajvFormats(this.ajv)
+    this.ajv = createAjv()
     this.ocppResponseService = ocppResponseService
     this.requestHandler = this.requestHandler.bind(this)
     this.sendMessage = this.sendMessage.bind(this)

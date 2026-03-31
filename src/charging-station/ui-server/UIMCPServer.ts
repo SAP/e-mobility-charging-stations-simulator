@@ -31,19 +31,12 @@ import {
   registerMCPResources,
   registerMCPSchemaResources,
 } from './mcp/index.js'
-import {
-  createRateLimiter,
-  DEFAULT_MAX_PAYLOAD_SIZE,
-  DEFAULT_RATE_LIMIT,
-  DEFAULT_RATE_WINDOW,
-} from './UIServerSecurity.js'
+import { DEFAULT_MAX_PAYLOAD_SIZE } from './UIServerSecurity.js'
 import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
 
 const MCP_TOOL_TIMEOUT_MS = 30_000
-
-const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 
 export class UIMCPServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI MCP Server'
@@ -122,7 +115,7 @@ export class UIMCPServer extends AbstractUIServer {
       }
 
       const clientIp = req.socket.remoteAddress ?? 'unknown'
-      if (!rateLimiter(clientIp)) {
+      if (!this.rateLimiter(clientIp)) {
         res.writeHead(429, { 'Content-Type': 'text/plain' }).end('429 Too Many Requests')
         return
       }

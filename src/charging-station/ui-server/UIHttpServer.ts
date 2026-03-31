@@ -23,17 +23,12 @@ import { generateUUID, getErrorMessage, JSONStringify, logger } from '../../util
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
-  createRateLimiter,
   DEFAULT_COMPRESSION_THRESHOLD,
   DEFAULT_MAX_PAYLOAD_SIZE,
-  DEFAULT_RATE_LIMIT,
-  DEFAULT_RATE_WINDOW,
 } from './UIServerSecurity.js'
 import { HttpMethod, isProtocolAndVersionSupported } from './UIServerUtils.js'
 
 const moduleName = 'UIHttpServer'
-
-const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 
 /**
  * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
@@ -112,7 +107,7 @@ export class UIHttpServer extends AbstractUIServer {
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
     // Rate limiting check
     const clientIp = req.socket.remoteAddress ?? 'unknown'
-    if (!rateLimiter(clientIp)) {
+    if (!this.rateLimiter(clientIp)) {
       res
         .writeHead(StatusCodes.TOO_MANY_REQUESTS, {
           'Content-Type': 'text/plain',

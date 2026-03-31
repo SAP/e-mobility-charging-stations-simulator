@@ -46,7 +46,7 @@ import {
 import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   buildMeterValue,
-  PayloadValidatorConfig,
+  createPayloadConfigs,
   PayloadValidatorOptions,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
@@ -223,11 +223,7 @@ export class OCPP20ServiceUtils {
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Request.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP20ServiceUtils.incomingRequestSchemaNames, 'Request.json')
 
   /**
    * Configuration for OCPP 2.0 Incoming Request Response validators
@@ -236,11 +232,7 @@ export class OCPP20ServiceUtils {
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Response.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP20ServiceUtils.incomingRequestSchemaNames, 'Response.json')
 
   /**
    * Factory options for OCPP 2.0 payload validators
@@ -263,11 +255,7 @@ export class OCPP20ServiceUtils {
   public static createRequestPayloadConfigs = (): [
     OCPP20RequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Request.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP20ServiceUtils.outgoingRequestSchemaNames, 'Request.json')
 
   /**
    * OCPP 2.0 Response Service validator configurations
@@ -276,11 +264,7 @@ export class OCPP20ServiceUtils {
   public static createResponsePayloadConfigs = (): [
     OCPP20RequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Response.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP20ServiceUtils.outgoingRequestSchemaNames, 'Response.json')
 
   /**
    * Enforce ItemsPerMessage and BytesPerMessage limits on request data.

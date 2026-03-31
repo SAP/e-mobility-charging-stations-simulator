@@ -23,13 +23,19 @@ import {
 } from '../../types/index.js'
 import { isEmpty, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
-import { isValidCredential } from './UIServerSecurity.js'
+import {
+  createRateLimiter,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_RATE_WINDOW,
+  isValidCredential,
+} from './UIServerSecurity.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
   protected readonly httpServer: Http2Server | Server
+  protected readonly rateLimiter: ReturnType<typeof createRateLimiter>
   protected readonly responseHandlers: Map<UUIDv4, ServerResponse | WebSocket>
 
   protected abstract readonly uiServerType: string
@@ -62,6 +68,7 @@ export abstract class AbstractUIServer {
         )
     }
     this.responseHandlers = new Map<UUIDv4, ServerResponse | WebSocket>()
+    this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 

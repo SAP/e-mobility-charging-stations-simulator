@@ -26,6 +26,7 @@ import {
   DEFAULT_WORKER_START_DELAY,
   WorkerProcessType,
 } from '../worker/index.js'
+import { checkDeprecatedConfigurationKeys } from './ConfigurationMigration.js'
 import {
   buildPerformanceUriFilePath,
   checkWorkerElementsPerWorker,
@@ -161,9 +162,9 @@ export class Configuration {
   }
 
   public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
-    const checkDeprecatedConfigurationKeysOnce = once(
-      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration)
-    )
+    const checkDeprecatedConfigurationKeysOnce = once(() => {
+      checkDeprecatedConfigurationKeys(Configuration.getConfigurationData())
+    })
     checkDeprecatedConfigurationKeysOnce()
     return Configuration.getConfigurationData()?.stationTemplateUrls
   }
@@ -351,177 +352,6 @@ export class Configuration {
     }
   }
 
-  private static checkDeprecatedConfigurationKeys (): void {
-    const deprecatedKeys: [string, ConfigurationSection | undefined, string][] = [
-      // connection timeout
-      [
-        'autoReconnectTimeout',
-        undefined,
-        "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
-      ],
-      [
-        'connectionTimeout',
-        undefined,
-        "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
-      ],
-      // connection retries
-      ['autoReconnectMaxRetries', undefined, 'Use it in charging station template instead'],
-      // station template url(s)
-      ['stationTemplateURLs', undefined, "Use 'stationTemplateUrls' instead"],
-      // supervision url(s)
-      ['supervisionURLs', undefined, "Use 'supervisionUrls' instead"],
-      // supervision urls distribution
-      ['distributeStationToTenantEqually', undefined, "Use 'supervisionUrlDistribution' instead"],
-      ['distributeStationsToTenantsEqually', undefined, "Use 'supervisionUrlDistribution' instead"],
-      // worker section
-      [
-        'useWorkerPool',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
-      ],
-      [
-        'workerProcess',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
-      ],
-      [
-        'workerStartDelay',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker start delay instead`,
-      ],
-      [
-        'chargingStationsPerWorker',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`,
-      ],
-      [
-        'elementAddDelay',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker's element add delay instead`,
-      ],
-      [
-        'workerPoolMinSize',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker pool minimum size instead`,
-      ],
-      [
-        'workerPoolSize',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
-      ],
-      [
-        'workerPoolMaxSize',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
-      ],
-      [
-        'workerPoolStrategy',
-        undefined,
-        `Use '${ConfigurationSection.worker}' section to define the worker pool strategy instead`,
-      ],
-      ['poolStrategy', ConfigurationSection.worker, 'Not publicly exposed to end users'],
-      ['elementStartDelay', ConfigurationSection.worker, "Use 'elementAddDelay' instead"],
-      // log section
-      [
-        'logEnabled',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the logging enablement instead`,
-      ],
-      [
-        'logFile',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log file instead`,
-      ],
-      [
-        'logErrorFile',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log error file instead`,
-      ],
-      [
-        'logConsole',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the console logging enablement instead`,
-      ],
-      [
-        'logStatisticsInterval',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log statistics interval instead`,
-      ],
-      [
-        'logLevel',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log level instead`,
-      ],
-      [
-        'logFormat',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log format instead`,
-      ],
-      [
-        'logRotate',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log rotation enablement instead`,
-      ],
-      [
-        'logMaxFiles',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log maximum files instead`,
-      ],
-      [
-        'logMaxSize',
-        undefined,
-        `Use '${ConfigurationSection.log}' section to define the log maximum size instead`,
-      ],
-      // performanceStorage section
-      ['URI', ConfigurationSection.performanceStorage, "Use 'uri' instead"],
-    ]
-    for (const [key, section, msg] of deprecatedKeys) {
-      Configuration.warnDeprecatedConfigurationKey(key, section, msg)
-    }
-    // station template url(s) remapping
-    if (
-      Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
-      null
-    ) {
-      const configurationData = Configuration.getConfigurationData()
-      if (configurationData != null) {
-        configurationData.stationTemplateUrls = configurationData[
-          'stationTemplateURLs' as keyof ConfigurationData
-        ] as StationTemplateUrl[]
-      }
-    }
-    Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
-      (stationTemplateUrl: StationTemplateUrl) => {
-        if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] != null) {
-          console.error(
-            `${chalk.green(logPrefix())} ${chalk.red(
-              `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
-            )}`
-          )
-        }
-      }
-    )
-    // worker section: staticPool check
-    if (
-      Configuration.getConfigurationData()?.worker?.processType ===
-      ('staticPool' as WorkerProcessType)
-    ) {
-      console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration 'staticPool' value usage in worker section 'processType' field. Use '${WorkerProcessType.fixedPool}' value instead`
-        )}`
-      )
-    }
-    // uiServer section
-    if (has('uiWebSocketServer', Configuration.getConfigurationData())) {
-      console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`
-        )}`
-      )
-    }
-  }
-
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
     if (
       Configuration.configurationFile == null ||
@@ -572,38 +402,5 @@ export class Configuration {
 
   private static isConfigurationSectionCached (sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName)
-  }
-
-  private static warnDeprecatedConfigurationKey (
-    key: string,
-    configurationSection?: ConfigurationSection,
-    logMsgToAppend = ''
-  ): void {
-    if (
-      configurationSection != null &&
-      Configuration.getConfigurationData()?.[configurationSection as keyof ConfigurationData] !=
-        null &&
-      (
-        Configuration.getConfigurationData()?.[
-          configurationSection as keyof ConfigurationData
-        ] as Record<string, unknown>
-      )[key] != null
-    ) {
-      console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration key '${key}' usage in section '${configurationSection}'${
-            logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-          }`
-        )}`
-      )
-    } else if (Configuration.getConfigurationData()?.[key as keyof ConfigurationData] != null) {
-      console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration key '${key}' usage${
-            logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-          }`
-        )}`
-      )
-    }
   }
 }

@@ -60,8 +60,8 @@ import {
   buildEmptyMeterValue,
   buildMeterValue,
   buildSampledValue,
+  createPayloadConfigs,
   getSampledValueTemplate,
-  PayloadValidatorConfig,
   PayloadValidatorOptions,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
@@ -555,11 +555,7 @@ export class OCPP16ServiceUtils {
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP16ServiceUtils.incomingRequestSchemaNames, '.json')
 
   /**
    * OCPP 1.6 Incoming Request Response Service validator configurations
@@ -568,11 +564,7 @@ export class OCPP16ServiceUtils {
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Response.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP16ServiceUtils.incomingRequestSchemaNames, 'Response.json')
 
   /**
    * Factory options for OCPP 1.6 payload validators
@@ -595,11 +587,7 @@ export class OCPP16ServiceUtils {
   public static createRequestPayloadConfigs = (): [
     OCPP16RequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP16ServiceUtils.outgoingRequestSchemaNames, '.json')
 
   /**
    * OCPP 1.6 Response Service validator configurations
@@ -608,11 +596,7 @@ export class OCPP16ServiceUtils {
   public static createResponsePayloadConfigs = (): [
     OCPP16RequestCommand,
     { schemaPath: string }
-  ][] =>
-    OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
-      command,
-      PayloadValidatorConfig(`${schemaBase}Response.json`),
-    ])
+  ][] => createPayloadConfigs(OCPP16ServiceUtils.outgoingRequestSchemaNames, 'Response.json')
 
   /**
    * Checks whether a connector or the charging station has a valid reservation for the given idTag.

@@ -1,4 +1,5 @@
 import _Ajv, { type ErrorObject, type JSONSchemaType, type ValidateFunction } from 'ajv'
+import _ajvFormats from 'ajv-formats'
 import { isDate } from 'date-fns'
 import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -69,6 +70,16 @@ const moduleName = 'OCPPServiceUtils'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
+const ajvFormats = _ajvFormats.default
+
+export const createAjv = (): Ajv => {
+  const ajv = new Ajv({
+    keywords: ['javaType'],
+    multipleOfPrecision: 2,
+  })
+  ajvFormats(ajv)
+  return ajv
+}
 
 interface MultiPhaseMeasurandData {
   perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
@@ -2081,15 +2092,26 @@ export function isRequestCommandSupported (
   return false
 }
 
-/**
- * Configuration for a single payload validator.
- * @param schemaPath - Path to the JSON schema file
- * @returns Configuration object for payload validator creation
- */
-export const PayloadValidatorConfig = (schemaPath: string) =>
+const PayloadValidatorConfig = (schemaPath: string) =>
   ({
     schemaPath,
   }) as const
+
+/**
+ * Maps schema name tuples to payload validator config tuples with the given suffix.
+ * @param schemaNames - Array of `[command, schemaBase]` tuples
+ * @param schemaSuffix - File suffix appended to each schema base (e.g. `Request.json`)
+ * @returns Array of `[command, config]` tuples for payload validator map construction
+ */
+export function createPayloadConfigs<Command> (
+  schemaNames: readonly [Command, string][],
+  schemaSuffix: string
+): [Command, { schemaPath: string }][] {
+  return schemaNames.map(([command, schemaBase]) => [
+    command,
+    PayloadValidatorConfig(`${schemaBase}${schemaSuffix}`),
+  ])
+}
 
 /**
  * Options for payload validator creation.
