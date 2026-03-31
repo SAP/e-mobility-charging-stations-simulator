@@ -320,7 +320,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
         }
       }
     } else if (typeof value === 'object' && value !== null) {
-      convertDateToISOString<T>(value as T)
+      convertDateToISOString(value as T)
     }
   }
 }

@@ -198,7 +198,7 @@ export class AutomaticTransactionGenerator {
     const statusEntry =
       this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[statusIndex]
     if (statusEntry != null) {
-      connectorStatus = clone<Status>(statusEntry)
+      connectorStatus = clone(statusEntry)
     } else {
       logger.warn(
         `${this.logPrefix(

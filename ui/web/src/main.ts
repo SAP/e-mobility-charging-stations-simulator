@@ -33,7 +33,7 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]
   }
-  app.config.globalProperties.$configuration ??= ref<ConfigurationData>(config)
+  app.config.globalProperties.$configuration ??= ref(config)
   if (!Array.isArray(app.config.globalProperties.$templates?.value)) {
     app.config.globalProperties.$templates = ref<string[]>([])
   }
@@ -42,16 +42,16 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   }
   if (
     getFromLocalStorage<number | undefined>('uiServerConfigurationIndex', undefined) == null ||
-    getFromLocalStorage<number>('uiServerConfigurationIndex', 0) >
+    getFromLocalStorage('uiServerConfigurationIndex', 0) >
       (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])
         .length -
         1
   ) {
-    setToLocalStorage<number>('uiServerConfigurationIndex', 0)
+    setToLocalStorage('uiServerConfigurationIndex', 0)
   }
   app.config.globalProperties.$uiClient ??= UIClient.getInstance(
     (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])[
-      getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+      getFromLocalStorage('uiServerConfigurationIndex', 0)
     ]
   )
   app.use(router).use(ToastPlugin).mount('#app')

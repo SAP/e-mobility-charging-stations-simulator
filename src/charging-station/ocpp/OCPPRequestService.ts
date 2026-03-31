@@ -195,8 +195,8 @@ export abstract class OCPPRequestService {
       )
       return false
     }
-    payload = clone<T>(payload)
-    convertDateToISOString<T>(payload)
+    payload = clone(payload)
+    convertDateToISOString(payload)
     if (validate(payload)) {
       return true
     }
@@ -236,8 +236,8 @@ export abstract class OCPPRequestService {
       )
       return false
     }
-    payload = clone<T>(payload)
-    convertDateToISOString<T>(payload)
+    payload = clone(payload)
+    convertDateToISOString(payload)
     if (validate(payload)) {
       return true
     }
