@@ -1489,10 +1489,7 @@ export class ChargingStation extends EventEmitter {
         propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
     return setChargingStationOptions(
-      mergeDeepRight(
-        Constants.DEFAULT_STATION_INFO as ChargingStationInfo,
-        stationInfo
-      ),
+      mergeDeepRight(Constants.DEFAULT_STATION_INFO as ChargingStationInfo, stationInfo),
       options
     )
   }
@@ -1853,10 +1850,7 @@ export class ChargingStation extends EventEmitter {
             status,
           ])
       for (const [connectorId, connectorStatus] of entries) {
-        this.connectors.set(
-          connectorId,
-          prepareConnectorStatus(clone(connectorStatus))
-        )
+        this.connectors.set(connectorId, prepareConnectorStatus(clone(connectorStatus)))
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       const isTupleFormat =
@@ -2373,9 +2367,7 @@ export class ChargingStation extends EventEmitter {
         }
         const configurationFromFile = this.getConfigurationFromFile()
         let configurationData: ChargingStationConfiguration =
-          configurationFromFile != null
-            ? clone(configurationFromFile)
-            : {}
+          configurationFromFile != null ? clone(configurationFromFile) : {}
         if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
           configurationData.stationInfo = this.stationInfo
         } else {

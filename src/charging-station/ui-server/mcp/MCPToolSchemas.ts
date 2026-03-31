@@ -91,10 +91,7 @@ const ocpp20PayloadField = z
   .optional()
   .describe('OCPP 2.0.1 request payload')
 
-const buildOcppInputSchema = (mapping: {
-  ocpp16?: string
-  ocpp20?: string
-}): z.ZodObject => {
+const buildOcppInputSchema = (mapping: { ocpp16?: string; ocpp20?: string }): z.ZodObject => {
   const fields: Record<string, z.ZodType> = { connectorIds, hashIds }
   if (mapping.ocpp16 != null) {
     fields.ocpp16Payload = ocpp16PayloadField
@@ -124,8 +121,7 @@ const ocppDescription = (base: string, name: ProcedureName): string => {
   return `${base} ${affinity}${hint}`
 }
 
-const ocppInputSchema = (name: ProcedureName): z.ZodObject =>
-  buildOcppInputSchema(getMapping(name))
+const ocppInputSchema = (name: ProcedureName): z.ZodObject => buildOcppInputSchema(getMapping(name))
 
 export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
