@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.1.0...simulator@v4.1.1) (2026-03-31)
+
+
+### 🐞 Bug Fixes
+
+* **ocpp:** warn on OCPP 1.6 keys in template only, silent remap for internal code ([a428896](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a428896fece63ca81fb65377715296357630216a))
+
+
+### ✨ Polish
+
+* **log:** quote and truncate all auth identifiers in log messages ([854457b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/854457bd4283388d5f5f2f1713c7e1e3a01c4a9b))
+
 ## [4.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.0.3...simulator@v4.1.0) (2026-03-31)
 
 ### 🚀 Features
