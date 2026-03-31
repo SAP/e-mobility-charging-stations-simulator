@@ -1,6 +1,6 @@
 import type { ChargingStation } from '../../charging-station/index.js'
 
-import { logger } from '../../utils/index.js'
+import { logger, truncateId } from '../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -17,7 +17,7 @@ export const isIdTagAuthorized = async (
 ): Promise<boolean> => {
   try {
     logger.debug(
-      `${chargingStation.logPrefix()} Authorizing idTag '${idTag}' on connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} Authorizing idTag '${truncateId(idTag)}' on connector ${connectorId.toString()}`
     )
 
     const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
@@ -34,7 +34,7 @@ export const isIdTagAuthorized = async (
     })
 
     logger.debug(
-      `${chargingStation.logPrefix()} Authorization result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
+      `${chargingStation.logPrefix()} Authorization result for idTag '${truncateId(idTag)}': ${authResult.status} using ${authResult.method} method`
     )
 
     if (authResult.status === AuthorizationStatus.ACCEPTED) {

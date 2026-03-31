@@ -80,7 +80,7 @@ function createRejectedResult (
  * @returns Formatted error string with truncated identifier
  */
 function formatAuthError (error: Error, identifier: Identifier): string {
-  return `Authentication failed for identifier ${truncateId(identifier.value)} (${identifier.type}): ${error.message}`
+  return `Authentication failed for identifier '${truncateId(identifier.value)}' (${identifier.type}): ${error.message}`
 }
 
 /**

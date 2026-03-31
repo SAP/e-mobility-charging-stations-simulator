@@ -172,9 +172,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
           authorizeConnectorStatus.idTagAuthorized = true
           logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${truncateId(
               requestPayload.idTag
-            }' accepted on connector id ${authorizeConnectorId.toString()}`
+            )}' accepted on connector id ${authorizeConnectorId.toString()}`
           )
         } else {
           authorizeConnectorStatus.idTagAuthorized = false
@@ -188,9 +188,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${truncateId(
           requestPayload.idTag
-        }' has no authorize request pending`
+        )}' has no authorize request pending`
       )
     }
     OCPP16ServiceUtils.updateAuthorizationCache(
@@ -278,10 +278,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagLocalAuthorized === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not local authorized idTag ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          connectorStatus.localAuthorizeIdTag
-        } on connector id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not local authorized idTag '${truncateId(
+          connectorStatus.localAuthorizeIdTag ?? ''
+        )}' on connector id ${connectorId.toString()}`
       )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
@@ -294,10 +293,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagAuthorized === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not authorized idTag ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          connectorStatus.authorizeIdTag
-        } on connector id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not authorized idTag '${truncateId(
+          connectorStatus.authorizeIdTag ?? ''
+        )}' on connector id ${connectorId.toString()}`
       )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
@@ -308,11 +306,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.authorizeIdTag !== requestPayload.idTag
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag '${truncateId(
           requestPayload.idTag
-        } different from the authorize request one ${
-          connectorStatus.authorizeIdTag
-        } on connector id ${connectorId.toString()}`
+        )}' different from the authorize request one '${truncateId(
+          connectorStatus.authorizeIdTag ?? ''
+        )}' on connector id ${connectorId.toString()}`
       )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
@@ -323,21 +321,20 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag '${truncateId(
           requestPayload.idTag
-        } different from the local authorized one ${
-          connectorStatus.localAuthorizeIdTag
-        } on connector id ${connectorId.toString()}`
+        )}' different from the local authorized one '${truncateId(
+          connectorStatus.localAuthorizeIdTag ?? ''
+        )}' on connector id ${connectorId.toString()}`
       )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
     }
     if (connectorStatus?.transactionStarted === true) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          connectorStatus.transactionIdTag
-        }`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag '${truncateId(
+          connectorStatus.transactionIdTag ?? ''
+        )}'`
       )
       return
     }
@@ -347,10 +344,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
           for (const [id, status] of evseStatus.connectors) {
             if (id !== connectorId && status.transactionStarted === true) {
               logger.warn(
-                `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag ${
-                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  status.transactionIdTag
-                }`
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag '${truncateId(
+                  status.transactionIdTag ?? ''
+                )}'`
               )
               await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
               return
@@ -399,9 +395,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
             logger.warn(
-              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${truncateId(
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag '${truncateId(
                 requestPayload.idTag
-              )} than the reservation one ${truncateId(reservation.idTag)}`
+              )}' than the reservation one '${truncateId(reservation.idTag)}'`
             )
           }
           if (hasReservationExpired(reservation)) {

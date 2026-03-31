@@ -88,7 +88,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `${moduleName}: Authenticating ${truncateId(request.identifier.value)} via CSMS for ${request.context}`
+        `${moduleName}: Authenticating '${truncateId(request.identifier.value)}' via CSMS for ${request.context}`
       )
 
       // Get adapter
@@ -119,7 +119,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
           const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
             logger.debug(
-              `${moduleName}: Skipping cache for local list identifier: ${truncateId(request.identifier.value)}`
+              `${moduleName}: Skipping cache for local list identifier: '${truncateId(request.identifier.value)}'`
             )
           } else {
             this.cacheResult(
@@ -147,7 +147,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       logger.debug(
-        `${moduleName}: No remote authorization result for ${truncateId(request.identifier.value)}`
+        `${moduleName}: No remote authorization result for '${truncateId(request.identifier.value)}'`
       )
       return undefined
     } catch (error) {
@@ -379,7 +379,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
       this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
-        `${moduleName}: Cached result for ${truncateId(identifier)} (TTL: ${String(cacheTtl)}s)`
+        `${moduleName}: Cached result for '${truncateId(identifier)}' (TTL: ${String(cacheTtl)}s)`
       )
     } catch (error) {
       const errorMessage = getErrorMessage(error)

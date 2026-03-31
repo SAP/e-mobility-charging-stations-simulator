@@ -291,7 +291,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${idTag}'`
+                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
                 )
               } else {
                 logger.debug(
@@ -299,7 +299,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  }#${connectorId?.toString()} for idTag '${idTag}'`
+                  }#${connectorId?.toString()} for idTag '${truncateId(idTag)}'`
                 )
               }
               return undefined
@@ -1297,7 +1297,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStartTransaction: Remote start transaction ACCEPTED on ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         chargingStation.stationInfo?.chargingStationId
-      }#${transactionConnectorId.toString()}, idTag '${idTag}'`
+      }#${transactionConnectorId.toString()}, idTag '${truncateId(idTag)}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
@@ -1617,7 +1617,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.notifyRemoteStartTransactionRejected: Remote start transaction REJECTED on ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         chargingStation.stationInfo?.chargingStationId
-      }#${connectorId.toString()}, idTag '${idTag}', availability '${
+      }#${connectorId.toString()}, idTag '${truncateId(idTag)}', availability '${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         connectorStatus?.availability
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

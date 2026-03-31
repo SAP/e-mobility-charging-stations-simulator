@@ -88,7 +88,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.metrics.totalRequests++
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.authenticate: Starting authentication for identifier: ${truncateId(request.identifier.value)}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.authenticate: Starting authentication for identifier: '${truncateId(request.identifier.value)}'`
     )
 
     // Try each strategy in priority order
@@ -372,7 +372,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     }
     this.authCache.remove(identifier.value)
     logger.info(
-      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: '${truncateId(identifier.value)}'`
     )
   }
 
@@ -492,7 +492,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         const ttlSeconds = Math.floor((expiry.getTime() - Date.now()) / 1000)
         if (ttlSeconds <= 0) {
           logger.debug(
-            `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for ${truncateId(identifier)}`
+            `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for '${truncateId(identifier)}'`
           )
           return
         }
@@ -511,7 +511,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.authCache.set(identifier, result, effectiveTtl)
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${status}${effectiveTtl != null ? `, ttl=${effectiveTtl.toString()}s` : ''}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Updated cache for '${truncateId(identifier)}' status=${status}${effectiveTtl != null ? `, ttl=${effectiveTtl.toString()}s` : ''}`
     )
   }
 

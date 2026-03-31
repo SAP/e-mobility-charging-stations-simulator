@@ -56,7 +56,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 1.6`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier '${truncateId(identifier.value)}' via OCPP 1.6`
       )
 
       // Mark connector as authorizing if provided

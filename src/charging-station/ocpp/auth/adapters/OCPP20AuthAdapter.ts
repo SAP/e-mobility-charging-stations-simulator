@@ -65,7 +65,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 2.0 Authorize`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier '${truncateId(identifier.value)}' via OCPP 2.0 Authorize`
       )
 
       const isRemoteAuth = this.isRemoteAvailable()

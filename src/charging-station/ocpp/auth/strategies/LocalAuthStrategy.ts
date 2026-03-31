@@ -72,7 +72,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `${moduleName}: Authenticating ${truncateId(request.identifier.value)} for ${request.context}`
+        `${moduleName}: Authenticating '${truncateId(request.identifier.value)}' for ${request.context}`
       )
 
       // 1. Try local authorization list first (highest priority)
@@ -130,7 +130,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       }
 
       logger.debug(
-        `${moduleName}: No local authorization found for ${truncateId(request.identifier.value)}`
+        `${moduleName}: No local authorization found for '${truncateId(request.identifier.value)}'`
       )
       return undefined
     } catch (error) {
@@ -163,7 +163,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.set(identifier, result, ttl)
-      logger.debug(`${moduleName}: Cached result for ${truncateId(identifier)}`)
+      logger.debug(`${moduleName}: Cached result for '${truncateId(identifier)}'`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.error(`${moduleName}: Failed to cache result: ${errorMessage}`)
@@ -288,7 +288,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.remove(identifier)
-      logger.debug(`${moduleName}: Invalidated cache for ${truncateId(identifier)}`)
+      logger.debug(`${moduleName}: Invalidated cache for '${truncateId(identifier)}'`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.error(`${moduleName}: Failed to invalidate cache: ${errorMessage}`)
@@ -352,7 +352,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         return undefined
       }
 
-      logger.debug(`${moduleName}: Cache hit for ${truncateId(request.identifier.value)}`)
+      logger.debug(`${moduleName}: Cache hit for '${truncateId(request.identifier.value)}'`)
       return cachedResult
     } catch (error) {
       const errorMessage = getErrorMessage(error)
@@ -390,7 +390,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // Check if entry is expired
       if (entry.expiryDate && entry.expiryDate < new Date()) {
-        logger.debug(`${moduleName}: Entry ${truncateId(request.identifier.value)} expired`)
+        logger.debug(`${moduleName}: Entry '${truncateId(request.identifier.value)}' expired`)
         return {
           expiryDate: entry.expiryDate,
           isOffline: false,
@@ -437,7 +437,7 @@ export class LocalAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): AuthorizationResult | undefined {
     logger.debug(
-      `${moduleName}: Applying offline fallback for ${truncateId(request.identifier.value)}`
+      `${moduleName}: Applying offline fallback for '${truncateId(request.identifier.value)}'`
     )
 
     // For transaction stops, always allow (safety requirement)

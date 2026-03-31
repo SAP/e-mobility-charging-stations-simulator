@@ -834,7 +834,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (authResult.status !== AuthorizationStatus.ACCEPTED) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.authorizeToken: ${tokenLabel} ${truncateId(tokenValue)} is not authorized`
+        `${chargingStation.logPrefix()} ${moduleName}.authorizeToken: ${tokenLabel} '${truncateId(tokenValue)}' is not authorized`
       )
     }
 
@@ -2294,7 +2294,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20RequestStartTransactionResponse> {
     const { chargingProfile, evseId, groupIdToken, idToken, remoteStartId } = commandPayload
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${truncateId(idToken.idToken)} and remoteStartId ${remoteStartId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken '${truncateId(idToken.idToken)}' and remoteStartId ${remoteStartId.toString()}`
     )
 
     let resolvedEvseId = evseId
@@ -2415,7 +2415,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       } catch (error) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${truncateId(idToken.idToken)}:`,
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for '${truncateId(idToken.idToken)}':`,
           error
         )
         return {
@@ -2437,7 +2437,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: `IdToken ${truncateId(idToken.idToken)} is not authorized`,
+          additionalInfo: `IdToken '${truncateId(idToken.idToken)}' is not authorized`,
           reasonCode: ReasonCodeEnumType.InvalidIdToken,
         },
         transactionId: generateUUID(),
@@ -2456,7 +2456,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       } catch (error) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${truncateId(groupIdToken.idToken)}:`,
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for '${truncateId(groupIdToken.idToken)}':`,
           error
         )
         return {
@@ -2472,7 +2472,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
-            additionalInfo: `GroupIdToken ${truncateId(groupIdToken.idToken)} is not authorized`,
+            additionalInfo: `GroupIdToken '${truncateId(groupIdToken.idToken)}' is not authorized`,
             reasonCode: ReasonCodeEnumType.InvalidIdToken,
           },
           transactionId: generateUUID(),
@@ -2977,7 +2977,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: IdToken ${truncateId(presentedIdToken.idToken)} not authorized to stop transaction on connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: IdToken '${truncateId(presentedIdToken.idToken)}' not authorized to stop transaction on connector ${connectorId.toString()}`
     )
     return false
   }

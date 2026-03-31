@@ -171,7 +171,7 @@ export class InMemoryAuthCache implements AuthCache {
     // Check rate limiting first
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
-      logger.warn(`${moduleName}: Rate limit exceeded for identifier: ${truncateId(identifier)}`)
+      logger.warn(`${moduleName}: Rate limit exceeded for identifier: '${truncateId(identifier)}'`)
       return undefined
     }
 
@@ -198,7 +198,7 @@ export class InMemoryAuthCache implements AuthCache {
       }
       this.lruOrder.set(identifier, now)
       logger.debug(
-        `${moduleName}: Expired entry transitioned to EXPIRED for identifier: ${truncateId(identifier)}`
+        `${moduleName}: Expired entry transitioned to EXPIRED for identifier: '${truncateId(identifier)}'`
       )
       return authCacheEntry.result
     }
@@ -216,7 +216,7 @@ export class InMemoryAuthCache implements AuthCache {
       authCacheEntry.expiresAt = now + this.defaultTtl * 1000
     }
 
-    logger.debug(`${moduleName}: Cache hit for identifier: ${truncateId(identifier)}`)
+    logger.debug(`${moduleName}: Cache hit for identifier: '${truncateId(identifier)}'`)
     return authCacheEntry.result
   }
 
@@ -264,7 +264,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.delete(identifier)
 
     if (deleted) {
-      logger.debug(`${moduleName}: Removed entry for identifier: ${truncateId(identifier)}`)
+      logger.debug(`${moduleName}: Removed entry for identifier: '${truncateId(identifier)}'`)
     }
   }
 
@@ -318,7 +318,7 @@ export class InMemoryAuthCache implements AuthCache {
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
       logger.warn(
-        `${moduleName}: Rate limit exceeded, not caching identifier: ${truncateId(identifier)}`
+        `${moduleName}: Rate limit exceeded, not caching identifier: '${truncateId(identifier)}'`
       )
       return
     }
@@ -344,7 +344,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.stats.sets++
 
     logger.debug(
-      `${moduleName}: Cached result for identifier: ${truncateId(identifier)}, ttl=${String(clampedTtl)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
+      `${moduleName}: Cached result for identifier: '${truncateId(identifier)}', ttl=${String(clampedTtl)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
     )
   }
 
@@ -452,7 +452,7 @@ export class InMemoryAuthCache implements AuthCache {
       this.cache.delete(candidateIdentifier)
       this.lruOrder.delete(candidateIdentifier)
       this.stats.evictions++
-      logger.debug(`${moduleName}: Evicted LRU entry: ${truncateId(candidateIdentifier)}`)
+      logger.debug(`${moduleName}: Evicted LRU entry: '${truncateId(candidateIdentifier)}'`)
     }
   }
 }

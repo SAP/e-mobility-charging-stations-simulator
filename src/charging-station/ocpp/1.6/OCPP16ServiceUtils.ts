@@ -620,7 +620,7 @@ export class OCPP16ServiceUtils {
         chargingStationReservation.idTag === idTag)
     ) {
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.hasReservation: Connector id ${connectorId.toString()} has a valid reservation for idTag ${idTag}: %j`,
+        `${chargingStation.logPrefix()} ${moduleName}.hasReservation: Connector id ${connectorId.toString()} has a valid reservation for idTag '${truncateId(idTag)}': %j`,
         connectorReservation ?? chargingStationReservation
       )
       return true
