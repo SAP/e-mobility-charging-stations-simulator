@@ -1,9 +1,11 @@
-import type { StopTransactionReason } from '../../types/index.js'
+import type { BootReasonEnumType, StopTransactionReason } from '../../types/index.js'
 
 import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
+  type BootNotificationRequest,
+  type ChargingStationInfo,
   ErrorType,
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
@@ -242,5 +244,26 @@ export const flushQueuedTransactionMessages = async (
       break
     default:
       break
+  }
+}
+
+/**
+ * Builds an OCPP BootNotification request using the appropriate version-specific handler.
+ * @param stationInfo - Charging station information
+ * @param bootReason - Optional boot reason (OCPP 2.0 only)
+ * @returns The BootNotification request payload, or undefined if the OCPP version is unsupported
+ */
+export const buildBootNotificationRequest = (
+  stationInfo: ChargingStationInfo,
+  bootReason?: BootReasonEnumType
+): BootNotificationRequest | undefined => {
+  switch (stationInfo.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      return OCPP16ServiceUtils.buildBootNotificationRequest(stationInfo)
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return OCPP20ServiceUtils.buildBootNotificationRequest(stationInfo, bootReason)
+    default:
+      return undefined
   }
 }

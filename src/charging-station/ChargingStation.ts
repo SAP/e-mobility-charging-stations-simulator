@@ -43,7 +43,7 @@ import {
   type IncomingRequestCommand,
   MessageType,
   MeterValueMeasurand,
-  OCPPVersion,
+  type OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
   RegistrationStatusEnumType,
@@ -122,7 +122,6 @@ import {
   checkEvsesConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
-  createBootNotificationRequest,
   createSerialNumber,
   getAmperageLimitationUnitDivider,
   getBootConnectorStatus,
@@ -146,13 +145,9 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
+  buildBootNotificationRequest,
+  createOCPPServices,
   flushQueuedTransactionMessages,
-  OCPP16IncomingRequestService,
-  OCPP16RequestService,
-  OCPP16ResponseService,
-  OCPP20IncomingRequestService,
-  OCPP20RequestService,
-  OCPP20ResponseService,
   OCPPAuthServiceFactory,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
@@ -1757,7 +1752,7 @@ export class ChargingStation extends EventEmitter {
         this.configuredSupervisionUrl
       )
     }
-    const bootNotificationRequest = createBootNotificationRequest(this.stationInfo)
+    const bootNotificationRequest = buildBootNotificationRequest(this.stationInfo)
     if (bootNotificationRequest == null) {
       const errorMsg = 'Error while creating boot notification request'
       logger.error(`${this.logPrefix()} ${errorMsg}`)
@@ -2097,25 +2092,19 @@ export class ChargingStation extends EventEmitter {
 
   private initializeOcppServices (): void {
     const ocppVersion = this.stationInfo?.ocppVersion
-    switch (ocppVersion) {
-      case OCPPVersion.VERSION_16:
-        this.ocppIncomingRequestService =
-          OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>()
-        this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
-          OCPP16ResponseService.getInstance<OCPP16ResponseService>()
-        )
-        break
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        this.ocppIncomingRequestService =
-          OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>()
-        this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
-          OCPP20ResponseService.getInstance<OCPP20ResponseService>()
-        )
-        break
-      default:
+    if (ocppVersion == null) {
+      this.handleUnsupportedVersion(ocppVersion)
+      return
+    }
+    try {
+      const services = createOCPPServices(ocppVersion)
+      this.ocppIncomingRequestService = services.incomingRequestService
+      this.ocppRequestService = services.requestService
+    } catch (error) {
+      if (error instanceof OCPPError && error.code === ErrorType.INTERNAL_ERROR) {
         this.handleUnsupportedVersion(ocppVersion)
-        break
+      }
+      throw error
     }
   }
 

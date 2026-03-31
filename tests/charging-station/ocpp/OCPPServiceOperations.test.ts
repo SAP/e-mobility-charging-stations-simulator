@@ -1,23 +1,29 @@
 /**
  * @file Tests for OCPPServiceOperations version-dispatching functions
  * @description Verifies startTransactionOnConnector, stopTransactionOnConnector,
- *              stopRunningTransactions, and flushQueuedTransactionMessages
- *              cross-version dispatchers
+ *              stopRunningTransactions, flushQueuedTransactionMessages, and
+ *              buildBootNotificationRequest cross-version dispatchers
  */
 
 import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
+import type { ChargingStationInfo } from '../../../src/types/index.js'
 import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
+  buildBootNotificationRequest,
   flushQueuedTransactionMessages,
   startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
-import { type OCPP20TransactionEventRequest, OCPPVersion } from '../../../src/types/index.js'
+import {
+  BootReasonEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
+} from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 
@@ -304,6 +310,141 @@ await describe('OCPPServiceOperations', async () => {
       await flushQueuedTransactionMessages(station)
 
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
+    })
+  })
+
+  await describe('buildBootNotificationRequest', async () => {
+    await describe('OCPP 1.6', async () => {
+      await it('should build OCPP 1.6 boot notification with required fields', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_16,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+        })
+      })
+
+      await it('should build OCPP 1.6 boot notification with optional fields', () => {
+        // Arrange
+        const stationInfo = {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointSerialNumber: 'CP-001',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '1.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          meterSerialNumber: 'M-001',
+          meterType: 'ACMeter',
+          ocppVersion: OCPPVersion.VERSION_16,
+        } as unknown as ChargingStationInfo
+
+        // Act
+        const result = buildBootNotificationRequest(stationInfo)
+
+        // Assert
+        assert.deepStrictEqual(result, {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointSerialNumber: 'CP-001',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '1.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          meterSerialNumber: 'M-001',
+          meterType: 'ACMeter',
+        })
+      })
+    })
+
+    await describe('OCPP 2.0', async () => {
+      await it('should build OCPP 2.0 boot notification with required fields', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_20,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            model: 'TestModel',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.PowerUp,
+        })
+      })
+
+      await it('should build OCPP 2.0 boot notification with optional fields and modem', () => {
+        // Arrange
+        const stationInfo = {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '2.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          ocppVersion: OCPPVersion.VERSION_201,
+        } as unknown as ChargingStationInfo
+
+        // Act
+        const result = buildBootNotificationRequest(stationInfo)
+
+        // Assert
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            firmwareVersion: '2.0.0',
+            model: 'TestModel',
+            modem: {
+              iccid: '8901234567890',
+              imsi: '310150123456789',
+            },
+            serialNumber: 'CB-001',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.PowerUp,
+        })
+      })
+
+      await it('should build OCPP 2.0 boot notification with custom boot reason', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_20,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo, BootReasonEnumType.RemoteReset)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            model: 'TestModel',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.RemoteReset,
+        })
+      })
+    })
+
+    await it('should return undefined for unsupported version', () => {
+      const stationInfo = {
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        ocppVersion: '3.0',
+      } as unknown as ChargingStationInfo
+
+      const result = buildBootNotificationRequest(stationInfo)
+
+      assert.strictEqual(result, undefined)
     })
   })
 })

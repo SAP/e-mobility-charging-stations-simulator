@@ -11,7 +11,9 @@ export { OCPPAuthServiceFactory } from './auth/index.js'
 export { isIdTagAuthorized } from './IdTagAuthorization.js'
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
+export { createOCPPServices } from './OCPPServiceFactory.js'
 export {
+  buildBootNotificationRequest,
   flushQueuedTransactionMessages,
   startTransactionOnConnector,
   stopRunningTransactions,

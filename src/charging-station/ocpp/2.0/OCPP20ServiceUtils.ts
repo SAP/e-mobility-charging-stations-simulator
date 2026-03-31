@@ -3,9 +3,12 @@ import { secondsToMilliseconds } from 'date-fns'
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
+  BootReasonEnumType,
+  type ChargingStationInfo,
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
+  type OCPP20BootNotificationRequest,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   type OCPP20ConnectorStatusEnumType,
@@ -101,6 +104,37 @@ export class OCPP20ServiceUtils {
     [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
+
+  /**
+   * Builds an OCPP 2.0 BootNotification request payload from station info.
+   * @param stationInfo - Charging station information
+   * @param bootReason - Reason for the boot notification
+   * @returns Formatted OCPP 2.0 BootNotification request payload
+   */
+  public static buildBootNotificationRequest (
+    stationInfo: ChargingStationInfo,
+    bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
+  ): OCPP20BootNotificationRequest {
+    return {
+      chargingStation: {
+        model: stationInfo.chargePointModel,
+        vendorName: stationInfo.chargePointVendor,
+        ...(stationInfo.firmwareVersion != null && {
+          firmwareVersion: stationInfo.firmwareVersion,
+        }),
+        ...(stationInfo.chargeBoxSerialNumber != null && {
+          serialNumber: stationInfo.chargeBoxSerialNumber,
+        }),
+        ...((stationInfo.iccid != null || stationInfo.imsi != null) && {
+          modem: {
+            ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
+            ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
+          },
+        }),
+      },
+      reason: bootReason,
+    } satisfies OCPP20BootNotificationRequest
+  }
 
   /**
    * @param chargingStation - Target charging station for EVSE resolution

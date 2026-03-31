@@ -27,8 +27,6 @@ import { BaseError } from '../exception/index.js'
 import {
   AmpereUnits,
   AvailabilityType,
-  type BootNotificationRequest,
-  BootReasonEnumType,
   type ChargingProfile,
   ChargingProfileKindType,
   ChargingProfilePurposeType,
@@ -562,58 +560,6 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       })
   }
   return connectorStatus
-}
-
-export const createBootNotificationRequest = (
-  stationInfo: ChargingStationInfo,
-  bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
-): BootNotificationRequest | undefined => {
-  const ocppVersion = stationInfo.ocppVersion
-  switch (ocppVersion) {
-    case OCPPVersion.VERSION_16:
-      return {
-        chargePointModel: stationInfo.chargePointModel,
-        chargePointVendor: stationInfo.chargePointVendor,
-        ...(stationInfo.chargeBoxSerialNumber != null && {
-          chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
-        }),
-        ...(stationInfo.chargePointSerialNumber != null && {
-          chargePointSerialNumber: stationInfo.chargePointSerialNumber,
-        }),
-        ...(stationInfo.firmwareVersion != null && {
-          firmwareVersion: stationInfo.firmwareVersion,
-        }),
-        ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
-        ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
-        ...(stationInfo.meterSerialNumber != null && {
-          meterSerialNumber: stationInfo.meterSerialNumber,
-        }),
-        ...(stationInfo.meterType != null && {
-          meterType: stationInfo.meterType,
-        }),
-      } satisfies BootNotificationRequest
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      return {
-        chargingStation: {
-          model: stationInfo.chargePointModel,
-          vendorName: stationInfo.chargePointVendor,
-          ...(stationInfo.firmwareVersion != null && {
-            firmwareVersion: stationInfo.firmwareVersion,
-          }),
-          ...(stationInfo.chargeBoxSerialNumber != null && {
-            serialNumber: stationInfo.chargeBoxSerialNumber,
-          }),
-          ...((stationInfo.iccid != null || stationInfo.imsi != null) && {
-            modem: {
-              ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
-              ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
-            },
-          }),
-        },
-        reason: bootReason,
-      } satisfies BootNotificationRequest
-  }
 }
 
 export const warnTemplateKeysDeprecation = (

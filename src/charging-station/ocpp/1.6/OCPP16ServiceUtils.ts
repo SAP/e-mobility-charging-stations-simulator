@@ -16,12 +16,14 @@ import {
 import { BaseError } from '../../../exception/index.js'
 import {
   ChargePointErrorCode,
+  type ChargingStationInfo,
   type ConfigurationKey,
   type GenericResponse,
   type MeterValuesRequest,
   type MeterValuesResponse,
   OCPP16AuthorizationStatus,
   type OCPP16AvailabilityType,
+  type OCPP16BootNotificationRequest,
   type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
@@ -104,6 +106,37 @@ export class OCPP16ServiceUtils {
     [OCPP16RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
   ]
+
+  /**
+   * Builds an OCPP 1.6 BootNotification request payload from station info.
+   * @param stationInfo - Charging station information
+   * @returns Formatted OCPP 1.6 BootNotification request payload
+   */
+  public static buildBootNotificationRequest (
+    stationInfo: ChargingStationInfo
+  ): OCPP16BootNotificationRequest {
+    return {
+      chargePointModel: stationInfo.chargePointModel,
+      chargePointVendor: stationInfo.chargePointVendor,
+      ...(stationInfo.chargeBoxSerialNumber != null && {
+        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
+      }),
+      ...(stationInfo.chargePointSerialNumber != null && {
+        chargePointSerialNumber: stationInfo.chargePointSerialNumber,
+      }),
+      ...(stationInfo.firmwareVersion != null && {
+        firmwareVersion: stationInfo.firmwareVersion,
+      }),
+      ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
+      ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
+      ...(stationInfo.meterSerialNumber != null && {
+        meterSerialNumber: stationInfo.meterSerialNumber,
+      }),
+      ...(stationInfo.meterType != null && {
+        meterType: stationInfo.meterType,
+      }),
+    } satisfies OCPP16BootNotificationRequest
+  }
 
   /**
    * @param commandParams - Status notification parameters
