@@ -19,12 +19,12 @@ import { Constants } from '../../src/utils/index.js'
 import {
   clampToSafeTimerValue,
   clone,
+  computeExponentialBackOffDelay,
   convertToBoolean,
   convertToDate,
   convertToFloat,
   convertToInt,
   convertToIntOrNaN,
-  exponentialDelay,
   extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
@@ -556,141 +556,156 @@ await describe('Utils', async () => {
     assert.strictEqual(clampToSafeTimerValue(-1000), 0)
   })
 
-  // -------------------------------------------------------------------------
-  // Exponential Backoff Algorithm Tests (WebSocket Reconnection)
-  // -------------------------------------------------------------------------
+  await describe('computeExponentialBackOffDelay', async () => {
+    await it('should calculate exponential delay with default-like parameters', () => {
+      const baseDelayMs = 100
 
-  await it('should calculate exponential delay with default parameters', () => {
-    // Formula: delay = 2^retryNumber * delayFactor + (0-20% random jitter)
-    // With default delayFactor = 100ms
+      // retryNumber = 0: 2^0 * 100 = 100ms base, no jitter
+      const delay0 = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 0 })
+      assert.strictEqual(delay0, 100)
 
-    // retryNumber = 0: 2^0 * 100 = 100ms base
-    const delay0 = exponentialDelay(0)
-    assert.strictEqual(delay0 >= 100, true)
-    assert.strictEqual(delay0 <= 120, true) // 100 + 20% max jitter
+      // retryNumber = 1: 2^1 * 100 = 200ms base
+      const delay1 = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 1 })
+      assert.strictEqual(delay1, 200)
 
-    // retryNumber = 1: 2^1 * 100 = 200ms base
-    const delay1 = exponentialDelay(1)
-    assert.strictEqual(delay1 >= 200, true)
-    assert.strictEqual(delay1 <= 240, true) // 200 + 20% max jitter
+      // retryNumber = 2: 2^2 * 100 = 400ms base
+      const delay2 = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 2 })
+      assert.strictEqual(delay2, 400)
 
-    // retryNumber = 2: 2^2 * 100 = 400ms base
-    const delay2 = exponentialDelay(2)
-    assert.strictEqual(delay2 >= 400, true)
-    assert.strictEqual(delay2 <= 480, true) // 400 + 20% max jitter
+      // retryNumber = 3: 2^3 * 100 = 800ms base
+      const delay3 = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 3 })
+      assert.strictEqual(delay3, 800)
+    })
 
-    // retryNumber = 3: 2^3 * 100 = 800ms base
-    const delay3 = exponentialDelay(3)
-    assert.strictEqual(delay3 >= 800, true)
-    assert.strictEqual(delay3 <= 960, true) // 800 + 20% max jitter
-  })
+    await it('should calculate exponential delay with custom base delay', () => {
+      const delay0 = computeExponentialBackOffDelay({ baseDelayMs: 50, retryNumber: 0 })
+      assert.strictEqual(delay0, 50)
 
-  await it('should calculate exponential delay with custom delay factor', () => {
-    // Custom delayFactor = 50ms
-    const delay0 = exponentialDelay(0, 50)
-    assert.strictEqual(delay0 >= 50, true)
-    assert.strictEqual(delay0 <= 60, true) // 50 + 20% max jitter
+      const delay1 = computeExponentialBackOffDelay({ baseDelayMs: 50, retryNumber: 1 })
+      assert.strictEqual(delay1, 100)
 
-    const delay1 = exponentialDelay(1, 50)
-    assert.strictEqual(delay1 >= 100, true)
-    assert.strictEqual(delay1 <= 120, true)
+      const delay2 = computeExponentialBackOffDelay({ baseDelayMs: 200, retryNumber: 2 })
+      assert.strictEqual(delay2, 800) // 2^2 * 200 = 800
+    })
 
-    // Custom delayFactor = 200ms
-    const delay2 = exponentialDelay(2, 200)
-    assert.strictEqual(delay2 >= 800, true) // 2^2 * 200 = 800
-    assert.strictEqual(delay2 <= 960, true)
-  })
+    await it('should follow 2^n exponential growth pattern', () => {
+      const baseDelayMs = 100
+      const delays: number[] = []
+      for (let retry = 0; retry <= 5; retry++) {
+        delays.push(computeExponentialBackOffDelay({ baseDelayMs, retryNumber: retry }))
+      }
 
-  await it('should follow 2^n exponential growth pattern', () => {
-    // Verify that delays follow 2^n exponential growth pattern
-    const delayFactor = 100
+      // Each delay should be exactly double the previous (no jitter)
+      for (let i = 1; i < delays.length; i++) {
+        assert.strictEqual(delays[i] / delays[i - 1], 2)
+      }
+    })
 
-    // Collect base delays (without jitter consideration)
-    const delays: number[] = []
-    for (let retry = 0; retry <= 5; retry++) {
-      delays.push(exponentialDelay(retry, delayFactor))
-    }
+    await it('should include random jitter when jitterMs is specified', () => {
+      const delays = new Set<number>()
+      const baseDelayMs = 100
 
-    // Each delay should be approximately double the previous (accounting for jitter)
-    // delay[n+1] / delay[n] should be close to 2 (between 1.5 and 2.5 with jitter)
-    for (let i = 1; i < delays.length; i++) {
-      const ratio = delays[i] / delays[i - 1]
-      // Allow for jitter variance - ratio should be roughly 2x
-      assert.strictEqual(ratio > 1.5, true)
-      assert.strictEqual(ratio < 2.5, true)
-    }
-  })
+      for (let i = 0; i < 10; i++) {
+        delays.add(
+          Math.round(
+            computeExponentialBackOffDelay({
+              baseDelayMs,
+              jitterMs: 50,
+              retryNumber: 3,
+            })
+          )
+        )
+      }
 
-  await it('should include random jitter in exponential delay', () => {
-    // Run multiple times to verify jitter produces different values
-    const delays = new Set<number>()
-    const retryNumber = 3
-    const delayFactor = 100
+      // With jitter, we expect variation
+      assert.strictEqual(delays.size > 1, true)
+    })
 
-    // Collect 10 samples - with cryptographically secure random,
-    // we should get variation (not all identical)
-    for (let i = 0; i < 10; i++) {
-      delays.add(Math.round(exponentialDelay(retryNumber, delayFactor)))
-    }
+    await it('should keep jitter within specified range', () => {
+      const retryNumber = 4
+      const baseDelayMs = 100
+      const jitterMs = 200
+      const expectedBase = Math.pow(2, retryNumber) * baseDelayMs // 1600ms
 
-    // With jitter, we expect at least some variation
-    // (unlikely to get 10 identical values with secure random)
-    assert.strictEqual(delays.size > 1, true)
-  })
+      for (let i = 0; i < 20; i++) {
+        const delay = computeExponentialBackOffDelay({ baseDelayMs, jitterMs, retryNumber })
+        const jitter = delay - expectedBase
 
-  await it('should keep jitter within 0-20% range of base delay', () => {
-    // For a given retry, jitter should add 0-20% of base delay
-    const retryNumber = 4
-    const delayFactor = 100
-    const baseDelay = Math.pow(2, retryNumber) * delayFactor // 1600ms
+        assert.strictEqual(jitter >= 0, true)
+        assert.strictEqual(jitter <= jitterMs, true)
+      }
+    })
 
-    // Run multiple samples to verify jitter range
-    for (let i = 0; i < 20; i++) {
-      const delay = exponentialDelay(retryNumber, delayFactor)
-      const jitter = delay - baseDelay
+    await it('should apply proportional jitter with jitterPercent', () => {
+      const retryNumber = 4
+      const baseDelayMs = 100
+      const jitterPercent = 0.2
+      const expectedBase = Math.pow(2, retryNumber) * baseDelayMs // 1600ms
+      const maxJitter = expectedBase * jitterPercent // 320ms
 
-      // Jitter should be non-negative and at most 20% of base delay
-      assert.strictEqual(jitter >= 0, true)
-      assert.strictEqual(jitter <= baseDelay * 0.2, true)
-    }
-  })
+      for (let i = 0; i < 20; i++) {
+        const delay = computeExponentialBackOffDelay({ baseDelayMs, jitterPercent, retryNumber })
+        const jitter = delay - expectedBase
 
-  await it('should handle edge cases (default retry, large retry, small factor)', () => {
-    // Default retryNumber (0)
-    const defaultRetry = exponentialDelay()
-    assert.strictEqual(defaultRetry >= 100, true) // 2^0 * 100
-    assert.strictEqual(defaultRetry <= 120, true)
+        assert.strictEqual(jitter >= 0, true)
+        assert.strictEqual(jitter <= maxJitter, true)
+      }
+    })
 
-    // Large retry number (verify no overflow issues)
-    const largeRetry = exponentialDelay(10, 100)
-    // 2^10 * 100 = 102400ms base
-    assert.strictEqual(largeRetry >= 102400, true)
-    assert.strictEqual(largeRetry <= 122880, true) // 102400 + 20%
+    await it('should prioritize jitterPercent over jitterMs when both provided', () => {
+      const retryNumber = 3
+      const baseDelayMs = 100
+      const expectedBase = Math.pow(2, retryNumber) * baseDelayMs // 800ms
 
-    // Very small delay factor
-    const smallFactor = exponentialDelay(2, 1)
-    assert.strictEqual(smallFactor >= 4, true) // 2^2 * 1
-    assert.strictEqual(smallFactor < 5, true) // 4 + 20%
-  })
+      for (let i = 0; i < 20; i++) {
+        const delay = computeExponentialBackOffDelay({
+          baseDelayMs,
+          jitterMs: 5000,
+          jitterPercent: 0.1,
+          retryNumber,
+        })
+        assert.strictEqual(delay >= expectedBase, true)
+        assert.strictEqual(delay <= expectedBase + expectedBase * 0.1, true)
+      }
+    })
 
-  await it('should calculate appropriate delays for WebSocket reconnection scenarios', () => {
-    // Simulate typical WebSocket reconnection delay sequence
-    const delayFactor = 100 // Default used in ChargingStation.reconnect()
+    await it('should handle edge cases (zero retry, large retry, small base)', () => {
+      const defaultRetry = computeExponentialBackOffDelay({ baseDelayMs: 100, retryNumber: 0 })
+      assert.strictEqual(defaultRetry, 100) // 2^0 * 100
 
-    // First reconnect attempt (retry 1)
-    const firstDelay = exponentialDelay(1, delayFactor)
-    assert.strictEqual(firstDelay >= 200, true) // 2^1 * 100
-    assert.strictEqual(firstDelay <= 240, true)
+      // Large retry number
+      const largeRetry = computeExponentialBackOffDelay({ baseDelayMs: 100, retryNumber: 10 })
+      assert.strictEqual(largeRetry, 102400) // 2^10 * 100
 
-    // After several failures (retry 5)
-    const fifthDelay = exponentialDelay(5, delayFactor)
-    assert.strictEqual(fifthDelay >= 3200, true) // 2^5 * 100
-    assert.strictEqual(fifthDelay <= 3840, true)
+      // Very small base
+      const smallBase = computeExponentialBackOffDelay({ baseDelayMs: 1, retryNumber: 2 })
+      assert.strictEqual(smallBase, 4) // 2^2 * 1
+    })
 
-    // Maximum practical retry (retry 10 = ~102 seconds)
-    const maxDelay = exponentialDelay(10, delayFactor)
-    assert.strictEqual(maxDelay >= 102400, true) // ~102 seconds
-    assert.strictEqual(maxDelay <= 122880, true)
+    await it('should respect maxRetries cap', () => {
+      const baseDelayMs = 100
+
+      // Without cap: 2^10 * 100 = 102400
+      const uncapped = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 10 })
+      assert.strictEqual(uncapped, 102400)
+
+      // With cap at 3: 2^3 * 100 = 800 (even though retryNumber is 10)
+      const capped = computeExponentialBackOffDelay({ baseDelayMs, maxRetries: 3, retryNumber: 10 })
+      assert.strictEqual(capped, 800)
+    })
+
+    await it('should calculate appropriate delays for WebSocket reconnection scenarios', () => {
+      const baseDelayMs = 100
+
+      const firstDelay = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 1 })
+      assert.strictEqual(firstDelay, 200) // 2^1 * 100
+
+      const fifthDelay = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 5 })
+      assert.strictEqual(fifthDelay, 3200) // 2^5 * 100
+
+      const maxDelay = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 10 })
+      assert.strictEqual(maxDelay, 102400) // ~102 seconds
+    })
   })
 
   await it('should return timestamped log prefix with optional string', () => {

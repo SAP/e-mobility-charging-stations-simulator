@@ -7,6 +7,8 @@ export enum ErrorType {
   GENERIC_ERROR = 'GenericError',
   // An internal error occurred and the receiver was not able to process the requested Action successfully
   INTERNAL_ERROR = 'InternalError',
+  // Requested MessageType is not supported by receiver (OCPP 2.0.1 §4.3 Table 8)
+  MESSAGE_TYPE_NOT_SUPPORTED = 'MessageTypeNotSupported',
   // Requested Action is not known by receiver
   NOT_IMPLEMENTED = 'NotImplemented',
   // Requested Action is recognized but not supported by the receiver
@@ -17,6 +19,8 @@ export enum ErrorType {
   PROPERTY_CONSTRAINT_VIOLATION = 'PropertyConstraintViolation',
   // Payload for Action is incomplete
   PROTOCOL_ERROR = 'ProtocolError',
+  // Content of the call is not a valid RPC Request (OCPP 2.0.1 §4.3 Table 8)
+  RPC_FRAMEWORK_ERROR = 'RpcFrameworkError',
   // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
   SECURITY_ERROR = 'SecurityError',
   // eslint-disable-next-line @cspell/spellchecker

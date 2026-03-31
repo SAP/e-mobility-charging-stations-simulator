@@ -13,6 +13,7 @@ import {
 import { type ChargingStation } from '../../../index.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
+  type AuthCache,
   type AuthStats,
   type AuthStrategy,
   type OCPPAuthService,
@@ -280,7 +281,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
     // Clear cache in local strategy
     const localStrategy = this.strategies.get('local')
-    const localAuthCache = localStrategy?.getAuthCache?.()
+    const localAuthCache = localStrategy?.getAuthCache()
     if (localAuthCache) {
       localAuthCache.clear()
       logger.info(
@@ -291,6 +292,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         `${this.chargingStation.logPrefix()} ${moduleName}.clearCache: No authorization cache available to clear`
       )
     }
+  }
+
+  public getAuthCache (): AuthCache | undefined {
+    if (!this.config.authorizationCacheEnabled) {
+      return undefined
+    }
+    const localStrategy = this.strategies.get('local')
+    return localStrategy?.getAuthCache()
   }
 
   /**
@@ -428,7 +437,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
     // Invalidate in local strategy
     const localStrategy = this.strategies.get('local')
-    const localAuthCache = localStrategy?.getAuthCache?.()
+    const localAuthCache = localStrategy?.getAuthCache()
     if (localAuthCache) {
       localAuthCache.remove(identifier.value)
       logger.info(
@@ -543,7 +552,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     }
 
     const localStrategy = this.strategies.get('local')
-    const authCache = localStrategy?.getAuthCache?.()
+    const authCache = localStrategy?.getAuthCache()
     if (authCache == null) {
       logger.debug(
         `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: No auth cache available`

@@ -168,24 +168,23 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (authorizeConnectorId != null) {
       const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId)
-      if (authorizeConnectorStatus == null) {
-        return
-      }
-      if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-        authorizeConnectorStatus.idTagAuthorized = true
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
-            requestPayload.idTag
-          }' accepted on connector id ${authorizeConnectorId.toString()}`
-        )
-      } else {
-        authorizeConnectorStatus.idTagAuthorized = false
-        delete authorizeConnectorStatus.authorizeIdTag
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${truncateId(
-            requestPayload.idTag
-          )}' rejected with status '${payload.idTagInfo.status}'`
-        )
+      if (authorizeConnectorStatus != null) {
+        if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
+          authorizeConnectorStatus.idTagAuthorized = true
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
+              requestPayload.idTag
+            }' accepted on connector id ${authorizeConnectorId.toString()}`
+          )
+        } else {
+          authorizeConnectorStatus.idTagAuthorized = false
+          delete authorizeConnectorStatus.authorizeIdTag
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${truncateId(
+              requestPayload.idTag
+            )}' rejected with status '${payload.idTagInfo.status}'`
+          )
+        }
       }
     } else {
       logger.warn(
@@ -194,6 +193,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }' has no authorize request pending`
       )
     }
+    OCPP16ServiceUtils.updateAuthorizationCache(
+      chargingStation,
+      requestPayload.idTag,
+      payload.idTagInfo
+    )
   }
 
   private handleResponseBootNotification (
@@ -470,6 +474,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
     }
+    OCPP16ServiceUtils.updateAuthorizationCache(
+      chargingStation,
+      requestPayload.idTag,
+      payload.idTagInfo
+    )
   }
 
   private async handleResponseStopTransaction (
@@ -529,6 +538,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
     }
     const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
+    const transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
     resetConnectorStatus(transactionConnectorStatus)
     if (
       transactionConnectorStatus != null &&
@@ -549,6 +559,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.info(logMsg)
     } else {
       logger.warn(logMsg)
+    }
+    if (payload.idTagInfo != null && transactionIdTag != null) {
+      OCPP16ServiceUtils.updateAuthorizationCache(
+        chargingStation,
+        transactionIdTag,
+        payload.idTagInfo
+      )
     }
   }
 

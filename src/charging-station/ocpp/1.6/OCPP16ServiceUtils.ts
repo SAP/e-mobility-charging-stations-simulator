@@ -29,6 +29,7 @@ import {
   type OCPP16ChargingProfile,
   type OCPP16ChargingSchedule,
   type OCPP16ClearChargingProfileRequest,
+  type OCPP16IdTagInfo,
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
@@ -55,7 +56,14 @@ import {
   isNotEmptyArray,
   logger,
   roundTo,
+  truncateId,
 } from '../../../utils/index.js'
+import {
+  AuthenticationMethod,
+  type AuthorizationResult,
+  mapOCPP16Status,
+  OCPPAuthServiceFactory,
+} from '../auth/index.js'
 import {
   buildEmptyMeterValue,
   buildMeterValue,
@@ -304,39 +312,32 @@ export class OCPP16ServiceUtils {
     chargingProfiles: OCPP16ChargingProfile[] | undefined
   ): boolean => {
     const { chargingProfilePurpose, id, stackLevel } = commandPayload
-    let clearedCP = false
+    let profileCleared = false
     if (isNotEmptyArray(chargingProfiles)) {
-      chargingProfiles.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
-        let clearCurrentCP = false
-        if (chargingProfile.chargingProfileId === id) {
-          clearCurrentCP = true
+      // Errata 3.25: ALL specified fields must match (AND logic).
+      // null/undefined fields are wildcards (match any).
+      const unmatchedProfiles = chargingProfiles.filter(
+        (chargingProfile: OCPP16ChargingProfile) => {
+          const matchesId = id == null || chargingProfile.chargingProfileId === id
+          const matchesPurpose =
+            chargingProfilePurpose == null ||
+            chargingProfile.chargingProfilePurpose === chargingProfilePurpose
+          const matchesStackLevel = stackLevel == null || chargingProfile.stackLevel === stackLevel
+          if (matchesId && matchesPurpose && matchesStackLevel) {
+            logger.debug(
+              `${chargingStation.logPrefix()} ${moduleName}.clearChargingProfiles: Matching charging profile(s) cleared: %j`,
+              chargingProfile
+            )
+            profileCleared = true
+            return false
+          }
+          return true
         }
-        if (chargingProfilePurpose == null && chargingProfile.stackLevel === stackLevel) {
-          clearCurrentCP = true
-        }
-        if (
-          stackLevel == null &&
-          chargingProfile.chargingProfilePurpose === chargingProfilePurpose
-        ) {
-          clearCurrentCP = true
-        }
-        if (
-          chargingProfile.stackLevel === stackLevel &&
-          chargingProfile.chargingProfilePurpose === chargingProfilePurpose
-        ) {
-          clearCurrentCP = true
-        }
-        if (clearCurrentCP) {
-          chargingProfiles.splice(index, 1)
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.clearChargingProfiles: Matching charging profile(s) cleared: %j`,
-            chargingProfile
-          )
-          clearedCP = true
-        }
-      })
+      )
+      chargingProfiles.length = 0
+      chargingProfiles.push(...unmatchedProfiles)
     }
-    return clearedCP
+    return profileCleared
   }
 
   /**
@@ -852,6 +853,49 @@ export class OCPP16ServiceUtils {
     if (connectorStatus?.transactionUpdatedMeterValuesSetInterval != null) {
       clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
       delete connectorStatus.transactionUpdatedMeterValuesSetInterval
+    }
+  }
+
+  public static updateAuthorizationCache (
+    chargingStation: ChargingStation,
+    idTag: string,
+    idTagInfo: OCPP16IdTagInfo
+  ): void {
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const authCache = authService.getAuthCache()
+      if (authCache == null) {
+        return
+      }
+      const result: AuthorizationResult = {
+        isOffline: false,
+        method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+        status: mapOCPP16Status(idTagInfo.status),
+        timestamp: new Date(),
+      }
+      let ttl: number | undefined
+      if (idTagInfo.expiryDate != null) {
+        const expiryDate = convertToDate(idTagInfo.expiryDate)
+        if (expiryDate != null) {
+          const ttlSeconds = Math.ceil((expiryDate.getTime() - Date.now()) / 1000)
+          if (ttlSeconds <= 0) {
+            logger.debug(
+              `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Skipping expired entry for '${truncateId(idTag)}'`
+            )
+            return
+          }
+          ttl = ttlSeconds
+        }
+      }
+      authCache.set(idTag, result, ttl)
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Updated cache for '${truncateId(idTag)}' status=${result.status}${ttl != null ? `, ttl=${ttl.toString()}s` : ''}`
+      )
+    } catch (error) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Cache update failed for '${truncateId(idTag)}':`,
+        error
+      )
     }
   }
 

@@ -28,7 +28,13 @@ export interface OCPP16AuthorizeRequest extends JsonObject {
 }
 
 export interface OCPP16AuthorizeResponse extends JsonObject {
-  idTagInfo: IdTagInfo
+  idTagInfo: OCPP16IdTagInfo
+}
+
+export interface OCPP16IdTagInfo extends JsonObject {
+  expiryDate?: Date
+  parentIdTag?: string
+  status: OCPP16AuthorizationStatus
 }
 
 export interface OCPP16StartTransactionRequest extends JsonObject {
@@ -40,7 +46,7 @@ export interface OCPP16StartTransactionRequest extends JsonObject {
 }
 
 export interface OCPP16StartTransactionResponse extends JsonObject {
-  idTagInfo: IdTagInfo
+  idTagInfo: OCPP16IdTagInfo
   transactionId: number
 }
 
@@ -54,11 +60,5 @@ export interface OCPP16StopTransactionRequest extends JsonObject {
 }
 
 export interface OCPP16StopTransactionResponse extends JsonObject {
-  idTagInfo?: IdTagInfo
-}
-
-interface IdTagInfo extends JsonObject {
-  expiryDate?: Date
-  parentIdTag?: string
-  status: OCPP16AuthorizationStatus
+  idTagInfo?: OCPP16IdTagInfo
 }

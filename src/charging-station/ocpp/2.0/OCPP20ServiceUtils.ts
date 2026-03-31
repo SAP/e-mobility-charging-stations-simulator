@@ -13,6 +13,8 @@ import {
   OCPP20ComponentName,
   type OCPP20ConnectorStatusEnumType,
   type OCPP20EVSEType,
+  type OCPP20IdTokenInfoType,
+  type OCPP20IdTokenType,
   OCPP20IncomingRequestCommand,
   type OCPP20MeterValue,
   OCPP20OptionalVariableName,
@@ -34,6 +36,7 @@ import {
 } from '../../../types/index.js'
 import {
   clampToSafeTimerValue,
+  computeExponentialBackOffDelay,
   Constants,
   convertToBoolean,
   convertToInt,
@@ -44,6 +47,7 @@ import {
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
@@ -214,6 +218,42 @@ export class OCPP20ServiceUtils {
       connectorId,
       connectorStatus: ConnectorStatusEnum.Available,
     } as unknown as OCPP20StatusNotificationRequest)
+  }
+
+  /**
+   * OCPP 2.0.1 §8.1-§8.3 RetryBackOff reconnection delay computation.
+   * @param chargingStation - Target charging station
+   * @param retryCount - Current websocket connection retry count
+   * @returns Reconnect delay in milliseconds
+   */
+  public static computeReconnectDelay (
+    chargingStation: ChargingStation,
+    retryCount: number
+  ): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+        variable: { name: OCPP20OptionalVariableName.RetryBackOffWaitMinimum },
+      },
+      {
+        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+        variable: { name: OCPP20OptionalVariableName.RetryBackOffRandomRange },
+      },
+      {
+        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+        variable: { name: OCPP20OptionalVariableName.RetryBackOffRepeatTimes },
+      },
+    ])
+    const waitMinimum = convertToInt(results[0]?.attributeValue) || 30
+    const randomRange = convertToInt(results[1]?.attributeValue) || 10
+    const repeatTimes = convertToInt(results[2]?.attributeValue) || 5
+    return computeExponentialBackOffDelay({
+      baseDelayMs: secondsToMilliseconds(waitMinimum),
+      jitterMs: secondsToMilliseconds(randomRange),
+      maxRetries: repeatTimes,
+      retryNumber: Math.max(0, retryCount - 1),
+    })
   }
 
   /**
@@ -957,6 +997,22 @@ export class OCPP20ServiceUtils {
       delete connectorStatus.transactionUpdatedMeterValuesSetInterval
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.stopUpdatedMeterValues: TxUpdatedInterval stopped`
+      )
+    }
+  }
+
+  public static updateAuthorizationCache (
+    chargingStation: ChargingStation,
+    idToken: OCPP20IdTokenType,
+    idTokenInfo: OCPP20IdTokenInfoType
+  ): void {
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      authService.updateCacheEntry(idToken.idToken, idTokenInfo, mapOCPP20TokenType(idToken.type))
+    } catch (error: unknown) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.updateAuthorizationCache: Error updating auth cache:`,
+        error
       )
     }
   }

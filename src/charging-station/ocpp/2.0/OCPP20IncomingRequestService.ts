@@ -160,6 +160,7 @@ import {
   hasCertificateManager,
   type StoreCertificateResult,
 } from './OCPP20CertificateManager.js'
+import { OCPP20CertSigningRetryManager } from './OCPP20CertSigningRetryManager.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
@@ -211,8 +212,18 @@ const buildStationInfoReportData = (
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
+  certSigningRetryManager?: OCPP20CertSigningRetryManager
+  isDrainingSecurityEvents: boolean
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
+  securityEventQueue: QueuedSecurityEvent[]
+}
+
+interface QueuedSecurityEvent {
+  retryCount?: number
+  techInfo?: string
+  timestamp: Date
+  type: string
 }
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
@@ -573,6 +584,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+  }
+
+  public getCertSigningRetryManager (
+    chargingStation: ChargingStation
+  ): OCPP20CertSigningRetryManager {
+    const state = this.getStationState(chargingStation)
+    state.certSigningRetryManager ??= new OCPP20CertSigningRetryManager(chargingStation)
+    return state.certSigningRetryManager
   }
 
   /**
@@ -1119,8 +1138,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     let state = this.stationsState.get(chargingStation)
     if (state == null) {
       state = {
+        isDrainingSecurityEvents: false,
         preInoperativeConnectorStatuses: new Map(),
         reportDataCache: new Map(),
+        securityEventQueue: [],
       }
       this.stationsState.set(chargingStation, state)
     }
@@ -1339,12 +1360,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         'InvalidChargingStationCertificate',
         `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
-      ).catch((error: unknown) => {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: SecurityEventNotification failed:`,
-          error
-        )
-      })
+      )
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
@@ -1390,6 +1406,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain stored successfully`
       )
+      // A02.FR.20: Cancel retry timer when CertificateSignedRequest is received and accepted
+      this.getCertSigningRetryManager(chargingStation).cancelRetryTimer()
       return {
         status: GenericStatus.Accepted,
       }
@@ -2825,12 +2843,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           chargingStation,
           'InvalidFirmwareSigningCertificate',
           `Invalid signing certificate PEM for requestId ${requestId.toString()}`
-        ).catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: SecurityEventNotification error:`,
-            error
-          )
-        })
+        )
         return {
           status: UpdateFirmwareStatusEnumType.InvalidCertificate,
         }
@@ -3318,6 +3331,67 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     stationState.reportDataCache.delete(requestId)
   }
 
+  private sendQueuedSecurityEvents (chargingStation: ChargingStation): void {
+    const stationState = this.getStationState(chargingStation)
+    if (
+      stationState.isDrainingSecurityEvents ||
+      !chargingStation.isWebSocketConnectionOpened() ||
+      stationState.securityEventQueue.length === 0
+    ) {
+      return
+    }
+    stationState.isDrainingSecurityEvents = true
+    const queue = stationState.securityEventQueue
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Draining ${queue.length.toString()} queued security event(s)`
+    )
+    const drainNextEvent = (): void => {
+      if (queue.length === 0 || !chargingStation.isWebSocketConnectionOpened()) {
+        stationState.isDrainingSecurityEvents = false
+        return
+      }
+      const event = queue.shift()
+      if (event == null) {
+        stationState.isDrainingSecurityEvents = false
+        return
+      }
+      chargingStation.ocppRequestService
+        .requestHandler<
+          OCPP20SecurityEventNotificationRequest,
+          OCPP20SecurityEventNotificationResponse
+        >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
+          timestamp: event.timestamp,
+          type: event.type,
+          ...(event.techInfo !== undefined && { techInfo: event.techInfo }),
+        })
+        .then(() => {
+          drainNextEvent()
+          return undefined
+        })
+        .catch((error: unknown) => {
+          const retryCount = (event.retryCount ?? 0) + 1
+          if (retryCount >= 3) {
+            logger.warn(
+              `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Discarding event '${event.type}' after ${retryCount.toString()} failed attempts`,
+              error
+            )
+            drainNextEvent()
+            return
+          }
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Failed to send queued event '${event.type}' (attempt ${retryCount.toString()}/3)`,
+            error
+          )
+          queue.unshift({ ...event, retryCount })
+          stationState.isDrainingSecurityEvents = false
+          setTimeout(() => {
+            this.sendQueuedSecurityEvents(chargingStation)
+          }, 5000)
+        })
+    }
+    drainNextEvent()
+  }
+
   private sendRestoredAllConnectorsStatusNotifications (chargingStation: ChargingStation): void {
     for (const { connectorId } of chargingStation.iterateConnectors(true)) {
       const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
@@ -3358,15 +3432,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     type: string,
     techInfo?: string
-  ): Promise<OCPP20SecurityEventNotificationResponse> {
-    return chargingStation.ocppRequestService.requestHandler<
-      OCPP20SecurityEventNotificationRequest,
-      OCPP20SecurityEventNotificationResponse
-    >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
+  ): void {
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.sendSecurityEventNotification: [SecurityEvent] type=${type}${techInfo != null ? `, techInfo=${techInfo}` : ''}`
+    )
+    this.getStationState(chargingStation).securityEventQueue.push({
       timestamp: new Date(),
       type,
       ...(techInfo !== undefined && { techInfo }),
     })
+    this.sendQueuedSecurityEvents(chargingStation)
   }
 
   /**
@@ -3479,16 +3554,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           OCPP20FirmwareStatusEnumType.InvalidSignature,
           requestId
         )
-        await this.sendSecurityEventNotification(
+        this.sendSecurityEventNotification(
           chargingStation,
           'InvalidFirmwareSignature',
           `Firmware signature verification failed for requestId ${requestId.toString()}`
-        ).catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: SecurityEventNotification error:`,
-            error
-          )
-        })
+        )
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
         )
@@ -3574,7 +3644,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     // H11: Send SecurityEventNotification for successful firmware update
-    await this.sendSecurityEventNotification(
+    this.sendSecurityEventNotification(
       chargingStation,
       'FirmwareUpdated',
       `Firmware update completed for requestId ${requestId.toString()}`

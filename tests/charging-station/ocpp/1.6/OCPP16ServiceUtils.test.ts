@@ -1,9 +1,11 @@
 /**
  * @file Tests for OCPP16ServiceUtils pure utility functions
  * @module OCPP 1.6 — §4.7 MeterValues (meter value building), §9.3 SetChargingProfile
- *   (charging profile management), §3 ChargePoint status (connector status transitions)
+ *   (charging profile management), §3 ChargePoint status (connector status transitions),
+ *   §9.4 ClearChargingProfile (Errata 3.25 AND logic), authorization cache updates
  * @description Verifies pure static methods on OCPP16ServiceUtils: meter value building,
- * charging profile management, feature profile checking, and command support checks.
+ * charging profile management, feature profile checking, command support checks,
+ * and authorization cache update behavior.
  */
 
 import assert from 'node:assert/strict'
@@ -11,11 +13,16 @@ import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
+  AuthorizationStatus,
+  OCPPAuthServiceFactory,
+} from '../../../../src/charging-station/ocpp/auth/index.js'
+import {
   isIncomingRequestCommandSupported,
   isRequestCommandSupported,
 } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   ChargePointErrorCode,
+  OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfileKindType,
@@ -23,6 +30,7 @@ import {
   OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedule,
   type OCPP16ClearChargingProfileRequest,
+  type OCPP16IdTagInfo,
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
@@ -35,7 +43,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createCommandsSupport, createMeterValuesTemplate } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ServiceUtils — pure functions', async () => {
@@ -389,6 +397,93 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       // Assert
       assert.strictEqual(result, false)
       assert.strictEqual(profiles.length, 1)
+    })
+
+    await it('should clear profile matching all specified criteria (AND logic)', () => {
+      // Arrange
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      const profiles = [
+        makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
+        makeProfile(2, OCPP16ChargingProfilePurposeType.TX_PROFILE, 1),
+        makeProfile(3, OCPP16ChargingProfilePurposeType.TX_PROFILE, 0),
+      ]
+      const payload: OCPP16ClearChargingProfileRequest = {
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+        id: 2,
+        stackLevel: 1,
+      }
+
+      // Act
+      const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
+
+      // Assert — only profile 2 matches all three criteria
+      assert.strictEqual(result, true)
+      assert.strictEqual(profiles.length, 2)
+      assert.strictEqual(profiles[0].chargingProfileId, 1)
+      assert.strictEqual(profiles[1].chargingProfileId, 3)
+    })
+
+    await it('should treat null fields as wildcards', () => {
+      // Arrange
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      const profiles = [
+        makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
+        makeProfile(2, OCPP16ChargingProfilePurposeType.TX_PROFILE, 1),
+        makeProfile(3, OCPP16ChargingProfilePurposeType.TX_PROFILE, 5),
+      ]
+      const payload: OCPP16ClearChargingProfileRequest = {
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+      }
+
+      // Act
+      const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
+
+      // Assert — id and stackLevel are null (wildcards), so all TxProfile profiles cleared
+      assert.strictEqual(result, true)
+      assert.strictEqual(profiles.length, 1)
+      assert.strictEqual(profiles[0].chargingProfileId, 1)
+    })
+
+    await it('should not clear profile when only some criteria match', () => {
+      // Arrange
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      const profiles = [
+        makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
+        makeProfile(2, OCPP16ChargingProfilePurposeType.TX_PROFILE, 1),
+      ]
+      const payload: OCPP16ClearChargingProfileRequest = {
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
+        id: 1,
+      }
+
+      // Act
+      const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
+
+      // Assert — id=1 matches P1 but purpose doesn't; purpose matches P2 but id doesn't
+      assert.strictEqual(result, false)
+      assert.strictEqual(profiles.length, 2)
+    })
+
+    await it('should clear multiple matching profiles', () => {
+      // Arrange
+      const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
+      const profiles = [
+        makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
+        makeProfile(2, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
+        makeProfile(3, OCPP16ChargingProfilePurposeType.TX_PROFILE, 1),
+      ]
+      const payload: OCPP16ClearChargingProfileRequest = {
+        chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE,
+        stackLevel: 0,
+      }
+
+      // Act
+      const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
+
+      // Assert — profiles 1 and 2 both match purpose + stackLevel
+      assert.strictEqual(result, true)
+      assert.strictEqual(profiles.length, 1)
+      assert.strictEqual(profiles[0].chargingProfileId, 3)
     })
   })
 
@@ -754,6 +849,144 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
 
       assert.strictEqual(result, false)
+    })
+  })
+
+  // ─── updateAuthorizationCache ──────────────────────────────────────────
+
+  await describe('updateAuthorizationCache', async () => {
+    const TEST_ID_TAG = 'TEST_RFID_001'
+
+    afterEach(() => {
+      OCPPAuthServiceFactory.clearAllInstances()
+    })
+
+    await it('should update auth cache with Accepted status', () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          chargingStationId: 'CS_CACHE_TEST_01',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const idTagInfo: OCPP16IdTagInfo = {
+        status: OCPP16AuthorizationStatus.ACCEPTED,
+      }
+
+      // Act
+      OCPP16ServiceUtils.updateAuthorizationCache(station, TEST_ID_TAG, idTagInfo)
+
+      // Assert
+      const authService = OCPPAuthServiceFactory.getInstance(station)
+      const authCache = authService.getAuthCache()
+      assert.ok(authCache != null)
+      const cached = authCache.get(TEST_ID_TAG)
+      assert.ok(cached != null)
+      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+    })
+
+    await it('should update auth cache with rejected status', () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          chargingStationId: 'CS_CACHE_TEST_02',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const idTagInfo: OCPP16IdTagInfo = {
+        status: OCPP16AuthorizationStatus.BLOCKED,
+      }
+
+      // Act
+      OCPP16ServiceUtils.updateAuthorizationCache(station, TEST_ID_TAG, idTagInfo)
+
+      // Assert
+      const authService = OCPPAuthServiceFactory.getInstance(station)
+      const authCache = authService.getAuthCache()
+      assert.ok(authCache != null)
+      const cached = authCache.get(TEST_ID_TAG)
+      assert.ok(cached != null)
+      assert.strictEqual(cached.status, AuthorizationStatus.BLOCKED)
+    })
+
+    await it('should set TTL from expiryDate when in future', () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          chargingStationId: 'CS_CACHE_TEST_03',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const futureDate = new Date(Date.now() + 600_000)
+      const idTagInfo: OCPP16IdTagInfo = {
+        expiryDate: futureDate,
+        status: OCPP16AuthorizationStatus.ACCEPTED,
+      }
+
+      // Act
+      OCPP16ServiceUtils.updateAuthorizationCache(station, TEST_ID_TAG, idTagInfo)
+
+      // Assert
+      const authService = OCPPAuthServiceFactory.getInstance(station)
+      const authCache = authService.getAuthCache()
+      assert.ok(authCache != null)
+      const cached = authCache.get(TEST_ID_TAG)
+      assert.ok(cached != null, 'Cache entry should exist with future TTL')
+      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+    })
+
+    await it('should skip caching when expiryDate is in the past', () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          chargingStationId: 'CS_CACHE_TEST_04',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const pastDate = new Date(Date.now() - 60_000)
+      const idTagInfo: OCPP16IdTagInfo = {
+        expiryDate: pastDate,
+        status: OCPP16AuthorizationStatus.ACCEPTED,
+      }
+
+      // Act
+      OCPP16ServiceUtils.updateAuthorizationCache(station, TEST_ID_TAG, idTagInfo)
+
+      // Assert
+      const authService = OCPPAuthServiceFactory.getInstance(station)
+      const authCache = authService.getAuthCache()
+      assert.ok(authCache != null)
+      const cached = authCache.get(TEST_ID_TAG)
+      assert.strictEqual(cached, undefined, 'Expired entry must not be cached')
+    })
+
+    await it('should cache without TTL when no expiryDate', () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          chargingStationId: 'CS_CACHE_TEST_05',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const idTagInfo: OCPP16IdTagInfo = {
+        status: OCPP16AuthorizationStatus.ACCEPTED,
+      }
+
+      // Act
+      OCPP16ServiceUtils.updateAuthorizationCache(station, TEST_ID_TAG, idTagInfo)
+
+      // Assert
+      const authService = OCPPAuthServiceFactory.getInstance(station)
+      const authCache = authService.getAuthCache()
+      assert.ok(authCache != null)
+      const cached = authCache.get(TEST_ID_TAG)
+      assert.ok(cached != null, 'Cache entry should exist without TTL')
+      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
     })
   })
 })

@@ -33,12 +33,12 @@ export { average, max, median, min, percentile, std } from './StatisticUtils.js'
 export {
   clampToSafeTimerValue,
   clone,
+  computeExponentialBackOffDelay,
   convertToBoolean,
   convertToDate,
   convertToFloat,
   convertToInt,
   convertToIntOrNaN,
-  exponentialDelay,
   extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,

@@ -402,15 +402,32 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
   `${str.slice(0, pos)}${subStr}${str.slice(pos)}`
 
 /**
- * Computes the retry delay in milliseconds using an exponential backoff algorithm.
- * @param retryNumber - the number of retries that have already been attempted
- * @param delayFactor - the base delay factor in milliseconds
+ * Generalized exponential back-off: baseDelayMs × 2^min(retryNumber, maxRetries) + jitter.
+ * @param options - back-off configuration
+ * @param options.baseDelayMs - base delay in milliseconds
+ * @param options.retryNumber - current retry attempt (0-based)
+ * @param options.maxRetries - stop doubling after this many retries (default: unlimited)
+ * @param options.jitterMs - maximum fixed random jitter in milliseconds (default: 0)
+ * @param options.jitterPercent - proportional jitter as fraction of computed delay, e.g. 0.2 = 20% (default: 0)
  * @returns delay in milliseconds
  */
-export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => {
-  const delay = 2 ** retryNumber * delayFactor
-  const randomSum = delay * 0.2 * secureRandom() // 0-20% of the delay
-  return delay + randomSum
+export const computeExponentialBackOffDelay = (options: {
+  baseDelayMs: number
+  jitterMs?: number
+  jitterPercent?: number
+  maxRetries?: number
+  retryNumber: number
+}): number => {
+  const { baseDelayMs, jitterMs, jitterPercent, maxRetries, retryNumber } = options
+  const effectiveRetry = maxRetries != null ? Math.min(retryNumber, maxRetries) : retryNumber
+  const delay = baseDelayMs * 2 ** effectiveRetry
+  let jitter = 0
+  if (jitterPercent != null && jitterPercent > 0) {
+    jitter = delay * jitterPercent * secureRandom()
+  } else if (jitterMs != null && jitterMs > 0) {
+    jitter = secureRandom() * jitterMs
+  }
+  return delay + jitter
 }
 
 /**

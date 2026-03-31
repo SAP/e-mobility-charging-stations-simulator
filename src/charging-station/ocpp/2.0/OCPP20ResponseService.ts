@@ -8,8 +8,10 @@ import {
 import {
   ChargingStationEvents,
   ConnectorStatusEnum,
+  GenericStatus,
   type JsonType,
   OCPP20AuthorizationStatusEnumType,
+  type OCPP20AuthorizeRequest,
   type OCPP20AuthorizeResponse,
   type OCPP20BootNotificationResponse,
   OCPP20ComponentName,
@@ -26,6 +28,7 @@ import {
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   type OCPP20SecurityEventNotificationResponse,
+  type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
   type OCPP20StatusNotificationRequest,
   type OCPP20StatusNotificationResponse,
@@ -38,13 +41,13 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { convertToDate, logger } from '../../../utils/index.js'
-import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import {
   createPayloadValidatorMap,
   isRequestCommandSupported,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
+import { OCPP20IncomingRequestService } from './OCPP20IncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'
 
@@ -195,10 +198,17 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
   private handleResponseAuthorize (
     chargingStation: ChargingStation,
-    payload: OCPP20AuthorizeResponse
+    payload: OCPP20AuthorizeResponse,
+    requestPayload: OCPP20AuthorizeRequest
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: Authorize response received, status: ${payload.idTokenInfo.status}`
+    )
+    // C10.FR.04: Update Authorization Cache entry upon receipt of AuthorizationResponse
+    OCPP20ServiceUtils.updateAuthorizationCache(
+      chargingStation,
+      requestPayload.idToken,
+      payload.idTokenInfo
     )
   }
 
@@ -347,11 +357,17 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
   private handleResponseSignCertificate (
     chargingStation: ChargingStation,
-    payload: OCPP20SignCertificateResponse
+    payload: OCPP20SignCertificateResponse,
+    requestPayload: OCPP20SignCertificateRequest
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseSignCertificate: SignCertificate response received, status: ${payload.status}`
     )
+    if (payload.status === GenericStatus.Accepted) {
+      OCPP20IncomingRequestService.getInstance()
+        .getCertSigningRetryManager(chargingStation)
+        .startRetryTimer(requestPayload.certificateType)
+    }
   }
 
   private handleResponseStatusNotification (
@@ -479,18 +495,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
       }
       // C10.FR.01/04/05: Update auth cache with idTokenInfo from response
       if (requestPayload.idToken != null) {
-        const idTokenValue = requestPayload.idToken.idToken
-        const idTokenInfo = payload.idTokenInfo
-        const identifierType = mapOCPP20TokenType(requestPayload.idToken.type)
-        try {
-          const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-          authService.updateCacheEntry(idTokenValue, idTokenInfo, identifierType)
-        } catch (error: unknown) {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error updating auth cache:`,
-            error
-          )
-        }
+        OCPP20ServiceUtils.updateAuthorizationCache(
+          chargingStation,
+          requestPayload.idToken,
+          payload.idTokenInfo
+        )
       }
     }
     if (payload.updatedPersonalMessage != null) {

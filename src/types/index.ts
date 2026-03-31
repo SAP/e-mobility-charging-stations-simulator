@@ -144,6 +144,7 @@ export {
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
+  type OCPP16IdTagInfo,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,

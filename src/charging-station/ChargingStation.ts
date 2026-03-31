@@ -43,7 +43,7 @@ import {
   type IncomingRequestCommand,
   MessageType,
   MeterValueMeasurand,
-  type OCPPVersion,
+  OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
   RegistrationStatusEnumType,
@@ -77,6 +77,7 @@ import {
   buildUpdatedMessage,
   clampToSafeTimerValue,
   clone,
+  computeExponentialBackOffDelay,
   Configuration,
   Constants,
   convertToBoolean,
@@ -84,7 +85,6 @@ import {
   convertToInt,
   DCElectricUtils,
   ensureError,
-  exponentialDelay,
   formatDurationMilliSeconds,
   formatDurationSeconds,
   getErrorMessage,
@@ -148,6 +148,7 @@ import {
   buildBootNotificationRequest,
   createOCPPServices,
   flushQueuedTransactionMessages,
+  OCPP20ServiceUtils,
   OCPPAuthServiceFactory,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
@@ -1467,6 +1468,22 @@ export class ChargingStation extends EventEmitter {
     return powerDivider
   }
 
+  private getReconnectDelay (): number {
+    if (
+      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+    ) {
+      return OCPP20ServiceUtils.computeReconnectDelay(this, this.wsConnectionRetryCount)
+    }
+    return this.stationInfo?.reconnectExponentialDelay === true
+      ? computeExponentialBackOffDelay({
+        baseDelayMs: 100,
+        jitterPercent: 0.2,
+        retryNumber: this.wsConnectionRetryCount,
+      })
+      : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY)
+  }
+
   private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
     const stationInfoFromTemplate = this.getStationInfoFromTemplate()
     options?.persistentConfiguration != null &&
@@ -2180,7 +2197,12 @@ export class ChargingStation extends EventEmitter {
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             errorMsg = `Wrong message type ${messageType}`
             logger.error(`${this.logPrefix()} ${errorMsg}`)
-            throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg)
+            throw new OCPPError(
+              this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16
+                ? ErrorType.MESSAGE_TYPE_NOT_SUPPORTED
+                : ErrorType.PROTOCOL_ERROR,
+              errorMsg
+            )
         }
       } else {
         throw new OCPPError(
@@ -2196,6 +2218,28 @@ export class ChargingStation extends EventEmitter {
       if (!Array.isArray(request)) {
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, error)
+        // OCPP 2.0.1 §4.2.3: respond with CALLERROR using messageId "-1"
+        if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
+          await this.ocppRequestService
+            .sendError(
+              this,
+              '-1',
+              new OCPPError(
+                ErrorType.RPC_FRAMEWORK_ERROR,
+                'Incoming message is not a valid JSON or not an array',
+                undefined,
+                // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                { rawMessage: typeof data === 'string' ? data : data.toString() }
+              ),
+              Constants.UNKNOWN_OCPP_COMMAND
+            )
+            .catch((sendError: unknown) => {
+              logger.error(
+                `${this.logPrefix()} Error sending RpcFrameworkError CALLERROR:`,
+                sendError
+              )
+            })
+        }
         return
       }
       let commandName: IncomingRequestCommand | undefined
@@ -2278,12 +2322,14 @@ export class ChargingStation extends EventEmitter {
           if (!this.inAcceptedState()) {
             ++registrationRetryCount
             await sleep(
-              exponentialDelay(
-                registrationRetryCount,
-                this.bootNotificationResponse?.interval != null
-                  ? secondsToMilliseconds(this.bootNotificationResponse.interval)
-                  : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
-              )
+              computeExponentialBackOffDelay({
+                baseDelayMs:
+                  this.bootNotificationResponse?.interval != null
+                    ? secondsToMilliseconds(this.bootNotificationResponse.interval)
+                    : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
+                jitterMs: 1000,
+                retryNumber: registrationRetryCount,
+              })
             )
           }
         } while (
@@ -2322,10 +2368,7 @@ export class ChargingStation extends EventEmitter {
       this.wsConnectionRetryCount < (this.stationInfo?.autoReconnectMaxRetries ?? 0)
     ) {
       ++this.wsConnectionRetryCount
-      const reconnectDelay =
-        this.stationInfo?.reconnectExponentialDelay === true
-          ? exponentialDelay(this.wsConnectionRetryCount)
-          : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY)
+      const reconnectDelay = this.getReconnectDelay()
       const reconnectDelayWithdraw = 1000
       const reconnectTimeout =
         reconnectDelay - reconnectDelayWithdraw > 0 ? reconnectDelay - reconnectDelayWithdraw : 0
@@ -2517,7 +2560,13 @@ export class ChargingStation extends EventEmitter {
           )
         }
         // eslint-disable-next-line promise/no-promise-in-callback
-        sleep(exponentialDelay(messageIdx))
+        sleep(
+          computeExponentialBackOffDelay({
+            baseDelayMs: 100,
+            jitterPercent: 0.2,
+            retryNumber: messageIdx ?? 0,
+          })
+        )
           .then(() => {
             if (messageIdx != null) {
               ++messageIdx

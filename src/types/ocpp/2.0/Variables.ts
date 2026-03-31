@@ -33,12 +33,17 @@ export enum OCPP20DeviceInfoVariableName {
 }
 
 export enum OCPP20OptionalVariableName {
+  CertSigningRepeatTimes = 'CertSigningRepeatTimes',
+  CertSigningWaitMinimum = 'CertSigningWaitMinimum',
   ConfigurationValueSize = 'ConfigurationValueSize',
   HeartbeatInterval = 'HeartbeatInterval',
   MaxCertificateChainSize = 'MaxCertificateChainSize',
   MaxEnergyOnInvalidId = 'MaxEnergyOnInvalidId',
   NonEvseSpecific = 'NonEvseSpecific',
   ReportingValueSize = 'ReportingValueSize',
+  RetryBackOffRandomRange = 'RetryBackOffRandomRange',
+  RetryBackOffRepeatTimes = 'RetryBackOffRepeatTimes',
+  RetryBackOffWaitMinimum = 'RetryBackOffWaitMinimum',
   ValueSize = 'ValueSize',
   WebSocketPingInterval = 'WebSocketPingInterval',
 }

@@ -219,6 +219,10 @@ export class RemoteAuthStrategy implements AuthStrategy {
     logger.debug(`${moduleName}: Cleared OCPP adapter`)
   }
 
+  public getAuthCache (): undefined {
+    return undefined
+  }
+
   /**
    * Get strategy statistics
    * @returns Strategy statistics including success rates, response times, and error counts

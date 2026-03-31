@@ -1406,36 +1406,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'QueueAllMessages',
   },
-  [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'RetryBackOffRandomRange')]: {
-    component: OCPP20ComponentName.OCPPCommCtrlr,
-    dataType: DataEnumType.integer,
-    description:
-      'When the Charging Station is reconnecting, after a connection loss, it will use this variable as the maximum value for the random part of the back-off time',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'RetryBackOffRandomRange',
-  },
-  [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'RetryBackOffRepeatTimes')]: {
-    component: OCPP20ComponentName.OCPPCommCtrlr,
-    dataType: DataEnumType.integer,
-    description:
-      'When the Charging Station is reconnecting, after a connection loss, it will use this variable for the amount of times it will double the previous back-off time.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'RetryBackOffRepeatTimes',
-  },
-  [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'RetryBackOffWaitMinimum')]: {
-    component: OCPP20ComponentName.OCPPCommCtrlr,
-    dataType: DataEnumType.integer,
-    description:
-      'When the Charging Station is reconnecting, after a connection loss, it will use this variable as the minimum back-off time, the first time it tries to reconnect.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'RetryBackOffWaitMinimum',
-  },
   [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr,
     OCPP20OptionalVariableName.HeartbeatInterval
@@ -1453,6 +1423,45 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20OptionalVariableName.HeartbeatInterval,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr,
+    OCPP20OptionalVariableName.RetryBackOffRandomRange
+  )]: {
+    component: OCPP20ComponentName.OCPPCommCtrlr,
+    dataType: DataEnumType.integer,
+    description:
+      'When the Charging Station is reconnecting, after a connection loss, it will use this variable as the maximum value for the random part of the back-off time',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.RetryBackOffRandomRange,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr,
+    OCPP20OptionalVariableName.RetryBackOffRepeatTimes
+  )]: {
+    component: OCPP20ComponentName.OCPPCommCtrlr,
+    dataType: DataEnumType.integer,
+    description:
+      'When the Charging Station is reconnecting, after a connection loss, it will use this variable for the amount of times it will double the previous back-off time.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.RetryBackOffRepeatTimes,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr,
+    OCPP20OptionalVariableName.RetryBackOffWaitMinimum
+  )]: {
+    component: OCPP20ComponentName.OCPPCommCtrlr,
+    dataType: DataEnumType.integer,
+    description:
+      'When the Charging Station is reconnecting, after a connection loss, it will use this variable as the minimum back-off time, the first time it tries to reconnect.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.RetryBackOffWaitMinimum,
   },
   [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr,
@@ -1906,7 +1915,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'BasicAuthPassword',
   },
-  [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'CertSigningRepeatTimes')]: {
+  [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'Identity')]: {
+    component: OCPP20ComponentName.SecurityCtrlr,
+    dataType: DataEnumType.string,
+    description: 'The Charging Station identity.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'Identity',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr,
+    OCPP20OptionalVariableName.CertSigningRepeatTimes
+  )]: {
     component: OCPP20ComponentName.SecurityCtrlr,
     dataType: DataEnumType.integer,
     defaultValue: '3',
@@ -1916,9 +1937,12 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'CertSigningRepeatTimes',
+    variable: OCPP20OptionalVariableName.CertSigningRepeatTimes,
   },
-  [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'CertSigningWaitMinimum')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr,
+    OCPP20OptionalVariableName.CertSigningWaitMinimum
+  )]: {
     component: OCPP20ComponentName.SecurityCtrlr,
     dataType: DataEnumType.integer,
     defaultValue: '60',
@@ -1929,16 +1953,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     unit: OCPP20UnitEnumType.SECONDS,
-    variable: 'CertSigningWaitMinimum',
-  },
-  [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'Identity')]: {
-    component: OCPP20ComponentName.SecurityCtrlr,
-    dataType: DataEnumType.string,
-    description: 'The Charging Station identity.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Identity',
+    variable: OCPP20OptionalVariableName.CertSigningWaitMinimum,
   },
   [buildRegistryKey(
     OCPP20ComponentName.SecurityCtrlr,

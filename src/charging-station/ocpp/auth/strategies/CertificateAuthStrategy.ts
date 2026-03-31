@@ -132,6 +132,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
     logger.debug(`${moduleName}: Certificate authentication strategy cleaned up`)
   }
 
+  public getAuthCache (): undefined {
+    return undefined
+  }
+
   getStats (): JsonObject {
     return {
       ...this.stats,
