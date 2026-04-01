@@ -7,7 +7,6 @@
  * - buildBootNotificationRequest — builds version-specific boot notification payloads
  * - convertDateToISOString — recursively converts Date objects to ISO strings in-place
  * - isConnectorIdValid — validates connector ID ranges
- * - mapStopReasonToOCPP20 — maps OCPP 1.6 stop reasons to OCPP 2.0 equivalents (from OCPP20RequestBuilders)
  */
 
 import type { ErrorObject } from 'ajv'
@@ -17,7 +16,6 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
 
-import { mapStopReasonToOCPP20 } from '../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import {
   ajvErrorsToErrorType,
   buildBootNotificationRequest,
@@ -31,7 +29,6 @@ import {
   IncomingRequestCommand,
   type JsonType,
   OCPPVersion,
-  type StopTransactionReason,
 } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
@@ -172,29 +169,6 @@ await describe('OCPPServiceUtils — pure functions', async () => {
         -1
       )
       assert.strictEqual(result, false)
-    })
-  })
-
-  await describe('mapStopReasonToOCPP20', async () => {
-    await it('should map Other to Other/AbnormalCondition', () => {
-      const result = mapStopReasonToOCPP20('Other' as StopTransactionReason)
-
-      assert.strictEqual(result.stoppedReason, 'Other')
-      assert.strictEqual(result.triggerReason, 'AbnormalCondition')
-    })
-
-    await it('should map undefined to Local/StopAuthorized', () => {
-      const result = mapStopReasonToOCPP20(undefined)
-
-      assert.strictEqual(result.stoppedReason, 'Local')
-      assert.strictEqual(result.triggerReason, 'StopAuthorized')
-    })
-
-    await it('should map Remote to Remote/RemoteStop', () => {
-      const result = mapStopReasonToOCPP20('Remote' as StopTransactionReason)
-
-      assert.strictEqual(result.stoppedReason, 'Remote')
-      assert.strictEqual(result.triggerReason, 'RemoteStop')
     })
   })
 
