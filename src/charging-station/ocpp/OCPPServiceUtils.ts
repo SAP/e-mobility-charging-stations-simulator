@@ -57,10 +57,14 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
-import { buildMeterValueForOCPP16 } from './1.6/OCPP16MeterValueBuilders.js'
-import { buildOCPP16BootNotificationRequest } from './1.6/OCPP16RequestBuilders.js'
-import { buildMeterValueForOCPP20 } from './2.0/OCPP20MeterValueBuilders.js'
-import { buildOCPP20BootNotificationRequest } from './2.0/OCPP20RequestBuilders.js'
+import {
+  buildMeterValueForOCPP16,
+  buildOCPP16BootNotificationRequest,
+} from './1.6/OCPP16RequestBuilders.js'
+import {
+  buildMeterValueForOCPP20,
+  buildOCPP20BootNotificationRequest,
+} from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
 const moduleName = 'OCPPServiceUtils'
