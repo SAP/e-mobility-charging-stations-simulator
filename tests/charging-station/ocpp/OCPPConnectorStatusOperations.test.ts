@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPPServiceUtils connector status management
+ * @file Tests for OCPPConnectorStatusOperations
  * @description Verifies sendAndSetConnectorStatus and restoreConnectorStatus functions
  *
  * Covers:
@@ -17,7 +17,7 @@ import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
-} from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+} from '../../../src/charging-station/ocpp/OCPPConnectorStatusOperations.js'
 import {
   ConnectorStatusEnum,
   type OCPP16StatusNotificationRequest,
@@ -44,7 +44,7 @@ function createStationWithRequestHandler (opts?: Partial<MockChargingStationOpti
   return { requestHandler, station }
 }
 
-await describe('OCPPServiceUtils — connector status management', async () => {
+await describe('OCPPConnectorStatusOperations', async () => {
   afterEach(() => {
     standardCleanup()
   })

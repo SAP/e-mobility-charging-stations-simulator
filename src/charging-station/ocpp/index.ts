@@ -8,6 +8,10 @@ export { OCPP20ResponseService } from './2.0/OCPP20ResponseService.js'
 export { buildTransactionEvent, OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
 export { OCPP20VariableManager } from './2.0/OCPP20VariableManager.js'
 export { OCPPAuthServiceFactory } from './auth/index.js'
+export {
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from './OCPPConnectorStatusOperations.js'
 export { OCPPConstants } from './OCPPConstants.js'
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
@@ -20,4 +24,4 @@ export {
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from './OCPPServiceOperations.js'
-export { buildMeterValue, sendAndSetConnectorStatus } from './OCPPServiceUtils.js'
+export { buildMeterValue } from './OCPPServiceUtils.js'

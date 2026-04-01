@@ -116,6 +116,7 @@ import {
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext } from '../auth/index.js'
+import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { isIdTagAuthorized } from '../OCPPServiceOperations.js'
@@ -125,7 +126,6 @@ import {
   isConnectorIdValid,
   isIncomingRequestCommandSupported,
   isMessageTriggerSupported,
-  sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'

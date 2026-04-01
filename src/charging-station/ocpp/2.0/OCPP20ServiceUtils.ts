@@ -52,11 +52,11 @@ import {
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
 } from '../auth/index.js'
+import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
   PayloadValidatorOptions,
-  sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 

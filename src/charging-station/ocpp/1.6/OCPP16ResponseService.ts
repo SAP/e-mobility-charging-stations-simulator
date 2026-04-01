@@ -35,13 +35,12 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { Constants, convertToInt, logger, truncateId } from '../../../utils/index.js'
-import { OCPPResponseService } from '../OCPPResponseService.js'
 import {
-  createPayloadValidatorMap,
-  isRequestCommandSupported,
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
-} from '../OCPPServiceUtils.js'
+} from '../OCPPConnectorStatusOperations.js'
+import { OCPPResponseService } from '../OCPPResponseService.js'
+import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'

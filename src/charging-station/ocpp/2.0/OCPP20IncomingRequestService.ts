@@ -147,13 +147,15 @@ import {
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
 } from '../auth/index.js'
+import {
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from '../OCPPConnectorStatusOperations.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
   createPayloadValidatorMap,
   isIncomingRequestCommandSupported,
-  restoreConnectorStatus,
-  sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import {
   type GetInstalledCertificatesResult,

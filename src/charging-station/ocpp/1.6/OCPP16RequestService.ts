@@ -17,12 +17,9 @@ import {
   type RequestParams,
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
+import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import {
-  createPayloadValidatorMap,
-  isRequestCommandSupported,
-  sendAndSetConnectorStatus,
-} from '../OCPPServiceUtils.js'
+import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 

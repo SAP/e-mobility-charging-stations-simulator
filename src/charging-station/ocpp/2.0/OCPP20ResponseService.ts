@@ -41,12 +41,9 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { convertToDate, logger } from '../../../utils/index.js'
+import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
-import {
-  createPayloadValidatorMap,
-  isRequestCommandSupported,
-  sendAndSetConnectorStatus,
-} from '../OCPPServiceUtils.js'
+import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { OCPP20IncomingRequestService } from './OCPP20IncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'

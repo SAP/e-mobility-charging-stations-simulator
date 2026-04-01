@@ -59,6 +59,7 @@ import {
   truncateId,
 } from '../../../utils/index.js'
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
+import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildEmptyMeterValue,
   buildMeterValue,
@@ -66,7 +67,6 @@ import {
   createPayloadConfigs,
   getSampledValueTemplate,
   PayloadValidatorOptions,
-  sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
