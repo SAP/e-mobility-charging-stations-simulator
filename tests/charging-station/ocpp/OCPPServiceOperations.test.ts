@@ -2,30 +2,35 @@
  * @file Tests for OCPPServiceOperations version-dispatching functions
  * @description Verifies startTransactionOnConnector, stopTransactionOnConnector,
  *              stopRunningTransactions, flushQueuedTransactionMessages, and
- *              buildBootNotificationRequest cross-version dispatchers
+ *              isIdTagAuthorized cross-version dispatchers
  */
 
 import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
-import type { ChargingStationInfo } from '../../../src/types/index.js'
 import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
+  AuthContext,
+  AuthenticationMethod,
+  AuthorizationStatus,
+  OCPPAuthServiceFactory,
+} from '../../../src/charging-station/ocpp/auth/index.js'
+import {
   flushQueuedTransactionMessages,
+  isIdTagAuthorized,
   startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
-import { buildBootNotificationRequest } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import {
-  BootReasonEnumType,
-  type OCPP20TransactionEventRequest,
-  OCPPVersion,
-} from '../../../src/types/index.js'
+import { type OCPP20TransactionEventRequest, OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
+import {
+  createMockAuthorizationResult,
+  createMockAuthService,
+} from './auth/helpers/MockFactories.js'
 
 /**
  * Creates a mock charging station with a tracked request handler for testing
@@ -42,6 +47,22 @@ function createStationWithRequestHandler (opts?: Partial<MockChargingStationOpti
     ...opts,
   })
   return { requestHandler, station }
+}
+
+/**
+ * Registers a mock auth service for the given station in OCPPAuthServiceFactory.
+ * @param station - Mock charging station instance
+ * @param overrides - Partial overrides for the mock auth service methods
+ * @returns The created mock auth service
+ */
+function injectMockAuthService (
+  station: ReturnType<typeof createMockChargingStation>['station'],
+  overrides?: Parameters<typeof createMockAuthService>[0]
+): ReturnType<typeof createMockAuthService> {
+  const stationId = station.stationInfo?.chargingStationId ?? 'unknown'
+  const mockService = createMockAuthService(overrides)
+  OCPPAuthServiceFactory.setInstanceForTesting(stationId, mockService)
+  return mockService
 }
 
 /**
@@ -89,6 +110,7 @@ function setupTransaction (
 
 await describe('OCPPServiceOperations', async () => {
   afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
     standardCleanup()
   })
 
@@ -313,138 +335,248 @@ await describe('OCPPServiceOperations', async () => {
     })
   })
 
-  await describe('buildBootNotificationRequest', async () => {
-    await describe('OCPP 1.6', async () => {
-      await it('should build OCPP 1.6 boot notification with required fields', () => {
-        const stationInfo = {
-          chargePointModel: 'TestModel',
-          chargePointVendor: 'TestVendor',
-          ocppVersion: OCPPVersion.VERSION_16,
-        } as unknown as ChargingStationInfo
-
-        const result = buildBootNotificationRequest(stationInfo)
-
-        assert.notStrictEqual(result, undefined)
-        assert.deepStrictEqual(result, {
-          chargePointModel: 'TestModel',
-          chargePointVendor: 'TestVendor',
-        })
+  await describe('isIdTagAuthorized', async () => {
+    await it('should return false when auth service rejects the tag', async () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        stationInfo: { remoteAuthorization: false },
+      })
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(createMockAuthorizationResult({ status: AuthorizationStatus.INVALID })),
       })
 
-      await it('should build OCPP 1.6 boot notification with optional fields', () => {
-        // Arrange
-        const stationInfo = {
-          chargeBoxSerialNumber: 'CB-001',
-          chargePointModel: 'TestModel',
-          chargePointSerialNumber: 'CP-001',
-          chargePointVendor: 'TestVendor',
-          firmwareVersion: '1.0.0',
-          iccid: '8901234567890',
-          imsi: '310150123456789',
-          meterSerialNumber: 'M-001',
-          meterType: 'ACMeter',
-          ocppVersion: OCPPVersion.VERSION_16,
-        } as unknown as ChargingStationInfo
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
 
-        // Act
-        const result = buildBootNotificationRequest(stationInfo)
-
-        // Assert
-        assert.deepStrictEqual(result, {
-          chargeBoxSerialNumber: 'CB-001',
-          chargePointModel: 'TestModel',
-          chargePointSerialNumber: 'CP-001',
-          chargePointVendor: 'TestVendor',
-          firmwareVersion: '1.0.0',
-          iccid: '8901234567890',
-          imsi: '310150123456789',
-          meterSerialNumber: 'M-001',
-          meterType: 'ACMeter',
-        })
-      })
+      // Assert
+      assert.strictEqual(result, false)
     })
 
-    await describe('OCPP 2.0', async () => {
-      await it('should build OCPP 2.0 boot notification with required fields', () => {
-        const stationInfo = {
-          chargePointModel: 'TestModel',
-          chargePointVendor: 'TestVendor',
-          ocppVersion: OCPPVersion.VERSION_20,
-        } as unknown as ChargingStationInfo
-
-        const result = buildBootNotificationRequest(stationInfo)
-
-        assert.notStrictEqual(result, undefined)
-        assert.deepStrictEqual(result, {
-          chargingStation: {
-            model: 'TestModel',
-            vendorName: 'TestVendor',
-          },
-          reason: BootReasonEnumType.PowerUp,
-        })
+    await it('should return true when auth service returns LOCAL_LIST accepted', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.LOCAL_LIST,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
       })
 
-      await it('should build OCPP 2.0 boot notification with optional fields and modem', () => {
-        // Arrange
-        const stationInfo = {
-          chargeBoxSerialNumber: 'CB-001',
-          chargePointModel: 'TestModel',
-          chargePointVendor: 'TestVendor',
-          firmwareVersion: '2.0.0',
-          iccid: '8901234567890',
-          imsi: '310150123456789',
-          ocppVersion: OCPPVersion.VERSION_201,
-        } as unknown as ChargingStationInfo
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
 
-        // Act
-        const result = buildBootNotificationRequest(stationInfo)
-
-        // Assert
-        assert.deepStrictEqual(result, {
-          chargingStation: {
-            firmwareVersion: '2.0.0',
-            model: 'TestModel',
-            modem: {
-              iccid: '8901234567890',
-              imsi: '310150123456789',
-            },
-            serialNumber: 'CB-001',
-            vendorName: 'TestVendor',
-          },
-          reason: BootReasonEnumType.PowerUp,
-        })
-      })
-
-      await it('should build OCPP 2.0 boot notification with custom boot reason', () => {
-        const stationInfo = {
-          chargePointModel: 'TestModel',
-          chargePointVendor: 'TestVendor',
-          ocppVersion: OCPPVersion.VERSION_20,
-        } as unknown as ChargingStationInfo
-
-        const result = buildBootNotificationRequest(stationInfo, BootReasonEnumType.RemoteReset)
-
-        assert.notStrictEqual(result, undefined)
-        assert.deepStrictEqual(result, {
-          chargingStation: {
-            model: 'TestModel',
-            vendorName: 'TestVendor',
-          },
-          reason: BootReasonEnumType.RemoteReset,
-        })
-      })
+      // Assert
+      assert.strictEqual(result, true)
     })
 
-    await it('should return undefined for unsupported version', () => {
-      const stationInfo = {
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
-        ocppVersion: '3.0',
-      } as unknown as ChargingStationInfo
+    await it('should set localAuthorizeIdTag when auth returns LOCAL_LIST method', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.LOCAL_LIST,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
 
-      const result = buildBootNotificationRequest(stationInfo)
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-001')
 
-      assert.strictEqual(result, undefined)
+      // Assert
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.localAuthorizeIdTag, 'TAG-001')
+      assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
+    })
+
+    await it('should set idTagLocalAuthorized when auth returns CACHE method', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.CACHE,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
+
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-CACHED')
+
+      // Assert
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.localAuthorizeIdTag, 'TAG-CACHED')
+      assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
+    })
+
+    await it('should authorize remotely when auth service returns REMOTE_AUTHORIZATION accepted', async () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        stationInfo: { remoteAuthorization: true },
+      })
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
+
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
+
+      // Assert
+      assert.strictEqual(result, true)
+    })
+
+    await it('should not set localAuthorizeIdTag when REMOTE_AUTHORIZATION method', async () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        stationInfo: { remoteAuthorization: true },
+      })
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
+
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-001')
+
+      // Assert
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.localAuthorizeIdTag, undefined)
+      assert.notStrictEqual(connectorStatus.idTagLocalAuthorized, true)
+    })
+
+    await it('should return false when remote authorization rejects the tag', async () => {
+      // Arrange
+      const { station } = createMockChargingStation({
+        stationInfo: { remoteAuthorization: true },
+      })
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+              status: AuthorizationStatus.BLOCKED,
+            })
+          ),
+      })
+
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-999')
+
+      // Assert
+      assert.strictEqual(result, false)
+    })
+
+    await it('should return true but not set connector state for non-existent connector', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.LOCAL_LIST,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
+
+      // Act
+      const result = await isIdTagAuthorized(station, 99, 'TAG-001')
+
+      // Assert
+      assert.strictEqual(result, true)
+      const connectorStatus = station.getConnectorStatus(99)
+      assert.strictEqual(connectorStatus, undefined)
+    })
+
+    await it('should set localAuthorizeIdTag when auth returns OFFLINE_FALLBACK method', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () =>
+          Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.OFFLINE_FALLBACK,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          ),
+      })
+
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-OFFLINE')
+
+      // Assert
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.localAuthorizeIdTag, 'TAG-OFFLINE')
+      assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
+    })
+
+    await it('should return false when auth service throws an error', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      injectMockAuthService(station, {
+        authorize: () => Promise.reject(new Error('Test auth service error')),
+      })
+
+      // Act
+      const result = await isIdTagAuthorized(station, 1, 'TAG-ERROR')
+
+      // Assert
+      assert.strictEqual(result, false)
+    })
+
+    await it('should accept explicit auth context parameter', async () => {
+      // Arrange
+      const { station } = createMockChargingStation()
+      let capturedContext: string | undefined
+      injectMockAuthService(station, {
+        authorize: (request: { context?: string }) => {
+          capturedContext = request.context
+          return Promise.resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.LOCAL_LIST,
+              status: AuthorizationStatus.ACCEPTED,
+            })
+          )
+        },
+      })
+
+      // Act
+      await isIdTagAuthorized(station, 1, 'TAG-001', AuthContext.REMOTE_START)
+
+      // Assert
+      assert.strictEqual(capturedContext, 'RemoteStart')
+    })
+
+    await it('should return false when no auth service is registered for station', async () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+
+      const result = await isIdTagAuthorized(station, 1, 'TAG-001')
+      assert.strictEqual(result, false)
     })
   })
 })

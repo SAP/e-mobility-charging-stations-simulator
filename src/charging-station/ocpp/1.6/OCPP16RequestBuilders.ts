@@ -62,7 +62,7 @@ export const buildOCPP16BootNotificationRequest = (
   }),
 })
 
-export const buildMeterValueForOCPP16 = (
+export const buildOCPP16MeterValue = (
   chargingStation: ChargingStation,
   transactionId: number | string,
   interval: number,
@@ -86,7 +86,7 @@ export const buildMeterValueForOCPP16 = (
     context?: MeterValueContext,
     phase?: MeterValuePhase
   ): OCPP16SampledValue => {
-    return buildSampledValueForOCPP16(sampledValueTemplate, value, context, phase)
+    return buildOCPP16SampledValue(sampledValueTemplate, value, context, phase)
   }
   // SoC measurand
   const socMeasurand = buildSocMeasurandValue(
@@ -313,7 +313,7 @@ export const buildMeterValueForOCPP16 = (
  * @param phase - The phase of the measurement.
  * @returns The built OCPP 1.6 sampled value.
  */
-export function buildSampledValueForOCPP16 (
+export function buildOCPP16SampledValue (
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,

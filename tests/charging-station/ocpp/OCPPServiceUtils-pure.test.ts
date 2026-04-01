@@ -4,6 +4,7 @@
  *
  * Covers:
  * - ajvErrorsToErrorType — maps AJV validation errors to OCPP ErrorType
+ * - buildBootNotificationRequest — builds version-specific boot notification payloads
  * - convertDateToISOString — recursively converts Date objects to ISO strings in-place
  * - isConnectorIdValid — validates connector ID ranges
  * - mapStopReasonToOCPP20 — maps OCPP 1.6 stop reasons to OCPP 2.0 equivalents
@@ -18,14 +19,18 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 
 import {
   ajvErrorsToErrorType,
+  buildBootNotificationRequest,
   convertDateToISOString,
   isConnectorIdValid,
   mapStopReasonToOCPP20,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  BootReasonEnumType,
+  type ChargingStationInfo,
   ErrorType,
   IncomingRequestCommand,
   type JsonType,
+  OCPPVersion,
   type StopTransactionReason,
 } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
@@ -190,6 +195,141 @@ await describe('OCPPServiceUtils — pure functions', async () => {
 
       assert.strictEqual(result.stoppedReason, 'Remote')
       assert.strictEqual(result.triggerReason, 'RemoteStop')
+    })
+  })
+
+  await describe('buildBootNotificationRequest', async () => {
+    await describe('OCPP 1.6', async () => {
+      await it('should build OCPP 1.6 boot notification with required fields', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_16,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+        })
+      })
+
+      await it('should build OCPP 1.6 boot notification with optional fields', () => {
+        // Arrange
+        const stationInfo = {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointSerialNumber: 'CP-001',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '1.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          meterSerialNumber: 'M-001',
+          meterType: 'ACMeter',
+          ocppVersion: OCPPVersion.VERSION_16,
+        } as unknown as ChargingStationInfo
+
+        // Act
+        const result = buildBootNotificationRequest(stationInfo)
+
+        // Assert
+        assert.deepStrictEqual(result, {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointSerialNumber: 'CP-001',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '1.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          meterSerialNumber: 'M-001',
+          meterType: 'ACMeter',
+        })
+      })
+    })
+
+    await describe('OCPP 2.0', async () => {
+      await it('should build OCPP 2.0 boot notification with required fields', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_20,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            model: 'TestModel',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.PowerUp,
+        })
+      })
+
+      await it('should build OCPP 2.0 boot notification with optional fields and modem', () => {
+        // Arrange
+        const stationInfo = {
+          chargeBoxSerialNumber: 'CB-001',
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          firmwareVersion: '2.0.0',
+          iccid: '8901234567890',
+          imsi: '310150123456789',
+          ocppVersion: OCPPVersion.VERSION_201,
+        } as unknown as ChargingStationInfo
+
+        // Act
+        const result = buildBootNotificationRequest(stationInfo)
+
+        // Assert
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            firmwareVersion: '2.0.0',
+            model: 'TestModel',
+            modem: {
+              iccid: '8901234567890',
+              imsi: '310150123456789',
+            },
+            serialNumber: 'CB-001',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.PowerUp,
+        })
+      })
+
+      await it('should build OCPP 2.0 boot notification with custom boot reason', () => {
+        const stationInfo = {
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          ocppVersion: OCPPVersion.VERSION_20,
+        } as unknown as ChargingStationInfo
+
+        const result = buildBootNotificationRequest(stationInfo, BootReasonEnumType.RemoteReset)
+
+        assert.notStrictEqual(result, undefined)
+        assert.deepStrictEqual(result, {
+          chargingStation: {
+            model: 'TestModel',
+            vendorName: 'TestVendor',
+          },
+          reason: BootReasonEnumType.RemoteReset,
+        })
+      })
+    })
+
+    await it('should return undefined for unsupported version', () => {
+      const stationInfo = {
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        ocppVersion: '3.0',
+      } as unknown as ChargingStationInfo
+
+      const result = buildBootNotificationRequest(stationInfo)
+
+      assert.strictEqual(result, undefined)
     })
   })
 })

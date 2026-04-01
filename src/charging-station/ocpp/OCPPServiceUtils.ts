@@ -58,12 +58,12 @@ import {
   roundTo,
 } from '../../utils/index.js'
 import {
-  buildMeterValueForOCPP16,
   buildOCPP16BootNotificationRequest,
+  buildOCPP16MeterValue,
 } from './1.6/OCPP16RequestBuilders.js'
 import {
-  buildMeterValueForOCPP20,
   buildOCPP20BootNotificationRequest,
+  buildOCPP20MeterValue,
 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
@@ -1068,7 +1068,7 @@ export const buildMeterValue = (
   }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
-      return buildMeterValueForOCPP16(
+      return buildOCPP16MeterValue(
         chargingStation,
         transactionId,
         interval,
@@ -1078,7 +1078,7 @@ export const buildMeterValue = (
       )
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      return buildMeterValueForOCPP20(
+      return buildOCPP20MeterValue(
         chargingStation,
         transactionId,
         interval,
