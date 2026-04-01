@@ -66,38 +66,26 @@ const type = (value: unknown): string => {
   return Object.prototype.toString.call(value).slice(8, -1)
 }
 
-export const isEmpty = (value: unknown): boolean => {
-  const valueType = type(value)
-  if (['BigInt', 'Boolean', 'NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
-    return false
-  }
-  if (!value) return true
-
-  if (valueType === 'String') {
-    return (value as string).trim().length === 0
-  }
-
-  if (valueType === 'Object') {
-    return Object.keys(value as Record<string, unknown>).length === 0
-  }
-
-  if (valueType === 'Array') {
-    return (value as unknown[]).length === 0
-  }
-
-  if (valueType === 'Map') {
-    return (value as Map<unknown, unknown>).size === 0
-  }
-
-  if (valueType === 'Set') {
-    return (value as Set<unknown>).size === 0
-  }
-
-  return false
-}
-
 const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
+}
+
+export const isEmpty = (value: unknown): boolean => {
+  if (
+    value == null ||
+    typeof value === 'bigint' ||
+    typeof value === 'boolean' ||
+    typeof value === 'number'
+  ) {
+    return false
+  }
+
+  if (typeof value === 'string') return value.trim().length === 0
+  if (Array.isArray(value)) return value.length === 0
+  if (value instanceof Map) return value.size === 0
+  if (value instanceof Set) return value.size === 0
+  if (isObject(value)) return Object.keys(value).length === 0
+  return false
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

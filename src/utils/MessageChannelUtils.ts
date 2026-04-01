@@ -5,7 +5,6 @@ import type { ChargingStation } from '../charging-station/index.js'
 import {
   type ChargingStationData,
   type ChargingStationInfo,
-  type ChargingStationOcppConfiguration,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
   type Statistics,
@@ -101,8 +100,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     connectors: buildConnectorEntries(chargingStation),
     evses: buildEvseEntries(chargingStation),
-    ocppConfiguration:
-      chargingStation.ocppConfiguration ?? ({} as ChargingStationOcppConfiguration),
+    ocppConfiguration: chargingStation.ocppConfiguration ?? {},
     started: chargingStation.started,
     stationInfo: chargingStation.stationInfo ?? ({} as ChargingStationInfo),
     supervisionUrl: chargingStation.wsConnectionUrl.href,

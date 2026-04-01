@@ -23,14 +23,14 @@ export class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
     }
-    workerOptions = mergeDeepRight(DEFAULT_WORKER_OPTIONS, (workerOptions ?? {}) as WorkerOptions)
+    const resolvedOptions = mergeDeepRight(DEFAULT_WORKER_OPTIONS, workerOptions ?? {})
     switch (workerProcessType) {
       case WorkerProcessType.dynamicPool:
-        return new WorkerDynamicPool<D, R>(workerScript, workerOptions)
+        return new WorkerDynamicPool<D, R>(workerScript, resolvedOptions)
       case WorkerProcessType.fixedPool:
-        return new WorkerFixedPool<D, R>(workerScript, workerOptions)
+        return new WorkerFixedPool<D, R>(workerScript, resolvedOptions)
       case WorkerProcessType.workerSet:
-        return new WorkerSet<D, R>(workerScript, workerOptions)
+        return new WorkerSet<D, R>(workerScript, resolvedOptions)
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Worker implementation type '${workerProcessType}' not found`)
