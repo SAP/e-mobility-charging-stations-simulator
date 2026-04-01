@@ -13,12 +13,12 @@ import type { ChargingStationInfo } from '../../../src/types/index.js'
 import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
-  buildBootNotificationRequest,
   flushQueuedTransactionMessages,
   startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import { buildBootNotificationRequest } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   BootReasonEnumType,
   type OCPP20TransactionEventRequest,

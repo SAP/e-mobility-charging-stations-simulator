@@ -6,11 +6,13 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { StopTransactionReason } from '../../types/index.js'
+import type { BootReasonEnumType, StopTransactionReason } from '../../types/index.js'
 
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
+  type BootNotificationRequest,
+  type ChargingStationInfo,
   type ConfigurationKeyType,
   type ConnectorStatus,
   CurrentType,
@@ -27,10 +29,8 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type OCPP16MeterValue,
   type OCPP16SampledValue,
   OCPP16StopTransactionReason,
-  type OCPP20MeterValue,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
   OCPP20TriggerReasonEnumType,
@@ -57,6 +57,10 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
+import { buildMeterValueForOCPP16 } from './1.6/OCPP16MeterValueBuilders.js'
+import { buildOCPP16BootNotificationRequest } from './1.6/OCPP16RequestBuilders.js'
+import { buildMeterValueForOCPP20 } from './2.0/OCPP20MeterValueBuilders.js'
+import { buildOCPP20BootNotificationRequest } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
 const moduleName = 'OCPPServiceUtils'
@@ -84,6 +88,21 @@ interface MultiPhaseMeasurandData {
 interface SingleValueMeasurandData {
   template: SampledValueTemplate
   value: number
+}
+
+export const buildBootNotificationRequest = (
+  stationInfo: ChargingStationInfo,
+  bootReason?: BootReasonEnumType
+): BootNotificationRequest | undefined => {
+  switch (stationInfo.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      return buildOCPP16BootNotificationRequest(stationInfo)
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return buildOCPP20BootNotificationRequest(stationInfo, bootReason)
+    default:
+      return undefined
+  }
 }
 
 /**
@@ -215,7 +234,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
   }
 }
 
-const buildSocMeasurandValue = (
+export const buildSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -247,7 +266,7 @@ const buildSocMeasurandValue = (
   }
 }
 
-const validateSocMeasurandValue = (
+export const validateSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -270,7 +289,7 @@ const validateSocMeasurandValue = (
   }
 }
 
-const buildVoltageMeasurandValue = (
+export const buildVoltageMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -303,7 +322,7 @@ const buildVoltageMeasurandValue = (
   }
 }
 
-const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
+export const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   meterValue: { sampledValue: TSampledValue[] },
   voltageData: { template: SampledValueTemplate; value: number },
@@ -329,7 +348,7 @@ const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
   }
 }
 
-const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
+export const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   connectorId: number,
   meterValue: { sampledValue: TSampledValue[] },
@@ -382,7 +401,7 @@ const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   )
 }
 
-const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
+export const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   connectorId: number,
   meterValue: { sampledValue: TSampledValue[] },
@@ -443,7 +462,7 @@ const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
   )
 }
 
-const buildEnergyMeasurandValue = (
+export const buildEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   interval: number,
@@ -493,7 +512,7 @@ const buildEnergyMeasurandValue = (
   }
 }
 
-const updateConnectorEnergyValues = (
+export const updateConnectorEnergyValues = (
   connectorStatus: ConnectorStatus | undefined,
   energyValue: number
 ): void => {
@@ -513,7 +532,7 @@ const updateConnectorEnergyValues = (
   }
 }
 
-const validateEnergyMeasurandValue = (
+export const validateEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -534,7 +553,7 @@ const validateEnergyMeasurandValue = (
   }
 }
 
-const buildPowerMeasurandValue = (
+export const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -742,7 +761,7 @@ const buildPowerMeasurandValue = (
   }
 }
 
-const validatePowerMeasurandValue = (
+export const validatePowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -765,7 +784,7 @@ const validatePowerMeasurandValue = (
   }
 }
 
-const validateCurrentMeasurandValue = (
+export const validateCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -788,7 +807,7 @@ const validateCurrentMeasurandValue = (
   }
 }
 
-const validateCurrentMeasurandPhaseValue = (
+export const validateCurrentMeasurandPhaseValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -814,7 +833,7 @@ const validateCurrentMeasurandPhaseValue = (
   }
 }
 
-const buildCurrentMeasurandValue = (
+export const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -1073,407 +1092,6 @@ export const buildMeterValue = (
   }
 }
 
-const buildMeterValueForOCPP16 = (
-  chargingStation: ChargingStation,
-  transactionId: number | string,
-  interval: number,
-  measurandsKey?: ConfigurationKeyType,
-  context?: MeterValueContext,
-  debug = false
-): OCPP16MeterValue => {
-  const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
-  if (connectorId == null) {
-    throw new OCPPError(
-      ErrorType.INTERNAL_ERROR,
-      `Cannot build MeterValues: no connector found for transaction ${String(transactionId)}`,
-      RequestCommand.METER_VALUES
-    )
-  }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
-  const buildVersionedSampledValue = (
-    sampledValueTemplate: SampledValueTemplate,
-    value: number,
-    context?: MeterValueContext,
-    phase?: MeterValuePhase
-  ): OCPP16SampledValue => {
-    return buildSampledValueForOCPP16(sampledValueTemplate, value, context, phase)
-  }
-  // SoC measurand
-  const socMeasurand = buildSocMeasurandValue(
-    chargingStation,
-    connectorId,
-    undefined,
-    measurandsKey
-  )
-  if (socMeasurand != null) {
-    const socSampledValue = buildVersionedSampledValue(socMeasurand.template, socMeasurand.value)
-    meterValue.sampledValue.push(socSampledValue)
-    validateSocMeasurandValue(
-      chargingStation,
-      connectorId,
-      socSampledValue,
-      socMeasurand.template.minimumValue ?? 0,
-      100,
-      debug
-    )
-  }
-  // Voltage measurand
-  const voltageMeasurand = buildVoltageMeasurandValue(
-    chargingStation,
-    connectorId,
-    undefined,
-    measurandsKey
-  )
-  if (voltageMeasurand != null) {
-    addMainVoltageToMeterValue(
-      chargingStation,
-      meterValue,
-      voltageMeasurand,
-      buildVersionedSampledValue
-    )
-    for (
-      let phase = 1;
-      chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
-      phase++
-    ) {
-      addPhaseVoltageToMeterValue(
-        chargingStation,
-        connectorId,
-        meterValue,
-        voltageMeasurand,
-        phase,
-        buildVersionedSampledValue
-      )
-      addLineToLineVoltageToMeterValue(
-        chargingStation,
-        connectorId,
-        meterValue,
-        voltageMeasurand,
-        phase,
-        buildVersionedSampledValue
-      )
-    }
-  }
-  // Power.Active.Import measurand
-  const powerMeasurand = buildPowerMeasurandValue(
-    chargingStation,
-    connectorId,
-    undefined,
-    measurandsKey
-  )
-  if (powerMeasurand != null) {
-    const unitDivider = powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? 1000 : 1
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
-    const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
-    const connectorMinimumPower = Math.round(powerMeasurand.template.minimumValue ?? 0)
-
-    meterValue.sampledValue.push(
-      buildVersionedSampledValue(powerMeasurand.template, powerMeasurand.values.allPhases)
-    )
-    const sampledValuesIndex = meterValue.sampledValue.length - 1
-    validatePowerMeasurandValue(
-      chargingStation,
-      connectorId,
-      connectorStatus,
-      meterValue.sampledValue[sampledValuesIndex],
-      connectorMaximumPower / unitDivider,
-      connectorMinimumPower / unitDivider,
-      debug
-    )
-    if (chargingStation.getNumberOfPhases() === 3) {
-      const connectorMaximumPowerPerPhase = Math.round(
-        connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
-      )
-      const connectorMinimumPowerPerPhase = Math.round(
-        connectorMinimumPower / chargingStation.getNumberOfPhases()
-      )
-      for (let phase = 1; phase <= chargingStation.getNumberOfPhases(); phase++) {
-        const phaseTemplate =
-          powerMeasurand.perPhaseTemplates[
-            `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
-          ]
-        if (phaseTemplate != null) {
-          const phaseValue = `L${phase.toString()}-N` as MeterValuePhase
-          const phasePowerValue =
-            powerMeasurand.values[`L${phase.toString()}` as keyof MeasurandValues]
-          meterValue.sampledValue.push(
-            buildVersionedSampledValue(phaseTemplate, phasePowerValue, undefined, phaseValue)
-          )
-          const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1
-          validatePowerMeasurandValue(
-            chargingStation,
-            connectorId,
-            connectorStatus,
-            meterValue.sampledValue[sampledValuesPerPhaseIndex],
-            connectorMaximumPowerPerPhase / unitDivider,
-            connectorMinimumPowerPerPhase / unitDivider,
-            debug
-          )
-        }
-      }
-    }
-  }
-  // Current.Import measurand
-  const currentMeasurand = buildCurrentMeasurandValue(
-    chargingStation,
-    connectorId,
-    undefined,
-    measurandsKey
-  )
-  if (currentMeasurand != null) {
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
-    const connectorMaximumAmperage =
-      chargingStation.stationInfo?.currentOutType === CurrentType.AC
-        ? ACElectricUtils.amperagePerPhaseFromPower(
-          chargingStation.getNumberOfPhases(),
-          connectorMaximumAvailablePower,
-          chargingStation.getVoltageOut()
-        )
-        : DCElectricUtils.amperage(connectorMaximumAvailablePower, chargingStation.getVoltageOut())
-    const connectorMinimumAmperage = currentMeasurand.template.minimumValue ?? 0
-
-    meterValue.sampledValue.push(
-      buildVersionedSampledValue(currentMeasurand.template, currentMeasurand.values.allPhases)
-    )
-    const sampledValuesIndex = meterValue.sampledValue.length - 1
-    validateCurrentMeasurandValue(
-      chargingStation,
-      connectorId,
-      connectorStatus,
-      meterValue.sampledValue[sampledValuesIndex],
-      connectorMaximumAmperage,
-      connectorMinimumAmperage,
-      debug
-    )
-    for (
-      let phase = 1;
-      chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
-      phase++
-    ) {
-      const phaseValue = `L${phase.toString()}` as MeterValuePhase
-      meterValue.sampledValue.push(
-        buildVersionedSampledValue(
-          currentMeasurand.perPhaseTemplates[
-            phaseValue as keyof MeasurandPerPhaseSampledValueTemplates
-          ] ?? currentMeasurand.template,
-          currentMeasurand.values[phaseValue as keyof MeasurandPerPhaseSampledValueTemplates],
-          undefined,
-          phaseValue
-        )
-      )
-      const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1
-      validateCurrentMeasurandPhaseValue(
-        chargingStation,
-        connectorId,
-        connectorStatus,
-        meterValue.sampledValue[sampledValuesPerPhaseIndex],
-        connectorMaximumAmperage,
-        connectorMinimumAmperage,
-        debug
-      )
-    }
-  }
-  // Energy.Active.Import.Register measurand (default)
-  const energyMeasurand = buildEnergyMeasurandValue(
-    chargingStation,
-    connectorId,
-    interval,
-    undefined,
-    measurandsKey
-  )
-  if (energyMeasurand != null) {
-    updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
-    const unitDivider = energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-    const energySampledValue = buildVersionedSampledValue(
-      energyMeasurand.template,
-      roundTo(
-        chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) / unitDivider,
-        2
-      )
-    )
-    meterValue.sampledValue.push(energySampledValue)
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
-    const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / (3600 * 1000),
-      2
-    )
-    const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
-    validateEnergyMeasurandValue(
-      chargingStation,
-      connectorId,
-      energySampledValue,
-      energyMeasurand.value,
-      connectorMinimumEnergyRounded,
-      connectorMaximumEnergyRounded,
-      interval,
-      debug
-    )
-  }
-  return meterValue
-}
-
-const buildMeterValueForOCPP20 = (
-  chargingStation: ChargingStation,
-  transactionId: number | string,
-  interval: number,
-  measurandsKey?: ConfigurationKeyType,
-  context?: MeterValueContext,
-  debug = false
-): OCPP20MeterValue => {
-  const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
-  const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
-  if (connectorId == null || evseId == null) {
-    throw new OCPPError(
-      ErrorType.INTERNAL_ERROR,
-      `Cannot build MeterValues: no connector/EVSE found for transaction ${String(transactionId)}`,
-      RequestCommand.METER_VALUES
-    )
-  }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  const meterValue = buildEmptyMeterValue() as OCPP20MeterValue
-  const buildVersionedSampledValue = (
-    sampledValueTemplate: SampledValueTemplate,
-    value: number,
-    context?: MeterValueContext,
-    phase?: MeterValuePhase
-  ): OCPP20SampledValue => {
-    return buildSampledValueForOCPP20(sampledValueTemplate, value, context, phase)
-  }
-  // SoC measurand
-  const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
-  if (socMeasurand != null) {
-    const socSampledValue = buildVersionedSampledValue(
-      socMeasurand.template,
-      socMeasurand.value,
-      context
-    )
-    meterValue.sampledValue.push(socSampledValue)
-    validateSocMeasurandValue(
-      chargingStation,
-      connectorId,
-      socSampledValue,
-      socMeasurand.template.minimumValue ?? 0,
-      100,
-      debug
-    )
-  }
-  // Voltage measurand
-  const voltageMeasurand = buildVoltageMeasurandValue(
-    chargingStation,
-    connectorId,
-    evseId,
-    measurandsKey
-  )
-  if (voltageMeasurand != null) {
-    addMainVoltageToMeterValue(
-      chargingStation,
-      meterValue,
-      voltageMeasurand,
-      buildVersionedSampledValue,
-      context
-    )
-    for (
-      let phase = 1;
-      chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
-      phase++
-    ) {
-      addPhaseVoltageToMeterValue(
-        chargingStation,
-        connectorId,
-        meterValue,
-        voltageMeasurand,
-        phase,
-        buildVersionedSampledValue,
-        measurandsKey,
-        context
-      )
-      addLineToLineVoltageToMeterValue(
-        chargingStation,
-        connectorId,
-        meterValue,
-        voltageMeasurand,
-        phase,
-        buildVersionedSampledValue,
-        measurandsKey,
-        context
-      )
-    }
-  }
-  // Energy.Active.Import.Register measurand
-  const energyMeasurand = buildEnergyMeasurandValue(
-    chargingStation,
-    connectorId,
-    interval,
-    evseId,
-    measurandsKey
-  )
-  if (energyMeasurand != null) {
-    updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
-    const unitDivider = energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-    const energySampledValue = buildVersionedSampledValue(
-      energyMeasurand.template,
-      roundTo(
-        chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) / unitDivider,
-        2
-      ),
-      context
-    )
-    meterValue.sampledValue.push(energySampledValue)
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
-    const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / (3600 * 1000),
-      2
-    )
-    const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
-    validateEnergyMeasurandValue(
-      chargingStation,
-      connectorId,
-      energySampledValue,
-      energyMeasurand.value,
-      connectorMinimumEnergyRounded,
-      connectorMaximumEnergyRounded,
-      interval,
-      debug
-    )
-  }
-  // Power.Active.Import measurand
-  const powerMeasurand = buildPowerMeasurandValue(
-    chargingStation,
-    connectorId,
-    evseId,
-    measurandsKey
-  )
-  if (powerMeasurand?.values.allPhases != null) {
-    const powerSampledValue = buildVersionedSampledValue(
-      powerMeasurand.template,
-      powerMeasurand.values.allPhases,
-      context
-    )
-    meterValue.sampledValue.push(powerSampledValue)
-  }
-  // Current.Import measurand
-  const currentMeasurand = buildCurrentMeasurandValue(
-    chargingStation,
-    connectorId,
-    evseId,
-    measurandsKey
-  )
-  if (currentMeasurand?.values.allPhases != null) {
-    const currentSampledValue = buildVersionedSampledValue(
-      currentMeasurand.template,
-      currentMeasurand.values.allPhases,
-      context
-    )
-    meterValue.sampledValue.push(currentSampledValue)
-  }
-  return meterValue
-}
-
 const checkMeasurandPowerDivider = (
   chargingStation: ChargingStation,
   measurandType: MeterValueMeasurand | undefined
@@ -1686,52 +1304,6 @@ export function buildSampledValue (
         RequestCommand.METER_VALUES
       )
   }
-}
-
-/**
- * Builds an OCPP 1.6 sampled value from a template and measurement data.
- * @param sampledValueTemplate - The sampled value template to use.
- * @param value - The measured value.
- * @param context - The reading context.
- * @param phase - The phase of the measurement.
- * @returns The built OCPP 1.6 sampled value.
- */
-function buildSampledValueForOCPP16 (
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP16SampledValue {
-  return buildSampledValue(
-    OCPPVersion.VERSION_16,
-    sampledValueTemplate,
-    value,
-    context,
-    phase
-  ) as OCPP16SampledValue
-}
-
-/**
- * Builds an OCPP 2.0 sampled value from a template and measurement data.
- * @param sampledValueTemplate - The sampled value template to use.
- * @param value - The measured value.
- * @param context - The reading context.
- * @param phase - The phase of the measurement.
- * @returns The built OCPP 2.0 sampled value.
- */
-function buildSampledValueForOCPP20 (
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP20SampledValue {
-  return buildSampledValue(
-    OCPPVersion.VERSION_20,
-    sampledValueTemplate,
-    value,
-    context,
-    phase
-  ) as OCPP20SampledValue
 }
 
 const getMeasurandDefaultContext = (measurandType: MeterValueMeasurand): MeterValueContext => {

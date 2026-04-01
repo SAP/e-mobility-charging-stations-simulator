@@ -3,16 +3,15 @@ import { secondsToMilliseconds } from 'date-fns'
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
-  BootReasonEnumType,
-  type ChargingStationInfo,
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
-  type OCPP20BootNotificationRequest,
+  OCPP20AuthorizationStatusEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   type OCPP20ConnectorStatusEnumType,
   type OCPP20EVSEType,
+  OCPP20IdTokenEnumType,
   type OCPP20IdTokenInfoType,
   type OCPP20IdTokenType,
   OCPP20IncomingRequestCommand,
@@ -32,6 +31,9 @@ import {
   OCPPVersion,
   ReasonCodeEnumType,
   RequestCommand,
+  type StartTransactionResult,
+  type StopTransactionReason,
+  type StopTransactionResult,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -56,6 +58,7 @@ import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
+  mapStopReasonToOCPP20,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
@@ -112,37 +115,6 @@ export class OCPP20ServiceUtils {
     [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
-
-  /**
-   * Builds an OCPP 2.0 BootNotification request payload from station info.
-   * @param stationInfo - Charging station information
-   * @param bootReason - Reason for the boot notification
-   * @returns Formatted OCPP 2.0 BootNotification request payload
-   */
-  public static buildBootNotificationRequest (
-    stationInfo: ChargingStationInfo,
-    bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
-  ): OCPP20BootNotificationRequest {
-    return {
-      chargingStation: {
-        model: stationInfo.chargePointModel,
-        vendorName: stationInfo.chargePointVendor,
-        ...(stationInfo.firmwareVersion != null && {
-          firmwareVersion: stationInfo.firmwareVersion,
-        }),
-        ...(stationInfo.chargeBoxSerialNumber != null && {
-          serialNumber: stationInfo.chargeBoxSerialNumber,
-        }),
-        ...((stationInfo.iccid != null || stationInfo.imsi != null) && {
-          modem: {
-            ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
-            ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
-          },
-        }),
-      },
-      reason: bootReason,
-    } satisfies OCPP20BootNotificationRequest
-  }
 
   /**
    * @param chargingStation - Target charging station for EVSE resolution
@@ -816,6 +788,43 @@ export class OCPP20ServiceUtils {
     )
   }
 
+  public static async startTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag?: string
+  ): Promise<StartTransactionResult> {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    let transactionId = connectorStatus?.transactionId as string | undefined
+    if (transactionId == null) {
+      transactionId = generateUUID()
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+      }
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
+    }
+    const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
+      chargingStation,
+      transactionId
+    )
+    const response = await OCPP20ServiceUtils.sendTransactionEvent(
+      chargingStation,
+      OCPP20TransactionEventEnumType.Started,
+      OCPP20TriggerReasonEnumType.Authorized,
+      connectorId,
+      transactionId,
+      {
+        idToken:
+          idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
+        ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
+      }
+    )
+    return {
+      accepted:
+        response.idTokenInfo == null ||
+        response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
+    }
+  }
+
   /**
    * Start periodic TransactionEvent(Updated) with meter values for a connector.
    * @param chargingStation - Target charging station
@@ -983,6 +992,33 @@ export class OCPP20ServiceUtils {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.stopEndedMeterValues: TxEndedInterval stopped`
       )
+    }
+  }
+
+  public static async stopTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    reason?: StopTransactionReason
+  ): Promise<StopTransactionResult> {
+    const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+    if (evseId == null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} stopTransactionOnConnector: cannot resolve EVSE ID for connector ${connectorId.toString()}, skipping`
+      )
+      return { accepted: false }
+    }
+    const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
+    const response = await OCPP20ServiceUtils.requestStopTransaction(
+      chargingStation,
+      connectorId,
+      evseId,
+      triggerReason,
+      stoppedReason
+    )
+    return {
+      accepted:
+        response.idTokenInfo == null ||
+        response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
     }
   }
 

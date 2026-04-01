@@ -1,21 +1,15 @@
-import type { BootReasonEnumType, StopTransactionReason } from '../../types/index.js'
+import type { StopTransactionReason } from '../../types/index.js'
 
 import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
-  type BootNotificationRequest,
-  type ChargingStationInfo,
   ErrorType,
-  OCPP20AuthorizationStatusEnumType,
-  OCPP20IdTokenEnumType,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type StartTransactionResult,
   type StopTransactionResult,
 } from '../../types/index.js'
-import { generateUUID, logger, truncateId } from '../../utils/index.js'
+import { logger, truncateId } from '../../utils/index.js'
 import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils.js'
 import { OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
 import {
@@ -49,38 +43,8 @@ export const startTransactionOnConnector = async (
       return { accepted: response.idTagInfo.status === AuthorizationStatus.ACCEPTED }
     }
     case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-      let transactionId = connectorStatus?.transactionId as string | undefined
-      if (transactionId == null) {
-        transactionId = generateUUID()
-        if (connectorStatus != null) {
-          connectorStatus.transactionId = transactionId
-        }
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
-      }
-      const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
-        chargingStation,
-        transactionId
-      )
-      const response = await OCPP20ServiceUtils.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Started,
-        OCPP20TriggerReasonEnumType.Authorized,
-        connectorId,
-        transactionId,
-        {
-          idToken:
-            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
-          ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
-        }
-      )
-      return {
-        accepted:
-          response.idTokenInfo == null ||
-          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
-      }
-    }
+    case OCPPVersion.VERSION_201:
+      return OCPP20ServiceUtils.startTransactionOnConnector(chargingStation, connectorId, idTag)
     default:
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
@@ -112,28 +76,8 @@ export const stopTransactionOnConnector = async (
       return { accepted: response.idTagInfo?.status === AuthorizationStatus.ACCEPTED }
     }
     case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201: {
-      const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
-      if (evseId == null) {
-        logger.warn(
-          `${chargingStation.logPrefix()} stopTransactionOnConnector: cannot resolve EVSE ID for connector ${connectorId.toString()}, skipping`
-        )
-        return { accepted: false }
-      }
-      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
-      const response = await OCPP20ServiceUtils.requestStopTransaction(
-        chargingStation,
-        connectorId,
-        evseId,
-        triggerReason,
-        stoppedReason
-      )
-      return {
-        accepted:
-          response.idTokenInfo == null ||
-          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
-      }
-    }
+    case OCPPVersion.VERSION_201:
+      return OCPP20ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
     default:
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
@@ -251,27 +195,6 @@ export const flushQueuedTransactionMessages = async (
       break
     default:
       break
-  }
-}
-
-/**
- * Builds an OCPP BootNotification request using the appropriate version-specific handler.
- * @param stationInfo - Charging station information
- * @param bootReason - Optional boot reason (OCPP 2.0 only)
- * @returns The BootNotification request payload, or undefined if the OCPP version is unsupported
- */
-export const buildBootNotificationRequest = (
-  stationInfo: ChargingStationInfo,
-  bootReason?: BootReasonEnumType
-): BootNotificationRequest | undefined => {
-  switch (stationInfo.ocppVersion) {
-    case OCPPVersion.VERSION_16:
-      return OCPP16ServiceUtils.buildBootNotificationRequest(stationInfo)
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      return OCPP20ServiceUtils.buildBootNotificationRequest(stationInfo, bootReason)
-    default:
-      return undefined
   }
 }
 

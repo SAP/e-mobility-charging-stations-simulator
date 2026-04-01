@@ -17,11 +17,10 @@ export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
 export { createOCPPServices } from './OCPPServiceFactory.js'
 export {
-  buildBootNotificationRequest,
   flushQueuedTransactionMessages,
   isIdTagAuthorized,
   startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from './OCPPServiceOperations.js'
-export { buildMeterValue } from './OCPPServiceUtils.js'
+export { buildBootNotificationRequest, buildMeterValue } from './OCPPServiceUtils.js'
