@@ -20,7 +20,7 @@ import {
   AuthorizationStatus,
   OCPPAuthServiceFactory,
 } from '../../../src/charging-station/ocpp/auth/index.js'
-import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/IdTagAuthorization.js'
+import { isIdTagAuthorized } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { OCPPVersion } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'

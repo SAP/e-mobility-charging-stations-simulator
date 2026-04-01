@@ -116,9 +116,9 @@ import {
   truncateId,
 } from '../../../utils/index.js'
 import { AuthContext } from '../auth/index.js'
-import { isIdTagAuthorized } from '../IdTagAuthorization.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
+import { isIdTagAuthorized } from '../OCPPServiceOperations.js'
 import {
   buildMeterValue,
   createPayloadValidatorMap,
