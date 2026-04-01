@@ -669,7 +669,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         negRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValuePositiveOnly
       )
-      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.ok(
+        negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'),
+        'Expected validation error message for positive integer requirement'
+      )
       assert.strictEqual(nonIntRes.attributeStatus, SetVariableStatusEnumType.Rejected)
       if (nonIntRes.attributeStatusInfo == null) {
         assert.fail('Expected attributeStatusInfo to be defined')
@@ -678,7 +681,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         assert.fail('Expected additionalInfo to be defined')
       }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
+      assert.ok(
+        nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'),
+        'Expected validation error message for positive integer type'
+      )
     })
 
     await it('should accept setting ConnectionUrl with valid ws URL', () => {
@@ -867,7 +873,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         negRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValuePositiveOnly
       )
-      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.ok(
+        negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'),
+        'Expected validation error message for positive integer requirement'
+      )
       if (nonIntRes.attributeStatusInfo == null) {
         assert.fail('Expected attributeStatusInfo to be defined')
       }
@@ -875,7 +884,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         assert.fail('Expected additionalInfo to be defined')
       }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
+      assert.ok(
+        nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'),
+        'Expected validation error message for positive integer type'
+      )
     })
 
     await it('should accept WebSocketPingInterval zero (disable) and positive', () => {
@@ -924,7 +936,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         negRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValueZeroNotAllowed
       )
-      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
+      assert.ok(
+        negRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'),
+        'Expected validation error message for non-negative integer requirement'
+      )
       if (nonIntRes.attributeStatusInfo == null) {
         assert.fail('Expected attributeStatusInfo to be defined')
       }
@@ -935,7 +950,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         nonIntRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValueZeroNotAllowed
       )
-      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
+      assert.ok(
+        nonIntRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'),
+        'Expected validation error message for non-negative integer type'
+      )
     })
 
     await it('should validate EVConnectionTimeOut positive integer >0 and reject invalid', () => {
@@ -992,7 +1010,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         negRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValuePositiveOnly
       )
-      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.ok(
+        negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'),
+        'Expected validation error message for positive integer requirement'
+      )
       if (nonIntRes.attributeStatusInfo == null) {
         assert.fail('Expected attributeStatusInfo to be defined')
       }
@@ -1000,7 +1021,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         assert.fail('Expected additionalInfo to be defined')
       }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
+      assert.ok(
+        nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'),
+        'Expected validation error message for positive integer type'
+      )
     })
 
     await it('should validate MessageTimeout positive integer >0 and reject invalid', () => {
@@ -1057,7 +1081,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         negRes.attributeStatusInfo.reasonCode,
         ReasonCodeEnumType.ValuePositiveOnly
       )
-      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.ok(
+        negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'),
+        'Expected validation error message for positive integer requirement'
+      )
       if (nonIntRes.attributeStatusInfo == null) {
         assert.fail('Expected attributeStatusInfo to be defined')
       }
@@ -1065,7 +1092,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         assert.fail('Expected additionalInfo to be defined')
       }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
+      assert.ok(
+        nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'),
+        'Expected validation error message for positive integer type'
+      )
     })
 
     await it('should avoid duplicate persistence operations when value unchanged', () => {
