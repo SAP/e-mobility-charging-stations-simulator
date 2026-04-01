@@ -159,7 +159,7 @@ export const buildOCPP16MeterValue = (
     undefined,
     measurandsKey
   )
-  if (powerMeasurand != null) {
+  if (powerMeasurand?.values.allPhases != null) {
     const unitDivider = powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? 1000 : 1
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
@@ -219,7 +219,7 @@ export const buildOCPP16MeterValue = (
     undefined,
     measurandsKey
   )
-  if (currentMeasurand != null) {
+  if (currentMeasurand?.values.allPhases != null) {
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumAmperage =
@@ -337,7 +337,7 @@ export function buildOCPP16SampledValue (
     context: fields.context,
     location: fields.location,
     measurand: fields.measurand,
-    unit: fields.unit,
+    ...(fields.unit != null && { unit: fields.unit }),
     value: fields.value.toString(),
     ...(fields.phase != null && { phase: fields.phase }),
   } as OCPP16SampledValue

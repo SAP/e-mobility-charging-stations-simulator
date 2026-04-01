@@ -337,7 +337,7 @@ export function buildOCPP20SampledValue (
     context: fields.context,
     location: fields.location,
     measurand: fields.measurand,
-    ...(fields.unit !== undefined && { unitOfMeasure: { unit: fields.unit } }),
+    ...(fields.unit != null && { unitOfMeasure: { unit: fields.unit } }),
     value: fields.value,
     ...(fields.phase != null && { phase: fields.phase }),
   } as OCPP20SampledValue
