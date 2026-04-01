@@ -288,7 +288,7 @@ export class UIMCPServer extends AbstractUIServer {
     if (this.ocppSchemaCache.size === 0) {
       return
     }
-    // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@~1.27.x
+    // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@~1.29.x
     // The SDK does not provide a public API for wrapping existing handlers.
     // setRequestHandler() replaces handlers entirely, losing Zod→JSON Schema conversion.
     const handlers = Reflect.get(mcpServer.server, '_requestHandlers') as

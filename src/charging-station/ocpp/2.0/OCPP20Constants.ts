@@ -141,7 +141,6 @@ export class OCPP20Constants extends OCPPConstants {
   static readonly DEFAULT_CONNECTION_URL = 'ws://localhost'
 
   static readonly FIRMWARE_INSTALL_DELAY_MS = 5000
-
   static readonly FIRMWARE_STATUS_DELAY_MS = 2000
   static readonly FIRMWARE_VERIFY_DELAY_MS = 500
   /**
