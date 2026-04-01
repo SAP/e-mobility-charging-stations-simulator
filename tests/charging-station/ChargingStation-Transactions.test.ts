@@ -641,6 +641,34 @@ await describe('ChargingStation Transaction Management', async () => {
       })
     })
 
+    await it('should restart transaction updated interval for OCPP 2.0', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station = result.station
+        const connector1 = station.getConnectorStatus(1)
+        if (connector1 != null) {
+          connector1.transactionStarted = true
+          connector1.transactionId = 100
+        }
+        OCPP20ServiceUtils.startUpdatedMeterValues(station, 1, 5000)
+        const firstInterval = connector1?.transactionUpdatedMeterValuesSetInterval
+
+        // Act
+        OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
+        OCPP20ServiceUtils.startUpdatedMeterValues(station, 1, 8000)
+        const secondInterval = connector1?.transactionUpdatedMeterValuesSetInterval
+
+        // Assert - interval should be different
+        assert.notStrictEqual(secondInterval, undefined)
+        assert.strictEqual(typeof secondInterval, 'object')
+        assert.notStrictEqual(firstInterval, secondInterval)
+      })
+    })
+
     await it('should create transaction ended interval when startEndedMeterValues() is called for OCPP 2.0', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange

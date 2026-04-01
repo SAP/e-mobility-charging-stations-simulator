@@ -21,6 +21,7 @@ import type {
 import {
   AvailabilityType,
   ConnectorStatusEnum,
+  CurrentType,
   OCPPVersion,
   RegistrationStatusEnumType,
 } from '../../../src/types/index.js'
@@ -517,6 +518,9 @@ export function createMockChargingStation (
     getNumberOfEvses (): number {
       return evses.has(0) ? evses.size - 1 : evses.size
     },
+    getNumberOfPhases (): number {
+      return stationInfoOverrides?.numberOfPhases ?? 3
+    },
     getNumberOfRunningTransactions (): number {
       return this.iterateConnectors(true).reduce(
         (count, { connectorStatus }) =>
@@ -533,6 +537,9 @@ export function createMockChargingStation (
       return this.iterateConnectors().find(
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorStatus.transactionIdTag
+    },
+    getVoltageOut (): number {
+      return stationInfoOverrides?.voltageOut ?? 230
     },
     getWebSocketPingInterval (): number {
       return websocketPingInterval
@@ -738,13 +745,16 @@ export function createMockChargingStation (
       autoStart,
       baseName,
       chargingStationId: `${baseName}-${index.toString().padStart(5, '0')}`,
+      currentOutType: CurrentType.AC,
       hashId: TEST_CHARGING_STATION_HASH_ID,
       maximumAmperage: 32,
       maximumPower: 22000,
+      numberOfPhases: 3,
       ocppVersion: stationInfoOverrides?.ocppVersion ?? ocppVersion,
       remoteAuthorization: true,
       templateIndex: index,
       templateName: templateFile,
+      voltageOut: 230,
       ...stationInfoOverrides,
     },
 

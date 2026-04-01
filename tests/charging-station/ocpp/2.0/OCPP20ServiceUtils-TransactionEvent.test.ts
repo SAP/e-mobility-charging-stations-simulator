@@ -2792,6 +2792,31 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Assert
       assert.strictEqual(result.length, 0)
     })
+
+    await it('should return empty array when EVSE has no MeterValues template', () => {
+      // Arrange
+      const transactionId = generateUUID()
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.SampledDataCtrlr}.${OCPP20RequiredVariableName.TxStartedMeasurands}`,
+        'Energy.Active.Import.Register',
+        undefined,
+        { save: false }
+      )
+
+      // Act
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(station, transactionId)
+
+      // Assert
+      assert.strictEqual(result.length, 0)
+    })
   })
 
   await describe('buildTransactionEndedMeterValues', async () => {
