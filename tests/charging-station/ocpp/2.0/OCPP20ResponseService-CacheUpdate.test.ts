@@ -18,11 +18,12 @@ import {
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import { OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_TOKEN_ISO14443,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
-
-const TEST_IDENTIFIER = 'TEST_RFID_TOKEN_001'
-const TEST_STATION_ID = 'CS_CACHE_UPDATE_TEST'
 
 await describe('C10 - TransactionEventResponse Cache Update', async () => {
   let station: ChargingStation
@@ -31,10 +32,10 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
 
   beforeEach(() => {
     const { station: mockStation } = createMockChargingStation({
-      baseName: TEST_STATION_ID,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       stationInfo: {
-        chargingStationId: TEST_STATION_ID,
+        chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
         ocppVersion: OCPPVersion.VERSION_201,
       },
     })
@@ -54,14 +55,14 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   await it('C10.FR.05 - should update cache on TransactionEventResponse with Accepted idTokenInfo', () => {
     // Act
     authService.updateCacheEntry(
-      TEST_IDENTIFIER,
+      TEST_TOKEN_ISO14443,
       AuthorizationStatus.ACCEPTED,
       undefined,
       IdentifierType.ISO14443
     )
 
     // Assert
-    const cached = authCache.get(TEST_IDENTIFIER)
+    const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.ok(cached != null, 'Cache entry should exist')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
@@ -72,14 +73,14 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
 
     // Act
     authService.updateCacheEntry(
-      TEST_IDENTIFIER,
+      TEST_TOKEN_ISO14443,
       AuthorizationStatus.ACCEPTED,
       futureDate,
       IdentifierType.ISO14443
     )
 
     // Assert
-    const cached = authCache.get(TEST_IDENTIFIER)
+    const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.ok(cached != null, 'Cache entry should exist with explicit TTL')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
@@ -87,14 +88,14 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
   await it('C10.FR.08 - should use AuthCacheLifeTime as TTL when cacheExpiryDateTime absent', () => {
     // Act — no expiryDate, uses config.authorizationCacheLifetime
     authService.updateCacheEntry(
-      TEST_IDENTIFIER,
+      TEST_TOKEN_ISO14443,
       AuthorizationStatus.ACCEPTED,
       undefined,
       IdentifierType.ISO14443
     )
 
     // Assert
-    const cached = authCache.get(TEST_IDENTIFIER)
+    const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.ok(cached != null, 'Cache entry should exist with default TTL')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
@@ -158,24 +159,24 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
 
     // Act
     authService.updateCacheEntry(
-      TEST_IDENTIFIER,
+      TEST_TOKEN_ISO14443,
       AuthorizationStatus.ACCEPTED,
       pastDate,
       IdentifierType.ISO14443
     )
 
     // Assert
-    const cached = authCache.get(TEST_IDENTIFIER)
+    const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.strictEqual(cached, undefined, 'Expired entry must not be cached')
   })
 
   await it('should not update cache when authorizationCacheEnabled is false', () => {
     // Arrange — create service with cache disabled
     const { station: disabledStation } = createMockChargingStation({
-      baseName: 'CS_CACHE_DISABLED',
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       stationInfo: {
-        chargingStationId: 'CS_CACHE_DISABLED',
+        chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
         ocppVersion: OCPPVersion.VERSION_201,
       },
     })
@@ -185,7 +186,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
 
     // Act
     disabledService.updateCacheEntry(
-      TEST_IDENTIFIER,
+      TEST_TOKEN_ISO14443,
       AuthorizationStatus.ACCEPTED,
       undefined,
       IdentifierType.ISO14443
@@ -193,7 +194,7 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
 
     // Assert
     const disabledCache = getTestAuthCache(disabledService)
-    const cached = disabledCache.get(TEST_IDENTIFIER)
+    const cached = disabledCache.get(TEST_TOKEN_ISO14443)
     assert.strictEqual(cached, undefined, 'Cache entry should not exist when cache is disabled')
   })
 })

@@ -71,7 +71,10 @@ await describe('I02 - SignCertificate Request', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, GenericStatus.Accepted)
 
-      assert.ok(sendMessageMock.mock.calls.length > 0)
+      assert.ok(
+        sendMessageMock.mock.calls.length > 0,
+        'sendMessage should have been called at least once'
+      )
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       assert.notStrictEqual(sentPayload.csr, undefined)
@@ -317,8 +320,8 @@ await describe('I02 - SignCertificate Request', async () => {
       assert.strictEqual(typeof sentPayload, 'object')
       assert.notStrictEqual(sentPayload.csr, undefined)
       assert.strictEqual(typeof sentPayload.csr, 'string')
-      assert.ok(sentPayload.csr.length > 0)
-      assert.ok(sentPayload.csr.length <= 5500)
+      assert.ok(sentPayload.csr.length > 0, 'CSR should not be empty')
+      assert.ok(sentPayload.csr.length <= 5500, 'CSR length should be at most 5500 characters')
     })
 
     await it('should send SIGN_CERTIFICATE command name', async () => {

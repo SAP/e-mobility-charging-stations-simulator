@@ -188,7 +188,7 @@ await describe('OCPP16Constants', async () => {
 
     await it('should contain 56 connector-level transitions', () => {
       const transitions = OCPP16Constants.ChargePointStatusConnectorTransitions
-      assert.ok(transitions.length >= 56)
+      assert.ok(transitions.length >= 56, 'should contain at least 56 connector-level transitions')
     })
 
     await it('should have transitions with correct structure', () => {

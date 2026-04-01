@@ -383,7 +383,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       assert.strictEqual(capturedReasons.length, 1)
       assert.strictEqual(capturedReasons[0].reasonCode, ReasonCodeEnumType.TooLargeElement)
       assert.strictEqual(typeof capturedReasons[0].additionalInfo, 'string')
-      assert.ok(capturedReasons[0].additionalInfo.length > 0)
+      assert.ok(capturedReasons[0].additionalInfo.length > 0, 'additionalInfo should not be empty')
     })
   })
 })

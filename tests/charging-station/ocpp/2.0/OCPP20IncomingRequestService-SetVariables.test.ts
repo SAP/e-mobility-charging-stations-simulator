@@ -516,11 +516,11 @@ await describe('B05 - Set Variables', async () => {
       postCalcLimit.toString(),
       false
     )
-    assert.ok(preEstimate < postCalcLimit)
+    assert.ok(preEstimate < postCalcLimit, 'pre-estimate should be less than post-calc limit')
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.setVariableResult), 'utf8')
-    assert.ok(actualSize > postCalcLimit)
+    assert.ok(actualSize > postCalcLimit, 'actual response size should exceed post-calc limit')
     assert.strictEqual(response.setVariableResult.length, request.setVariableData.length)
     response.setVariableResult.forEach(r => {
       assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)

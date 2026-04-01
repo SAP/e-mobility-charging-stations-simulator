@@ -38,8 +38,8 @@ await describe('AuthHelpers', async () => {
       const result = AuthHelpers.calculateTTL(futureDate)
       assert.notStrictEqual(result, undefined)
       if (result !== undefined) {
-        assert.ok(result >= 4)
-        assert.ok(result <= 5)
+        assert.ok(result >= 4, 'TTL should be at least 4 seconds')
+        assert.ok(result <= 5, 'TTL should be at most 5 seconds')
       }
     })
 

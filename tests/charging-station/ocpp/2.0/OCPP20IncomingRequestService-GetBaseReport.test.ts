@@ -209,7 +209,7 @@ await describe('B07 - Get Base Report', async () => {
     )
 
     assert.ok(Array.isArray(reportData))
-    assert.ok(reportData.length > 0)
+    assert.ok(reportData.length > 0, 'report data should not be empty')
 
     // Check that each report data item has the expected structure
     for (const item of reportData) {
@@ -228,7 +228,7 @@ await describe('B07 - Get Base Report', async () => {
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
 
     assert.ok(Array.isArray(reportData))
-    assert.ok(reportData.length > 0)
+    assert.ok(reportData.length > 0, 'report data should not be empty')
 
     // Check for station info variables
     const modelVariable = reportData.find(
@@ -257,7 +257,7 @@ await describe('B07 - Get Base Report', async () => {
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.SummaryInventory)
 
     assert.ok(Array.isArray(reportData))
-    assert.ok(reportData.length > 0)
+    assert.ok(reportData.length > 0, 'report data should not be empty')
 
     // Check for availability state variable
     const availabilityVariable = reportData.find(
@@ -323,7 +323,7 @@ await describe('B07 - Get Base Report', async () => {
   await it('should handle GetBaseReport with EVSE structure', () => {
     // Create a station with EVSEs
     const { station: stationWithEvses } = createMockChargingStation({
-      baseName: 'CS-EVSE-001',
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       stationInfo: {
@@ -340,14 +340,14 @@ await describe('B07 - Get Base Report', async () => {
     )
 
     assert.ok(Array.isArray(reportData))
-    assert.ok(reportData.length > 0)
+    assert.ok(reportData.length > 0, 'report data should not be empty')
 
     // Check if EVSE components are included when EVSEs exist
     const evseComponents = reportData.filter(
       (item: ReportDataType) => item.component.name === (OCPP20ComponentName.EVSE as string)
     )
     if (stationWithEvses.hasEvses) {
-      assert.ok(evseComponents.length > 0)
+      assert.ok(evseComponents.length > 0, 'should include EVSE components')
     }
   })
 

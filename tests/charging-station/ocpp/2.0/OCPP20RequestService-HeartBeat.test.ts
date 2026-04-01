@@ -18,6 +18,7 @@ import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
   TEST_CHARGE_POINT_VENDOR,
+  TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -126,7 +127,7 @@ await describe('G02 - Heartbeat', async () => {
   // FR: G02.FR.05
   await it('should handle HeartBeat request with different charging station configurations', () => {
     const { station: alternativeChargingStation } = createMockChargingStation({
-      baseName: 'CS-ALTERNATIVE-002',
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: 120,

@@ -227,7 +227,10 @@ await describe('G01 - Status Notification', async () => {
 
       assert.notStrictEqual(payload, undefined)
       assert.ok(payload.timestamp instanceof Date)
-      assert.ok(payload.timestamp.getTime() >= beforeBuild.getTime())
+      assert.ok(
+        payload.timestamp.getTime() >= beforeBuild.getTime(),
+        'timestamp should be at or after build start time'
+      )
     })
   })
 })

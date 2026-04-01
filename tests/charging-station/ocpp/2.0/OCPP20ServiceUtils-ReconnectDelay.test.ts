@@ -19,10 +19,9 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
-
-const TEST_STATION_ID = 'CS_RECONNECT_DELAY_TEST'
 
 const DEFAULT_WAIT_MINIMUM_S = 30
 const DEFAULT_RANDOM_RANGE_S = 10
@@ -73,11 +72,11 @@ await describe('OCPP20ServiceUtils.computeReconnectDelay', async () => {
 
   beforeEach(() => {
     const { station: mockStation } = createMockChargingStation({
-      baseName: TEST_STATION_ID,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
-        chargingStationId: TEST_STATION_ID,
+        chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
         ocppVersion: OCPPVersion.VERSION_201,
       },
     })

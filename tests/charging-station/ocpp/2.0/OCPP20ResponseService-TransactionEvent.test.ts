@@ -28,11 +28,11 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_TRANSACTION_UUID,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-
-/** UUID used as transactionId in all tests — must match connector.transactionId */
-const TEST_TRANSACTION_ID: UUIDv4 = '00000000-0000-0000-0000-000000000001'
 
 interface TestableOCPP20ResponseService {
   handleResponseTransactionEvent: (
@@ -96,7 +96,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     // Override with UUID string so getConnectorIdByTransactionId can find it
     const connectorStatus = station.getConnectorStatus(1)
     if (connectorStatus != null) {
-      connectorStatus.transactionId = TEST_TRANSACTION_ID
+      connectorStatus.transactionId = TEST_TRANSACTION_UUID
     }
     const responseService = new OCPP20ResponseService()
     testable = createTestableResponseService(responseService)
@@ -118,7 +118,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Accepted,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -139,7 +139,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Invalid,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -163,7 +163,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Blocked,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -183,7 +183,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const payload: OCPP20TransactionEventResponse = {
       chargingPriority: 5,
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -200,7 +200,7 @@ await describe('D01 - TransactionEvent Response', async () => {
       () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {}
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -221,7 +221,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Expired,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -242,7 +242,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.NoCredit,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
@@ -265,7 +265,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         format: OCPP20MessageFormatEnumType.UTF8,
       },
     }
-    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
 
     // Act
     testable.handleResponseTransactionEvent(station, payload, requestPayload)

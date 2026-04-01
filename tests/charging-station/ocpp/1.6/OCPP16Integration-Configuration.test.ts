@@ -239,7 +239,10 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const getResponse = testableService.handleRequestGetConfiguration(station, {})
 
     // Assert — All visible keys returned with correct values
-    assert.ok(getResponse.configurationKey.length >= 3)
+    assert.ok(
+      getResponse.configurationKey.length >= 3,
+      'should return at least 3 configuration keys'
+    )
     assert.strictEqual(getResponse.unknownKey.length, 0)
 
     const heartbeat = getResponse.configurationKey.find(

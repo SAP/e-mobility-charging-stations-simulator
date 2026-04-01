@@ -440,7 +440,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           assert.fail('Expected evse to be defined')
         }
         assert.strictEqual(typeof transactionEvent.evse.id, 'number')
-        assert.ok(transactionEvent.evse.id > 0)
+        assert.ok(transactionEvent.evse.id > 0, 'EVSE ID should be positive')
 
         // Validate transactionInfo structure
         assert.strictEqual(typeof transactionEvent.transactionInfo.transactionId, 'string')

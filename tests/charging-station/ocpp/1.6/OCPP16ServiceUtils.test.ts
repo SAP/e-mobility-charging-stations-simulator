@@ -43,6 +43,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 import { createCommandsSupport, createMeterValuesTemplate } from './OCPP16TestUtils.js'
@@ -581,7 +582,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(result.chargingSchedulePeriod.length, 2)
       // Should be sorted by startPeriod
       const periods = result.chargingSchedulePeriod
-      assert.ok(periods[0].startPeriod <= periods[1].startPeriod)
+      assert.ok(
+        periods[0].startPeriod <= periods[1].startPeriod,
+        'periods should be sorted by startPeriod'
+      )
     })
   })
 
@@ -856,8 +860,6 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
   // ─── updateAuthorizationCache ──────────────────────────────────────────
 
   await describe('updateAuthorizationCache', async () => {
-    const TEST_ID_TAG = 'TEST_RFID_001'
-
     afterEach(() => {
       OCPPAuthServiceFactory.clearAllInstances()
     })
@@ -867,7 +869,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          chargingStationId: 'CS_CACHE_TEST_01',
+          chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
           ocppVersion: OCPPVersion.VERSION_16,
         },
       })
@@ -891,7 +893,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          chargingStationId: 'CS_CACHE_TEST_02',
+          chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
           ocppVersion: OCPPVersion.VERSION_16,
         },
       })
@@ -915,7 +917,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          chargingStationId: 'CS_CACHE_TEST_03',
+          chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
           ocppVersion: OCPPVersion.VERSION_16,
         },
       })
@@ -941,7 +943,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          chargingStationId: 'CS_CACHE_TEST_04',
+          chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
           ocppVersion: OCPPVersion.VERSION_16,
         },
       })
@@ -966,7 +968,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          chargingStationId: 'CS_CACHE_TEST_05',
+          chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
           ocppVersion: OCPPVersion.VERSION_16,
         },
       })

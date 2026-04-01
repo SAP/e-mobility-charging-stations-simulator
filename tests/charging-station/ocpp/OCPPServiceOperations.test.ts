@@ -125,7 +125,10 @@ await describe('OCPPServiceOperations', async () => {
       const result = await stopTransactionOnConnector(station, 1)
 
       assert.strictEqual(result.accepted, true)
-      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.ok(
+        requestHandler.mock.calls.length >= 1,
+        'request handler should have been called at least once'
+      )
       assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'StopTransaction')
     })
 
@@ -142,7 +145,10 @@ await describe('OCPPServiceOperations', async () => {
       const result = await stopTransactionOnConnector(station, 1)
 
       assert.strictEqual(result.accepted, true)
-      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.ok(
+        requestHandler.mock.calls.length >= 1,
+        'request handler should have been called at least once'
+      )
       assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'TransactionEvent')
     })
 
@@ -258,7 +264,10 @@ await describe('OCPPServiceOperations', async () => {
       const result = await startTransactionOnConnector(station, 1, 'TAG001')
 
       assert.strictEqual(result.accepted, true)
-      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.ok(
+        requestHandler.mock.calls.length >= 1,
+        'request handler should have been called at least once'
+      )
       assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'StartTransaction')
     })
 
@@ -274,7 +283,10 @@ await describe('OCPPServiceOperations', async () => {
       const result = await startTransactionOnConnector(station, 1, 'TAG002')
 
       assert.strictEqual(result.accepted, true)
-      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.ok(
+        requestHandler.mock.calls.length >= 1,
+        'request handler should have been called at least once'
+      )
       assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'TransactionEvent')
     })
 

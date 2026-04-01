@@ -120,7 +120,10 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
       assert.strictEqual(sendMessageMock.mock.calls.length, 1)
       const sentPayload = sendMessageMock.mock.calls[0]
         .arguments[2] as OCPP20TransactionEventRequest
-      assert.ok(sentPayload.transactionInfo.transactionId.length > 0)
+      assert.ok(
+        sentPayload.transactionInfo.transactionId.length > 0,
+        'transactionId should not be empty'
+      )
     })
 
     await it('should default triggerReason to Authorized for Started when not provided', async () => {
@@ -164,7 +167,10 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
       assert.strictEqual(sendMessageMock.mock.calls.length, 1)
       const sentPayload = sendMessageMock.mock.calls[0]
         .arguments[2] as OCPP20TransactionEventRequest
-      assert.ok(sentPayload.transactionInfo.transactionId.length > 0)
+      assert.ok(
+        sentPayload.transactionInfo.transactionId.length > 0,
+        'transactionId should not be empty'
+      )
       assert.strictEqual(sentPayload.eventType, OCPP20TransactionEventEnumType.Started)
     })
   })

@@ -23,11 +23,12 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_TOKEN_ISO14443,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
-
-const TEST_STATION_ID = 'CS_AUTH_CACHE_UTILS_TEST'
-const TEST_TOKEN_VALUE = 'RFID_AUTH_CACHE_001'
 
 await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
   let station: ChargingStation
@@ -36,10 +37,10 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
 
   beforeEach(() => {
     const { station: mockStation } = createMockChargingStation({
-      baseName: TEST_STATION_ID,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       stationInfo: {
-        chargingStationId: TEST_STATION_ID,
+        chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
         ocppVersion: OCPPVersion.VERSION_201,
       },
     })
@@ -47,7 +48,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
 
     authService = new OCPPAuthServiceImpl(station)
     authService.initialize()
-    OCPPAuthServiceFactory.setInstanceForTesting(TEST_STATION_ID, authService)
+    OCPPAuthServiceFactory.setInstanceForTesting(TEST_CHARGING_STATION_BASE_NAME, authService)
 
     authCache = getTestAuthCache(authService)
   })
@@ -60,7 +61,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
   await it('C10.FR.04 - should update cache on AuthorizeResponse via updateAuthorizationCache', () => {
     // Arrange
     const idToken: OCPP20IdTokenType = {
-      idToken: TEST_TOKEN_VALUE,
+      idToken: TEST_TOKEN_ISO14443,
       type: OCPP20IdTokenEnumType.ISO14443,
     }
     const idTokenInfo = {
@@ -71,7 +72,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
     OCPP20ServiceUtils.updateAuthorizationCache(station, idToken, idTokenInfo)
 
     // Assert
-    const cached = authCache.get(TEST_TOKEN_VALUE)
+    const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.ok(cached != null, 'AuthorizeResponse should update the cache')
     assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
   })
@@ -95,17 +96,17 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
   await it('should handle auth service initialization failure gracefully', () => {
     // Arrange
     const { station: isolatedStation } = createMockChargingStation({
-      baseName: 'CS_NO_AUTH_SERVICE',
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       stationInfo: {
-        chargingStationId: 'CS_NO_AUTH_SERVICE',
+        chargingStationId: TEST_CHARGING_STATION_BASE_NAME,
         ocppVersion: OCPPVersion.VERSION_201,
       },
     })
     OCPPAuthServiceFactory.clearAllInstances()
 
     const idToken: OCPP20IdTokenType = {
-      idToken: TEST_TOKEN_VALUE,
+      idToken: TEST_TOKEN_ISO14443,
       type: OCPP20IdTokenEnumType.ISO14443,
     }
     const idTokenInfo = {

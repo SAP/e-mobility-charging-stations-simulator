@@ -193,7 +193,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
         cache.get('token-2')
 
         const stats = cache.getStats()
-        assert.ok(stats.expiredEntries >= 2)
+        assert.ok(stats.expiredEntries >= 2, 'should track at least 2 expired entries')
       })
     })
 
@@ -271,8 +271,8 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       cache.get('miss')
 
       const statsBefore = cache.getStats()
-      assert.ok(statsBefore.hits > 0)
-      assert.ok(statsBefore.misses > 0)
+      assert.ok(statsBefore.hits > 0, 'should have cache hits before clear')
+      assert.ok(statsBefore.misses > 0, 'should have cache misses before clear')
 
       cache.clear()
 
@@ -303,7 +303,10 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       assert.strictEqual(result, undefined)
 
       const stats = cache.getStats()
-      assert.ok(stats.rateLimit.blockedRequests > 0)
+      assert.ok(
+        stats.rateLimit.blockedRequests > 0,
+        'should have blocked requests in rate limit stats'
+      )
     })
 
     await it('should track rate limit statistics', () => {
@@ -316,8 +319,8 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       cache.set(identifier, mockResult) // Should be blocked
 
       const stats = cache.getStats()
-      assert.ok(stats.rateLimit.totalChecks > 0)
-      assert.ok(stats.rateLimit.blockedRequests > 0)
+      assert.ok(stats.rateLimit.totalChecks > 0, 'should have total rate limit checks')
+      assert.ok(stats.rateLimit.blockedRequests > 0, 'should have blocked requests')
     })
 
     await it('should reset rate limit after window expires', async t => {
@@ -428,7 +431,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       assert.strictEqual(stats.hits, 1)
       assert.strictEqual(stats.misses, 1)
       assert.strictEqual(stats.hitRate, 50)
-      assert.ok(stats.memoryUsage > 0)
+      assert.ok(stats.memoryUsage > 0, 'should have positive memory usage')
     })
 
     await it('should track memory usage estimate', () => {
@@ -443,7 +446,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       const statsAfter = cache.getStats()
       const memoryAfter = statsAfter.memoryUsage
 
-      assert.ok(memoryAfter > memoryBefore)
+      assert.ok(memoryAfter > memoryBefore, 'memory usage should increase with more entries')
     })
 
     await it('should provide rate limit statistics', () => {
@@ -456,9 +459,9 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       const stats = cache.getStats()
 
       assert.notStrictEqual(stats.rateLimit, undefined)
-      assert.ok(stats.rateLimit.totalChecks > 0)
-      assert.ok(stats.rateLimit.blockedRequests > 0)
-      assert.ok(stats.rateLimit.rateLimitedIdentifiers > 0)
+      assert.ok(stats.rateLimit.totalChecks > 0, 'should have total rate limit checks')
+      assert.ok(stats.rateLimit.blockedRequests > 0, 'should have blocked requests')
+      assert.ok(stats.rateLimit.rateLimitedIdentifiers > 0, 'should have rate limited identifiers')
     })
   })
 
@@ -804,7 +807,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       }
 
       const rateLimitsSize = boundedCache.getStats().rateLimit.rateLimitedIdentifiers
-      assert.ok(rateLimitsSize <= 4)
+      assert.ok(rateLimitsSize <= 4, 'rate limits size should be at most 4')
       boundedCache.dispose()
     })
   })
@@ -825,9 +828,9 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       statsCache.get('id-miss') // miss
 
       const before = statsCache.getStats()
-      assert.ok(before.evictions > 0)
-      assert.ok(before.hits > 0)
-      assert.ok(before.misses > 0)
+      assert.ok(before.evictions > 0, 'should have evictions')
+      assert.ok(before.hits > 0, 'should have cache hits')
+      assert.ok(before.misses > 0, 'should have cache misses')
 
       statsCache.clear()
 
@@ -852,8 +855,8 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       statsCache.get('id-miss') // miss
 
       const before = statsCache.getStats()
-      assert.ok(before.hits > 0)
-      assert.ok(before.misses > 0)
+      assert.ok(before.hits > 0, 'should have cache hits before reset')
+      assert.ok(before.misses > 0, 'should have cache misses before reset')
 
       statsCache.resetStats()
 
@@ -878,7 +881,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       statsCache.clear() // clears entries but preserves stats
 
       const afterClear = statsCache.getStats()
-      assert.ok(afterClear.hits > 0) // stats preserved
+      assert.ok(afterClear.hits > 0, 'stats preserved after clear') // stats preserved
       assert.strictEqual(afterClear.totalEntries, 0) // entries gone
 
       statsCache.resetStats() // now zero out

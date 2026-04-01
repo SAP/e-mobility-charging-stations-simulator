@@ -518,7 +518,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     if (response.transactionId == null) {
       assert.fail('Expected transactionId to be defined')
     }
-    assert.ok(response.transactionId.length > 0)
+    assert.ok(response.transactionId.length > 0, 'transactionId should not be empty')
   })
 
   await describe('REQUEST_START_TRANSACTION event listener', async () => {

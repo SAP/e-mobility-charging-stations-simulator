@@ -54,7 +54,10 @@ await describe('G03 - ChangeAvailability', async () => {
     const evseStatus = station.getEvseStatus(1)
     assert.strictEqual(evseStatus?.availability, OCPP20OperationalStatusEnumType.Inoperative)
     await flushMicrotasks()
-    assert.ok(requestHandlerMock.mock.callCount() >= 1)
+    assert.ok(
+      requestHandlerMock.mock.callCount() >= 1,
+      'request handler should have been called at least once'
+    )
     const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string]
     assert.strictEqual(args[1], OCPP20RequestCommand.STATUS_NOTIFICATION)
   })

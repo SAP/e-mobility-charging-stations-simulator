@@ -105,7 +105,10 @@ await describe('ASN.1 DER encoding utilities', async () => {
       for (const line of contentLines.slice(0, -1)) {
         assert.strictEqual(line.length, 64)
       }
-      assert.ok(contentLines[contentLines.length - 1].length <= 64)
+      assert.ok(
+        contentLines[contentLines.length - 1].length <= 64,
+        'last line length should be at most 64 characters'
+      )
     })
   })
 })

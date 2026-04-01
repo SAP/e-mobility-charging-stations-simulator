@@ -422,7 +422,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       // Then: Charging station should have required configuration
       assert.notStrictEqual(mockStation, undefined)
       assert.notStrictEqual(mockStation.getNumberOfEvses(), 0)
-      assert.ok(mockStation.getNumberOfEvses() > 0)
+      assert.ok(mockStation.getNumberOfEvses() > 0, 'should have at least one EVSE')
       assert.strictEqual(mockStation.stationInfo?.ocppVersion, OCPPVersion.VERSION_201)
     })
   })

@@ -324,7 +324,7 @@ await describe('B06 - Get Variables', async () => {
     setStrictLimits(station, 100, limit)
     const response = incomingRequestService.handleRequestGetVariables(station, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.getVariableResult), 'utf8')
-    assert.ok(actualSize > limit)
+    assert.ok(actualSize > limit, 'response size should exceed limit')
     assert.strictEqual(response.getVariableResult.length, request.getVariableData.length)
     response.getVariableResult.forEach(r => {
       assert.strictEqual(r.attributeStatus, GetVariableStatusEnumType.Rejected)
@@ -594,7 +594,10 @@ await describe('B06 - Get Variables', async () => {
     if (result.attributeValue == null) {
       assert.fail('Expected attributeValue to be defined')
     }
-    assert.ok(result.attributeValue.length <= 3)
+    assert.ok(
+      result.attributeValue.length <= 3,
+      'attributeValue should be truncated to at most 3 characters'
+    )
     resetReportingValueSize(station)
   })
 })

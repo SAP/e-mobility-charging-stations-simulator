@@ -298,8 +298,11 @@ await describe('I04 - CertificateSigned', async () => {
         assert.fail('Expected statusInfo to be defined')
       }
       assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
-      assert.ok(response.statusInfo.reasonCode.length > 0)
-      assert.ok(response.statusInfo.reasonCode.length <= 20)
+      assert.ok(response.statusInfo.reasonCode.length > 0, 'reasonCode should not be empty')
+      assert.ok(
+        response.statusInfo.reasonCode.length <= 20,
+        'reasonCode length should be at most 20 characters'
+      )
     })
   })
 
