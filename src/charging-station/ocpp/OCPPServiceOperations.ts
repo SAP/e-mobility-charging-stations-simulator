@@ -11,6 +11,7 @@ import {
 } from '../../types/index.js'
 import { logger, truncateId } from '../../utils/index.js'
 import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils.js'
+import { mapStopReasonToOCPP20 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
 import {
   AuthContext,
@@ -19,7 +20,6 @@ import {
   IdentifierType,
   OCPPAuthServiceFactory,
 } from './auth/index.js'
-import { mapStopReasonToOCPP20 } from './OCPPServiceUtils.js'
 
 /**
  * Starts a transaction on a specific connector using the appropriate OCPP version handler.

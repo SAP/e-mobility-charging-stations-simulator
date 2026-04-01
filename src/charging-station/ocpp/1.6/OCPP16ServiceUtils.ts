@@ -34,7 +34,6 @@ import {
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
-  type OCPP16SampledValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
@@ -61,12 +60,12 @@ import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildEmptyMeterValue,
   buildMeterValue,
-  buildSampledValue,
   createPayloadConfigs,
   getSampledValueTemplate,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
+import { buildOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
 const moduleName = 'OCPP16ServiceUtils'
 
@@ -141,12 +140,11 @@ export class OCPP16ServiceUtils {
       const unitDivider =
         sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
       meterValue.sampledValue.push(
-        buildSampledValue(
-          chargingStation.stationInfo?.ocppVersion,
+        buildOCPP16SampledValue(
           sampledValueTemplate,
           roundTo((meterStart ?? 0) / unitDivider, 4),
           OCPP16MeterValueContext.TRANSACTION_BEGIN
-        ) as OCPP16SampledValue
+        )
       )
     }
     return meterValue
@@ -188,12 +186,11 @@ export class OCPP16ServiceUtils {
     const unitDivider = sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     meterValue.sampledValue.push(
-      buildSampledValue(
-        OCPPVersion.VERSION_16,
+      buildOCPP16SampledValue(
         sampledValueTemplate,
         roundTo((meterStop ?? 0) / unitDivider, 4),
         OCPP16MeterValueContext.TRANSACTION_END
-      ) as OCPP16SampledValue
+      )
     )
     return meterValue
   }

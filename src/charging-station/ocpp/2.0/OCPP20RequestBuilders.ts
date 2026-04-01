@@ -1,4 +1,5 @@
 import type { ChargingStation } from '../../../charging-station/index.js'
+import type { StopTransactionReason } from '../../../types/index.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -9,10 +10,12 @@ import {
   type MeterValueContext,
   type MeterValuePhase,
   MeterValueUnit,
+  OCPP16StopTransactionReason,
   type OCPP20BootNotificationRequest,
   type OCPP20MeterValue,
+  OCPP20ReasonEnumType,
   type OCPP20SampledValue,
-  OCPPVersion,
+  OCPP20TriggerReasonEnumType,
   RequestCommand,
   type SampledValueTemplate,
 } from '../../../types/index.js'
@@ -25,9 +28,9 @@ import {
   buildEmptyMeterValue,
   buildEnergyMeasurandValue,
   buildPowerMeasurandValue,
-  buildSampledValue,
   buildSocMeasurandValue,
   buildVoltageMeasurandValue,
+  resolveSampledValueFields,
   updateConnectorEnergyValues,
   validateEnergyMeasurandValue,
   validateSocMeasurandValue,
@@ -228,11 +231,81 @@ export function buildOCPP20SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): OCPP20SampledValue {
-  return buildSampledValue(
-    OCPPVersion.VERSION_20,
-    sampledValueTemplate,
-    value,
-    context,
-    phase
-  ) as OCPP20SampledValue
+  const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
+  return {
+    context: fields.context,
+    location: fields.location,
+    measurand: fields.measurand,
+    ...(fields.unit !== undefined && { unitOfMeasure: { unit: fields.unit } }),
+    value: fields.value,
+    ...(fields.phase != null && { phase: fields.phase }),
+  } as OCPP20SampledValue
+}
+
+export const mapStopReasonToOCPP20 = (
+  reason?: StopTransactionReason
+): {
+  stoppedReason: OCPP20ReasonEnumType
+  triggerReason: OCPP20TriggerReasonEnumType
+} => {
+  switch (reason) {
+    case OCPP16StopTransactionReason.DE_AUTHORIZED:
+    case OCPP20ReasonEnumType.DeAuthorized:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
+        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
+      }
+    case OCPP16StopTransactionReason.EMERGENCY_STOP:
+    case OCPP20ReasonEnumType.EmergencyStop:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.EV_DISCONNECTED:
+    case OCPP20ReasonEnumType.EVDisconnected:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
+        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
+      }
+    case OCPP16StopTransactionReason.HARD_RESET:
+    case OCPP16StopTransactionReason.REBOOT:
+    case OCPP16StopTransactionReason.SOFT_RESET:
+    case OCPP20ReasonEnumType.ImmediateReset:
+    case OCPP20ReasonEnumType.Reboot:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
+        triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
+      }
+    case OCPP16StopTransactionReason.OTHER:
+    case OCPP20ReasonEnumType.Other:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Other,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.POWER_LOSS:
+    case OCPP20ReasonEnumType.PowerLoss:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.PowerLoss,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.REMOTE:
+    case OCPP20ReasonEnumType.Remote:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Remote,
+        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+      }
+    case OCPP20ReasonEnumType.TimeLimitReached:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.TimeLimitReached,
+        triggerReason: OCPP20TriggerReasonEnumType.TimeLimitReached,
+      }
+    case OCPP16StopTransactionReason.LOCAL:
+    case OCPP20ReasonEnumType.Local:
+    case undefined:
+    default:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Local,
+        triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+      }
+  }
 }

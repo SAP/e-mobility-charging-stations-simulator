@@ -7,7 +7,7 @@
  * - buildBootNotificationRequest — builds version-specific boot notification payloads
  * - convertDateToISOString — recursively converts Date objects to ISO strings in-place
  * - isConnectorIdValid — validates connector ID ranges
- * - mapStopReasonToOCPP20 — maps OCPP 1.6 stop reasons to OCPP 2.0 equivalents
+ * - mapStopReasonToOCPP20 — maps OCPP 1.6 stop reasons to OCPP 2.0 equivalents (from OCPP20RequestBuilders)
  */
 
 import type { ErrorObject } from 'ajv'
@@ -17,12 +17,12 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
 
+import { mapStopReasonToOCPP20 } from '../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import {
   ajvErrorsToErrorType,
   buildBootNotificationRequest,
   convertDateToISOString,
   isConnectorIdValid,
-  mapStopReasonToOCPP20,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   BootReasonEnumType,

@@ -58,9 +58,9 @@ import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
-  mapStopReasonToOCPP20,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
+import { mapStopReasonToOCPP20 } from './OCPP20RequestBuilders.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'

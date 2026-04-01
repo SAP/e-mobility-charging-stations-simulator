@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { BootReasonEnumType, StopTransactionReason } from '../../types/index.js'
+import type { BootReasonEnumType } from '../../types/index.js'
 
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
@@ -29,11 +29,6 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type OCPP16SampledValue,
-  OCPP16StopTransactionReason,
-  OCPP20ReasonEnumType,
-  type OCPP20SampledValue,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
@@ -106,79 +101,6 @@ export const buildBootNotificationRequest = (
       return buildOCPP20BootNotificationRequest(stationInfo, bootReason)
     default:
       return undefined
-  }
-}
-
-/**
- * Maps an OCPP 1.6 or generic stop transaction reason to OCPP 2.0 stopped and trigger reasons.
- * @param reason - Stop transaction reason to map
- * @returns Object containing the OCPP 2.0 stoppedReason and triggerReason
- */
-export const mapStopReasonToOCPP20 = (
-  reason?: StopTransactionReason
-): {
-  stoppedReason: OCPP20ReasonEnumType
-  triggerReason: OCPP20TriggerReasonEnumType
-} => {
-  switch (reason) {
-    case OCPP16StopTransactionReason.DE_AUTHORIZED:
-    case OCPP20ReasonEnumType.DeAuthorized:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
-        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
-      }
-    case OCPP16StopTransactionReason.EMERGENCY_STOP:
-    case OCPP20ReasonEnumType.EmergencyStop:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
-        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
-      }
-    case OCPP16StopTransactionReason.EV_DISCONNECTED:
-    case OCPP20ReasonEnumType.EVDisconnected:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
-        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
-      }
-    case OCPP16StopTransactionReason.HARD_RESET:
-    case OCPP16StopTransactionReason.REBOOT:
-    case OCPP16StopTransactionReason.SOFT_RESET:
-    case OCPP20ReasonEnumType.ImmediateReset:
-    case OCPP20ReasonEnumType.Reboot:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
-        triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
-      }
-    case OCPP16StopTransactionReason.OTHER:
-    case OCPP20ReasonEnumType.Other:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.Other,
-        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
-      }
-    case OCPP16StopTransactionReason.POWER_LOSS:
-    case OCPP20ReasonEnumType.PowerLoss:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.PowerLoss,
-        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
-      }
-    case OCPP16StopTransactionReason.REMOTE:
-    case OCPP20ReasonEnumType.Remote:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.Remote,
-        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
-      }
-    case OCPP20ReasonEnumType.TimeLimitReached:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.TimeLimitReached,
-        triggerReason: OCPP20TriggerReasonEnumType.TimeLimitReached,
-      }
-    case OCPP16StopTransactionReason.LOCAL:
-    case OCPP20ReasonEnumType.Local:
-    case undefined:
-    default:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.Local,
-        triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
-      }
   }
 }
 
@@ -1254,59 +1176,42 @@ export const getSampledValueTemplate = (
 }
 
 /**
- * Builds a sampled value object according to the specified OCPP version.
- * @param ocppVersion - The OCPP version to use for formatting the sampled value
+ * Resolves the common sampled value fields from a template and optional overrides.
  * @param sampledValueTemplate - Template containing measurement configuration and metadata
  * @param value - The measured numeric value to be included in the sampled value
  * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
  * @param phase - Optional phase information for multi-phase electrical measurements
- * @returns A sampled value object formatted according to the specified OCPP version
+ * @returns An object containing the resolved sampled value fields
  */
-export function buildSampledValue (
-  ocppVersion: OCPPVersion | undefined,
+export const resolveSampledValueFields = (
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
   phase?: MeterValuePhase
-): SampledValue {
-  const sampledValueMeasurand = sampledValueTemplate.measurand ?? getMeasurandDefault()
-  const sampledValueUnit =
-    sampledValueTemplate.unit ?? getMeasurandDefaultUnit(sampledValueMeasurand)
-  const sampledValueContext =
-    context ?? sampledValueTemplate.context ?? getMeasurandDefaultContext(sampledValueMeasurand)
-  const sampledValueLocation =
-    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueMeasurand)
-  const sampledValuePhase = phase ?? sampledValueTemplate.phase
-
-  switch (ocppVersion) {
-    case OCPPVersion.VERSION_16:
-      // OCPP 1.6 format
-      return {
-        context: sampledValueContext,
-        location: sampledValueLocation,
-        measurand: sampledValueMeasurand,
-        unit: sampledValueUnit,
-        value: value.toString(), // OCPP 1.6 uses string
-        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-      } as OCPP16SampledValue
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
-      // OCPP 2.0 format
-      return {
-        context: sampledValueContext,
-        location: sampledValueLocation,
-        measurand: sampledValueMeasurand,
-        ...(sampledValueUnit !== undefined && { unitOfMeasure: { unit: sampledValueUnit } }),
-        value, // OCPP 2.0 uses number
-        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-      } as OCPP20SampledValue
-    default:
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot build sampledValue: OCPP version ${ocppVersion} not supported`,
-        RequestCommand.METER_VALUES
-      )
+): {
+  context: MeterValueContext
+  location: MeterValueLocation | undefined
+  measurand: MeterValueMeasurand
+  phase: MeterValuePhase | undefined
+  unit: MeterValueUnit | undefined
+  value: number
+} => {
+  const sampledValueMeasurand =
+    (sampledValueTemplate.measurand as MeterValueMeasurand | undefined) ?? getMeasurandDefault()
+  return {
+    context:
+      context ??
+      (sampledValueTemplate.context as MeterValueContext | undefined) ??
+      getMeasurandDefaultContext(sampledValueMeasurand),
+    location:
+      (sampledValueTemplate.location as MeterValueLocation | undefined) ??
+      getMeasurandDefaultLocation(sampledValueMeasurand),
+    measurand: sampledValueMeasurand,
+    phase: phase ?? (sampledValueTemplate.phase as MeterValuePhase | undefined),
+    unit:
+      (sampledValueTemplate.unit as MeterValueUnit | undefined) ??
+      getMeasurandDefaultUnit(sampledValueMeasurand),
+    value,
   }
 }
 

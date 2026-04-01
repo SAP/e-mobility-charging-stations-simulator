@@ -14,7 +14,6 @@ import {
   type OCPP16BootNotificationRequest,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
-  OCPPVersion,
   RequestCommand,
   type SampledValueTemplate,
 } from '../../../types/index.js'
@@ -27,9 +26,9 @@ import {
   buildEmptyMeterValue,
   buildEnergyMeasurandValue,
   buildPowerMeasurandValue,
-  buildSampledValue,
   buildSocMeasurandValue,
   buildVoltageMeasurandValue,
+  resolveSampledValueFields,
   updateConnectorEnergyValues,
   validateCurrentMeasurandPhaseValue,
   validateCurrentMeasurandValue,
@@ -319,11 +318,13 @@ export function buildOCPP16SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): OCPP16SampledValue {
-  return buildSampledValue(
-    OCPPVersion.VERSION_16,
-    sampledValueTemplate,
-    value,
-    context,
-    phase
-  ) as OCPP16SampledValue
+  const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
+  return {
+    context: fields.context,
+    location: fields.location,
+    measurand: fields.measurand,
+    unit: fields.unit,
+    value: fields.value.toString(),
+    ...(fields.phase != null && { phase: fields.phase }),
+  } as OCPP16SampledValue
 }
