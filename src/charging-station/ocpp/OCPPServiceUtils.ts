@@ -37,6 +37,7 @@ import {
 } from '../../types/index.js'
 import {
   ACElectricUtils,
+  clone,
   Constants,
   convertToFloat,
   convertToInt,
@@ -129,6 +130,55 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
     }
   }
   return ErrorType.FORMAT_VIOLATION
+}
+
+/**
+ * Validates an OCPP payload against a JSON schema validation function.
+ * Shared implementation used by request, response, and incoming request validation.
+ * @param chargingStation - The charging station instance
+ * @param commandName - OCPP command name to validate against
+ * @param payload - JSON payload to validate
+ * @param validate - Ajv validation function for the command
+ * @param context - Description of the validation context (e.g. 'request', 'response')
+ * @param clonePayload - Whether to clone payload and convert dates before validation
+ * @returns True if payload validation succeeds, false otherwise
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export const validatePayload = <T extends JsonType>(
+  chargingStation: ChargingStation,
+  commandName: IncomingRequestCommand | RequestCommand,
+  payload: T,
+  validate: undefined | ValidateFunction<JsonType>,
+  context: string,
+  clonePayload = false
+): boolean => {
+  if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
+    return true
+  }
+  if (validate == null) {
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' ${context} PDU validation`
+    )
+    return false
+  }
+  let payloadToValidate = payload
+  if (clonePayload) {
+    payloadToValidate = clone(payload)
+    convertDateToISOString(payloadToValidate)
+  }
+  if (validate(payloadToValidate)) {
+    return true
+  }
+  logger.error(
+    `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Command '${commandName}' ${context} PDU is invalid: %j`,
+    validate.errors
+  )
+  throw new OCPPError(
+    ajvErrorsToErrorType(validate.errors),
+    `${context.charAt(0).toUpperCase()}${context.slice(1)} PDU is invalid`,
+    commandName,
+    JSON.stringify(validate.errors, undefined, 2)
+  )
 }
 
 /**

@@ -12,9 +12,7 @@ import {
   type OCPPVersion,
 } from '../../types/index.js'
 import { isAsyncFunction, logger } from '../../utils/index.js'
-import { type Ajv, ajvErrorsToErrorType, createAjv } from './OCPPServiceUtils.js'
-
-const moduleName = 'OCPPIncomingRequestService'
+import { type Ajv, createAjv, validatePayload } from './OCPPServiceUtils.js'
 
 export abstract class OCPPIncomingRequestService extends EventEmitter {
   private static readonly instances = new Map<
@@ -177,28 +175,12 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     commandName: IncomingRequestCommand,
     payload: T
   ): boolean {
-    if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
-      return true
-    }
-    const validate = this.payloadValidatorFunctions.get(commandName)
-    if (validate == null) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-      )
-      return false
-    }
-    if (validate(payload)) {
-      return true
-    }
-    logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Command '${commandName}' incoming request PDU is invalid: %j`,
-      validate.errors
-    )
-    throw new OCPPError(
-      ajvErrorsToErrorType(validate.errors),
-      'Incoming request PDU is invalid',
+    return validatePayload(
+      chargingStation,
       commandName,
-      JSON.stringify(validate.errors, undefined, 2)
+      payload,
+      this.payloadValidatorFunctions.get(commandName),
+      'incoming request'
     )
   }
 }
