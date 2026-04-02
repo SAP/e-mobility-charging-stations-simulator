@@ -8,22 +8,6 @@
  * @module ocpp/auth
  */
 
-// ============================================================================
-// Interfaces
-// ============================================================================
-
-export { OCPP16AuthAdapter } from './adapters/OCPP16AuthAdapter.js'
-
-// ============================================================================
-// Types & Enums
-// ============================================================================
-
-export { OCPP20AuthAdapter } from './adapters/OCPP20AuthAdapter.js'
-
-// ============================================================================
-// Adapters
-// ============================================================================
-
 export type {
   AuthCache,
   AuthComponentFactory,
@@ -38,20 +22,7 @@ export type {
   OCPPAuthService,
 } from './interfaces/OCPPAuthService.js'
 export { OCPPAuthServiceFactory } from './services/OCPPAuthServiceFactory.js'
-
-// ============================================================================
-// Strategies
-// ============================================================================
-
 export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
-export { CertificateAuthStrategy } from './strategies/CertificateAuthStrategy.js'
-export { LocalAuthStrategy } from './strategies/LocalAuthStrategy.js'
-
-// ============================================================================
-// Services
-// ============================================================================
-
-export { RemoteAuthStrategy } from './strategies/RemoteAuthStrategy.js'
 export {
   type AuthConfiguration,
   AuthContext,
@@ -75,10 +46,3 @@ export {
   mapToOCPP20TokenType,
   requiresAdditionalInfo,
 } from './types/AuthTypes.js'
-
-// ============================================================================
-// Utils
-// ============================================================================
-
-export { AuthValidators } from './utils/AuthValidators.js'
-export { AuthConfigValidator } from './utils/ConfigValidator.js'
