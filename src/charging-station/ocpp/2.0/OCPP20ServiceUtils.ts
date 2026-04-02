@@ -506,23 +506,6 @@ export class OCPP20ServiceUtils {
     return defaultValue
   }
 
-  public static readVariableAsIntervalMs (
-    chargingStation: ChargingStation,
-    componentName: string,
-    variableName: string,
-    defaultSeconds: number
-  ): number {
-    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
-      chargingStation,
-      componentName,
-      variableName,
-      defaultSeconds
-    )
-    return intervalSeconds > 0
-      ? secondsToMilliseconds(intervalSeconds)
-      : secondsToMilliseconds(defaultSeconds)
-  }
-
   public static readVariableValue (
     chargingStation: ChargingStation,
     componentName: string,
@@ -1157,6 +1140,23 @@ export class OCPP20ServiceUtils {
       )
     }
     return endedMeterValues.length > 0 ? endedMeterValues : []
+  }
+
+  private static readVariableAsIntervalMs (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultSeconds: number
+  ): number {
+    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      componentName,
+      variableName,
+      defaultSeconds
+    )
+    return intervalSeconds > 0
+      ? secondsToMilliseconds(intervalSeconds)
+      : secondsToMilliseconds(defaultSeconds)
   }
 
   private static resolveActiveTransaction (

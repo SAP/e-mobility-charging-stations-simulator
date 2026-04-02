@@ -160,7 +160,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
   }
 }
 
-export const buildSocMeasurandValue = (
+const buildSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -192,7 +192,7 @@ export const buildSocMeasurandValue = (
   }
 }
 
-export const validateSocMeasurandValue = (
+const validateSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -215,7 +215,7 @@ export const validateSocMeasurandValue = (
   }
 }
 
-export const buildVoltageMeasurandValue = (
+const buildVoltageMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -248,7 +248,7 @@ export const buildVoltageMeasurandValue = (
   }
 }
 
-export const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
+const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   meterValue: { sampledValue: TSampledValue[] },
   voltageData: { template: SampledValueTemplate; value: number },
@@ -274,7 +274,7 @@ export const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
   }
 }
 
-export const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
+const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   connectorId: number,
   meterValue: { sampledValue: TSampledValue[] },
@@ -327,7 +327,7 @@ export const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   )
 }
 
-export const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
+const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   connectorId: number,
   meterValue: { sampledValue: TSampledValue[] },
@@ -388,7 +388,7 @@ export const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledVa
   )
 }
 
-export const buildEnergyMeasurandValue = (
+const buildEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   interval: number,
@@ -438,7 +438,7 @@ export const buildEnergyMeasurandValue = (
   }
 }
 
-export const updateConnectorEnergyValues = (
+const updateConnectorEnergyValues = (
   connectorStatus: ConnectorStatus | undefined,
   energyValue: number
 ): void => {
@@ -458,7 +458,7 @@ export const updateConnectorEnergyValues = (
   }
 }
 
-export const validateEnergyMeasurandValue = (
+const validateEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -479,7 +479,7 @@ export const validateEnergyMeasurandValue = (
   }
 }
 
-export const buildPowerMeasurandValue = (
+const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
@@ -687,7 +687,7 @@ export const buildPowerMeasurandValue = (
   }
 }
 
-export const validatePowerMeasurandValue = (
+const validatePowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -710,7 +710,7 @@ export const validatePowerMeasurandValue = (
   }
 }
 
-export const validateCurrentMeasurandValue = (
+const validateCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -733,7 +733,7 @@ export const validateCurrentMeasurandValue = (
   }
 }
 
-export const validateCurrentMeasurandPhaseValue = (
+const validateCurrentMeasurandPhaseValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined,
@@ -759,7 +759,7 @@ export const validateCurrentMeasurandPhaseValue = (
   }
 }
 
-export const buildCurrentMeasurandValue = (
+const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
