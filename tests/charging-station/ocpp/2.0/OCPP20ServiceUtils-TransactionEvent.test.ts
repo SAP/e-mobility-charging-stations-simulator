@@ -44,7 +44,11 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
-import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  setupConnectorWithTransaction,
+  standardCleanup,
+  withMockTimers,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
@@ -923,8 +927,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           // Set transaction ID at start
-          connectorStatus.transactionId = transactionId
-          connectorStatus.transactionStarted = true
+          setupConnectorWithTransaction(mockStation, connectorId, { transactionId })
           connectorStatus.status = ConnectorStatusEnum.Preparing
 
           // Transition to charging
@@ -1665,8 +1668,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connectorStatus = mockStation.getConnectorStatus(connectorId)
         assert(connectorStatus != null)
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
+        setupConnectorWithTransaction(mockStation, connectorId, { transactionId })
         connectorStatus.locked = true
         assert.strictEqual(connectorStatus.transactionEventQueue?.length, 2)
 
@@ -2410,9 +2412,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2442,9 +2443,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 1500
       }
 
@@ -2497,9 +2497,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 100
         connectorStatus.transactionDeauthorized = true
         connectorStatus.transactionDeauthorizedEnergyWh = 50
@@ -2537,9 +2536,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
       OCPP20VariableManager.getInstance().setVariables(mockTracking.station, [
@@ -2582,8 +2580,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       if (connectorStatus == null) {
         assert.fail('connectorStatus should not be undefined')
       }
-      connectorStatus.transactionStarted = true
-      connectorStatus.transactionId = transactionId
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       connectorStatus.transactionEnergyActiveImportRegisterValue = 500
       connectorStatus.transactionDeauthorized = true
       connectorStatus.transactionDeauthorizedEnergyWh = 500
@@ -2597,9 +2594,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2645,9 +2641,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2674,9 +2669,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const customStoppedReason = OCPP20ReasonEnumType.DeAuthorized
       const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
       assert.notStrictEqual(connectorStatus, undefined)
+      setupConnectorWithTransaction(mockTracking.station, connectorId, { transactionId })
       if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2738,8 +2732,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
       }
 
@@ -2781,8 +2774,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2798,8 +2790,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2841,8 +2832,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(mockTracking.station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 5678
       }
 
@@ -2883,8 +2873,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(mockTracking.station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       }
 
@@ -2907,8 +2896,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const transactionId = generateUUID()
       const connectorStatus = mockTracking.station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.transactionId = transactionId
-        connectorStatus.transactionStarted = true
+        setupConnectorWithTransaction(mockTracking.station, 1, { transactionId })
         connectorStatus.transactionEnergyActiveImportRegisterValue = 5678
       }
 

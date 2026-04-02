@@ -18,7 +18,11 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../../src/types/index.js'
-import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
@@ -75,11 +79,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Set all connectors as having active transactions
     for (let connectorId = 1; connectorId <= station.getNumberOfConnectors(); connectorId++) {
-      const connectorStatus = station.getConnectorStatus(connectorId)
-      if (connectorStatus != null) {
-        connectorStatus.transactionStarted = true
-        connectorStatus.transactionId = connectorId * 100
-      }
+      setupConnectorWithTransaction(station, connectorId, { transactionId: connectorId * 100 })
     }
 
     const request: RemoteStartTransactionRequest = {
