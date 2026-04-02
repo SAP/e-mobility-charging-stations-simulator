@@ -206,24 +206,24 @@ export class OCPP20ServiceUtils {
     chargingStation: ChargingStation,
     retryCount: number
   ): number {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-        variable: { name: OCPP20OptionalVariableName.RetryBackOffWaitMinimum },
-      },
-      {
-        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-        variable: { name: OCPP20OptionalVariableName.RetryBackOffRandomRange },
-      },
-      {
-        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-        variable: { name: OCPP20OptionalVariableName.RetryBackOffRepeatTimes },
-      },
-    ])
-    const waitMinimum = convertToInt(results[0]?.attributeValue) || 30
-    const randomRange = convertToInt(results[1]?.attributeValue) || 10
-    const repeatTimes = convertToInt(results[2]?.attributeValue) || 5
+    const waitMinimum = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20OptionalVariableName.RetryBackOffWaitMinimum,
+      30
+    )
+    const randomRange = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20OptionalVariableName.RetryBackOffRandomRange,
+      10
+    )
+    const repeatTimes = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20OptionalVariableName.RetryBackOffRepeatTimes,
+      5
+    )
     return computeExponentialBackOffDelay({
       baseDelayMs: secondsToMilliseconds(waitMinimum),
       jitterMs: secondsToMilliseconds(randomRange),
@@ -474,6 +474,71 @@ export class OCPP20ServiceUtils {
       )
     }
     return { bytesLimit, itemsLimit }
+  }
+
+  public static readVariableAsBoolean (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue: boolean
+  ): boolean {
+    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
+    return value != null ? convertToBoolean(value) : defaultValue
+  }
+
+  public static readVariableAsInteger (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue: number
+  ): number {
+    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
+    if (value != null) {
+      try {
+        return convertToInt(value)
+      } catch {
+        logger.warn(
+          `${moduleName}.readVariableAsInteger: Cannot convert '${value}' to integer for ${componentName}.${variableName}, using default ${defaultValue.toString()}`
+        )
+        return defaultValue
+      }
+    }
+    return defaultValue
+  }
+
+  public static readVariableAsIntervalMs (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultSeconds: number
+  ): number {
+    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      componentName,
+      variableName,
+      defaultSeconds
+    )
+    return intervalSeconds > 0
+      ? secondsToMilliseconds(intervalSeconds)
+      : secondsToMilliseconds(defaultSeconds)
+  }
+
+  public static readVariableValue (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string
+  ): string | undefined {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: componentName },
+        variable: { name: variableName },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      return results[0].attributeValue
+    }
+    return undefined
   }
 
   /**
@@ -1092,71 +1157,6 @@ export class OCPP20ServiceUtils {
       )
     }
     return endedMeterValues.length > 0 ? endedMeterValues : []
-  }
-
-  private static readVariableAsBoolean (
-    chargingStation: ChargingStation,
-    componentName: string,
-    variableName: string,
-    defaultValue: boolean
-  ): boolean {
-    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
-    return value != null ? convertToBoolean(value) : defaultValue
-  }
-
-  private static readVariableAsInteger (
-    chargingStation: ChargingStation,
-    componentName: string,
-    variableName: string,
-    defaultValue: number
-  ): number {
-    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
-    if (value != null) {
-      try {
-        return convertToInt(value)
-      } catch {
-        logger.warn(
-          `${moduleName}.readVariableAsInteger: Cannot convert '${value}' to integer for ${componentName}.${variableName}, using default ${defaultValue.toString()}`
-        )
-        return defaultValue
-      }
-    }
-    return defaultValue
-  }
-
-  private static readVariableAsIntervalMs (
-    chargingStation: ChargingStation,
-    componentName: string,
-    variableName: string,
-    defaultSeconds: number
-  ): number {
-    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
-      chargingStation,
-      componentName,
-      variableName,
-      defaultSeconds
-    )
-    return intervalSeconds > 0
-      ? secondsToMilliseconds(intervalSeconds)
-      : secondsToMilliseconds(defaultSeconds)
-  }
-
-  private static readVariableValue (
-    chargingStation: ChargingStation,
-    componentName: string,
-    variableName: string
-  ): string | undefined {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: componentName },
-        variable: { name: variableName },
-      },
-    ])
-    if (results.length > 0 && results[0].attributeValue != null) {
-      return results[0].attributeValue
-    }
-    return undefined
   }
 
   private static resolveActiveTransaction (

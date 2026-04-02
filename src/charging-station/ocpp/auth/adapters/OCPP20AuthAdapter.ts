@@ -14,9 +14,8 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
+import { OCPP20ServiceUtils } from '../../2.0/OCPP20ServiceUtils.js'
 import {
-  GetVariableStatusEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
@@ -24,7 +23,7 @@ import {
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../types/index.js'
-import { logger, truncateId } from '../../../../utils/index.js'
+import { convertToBoolean, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -373,12 +372,13 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       // Check if station is online and can communicate
       const isOnline = this.chargingStation.inAcceptedState()
 
-      // Check AuthorizeRemoteStart variable (with type validation)
+      // Check AuthorizeRemoteStart variable
       const remoteStartValue = this.getVariableValue(
         OCPP20ComponentName.AuthCtrlr,
         OCPP20RequiredVariableName.AuthorizeRemoteStart
       )
-      const remoteStartEnabled = this.parseBooleanVariable(remoteStartValue, true)
+      const remoteStartEnabled =
+        remoteStartValue != null ? convertToBoolean(remoteStartValue) : true
 
       return isOnline && remoteStartEnabled
     } catch (error) {
@@ -513,7 +513,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
         OCPP20ComponentName.AuthCtrlr,
         OCPP20RequiredVariableName.LocalAuthorizationOffline
       )
-      return this.parseBooleanVariable(value, true)
+      return value != null ? convertToBoolean(value) : true
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineAuthorizationConfig: Error getting offline authorization config`,
@@ -536,37 +536,15 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
     useDefaultFallback = true
   ): string | undefined {
     try {
-      const variableManager = OCPP20VariableManager.getInstance()
-
-      const results = variableManager.getVariables(this.chargingStation, [
-        {
-          component: { name: component },
-          variable: { name: variable },
-        },
-      ])
-
-      // Check if variable was successfully retrieved
-      if (results.length === 0) {
-        logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not found in registry`
-        )
-        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
+      const value = OCPP20ServiceUtils.readVariableValue(this.chargingStation, component, variable)
+      if (value != null) {
+        return value
       }
 
-      const result = results[0]
-
-      // Check for errors or rejection
-      if (
-        result.attributeStatus !== GetVariableStatusEnumType.Accepted ||
-        result.attributeValue == null
-      ) {
-        logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not available: ${result.attributeStatus}`
-        )
-        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
-      }
-
-      return result.attributeValue
+      logger.debug(
+        `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not available`
+      )
+      return this.getDefaultVariableValue(component, variable, useDefaultFallback)
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Error getting variable ${component}.${variable}`,
@@ -574,32 +552,5 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       )
       return this.getDefaultVariableValue(component, variable, useDefaultFallback)
     }
-  }
-
-  /**
-   * Parse and validate a boolean variable value
-   * @param value - String value to parse ('true', 'false', '1', '0')
-   * @param defaultValue - Fallback value when parsing fails or value is undefined
-   * @returns Parsed boolean value, or defaultValue if parsing fails
-   */
-  private parseBooleanVariable (value: string | undefined, defaultValue: boolean): boolean {
-    if (value == null) {
-      return defaultValue
-    }
-
-    const normalized = value.toLowerCase().trim()
-
-    if (normalized === 'true' || normalized === '1') {
-      return true
-    }
-
-    if (normalized === 'false' || normalized === '0') {
-      return false
-    }
-
-    logger.warn(
-      `${this.chargingStation.logPrefix()} ${moduleName}.parseBooleanVariable: Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
-    )
-    return defaultValue
   }
 }

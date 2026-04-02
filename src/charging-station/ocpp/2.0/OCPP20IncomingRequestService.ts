@@ -126,8 +126,8 @@ import {
   UploadLogStatusEnumType,
 } from '../../../types/index.js'
 import {
-  convertToBoolean,
   convertToDate,
+  convertToIntOrNaN,
   generateUUID,
   logger,
   promiseWithTimeout,
@@ -1335,7 +1335,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     )
     if (maxChainSizeKey?.value != null) {
-      const maxChainSize = parseInt(maxChainSizeKey.value, 10)
+      const maxChainSize = convertToIntOrNaN(maxChainSizeKey.value)
       if (!Number.isNaN(maxChainSize) && maxChainSize > 0) {
         const chainByteSize = Buffer.byteLength(certificateChain, 'utf8')
         if (chainByteSize > maxChainSize) {
@@ -1963,17 +1963,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const { evseId, type } = commandPayload
 
-    const variableManager = OCPP20VariableManager.getInstance()
-    const allowResetResults = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.EVSE },
-        variable: { name: 'AllowReset' },
-      },
-    ])
     if (
-      allowResetResults.length > 0 &&
-      allowResetResults[0].attributeValue != null &&
-      !convertToBoolean(allowResetResults[0].attributeValue)
+      !OCPP20ServiceUtils.readVariableAsBoolean(
+        chargingStation,
+        OCPP20ComponentName.EVSE,
+        'AllowReset',
+        true
+      )
     ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: AllowReset is false, rejecting reset request`
@@ -2215,26 +2211,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const variableManager = OCPP20VariableManager.getInstance()
-    const currentSecurityProfileResults = variableManager.getVariables(chargingStation, [
-      {
-        attributeType: AttributeEnumType.Actual,
-        component: { name: OCPP20ComponentName.SecurityCtrlr },
-        variable: { name: OCPP20RequiredVariableName.SecurityProfile },
-      },
-    ])
-    const currentSecurityProfile = Number(currentSecurityProfileResults[0]?.attributeValue ?? '0')
+    const currentSecurityProfile = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.SecurityCtrlr,
+      OCPP20RequiredVariableName.SecurityProfile,
+      0
+    )
     const newSecurityProfile = commandPayload.connectionData.securityProfile
     if (newSecurityProfile < currentSecurityProfile) {
       // B09.FR.04 (errata 2025-09): Check AllowSecurityProfileDowngrade before rejecting
-      const allowDowngradeResults = variableManager.getVariables(chargingStation, [
-        {
-          attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.SecurityCtrlr },
-          variable: { name: 'AllowSecurityProfileDowngrade' },
-        },
-      ])
-      const allowDowngrade = convertToBoolean(allowDowngradeResults[0]?.attributeValue)
+      const allowDowngrade = OCPP20ServiceUtils.readVariableAsBoolean(
+        chargingStation,
+        OCPP20ComponentName.SecurityCtrlr,
+        'AllowSecurityProfileDowngrade',
+        false
+      )
 
       // B09.FR.31 (errata 2025-09 §2.12): Allow downgrade except to profile 1 when enabled
       if (!allowDowngrade || newSecurityProfile <= 1) {
@@ -2251,14 +2242,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const priorityResults = variableManager.getVariables(chargingStation, [
-      {
-        attributeType: AttributeEnumType.Actual,
-        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-        variable: { name: OCPP20RequiredVariableName.NetworkConfigurationPriority },
-      },
-    ])
-    const priorityValue = priorityResults[0]?.attributeValue ?? ''
+    const priorityValue =
+      OCPP20ServiceUtils.readVariableValue(
+        chargingStation,
+        OCPP20ComponentName.OCPPCommCtrlr,
+        OCPP20RequiredVariableName.NetworkConfigurationPriority
+      ) ?? ''
     if (priorityValue.length > 0) {
       const priorities = priorityValue.split(',').map(Number)
       if (!priorities.includes(commandPayload.configurationSlot)) {
@@ -2366,29 +2355,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const variableManager = OCPP20VariableManager.getInstance()
-    const authorizeRemoteStartResults = variableManager.getVariables(chargingStation, [
-      {
-        attributeType: AttributeEnumType.Actual,
-        component: { name: OCPP20ComponentName.AuthCtrlr },
-        variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
-      },
-    ])
-    const shouldAuthorizeRemoteStart =
-      authorizeRemoteStartResults[0]?.attributeValue == null ||
-      convertToBoolean(authorizeRemoteStartResults[0].attributeValue)
+    const shouldAuthorizeRemoteStart = OCPP20ServiceUtils.readVariableAsBoolean(
+      chargingStation,
+      OCPP20ComponentName.AuthCtrlr,
+      OCPP20RequiredVariableName.AuthorizeRemoteStart,
+      true
+    )
 
     let isAuthorized = true
     if (shouldAuthorizeRemoteStart) {
       // C12.FR.09: Check MasterPassGroupId before authorization
-      const masterPassGroupIdResults = variableManager.getVariables(chargingStation, [
-        {
-          attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.AuthCtrlr },
-          variable: { name: 'MasterPassGroupId' },
-        },
-      ])
-      const masterPassGroupId = masterPassGroupIdResults[0]?.attributeValue
+      const masterPassGroupId = OCPP20ServiceUtils.readVariableValue(
+        chargingStation,
+        OCPP20ComponentName.AuthCtrlr,
+        'MasterPassGroupId'
+      )
       if (
         masterPassGroupId != null &&
         masterPassGroupId.length > 0 &&
@@ -3537,17 +3518,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       if (checkAborted()) return
 
       // L01.FR.04: Simulate signature verification
-      const variableManager = OCPP20VariableManager.getInstance()
-      const verificationResults = variableManager.getVariables(chargingStation, [
-        {
-          attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
-          variable: {
-            name: OCPP20VendorVariableName.SimulateSignatureVerificationFailure as string,
-          },
-        },
-      ])
-      const simulateFailure = convertToBoolean(verificationResults[0]?.attributeValue)
+      const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
+        chargingStation,
+        OCPP20ComponentName.FirmwareCtrlr as string,
+        OCPP20VendorVariableName.SimulateSignatureVerificationFailure as string,
+        false
+      )
 
       if (simulateFailure) {
         // L01.FR.03: InvalidSignature + SecurityEventNotification
@@ -3596,15 +3572,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       .iterateEvses(true)
       .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
     if (hasActiveTransactionsBeforeInstall) {
-      const variableManager = OCPP20VariableManager.getInstance()
-      const allowNewSessionsResults = variableManager.getVariables(chargingStation, [
-        {
-          attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.ChargingStation },
-          variable: { name: 'AllowNewSessionsPendingFirmwareUpdate' },
-        },
-      ])
-      const allowNewSessions = convertToBoolean(allowNewSessionsResults[0]?.attributeValue)
+      const allowNewSessions = OCPP20ServiceUtils.readVariableAsBoolean(
+        chargingStation,
+        OCPP20ComponentName.ChargingStation,
+        'AllowNewSessionsPendingFirmwareUpdate',
+        false
+      )
       while (
         !checkAborted() &&
         chargingStation

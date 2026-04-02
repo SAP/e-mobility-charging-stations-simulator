@@ -10,7 +10,7 @@ import {
   OCPP20RequestCommand,
 } from '../../../types/index.js'
 import { computeExponentialBackOffDelay, logger } from '../../../utils/index.js'
-import { OCPP20VariableManager } from './OCPP20VariableManager.js'
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20CertSigningRetryManager'
 
@@ -51,8 +51,13 @@ export class OCPP20CertSigningRetryManager {
   public startRetryTimer (certificateType?: string): void {
     this.cancelRetryTimer()
     this.retryAborted = false
-    const waitMinimum = this.getVariableValue(OCPP20OptionalVariableName.CertSigningWaitMinimum)
-    if (waitMinimum == null || waitMinimum <= 0) {
+    const waitMinimum = OCPP20ServiceUtils.readVariableAsInteger(
+      this.chargingStation,
+      OCPP20ComponentName.SecurityCtrlr,
+      OCPP20OptionalVariableName.CertSigningWaitMinimum,
+      0
+    )
+    if (waitMinimum <= 0) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.startRetryTimer: ${OCPP20OptionalVariableName.CertSigningWaitMinimum} not configured or invalid, retry disabled`
       )
@@ -64,23 +69,13 @@ export class OCPP20CertSigningRetryManager {
     this.scheduleNextRetry(certificateType, waitMinimum)
   }
 
-  private getVariableValue (variableName: OCPP20OptionalVariableName): number | undefined {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(this.chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.SecurityCtrlr },
-        variable: { name: variableName },
-      },
-    ])
-    if (results.length > 0 && results[0]?.attributeValue != null) {
-      const parsed = parseInt(results[0].attributeValue, 10)
-      return Number.isNaN(parsed) ? undefined : parsed
-    }
-    return undefined
-  }
-
   private scheduleNextRetry (certificateType?: string, waitMinimumSeconds?: number): void {
-    const maxRetries = this.getVariableValue(OCPP20OptionalVariableName.CertSigningRepeatTimes) ?? 0
+    const maxRetries = OCPP20ServiceUtils.readVariableAsInteger(
+      this.chargingStation,
+      OCPP20ComponentName.SecurityCtrlr,
+      OCPP20OptionalVariableName.CertSigningRepeatTimes,
+      0
+    )
     if (this.retryCount >= maxRetries) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.scheduleNextRetry: Max retry count ${maxRetries.toString()} reached, giving up`
@@ -91,8 +86,12 @@ export class OCPP20CertSigningRetryManager {
 
     const baseDelayMs = secondsToMilliseconds(
       waitMinimumSeconds ??
-        this.getVariableValue(OCPP20OptionalVariableName.CertSigningWaitMinimum) ??
-        60
+        OCPP20ServiceUtils.readVariableAsInteger(
+          this.chargingStation,
+          OCPP20ComponentName.SecurityCtrlr,
+          OCPP20OptionalVariableName.CertSigningWaitMinimum,
+          60
+        )
     )
     const delayMs = computeExponentialBackOffDelay({
       baseDelayMs,
