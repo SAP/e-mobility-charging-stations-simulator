@@ -11,6 +11,7 @@ import {
   OCPP20DeviceInfoVariableName,
   OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
+  OCPP20MessageFormatEnumType,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
@@ -749,6 +750,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ReportingValueSize,
   },
+
   [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
@@ -764,7 +766,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ValueSize,
   },
-  // DeviceDataCtrlr Component
+
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20RequiredVariableName.BytesPerMessage
@@ -895,6 +897,50 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
+  },
+
+  // DisplayMessageCtrlr Component
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'DisplayMessages')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: '0',
+    description:
+      'Amount of different messages that are currently configured in this Charging Station, via SetDisplayMessageRequest.',
+    min: 0,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Volatile,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'DisplayMessages',
+  },
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'SupportedFormats')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.MemberList,
+    defaultValue: 'ASCII,UTF8',
+    description: 'List of message formats supported by this Charging Station.',
+    enumeration: [
+      OCPP20MessageFormatEnumType.ASCII,
+      OCPP20MessageFormatEnumType.HTML,
+      OCPP20MessageFormatEnumType.URI,
+      OCPP20MessageFormatEnumType.UTF8,
+    ],
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SupportedFormats',
+  },
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'SupportedPriorities')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.MemberList,
+    defaultValue: 'AlwaysFront,InFront,NormalCycle',
+    description: 'List of the priorities supported by this Charging Station.',
+    enumeration: ['AlwaysFront', 'InFront', 'NormalCycle'],
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SupportedPriorities',
   },
 
   // EVSE Component
