@@ -2242,12 +2242,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const priorityValue =
-      OCPP20ServiceUtils.readVariableValue(
-        chargingStation,
-        OCPP20ComponentName.OCPPCommCtrlr,
-        OCPP20RequiredVariableName.NetworkConfigurationPriority
-      ) ?? ''
+    const priorityValue = OCPP20ServiceUtils.readVariableAsString(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20RequiredVariableName.NetworkConfigurationPriority
+    )
     if (priorityValue.length > 0) {
       const priorities = priorityValue.split(',').map(Number)
       if (!priorities.includes(commandPayload.configurationSlot)) {

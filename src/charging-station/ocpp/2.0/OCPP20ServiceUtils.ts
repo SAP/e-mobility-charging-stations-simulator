@@ -506,6 +506,18 @@ export class OCPP20ServiceUtils {
     return defaultValue
   }
 
+  public static readVariableAsString (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue = ''
+  ): string {
+    return (
+      OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName) ??
+      defaultValue
+    )
+  }
+
   public static readVariableValue (
     chargingStation: ChargingStation,
     componentName: string,

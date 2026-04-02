@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/index.js'
 
+import { OCPP20ServiceUtils } from '../../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20AuthAdapter } from '../../../../../src/charging-station/ocpp/auth/adapters/OCPP20AuthAdapter.js'
 import {
   type AuthConfiguration,
@@ -239,11 +240,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
   await describe('isRemoteAvailable', async () => {
     await it('should return true when station is online and remote start enabled', t => {
-      t.mock.method(
-        adapter as unknown as { getVariableValue: () => string | undefined },
-        'getVariableValue',
-        () => 'true'
-      )
+      t.mock.method(OCPP20ServiceUtils, 'readVariableAsBoolean', () => true)
 
       const isAvailable = adapter.isRemoteAvailable()
       assert.strictEqual(isAvailable, true)
@@ -251,11 +248,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
     await it('should return false when station is offline', t => {
       mockStation.inAcceptedState = () => false
-      t.mock.method(
-        adapter as unknown as { getVariableValue: () => string | undefined },
-        'getVariableValue',
-        () => 'true'
-      )
+      t.mock.method(OCPP20ServiceUtils, 'readVariableAsBoolean', () => true)
 
       const isAvailable = adapter.isRemoteAvailable()
       assert.strictEqual(isAvailable, false)
@@ -388,25 +381,21 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await describe('C15 - Offline detection', async () => {
-      await it('should detect station is offline when not in accepted state', () => {
-        // Given: Station is offline (not in accepted state)
+      await it('should detect station is offline when not in accepted state', t => {
         offlineMockChargingStation.inAcceptedState = () => false
+        t.mock.method(OCPP20ServiceUtils, 'readVariableAsBoolean', () => true)
 
-        // When: Check if remote authorization is available
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
-        // Then: Remote should not be available
         assert.strictEqual(isAvailable, false)
       })
 
-      await it('should detect station is online when in accepted state', () => {
-        // Given: Station is online (in accepted state)
+      await it('should detect station is online when in accepted state', t => {
         offlineMockChargingStation.inAcceptedState = () => true
+        t.mock.method(OCPP20ServiceUtils, 'readVariableAsBoolean', () => true)
 
-        // When: Check if remote authorization is available
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
-        // Then: Remote should be available (assuming AuthorizeRemoteStart is enabled by default)
         assert.strictEqual(isAvailable, true)
       })
 
@@ -417,14 +406,12 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await describe('C15 - Remote availability check', async () => {
-      await it('should return false when offline even with valid configuration', () => {
-        // Given: Station is offline
+      await it('should return false when offline even with valid configuration', t => {
         offlineMockChargingStation.inAcceptedState = () => false
+        t.mock.method(OCPP20ServiceUtils, 'readVariableAsBoolean', () => true)
 
-        // When: Check remote availability
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
-        // Then: Should not be available
         assert.strictEqual(isAvailable, false)
       })
 

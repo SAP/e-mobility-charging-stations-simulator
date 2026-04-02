@@ -23,7 +23,7 @@ import {
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../types/index.js'
-import { convertToBoolean, logger, truncateId } from '../../../../utils/index.js'
+import { logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -366,20 +366,13 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
    */
   isRemoteAvailable (): boolean {
     try {
-      // Check if station supports remote authorization via variables
-      // OCPP 2.0 uses variables instead of configuration keys
-
-      // Check if station is online and can communicate
       const isOnline = this.chargingStation.inAcceptedState()
-
-      // Check AuthorizeRemoteStart variable
-      const remoteStartValue = this.getVariableValue(
+      const remoteStartEnabled = OCPP20ServiceUtils.readVariableAsBoolean(
+        this.chargingStation,
         OCPP20ComponentName.AuthCtrlr,
-        OCPP20RequiredVariableName.AuthorizeRemoteStart
+        OCPP20RequiredVariableName.AuthorizeRemoteStart,
+        true
       )
-      const remoteStartEnabled =
-        remoteStartValue != null ? convertToBoolean(remoteStartValue) : true
-
       return isOnline && remoteStartEnabled
     } catch (error) {
       logger.warn(
@@ -460,97 +453,23 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Get default variable value based on OCPP 2.0.1 specification
-   * @param component - OCPP component name (e.g., OCPP20ComponentName.AuthCtrlr)
-   * @param variable - OCPP variable name (e.g., OCPP20RequiredVariableName.AuthorizeRemoteStart)
-   * @param useFallback - Whether to return fallback values when variable is not configured
-   * @returns Default value according to OCPP 2.0.1 spec, or undefined if no default exists
-   */
-  private getDefaultVariableValue (
-    component: string,
-    variable: string,
-    useFallback: boolean
-  ): string | undefined {
-    if (!useFallback) {
-      return undefined
-    }
-
-    // Default values from OCPP 2.0.1 specification and variable registry
-    if (component === (OCPP20ComponentName.AuthCtrlr as string)) {
-      switch (variable) {
-        case OCPP20RequiredVariableName.AuthorizeRemoteStart as string:
-          return 'true'
-        case OCPP20RequiredVariableName.Enabled as string:
-          return 'true'
-        case OCPP20RequiredVariableName.LocalAuthorizationOffline as string:
-          return 'true'
-        case OCPP20RequiredVariableName.LocalPreAuthorization as string:
-          return 'false'
-        default:
-          return undefined
-      }
-    }
-
-    if (component === (OCPP20ComponentName.LocalAuthListCtrlr as string)) {
-      switch (variable) {
-        case OCPP20RequiredVariableName.Enabled as string:
-          return 'true'
-        default:
-          return undefined
-      }
-    }
-
-    return undefined
-  }
-
-  /**
    * Check if offline authorization is allowed
    * @returns True if offline authorization is enabled
    */
   private getOfflineAuthorizationConfig (): boolean {
     try {
-      const value = this.getVariableValue(
+      return OCPP20ServiceUtils.readVariableAsBoolean(
+        this.chargingStation,
         OCPP20ComponentName.AuthCtrlr,
-        OCPP20RequiredVariableName.LocalAuthorizationOffline
+        OCPP20RequiredVariableName.LocalAuthorizationOffline,
+        true
       )
-      return value != null ? convertToBoolean(value) : true
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineAuthorizationConfig: Error getting offline authorization config`,
         error
       )
       return false
-    }
-  }
-
-  /**
-   * Get variable value from OCPP 2.0 variable system
-   * @param component - OCPP component name (e.g., OCPP20ComponentName.AuthCtrlr)
-   * @param variable - OCPP variable name (e.g., OCPP20RequiredVariableName.AuthorizeRemoteStart)
-   * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
-   * @returns Promise resolving to variable value as string, or undefined if not available
-   */
-  private getVariableValue (
-    component: string,
-    variable: string,
-    useDefaultFallback = true
-  ): string | undefined {
-    try {
-      const value = OCPP20ServiceUtils.readVariableValue(this.chargingStation, component, variable)
-      if (value != null) {
-        return value
-      }
-
-      logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not available`
-      )
-      return this.getDefaultVariableValue(component, variable, useDefaultFallback)
-    } catch (error) {
-      logger.warn(
-        `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Error getting variable ${component}.${variable}`,
-        error
-      )
-      return this.getDefaultVariableValue(component, variable, useDefaultFallback)
     }
   }
 }
