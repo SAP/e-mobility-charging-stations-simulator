@@ -6,10 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, describe, it, mock } from 'node:test'
-
-import type { ChargingStation } from '../../../src/charging-station/index.js'
-import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   AuthContext,
@@ -25,29 +22,16 @@ import {
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { type OCPP20TransactionEventRequest, OCPPVersion } from '../../../src/types/index.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import {
+  createStationWithRequestHandler,
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 import {
   createMockAuthorizationResult,
   createMockAuthService,
 } from './auth/helpers/MockFactories.js'
-
-/**
- * Creates a mock charging station with a tracked request handler for testing
- * @param opts - optional charging station configuration options
- * @returns object with the mock station and the mock request handler function
- */
-function createStationWithRequestHandler (opts?: Partial<MockChargingStationOptions>): {
-  requestHandler: ReturnType<typeof mock.fn>
-  station: ChargingStation
-} {
-  const requestHandler = mock.fn(async (..._args: unknown[]) => Promise.resolve({}))
-  const { station } = createMockChargingStation({
-    ocppRequestService: { requestHandler },
-    ...opts,
-  })
-  return { requestHandler, station }
-}
 
 /**
  * Registers a mock auth service for the given station in OCPPAuthServiceFactory.
@@ -65,49 +49,6 @@ function injectMockAuthService (
   return mockService
 }
 
-/**
- * Configures a connector with a pending (not started) transaction for testing
- * @param station - the charging station mock
- * @param connectorId - the connector ID to configure
- * @param txId - the transaction ID to assign
- */
-function setupPendingTransaction (
-  station: ChargingStation,
-  connectorId: number,
-  txId: string
-): void {
-  const connectorStatus = station.getConnectorStatus(connectorId)
-  if (connectorStatus == null) {
-    throw new Error(`Connector ${String(connectorId)} not found`)
-  }
-  connectorStatus.transactionPending = true
-  connectorStatus.transactionStarted = false
-  connectorStatus.transactionId = txId
-  connectorStatus.transactionStart = new Date()
-}
-
-/**
- * Configures a connector with a started transaction for testing
- * @param station - the charging station mock
- * @param connectorId - the connector ID to configure
- * @param txId - the transaction ID to assign
- */
-function setupTransaction (
-  station: ChargingStation,
-  connectorId: number,
-  txId: number | string
-): void {
-  const connectorStatus = station.getConnectorStatus(connectorId)
-  if (connectorStatus == null) {
-    throw new Error(`Connector ${String(connectorId)} not found`)
-  }
-  connectorStatus.transactionStarted = true
-  connectorStatus.transactionId = txId
-  connectorStatus.transactionIdTag = `TAG-${String(txId)}`
-  connectorStatus.transactionStart = new Date()
-  connectorStatus.idTagAuthorized = true
-}
-
 await describe('OCPPServiceOperations', async () => {
   afterEach(() => {
     OCPPAuthServiceFactory.clearAllInstances()
@@ -120,7 +61,7 @@ await describe('OCPPServiceOperations', async () => {
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
         Promise.resolve({ idTagInfo: { status: 'Accepted' } })
       )
-      setupTransaction(station, 1, 100)
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
 
       const result = await stopTransactionOnConnector(station, 1)
 
@@ -140,7 +81,7 @@ await describe('OCPPServiceOperations', async () => {
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
         Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       )
-      setupTransaction(station, 1, 'tx-uuid-001')
+      setupConnectorWithTransaction(station, 1, { transactionId: 'tx-uuid-001' })
 
       const result = await stopTransactionOnConnector(station, 1)
 
@@ -179,8 +120,8 @@ await describe('OCPPServiceOperations', async () => {
         sentCommands.push(args[1] as string)
         return Promise.resolve({ idTagInfo: { status: 'Accepted' } })
       })
-      setupTransaction(station, 1, 101)
-      setupTransaction(station, 2, 102)
+      setupConnectorWithTransaction(station, 1, { transactionId: 101 })
+      setupConnectorWithTransaction(station, 2, { transactionId: 102 })
 
       await stopRunningTransactions(station)
 
@@ -203,8 +144,8 @@ await describe('OCPPServiceOperations', async () => {
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
-      setupTransaction(station, 1, 'tx-001')
-      setupTransaction(station, 2, 'tx-002')
+      setupConnectorWithTransaction(station, 1, { transactionId: 'tx-001' })
+      setupConnectorWithTransaction(station, 2, { transactionId: 'tx-002' })
 
       await stopRunningTransactions(station)
 
@@ -230,8 +171,8 @@ await describe('OCPPServiceOperations', async () => {
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
-      setupTransaction(station, 1, 'tx-started')
-      setupPendingTransaction(station, 2, 'tx-pending')
+      setupConnectorWithTransaction(station, 1, { transactionId: 'tx-started' })
+      setupConnectorWithTransaction(station, 2, { pending: true, transactionId: 'tx-pending' })
 
       await stopRunningTransactions(station)
 
@@ -248,7 +189,7 @@ await describe('OCPPServiceOperations', async () => {
       requestHandler.mock.mockImplementation(async () =>
         Promise.reject(new Error('Simulated network error'))
       )
-      setupTransaction(station, 1, 'tx-fail')
+      setupConnectorWithTransaction(station, 1, { transactionId: 'tx-fail' })
 
       await assert.doesNotReject(() => stopRunningTransactions(station))
     })
