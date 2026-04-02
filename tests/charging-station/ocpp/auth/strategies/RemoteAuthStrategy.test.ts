@@ -21,6 +21,7 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG_INVALID } from '../../../ChargingStationTestConstants.js'
 import {
   createMockAuthCache,
   createMockAuthorizationResult,
@@ -241,11 +242,11 @@ await describe('RemoteAuthStrategy', async () => {
         authorizationCacheLifetime: 300,
       })
       const request = createMockAuthRequest({
-        identifier: createMockIdentifier('INVALID_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(TEST_ID_TAG_INVALID, IdentifierType.ID_TAG),
       })
 
       await strategy.authenticate(request, config)
-      assert.strictEqual(cachedKey, 'INVALID_TAG')
+      assert.strictEqual(cachedKey, TEST_ID_TAG_INVALID)
       assert.strictEqual(cachedValue?.status, AuthorizationStatus.INVALID)
       assert.strictEqual(cachedTtl, 300)
     })

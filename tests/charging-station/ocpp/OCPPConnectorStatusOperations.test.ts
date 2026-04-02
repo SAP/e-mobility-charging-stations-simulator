@@ -26,6 +26,7 @@ import {
   createStationWithRequestHandler,
   standardCleanup,
 } from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../ChargingStationTestConstants.js'
 
 await describe('OCPPConnectorStatusOperations', async () => {
   afterEach(() => {
@@ -136,7 +137,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
         connectorStatus.reservation = {
           connectorId: 1,
           expiryDate: new Date().toISOString(),
-          idTag: 'TEST-TAG',
+          idTag: TEST_ID_TAG,
           reservationId: 1,
         } as unknown as Reservation
         connectorStatus.status = ConnectorStatusEnum.Occupied

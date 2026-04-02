@@ -39,7 +39,7 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 /**
@@ -121,7 +121,7 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
   await it('should complete full transaction lifecycle: RemoteStart → StartTransaction accepted → StopTransaction', async () => {
     const connectorId = 1
     const transactionId = 42
-    const idTag = 'TEST-TAG-001'
+    const idTag = TEST_ID_TAG
 
     // Step 1: RemoteStartTransaction — CSMS asks station to start charging
     const remoteStartRequest: RemoteStartTransactionRequest = {
@@ -240,7 +240,7 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     // Act
     const request: RemoteStartTransactionRequest = {
       connectorId,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 

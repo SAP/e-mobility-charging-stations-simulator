@@ -30,6 +30,7 @@ import {
   type OCPP20IdTokenType,
   OCPPVersion,
 } from '../../../../../src/types/index.js'
+import { TEST_ID_TAG } from '../../../ChargingStationTestConstants.js'
 
 /**
  * Factory functions for creating test mocks and fixtures
@@ -38,12 +39,12 @@ import {
 
 /**
  * Create a mock Identifier for any OCPP version.
- * @param value - Identifier token value (defaults to 'TEST-TAG-001')
+ * @param value - Identifier token value (defaults to TEST_ID_TAG)
  * @param type - Identifier type enum value (defaults to ID_TAG)
  * @returns Mock Identifier configured for testing
  */
 export const createMockIdentifier = (
-  value = 'TEST-TAG-001',
+  value = TEST_ID_TAG,
   type: IdentifierType = IdentifierType.ID_TAG
 ): Identifier => ({
   type,

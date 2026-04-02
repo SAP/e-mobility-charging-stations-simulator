@@ -27,6 +27,7 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import { createOCPP16ResponseTestContext, setMockRequestHandler } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ResponseService — StartTransaction and StopTransaction', async () => {
@@ -72,7 +73,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       const transactionId = 42
       const requestPayload: OCPP16StartTransactionRequest = {
         connectorId,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
         meterStart: 0,
         timestamp: new Date(),
       }
@@ -96,7 +97,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       }
       assert.strictEqual(connectorStatus.transactionId, transactionId)
       assert.strictEqual(connectorStatus.transactionStarted, true)
-      assert.strictEqual(connectorStatus.transactionIdTag, 'TEST-TAG-001')
+      assert.strictEqual(connectorStatus.transactionIdTag, TEST_ID_TAG)
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 0)
     })
 
@@ -106,7 +107,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       const connectorId = 1
       const requestPayload: OCPP16StartTransactionRequest = {
         connectorId,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
         meterStart: 0,
         timestamp: new Date(),
       }
@@ -142,13 +143,13 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
         connectorStatus.reservation = {
           connectorId,
           expiryDate: new Date(Date.now() + 3600000),
-          idTag: 'TEST-TAG-001',
+          idTag: TEST_ID_TAG,
           reservationId,
         }
       }
       const requestPayload: OCPP16StartTransactionRequest = {
         connectorId,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
         meterStart: 0,
         reservationId,
         timestamp: new Date(),
@@ -182,7 +183,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       const requestTimestamp = new Date('2025-01-01T12:00:00Z')
       const requestPayload: OCPP16StartTransactionRequest = {
         connectorId,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
         meterStart: 500,
         timestamp: requestTimestamp,
       }

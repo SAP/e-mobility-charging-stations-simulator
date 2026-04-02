@@ -23,6 +23,7 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import {
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
@@ -46,7 +47,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const { station, testableService } = testContext
     const request: RemoteStartTransactionRequest = {
       connectorId: 0,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -62,7 +63,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const { station, testableService } = testContext
     const request: RemoteStartTransactionRequest = {
       connectorId: 1,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -83,7 +84,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     }
 
     const request: RemoteStartTransactionRequest = {
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -98,7 +99,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     // Arrange
     const { station, testableService } = testContext
     const request: RemoteStartTransactionRequest = {
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -121,7 +122,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     const request: RemoteStartTransactionRequest = {
       connectorId: 1,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -144,7 +145,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     const request: RemoteStartTransactionRequest = {
       connectorId: 1,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -160,7 +161,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const { station, testableService } = testContext
     const request: RemoteStartTransactionRequest = {
       connectorId: 99,
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
@@ -200,7 +201,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
       const request: RemoteStartTransactionRequest = {
         connectorId: 1,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
       }
       const response = { status: GenericStatus.Accepted }
 
@@ -225,7 +226,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
       // Arrange
       const request: RemoteStartTransactionRequest = {
         connectorId: 1,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
       }
       const response = { status: GenericStatus.Rejected }
 
@@ -251,7 +252,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
       const request: RemoteStartTransactionRequest = {
         connectorId: 1,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
       }
       const response = { status: GenericStatus.Accepted }
 
@@ -287,7 +288,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
       const request: RemoteStartTransactionRequest = {
         connectorId: 1,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
       }
       const response = { status: GenericStatus.Accepted }
 

@@ -37,7 +37,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import {
   createMockChargingStation,
   type MockChargingStation,
@@ -429,7 +429,7 @@ export const ReservationFixtures = {
   createReservation: (
     connectorId = 1,
     reservationId = 1,
-    idTag = 'TEST-TAG-001',
+    idTag = TEST_ID_TAG,
     expiryDate = new Date(Date.now() + 3600000)
   ) => ({
     connectorId,
@@ -453,7 +453,7 @@ export const ResetFixtures = {
 } as const
 
 export const TransactionFixtures = {
-  createStartTransactionParams: (connectorId = 1, idTag = 'TEST-TAG-001') => ({
+  createStartTransactionParams: (connectorId = 1, idTag = TEST_ID_TAG) => ({
     connectorId,
     idTag,
   }),

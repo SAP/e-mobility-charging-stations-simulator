@@ -27,6 +27,7 @@ import {
   type OCPP16StopTransactionRequest,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import { createOCPP16RequestTestContext } from './OCPP16TestUtils.js'
 
 await describe('OCPP16RequestService — buildRequestPayload', async () => {
@@ -183,12 +184,12 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       const payload = testableRequestService.buildRequestPayload(
         station,
         OCPP16RequestCommand.START_TRANSACTION,
-        { connectorId: 1, idTag: 'TEST-TAG-001' }
+        { connectorId: 1, idTag: TEST_ID_TAG }
       ) as OCPP16StartTransactionRequest
 
       assert.notStrictEqual(payload, undefined)
       assert.strictEqual(payload.connectorId, 1)
-      assert.strictEqual(payload.idTag, 'TEST-TAG-001')
+      assert.strictEqual(payload.idTag, TEST_ID_TAG)
       assert.strictEqual(typeof payload.meterStart, 'number')
       assert.notStrictEqual(payload.timestamp, undefined)
     })
