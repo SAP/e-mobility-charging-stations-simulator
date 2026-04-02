@@ -34,11 +34,11 @@ await describe('CertificateAuthStrategy', async () => {
       logPrefix: () => '[TEST-CS-001]',
       stationInfo: {
         chargingStationId: 'TEST-CS-001',
-        ocppVersion: OCPPVersion.VERSION_20,
+        ocppVersion: OCPPVersion.VERSION_201,
       },
     } as unknown as ChargingStation
 
-    mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_20, {
+    mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_201, {
       authorizeRemote: () =>
         new Promise<AuthorizationResult>(resolve => {
           resolve(

@@ -77,7 +77,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
       const adapter = this.adapter
 
       // For OCPP 2.0, we can use certificate-based validation
-      if (this.adapter.ocppVersion === OCPPVersion.VERSION_20) {
+      if (this.adapter.ocppVersion === OCPPVersion.VERSION_201) {
         const result = await this.validateCertificateWithOCPP20(request, adapter, config)
         this.updateStatistics(result, startTime)
         return result

@@ -37,7 +37,7 @@ await describe('AuthComponentFactory', async () => {
       const adapter = AuthComponentFactory.createAdapter(chargingStation)
 
       assert.notStrictEqual(adapter, undefined)
-      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_201)
     })
 
     await it('should create OCPP 2.0.1 adapter', () => {
@@ -47,7 +47,7 @@ await describe('AuthComponentFactory', async () => {
       const adapter = AuthComponentFactory.createAdapter(chargingStation)
 
       assert.notStrictEqual(adapter, undefined)
-      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_201)
     })
 
     await it('should throw error for unsupported version', () => {

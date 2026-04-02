@@ -46,7 +46,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct OCPP version', () => {
-      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_201)
     })
   })
 
@@ -183,7 +183,7 @@ await describe('OCPP20AuthAdapter', async () => {
       assert.strictEqual(request.connectorId, 1)
       assert.strictEqual(request.transactionId, 'trans_123')
       assert.strictEqual(request.context, AuthContext.TRANSACTION_START)
-      assert.strictEqual(request.metadata?.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(request.metadata?.ocppVersion, OCPPVersion.VERSION_201)
     })
 
     await it('should map OCPP 2.0 contexts correctly', () => {
@@ -316,7 +316,7 @@ await describe('OCPP20AuthAdapter', async () => {
     await it('should return adapter status information', () => {
       const status = adapter.getStatus()
 
-      assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_201)
       assert.strictEqual(status.isOnline, true)
       assert.strictEqual(status.stationId, 'TEST-002')
       assert.notStrictEqual(status.supportsIdTokenTypes, undefined)
@@ -412,7 +412,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       await it('should have correct OCPP version for offline tests', () => {
         // Verify we're testing the correct OCPP version
-        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_20)
+        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_201)
       })
     })
 
@@ -446,7 +446,7 @@ await describe('OCPP20AuthAdapter', async () => {
       await it('should initialize with default configuration for offline scenarios', () => {
         // When: Adapter is created
         // Then: Should have OCPP 2.0 version
-        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_20)
+        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_201)
       })
 
       await it('should validate configuration schema for offline auth', () => {
@@ -467,7 +467,7 @@ await describe('OCPP20AuthAdapter', async () => {
         // Then: Status should be defined and include online state
         assert.notStrictEqual(status, undefined)
         assert.strictEqual(typeof status.isOnline, 'boolean')
-        assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_20)
+        assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_201)
       })
     })
   })

@@ -45,7 +45,7 @@ const moduleName = 'OCPP20AuthAdapter'
  * between auth types and OCPP 2.0 specific types and protocols.
  */
 export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
-  readonly ocppVersion = OCPPVersion.VERSION_20
+  readonly ocppVersion = OCPPVersion.VERSION_201
 
   constructor (private readonly chargingStation: ChargingStation) {}
 
@@ -287,7 +287,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       context: authContext,
       identifier,
       metadata: {
-        ocppVersion: OCPPVersion.VERSION_20,
+        ocppVersion: OCPPVersion.VERSION_201,
         stationId: this.chargingStation.stationInfo?.chargingStationId,
       },
       timestamp: new Date(),
