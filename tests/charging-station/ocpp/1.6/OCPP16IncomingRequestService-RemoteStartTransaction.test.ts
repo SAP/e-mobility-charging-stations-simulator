@@ -154,6 +154,53 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
+  // @spec §5.11 — Auto-select skips Inoperative connectors
+  await it('should skip inoperative connectors during auto-selection without connectorId', async () => {
+    // Arrange
+    const { station, testableService } = testContext
+
+    // Set connector 1 to Inoperative
+    const connector1Status = station.getConnectorStatus(1)
+    if (connector1Status != null) {
+      connector1Status.availability = AvailabilityType.Inoperative
+    }
+
+    const request: RemoteStartTransactionRequest = {
+      idTag: 'TEST-TAG-001',
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert — should select connector 2 (which is Operative) and accept
+    assert.strictEqual(response.status, GenericStatus.Accepted)
+    assert.strictEqual(request.connectorId, 2, 'should auto-select connector 2 since connector 1 is Inoperative')
+  })
+
+  // @spec §5.11 — All connectors Inoperative, no connectorId specified
+  await it('should reject remote start transaction when all connectors are inoperative and no connectorId specified', async () => {
+    // Arrange
+    const { station, testableService } = testContext
+
+    // Set all connectors to Inoperative
+    for (let connectorId = 1; connectorId <= station.getNumberOfConnectors(); connectorId++) {
+      const connectorStatus = station.getConnectorStatus(connectorId)
+      if (connectorStatus != null) {
+        connectorStatus.availability = AvailabilityType.Inoperative
+      }
+    }
+
+    const request: RemoteStartTransactionRequest = {
+      idTag: 'TEST-TAG-001',
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert
+    assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
   // @spec §5.11 — Non-existing connector
   await it('should reject remote start transaction with non-existing connectorId', async () => {
     // Arrange
