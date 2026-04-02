@@ -297,6 +297,7 @@ export const createMockAuthServiceTestStation = (
   ({
     getConnectorStatus: () => ({ status: 'Available' }),
     idTagLocalAuthorized: () => false,
+    inAcceptedState: () => true,
     isConnected: () => true,
     logPrefix: () => `[TEST-CS-${id}]`,
     sendRequest: () =>
