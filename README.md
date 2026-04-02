@@ -724,6 +724,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Model (type: string) (units: -)
 - :white_check_mark: SupplyPhases (type: integer) (units: -)
 - :white_check_mark: VendorName (type: string) (units: -)
+- :white_check_mark: WebSocketPingInterval (type: integer) (units: seconds)
 
 #### ClockCtrlr
 
