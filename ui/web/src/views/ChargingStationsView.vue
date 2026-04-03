@@ -95,7 +95,11 @@
       v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
       :key="state.renderChargingStations"
       :charging-stations="$chargingStations"
-      @need-refresh="() => { state.renderAddChargingStations = randomUUID() }"
+      @need-refresh="
+        () => {
+          state.renderAddChargingStations = randomUUID()
+        }
+      "
     />
   </Container>
 </template>
