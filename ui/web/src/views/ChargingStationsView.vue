@@ -13,7 +13,8 @@
           @change="
             () => {
               if (
-                getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) !== state.uiServerIndex
+                getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) !==
+                state.uiServerIndex
               ) {
                 $uiClient.setConfiguration(
                   ($configuration.uiServer as UIServerConfigurationSection[])[state.uiServerIndex]
@@ -22,7 +23,10 @@
                 $uiClient.registerWSEventListener(
                   'open',
                   () => {
-                    setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, state.uiServerIndex)
+                    setToLocalStorage<number>(
+                      UI_SERVER_CONFIGURATION_INDEX_KEY,
+                      state.uiServerIndex
+                    )
                     clearToggleButtons()
                     refresh()
                     $route.name !== 'charging-stations' &&
