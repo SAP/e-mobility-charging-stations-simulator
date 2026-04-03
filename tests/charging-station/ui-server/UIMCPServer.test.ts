@@ -46,6 +46,8 @@ import {
   createMockUIServerConfiguration,
 } from './UIServerTestUtils.js'
 
+const TEST_TIMEOUT_MS = 30_000
+
 class TestableUIMCPServer extends UIMCPServer {
   public constructor (config: UIServerConfiguration) {
     super(config, createMockBootstrap())
@@ -242,7 +244,7 @@ await describe('UIMCPServer', async () => {
     })
 
     await it('should return true when uuid is in pendingMcpRequests', () => {
-      const timeout = setTimeout(() => undefined, 30000)
+      const timeout = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
       pendingMap.set(TEST_UUID, {
         reject: (_error: Error) => undefined,
@@ -260,7 +262,7 @@ await describe('UIMCPServer', async () => {
   await describe('sendResponse Promise bridge', async () => {
     await it('should resolve pending Promise when sendResponse called with matching UUID', () => {
       let resolvedPayload: ResponsePayload | undefined
-      const timeout = setTimeout(() => undefined, 30000)
+      const timeout = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
       pendingMap.set(TEST_UUID, {
         reject: (_error: Error) => undefined,
@@ -280,7 +282,7 @@ await describe('UIMCPServer', async () => {
     await it('should clear timeout when resolving pending request', t => {
       const clearTimeoutMock = t.mock.method(globalThis, 'clearTimeout')
 
-      const timeout = setTimeout(() => undefined, 30000)
+      const timeout = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
       pendingMap.set(TEST_UUID, {
         reject: (_error: Error) => undefined,
@@ -294,7 +296,7 @@ await describe('UIMCPServer', async () => {
     })
 
     await it('should delete pending entry after resolve', () => {
-      const timeout = setTimeout(() => undefined, 30000)
+      const timeout = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
       pendingMap.set(TEST_UUID, {
         reject: (_error: Error) => undefined,
@@ -331,8 +333,8 @@ await describe('UIMCPServer', async () => {
   await describe('stop cleanup', async () => {
     await it('should reject all pending requests on stop', () => {
       const rejectedErrors: Error[] = []
-      const timeout1 = setTimeout(() => undefined, 30000)
-      const timeout2 = setTimeout(() => undefined, 30000)
+      const timeout1 = setTimeout(() => undefined, TEST_TIMEOUT_MS)
+      const timeout2 = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
 
       pendingMap.set(TEST_UUID, {
@@ -364,8 +366,8 @@ await describe('UIMCPServer', async () => {
     await it('should clear all timeouts on stop', t => {
       const clearTimeoutMock = t.mock.method(globalThis, 'clearTimeout')
 
-      const timeout1 = setTimeout(() => undefined, 30000)
-      const timeout2 = setTimeout(() => undefined, 30000)
+      const timeout1 = setTimeout(() => undefined, TEST_TIMEOUT_MS)
+      const timeout2 = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
 
       pendingMap.set(TEST_UUID, {
@@ -385,7 +387,7 @@ await describe('UIMCPServer', async () => {
     })
 
     await it('should clear pending map on stop', () => {
-      const timeout = setTimeout(() => undefined, 30000)
+      const timeout = setTimeout(() => undefined, TEST_TIMEOUT_MS)
       const pendingMap = server.getPendingMcpRequestsMap()
 
       pendingMap.set(TEST_UUID, {

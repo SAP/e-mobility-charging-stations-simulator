@@ -27,7 +27,7 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
+import { TEST_ID_TAG, TEST_RESERVATION_EXPIRY_MS } from '../../ChargingStationTestConstants.js'
 import { createOCPP16ResponseTestContext, setMockRequestHandler } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ResponseService — StartTransaction and StopTransaction', async () => {
@@ -142,7 +142,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       if (connectorStatus != null) {
         connectorStatus.reservation = {
           connectorId,
-          expiryDate: new Date(Date.now() + 3600000),
+          expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
           idTag: TEST_ID_TAG,
           reservationId,
         }
