@@ -82,11 +82,6 @@
           }
         "
         :shared="true"
-        @clicked="
-          () => {
-            state.renderChargingStations = randomUUID()
-          }
-        "
       >
         Add Charging Stations
       </ToggleButton>
