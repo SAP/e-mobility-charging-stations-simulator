@@ -5,6 +5,7 @@ import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
 import {
+  Constants,
   convertToDate,
   ensureError,
   getErrorMessage,
@@ -592,7 +593,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       certificateValidationStrict: false,
       localAuthListEnabled: true,
       localPreAuthorize: false,
-      maxCacheEntries: 1000,
+      maxCacheEntries: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES,
       ocppVersion: this.chargingStation.stationInfo?.ocppVersion,
       offlineAuthorizationEnabled: true,
       remoteAuthorization: true,

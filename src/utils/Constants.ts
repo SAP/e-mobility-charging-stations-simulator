@@ -22,6 +22,8 @@ export class Constants {
 
   static readonly DEFAULT_ATG_WAIT_TIME = 1000 // Ms
 
+  static readonly DEFAULT_AUTH_CACHE_MAX_ENTRIES = 1000
+
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386

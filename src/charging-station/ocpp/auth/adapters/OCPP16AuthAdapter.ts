@@ -16,7 +16,7 @@ import {
   RequestCommand,
   StandardParametersKey,
 } from '../../../../types/index.js'
-import { convertToBoolean, logger, truncateId } from '../../../../utils/index.js'
+import { convertToBoolean, getErrorMessage, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -105,7 +105,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
       return {
         additionalInfo: {
           connectorId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: getErrorMessage(error),
           transactionId,
         },
         isOffline: false,

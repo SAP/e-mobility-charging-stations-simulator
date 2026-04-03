@@ -3,7 +3,7 @@ import { secondsToMilliseconds } from 'date-fns'
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
-import { logger, truncateId } from '../../../../utils/index.js'
+import { Constants, logger, truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
@@ -108,7 +108,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
    * @param options.defaultTtl - Default TTL in seconds (default: 3600)
    * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: 86400000)
-   * @param options.maxEntries - Maximum number of cache entries (default: 1000)
+   * @param options.maxEntries - Maximum number of cache entries (default: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
    * @param options.rateLimit - Rate limiting configuration
    * @param options.rateLimit.enabled - Enable rate limiting (default: false)
    * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
@@ -124,7 +124,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
     this.maxAbsoluteLifetimeMs =
       options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
-    this.maxEntries = Math.max(1, options?.maxEntries ?? 1000)
+    this.maxEntries = Math.max(1, options?.maxEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
       maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window

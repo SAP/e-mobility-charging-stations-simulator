@@ -22,7 +22,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, logger } from '../../utils/index.js'
+import { generateUUID, getErrorMessage, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   mcpToolSchemas,
@@ -278,8 +278,7 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
       const isBadRequest =
-        error instanceof SyntaxError ||
-        (error instanceof Error && error.message.includes('Payload too large'))
+        error instanceof SyntaxError || getErrorMessage(error).includes('Payload too large')
       this.sendErrorResponse(res, isBadRequest ? 400 : 500)
     }
   }
@@ -404,11 +403,7 @@ export class UIMCPServer extends AbstractUIServer {
             clearTimeout(pending.timeout)
             this.pendingMcpRequests.delete(uuid)
           }
-          resolve(
-            UIMCPServer.createToolErrorResponse(
-              error instanceof Error ? error.message : String(error)
-            )
-          )
+          resolve(UIMCPServer.createToolErrorResponse(getErrorMessage(error)))
         })
     })
   }

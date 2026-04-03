@@ -486,7 +486,7 @@ export class OCPP20CertificateManager {
       return { valid: true }
     } catch (error) {
       return {
-        reason: `Certificate parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        reason: `Certificate parsing failed: ${getErrorMessage(error)}`,
         valid: false,
       }
     }

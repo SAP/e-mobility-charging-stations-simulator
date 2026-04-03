@@ -19,7 +19,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
-import { generateUUID, logger } from '../../../utils/index.js'
+import { generateUUID, getErrorMessage, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
@@ -179,7 +179,7 @@ export class OCPP20RequestService extends OCPPRequestService {
 
           csr = generatePkcs10Csr(stationId, orgName)
         } catch (error) {
-          const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
+          const errorMsg = `Failed to generate CSR: ${getErrorMessage(error)}`
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: ${errorMsg}`
           )
