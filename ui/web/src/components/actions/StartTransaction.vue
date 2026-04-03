@@ -20,7 +20,7 @@
       type="text"
     >
   </p>
-  <p v-if="!isOCPP20x">
+  <p>
     Authorize RFID tag:
     <input
       v-model="state.authorizeIdTag"
@@ -42,13 +42,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
-import {
-  convertToInt,
-  resetToggleButtonState,
-  ROUTE_NAMES,
-  UIClient,
-  useUIClient,
-} from '@/composables'
+import { convertToInt, resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
 import { type OCPPVersion } from '@/types'
 
 const props = defineProps<{
@@ -65,7 +59,6 @@ const evseId = computed(() =>
   $route.query.evseId != null ? Number($route.query.evseId) : undefined
 )
 const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
-const isOCPP20x = computed(() => UIClient.isOCPP20x(ocppVersion.value))
 
 const state = ref<{ authorizeIdTag: boolean; idTag: string }>({
   authorizeIdTag: false,
@@ -81,7 +74,7 @@ const toggleButtonId = computed(
 const handleStartTransaction = async (): Promise<void> => {
   const idTag = state.value.idTag.length > 0 ? state.value.idTag : undefined
 
-  if (!isOCPP20x.value && state.value.authorizeIdTag) {
+  if (state.value.authorizeIdTag) {
     if (idTag == null) {
       $toast.error('Please provide an RFID tag to authorize')
       return
