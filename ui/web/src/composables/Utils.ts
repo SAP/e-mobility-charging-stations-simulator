@@ -5,6 +5,7 @@ import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData, ConfigurationData, UUIDv4 } from '@/types'
 
+import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants'
 import { UIClient } from './UIClient'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
@@ -69,12 +70,50 @@ export const getLocalStorage = (): Storage => {
 }
 
 /**
+ * Deletes all localStorage entries whose key includes the given pattern.
+ * @param pattern - Substring to match against localStorage keys
+ */
+export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
+  const keysToDelete: string[] = []
+  for (const key in getLocalStorage()) {
+    if (key.includes(pattern)) {
+      keysToDelete.push(key)
+    }
+  }
+  for (const key of keysToDelete) {
+    deleteFromLocalStorage(key)
+  }
+}
+
+/**
+ * Returns a human-readable name for a WebSocket ready state.
+ * @param state - The WebSocket readyState value
+ * @returns The state name or 'Ø' for unknown/undefined states
+ */
+export const getWebSocketStateName = (state: number | undefined): string => {
+  switch (state) {
+    case WebSocket.CLOSED:
+      return 'Closed'
+    case WebSocket.CLOSING:
+      return 'Closing'
+    case WebSocket.CONNECTING:
+      return 'Connecting'
+    case WebSocket.OPEN:
+      return 'Open'
+    default:
+      return 'Ø'
+  }
+}
+
+/**
  * Resets the state of a toggle button by removing its entry from localStorage.
  * @param id - The identifier of the toggle button
  * @param shared - Whether the toggle button is shared
  */
 export const resetToggleButtonState = (id: string, shared = false): void => {
-  const key = shared ? `shared-toggle-button-${id}` : `toggle-button-${id}`
+  const key = shared
+    ? `${SHARED_TOGGLE_BUTTON_KEY_PREFIX}${id}`
+    : `${TOGGLE_BUTTON_KEY_PREFIX}${id}`
   deleteFromLocalStorage(key)
 }
 

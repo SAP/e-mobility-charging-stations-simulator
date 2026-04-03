@@ -73,7 +73,7 @@ const toggleButtonId = computed(
 )
 
 const handleStartTransaction = async (): Promise<void> => {
-  const idTag = state.value.idTag.trim().length > 0 ? state.value.idTag.trim() : undefined
+  const idTag = state.value.idTag.length > 0 ? state.value.idTag : undefined
 
   if (!isOCPP20x.value && state.value.authorizeIdTag) {
     if (idTag == null) {

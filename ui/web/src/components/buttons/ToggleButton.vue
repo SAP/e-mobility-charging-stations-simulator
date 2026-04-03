@@ -11,7 +11,12 @@
 import { ref } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
-import { getFromLocalStorage, setToLocalStorage } from '@/composables'
+import {
+  getFromLocalStorage,
+  setToLocalStorage,
+  SHARED_TOGGLE_BUTTON_KEY_PREFIX,
+  TOGGLE_BUTTON_KEY_PREFIX,
+} from '@/composables'
 
 const props = defineProps<{
   id: string
@@ -23,7 +28,7 @@ const props = defineProps<{
 
 const $emit = defineEmits(['clicked'])
 
-const id = props.shared === true ? `shared-toggle-button-${props.id}` : `toggle-button-${props.id}`
+const id = props.shared === true ? `${SHARED_TOGGLE_BUTTON_KEY_PREFIX}${props.id}` : `${TOGGLE_BUTTON_KEY_PREFIX}${props.id}`
 
 const state = ref<{ status: boolean }>({
   status: getFromLocalStorage<boolean>(id, props.status ?? false),
@@ -32,7 +37,7 @@ const state = ref<{ status: boolean }>({
 const click = (): void => {
   if (props.shared === true) {
     for (const key in localStorage) {
-      if (key !== id && key.startsWith('shared-toggle-button-')) {
+      if (key !== id && key.startsWith(SHARED_TOGGLE_BUTTON_KEY_PREFIX)) {
         setToLocalStorage<boolean>(key, false)
         state.value.status = getFromLocalStorage<boolean>(key, false)
       }

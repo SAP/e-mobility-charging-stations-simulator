@@ -45,6 +45,7 @@ from ocpp.v201.enums import (
 from server import (
     DEFAULT_HEARTBEAT_INTERVAL,
     DEFAULT_TOTAL_COST,
+    FALLBACK_TRANSACTION_ID,
     MAX_REQUEST_ID,
     AuthConfig,
     AuthMode,
@@ -794,7 +795,7 @@ class TestTransactionTracking:
         )
         await command_charge_point._send_request_stop_transaction()
         request = command_charge_point.call.call_args[0][0]
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_empty_transaction_id_not_stored(self, charge_point):
         await charge_point.on_transaction_event(
@@ -995,7 +996,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.RequestStopTransaction)
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_send_reset(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.Reset(
@@ -1123,7 +1124,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.GetTransactionStatus)
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_send_install_certificate(self, command_charge_point):
         command_charge_point.call.return_value = (

@@ -10,7 +10,7 @@
       {{ getSupervisionUrl() }}
     </td>
     <td class="cs-table__column">
-      {{ getWSState() }}
+      {{ getWebSocketStateName(chargingStation.wsState) }}
     </td>
     <td class="cs-table__column">
       {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
@@ -144,8 +144,8 @@ import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import {
-  deleteFromLocalStorage,
-  getLocalStorage,
+  deleteLocalStorageByKeyPattern,
+  getWebSocketStateName,
   useExecuteAction,
   useUIClient,
 } from '@/composables'
@@ -192,20 +192,6 @@ const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
   return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
 }
-const getWSState = (): string => {
-  switch (props.chargingStation?.wsState) {
-    case WebSocket.CLOSED:
-      return 'Closed'
-    case WebSocket.CLOSING:
-      return 'Closing'
-    case WebSocket.CONNECTING:
-      return 'Connecting'
-    case WebSocket.OPEN:
-      return 'Open'
-    default:
-      return 'Ø'
-  }
-}
 
 const $uiClient = useUIClient()
 
@@ -245,11 +231,7 @@ const deleteChargingStation = (): void => {
   $uiClient
     .deleteChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
-      for (const key in getLocalStorage()) {
-        if (key.includes(props.chargingStation.stationInfo.hashId)) {
-          deleteFromLocalStorage(key)
-        }
-      }
+      deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
       $emit('need-refresh')
       return $toast.success('Charging station successfully deleted')
     })

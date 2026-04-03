@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from functools import partial
 from random import randint
+from typing import ClassVar
 
 import ocpp.v201
 import websockets
@@ -59,6 +60,7 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9000
 DEFAULT_HEARTBEAT_INTERVAL = 60
 DEFAULT_TOTAL_COST = 10.0
+FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
 SHUTDOWN_TIMEOUT = 30.0
 SUBPROTOCOLS: list[websockets.Subprotocol] = [
@@ -447,11 +449,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_start_transaction)
 
-    async def _send_request_stop_transaction(self):
+    def _get_active_or_fallback_transaction_id(self) -> str:
+        """Return the first active transaction ID, or fall back to a test ID."""
         transaction_id = next(iter(self._active_transactions), "")
         if not transaction_id:
             logger.warning("No active transaction found, using fallback ID")
-            transaction_id = "test_transaction_123"
+            transaction_id = FALLBACK_TRANSACTION_ID
+        return transaction_id
+
+    async def _send_request_stop_transaction(self):
+        transaction_id = self._get_active_or_fallback_transaction_id()
         request = ocpp.v201.call.RequestStopTransaction(transaction_id=transaction_id)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_stop_transaction)
@@ -554,10 +561,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self._call_and_log(request, Action.get_log, LogStatusEnumType.accepted)
 
     async def _send_get_transaction_status(self):
-        transaction_id = next(iter(self._active_transactions), "")
-        if not transaction_id:
-            logger.warning("No active transaction found, using fallback ID")
-            transaction_id = "test_transaction_123"
+        transaction_id = self._get_active_or_fallback_transaction_id()
         request = ocpp.v201.call.GetTransactionStatus(
             transaction_id=transaction_id,
         )
@@ -615,52 +619,37 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     # --- Command dispatch ---
 
+    _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
+        Action.clear_cache: "_send_clear_cache",
+        Action.get_base_report: "_send_get_base_report",
+        Action.get_variables: "_send_get_variables",
+        Action.set_variables: "_send_set_variables",
+        Action.request_start_transaction: "_send_request_start_transaction",
+        Action.request_stop_transaction: "_send_request_stop_transaction",
+        Action.reset: "_send_reset",
+        Action.unlock_connector: "_send_unlock_connector",
+        Action.change_availability: "_send_change_availability",
+        Action.trigger_message: "_send_trigger_message",
+        Action.data_transfer: "_send_data_transfer",
+        Action.certificate_signed: "_send_certificate_signed",
+        Action.customer_information: "_send_customer_information",
+        Action.delete_certificate: "_send_delete_certificate",
+        Action.get_installed_certificate_ids: "_send_get_installed_certificate_ids",
+        Action.get_log: "_send_get_log",
+        Action.get_transaction_status: "_send_get_transaction_status",
+        Action.install_certificate: "_send_install_certificate",
+        Action.set_network_profile: "_send_set_network_profile",
+        Action.update_firmware: "_send_update_firmware",
+    }
+
     async def _send_command(self, command_name: Action):
         logger.debug("Sending OCPP command %s", command_name)
         try:
-            match command_name:
-                case Action.clear_cache:
-                    await self._send_clear_cache()
-                case Action.get_base_report:
-                    await self._send_get_base_report()
-                case Action.get_variables:
-                    await self._send_get_variables()
-                case Action.set_variables:
-                    await self._send_set_variables()
-                case Action.request_start_transaction:
-                    await self._send_request_start_transaction()
-                case Action.request_stop_transaction:
-                    await self._send_request_stop_transaction()
-                case Action.reset:
-                    await self._send_reset()
-                case Action.unlock_connector:
-                    await self._send_unlock_connector()
-                case Action.change_availability:
-                    await self._send_change_availability()
-                case Action.trigger_message:
-                    await self._send_trigger_message()
-                case Action.data_transfer:
-                    await self._send_data_transfer()
-                case Action.certificate_signed:
-                    await self._send_certificate_signed()
-                case Action.customer_information:
-                    await self._send_customer_information()
-                case Action.delete_certificate:
-                    await self._send_delete_certificate()
-                case Action.get_installed_certificate_ids:
-                    await self._send_get_installed_certificate_ids()
-                case Action.get_log:
-                    await self._send_get_log()
-                case Action.get_transaction_status:
-                    await self._send_get_transaction_status()
-                case Action.install_certificate:
-                    await self._send_install_certificate()
-                case Action.set_network_profile:
-                    await self._send_set_network_profile()
-                case Action.update_firmware:
-                    await self._send_update_firmware()
-                case _:
-                    logger.warning("Not supported command %s", command_name)
+            handler_name = self._COMMAND_HANDLERS.get(command_name)
+            if handler_name is not None:
+                await getattr(self, handler_name)()
+            else:
+                logger.warning("Not supported command %s", command_name)
         except TimeoutError:
             logger.error("Timeout waiting for %s response", command_name)
         except OCPPError as e:
@@ -804,46 +793,42 @@ def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
     return result
 
 
-def _parse_set_variable_specs(specs_str: str) -> list[dict]:
+def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[dict]:
     result = []
     for entry in specs_str.split(","):
         entry = entry.strip()
         if not entry:
             continue
-        if "=" not in entry or "." not in entry.split("=")[0]:
-            raise argparse.ArgumentTypeError(
-                f"Invalid variable spec '{entry}': expected 'Component.Variable=Value'"
-            )
-        component_var, value = entry.split("=", 1)
+        if require_value:
+            if "=" not in entry or "." not in entry.split("=")[0]:
+                raise argparse.ArgumentTypeError(
+                    f"Invalid variable spec '{entry}':"
+                    " expected 'Component.Variable=Value'"
+                )
+            component_var, value = entry.split("=", 1)
+        else:
+            if "." not in entry:
+                raise argparse.ArgumentTypeError(
+                    f"Invalid variable spec '{entry}': expected 'Component.Variable'"
+                )
+            component_var = entry
         component, variable = component_var.strip().split(".", 1)
-        result.append(
-            {
-                "component": {"name": component.strip()},
-                "variable": {"name": variable.strip()},
-                "attribute_value": value.strip(),
-            }
-        )
+        spec: dict = {
+            "component": {"name": component.strip()},
+            "variable": {"name": variable.strip()},
+        }
+        if require_value:
+            spec["attribute_value"] = value.strip()
+        result.append(spec)
     return result
+
+
+def _parse_set_variable_specs(specs_str: str) -> list[dict]:
+    return _parse_variable_specs(specs_str, require_value=True)
 
 
 def _parse_get_variable_specs(specs_str: str) -> list[dict]:
-    result = []
-    for entry in specs_str.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        if "." not in entry:
-            raise argparse.ArgumentTypeError(
-                f"Invalid variable spec '{entry}': expected 'Component.Variable'"
-            )
-        component, variable = entry.split(".", 1)
-        result.append(
-            {
-                "component": {"name": component.strip()},
-                "variable": {"name": variable.strip()},
-            }
-        )
-    return result
+    return _parse_variable_specs(specs_str, require_value=False)
 
 
 async def main():

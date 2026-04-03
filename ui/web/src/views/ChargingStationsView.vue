@@ -13,7 +13,7 @@
           @change="
             () => {
               if (
-                getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
+                getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) !== state.uiServerIndex
               ) {
                 $uiClient.setConfiguration(
                   ($configuration.uiServer as UIServerConfigurationSection[])[state.uiServerIndex]
@@ -22,7 +22,7 @@
                 $uiClient.registerWSEventListener(
                   'open',
                   () => {
-                    setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                    setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, state.uiServerIndex)
                     clearToggleButtons()
                     refresh()
                     $route.name !== 'charging-stations' &&
@@ -34,12 +34,12 @@
                   'error',
                   () => {
                     state.uiServerIndex = getFromLocalStorage<number>(
-                      'uiServerConfigurationIndex',
+                      UI_SERVER_CONFIGURATION_INDEX_KEY,
                       0
                     )
                     $uiClient.setConfiguration(
                       ($configuration.uiServer as UIServerConfigurationSection[])[
-                        getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+                        getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
                       ]
                     )
                     registerWSEventListeners()
@@ -116,11 +116,11 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import Container from '@/components/Container.vue'
 import {
-  deleteFromLocalStorage,
+  deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
-  getLocalStorage,
   randomUUID,
   setToLocalStorage,
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
   useTemplates,
@@ -149,7 +149,7 @@ const state = ref<{
   gettingTemplates: false,
   renderAddChargingStations: randomUUID(),
   renderChargingStations: randomUUID(),
-  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0),
+  uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
 })
 
 const refresh = (): void => {
@@ -158,11 +158,7 @@ const refresh = (): void => {
 }
 
 const clearToggleButtons = (): void => {
-  for (const key in getLocalStorage()) {
-    if (key.includes('toggle-button')) {
-      deleteFromLocalStorage(key)
-    }
-  }
+  deleteLocalStorageByKeyPattern('toggle-button')
 }
 
 const $configuration = useConfiguration()
