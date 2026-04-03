@@ -22,8 +22,8 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
 
-const DEFAULT_WAIT_MINIMUM_S = 30
-const DEFAULT_RANDOM_RANGE_S = 10
+const DEFAULT_WAIT_MINIMUM_SECONDS = 30
+const DEFAULT_RANDOM_RANGE_SECONDS = 10
 const DEFAULT_REPEAT_TIMES = 5
 
 const MS_PER_SECOND = 1000
@@ -116,8 +116,8 @@ await describe('OCPP20ServiceUtils.computeReconnectDelay', async () => {
     const delay = OCPP20ServiceUtils.computeReconnectDelay(station, retryCount)
 
     // Assert — retryCount=1 → effectiveRetry=0 → baseDelay = 30s * 2^0 = 30000ms
-    const expectedBaseDelayMs = DEFAULT_WAIT_MINIMUM_S * MS_PER_SECOND
-    const maxJitterMs = DEFAULT_RANDOM_RANGE_S * MS_PER_SECOND
+    const expectedBaseDelayMs = DEFAULT_WAIT_MINIMUM_SECONDS * MS_PER_SECOND
+    const maxJitterMs = DEFAULT_RANDOM_RANGE_SECONDS * MS_PER_SECOND
     assert.ok(delay >= expectedBaseDelayMs, 'delay should be >= default base')
     assert.ok(delay < expectedBaseDelayMs + maxJitterMs, 'delay should be < default base + jitter')
   })
@@ -132,8 +132,9 @@ await describe('OCPP20ServiceUtils.computeReconnectDelay', async () => {
 
     // Assert — both capped: effectiveRetry = min(retryCount-1, repeatTimes) = 5
     // baseDelay = 30s * 2^5 = 960000ms
-    const cappedBaseDelayMs = DEFAULT_WAIT_MINIMUM_S * MS_PER_SECOND * 2 ** DEFAULT_REPEAT_TIMES
-    const maxJitterMs = DEFAULT_RANDOM_RANGE_S * MS_PER_SECOND
+    const cappedBaseDelayMs =
+      DEFAULT_WAIT_MINIMUM_SECONDS * MS_PER_SECOND * 2 ** DEFAULT_REPEAT_TIMES
+    const maxJitterMs = DEFAULT_RANDOM_RANGE_SECONDS * MS_PER_SECOND
     assert.ok(delayBeyondCap >= cappedBaseDelayMs, 'beyond-cap delay should be >= capped base')
     assert.ok(
       delayBeyondCap < cappedBaseDelayMs + maxJitterMs,

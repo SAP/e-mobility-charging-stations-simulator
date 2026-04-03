@@ -16,7 +16,7 @@ export const TEST_CHARGING_STATION_BASE_NAME = 'CS-TEST'
 export const TEST_CHARGING_STATION_HASH_ID = 'cs-test-hash-001'
 
 /**
- * Timer Intervals (seconds)
+ * Timer Intervals
  * Test values for timing-related configuration and expectations
  */
 export const TEST_HEARTBEAT_INTERVAL_SECONDS = 60

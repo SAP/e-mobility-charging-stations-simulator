@@ -25,7 +25,7 @@ import {
 } from '../../../src/charging-station/ui-server/mcp/index.js'
 import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
-import { DEFAULT_MAX_PAYLOAD_SIZE } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
+import { DEFAULT_MAX_PAYLOAD_SIZE_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { BaseError } from '../../../src/exception/index.js'
 import {
   ApplicationProtocol,
@@ -671,7 +671,7 @@ await describe('UIMCPServer', async () => {
     })
 
     await it('should reject with BaseError when payload too large', async () => {
-      const oversizedChunk = Buffer.alloc(DEFAULT_MAX_PAYLOAD_SIZE + 1)
+      const oversizedChunk = Buffer.alloc(DEFAULT_MAX_PAYLOAD_SIZE_BYTES + 1)
       const mockReq = Readable.from([oversizedChunk])
 
       await assert.rejects(

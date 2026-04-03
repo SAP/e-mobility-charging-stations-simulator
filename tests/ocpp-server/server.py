@@ -58,11 +58,23 @@ logger = logging.getLogger(__name__)
 # Server defaults
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9000
-DEFAULT_HEARTBEAT_INTERVAL = 60
+DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 60
+DEFAULT_MESSAGE_TIMEOUT_SECONDS = 30
 DEFAULT_TOTAL_COST = 10.0
+DEFAULT_SECURITY_PROFILE = 0
+DEFAULT_CONFIG_SLOT = 1
+DEFAULT_EVSE_ID = 1
+DEFAULT_CONNECTOR_ID = 1
+DEFAULT_OCPP_CSMS_URL = "ws://127.0.0.1:9000"
+DEFAULT_TEST_TOKEN = "test_token"  # noqa: S105
+DEFAULT_TOKEN_TYPE = "ISO14443"  # noqa: S105
+DEFAULT_VENDOR_ID = "TestVendor"
+DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v2.0.bin"
+DEFAULT_LOG_URL = "https://example.com/logs"
+DEFAULT_CUSTOMER_ID = "test_customer_001"
 FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
-SHUTDOWN_TIMEOUT = 30.0
+SHUTDOWN_TIMEOUT_SECONDS = 30.0
 SUBPROTOCOLS: list[websockets.Subprotocol] = [
     websockets.Subprotocol("ocpp2.0"),
     websockets.Subprotocol("ocpp2.0.1"),
@@ -236,7 +248,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._boot_index[0] = idx + 1
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
-            interval=DEFAULT_HEARTBEAT_INTERVAL,
+            interval=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
             status=status,
         )
 
@@ -442,8 +454,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_request_start_transaction(self):
         request = ocpp.v201.call.RequestStartTransaction(
-            id_token={"id_token": "test_token", "type": "ISO14443"},
-            evse_id=1,
+            id_token={"id_token": DEFAULT_TEST_TOKEN, "type": DEFAULT_TOKEN_TYPE},
+            evse_id=DEFAULT_EVSE_ID,
             remote_start_id=_random_request_id(),
         )
         await self.call(request, suppress=False)
@@ -468,7 +480,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self._call_and_log(request, Action.reset, ResetStatusEnumType.accepted)
 
     async def _send_unlock_connector(self):
-        request = ocpp.v201.call.UnlockConnector(evse_id=1, connector_id=1)
+        request = ocpp.v201.call.UnlockConnector(
+            evse_id=DEFAULT_EVSE_ID, connector_id=DEFAULT_CONNECTOR_ID
+        )
         await self._call_and_log(
             request, Action.unlock_connector, UnlockStatusEnumType.unlocked
         )
@@ -493,7 +507,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_data_transfer(self):
         request = ocpp.v201.call.DataTransfer(
-            vendor_id="TestVendor", message_id="TestMessage", data="test_data"
+            vendor_id=DEFAULT_VENDOR_ID, message_id="TestMessage", data="test_data"
         )
         await self._call_and_log(
             request, Action.data_transfer, DataTransferStatusEnumType.accepted
@@ -519,7 +533,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             request_id=_random_request_id(),
             report=True,
             clear=False,
-            customer_identifier="test_customer_001",
+            customer_identifier=DEFAULT_CUSTOMER_ID,
         )
         await self._call_and_log(
             request,
@@ -554,7 +568,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_get_log(self):
         request = ocpp.v201.call.GetLog(
-            log={"remote_location": "https://example.com/logs"},
+            log={"remote_location": DEFAULT_LOG_URL},
             log_type=LogEnumType.diagnostics_log,
             request_id=_random_request_id(),
         )
@@ -589,13 +603,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_set_network_profile(self):
         request = ocpp.v201.call.SetNetworkProfile(
-            configuration_slot=1,
+            configuration_slot=DEFAULT_CONFIG_SLOT,
             connection_data={
                 "ocpp_version": "OCPP20",
                 "ocpp_transport": "JSON",
-                "ocpp_csms_url": "ws://127.0.0.1:9000",
-                "message_timeout": 30,
-                "security_profile": 0,
+                "ocpp_csms_url": DEFAULT_OCPP_CSMS_URL,
+                "message_timeout": DEFAULT_MESSAGE_TIMEOUT_SECONDS,
+                "security_profile": DEFAULT_SECURITY_PROFILE,
                 "ocpp_interface": "Wired0",
             },
         )
@@ -609,7 +623,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.UpdateFirmware(
             request_id=_random_request_id(),
             firmware={
-                "location": "https://example.com/firmware/v2.0.bin",
+                "location": DEFAULT_FIRMWARE_URL,
                 "retrieve_date_time": datetime.now(timezone.utc).isoformat(),
             },
         )
@@ -1099,13 +1113,13 @@ async def main():
         await shutdown_event.wait()
 
         try:
-            async with asyncio.timeout(SHUTDOWN_TIMEOUT):
+            async with asyncio.timeout(SHUTDOWN_TIMEOUT_SECONDS):
                 await server.wait_closed()
         except TimeoutError:
             logger.warning(
                 "Shutdown timed out after %.0fs"
                 " — connections may not have closed cleanly",
-                SHUTDOWN_TIMEOUT,
+                SHUTDOWN_TIMEOUT_SECONDS,
             )
 
     logger.info("Server shutdown complete")

@@ -43,7 +43,7 @@ from ocpp.v201.enums import (
 )
 
 from server import (
-    DEFAULT_HEARTBEAT_INTERVAL,
+    DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     DEFAULT_TOTAL_COST,
     FALLBACK_TRANSACTION_ID,
     MAX_REQUEST_ID,
@@ -439,7 +439,7 @@ class TestBootNotificationHandler:
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.accepted
-        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL_SECONDS
         assert isinstance(response.current_time, str)
         assert "T" in response.current_time
 
@@ -544,7 +544,7 @@ class TestBootNotificationHandler:
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.accepted
-        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL_SECONDS
 
 
 class TestHeartbeatHandler:

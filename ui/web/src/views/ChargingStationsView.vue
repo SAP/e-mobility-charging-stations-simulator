@@ -29,8 +29,8 @@
                     )
                     clearToggleButtons()
                     refresh()
-                    $route.name !== 'charging-stations' &&
-                      $router.push({ name: 'charging-stations' })
+                    $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
+                      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
                   },
                   { once: true }
                 )
@@ -77,12 +77,12 @@
         :key="state.renderAddChargingStations"
         :off="
           () => {
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           }
         "
         :on="
           () => {
-            $router.push({ name: 'add-charging-stations' })
+            $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS })
           }
         "
         :shared="true"
@@ -123,7 +123,9 @@ import {
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
   randomUUID,
+  ROUTE_NAMES,
   setToLocalStorage,
+  TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
@@ -162,7 +164,7 @@ const refresh = (): void => {
 }
 
 const clearToggleButtons = (): void => {
-  deleteLocalStorageByKeyPattern('toggle-button')
+  deleteLocalStorageByKeyPattern(TOGGLE_BUTTON_KEY_PREFIX)
 }
 
 const $configuration = useConfiguration()

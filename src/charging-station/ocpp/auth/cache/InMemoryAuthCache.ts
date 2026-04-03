@@ -3,7 +3,7 @@ import { secondsToMilliseconds } from 'date-fns'
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
-import { Constants, logger, roundTo, truncateId } from '../../../../utils/index.js'
+import { Constants, isEmpty, logger, roundTo, truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
@@ -429,7 +429,7 @@ export class InMemoryAuthCache implements AuthCache {
    * Evict least recently used entry
    */
   private evictLRU (): void {
-    if (this.lruOrder.size === 0) {
+    if (isEmpty(this.lruOrder)) {
       return
     }
 

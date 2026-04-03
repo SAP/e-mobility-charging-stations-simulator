@@ -99,7 +99,7 @@
           })
           .finally(() => {
             resetToggleButtonState('add-charging-stations', true)
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           })
           .catch((error: Error) => {
             $toast.error('Error at adding charging stations')
@@ -122,6 +122,7 @@ import {
   convertToBoolean,
   randomUUID,
   resetToggleButtonState,
+  ROUTE_NAMES,
   useTemplates,
   useUIClient,
 } from '@/composables'

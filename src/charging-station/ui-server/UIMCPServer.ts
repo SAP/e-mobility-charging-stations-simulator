@@ -22,7 +22,13 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, getErrorMessage, isNotEmptyArray, logger } from '../../utils/index.js'
+import {
+  generateUUID,
+  getErrorMessage,
+  isEmpty,
+  isNotEmptyArray,
+  logger,
+} from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   mcpToolSchemas,
@@ -31,7 +37,7 @@ import {
   registerMCPResources,
   registerMCPSchemaResources,
 } from './mcp/index.js'
-import { DEFAULT_MAX_PAYLOAD_SIZE } from './UIServerSecurity.js'
+import { DEFAULT_MAX_PAYLOAD_SIZE_BYTES } from './UIServerSecurity.js'
 import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
@@ -284,7 +290,7 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   private injectOcppJsonSchemas (mcpServer: McpServer): void {
-    if (this.ocppSchemaCache.size === 0) {
+    if (isEmpty(this.ocppSchemaCache)) {
       return
     }
     // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@~1.29.x
@@ -439,7 +445,7 @@ export class UIMCPServer extends AbstractUIServer {
         cache.set(procedureName, entry)
       }
     }
-    if (cache.size > 0) {
+    if (!isEmpty(cache)) {
       logger.info(
         `${this.logPrefix(moduleName, 'loadOcppSchemas')} OCPP JSON schema injection enabled for ${cache.size.toString()} tool(s)`
       )
@@ -452,7 +458,7 @@ export class UIMCPServer extends AbstractUIServer {
     let received = 0
     for await (const chunk of req) {
       received += (chunk as Buffer).length
-      if (received > DEFAULT_MAX_PAYLOAD_SIZE) {
+      if (received > DEFAULT_MAX_PAYLOAD_SIZE_BYTES) {
         throw new BaseError('Payload too large')
       }
       chunks.push(chunk as Buffer)

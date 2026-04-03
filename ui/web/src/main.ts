@@ -10,6 +10,7 @@ import {
   getFromLocalStorage,
   setToLocalStorage,
   templatesKey,
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
   UIClient,
   uiClientKey,
 } from '@/composables'
@@ -45,15 +46,15 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   const templates = ref<string[]>([])
   const chargingStations = ref<ChargingStationData[]>([])
   if (
-    getFromLocalStorage<number | undefined>('uiServerConfigurationIndex', undefined) == null ||
-    getFromLocalStorage('uiServerConfigurationIndex', 0) >
+    getFromLocalStorage<number | undefined>(UI_SERVER_CONFIGURATION_INDEX_KEY, undefined) == null ||
+    getFromLocalStorage(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) >
       (configuration.value.uiServer as UIServerConfigurationSection[]).length - 1
   ) {
-    setToLocalStorage('uiServerConfigurationIndex', 0)
+    setToLocalStorage(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
   }
   const uiClient = UIClient.getInstance(
     (configuration.value.uiServer as UIServerConfigurationSection[])[
-      getFromLocalStorage('uiServerConfigurationIndex', 0)
+      getFromLocalStorage(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
     ]
   )
   app.provide(configurationKey, configuration)

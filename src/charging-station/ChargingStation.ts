@@ -177,7 +177,7 @@ export class ChargingStation extends EventEmitter {
   public wsConnection: null | WebSocket
 
   public get hasEvses (): boolean {
-    return isEmpty(this.connectors) && this.evses.size > 0
+    return isEmpty(this.connectors) && !isEmpty(this.evses)
   }
 
   public get wsConnectionUrl (): URL {
@@ -1233,7 +1233,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private flushMessageBuffer (): void {
-    if (!this.flushingMessageBuffer && this.messageQueue.length > 0) {
+    if (!this.flushingMessageBuffer && isNotEmptyArray<string>(this.messageQueue)) {
       this.flushingMessageBuffer = true
       this.sendMessageBuffer(() => {
         this.flushingMessageBuffer = false
@@ -1862,7 +1862,7 @@ export class ChargingStation extends EventEmitter {
   private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       const isTupleFormat =
-        configuration.connectorsStatus.length > 0 &&
+        isNotEmptyArray(configuration.connectorsStatus) &&
         Array.isArray(configuration.connectorsStatus[0])
       const entries: [number, ConnectorStatus][] = isTupleFormat
         ? (configuration.connectorsStatus as [number, ConnectorStatus][])
@@ -1875,7 +1875,7 @@ export class ChargingStation extends EventEmitter {
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       const isTupleFormat =
-        configuration.evsesStatus.length > 0 && Array.isArray(configuration.evsesStatus[0])
+        isNotEmptyArray(configuration.evsesStatus) && Array.isArray(configuration.evsesStatus[0])
       const evseEntries: [number, EvseStatusConfiguration][] = isTupleFormat
         ? (configuration.evsesStatus as [number, EvseStatusConfiguration][])
         : (configuration.evsesStatus as EvseStatusConfiguration[]).map((status, index) => [
@@ -1887,7 +1887,7 @@ export class ChargingStation extends EventEmitter {
         delete evseStatus.connectorsStatus
         const connIsTupleFormat =
           evseStatusConfiguration.connectorsStatus != null &&
-          evseStatusConfiguration.connectorsStatus.length > 0 &&
+          isNotEmptyArray(evseStatusConfiguration.connectorsStatus) &&
           Array.isArray(evseStatusConfiguration.connectorsStatus[0])
         const connEntries: [number, ConnectorStatus][] = connIsTupleFormat
           ? (evseStatusConfiguration.connectorsStatus as [number, ConnectorStatus][])
@@ -2436,12 +2436,12 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true) {
           delete configurationData.automaticTransactionGenerator
         }
-        if (this.connectors.size > 0) {
+        if (!isEmpty(this.connectors)) {
           configurationData.connectorsStatus = buildConnectorsStatus(this)
         } else {
           delete configurationData.connectorsStatus
         }
-        if (this.evses.size > 0) {
+        if (!isEmpty(this.evses)) {
           configurationData.evsesStatus = buildEvsesStatus(this)
         } else {
           delete configurationData.evsesStatus
@@ -2453,10 +2453,10 @@ export class ChargingStation extends EventEmitter {
             automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
             configurationKey: configurationData.configurationKey,
             stationInfo: configurationData.stationInfo,
-            ...(this.connectors.size > 0 && {
+            ...(!isEmpty(this.connectors) && {
               connectorsStatus: configurationData.connectorsStatus,
             }),
-            ...(this.evses.size > 0 && {
+            ...(!isEmpty(this.evses) && {
               evsesStatus: configurationData.evsesStatus,
             }),
           } satisfies ChargingStationConfiguration),
@@ -2524,7 +2524,7 @@ export class ChargingStation extends EventEmitter {
     onCompleteCallback: () => void,
     messageIdx?: number
   ): void => {
-    if (this.messageQueue.length > 0) {
+    if (isNotEmptyArray<string>(this.messageQueue)) {
       const message = this.messageQueue[0]
       let beginId: string | undefined
       let commandName: RequestCommand | undefined

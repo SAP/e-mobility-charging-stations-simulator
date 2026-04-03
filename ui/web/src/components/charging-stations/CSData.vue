@@ -13,10 +13,10 @@
       {{ getWebSocketStateName(chargingStation.wsState) }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
+      {{ chargingStation.bootNotificationResponse?.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.stationInfo.ocppVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.ocppVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
       {{ chargingStation.stationInfo.templateName }}
@@ -28,7 +28,7 @@
       {{ chargingStation.stationInfo.chargePointModel }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.firmwareVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
       <StateButton
@@ -49,13 +49,13 @@
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
         :off="
           () => {
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           }
         "
         :on="
           () => {
             $router.push({
-              name: 'set-supervision-url',
+              name: ROUTE_NAMES.SET_SUPERVISION_URL,
               params: {
                 hashId: chargingStation.stationInfo.hashId,
                 chargingStationId: chargingStation.stationInfo.chargingStationId,
@@ -145,7 +145,9 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import {
   deleteLocalStorageByKeyPattern,
+  EMPTY_VALUE_PLACEHOLDER,
   getWebSocketStateName,
+  ROUTE_NAMES,
   useExecuteAction,
   useUIClient,
 } from '@/composables'

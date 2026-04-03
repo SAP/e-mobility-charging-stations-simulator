@@ -8,7 +8,7 @@ export const EMPTY_FUNCTION = Object.freeze(() => {
   /* This is intentional */
 })
 
-export const workerSetVersion = '1.0.1'
+export const WORKER_SET_VERSION = '1.0.1'
 
 export const DEFAULT_ELEMENT_ADD_DELAY_MS = 0
 export const DEFAULT_WORKER_START_DELAY_MS = 500

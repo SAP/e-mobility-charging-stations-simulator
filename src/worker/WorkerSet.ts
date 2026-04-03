@@ -5,7 +5,11 @@ import { EventEmitterAsyncResource } from 'node:events'
 import { SHARE_ENV, Worker } from 'node:worker_threads'
 
 import { WorkerAbstract } from './WorkerAbstract.js'
-import { DEFAULT_ELEMENTS_PER_WORKER, EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants.js'
+import {
+  DEFAULT_ELEMENTS_PER_WORKER,
+  EMPTY_FUNCTION,
+  WORKER_SET_VERSION,
+} from './WorkerConstants.js'
 import {
   type SetInfo,
   type UUIDv4,
@@ -37,7 +41,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       size: this.size,
       started: this.started,
       type: 'set',
-      version: workerSetVersion,
+      version: WORKER_SET_VERSION,
       worker: 'thread',
     }
   }

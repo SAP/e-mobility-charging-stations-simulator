@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AddChargingStations from '@/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/components/actions/SetSupervisionUrl.vue'
 import StartTransaction from '@/components/actions/StartTransaction.vue'
+import { ROUTE_NAMES } from '@/composables'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
@@ -14,7 +15,7 @@ export const router = createRouter({
       components: {
         default: ChargingStationsView,
       },
-      name: 'charging-stations',
+      name: ROUTE_NAMES.CHARGING_STATIONS,
       path: '/',
     },
     {
@@ -22,7 +23,7 @@ export const router = createRouter({
         action: AddChargingStations,
         default: ChargingStationsView,
       },
-      name: 'add-charging-stations',
+      name: ROUTE_NAMES.ADD_CHARGING_STATIONS,
       path: '/add-charging-stations',
     },
     {
@@ -30,7 +31,7 @@ export const router = createRouter({
         action: SetSupervisionUrl,
         default: ChargingStationsView,
       },
-      name: 'set-supervision-url',
+      name: ROUTE_NAMES.SET_SUPERVISION_URL,
       path: '/set-supervision-url/:hashId/:chargingStationId',
       props: { action: true, default: false },
     },
@@ -39,7 +40,7 @@ export const router = createRouter({
         action: StartTransaction,
         default: ChargingStationsView,
       },
-      name: 'start-transaction',
+      name: ROUTE_NAMES.START_TRANSACTION,
       path: '/start-transaction/:hashId/:chargingStationId/:connectorId',
       props: { action: true, default: false },
     },
@@ -47,7 +48,7 @@ export const router = createRouter({
       components: {
         default: NotFoundView,
       },
-      name: 'not-found',
+      name: ROUTE_NAMES.NOT_FOUND,
       path: '/:pathMatch(.*)*',
     },
   ],

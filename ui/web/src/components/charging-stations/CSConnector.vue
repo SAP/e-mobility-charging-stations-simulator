@@ -4,7 +4,7 @@
       {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
     <td class="connectors-table__column">
-      {{ connector.status ?? 'Ø' }}
+      {{ connector.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="connectors-table__column">
       {{ connector.locked === true ? 'Yes' : 'No' }}
@@ -28,13 +28,13 @@
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           }
         "
         :on="
           () => {
             $router.push({
-              name: 'start-transaction',
+              name: ROUTE_NAMES.START_TRANSACTION,
               params: { hashId, chargingStationId, connectorId },
               query: {
                 ...(evseId != null ? { evseId: String(evseId) } : {}),
@@ -73,7 +73,7 @@ import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
-import { useExecuteAction, useUIClient } from '@/composables'
+import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   atgStatus?: Status

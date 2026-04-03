@@ -42,7 +42,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToInt, resetToggleButtonState, UIClient, useUIClient } from '@/composables'
+import {
+  convertToInt,
+  resetToggleButtonState,
+  ROUTE_NAMES,
+  UIClient,
+  useUIClient,
+} from '@/composables'
 import { type OCPPVersion } from '@/types'
 
 const props = defineProps<{
@@ -86,7 +92,7 @@ const handleStartTransaction = async (): Promise<void> => {
       $toast.error('Error at authorizing RFID tag')
       console.error('Error at authorizing RFID tag:', error)
       resetToggleButtonState(toggleButtonId.value, true)
-      $router.push({ name: 'charging-stations' })
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
       return
     }
   }
@@ -104,7 +110,7 @@ const handleStartTransaction = async (): Promise<void> => {
     console.error('Error at starting transaction:', error)
   } finally {
     resetToggleButtonState(toggleButtonId.value, true)
-    $router.push({ name: 'charging-stations' })
+    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
   }
 }
 </script>

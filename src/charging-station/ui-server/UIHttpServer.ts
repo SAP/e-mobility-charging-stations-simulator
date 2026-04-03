@@ -23,8 +23,8 @@ import { generateUUID, getErrorMessage, JSONStringify, logger } from '../../util
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
-  DEFAULT_COMPRESSION_THRESHOLD,
-  DEFAULT_MAX_PAYLOAD_SIZE,
+  DEFAULT_COMPRESSION_THRESHOLD_BYTES,
+  DEFAULT_MAX_PAYLOAD_SIZE_BYTES,
 } from './UIServerSecurity.js'
 import { HttpMethod, isProtocolAndVersionSupported } from './UIServerUtils.js'
 
@@ -62,7 +62,7 @@ export class UIHttpServer extends AbstractUIServer {
         const body = JSONStringify(payload, undefined, MapStringifyFormat.object)
         const shouldCompress =
           this.acceptsGzip.get(uuid) === true &&
-          Buffer.byteLength(body) >= DEFAULT_COMPRESSION_THRESHOLD
+          Buffer.byteLength(body) >= DEFAULT_COMPRESSION_THRESHOLD_BYTES
 
         if (shouldCompress) {
           res.writeHead(this.responseStatusToStatusCode(payload.status), {
@@ -179,7 +179,7 @@ export class UIHttpServer extends AbstractUIServer {
         }
 
         const bodyBuffer: Uint8Array[] = []
-        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
+        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE_BYTES)
         req
           .on('data', (chunk: Uint8Array) => {
             if (!checkBodySize(chunk.length)) {

@@ -11,6 +11,7 @@ import {
   OCPP20ComponentName,
   type OCPP20ConnectorStatusEnumType,
   type OCPP20EVSEType,
+  type OCPP20GetVariableResultType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenInfoType,
   type OCPP20IdTokenType,
@@ -531,7 +532,10 @@ export class OCPP20ServiceUtils {
         variable: { name: variableName },
       },
     ])
-    if (results.length > 0 && results[0].attributeValue != null) {
+    if (
+      isNotEmptyArray<OCPP20GetVariableResultType>(results) &&
+      results[0].attributeValue != null
+    ) {
       return results[0].attributeValue
     }
     return undefined
