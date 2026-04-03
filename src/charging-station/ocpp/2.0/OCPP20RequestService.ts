@@ -3,6 +3,7 @@ import type { ValidateFunction } from 'ajv'
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
+import { getConfigurationKey } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   type CertificateSigningUseEnumType,
@@ -167,9 +168,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.SIGN_CERTIFICATE: {
         let csr: string
         try {
-          const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-            key => key.key === 'SecurityCtrlr.OrganizationName'
-          )
+          const configKey = getConfigurationKey(chargingStation, 'SecurityCtrlr.OrganizationName')
           const orgName = configKey?.value ?? 'Unknown'
           const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
 

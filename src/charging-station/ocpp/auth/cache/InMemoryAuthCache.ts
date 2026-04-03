@@ -1,3 +1,5 @@
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
@@ -131,7 +133,7 @@ export class InMemoryAuthCache implements AuthCache {
 
     const cleanupSeconds = options?.cleanupIntervalSeconds ?? 300
     if (cleanupSeconds > 0) {
-      const intervalMs = cleanupSeconds * 1000
+      const intervalMs = secondsToMilliseconds(cleanupSeconds)
       this.cleanupInterval = setInterval(() => {
         this.runCleanup()
       }, intervalMs)
@@ -193,7 +195,10 @@ export class InMemoryAuthCache implements AuthCache {
       if (!authCacheEntry.hasExplicitTtl) {
         const absoluteDeadline = authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs
         if (absoluteDeadline > now) {
-          authCacheEntry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          authCacheEntry.expiresAt = Math.min(
+            now + secondsToMilliseconds(this.defaultTtl),
+            absoluteDeadline
+          )
         }
       }
       this.lruOrder.set(identifier, now)
@@ -213,7 +218,7 @@ export class InMemoryAuthCache implements AuthCache {
       !authCacheEntry.hasExplicitTtl &&
       authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs > now
     ) {
-      authCacheEntry.expiresAt = now + this.defaultTtl * 1000
+      authCacheEntry.expiresAt = now + secondsToMilliseconds(this.defaultTtl)
     }
 
     logger.debug(`${moduleName}: Cache hit for identifier: '${truncateId(identifier)}'`)
@@ -297,7 +302,10 @@ export class InMemoryAuthCache implements AuthCache {
           if (!entry.hasExplicitTtl) {
             const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
             if (absoluteDeadline > now) {
-              entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+              entry.expiresAt = Math.min(
+                now + secondsToMilliseconds(this.defaultTtl),
+                absoluteDeadline
+              )
             }
           }
           this.stats.expired++
@@ -332,7 +340,7 @@ export class InMemoryAuthCache implements AuthCache {
     const maxTtlSeconds = this.maxAbsoluteLifetimeMs / 1000
     const clampedTtl = Math.min(Math.max(0, ttlSeconds), maxTtlSeconds)
     const now = Date.now()
-    const expiresAt = now + clampedTtl * 1000
+    const expiresAt = now + secondsToMilliseconds(clampedTtl)
 
     this.cache.set(identifier, {
       createdAt: now,

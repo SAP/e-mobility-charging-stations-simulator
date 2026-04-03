@@ -2,6 +2,8 @@
 
 import type { ValidateFunction } from 'ajv'
 
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPP20IdTokenEnumType } from '../../../types/index.js'
 
@@ -3479,7 +3481,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
       // L01.FR.30: Simulate download retries before reporting DownloadFailed
       const maxRetries = retries ?? 0
-      const retryDelayMs = (retryInterval ?? 0) * 1000
+      const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`

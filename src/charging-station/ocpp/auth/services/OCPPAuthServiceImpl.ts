@@ -1,3 +1,5 @@
+import { millisecondsToSeconds } from 'date-fns'
+
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 
 import { OCPPError } from '../../../../exception/index.js'
@@ -6,6 +8,7 @@ import {
   convertToDate,
   ensureError,
   getErrorMessage,
+  has,
   logger,
   truncateId,
 } from '../../../../utils/index.js'
@@ -319,7 +322,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const remoteStrategy = this.strategies.get('remote')
     if (remoteStrategy?.getStats) {
       const strategyStatistics = remoteStrategy.getStats()
-      if ('cache' in strategyStatistics) {
+      if (has('cache', strategyStatistics)) {
         const cacheStatistics = strategyStatistics.cache as {
           rateLimit?: {
             blockedRequests: number
@@ -489,7 +492,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (expiryDate != null) {
       const expiry = convertToDate(expiryDate)
       if (expiry != null) {
-        const ttlSeconds = Math.floor((expiry.getTime() - Date.now()) / 1000)
+        const ttlSeconds = millisecondsToSeconds(expiry.getTime() - Date.now())
         if (ttlSeconds <= 0) {
           logger.debug(
             `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for '${truncateId(identifier)}'`
@@ -555,7 +558,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       obj: AuthStrategy
     ): obj is AuthStrategy & { configure: (config: Record<string, unknown>) => void } => {
       return (
-        'configure' in obj &&
+        has('configure', obj) &&
         typeof (obj as AuthStrategy & { configure?: unknown }).configure === 'function'
       )
     }

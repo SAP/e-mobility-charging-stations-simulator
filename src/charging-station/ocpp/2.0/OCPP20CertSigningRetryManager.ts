@@ -1,4 +1,4 @@
-import { secondsToMilliseconds } from 'date-fns'
+import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { JsonType, OCPP20SignCertificateResponse } from '../../../types/index.js'
@@ -100,7 +100,7 @@ export class OCPP20CertSigningRetryManager {
     })
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.scheduleNextRetry: Scheduling retry ${(this.retryCount + 1).toString()}/${maxRetries.toString()} in ${Math.round(delayMs / 1000).toString()}s`
+      `${this.chargingStation.logPrefix()} ${moduleName}.scheduleNextRetry: Scheduling retry ${(this.retryCount + 1).toString()}/${maxRetries.toString()} in ${millisecondsToSeconds(delayMs).toString()}s`
     )
 
     this.retryTimer = setTimeout(() => {

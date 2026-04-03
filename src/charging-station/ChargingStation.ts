@@ -100,7 +100,6 @@ import {
   min,
   once,
   promiseWithTimeout,
-  roundTo,
   secureRandom,
   sleep,
   watchJsonFile,
@@ -2377,10 +2376,7 @@ export class ChargingStation extends EventEmitter {
           ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET
           : 0
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry in ${roundTo(
-          reconnectDelay,
-          2
-        ).toString()}ms, timeout ${reconnectTimeout.toString()}ms`
+        `${this.logPrefix()} WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
       )
       await sleep(reconnectDelay)
       logger.error(

@@ -1,3 +1,5 @@
+import { millisecondsToSeconds } from 'date-fns'
+
 import type {
   AuthContext,
   AuthenticationMethod,
@@ -25,7 +27,7 @@ function calculateTTL (expiryDate?: Date): number | undefined {
     return undefined
   }
 
-  return Math.floor(ttlMs / 1000)
+  return millisecondsToSeconds(ttlMs)
 }
 
 /**
