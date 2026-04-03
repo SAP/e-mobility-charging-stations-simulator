@@ -96,12 +96,6 @@ function mountView (
       stubs: {
         Container: { name: 'Container', template: '<div><slot /></div>' },
         CSTable: true,
-        ReloadButton: {
-          emits: ['click'],
-          name: 'ReloadButton',
-          props: ['loading'],
-          template: '<button @click="$emit(\'click\')" />',
-        },
         StateButton: StateButtonStub,
         ToggleButton: ToggleButtonStub,
       },
@@ -213,16 +207,6 @@ describe('ChargingStationsView', () => {
       const wrapper = mountView()
       expect(wrapper.text()).toContain('Start Simulator')
       expect(wrapper.text()).not.toContain('(')
-    })
-  })
-
-  describe('reload button', () => {
-    it('should call listChargingStations when reload button clicked', async () => {
-      const wrapper = mountView()
-      const reloadButton = wrapper.findComponent({ name: 'ReloadButton' })
-      await reloadButton.trigger('click')
-      await flushPromises()
-      expect(mockClient.listChargingStations).toHaveBeenCalled()
     })
   })
 

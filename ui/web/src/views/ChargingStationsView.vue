@@ -90,23 +90,12 @@
       >
         Add Charging Stations
       </ToggleButton>
-      <ReloadButton
-        class="reload-button"
-        :loading="state.gettingChargingStations"
-        @click="getChargingStations()"
-      />
     </Container>
     <CSTable
       v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
       :key="state.renderChargingStations"
       :charging-stations="$chargingStations"
-      @need-refresh="
-        () => {
-          getChargingStations()
-          state.renderAddChargingStations = randomUUID()
-          state.renderChargingStations = randomUUID()
-        }
-      "
+      @need-refresh="() => { state.renderAddChargingStations = randomUUID() }"
     />
   </Container>
 </template>
@@ -123,7 +112,6 @@ import type {
   UUIDv4,
 } from '@/types'
 
-import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSTable from '@/components/charging-stations/CSTable.vue'
@@ -374,13 +362,5 @@ const stopSimulator = (): void => {
 
 .buttons-container > * {
   flex: 1 1 0;
-}
-
-.reload-button {
-  font-size: 1.5rem;
-}
-
-.reload-button:active {
-  background-color: var(--color-primary);
 }
 </style>
