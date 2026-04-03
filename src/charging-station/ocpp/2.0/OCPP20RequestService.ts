@@ -10,7 +10,9 @@ import {
   ErrorType,
   type JsonObject,
   type JsonType,
+  OCPP20ComponentName,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   type OCPP20SignCertificateRequest,
   type OCPP20StatusNotificationRequest,
   type OCPP20TransactionEventOptions,
@@ -168,7 +170,10 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.SIGN_CERTIFICATE: {
         let csr: string
         try {
-          const configKey = getConfigurationKey(chargingStation, 'SecurityCtrlr.OrganizationName')
+          const configKey = getConfigurationKey(
+            chargingStation,
+            `${OCPP20ComponentName.SecurityCtrlr}.${OCPP20RequiredVariableName.OrganizationName}`
+          )
           const orgName = configKey?.value ?? 'Unknown'
           const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
 

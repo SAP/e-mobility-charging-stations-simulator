@@ -1,5 +1,7 @@
+import { isNotEmptyArray } from './Utils.js'
+
 export const average = (dataSet: number[]): number => {
-  if (!Array.isArray(dataSet) || dataSet.length === 0) {
+  if (!isNotEmptyArray<number>(dataSet)) {
     return 0
   }
   if (dataSet.length === 1) {
@@ -9,7 +11,7 @@ export const average = (dataSet: number[]): number => {
 }
 
 export const median = (dataSet: number[]): number => {
-  if (!Array.isArray(dataSet) || dataSet.length === 0) {
+  if (!isNotEmptyArray<number>(dataSet)) {
     return 0
   }
   if (dataSet.length === 1) {

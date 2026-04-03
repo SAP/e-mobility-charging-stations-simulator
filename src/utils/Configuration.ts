@@ -35,7 +35,7 @@ import {
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
-import { has, isCFEnvironment, mergeDeepRight, once } from './Utils.js'
+import { has, isCFEnvironment, isNotEmptyString, mergeDeepRight, once } from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -130,8 +130,7 @@ export class Configuration {
   public static getConfigurationData (): ConfigurationData | undefined {
     if (
       Configuration.configurationData == null &&
-      Configuration.configurationFile != null &&
-      Configuration.configurationFile.trim().length > 0
+      isNotEmptyString(Configuration.configurationFile)
     ) {
       try {
         Configuration.configurationData = JSON.parse(
@@ -353,10 +352,7 @@ export class Configuration {
   }
 
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
-    if (
-      Configuration.configurationFile == null ||
-      Configuration.configurationFile.trim().length === 0
-    ) {
+    if (!isNotEmptyString(Configuration.configurationFile)) {
       return
     }
     try {

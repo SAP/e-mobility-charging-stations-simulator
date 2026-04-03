@@ -7,7 +7,7 @@ import {
 } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'
 import { logPrefix } from './ConfigurationUtils.js'
-import { has } from './Utils.js'
+import { has, isNotEmptyString } from './Utils.js'
 
 /**
  * Check and warn about deprecated configuration keys
@@ -198,7 +198,7 @@ function warnDeprecatedConfigurationKey (
     console.error(
       `${chalk.green(logPrefix())} ${chalk.red(
         `Deprecated configuration key '${key}' usage in section '${configurationSection}'${
-          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
+          isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
         }`
       )}`
     )
@@ -206,7 +206,7 @@ function warnDeprecatedConfigurationKey (
     console.error(
       `${chalk.green(logPrefix())} ${chalk.red(
         `Deprecated configuration key '${key}' usage${
-          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
+          isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
         }`
       )}`
     )

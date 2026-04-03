@@ -16,7 +16,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
-import { convertToDate, getErrorMessage } from '../../../utils/index.js'
+import { convertToDate, getErrorMessage, isEmpty } from '../../../utils/index.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -439,7 +439,7 @@ export class OCPP20CertificateManager {
       return false
     }
 
-    if (pemData.trim().length === 0) {
+    if (isEmpty(pemData)) {
       return false
     }
 

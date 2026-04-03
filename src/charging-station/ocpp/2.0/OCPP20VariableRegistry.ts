@@ -22,7 +22,7 @@ import {
   ReasonCodeEnumType,
   type VariableName,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN, has } from '../../../utils/index.js'
+import { Constants, convertToIntOrNaN, has, isEmpty } from '../../../utils/index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
 /**
@@ -2697,7 +2697,7 @@ export function validateValue (
     }
     case DataEnumType.MemberList:
     case DataEnumType.SequenceList: {
-      if (rawValue.trim().length === 0) {
+      if (isEmpty(rawValue)) {
         return { info: 'List cannot be empty', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
       if (rawValue.startsWith(',') || rawValue.endsWith(',')) {

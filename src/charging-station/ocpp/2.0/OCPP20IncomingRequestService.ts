@@ -131,6 +131,8 @@ import {
   convertToDate,
   convertToIntOrNaN,
   generateUUID,
+  isEmpty,
+  isNotEmptyString,
   logger,
   promiseWithTimeout,
   sleep,
@@ -2815,7 +2817,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     // C10: Validate signing certificate PEM format if present
-    if (firmware.signingCertificate != null && firmware.signingCertificate.trim() !== '') {
+    if (isNotEmptyString(firmware.signingCertificate)) {
       if (
         !hasCertificateManager(chargingStation) ||
         !chargingStation.certificateManager.validateCertificateFormat(firmware.signingCertificate)
@@ -3478,7 +3480,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (checkAborted()) return
 
     // H9: If firmware location is empty or malformed, send DownloadFailed and stop
-    if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
+    if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
       // L01.FR.30: Simulate download retries before reporting DownloadFailed
       const maxRetries = retries ?? 0
       const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
