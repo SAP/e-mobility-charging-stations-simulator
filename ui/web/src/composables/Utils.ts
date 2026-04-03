@@ -5,7 +5,11 @@ import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData, ConfigurationData, UUIDv4 } from '@/types'
 
-import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants'
+import {
+  EMPTY_VALUE_PLACEHOLDER,
+  SHARED_TOGGLE_BUTTON_KEY_PREFIX,
+  TOGGLE_BUTTON_KEY_PREFIX,
+} from './Constants'
 import { UIClient } from './UIClient'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
@@ -88,7 +92,7 @@ export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
 /**
  * Returns a human-readable name for a WebSocket ready state.
  * @param state - The WebSocket readyState value
- * @returns The state name or 'Ø' for unknown/undefined states
+ * @returns The state name or EMPTY_VALUE_PLACEHOLDER for unknown/undefined states
  */
 export const getWebSocketStateName = (state: number | undefined): string => {
   switch (state) {
@@ -101,7 +105,7 @@ export const getWebSocketStateName = (state: number | undefined): string => {
     case WebSocket.OPEN:
       return 'Open'
     default:
-      return 'Ø'
+      return EMPTY_VALUE_PLACEHOLDER
   }
 }
 

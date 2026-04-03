@@ -9,6 +9,7 @@ import type { UIClient } from '@/composables'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { useUIClient } from '@/composables'
+import { EMPTY_VALUE_PLACEHOLDER } from '@/composables/Constants'
 import { OCPP16ChargePointStatus } from '@/types'
 
 import { toastMock } from '../setup'
@@ -78,7 +79,7 @@ describe('CSConnector', () => {
         connector: createConnectorStatus({ status: undefined }),
       })
       const cells = wrapper.findAll('td')
-      expect(cells[1].text()).toBe('Ø')
+      expect(cells[1].text()).toBe(EMPTY_VALUE_PLACEHOLDER)
     })
 
     it('should display No when transaction not started', () => {
