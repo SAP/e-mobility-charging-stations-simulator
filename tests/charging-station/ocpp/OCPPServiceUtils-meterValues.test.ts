@@ -76,9 +76,8 @@ await describe('buildMeterValue', async () => {
       const { station: s } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       station = s
       const connectorStatus = station.getConnectorStatus(1)
@@ -112,9 +111,8 @@ await describe('buildMeterValue', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       station = s
       const connectorStatus = station.getConnectorStatus(1)
@@ -192,16 +190,14 @@ await describe('buildMeterValue', async () => {
               baseName: TEST_CHARGING_STATION_BASE_NAME,
               connectorsCount: 1,
               evseConfiguration: { evsesCount: 1 },
-              heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
               stationInfo: { ocppVersion: version },
-              websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+              websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
             }
           : {
               baseName: TEST_CHARGING_STATION_BASE_NAME,
               connectorsCount: 1,
-              heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
               stationInfo: { ocppVersion: version },
-              websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+              websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
             }
         const { station: s } = createMockChargingStation(opts)
         const connectorStatus = s.getConnectorStatus(1)

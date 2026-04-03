@@ -55,7 +55,6 @@ function createIntegrationContext (): {
   const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 2,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: () => Promise.resolve({}),
     },
@@ -63,7 +62,7 @@ function createIntegrationContext (): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   // IncomingRequest service (handles RemoteStart/Stop from CSMS)

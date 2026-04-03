@@ -678,7 +678,7 @@ export class OCPP20VariableManager {
       variableMetadata.variable === (OCPP20RequiredVariableName.TxUpdatedInterval as string) &&
       !value
     ) {
-      value = Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
+      value = Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS.toString()
     }
 
     value = applyPostProcess(chargingStation, variableMetadata, value)

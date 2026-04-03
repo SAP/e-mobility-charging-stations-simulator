@@ -45,7 +45,6 @@ await describe('B07/B08 - NotifyReport', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         chargePointModel: TEST_CHARGE_POINT_MODEL,
         chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -54,7 +53,7 @@ await describe('B07/B08 - NotifyReport', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = createdStation
   })

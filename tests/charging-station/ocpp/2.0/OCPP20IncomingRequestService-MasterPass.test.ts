@@ -42,7 +42,6 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
         requestHandler: async () => Promise.resolve({}),
       },
@@ -50,7 +49,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     mockStation = station
     const incomingRequestService = new OCPP20IncomingRequestService()

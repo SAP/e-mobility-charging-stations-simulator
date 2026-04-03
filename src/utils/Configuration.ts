@@ -20,10 +20,10 @@ import {
 } from '../types/index.js'
 import {
   checkWorkerProcessType,
-  DEFAULT_ELEMENT_ADD_DELAY,
+  DEFAULT_ELEMENT_ADD_DELAY_MS,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
-  DEFAULT_WORKER_START_DELAY,
+  DEFAULT_WORKER_START_DELAY_MS,
   WorkerProcessType,
 } from '../worker/index.js'
 import { checkDeprecatedConfigurationKeys } from './ConfigurationMigration.js'
@@ -72,16 +72,16 @@ const defaultLogConfiguration: LogConfiguration = {
   format: 'simple',
   level: 'info',
   rotate: true,
-  statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
+  statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL_SECONDS,
 }
 
 const defaultWorkerConfiguration: WorkerConfiguration = {
-  elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
+  elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY_MS,
   elementsPerWorker: 'auto',
   poolMaxSize: DEFAULT_POOL_MAX_SIZE,
   poolMinSize: DEFAULT_POOL_MIN_SIZE,
   processType: WorkerProcessType.workerSet,
-  startDelay: DEFAULT_WORKER_START_DELAY,
+  startDelay: DEFAULT_WORKER_START_DELAY_MS,
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

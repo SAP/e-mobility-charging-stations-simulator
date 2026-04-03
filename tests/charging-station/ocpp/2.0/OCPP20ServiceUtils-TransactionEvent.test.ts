@@ -99,7 +99,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: async () => Promise.resolve({} as EmptyObject),
         },
@@ -107,7 +106,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       mockStation = station
       resetLimits(mockStation)
@@ -333,7 +332,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 1,
           evseConfiguration: { evsesCount: 1 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
           ocppRequestService: {
             requestHandler: () => {
               throw new Error('Network error')
@@ -343,7 +341,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
         })
 
         const connectorId = 1
@@ -507,7 +505,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 1,
           evseConfiguration: { evsesCount: 1 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
           ocppRequestService: {
             requestHandler: () => {
               throw new Error('Context test error')
@@ -517,7 +514,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
         })
 
         const connectorId = 1
@@ -588,7 +585,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: async () => Promise.resolve({} as EmptyObject),
         },
@@ -596,7 +592,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       mockStation = station
       resetLimits(mockStation)
@@ -1935,7 +1931,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 1,
           evseConfiguration: { evsesCount: 1 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
           ocppRequestService: {
             requestHandler: errorOnSecondMock,
           },
@@ -1943,7 +1938,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
         })
 
         errorStation.isWebSocketConnectionOpened = () => false
@@ -2278,7 +2273,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 1,
           evseConfiguration: { evsesCount: 1 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
           ocppRequestService: {
             requestHandler: () => {
               throw new Error('Network timeout')
@@ -2288,7 +2282,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
           },
-          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
         })
 
         // Mock WebSocket as open
@@ -2330,7 +2324,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     await it('should return default interval when TxUpdatedInterval is not configured', () => {
       const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
 
-      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
     })
 
     await it('should return configured interval in milliseconds', () => {
@@ -2360,7 +2354,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
 
-      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
     })
 
     await it('should return default for zero value', () => {
@@ -2375,7 +2369,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
 
-      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
     })
 
     await it('should return default for negative value', () => {
@@ -2390,7 +2384,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
 
-      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
     })
   })
 
@@ -2704,7 +2698,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: async () => Promise.resolve({} as EmptyObject),
         },
@@ -2712,7 +2705,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ocppStrictCompliance: true,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       station = s
       resetLimits(station)

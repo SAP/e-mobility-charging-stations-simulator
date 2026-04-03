@@ -603,7 +603,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.ChargingStation,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS.toString(),
     description:
       'Interval in seconds between WebSocket ping (keep-alive) frames. 0 disables pings.',
     max: 3600,
@@ -1465,7 +1465,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+    defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL_MS).toString(),
     description: 'Interval between Heartbeat messages.',
     max: 86400,
     maxLength: 10,
@@ -1523,7 +1523,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS.toString(),
     description:
       '0 disables client side websocket Ping/Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed.',
     min: 0,
@@ -1594,7 +1594,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_MESSAGE_TIMEOUT.toString(),
+    defaultValue: Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS.toString(),
     description: 'Timeout (in seconds) waiting for responses to general OCPP messages.',
     instance: 'Default',
     max: 3600,
@@ -1904,7 +1904,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.SampledDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_TX_UPDATED_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS.toString(),
     description:
       'Interval between sampling of metering data for Updated TransactionEvent messages.',
     max: 3600,
@@ -2351,7 +2351,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut)]: {
     component: OCPP20ComponentName.TxCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString(),
+    defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS.toString(),
     description: 'Timeout for EV to establish connection.',
     max: 3600,
     maxLength: 10,

@@ -497,7 +497,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 
@@ -512,7 +512,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 
@@ -527,7 +527,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 }

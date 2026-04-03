@@ -41,14 +41,13 @@ function createUnlockConnectorStation (): {
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: requestHandlerMock,
     },
     stationInfo: {
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
   return { mockStation: station as MockChargingStation, requestHandlerMock }
 }
@@ -164,14 +163,13 @@ await describe('F05 - UnlockConnector', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 2,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: requestHandlerMock,
         },
         stationInfo: {
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       const multiConnectorStation = station as MockChargingStation
 

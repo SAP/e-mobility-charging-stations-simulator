@@ -451,7 +451,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         connectorId,
         configuredMeterValueSampleInterval != null
           ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
-          : Constants.DEFAULT_METER_VALUES_INTERVAL
+          : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
       )
     } else {
       logger.warn(

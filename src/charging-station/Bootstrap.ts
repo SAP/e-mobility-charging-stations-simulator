@@ -586,13 +586,13 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
       const waitTimeout = setTimeout(() => {
         const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
-          Constants.STOP_CHARGING_STATIONS_TIMEOUT
+          Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS
         )} reached at stopping charging stations`
         logger.warn(
           `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutMessage}`
         )
         reject(new BaseError(timeoutMessage))
-      }, Constants.STOP_CHARGING_STATIONS_TIMEOUT)
+      }, Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)
       waitChargingStationEvents(
         this,
         ChargingStationWorkerMessageEvents.stopped,

@@ -447,10 +447,10 @@ export class ChargingStation extends EventEmitter {
     if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
       return convertToInt(
         getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
-          Constants.DEFAULT_EV_CONNECTION_TIMEOUT
+          Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS
       )
     }
-    return Constants.DEFAULT_EV_CONNECTION_TIMEOUT
+    return Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS
   }
 
   /**
@@ -604,9 +604,9 @@ export class ChargingStation extends EventEmitter {
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL_MS.toString()}`
       )
-    return Constants.DEFAULT_HEARTBEAT_INTERVAL
+    return Constants.DEFAULT_HEARTBEAT_INTERVAL_MS
   }
 
   public getLocalAuthListEnabled (): boolean {
@@ -694,7 +694,7 @@ export class ChargingStation extends EventEmitter {
   public getWebSocketPingInterval (): number {
     return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
       ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
-      : Constants.DEFAULT_WS_PING_INTERVAL
+      : Constants.DEFAULT_WS_PING_INTERVAL_SECONDS
   }
 
   public hasConnector (connectorId: number): boolean {
@@ -852,7 +852,7 @@ export class ChargingStation extends EventEmitter {
     params?: { closeOpened?: boolean; terminateOpened?: boolean }
   ): void {
     options = {
-      handshakeTimeout: secondsToMilliseconds(Constants.DEFAULT_WS_HANDSHAKE_TIMEOUT),
+      handshakeTimeout: secondsToMilliseconds(Constants.DEFAULT_WS_HANDSHAKE_TIMEOUT_SECONDS),
       ...this.stationInfo?.wsOptions,
       ...options,
     }
@@ -1150,8 +1150,8 @@ export class ChargingStation extends EventEmitter {
           try {
             await promiseWithTimeout(
               this.stopMessageSequence(reason, stopTransactions),
-              Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT,
-              `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT)} reached at stopping message sequence`
+              Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS,
+              `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)} reached at stopping message sequence`
             )
           } catch (error: unknown) {
             logger.error(`${this.logPrefix()} Error while stopping message sequence:`, error)
@@ -1484,7 +1484,7 @@ export class ChargingStation extends EventEmitter {
         jitterPercent: 0.2,
         retryNumber: this.wsConnectionRetryCount,
       })
-      : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY)
+      : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY_SECONDS)
   }
 
   private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
@@ -2099,7 +2099,7 @@ export class ChargingStation extends EventEmitter {
       addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
-        Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+        Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS.toString()
       )
     }
     this.saveOcppConfiguration()
@@ -2331,8 +2331,8 @@ export class ChargingStation extends EventEmitter {
                 baseDelayMs:
                   this.bootNotificationResponse?.interval != null
                     ? secondsToMilliseconds(this.bootNotificationResponse.interval)
-                    : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
-                jitterMs: Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET,
+                    : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL_MS,
+                jitterMs: Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS,
                 retryNumber: registrationRetryCount,
               })
             )
@@ -2375,8 +2375,8 @@ export class ChargingStation extends EventEmitter {
       ++this.wsConnectionRetryCount
       const reconnectDelay = this.getReconnectDelay()
       const reconnectTimeout =
-        reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET > 0
-          ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET
+        reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS > 0
+          ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS
           : 0
       logger.error(
         `${this.logPrefix()} WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
@@ -2594,7 +2594,7 @@ export class ChargingStation extends EventEmitter {
       if (!this.isWebSocketConnectionOpened() || isEmpty(this.messageQueue)) {
         this.clearIntervalFlushMessageBuffer()
       }
-    }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
+    }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS)
   }
 
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {

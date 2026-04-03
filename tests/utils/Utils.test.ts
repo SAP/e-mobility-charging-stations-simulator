@@ -537,20 +537,20 @@ await describe('Utils', async () => {
     )
   })
 
-  await it('should clamp values to safe timer range (0 to MAX_SETINTERVAL_DELAY)', () => {
+  await it('should clamp values to safe timer range (0 to MAX_SETINTERVAL_DELAY_MS)', () => {
     assert.strictEqual(clampToSafeTimerValue(0), 0)
     assert.strictEqual(clampToSafeTimerValue(1000), 1000)
     assert.strictEqual(
-      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY),
-      Constants.MAX_SETINTERVAL_DELAY
+      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY_MS),
+      Constants.MAX_SETINTERVAL_DELAY_MS
     )
     assert.strictEqual(
-      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1),
-      Constants.MAX_SETINTERVAL_DELAY
+      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY_MS + 1),
+      Constants.MAX_SETINTERVAL_DELAY_MS
     )
     assert.strictEqual(
       clampToSafeTimerValue(Number.MAX_SAFE_INTEGER),
-      Constants.MAX_SETINTERVAL_DELAY
+      Constants.MAX_SETINTERVAL_DELAY_MS
     )
     assert.strictEqual(clampToSafeTimerValue(-1), 0)
     assert.strictEqual(clampToSafeTimerValue(-1000), 0)

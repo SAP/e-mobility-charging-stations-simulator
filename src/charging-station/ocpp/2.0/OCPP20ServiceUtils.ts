@@ -430,7 +430,7 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.SampledDataCtrlr,
       OCPP20RequiredVariableName.TxUpdatedInterval,
-      Constants.DEFAULT_TX_UPDATED_INTERVAL
+      Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS
     )
   }
 

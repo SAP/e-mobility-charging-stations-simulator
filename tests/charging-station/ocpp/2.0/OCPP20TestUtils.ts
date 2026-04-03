@@ -136,7 +136,6 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: requestHandlerMock,
     },
@@ -144,7 +143,7 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
       ocppStrictCompliance: true,
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   station.isWebSocketConnectionOpened = () => isOnline
@@ -182,13 +181,12 @@ export function createOCPP20RequestTestContext (
     baseName,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_201,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   return { requestService, station, testableRequestService }
@@ -486,13 +484,12 @@ export const ResetTestFixtures = {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
         resetTime: 5000,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     const mockStation = station as MockChargingStation
     mockStation.getNumberOfRunningTransactions = () => runningTransactions
@@ -699,7 +696,6 @@ export function createOCPP20ListenerStation (baseName: string): {
     baseName,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: requestHandlerMock,
     },
@@ -707,7 +703,7 @@ export function createOCPP20ListenerStation (baseName: string): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_201,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
   return { requestHandlerMock, station }
 }
