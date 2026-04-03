@@ -121,17 +121,19 @@ export class InMemoryAuthCache implements AuthCache {
     maxEntries?: number
     rateLimit?: { enabled?: boolean; maxRequests?: number; windowMs?: number }
   }) {
-    this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
+    this.defaultTtl = options?.defaultTtl ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS
     this.maxAbsoluteLifetimeMs =
       options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
     this.maxEntries = Math.max(1, options?.maxEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
-      maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window
-      windowMs: options?.rateLimit?.windowMs ?? 60000, // 1 minute window
+      maxRequests:
+        options?.rateLimit?.maxRequests ?? Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: options?.rateLimit?.windowMs ?? Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS,
     }
 
-    const cleanupSeconds = options?.cleanupIntervalSeconds ?? 300
+    const cleanupSeconds =
+      options?.cleanupIntervalSeconds ?? Constants.DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS
     if (cleanupSeconds > 0) {
       const intervalMs = secondsToMilliseconds(cleanupSeconds)
       this.cleanupInterval = setInterval(() => {

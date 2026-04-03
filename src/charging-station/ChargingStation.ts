@@ -2332,7 +2332,7 @@ export class ChargingStation extends EventEmitter {
                   this.bootNotificationResponse?.interval != null
                     ? secondsToMilliseconds(this.bootNotificationResponse.interval)
                     : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
-                jitterMs: 1000,
+                jitterMs: Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET,
                 retryNumber: registrationRetryCount,
               })
             )

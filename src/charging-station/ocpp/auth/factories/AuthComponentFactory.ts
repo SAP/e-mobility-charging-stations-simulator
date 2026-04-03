@@ -70,7 +70,7 @@ export class AuthComponentFactory {
    */
   static createAuthCache (config: AuthConfiguration): AuthCache {
     return new InMemoryAuthCache({
-      defaultTtl: config.authorizationCacheLifetime ?? 3600,
+      defaultTtl: config.authorizationCacheLifetime ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS,
       maxEntries: config.maxCacheEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES,
     })
   }

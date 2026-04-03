@@ -2,12 +2,12 @@ import { isMainThread } from 'node:worker_threads'
 
 import type { WorkerAbstract } from './WorkerAbstract.js'
 
-import { mergeDeepRight } from '../utils/index.js'
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
 import { WorkerFixedPool } from './WorkerFixedPool.js'
 import { WorkerSet } from './WorkerSet.js'
 import { type WorkerData, type WorkerOptions, WorkerProcessType } from './WorkerTypes.js'
+import { mergeDeepRight } from './WorkerUtils.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class WorkerFactory {

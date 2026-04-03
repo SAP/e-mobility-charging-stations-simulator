@@ -22,7 +22,15 @@ export class Constants {
 
   static readonly DEFAULT_ATG_WAIT_TIME = 1000 // Ms
 
+  static readonly DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS = 300
+
   static readonly DEFAULT_AUTH_CACHE_MAX_ENTRIES = 1000
+
+  static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS = 10
+
+  static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS = 60000
+
+  static readonly DEFAULT_AUTH_CACHE_TTL_SECONDS = 3600
 
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
 

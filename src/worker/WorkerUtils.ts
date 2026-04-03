@@ -3,6 +3,29 @@ import { getRandomValues } from 'node:crypto'
 
 import { WorkerProcessType } from './WorkerTypes.js'
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (typeof value !== 'object' || value === null) return false
+  return Object.prototype.toString.call(value).slice(8, -1) === 'Object'
+}
+
+export const mergeDeepRight = <T extends object>(target: T, source: object): T => {
+  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    Object.keys(source).forEach(key => {
+      const sourceValue = source[key]
+      const targetValue = (target as Record<string, unknown>)[key]
+      if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+        output[key] = mergeDeepRight(targetValue, sourceValue)
+      } else {
+        output[key] = sourceValue
+      }
+    })
+  }
+
+  return output as T
+}
+
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
   return await new Promise<NodeJS.Timeout>(resolve => {
     const timeout = setTimeout(() => {

@@ -2,7 +2,6 @@
 
 import type { Worker } from 'node:worker_threads'
 
-import chalk from 'chalk'
 import { EventEmitter } from 'node:events'
 import { dirname, extname, join } from 'node:path'
 import process, { exit } from 'node:process'
@@ -255,10 +254,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
                 try {
                   await this.addChargingStation(index, stationTemplateUrl.file)
                 } catch (error) {
-                  console.error(
-                    chalk.red(
-                      `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-                    ),
+                  logger.error(
+                    `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
                     error
                   )
                 }
@@ -271,10 +268,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
               )
               for (const result of results) {
                 if (result.status === 'rejected') {
-                  console.error(
-                    chalk.red(
-                      `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-                    ),
+                  logger.error(
+                    `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
                     result.reason
                   )
                 }
@@ -284,43 +279,46 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
             ConfigurationSection.worker
           )
-          console.info(
-            chalk.green(
-              `Charging stations simulator ${this.version} started with ${this.numberOfConfiguredChargingStations.toString()} configured and ${this.numberOfProvisionedChargingStations.toString()} provisioned charging station(s) from ${this.numberOfChargingStationTemplates.toString()} charging station template(s) and ${
-                Configuration.workerDynamicPoolInUse()
-                  ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                    `${workerConfiguration.poolMinSize?.toString()}/`
-                  : ''
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              }${this.workerImplementation?.size.toString()}${
-                Configuration.workerPoolInUse()
-                  ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                    `/${workerConfiguration.poolMaxSize?.toString()}`
-                  : ''
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
-                this.workerImplementation?.maxElementsPerWorker != null
-                  ? ` (${this.workerImplementation.maxElementsPerWorker.toString()} charging station(s) per worker)`
-                  : ''
-              }`
-            )
+          logger.info(
+            `${this.logPrefix()} ${moduleName}.start: Charging stations simulator ${this.version} started with ${this.numberOfConfiguredChargingStations.toString()} configured and ${this.numberOfProvisionedChargingStations.toString()} provisioned charging station(s) from ${this.numberOfChargingStationTemplates.toString()} charging station template(s) and ${
+              Configuration.workerDynamicPoolInUse()
+                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  `${workerConfiguration.poolMinSize?.toString()}/`
+                : ''
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }${this.workerImplementation?.size.toString()}${
+              Configuration.workerPoolInUse()
+                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  `/${workerConfiguration.poolMaxSize?.toString()}`
+                : ''
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
+              this.workerImplementation?.maxElementsPerWorker != null
+                ? ` (${this.workerImplementation.maxElementsPerWorker.toString()} charging station(s) per worker)`
+                : ''
+            }`
           )
           Configuration.workerDynamicPoolInUse() &&
-            console.warn(
-              chalk.yellow(
-                'Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using fixed pool or worker set mode instead'
-              )
+            logger.warn(
+              `${this.logPrefix()} ${moduleName}.start: Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using fixed pool or worker set mode instead`
             )
-          console.info(chalk.green('Worker set/pool information:'), this.workerImplementation?.info)
+          logger.info(
+            `${this.logPrefix()} ${moduleName}.start: Worker set/pool information:`,
+            this.workerImplementation?.info
+          )
           this.started = true
         } finally {
           this.starting = false
         }
       } else {
-        console.error(chalk.red('Cannot start an already starting charging stations simulator'))
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.start: Cannot start an already starting charging stations simulator`
+        )
       }
     } else {
-      console.error(chalk.red('Cannot start an already started charging stations simulator'))
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.start: Cannot start an already started charging stations simulator`
+      )
     }
   }
 
@@ -347,17 +345,21 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           this.stopping = false
         }
       } else {
-        console.error(chalk.red('Cannot stop an already stopping charging stations simulator'))
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.stop: Cannot stop an already stopping charging stations simulator`
+        )
       }
     } else {
-      console.error(chalk.red('Cannot stop an already stopped charging stations simulator'))
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.stop: Cannot stop an already stopped charging stations simulator`
+      )
     }
   }
 
   private gracefulShutdown (): void {
     this.stop()
       .then(() => {
-        console.info(chalk.green('Graceful shutdown'))
+        logger.info(`${this.logPrefix()} ${moduleName}.gracefulShutdown: Graceful shutdown`)
         if (this.uiServerStarted) {
           this.uiServer.stop()
           this.uiServerStarted = false
@@ -365,7 +367,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         return exit(exitCodes.succeeded)
       })
       .catch((error: unknown) => {
-        console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.gracefulShutdown: Error while shutting down charging stations simulator:`,
+          error
+        )
         exit(exitCodes.gracefulShutdownError)
       })
   }
@@ -384,16 +389,14 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         })
       }
       if (this.templateStatistics.size !== stationTemplateUrls.length) {
-        console.error(
-          chalk.red(
-            "'stationTemplateUrls' contains duplicate entries, please check your configuration"
-          )
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.initializeCounters: 'stationTemplateUrls' contains duplicate entries, please check your configuration`
         )
         exit(exitCodes.duplicateChargingStationTemplateUrls)
       }
     } else {
-      console.error(
-        chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeCounters: 'stationTemplateUrls' not defined or empty, please check your configuration`
       )
       exit(exitCodes.missingChargingStationsConfiguration)
     }
@@ -402,10 +405,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
         .enabled !== true
     ) {
-      console.error(
-        chalk.red(
-          "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
-        )
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeCounters: 'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration`
       )
       exit(exitCodes.noChargingStationTemplates)
     }
@@ -587,8 +588,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
           Constants.STOP_CHARGING_STATIONS_TIMEOUT
         )} reached at stopping charging stations`
-        console.warn(chalk.yellow(timeoutMessage))
-        reject(new Error(timeoutMessage))
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutMessage}`
+        )
+        reject(new BaseError(timeoutMessage))
       }, Constants.STOP_CHARGING_STATIONS_TIMEOUT)
       waitChargingStationEvents(
         this,
