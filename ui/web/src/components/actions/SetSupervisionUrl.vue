@@ -18,18 +18,17 @@
     @click="
       () => {
         $uiClient
-          ?.setSupervisionUrl(hashId, state.supervisionUrl)
+          .setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
-            return refreshChargingStations()
-          })
-          .catch((error: Error) => {
-            $toast.error('Error at setting supervision url')
-            console.error('Error at setting supervision url:', error)
           })
           .finally(() => {
             resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
             $router.push({ name: 'charging-stations' })
+          })
+          .catch((error: Error) => {
+            $toast.error('Error at setting supervision url')
+            console.error('Error at setting supervision url:', error)
           })
       }
     "
@@ -42,7 +41,7 @@
 import { ref } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
-import { refreshChargingStations, resetToggleButtonState } from '@/composables'
+import { resetToggleButtonState, useUIClient } from '@/composables'
 
 const props = defineProps<{
   chargingStationId: string
@@ -52,6 +51,8 @@ const props = defineProps<{
 const state = ref<{ supervisionUrl: string }>({
   supervisionUrl: '',
 })
+
+const $uiClient = useUIClient()
 </script>
 
 <style scoped>

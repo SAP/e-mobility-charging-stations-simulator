@@ -14,8 +14,8 @@
       Please select a template
     </option>
     <option
-      v-for="template in $templates!.value"
-      v-show="Array.isArray($templates?.value) && $templates.value.length > 0"
+      v-for="template in $templates"
+      v-show="Array.isArray($templates) && $templates.length > 0"
       :key="template"
     >
       {{ template }}
@@ -87,7 +87,7 @@
     @click="
       () => {
         $uiClient
-          ?.addChargingStations(state.template, state.numberOfStations, {
+          .addChargingStations(state.template, state.numberOfStations, {
             supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
             autoStart: convertToBoolean(state.autoStart),
             persistentConfiguration: convertToBoolean(state.persistentConfiguration),
@@ -96,15 +96,14 @@
           })
           .then(() => {
             $toast.success('Charging stations successfully added')
-            return refreshChargingStations()
-          })
-          .catch((error: Error) => {
-            $toast.error('Error at adding charging stations')
-            console.error('Error at adding charging stations:', error)
           })
           .finally(() => {
             resetToggleButtonState('add-charging-stations', true)
             $router.push({ name: 'charging-stations' })
+          })
+          .catch((error: Error) => {
+            $toast.error('Error at adding charging stations')
+            console.error('Error at adding charging stations:', error)
           })
       }
     "
@@ -114,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 import type { UUIDv4 } from '@/types'
 
@@ -122,8 +121,9 @@ import Button from '@/components/buttons/Button.vue'
 import {
   convertToBoolean,
   randomUUID,
-  refreshChargingStations,
   resetToggleButtonState,
+  useTemplates,
+  useUIClient,
 } from '@/composables'
 
 const state = ref<{
@@ -146,14 +146,12 @@ const state = ref<{
   template: '',
 })
 
-const app = getCurrentInstance()
+const $uiClient = useUIClient()
+const $templates = useTemplates()
 
-const templates = app?.appContext.config.globalProperties.$templates
-if (templates != null) {
-  watch(templates, () => {
-    state.value.renderTemplates = randomUUID()
-  })
-}
+watch($templates, () => {
+  state.value.renderTemplates = randomUUID()
+})
 </script>
 
 <style scoped>

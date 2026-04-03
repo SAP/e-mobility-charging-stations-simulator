@@ -9,7 +9,13 @@ import { ref } from 'vue'
 
 import type { UIClient } from '@/composables'
 
-import { useUIClient } from '@/composables'
+import {
+  chargingStationsKey,
+  configurationKey,
+  templatesKey,
+  uiClientKey,
+  useUIClient,
+} from '@/composables'
 import { ResponseStatus } from '@/types'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 
@@ -77,13 +83,15 @@ function mountView (
     global: {
       config: {
         globalProperties: {
-          $chargingStations: ref(chargingStations),
-          $configuration: ref(configuration),
           $route: { name: 'charging-stations', params: {}, query: {} },
           $router: { back: vi.fn(), push: vi.fn(), replace: vi.fn() },
-          $templates: ref(templates),
-          $uiClient: mockClient,
         } as never,
+      },
+      provide: {
+        [chargingStationsKey as symbol]: ref(chargingStations),
+        [configurationKey as symbol]: ref(configuration),
+        [templatesKey as symbol]: ref(templates),
+        [uiClientKey as symbol]: mockClient,
       },
       stubs: {
         Container: { name: 'Container', template: '<div><slot /></div>' },

@@ -1,15 +1,20 @@
 export { UIClient } from './UIClient'
 export {
+  chargingStationsKey,
+  configurationKey,
   convertToBoolean,
   convertToInt,
   deleteFromLocalStorage,
   getFromLocalStorage,
   getLocalStorage,
   randomUUID,
-  refreshChargingStations,
   resetToggleButtonState,
   setToLocalStorage,
+  templatesKey,
+  uiClientKey,
   useChargingStations,
+  useConfiguration,
   useExecuteAction,
+  useTemplates,
   useUIClient,
 } from './Utils'

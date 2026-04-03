@@ -4,7 +4,15 @@ import ToastPlugin from 'vue-toast-notification'
 import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
 
 import App from '@/App.vue'
-import { getFromLocalStorage, setToLocalStorage, UIClient } from '@/composables'
+import {
+  chargingStationsKey,
+  configurationKey,
+  getFromLocalStorage,
+  setToLocalStorage,
+  templatesKey,
+  UIClient,
+  uiClientKey,
+} from '@/composables'
 import { router } from '@/router'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
@@ -33,27 +41,25 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]
   }
-  app.config.globalProperties.$configuration ??= ref(config)
-  if (!Array.isArray(app.config.globalProperties.$templates?.value)) {
-    app.config.globalProperties.$templates = ref<string[]>([])
-  }
-  if (!Array.isArray(app.config.globalProperties.$chargingStations?.value)) {
-    app.config.globalProperties.$chargingStations = ref<ChargingStationData[]>([])
-  }
+  const configuration = ref(config)
+  const templates = ref<string[]>([])
+  const chargingStations = ref<ChargingStationData[]>([])
   if (
     getFromLocalStorage<number | undefined>('uiServerConfigurationIndex', undefined) == null ||
     getFromLocalStorage('uiServerConfigurationIndex', 0) >
-      (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])
-        .length -
-        1
+      (configuration.value.uiServer as UIServerConfigurationSection[]).length - 1
   ) {
     setToLocalStorage('uiServerConfigurationIndex', 0)
   }
-  app.config.globalProperties.$uiClient ??= UIClient.getInstance(
-    (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])[
+  const uiClient = UIClient.getInstance(
+    (configuration.value.uiServer as UIServerConfigurationSection[])[
       getFromLocalStorage('uiServerConfigurationIndex', 0)
     ]
   )
+  app.provide(configurationKey, configuration)
+  app.provide(chargingStationsKey, chargingStations)
+  app.provide(templatesKey, templates)
+  app.provide(uiClientKey, uiClient)
   app.use(router).use(ToastPlugin).mount('#app')
 }
 

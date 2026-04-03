@@ -1,11 +1,17 @@
-import type { Ref } from 'vue'
+import type { InjectionKey, Ref } from 'vue'
 
-import { getCurrentInstance } from 'vue'
+import { inject } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import type { ChargingStationData, UUIDv4 } from '@/types'
+import type { ChargingStationData, ConfigurationData, UUIDv4 } from '@/types'
 
 import { UIClient } from './UIClient'
+
+export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
+export const chargingStationsKey: InjectionKey<Ref<ChargingStationData[]>> =
+  Symbol('chargingStations')
+export const templatesKey: InjectionKey<Ref<string[]>> = Symbol('templates')
+export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
 
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false
@@ -86,18 +92,27 @@ export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
 }
 
 export const useUIClient = (): UIClient => {
+  const injected = inject(uiClientKey, undefined)
+  if (injected != null) return injected
   return UIClient.getInstance()
 }
 
-export const useChargingStations = (): Ref<ChargingStationData[]> | undefined => {
-  return getCurrentInstance()?.appContext.config.globalProperties.$chargingStations
+export const useConfiguration = (): Ref<ConfigurationData> => {
+  const injected = inject(configurationKey, undefined)
+  if (injected != null) return injected
+  throw new Error('configuration not provided')
 }
 
-export const refreshChargingStations = async (): Promise<void> => {
-  const $chargingStations = useChargingStations()
-  if ($chargingStations == null) return
-  const response = await useUIClient().listChargingStations()
-  $chargingStations.value = response.chargingStations as ChargingStationData[]
+export const useChargingStations = (): Ref<ChargingStationData[]> => {
+  const injected = inject(chargingStationsKey, undefined)
+  if (injected != null) return injected
+  throw new Error('chargingStations not provided')
+}
+
+export const useTemplates = (): Ref<string[]> => {
+  const injected = inject(templatesKey, undefined)
+  if (injected != null) return injected
+  throw new Error('templates not provided')
 }
 
 export const useExecuteAction = (emit: (event: 'need-refresh') => void) => {

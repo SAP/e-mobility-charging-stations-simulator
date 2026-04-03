@@ -15,13 +15,11 @@
               if (
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
-                $uiClient?.setConfiguration(
-                  ($configuration!.value.uiServer as UIServerConfigurationSection[])[
-                    state.uiServerIndex
-                  ]
+                $uiClient.setConfiguration(
+                  ($configuration.uiServer as UIServerConfigurationSection[])[state.uiServerIndex]
                 )
                 registerWSEventListeners()
-                $uiClient?.registerWSEventListener(
+                $uiClient.registerWSEventListener(
                   'open',
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
@@ -32,15 +30,15 @@
                   },
                   { once: true }
                 )
-                $uiClient?.registerWSEventListener(
+                $uiClient.registerWSEventListener(
                   'error',
                   () => {
                     state.uiServerIndex = getFromLocalStorage<number>(
                       'uiServerConfigurationIndex',
                       0
                     )
-                    $uiClient?.setConfiguration(
-                      ($configuration!.value.uiServer as UIServerConfigurationSection[])[
+                    $uiClient.setConfiguration(
+                      ($configuration.uiServer as UIServerConfigurationSection[])[
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
                     )
@@ -99,9 +97,9 @@
       />
     </Container>
     <CSTable
-      v-show="Array.isArray($chargingStations?.value) && $chargingStations.value.length > 0"
+      v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
       :key="state.renderChargingStations"
-      :charging-stations="$chargingStations!.value"
+      :charging-stations="$chargingStations"
       @need-refresh="
         () => {
           getChargingStations()
@@ -114,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import type {
@@ -137,6 +135,8 @@ import {
   randomUUID,
   setToLocalStorage,
   useChargingStations,
+  useConfiguration,
+  useTemplates,
   useUIClient,
 } from '@/composables'
 
@@ -178,25 +178,20 @@ const clearToggleButtons = (): void => {
   }
 }
 
-const app = getCurrentInstance()
+const $configuration = useConfiguration()
+const $templates = useTemplates()
+const $chargingStations = useChargingStations()
 
-const chargingStationsRef = useChargingStations()
-if (chargingStationsRef != null) {
-  watch(chargingStationsRef, () => {
-    state.value.renderChargingStations = randomUUID()
-  })
-}
+watch($chargingStations, () => {
+  state.value.renderChargingStations = randomUUID()
+})
 
 const clearTemplates = (): void => {
-  if (app != null) {
-    app.appContext.config.globalProperties.$templates!.value = []
-  }
+  $templates.value = []
 }
 
 const clearChargingStations = (): void => {
-  if (chargingStationsRef != null) {
-    chargingStationsRef.value = []
-  }
+  $chargingStations.value = []
 }
 
 const $uiClient = useUIClient()
@@ -228,9 +223,7 @@ const getTemplates = (): void => {
     $uiClient
       .listTemplates()
       .then((response: ResponsePayload) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$templates!.value = response.templates as string[]
-        }
+        $templates.value = response.templates as string[]
         return undefined
       })
       .finally(() => {
@@ -250,9 +243,7 @@ const getChargingStations = (): void => {
     $uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
-        if (chargingStationsRef != null) {
-          chargingStationsRef.value = response.chargingStations as ChargingStationData[]
-        }
+        $chargingStations.value = response.chargingStations as ChargingStationData[]
         return undefined
       })
       .finally(() => {
@@ -301,13 +292,12 @@ onUnmounted(() => {
 const uiServerConfigurations: {
   configuration: UIServerConfigurationSection
   index: number
-}[] = (
-  app!.appContext.config.globalProperties.$configuration!.value
-    .uiServer as UIServerConfigurationSection[]
-).map((configuration: UIServerConfigurationSection, index: number) => ({
-  configuration,
-  index,
-}))
+}[] = ($configuration.value.uiServer as UIServerConfigurationSection[]).map(
+  (configuration: UIServerConfigurationSection, index: number) => ({
+    configuration,
+    index,
+  })
+)
 
 const startSimulator = (): void => {
   $uiClient
