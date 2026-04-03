@@ -837,14 +837,6 @@ def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[d
     return result
 
 
-def _parse_set_variable_specs(specs_str: str) -> list[dict]:
-    return _parse_variable_specs(specs_str, require_value=True)
-
-
-def _parse_get_variable_specs(specs_str: str) -> list[dict]:
-    return _parse_variable_specs(specs_str, require_value=False)
-
-
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
     command_group = parser.add_mutually_exclusive_group()
@@ -1002,12 +994,12 @@ async def main():
         if parsed_commands is not None and not parsed_commands:
             parser.error("--commands must contain at least one CMD:DELAY entry")
         parsed_set_variables = (
-            _parse_set_variable_specs(args.set_variables)
+            _parse_variable_specs(args.set_variables, require_value=True)
             if args.set_variables
             else None
         )
         parsed_get_variables = (
-            _parse_get_variable_specs(args.get_variables)
+            _parse_variable_specs(args.get_variables, require_value=False)
             if args.get_variables
             else None
         )

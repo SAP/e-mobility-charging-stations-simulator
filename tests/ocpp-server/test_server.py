@@ -52,8 +52,7 @@ from server import (
     ChargePoint,
     ServerConfig,
     _parse_commands,
-    _parse_get_variable_specs,
-    _parse_set_variable_specs,
+    _parse_variable_specs,
     _random_request_id,
     check_positive_number,
     main,
@@ -1639,8 +1638,9 @@ class TestMultiVariableCommands:
     """Tests for multi-variable SetVariables/GetVariables CLI support."""
 
     def test_parse_set_variable_specs_valid(self):
-        result = _parse_set_variable_specs(
-            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
+        result = _parse_variable_specs(
+            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60",
+            require_value=True,
         )
         assert len(result) == 2
         assert result[0]["component"]["name"] == "OCPPCommCtrlr"
@@ -1651,8 +1651,9 @@ class TestMultiVariableCommands:
         assert result[1]["attribute_value"] == "60"
 
     def test_parse_get_variable_specs_valid(self):
-        result = _parse_get_variable_specs(
-            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval"
+        result = _parse_variable_specs(
+            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval",
+            require_value=False,
         )
         assert len(result) == 2
         assert result[0]["component"]["name"] == "ChargingStation"
@@ -1665,7 +1666,7 @@ class TestMultiVariableCommands:
             argparse.ArgumentTypeError,
             match=r"expected 'Component\.Variable=Value'",
         ):
-            _parse_set_variable_specs("NoComponentVariable=30")
+            _parse_variable_specs("NoComponentVariable=30", require_value=True)
 
     async def test_send_set_variables_uses_custom_data(self, command_charge_point):
         custom_data = [
