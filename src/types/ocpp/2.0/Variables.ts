@@ -33,10 +33,12 @@ export enum OCPP20DeviceInfoVariableName {
 }
 
 export enum OCPP20OptionalVariableName {
+  AllowReset = 'AllowReset',
   CertSigningRepeatTimes = 'CertSigningRepeatTimes',
   CertSigningWaitMinimum = 'CertSigningWaitMinimum',
   ConfigurationValueSize = 'ConfigurationValueSize',
   HeartbeatInterval = 'HeartbeatInterval',
+  MasterPassGroupId = 'MasterPassGroupId',
   MaxCertificateChainSize = 'MaxCertificateChainSize',
   MaxEnergyOnInvalidId = 'MaxEnergyOnInvalidId',
   NonEvseSpecific = 'NonEvseSpecific',

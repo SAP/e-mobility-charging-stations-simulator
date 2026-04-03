@@ -1971,7 +1971,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       !OCPP20ServiceUtils.readVariableAsBoolean(
         chargingStation,
         OCPP20ComponentName.EVSE,
-        'AllowReset',
+        OCPP20OptionalVariableName.AllowReset,
         true
       )
     ) {
@@ -2371,7 +2371,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const masterPassGroupId = OCPP20ServiceUtils.readVariableValue(
         chargingStation,
         OCPP20ComponentName.AuthCtrlr,
-        'MasterPassGroupId'
+        OCPP20OptionalVariableName.MasterPassGroupId
       )
       if (
         masterPassGroupId != null &&

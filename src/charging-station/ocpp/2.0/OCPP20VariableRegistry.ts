@@ -365,17 +365,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: 'DisableRemoteAuthorization',
   },
 
-  [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'MasterPassGroupId')]: {
-    component: OCPP20ComponentName.AuthCtrlr,
-    dataType: DataEnumType.string,
-    description:
-      'IdTokens that have this id as groupId belong to the Master Pass Group. They can stop any ongoing transaction but cannot start transactions.',
-    maxLength: 36,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'MasterPassGroupId',
-  },
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'OfflineTxForUnknownIdEnabled')]: {
     component: OCPP20ComponentName.AuthCtrlr,
     dataType: DataEnumType.boolean,
@@ -385,6 +374,17 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'OfflineTxForUnknownIdEnabled',
+  },
+  [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, OCPP20OptionalVariableName.MasterPassGroupId)]: {
+    component: OCPP20ComponentName.AuthCtrlr,
+    dataType: DataEnumType.string,
+    description:
+      'IdTokens that have this id as groupId belong to the Master Pass Group. They can stop any ongoing transaction but cannot start transactions.',
+    maxLength: 36,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.MasterPassGroupId,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AuthCtrlr,
@@ -944,16 +944,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // EVSE Component
-  [buildRegistryKey(OCPP20ComponentName.EVSE, 'AllowReset')]: {
-    component: OCPP20ComponentName.EVSE,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description: 'Can be used to announce that an EVSE can be reset individually',
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'AllowReset',
-  },
   [buildRegistryKey(OCPP20ComponentName.EVSE, 'Available')]: {
     component: OCPP20ComponentName.EVSE,
     dataType: DataEnumType.boolean,
@@ -1030,6 +1020,16 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20DeviceInfoVariableName.AvailabilityState,
+  },
+  [buildRegistryKey(OCPP20ComponentName.EVSE, OCPP20OptionalVariableName.AllowReset)]: {
+    component: OCPP20ComponentName.EVSE,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Can be used to announce that an EVSE can be reset individually',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.AllowReset,
   },
 
   // FirmwareCtrlr Component

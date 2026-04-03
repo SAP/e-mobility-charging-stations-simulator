@@ -19,6 +19,7 @@ import type {
 
 import { Bootstrap } from '../../src/charging-station/Bootstrap.js'
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
+import { OCPP16StandardParametersKey } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface BootstrapStatic {
@@ -34,7 +35,9 @@ function createCacheableConfiguration (hash: string): ChargingStationConfigurati
   return {
     automaticTransactionGenerator: { enable: false, maxDuration: 120, minDuration: 60 },
     configurationHash: hash,
-    configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '60' }],
+    configurationKey: [
+      { key: OCPP16StandardParametersKey.HeartbeatInterval, readonly: false, value: '60' },
+    ],
     stationInfo: { chargingStationId: 'test-station' },
   } as unknown as ChargingStationConfiguration
 }

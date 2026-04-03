@@ -21,6 +21,7 @@ import {
   AttributeEnumType,
   GetVariableStatusEnumType,
   OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPPVersion,
   SetVariableStatusEnumType,
 } from '../../../../src/types/index.js'
@@ -72,7 +73,7 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
         {
           attributeValue: '60',
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'HeartbeatInterval' },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
     }
@@ -81,7 +82,7 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
         {
           attributeType: AttributeEnumType.Actual,
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'HeartbeatInterval' },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
     }
@@ -133,12 +134,12 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
         {
           attributeValue: '30',
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'HeartbeatInterval' },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
           attributeValue: '20',
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'WebSocketPingInterval' },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ],
     }
@@ -150,11 +151,11 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
       getVariableData: [
         {
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'HeartbeatInterval' },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'WebSocketPingInterval' },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ],
     }

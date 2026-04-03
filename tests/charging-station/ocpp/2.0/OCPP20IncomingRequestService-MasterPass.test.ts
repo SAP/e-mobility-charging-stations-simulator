@@ -18,6 +18,7 @@ import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/au
 import {
   GetVariableStatusEnumType,
   OCPP20IdTokenEnumType,
+  OCPP20OptionalVariableName,
   OCPPVersion,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
@@ -81,7 +82,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -142,7 +143,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -185,7 +186,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,
