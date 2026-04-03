@@ -35,7 +35,14 @@ import {
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
-import { has, isCFEnvironment, isNotEmptyString, mergeDeepRight, once } from './Utils.js'
+import {
+  convertToInt,
+  has,
+  isCFEnvironment,
+  isNotEmptyString,
+  mergeDeepRight,
+  once,
+} from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -283,7 +290,7 @@ export class Configuration {
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
       if (uiServerConfiguration.options != null) {
-        uiServerConfiguration.options.port = Number.parseInt(env.PORT ?? '')
+        uiServerConfiguration.options.port = convertToInt(env.PORT ?? '')
       }
     }
     return uiServerConfiguration
@@ -378,7 +385,7 @@ export class Configuration {
                 Configuration.configurationFileReloading = false
               })
               .catch((error: unknown) => {
-                throw typeof error === 'string' ? new Error(error) : error
+                throw ensureError(error)
               })
           } else {
             Configuration.configurationFileReloading = false

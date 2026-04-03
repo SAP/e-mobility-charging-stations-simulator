@@ -3,7 +3,7 @@ import { secondsToMilliseconds } from 'date-fns'
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
-import { Constants, logger, truncateId } from '../../../../utils/index.js'
+import { Constants, logger, roundTo, truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
@@ -243,7 +243,7 @@ export class InMemoryAuthCache implements AuthCache {
     return {
       evictions: this.stats.evictions,
       expiredEntries: this.stats.expired,
-      hitRate: Math.round(hitRate * 100) / 100,
+      hitRate: roundTo(hitRate, 2),
       hits: this.stats.hits,
       memoryUsage,
       misses: this.stats.misses,

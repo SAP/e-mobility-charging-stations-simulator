@@ -1,4 +1,4 @@
-import { isNotEmptyArray } from './Utils.js'
+import { isEmpty, isNotEmptyArray } from './Utils.js'
 
 export const average = (dataSet: number[]): number => {
   if (!isNotEmptyArray<number>(dataSet)) {
@@ -37,7 +37,7 @@ export const percentile = (dataSet: number[], percentile: number): number => {
   if (percentile < 0 || percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
-  if (dataSet.length === 0) {
+  if (isEmpty(dataSet)) {
     return 0
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)

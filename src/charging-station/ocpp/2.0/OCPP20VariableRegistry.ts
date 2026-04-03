@@ -22,7 +22,14 @@ import {
   ReasonCodeEnumType,
   type VariableName,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN, has, isEmpty } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToFloat,
+  convertToInt,
+  convertToIntOrNaN,
+  has,
+  isEmpty,
+} from '../../../utils/index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
 /**
@@ -2597,7 +2604,7 @@ export function validateValue (
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(rawValue)
+      const num = convertToFloat(rawValue)
       if (variableMetadata.positive && num <= 0) {
         return {
           info: 'Positive decimal > 0 required',
@@ -2657,7 +2664,7 @@ export function validateValue (
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(rawValue)
+      const num = convertToInt(rawValue)
       if (variableMetadata.allowZero && !variableMetadata.positive && num < 0) {
         return {
           info: 'Integer >= 0 required',
@@ -2708,7 +2715,7 @@ export function validateValue (
         }
       }
       const tokens = rawValue.split(',').map(t => t.trim())
-      if (tokens.some(t => t.length === 0)) {
+      if (tokens.some(t => isEmpty(t))) {
         return { info: 'Empty list member', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
       const seen = new Set<string>()

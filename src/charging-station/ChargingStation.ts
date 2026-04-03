@@ -275,10 +275,8 @@ export class ChargingStation extends EventEmitter {
       try {
         this.internalStopMessageSequence()
       } catch (error) {
-        logger.error(
-          `${this.logPrefix()} Error while stopping the internal message sequence:`,
-          error
-        )
+        const e = ensureError(error)
+        logger.error(`${this.logPrefix()} Error while stopping the internal message sequence:`, e)
       }
     })
 
@@ -346,7 +344,8 @@ export class ChargingStation extends EventEmitter {
       try {
         await this.stop()
       } catch (error) {
-        logger.error(`${this.logPrefix()} Error stopping station during delete:`, error)
+        const e = ensureError(error)
+        logger.error(`${this.logPrefix()} Error stopping station during delete:`, e)
       }
     }
     AutomaticTransactionGenerator.deleteInstance(this)
@@ -371,9 +370,10 @@ export class ChargingStation extends EventEmitter {
       try {
         rmSync(this.configurationFile, { force: true })
       } catch (error) {
+        const e = ensureError(error)
         logger.error(
           `${this.logPrefix()} Failed to delete configuration file ${this.configurationFile}:`,
-          error
+          e
         )
       }
     }
@@ -957,7 +957,8 @@ export class ChargingStation extends EventEmitter {
     try {
       await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
     } catch (error) {
-      logger.error(`${this.logPrefix()} Error during reset stop phase:`, error)
+      const e = ensureError(error)
+      logger.error(`${this.logPrefix()} Error during reset stop phase:`, e)
       return
     }
     await sleep(this.stationInfo?.resetTime ?? 0)
@@ -1058,9 +1059,10 @@ export class ChargingStation extends EventEmitter {
                   this.restartHeartbeat()
                   this.restartWebSocketPing()
                 } catch (error) {
+                  const e = ensureError(error)
                   logger.error(
                     `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                    error
+                    e
                   )
                 }
               }
@@ -2218,8 +2220,9 @@ export class ChargingStation extends EventEmitter {
       }
     } catch (error) {
       if (!Array.isArray(request)) {
+        const e = ensureError(error)
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, error)
+        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, e)
         // OCPP 2.0.1 §4.2.3: respond with CALLERROR using messageId "-1"
         if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
           await this.ocppRequestService

@@ -45,6 +45,7 @@ import {
   convertToIntOrNaN,
   formatDurationMilliSeconds,
   generateUUID,
+  isNotEmptyArray,
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
@@ -167,7 +168,7 @@ export class OCPP20ServiceUtils {
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
       ) as OCPP20MeterValue
-      return startedMeterValue.sampledValue.length > 0 ? [startedMeterValue] : []
+      return isNotEmptyArray(startedMeterValue.sampledValue) ? [startedMeterValue] : []
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionStartedMeterValues: ${(error as Error).message}`
@@ -686,7 +687,7 @@ export class OCPP20ServiceUtils {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (
       connectorStatus?.transactionEventQueue == null ||
-      connectorStatus.transactionEventQueue.length === 0
+      !isNotEmptyArray(connectorStatus.transactionEventQueue)
     ) {
       return
     }
@@ -838,7 +839,7 @@ export class OCPP20ServiceUtils {
           interval,
           measurandsKey
         ) as OCPP20MeterValue
-        if (meterValue.sampledValue.length > 0) {
+        if (isNotEmptyArray(meterValue.sampledValue)) {
           cs.transactionEndedMeterValues?.push(meterValue)
         }
       }
@@ -875,7 +876,7 @@ export class OCPP20ServiceUtils {
       {
         idToken:
           idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
-        ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
+        ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
       }
     )
     return {
@@ -1034,7 +1035,7 @@ export class OCPP20ServiceUtils {
         }
       }
     }
-    if (terminationPromises.length > 0) {
+    if (isNotEmptyArray(terminationPromises)) {
       await Promise.all(terminationPromises)
     }
   }
@@ -1143,7 +1144,7 @@ export class OCPP20ServiceUtils {
         measurandsKey,
         OCPP20ReadingContextEnumType.TRANSACTION_END
       ) as OCPP20MeterValue
-      if (finalMeterValue.sampledValue.length > 0) {
+      if (isNotEmptyArray(finalMeterValue.sampledValue)) {
         return [...endedMeterValues, finalMeterValue]
       }
     } catch (error) {
@@ -1151,7 +1152,7 @@ export class OCPP20ServiceUtils {
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${(error as Error).message}`
       )
     }
-    return endedMeterValues.length > 0 ? endedMeterValues : []
+    return isNotEmptyArray(endedMeterValues) ? endedMeterValues : []
   }
 
   private static readVariableAsIntervalMs (
@@ -1222,7 +1223,7 @@ export class OCPP20ServiceUtils {
       transactionId,
       {
         evseId,
-        meterValue: endedMeterValues.length > 0 ? endedMeterValues : undefined,
+        meterValue: isNotEmptyArray(endedMeterValues) ? endedMeterValues : undefined,
         stoppedReason,
       }
     )
@@ -1331,7 +1332,7 @@ export function buildTransactionEvent (
     transactionEventRequest.idToken = commandParams.idToken
     connectorStatus.transactionIdTokenSent = true
   }
-  if (commandParams.meterValue !== undefined && commandParams.meterValue.length > 0) {
+  if (commandParams.meterValue !== undefined && isNotEmptyArray(commandParams.meterValue)) {
     transactionEventRequest.meterValue = commandParams.meterValue
   }
   if (commandParams.cableMaxCurrent !== undefined) {

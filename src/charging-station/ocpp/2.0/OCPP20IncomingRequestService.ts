@@ -132,6 +132,7 @@ import {
   convertToIntOrNaN,
   generateUUID,
   isEmpty,
+  isNotEmptyArray,
   isNotEmptyString,
   logger,
   promiseWithTimeout,
@@ -442,7 +443,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               connectorId,
               response.transactionId,
               {
-                ...(startedMeterValues.length > 0 && { meterValue: startedMeterValues }),
+                ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
                 remoteStartId: request.remoteStartId,
               }
             ).catch((error: unknown) => {
@@ -984,7 +985,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               ]
               return order.indexOf(a.type) - order.indexOf(b.type)
             })
-            if (entry.attributes.length > 0) {
+            if (isNotEmptyArray(entry.attributes)) {
               reportData.push({
                 component: entry.component,
                 variable: entry.variable,
@@ -1118,7 +1119,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     transactionId?: string
   ): boolean {
     const queue = connectorStatus.transactionEventQueue
-    if (queue == null || queue.length === 0) {
+    if (queue == null || !isNotEmptyArray(queue)) {
       return false
     }
     if (transactionId == null) {
@@ -1719,10 +1720,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.getStationState(chargingStation)
     const cached = stationState.reportDataCache.get(commandPayload.requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
-    if (!cached && reportData.length > 0) {
+    if (!cached && isNotEmptyArray(reportData)) {
       stationState.reportDataCache.set(commandPayload.requestId, reportData)
     }
-    if (reportData.length === 0) {
+    if (!isNotEmptyArray(reportData)) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: No data available for reportBase ${commandPayload.reportBase}`
       )
@@ -1781,12 +1782,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
 
       return {
-        certificateHashDataChain:
-          result.certificateHashDataChain.length > 0 ? result.certificateHashDataChain : undefined,
-        status:
-          result.certificateHashDataChain.length > 0
-            ? GetInstalledCertificateStatusEnumType.Accepted
-            : GetInstalledCertificateStatusEnumType.NotFound,
+        certificateHashDataChain: isNotEmptyArray(result.certificateHashDataChain)
+          ? result.certificateHashDataChain
+          : undefined,
+        status: isNotEmptyArray(result.certificateHashDataChain)
+          ? GetInstalledCertificateStatusEnumType.Accepted
+          : GetInstalledCertificateStatusEnumType.NotFound,
       }
     } catch (error) {
       logger.error(
@@ -2251,7 +2252,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20RequiredVariableName.NetworkConfigurationPriority
     )
-    if (priorityValue.length > 0) {
+    if (isNotEmptyString(priorityValue)) {
       const priorities = priorityValue.split(',').map(Number)
       if (!priorities.includes(commandPayload.configurationSlot)) {
         logger.warn(
@@ -2375,7 +2376,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       if (
         masterPassGroupId != null &&
-        masterPassGroupId.length > 0 &&
+        isNotEmptyString(masterPassGroupId) &&
         groupIdToken?.idToken === masterPassGroupId
       ) {
         logger.debug(
@@ -3283,7 +3284,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       chunks.push(reportData.slice(i, i + maxItemsPerMessage))
     }
 
-    if (chunks.length === 0) {
+    if (!isNotEmptyArray(chunks)) {
       chunks.push(undefined) // undefined means reportData will be omitted from the request
     }
 
@@ -3296,7 +3297,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         requestId,
         seqNo,
         tbc: !isLastChunk,
-        ...(chunk !== undefined && chunk.length > 0 && { reportData: chunk }),
+        ...(chunk !== undefined && isNotEmptyArray(chunk) && { reportData: chunk }),
       }
 
       await chargingStation.ocppRequestService.requestHandler<
@@ -3322,7 +3323,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (
       stationState.isDrainingSecurityEvents ||
       !chargingStation.isWebSocketConnectionOpened() ||
-      stationState.securityEventQueue.length === 0
+      !isNotEmptyArray(stationState.securityEventQueue)
     ) {
       return
     }
@@ -3332,7 +3333,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Draining ${queue.length.toString()} queued security event(s)`
     )
     const drainNextEvent = (): void => {
-      if (queue.length === 0 || !chargingStation.isWebSocketConnectionOpened()) {
+      if (!isNotEmptyArray(queue) || !chargingStation.isWebSocketConnectionOpened()) {
         stationState.isDrainingSecurityEvents = false
         return
       }
@@ -3771,7 +3772,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    if (chargingProfile.chargingSchedule.length === 0) {
+    if (!isNotEmptyArray(chargingProfile.chargingSchedule)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile must contain at least one charging schedule`
       )
@@ -3935,7 +3936,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    if (schedule.chargingSchedulePeriod.length === 0) {
+    if (!isNotEmptyArray(schedule.chargingSchedulePeriod)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule must contain at least one charging schedule period`
       )

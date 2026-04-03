@@ -16,7 +16,13 @@ import {
   RequestCommand,
   StandardParametersKey,
 } from '../../../../types/index.js'
-import { convertToBoolean, getErrorMessage, logger, truncateId } from '../../../../utils/index.js'
+import {
+  convertToBoolean,
+  getErrorMessage,
+  isEmpty,
+  logger,
+  truncateId,
+} from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -300,10 +306,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
     }
 
     // Check length (OCPP 1.6 spec: max 20 characters)
-    if (
-      identifier.value.length === 0 ||
-      identifier.value.length > AuthValidators.MAX_IDTAG_LENGTH
-    ) {
+    if (isEmpty(identifier.value) || identifier.value.length > AuthValidators.MAX_IDTAG_LENGTH) {
       return false
     }
 

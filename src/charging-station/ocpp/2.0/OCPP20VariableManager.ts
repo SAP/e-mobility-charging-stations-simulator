@@ -19,7 +19,7 @@ import {
   SetVariableStatusEnumType,
   type VariableType,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN, logger } from '../../../utils/index.js'
+import { Constants, convertToIntOrNaN, isEmpty, logger } from '../../../utils/index.js'
 import { type ChargingStation } from '../../ChargingStation.js'
 import {
   addConfigurationKey,
@@ -479,7 +479,7 @@ export class OCPP20VariableManager {
 
     let variableValue = this.resolveVariableValue(chargingStation, component, variable)
 
-    if (variableValue.length === 0) {
+    if (isEmpty(variableValue)) {
       if (
         resolvedAttributeType === AttributeEnumType.Target &&
         variableMetadata.supportsTarget === true

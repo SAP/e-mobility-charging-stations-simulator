@@ -16,7 +16,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
-import { convertToDate, getErrorMessage, isEmpty } from '../../../utils/index.js'
+import { convertToDate, getErrorMessage, isEmpty, isNotEmptyArray } from '../../../utils/index.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -283,7 +283,7 @@ export class OCPP20CertificateManager {
         .map(dirent => dirent.name)
 
       for (const certType of certTypes) {
-        if (filterTypes != null && filterTypes.length > 0) {
+        if (filterTypes != null && isNotEmptyArray(filterTypes)) {
           if (!filterTypes.includes(certType as InstallCertificateUseEnumType)) {
             continue
           }

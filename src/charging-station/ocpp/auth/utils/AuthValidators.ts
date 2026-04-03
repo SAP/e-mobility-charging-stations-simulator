@@ -173,9 +173,14 @@ function validateIdentifier (identifier: unknown): boolean {
     case IdentifierType.MOBILE_APP:
     case IdentifierType.NO_AUTHORIZATION:
       // OCPP 2.0 types - use IdToken max length
-      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
+      return (
+        isNotEmptyString(typedIdentifier.value) &&
+        typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
+      )
     case IdentifierType.ID_TAG:
-      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTAG_LENGTH
+      return (
+        isNotEmptyString(typedIdentifier.value) && typedIdentifier.value.length <= MAX_IDTAG_LENGTH
+      )
 
     default:
       return false

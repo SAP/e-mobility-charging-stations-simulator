@@ -22,7 +22,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, getErrorMessage, logger } from '../../utils/index.js'
+import { generateUUID, getErrorMessage, isNotEmptyArray, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   mcpToolSchemas,
@@ -191,7 +191,7 @@ export class UIMCPServer extends AbstractUIServer {
       }
       return s.version !== OCPPVersion.VERSION_20 && s.version !== OCPPVersion.VERSION_201
     })
-    if (mismatched.length > 0) {
+    if (isNotEmptyArray(mismatched)) {
       const ids = mismatched.map(s => s.hashId).join(', ')
       const versions = [...new Set(mismatched.map(s => s.version ?? 'unknown'))].join(', ')
       return UIMCPServer.createToolErrorResponse(

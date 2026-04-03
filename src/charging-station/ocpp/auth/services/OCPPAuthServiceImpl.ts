@@ -11,6 +11,7 @@ import {
   getErrorMessage,
   has,
   logger,
+  roundTo,
   truncateId,
 } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../index.js'
@@ -336,13 +337,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     }
 
     return {
-      avgResponseTime: Math.round(avgResponseTime * 100) / 100,
-      cacheHitRate: Math.round(cacheHitRate * 10000) / 100,
+      avgResponseTime: roundTo(avgResponseTime, 2),
+      cacheHitRate: roundTo(cacheHitRate * 100, 2),
       failedAuth: this.metrics.failedAuth,
       lastUpdatedDate: this.metrics.lastReset,
-      localUsageRate: Math.round(localUsageRate * 10000) / 100,
+      localUsageRate: roundTo(localUsageRate * 100, 2),
       rateLimit: rateLimitStatistics,
-      remoteSuccessRate: Math.round(remoteSuccessRate * 10000) / 100,
+      remoteSuccessRate: roundTo(remoteSuccessRate * 100, 2),
       successfulAuth: this.metrics.successfulAuth,
       totalRequests: this.metrics.totalRequests,
     }

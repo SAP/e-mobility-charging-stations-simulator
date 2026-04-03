@@ -976,7 +976,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           )
         }
       }
-      if (allChargingProfiles.length === 0) {
+      if (isEmpty(allChargingProfiles)) {
         return OCPP16Constants.OCPP_RESPONSE_REJECTED
       }
       const compositeSchedule = this.composeCompositeSchedule(
