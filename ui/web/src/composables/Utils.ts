@@ -94,10 +94,10 @@ export const useChargingStations = (): Ref<ChargingStationData[]> | undefined =>
 }
 
 export const refreshChargingStations = async (): Promise<void> => {
-  const ref = useChargingStations()
-  if (ref == null) return
+  const $chargingStations = useChargingStations()
+  if ($chargingStations == null) return
   const response = await useUIClient().listChargingStations()
-  ref.value = response.chargingStations as ChargingStationData[]
+  $chargingStations.value = response.chargingStations as ChargingStationData[]
 }
 
 export const useExecuteAction = (emit: (event: 'need-refresh') => void) => {

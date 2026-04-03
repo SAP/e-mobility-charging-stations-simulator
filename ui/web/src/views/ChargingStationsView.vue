@@ -199,14 +199,14 @@ const clearChargingStations = (): void => {
   }
 }
 
-const uiClient = useUIClient()
+const $uiClient = useUIClient()
 
 const $toast = useToast()
 
 const getSimulatorState = (): void => {
   if (state.value.gettingSimulatorState === false) {
     state.value.gettingSimulatorState = true
-    uiClient
+    $uiClient
       .simulatorState()
       .then((response: ResponsePayload) => {
         simulatorState.value = response.state as SimulatorState
@@ -225,7 +225,7 @@ const getSimulatorState = (): void => {
 const getTemplates = (): void => {
   if (state.value.gettingTemplates === false) {
     state.value.gettingTemplates = true
-    uiClient
+    $uiClient
       .listTemplates()
       .then((response: ResponsePayload) => {
         if (app != null) {
@@ -247,7 +247,7 @@ const getTemplates = (): void => {
 const getChargingStations = (): void => {
   if (state.value.gettingChargingStations === false) {
     state.value.gettingChargingStations = true
-    uiClient
+    $uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
         if (chargingStationsRef != null) {
@@ -273,22 +273,22 @@ const getData = (): void => {
 }
 
 const registerWSEventListeners = () => {
-  uiClient.registerWSEventListener('open', getData)
-  uiClient.registerWSEventListener('error', clearChargingStations)
-  uiClient.registerWSEventListener('close', clearChargingStations)
+  $uiClient.registerWSEventListener('open', getData)
+  $uiClient.registerWSEventListener('error', clearChargingStations)
+  $uiClient.registerWSEventListener('close', clearChargingStations)
 }
 
 const unregisterWSEventListeners = () => {
-  uiClient.unregisterWSEventListener('open', getData)
-  uiClient.unregisterWSEventListener('error', clearChargingStations)
-  uiClient.unregisterWSEventListener('close', clearChargingStations)
+  $uiClient.unregisterWSEventListener('open', getData)
+  $uiClient.unregisterWSEventListener('error', clearChargingStations)
+  $uiClient.unregisterWSEventListener('close', clearChargingStations)
 }
 
 let unsubscribeRefresh: (() => void) | undefined
 
 onMounted(() => {
   registerWSEventListeners()
-  unsubscribeRefresh = uiClient.onRefresh(() => {
+  unsubscribeRefresh = $uiClient.onRefresh(() => {
     getChargingStations()
   })
 })
@@ -310,7 +310,7 @@ const uiServerConfigurations: {
 }))
 
 const startSimulator = (): void => {
-  uiClient
+  $uiClient
     .startSimulator()
     .then(() => {
       return $toast.success('Simulator successfully started')
@@ -324,7 +324,7 @@ const startSimulator = (): void => {
     })
 }
 const stopSimulator = (): void => {
-  uiClient
+  $uiClient
     .stopSimulator()
     .then(() => {
       clearChargingStations()

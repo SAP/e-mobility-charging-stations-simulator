@@ -72,7 +72,7 @@ const state = ref<{ authorizeIdTag: boolean; idTag: string }>({
   idTag: '',
 })
 
-const uiClient = useUIClient()
+const $uiClient = useUIClient()
 
 const toggleButtonId = computed(
   () => `${props.hashId}-${evseId.value ?? 0}-${props.connectorId}-start-transaction`
@@ -87,7 +87,7 @@ const handleStartTransaction = async (): Promise<void> => {
       return
     }
     try {
-      await uiClient.authorize(props.hashId, idTag)
+      await $uiClient.authorize(props.hashId, idTag)
     } catch (error) {
       $toast.error('Error at authorizing RFID tag')
       console.error('Error at authorizing RFID tag:', error)
@@ -98,7 +98,7 @@ const handleStartTransaction = async (): Promise<void> => {
   }
 
   try {
-    await uiClient.startTransaction(props.hashId, {
+    await $uiClient.startTransaction(props.hashId, {
       connectorId: convertToInt(props.connectorId),
       evseId: evseId.value,
       idTag,

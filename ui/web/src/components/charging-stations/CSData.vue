@@ -207,7 +207,7 @@ const getWSState = (): string => {
   }
 }
 
-const uiClient = useUIClient()
+const $uiClient = useUIClient()
 
 const $toast = useToast()
 
@@ -215,34 +215,34 @@ const executeAction = useExecuteAction($emit)
 
 const startChargingStation = (): void => {
   executeAction(
-    uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
+    $uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully started',
     'Error at starting charging station'
   )
 }
 const stopChargingStation = (): void => {
   executeAction(
-    uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
+    $uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully stopped',
     'Error at stopping charging station'
   )
 }
 const openConnection = (): void => {
   executeAction(
-    uiClient.openConnection(props.chargingStation.stationInfo.hashId),
+    $uiClient.openConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully opened',
     'Error at opening connection'
   )
 }
 const closeConnection = (): void => {
   executeAction(
-    uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
+    $uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully closed',
     'Error at closing connection'
   )
 }
 const deleteChargingStation = (): void => {
-  uiClient
+  $uiClient
     .deleteChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
       for (const key in getLocalStorage()) {
