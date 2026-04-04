@@ -6,7 +6,7 @@
 - **Constant unit suffixes**: Time/size constants MUST include unit in name: `_MS`, `_SECONDS`, `_BYTES`. Counts/ratios/strings: no suffix. No inline `// Ms` comments — the name IS the documentation
 - **Async**: Prefer async/await over raw Promises; fire-and-forget wrapped in `void`; handle rejections with try/catch
 - **Error handling**: Typed errors (`BaseError`, `OCPPError`) with structured properties; avoid generic `Error`; use `instanceof` guards (not `as` casts)
-- **BaseError import constraint**: `src/utils/` CANNOT import from `exception/index.js` (barrel) — causes circular dep via `OCPPError → OCPPConstants → utils/Constants`. `new Error()` is acceptable in utils/ and worker/
+- **`new Error()` in utils/ and worker/**: Acceptable — `BaseError` lives in `exception/` which cannot be imported from utils (see Common Pitfalls)
 - **Null safety**: Avoid non-null assertions (`!`); use optional chaining (`?.`) and nullish coalescing (`??`)
 - **Type safety**: Prefer explicit types over `any`; use type guards and discriminated unions; no `as any`, `@ts-ignore`, `@ts-expect-error`
 
@@ -27,6 +27,13 @@
 - **`.js` extension**: mandatory on all relative imports (ESM + `moduleResolution: "NodeNext"`)
 - **`.d.ts` files**: `consistent-type-imports` rule disabled (inline `import()` is the standard pattern in ambient declarations)
 
+## Utility Usage Rules
+
+- **Emptiness checks**: Use `isEmpty()` / `isNotEmptyArray()` instead of `.length === 0` / `.size > 0` (except in worker/)
+- **Number parsing**: Use `convertToInt()` / `convertToFloat()` instead of `Number.parseInt()` / `Number.parseFloat()`. Exception: when NaN fallback is needed (e.g., `getLimitFromSampledValueTemplateCustomValue` — keep `Number.parseFloat`)
+- **Cloning**: Use `clone()` — never `JSON.parse(JSON.stringify())`
+- **Random**: Use `secureRandom()` / `generateUUID()` — not direct `randomBytes()` / `randomUUID()` (except in worker/ which has its own copies)
+
 ## Date Handling
 
 - **`convertToDate()`** (`src/utils/Utils.ts`) is the ONLY way to convert incoming JSON date strings to `Date`
@@ -40,7 +47,6 @@
 - **Command naming**: Follow OCPP standard naming exactly (e.g., `RemoteStartTransaction`, `BootNotification`)
 - **Enumeration naming**: OCPP spec names exactly (e.g., `ConnectorStatusEnumType`); prefix with `OCPP16`/`OCPP20` for version-specific enums
 - **Version handling**: OCPP 1.6 and 2.0.x in separate directories/namespaces
-- **Payload validation**: Against OCPP JSON schemas when `ocppStrictCompliance` is enabled
 - **Message format**: SRPC format: `[messageTypeId, messageId, action, payload]`
 - **Per-station state**: Instance-based (each `ChargingStation` owns its own Maps/state). `WeakMap` used only in `OCPP20IncomingRequestService.stationsState` for handler-scoped state keyed by station reference
 
@@ -70,6 +76,13 @@
 - **Auto-reload**: file watcher on `src/assets/config.json`
 - **Sections**: `log`, `storage`, `uiServer`, `worker`, `stationTemplateUrls`, `supervisionUrls`
 
+## Vue UI Conventions
+
+- **Route names**: Use `ROUTE_NAMES` constant object from `composables/Constants.ts` — never hardcode route strings
+- **Placeholders**: Use `EMPTY_VALUE_PLACEHOLDER` constant for unknown/missing values — never hardcode `'Ø'`
+- **localStorage keys**: Use `UI_SERVER_CONFIGURATION_INDEX_KEY` and `TOGGLE_BUTTON_KEY_PREFIX` constants
+- **Separate package**: UI Web cannot import from the backend `src/` — shared logic is duplicated in `composables/Utils.ts`
+
 ## Testing Conventions
 
 Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
@@ -88,27 +101,6 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **Re-export hub**: `tests/charging-station/ChargingStationTestUtils.ts` aggregates all test utilities
 - **`__testable__` pattern**: `ocpp/1.6/__testable__/` and `ocpp/2.0/__testable__/` directories expose internal classes (e.g., `OCPP20VariableManagerTestable`, `OCPP20RequestServiceTestable`) for unit testing private internals. Import from `__testable__/index.ts` barrel in tests only
 
-## Utility Usage Rules
-
-- **Emptiness checks**: Use `isEmpty()` / `isNotEmptyArray()` instead of `.length === 0` / `.size > 0` (except in worker/)
-- **Number parsing**: Use `convertToInt()` / `convertToFloat()` instead of `Number.parseInt()` / `Number.parseFloat()`. Exception: when NaN fallback is needed (e.g., `getLimitFromSampledValueTemplateCustomValue` — keep `Number.parseFloat`)
-- **Cloning**: Use `clone()` — never `JSON.parse(JSON.stringify())`
-- **Random**: Use `secureRandom()` / `generateUUID()` — not direct `randomBytes()` / `randomUUID()` (except in worker/ which has its own copies)
-
-## Vue UI Conventions
-
-- **Route names**: Use `ROUTE_NAMES` constant object from `composables/Constants.ts` — never hardcode route strings
-- **Placeholders**: Use `EMPTY_VALUE_PLACEHOLDER` constant for unknown/missing values — never hardcode `'Ø'`
-- **localStorage keys**: Use `UI_SERVER_CONFIGURATION_INDEX_KEY` and `TOGGLE_BUTTON_KEY_PREFIX` constants
-- **Separate package**: UI Web cannot import from the backend `src/` — shared logic is duplicated in `composables/Utils.ts`
-
-## Common Pitfalls
-
-- **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
-- **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
-- **OCPP server is Python**: Uses Poetry, not pnpm. Linter is ruff (not pylint/flake8). Type checker is mypy
-- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js`
-
 ## Python Conventions (tests/ocpp-server/)
 
 - **Naming**: SCREAMING_SNAKE_CASE constants with unit suffixes (`_SECONDS`), snake_case functions, PascalCase classes
@@ -118,3 +110,10 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **Testing**: pytest fixtures for charge point variants (normal, whitelist, blacklist, offline, rate_limit, command); parametrized tests for command paths
 - **Server architecture**: `ChargePoint` class inherits `ocpp.v201.ChargePoint`, uses `_COMMAND_HANDLERS` ClassVar for dispatch, `Timer` class for delayed/periodic commands
 - **No thin wrappers**: Inline `require_value=True/False` at call sites rather than creating one-liner wrapper functions
+
+## Common Pitfalls
+
+- **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
+- **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
+- **OCPP server is Python**: Uses Poetry, not pnpm. Linter is ruff (not pylint/flake8). Type checker is mypy
+- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js` — causes circular via `OCPPError → OCPPConstants → utils/Constants`

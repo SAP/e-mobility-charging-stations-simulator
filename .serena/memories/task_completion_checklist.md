@@ -5,22 +5,22 @@
 ### 1. Root Simulator (always)
 
 ```bash
-pnpm format
-pnpm typecheck
-pnpm lint
-pnpm build
-pnpm test
+pnpm format                 # prettier + eslint auto-fix
+pnpm typecheck              # tsc --noEmit
+pnpm lint                   # eslint check only
+pnpm build                  # esbuild production bundle
+pnpm test                   # node native test runner
 ```
 
 ### 2. Web UI (if `ui/web/` files changed)
 
 ```bash
 cd ui/web
-pnpm format
-pnpm typecheck
-pnpm lint
-pnpm build
-pnpm test
+pnpm format                 # prettier + eslint auto-fix
+pnpm typecheck              # vue-tsc --noEmit
+pnpm lint                   # eslint check only
+pnpm build                  # vite production build
+pnpm test                   # vitest
 ```
 
 ### 3. OCPP Mock Server (if `tests/ocpp-server/` files changed)
