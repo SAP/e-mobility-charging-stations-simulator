@@ -107,7 +107,7 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
 - **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
 - **OCPP server is Python**: Uses Poetry, not pnpm. Linter is ruff (not pylint/flake8). Type checker is mypy
-- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js` — import directly from `BaseError.js` if absolutely needed
+- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js`
 
 ## Python Conventions (tests/ocpp-server/)
 
