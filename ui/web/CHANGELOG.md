@@ -2,26 +2,23 @@
 
 ## [4.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.2.0...webui@v4.3.0) (2026-04-04)
 
-
 ### 🚀 Features
 
-* **webui:** remove reload button (auto-refresh via WebSocket) ([4700340](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4700340f91b9192307224cd4e4ae4501c70ca7c1))
-
+- **webui:** remove reload button (auto-refresh via WebSocket) ([4700340](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4700340f91b9192307224cd4e4ae4501c70ca7c1))
 
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1772](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1772)) ([67edd21](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/67edd21f77ca7172bab1d95f489a41eaed2181d9))
-* **ui:** enable authorize for all OCPP versions in StartTransaction ([92059c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/92059c8a0f87183ad4f3084db67dbc1c126ff913))
-
+- **deps:** update all non-major dependencies ([#1772](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1772)) ([67edd21](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/67edd21f77ca7172bab1d95f489a41eaed2181d9))
+- **ui:** enable authorize for all OCPP versions in StartTransaction ([92059c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/92059c8a0f87183ad4f3084db67dbc1c126ff913))
 
 ### ✨ Polish
 
-* dry improvements in web UI and OCPP mock server ([599c584](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/599c58469621f8280a904cff8a665b75db08e7df))
-* enforce utility usage and centralize constants across all components ([5d68d55](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5d68d55e6b18849f73e40bb25def43631ac7631c))
-* **ui:** use EMPTY_VALUE_PLACEHOLDER in Utils.ts and test assertions ([895b963](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/895b9635fc5e6756e1f822298cca4355f2515849))
-* **webui:** align $ prefix convention on composable locals ([419aa28](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/419aa281a14c852b5cb54f9381a4e6827a6b99a0))
-* **webui:** migrate globalProperties to provide/inject ([39937d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/39937d177f719f8d98fc3539cbf7939492b873ce))
-* **webui:** remove redundant CSTable re-mount on toggle ([30d99fa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/30d99fa7d7f8430d1df337814e91e19466edce71))
+- dry improvements in web UI and OCPP mock server ([599c584](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/599c58469621f8280a904cff8a665b75db08e7df))
+- enforce utility usage and centralize constants across all components ([5d68d55](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5d68d55e6b18849f73e40bb25def43631ac7631c))
+- **ui:** use EMPTY_VALUE_PLACEHOLDER in Utils.ts and test assertions ([895b963](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/895b9635fc5e6756e1f822298cca4355f2515849))
+- **webui:** align $ prefix convention on composable locals ([419aa28](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/419aa281a14c852b5cb54f9381a4e6827a6b99a0))
+- **webui:** migrate globalProperties to provide/inject ([39937d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/39937d177f719f8d98fc3539cbf7939492b873ce))
+- **webui:** remove redundant CSTable re-mount on toggle ([30d99fa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/30d99fa7d7f8430d1df337814e91e19466edce71))
 
 ## [4.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.1.1...webui@v4.2.0) (2026-04-02)
 
