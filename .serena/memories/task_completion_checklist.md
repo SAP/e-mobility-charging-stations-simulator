@@ -27,11 +27,13 @@ pnpm test
 
 ```bash
 cd tests/ocpp-server
-poetry run task format
-poetry run task typecheck
-poetry run task lint
-poetry run task test
+poetry run task format      # ruff check --fix + ruff format
+poetry run task typecheck   # mypy
+poetry run task lint        # ruff check --diff + ruff format --check
+poetry run task test        # pytest -v
 ```
+
+Standalone ruff (without Poetry) also works: `ruff check .` and `ruff format --check .`
 
 ### 4. Documentation
 

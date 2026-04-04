@@ -14,11 +14,18 @@ Node.js simulator for OCPP-J charging stations, part of SAP e-Mobility solution.
 
 ## Tech Stack
 
-| Sub-project | Runtime          | Language               | Package Manager | Test Framework          | Build Tool |
-| ----------- | ---------------- | ---------------------- | --------------- | ----------------------- | ---------- |
-| Simulator   | Node.js >=22.0.0 | TypeScript 5.9         | pnpm >=10.9.0   | Node.js native `--test` | esbuild    |
-| Web UI      | Node.js >=22.0.0 | TypeScript 5.9 + Vue 3 | pnpm >=10.9.0   | Vitest                  | Vite       |
-| OCPP Server | Python >=3.12    | Python                 | Poetry >=2.0    | pytest + pytest-asyncio | N/A        |
+| Sub-project | Runtime          | Language                 | Package Manager | Test Framework          | Build Tool |
+| ----------- | ---------------- | ------------------------ | --------------- | ----------------------- | ---------- |
+| Simulator   | Node.js >=22.0.0 | TypeScript 6.0           | pnpm >=10.9.0   | Node.js native `--test` | esbuild    |
+| Web UI      | Node.js >=22.0.0 | TypeScript 6.0 + Vue 3.5 | pnpm >=10.9.0   | Vitest                  | Vite 8     |
+| OCPP Server | Python >=3.12    | Python                   | Poetry >=2.0    | pytest + pytest-asyncio | N/A        |
+
+## Coverage Thresholds
+
+| Sub-project | Branches      | Functions | Lines/Statements |
+| ----------- | ------------- | --------- | ---------------- |
+| Web UI      | 89%           | 83%       | 91%              |
+| OCPP Server | 83% (overall) | —         | —                |
 
 ## Source Structure
 
@@ -46,10 +53,38 @@ src/
 
 - `charging-station/` and `ocpp/` are SEPARATE components with their own barrels
 - `ocpp/1.6/` and `ocpp/2.0/` are separate sub-components of ocpp
-- `worker/` is self-contained and intentionally defines its own types (portable to other projects)
+- `ocpp/auth/` is an independent subsystem with its own barrel, interfaces, and strategy pattern
+- `worker/` is **fully standalone** — zero imports from other local modules. Has its own `sleep()`, `secureRandom()`, `mergeDeepRight()`. Uses `new Error()` (not `BaseError`). Portable to other projects
 - `types/` is pure type definitions, depends on nothing except `worker/` (type-only)
 - `utils/` depends on `types/` and `charging-station/` (type-only + 1 runtime: `getMessageTypeString`)
-- `exception/` is a leaf module with no dependencies
+- `exception/` — `BaseError` has no imports; `OCPPError` imports from `types/` and `ocpp/OCPPConstants`. The barrel creates a transitive dep chain NOT usable by `utils/` (circular)
+
+## Design Patterns
+
+| Pattern              | Where                                                           | Detail                                                          |
+| -------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- | ---------- |
+| Singleton            | Bootstrap, Configuration, PerformanceStatistics, UIClient (Vue) | Lazy `getInstance()`                                            |
+| Strategy             | Auth subsystem                                                  | Local/Remote/Certificate strategies with priority chain         |
+| Factory              | WorkerFactory, StorageFactory, AuthComponentFactory             | Create implementations from config                              |
+| EventEmitter         | ChargingStation, Bootstrap                                      | State change events                                             |
+| SRPC                 | UI WebSocket                                                    | `[uuid, procedureName, payload]` request/response correlation   |
+| Barrel exports       | All components                                                  | `index.ts` re-exports public API                                |
+| Discriminated unions | OCPP types                                                      | `BootNotificationRequest = OCPP16...                            | OCPP20...` |
+| `as const` merge     | OCPP enums                                                      | `ConnectorStatusEnum = { ...OCPP16..., ...OCPP20... } as const` |
+
+## Auth Subsystem (`ocpp/auth/`)
+
+- **OCPPAuthServiceImpl**: Strategy priority chain (local → remote → certificate)
+- **3 strategies**: LocalAuthStrategy (cache + local list), RemoteAuthStrategy (CSMS), CertificateAuthStrategy (X.509)
+- **InMemoryAuthCache**: LRU with TTL, rate limiting, periodic cleanup
+- **AuthComponentFactory**: Creates adapters, strategies, caches with DI
+- **Version adapters**: OCPP16AuthAdapter, OCPP20AuthAdapter
+
+## UI Server (`ui-server/`)
+
+- **3 transports**: UIWebSocketServer (SRPC), UIMCPServer (Model Context Protocol for LLM agents), UIHttpServer (REST, deprecated)
+- **AbstractUIServer**: Base with HTTP/HTTP2, auth (Basic/Protocol), rate limiting, debounced client notifications (500ms)
+- **Protocol**: `[uuid, procedureName, payload]` requests, `[uuid, responsePayload]` responses, `[ServerNotification.REFRESH]` notifications
 
 ## Test Structure
 
