@@ -33,8 +33,6 @@ poetry run task lint        # ruff check --diff + ruff format --check
 poetry run task test        # pytest -v
 ```
 
-Standalone ruff (without Poetry) also works: `ruff check .` and `ruff format --check .`
-
 ### 4. Documentation
 
 - Update docs if public API changed
