@@ -157,6 +157,17 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SignReadings',
   },
+  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'SignUpdatedReadings')]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Updated) for those measurands configured in AlignedDataTxUpdatedMeasurands. Only has effect if AlignedDataCtrlr.SignReadings is true.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SignUpdatedReadings',
+  },
   [buildRegistryKey(
     OCPP20ComponentName.AlignedDataCtrlr,
     OCPP20RequiredVariableName.AlignedDataInterval
@@ -1056,6 +1067,29 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     vendorSpecific: true,
   },
 
+  // FiscalMetering Component
+  [buildRegistryKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')]: {
+    component: OCPP20ComponentName.FiscalMetering,
+    dataType: DataEnumType.string,
+    defaultValue: '',
+    description:
+      'Public key for the fiscal meter connected to the EVSE. Base64 encoded, formatted as oca:<encoding>:<content-type>:<key>.',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'PublicKey',
+  },
+  [buildRegistryKey(OCPP20ComponentName.FiscalMetering, 'SigningMethod')]: {
+    component: OCPP20ComponentName.FiscalMetering,
+    dataType: DataEnumType.string,
+    defaultValue: 'ECDSA-secp256r1-SHA256',
+    description:
+      'Method used to create the digital signature for signed meter values. See OCA Application Note v1.0 Table 12 for valid values.',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SigningMethod',
+  },
   // ISO15118Ctrlr Component
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr, 'CentralContractValidationAllowed')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr,
@@ -1153,6 +1187,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'RequestMeteringReceipt',
   },
+
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr, 'SeccId')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr,
     dataType: DataEnumType.string,
@@ -1174,7 +1209,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'V2GCertificateInstallationEnabled',
   },
-
   // LocalAuthListCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Available')]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr,
@@ -1240,6 +1274,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
+
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Enabled)]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr,
     dataType: DataEnumType.boolean,
@@ -1266,7 +1301,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
-
   // MonitoringCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr, 'ActiveMonitoringBase')]: {
     component: OCPP20ComponentName.MonitoringCtrlr,
@@ -1382,6 +1416,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
   },
+
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr,
     OCPP20RequiredVariableName.ItemsPerMessage,
@@ -1416,7 +1451,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
-
   // OCPPCommCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'ActiveNetworkProfile')]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
@@ -1656,6 +1690,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.OfflineThreshold,
   },
+
   [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, OCPP20RequiredVariableName.ResetRetries)]: {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
@@ -1684,7 +1719,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.UnlockOnEVSideDisconnect,
   },
-
   // ReservationCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.ReservationCtrlr, 'Available')]: {
     component: OCPP20ComponentName.ReservationCtrlr,
@@ -1696,6 +1730,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
+
   [buildRegistryKey(
     OCPP20ComponentName.ReservationCtrlr,
     OCPP20OptionalVariableName.NonEvseSpecific
@@ -1720,7 +1755,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
   },
-
   // SampledDataCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'Available')]: {
     component: OCPP20ComponentName.SampledDataCtrlr,
@@ -1753,6 +1787,28 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SignReadings',
+  },
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings')]: {
+    component: OCPP20ComponentName.SampledDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Started or Updated) to the CSMS for those measurands configured in SampledDataTxStartedMeasurands.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SignStartedReadings',
+  },
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings')]: {
+    component: OCPP20ComponentName.SampledDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Updated) to the CSMS for those measurands configured in SampledDataTxUpdatedMeasurands. This setting only has an effect if SampledDataCtrlr.SignReadings is set to true.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SignUpdatedReadings',
   },
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, OCPP20MeasurandEnumType.CURRENT_IMPORT)]:
     {
@@ -1897,6 +1953,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxStartedMeasurands,
   },
+
   // Volatile rationale: sampling interval affects runtime only; simulator does not persist across restarts.
   [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr,
@@ -1947,7 +2004,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxUpdatedMeasurands,
   },
-
   // SecurityCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'AdditionalRootCertificateCheck')]: {
     component: OCPP20ComponentName.SecurityCtrlr,
@@ -2054,6 +2110,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.OrganizationName,
   },
+
   // Enumeration limited to profiles 1..3 commonly used; spec allows additional profiles via extensions.
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, OCPP20RequiredVariableName.SecurityProfile)]:
     {
