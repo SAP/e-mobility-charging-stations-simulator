@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 import type { BootReasonEnumType } from '../../types/index.js'
 
+import { buildConfigKey } from '../../charging-station/ConfigurationKeyUtils.js'
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
@@ -29,7 +30,9 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  OCPP20ComponentName,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
@@ -60,6 +63,7 @@ import {
 import {
   buildOCPP20BootNotificationRequest,
   buildOCPP20SampledValue,
+  type OCPP20SampledValueSigningConfig,
 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
@@ -893,6 +897,7 @@ export const buildMeterValue = (
     context?: MeterValueContext,
     phase?: MeterValuePhase
   ) => SampledValue
+  let ocpp20SigningConfig: OCPP20SampledValueSigningConfig | undefined
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
       if (connectorId == null) {
@@ -914,7 +919,44 @@ export const buildMeterValue = (
           RequestCommand.METER_VALUES
         )
       }
-      buildVersionedSampledValue = buildOCPP20SampledValue
+      {
+        const signReadings =
+          getConfigurationKey(
+            chargingStation,
+            buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings')
+          )?.value === 'true'
+
+        if (signReadings) {
+          const publicKeyWithSignedMeterValueStr = getConfigurationKey(
+            chargingStation,
+            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue')
+          )?.value
+          const publicKeyHex = getConfigurationKey(
+            chargingStation,
+            buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
+          )?.value
+          const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId)
+          ocpp20SigningConfig = {
+            enabled: true,
+            meterSerialNumber:
+              chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
+            publicKeyHex,
+            publicKeySentInTransaction:
+              currentConnectorStatus?.publicKeySentInTransaction ?? false,
+            publicKeyWithSignedMeterValue:
+              (publicKeyWithSignedMeterValueStr ??
+                PublicKeyWithSignedMeterValueEnumType.Never) as PublicKeyWithSignedMeterValueEnumType,
+            transactionId,
+          }
+        }
+
+        buildVersionedSampledValue = (
+          sampledValueTemplate: SampledValueTemplate,
+          value: number,
+          ctx?: MeterValueContext,
+          phase?: MeterValuePhase
+        ) => buildOCPP20SampledValue(sampledValueTemplate, value, ctx, phase, ocpp20SigningConfig)
+      }
       break
     default:
       throw new OCPPError(
@@ -1169,6 +1211,9 @@ export const buildMeterValue = (
       debug,
       { interval }
     )
+  }
+  if (ocpp20SigningConfig?.publicKeySentInTransaction === true && connectorStatus != null) {
+    connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue
 }
