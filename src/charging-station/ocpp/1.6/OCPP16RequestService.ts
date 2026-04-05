@@ -214,7 +214,8 @@ export class OCPP16RequestService extends OCPPRequestService {
           commandParams as unknown as OCPP16StatusNotificationRequest
         ) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        chargingStation.stationInfo?.transactionDataMeterValues === true &&
+        ;(chargingStation.stationInfo?.transactionDataMeterValues === true ||
+          OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams.transactionId as number
           ))
@@ -226,7 +227,8 @@ export class OCPP16RequestService extends OCPPRequestService {
           idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
           meterStop: energyActiveImportRegister,
           timestamp: new Date(),
-          ...(chargingStation.stationInfo?.transactionDataMeterValues === true &&
+          ...((chargingStation.stationInfo?.transactionDataMeterValues === true ||
+            OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
             connectorId != null && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               chargingStation.getConnectorStatus(connectorId)

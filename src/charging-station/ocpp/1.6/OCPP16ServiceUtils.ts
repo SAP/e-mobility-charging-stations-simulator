@@ -10,6 +10,7 @@ import {
 
 import {
   type ChargingStation,
+  getConfigurationKey,
   hasFeatureProfile,
   hasReservationExpired,
 } from '../../../charging-station/index.js'
@@ -34,11 +35,15 @@ import {
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
+  type OCPP16SampledValue,
+  type OCPP16SignedMeterValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
+  OCPP16VendorParametersKey,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
@@ -64,8 +69,10 @@ import {
   getSampledValueTemplate,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
+import { generateSignedMeterData, type SignedMeterDataParams } from '../SignedMeterDataGenerator.js'
+import { shouldIncludePublicKey } from '../SignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
-import { buildOCPP16SampledValue } from './OCPP16RequestBuilders.js'
+import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
 const moduleName = 'OCPP16ServiceUtils'
 
@@ -147,6 +154,31 @@ export class OCPP16ServiceUtils {
         )
       )
     }
+    if (
+      OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
+      getConfigurationKey(
+        chargingStation,
+        OCPP16VendorParametersKey.SampledDataSignStartedReadings
+      )?.value === 'true'
+    ) {
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      const transactionId = connectorStatus?.transactionId ?? 0
+      const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
+      const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+        chargingStation,
+        connectorId,
+        meterStart ?? 0,
+        OCPP16MeterValueContext.TRANSACTION_BEGIN,
+        transactionId,
+        publicKeySentInTransaction
+      )
+      if (signedSampledValue != null) {
+        meterValue.sampledValue.push(signedSampledValue)
+        if (connectorStatus != null) {
+          connectorStatus.publicKeySentInTransaction = true
+        }
+      }
+    }
     return meterValue
   }
 
@@ -192,6 +224,22 @@ export class OCPP16ServiceUtils {
         OCPP16MeterValueContext.TRANSACTION_END
       )
     )
+    if (OCPP16ServiceUtils.isSigningEnabled(chargingStation)) {
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      const transactionId = connectorStatus?.transactionId ?? 0
+      const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
+      const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+        chargingStation,
+        connectorId,
+        meterStop ?? 0,
+        OCPP16MeterValueContext.TRANSACTION_END,
+        transactionId,
+        publicKeySentInTransaction
+      )
+      if (signedSampledValue != null) {
+        meterValue.sampledValue.push(signedSampledValue)
+      }
+    }
     return meterValue
   }
 
@@ -604,6 +652,13 @@ export class OCPP16ServiceUtils {
     return key.visible
   }
 
+  public static isSigningEnabled (chargingStation: ChargingStation): boolean {
+    return (
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)
+        ?.value === 'true'
+    )
+  }
+
   /**
    * Stops a transaction remotely on the given connector.
    * @param chargingStation - Target charging station
@@ -734,6 +789,30 @@ export class OCPP16ServiceUtils {
     connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       const transactionId = convertToInt(connectorStatus.transactionId)
       const meterValue = buildMeterValue(chargingStation, transactionId, interval)
+      if (
+        OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
+        getConfigurationKey(
+          chargingStation,
+          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings
+        )?.value === 'true'
+      ) {
+        const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          connectorStatus.transactionId
+        )
+        const publicKeySentInTransaction = connectorStatus.publicKeySentInTransaction ?? false
+        const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+          chargingStation,
+          connectorId,
+          energyWh,
+          OCPP16MeterValueContext.SAMPLE_PERIODIC,
+          transactionId,
+          publicKeySentInTransaction
+        )
+        if (signedSampledValue != null) {
+          ;(meterValue as OCPP16MeterValue).sampledValue.push(signedSampledValue)
+          connectorStatus.publicKeySentInTransaction = true
+        }
+      }
       chargingStation.ocppRequestService
         .requestHandler<MeterValuesRequest, MeterValuesResponse>(
           chargingStation,
@@ -829,6 +908,46 @@ export class OCPP16ServiceUtils {
         error
       )
     }
+  }
+
+  private static buildSignedSampledValue (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    meterValueWh: number,
+    context: OCPP16MeterValueContext,
+    transactionId: number | string,
+    publicKeySentInTransaction: boolean
+  ): OCPP16SampledValue | undefined {
+    const publicKeyConfig =
+      getConfigurationKey(
+        chargingStation,
+        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
+      )?.value ?? 'Never'
+    const parsedConfig = Object.values(PublicKeyWithSignedMeterValueEnumType).includes(
+      publicKeyConfig as PublicKeyWithSignedMeterValueEnumType
+    )
+      ? (publicKeyConfig as PublicKeyWithSignedMeterValueEnumType)
+      : PublicKeyWithSignedMeterValueEnumType.Never
+
+    const meterPublicKeyConfig = getConfigurationKey(
+      chargingStation,
+      `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
+    )
+    const publicKeyHex = meterPublicKeyConfig?.value ?? undefined
+
+    const includePublicKey = shouldIncludePublicKey(parsedConfig, publicKeySentInTransaction)
+
+    const signedData = generateSignedMeterData(
+      {
+        context: context as SignedMeterDataParams['context'],
+        meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
+        meterValue: meterValueWh,
+        timestamp: new Date(),
+        transactionId,
+      },
+      includePublicKey ? publicKeyHex : undefined
+    )
+    return buildSignedOCPP16SampledValue(context, signedData as OCPP16SignedMeterValue)
   }
 
   private static readonly composeChargingSchedule = (
