@@ -70,11 +70,13 @@ export {
 export {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
+  OCPP16VendorParametersKey,
 } from './ocpp/1.6/Configuration.js'
 export { OCPP16DiagnosticsStatus } from './ocpp/1.6/DiagnosticsStatus.js'
 export {
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
+  OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
@@ -82,6 +84,7 @@ export {
   type OCPP16MeterValuesResponse,
   OCPP16MeterValueUnit,
   type OCPP16SampledValue,
+  type OCPP16SignedMeterValue,
 } from './ocpp/1.6/MeterValues.js'
 export {
   type ChangeConfigurationRequest,
