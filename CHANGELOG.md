@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.3.0...simulator@v4.3.1) (2026-04-05)
+
+### 🐞 Bug Fixes
+
+- **ocpp:** check connector availability in RemoteStartTransaction auto-selection ([#1774](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1774)) ([2249b13](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2249b13016a22022a2e0b0838d7ba01fa53ecf7c))
+
+### 🧪 Tests
+
+- harmonize RemoteStartTransaction tests across OCPP stacks ([eada3ac](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/eada3ac236a9df54ae6d62d67eafd74c61ea1756))
+
+### 📚 Documentation
+
+- restructure memories for logical coherence ([163e341](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/163e341a7fc456922032b6a6be16b34a2b28bf03))
+
 ## [4.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.2.0...simulator@v4.3.0) (2026-04-04)
 
 ### 🚀 Features

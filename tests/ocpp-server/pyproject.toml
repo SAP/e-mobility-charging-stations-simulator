@@ -1,6 +1,6 @@
 [project]
 name = "ocpp-server"
-version = "4.3.0"
+version = "4.3.1"
 description = "OCPP2 mock server"
 authors = [{ name = "Jérôme Benoit", email = "jerome.benoit@sap.com" }]
 readme = "README.md"
