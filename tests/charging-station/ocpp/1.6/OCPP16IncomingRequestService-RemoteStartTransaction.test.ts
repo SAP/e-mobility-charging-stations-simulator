@@ -167,7 +167,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     }
 
     const request: RemoteStartTransactionRequest = {
-      idTag: 'TEST-TAG-001',
+      idTag: TEST_ID_TAG,
     }
 
     // Act
