@@ -2034,23 +2034,18 @@ export class ChargingStation extends EventEmitter {
     }
     // Register signed meter values vendor configuration keys (OCPP 1.6 only)
     if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
-      if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignReadings) == null
-      ) {
+      if (getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignReadings) == null) {
         addConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignReadings, 'false', {
           readonly: false,
         })
       }
-      if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignReadings) == null
-      ) {
+      if (getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignReadings) == null) {
         addConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignReadings, 'false', {
           readonly: false,
         })
       }
       if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignStartedReadings) ==
-        null
+        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignStartedReadings) == null
       ) {
         addConfigurationKey(
           this,
@@ -2060,8 +2055,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
       if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignUpdatedReadings) ==
-        null
+        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignUpdatedReadings) == null
       ) {
         addConfigurationKey(
           this,
@@ -2071,8 +2065,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
       if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignUpdatedReadings) ==
-        null
+        getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignUpdatedReadings) == null
       ) {
         addConfigurationKey(
           this,
@@ -2082,8 +2075,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
       if (
-        getConfigurationKey(this, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue) ==
-        null
+        getConfigurationKey(this, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue) == null
       ) {
         addConfigurationKey(
           this,
