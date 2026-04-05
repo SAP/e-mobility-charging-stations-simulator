@@ -963,7 +963,8 @@ export const buildMeterValue = (
               meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
               publicKeyHex,
               publicKeySentInTransaction:
-                chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ?? false,
+                chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ??
+                false,
               publicKeyWithSignedMeterValue: Object.values(
                 PublicKeyWithSignedMeterValueEnumType
               ).includes(publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
