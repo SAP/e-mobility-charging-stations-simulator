@@ -12,6 +12,7 @@ import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServi
 import {
   MeterValueMeasurand,
   OCPP20ComponentName,
+  OCPP20ReadingContextEnumType,
   type OCPP20SampledValue,
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
@@ -304,6 +305,198 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       buildMeterValue(station, TEST_TRANSACTION_ID_STRING, 0)
 
       assert.strictEqual(connectorStatus?.publicKeySentInTransaction, true)
+    })
+
+    await it('should not sign when SignReadings=true but SignStartedReadings=false with TRANSACTION_BEGIN context', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings'),
+        'false'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID_STRING,
+        0,
+        undefined,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
+
+      const energySampledValue = meterValue.sampledValue.find(
+        sv => sv.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue | undefined
+      assert.strictEqual(
+        energySampledValue?.signedMeterValue,
+        undefined,
+        'Should not sign when SignStartedReadings is false'
+      )
+    })
+
+    await it('should sign when SignReadings=true and SignStartedReadings=true with TRANSACTION_BEGIN context', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
+        'abcdef1234567890'
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID_STRING,
+        0,
+        undefined,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
+
+      const energySampledValue = meterValue.sampledValue.find(
+        sv => sv.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue | undefined
+      assert.ok(
+        energySampledValue?.signedMeterValue != null,
+        'Should sign when SignStartedReadings is true'
+      )
+    })
+
+    await it('should not sign when SignReadings=true but SignUpdatedReadings=false with periodic context', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings'),
+        'false'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID_STRING,
+        0,
+        undefined,
+        OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+      )
+
+      const energySampledValue = meterValue.sampledValue.find(
+        sv => sv.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue | undefined
+      assert.strictEqual(
+        energySampledValue?.signedMeterValue,
+        undefined,
+        'Should not sign when SignUpdatedReadings is false'
+      )
+    })
+
+    await it('should sign when SignReadings=true and SignUpdatedReadings=true with periodic context', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
+        'abcdef1234567890'
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID_STRING,
+        0,
+        undefined,
+        OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
+      )
+
+      const energySampledValue = meterValue.sampledValue.find(
+        sv => sv.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue | undefined
+      assert.ok(
+        energySampledValue?.signedMeterValue != null,
+        'Should sign when SignUpdatedReadings is true'
+      )
+    })
+
+    await it('should sign when SignReadings=true with TRANSACTION_END context regardless of sub-switches', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings'),
+        'false'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings'),
+        'false'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
+        'abcdef1234567890'
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID_STRING,
+        0,
+        undefined,
+        OCPP20ReadingContextEnumType.TRANSACTION_END
+      )
+
+      const energySampledValue = meterValue.sampledValue.find(
+        sv => sv.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue | undefined
+      assert.ok(
+        energySampledValue?.signedMeterValue != null,
+        'Should always sign TRANSACTION_END regardless of sub-switches'
+      )
     })
   })
 })

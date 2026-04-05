@@ -31,6 +31,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  OCPP20ReadingContextEnumType,
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
@@ -927,26 +928,49 @@ export const buildMeterValue = (
           )?.value === 'true'
 
         if (signReadings) {
-          const publicKeyWithSignedMeterValueStr = getConfigurationKey(
-            chargingStation,
-            buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue')
-          )?.value
-          const publicKeyHex = getConfigurationKey(
-            chargingStation,
-            buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
-          )?.value
-          ocpp20SigningConfig = {
-            enabled: true,
-            meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
-            publicKeyHex,
-            publicKeySentInTransaction:
-              chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ?? false,
-            publicKeyWithSignedMeterValue: Object.values(
-              PublicKeyWithSignedMeterValueEnumType
-            ).includes(publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
-              ? (publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
-              : PublicKeyWithSignedMeterValueEnumType.Never,
-            transactionId,
+          let signingEnabledForContext = true
+          if (context != null) {
+            if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
+              signingEnabledForContext =
+                getConfigurationKey(
+                  chargingStation,
+                  buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings')
+                )?.value === 'true'
+            } else if (
+              context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
+              context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+            ) {
+              signingEnabledForContext =
+                getConfigurationKey(
+                  chargingStation,
+                  buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings')
+                )?.value === 'true'
+            }
+            // context === TRANSACTION_END: always sign (no sub-switch needed)
+          }
+
+          if (signingEnabledForContext) {
+            const publicKeyWithSignedMeterValueStr = getConfigurationKey(
+              chargingStation,
+              buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue')
+            )?.value
+            const publicKeyHex = getConfigurationKey(
+              chargingStation,
+              buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
+            )?.value
+            ocpp20SigningConfig = {
+              enabled: true,
+              meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
+              publicKeyHex,
+              publicKeySentInTransaction:
+                chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ?? false,
+              publicKeyWithSignedMeterValue: Object.values(
+                PublicKeyWithSignedMeterValueEnumType
+              ).includes(publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
+                ? (publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
+                : PublicKeyWithSignedMeterValueEnumType.Never,
+              transactionId,
+            }
           }
         }
 
