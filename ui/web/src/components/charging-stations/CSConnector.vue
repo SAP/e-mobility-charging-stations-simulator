@@ -4,7 +4,7 @@
       {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
     <td class="connectors-table__column">
-      {{ connector.status ?? 'Ø' }}
+      {{ connector.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="connectors-table__column">
       {{ connector.locked === true ? 'Yes' : 'No' }}
@@ -28,13 +28,13 @@
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           }
         "
         :on="
           () => {
             $router.push({
-              name: 'start-transaction',
+              name: ROUTE_NAMES.START_TRANSACTION,
               params: { hashId, chargingStationId, connectorId },
               query: {
                 ...(evseId != null ? { evseId: String(evseId) } : {}),
@@ -73,7 +73,7 @@ import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
-import { useExecuteAction, useUIClient } from '@/composables'
+import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   atgStatus?: Status
@@ -87,7 +87,7 @@ const props = defineProps<{
 
 const $emit = defineEmits(['need-refresh'])
 
-const uiClient = useUIClient()
+const $uiClient = useUIClient()
 
 const $toast = useToast()
 
@@ -99,7 +99,7 @@ const stopTransaction = (): void => {
     return
   }
   executeAction(
-    uiClient.stopTransaction(props.hashId, {
+    $uiClient.stopTransaction(props.hashId, {
       ocppVersion: props.ocppVersion,
       transactionId: props.connector.transactionId,
     }),
@@ -109,28 +109,28 @@ const stopTransaction = (): void => {
 }
 const lockConnector = (): void => {
   executeAction(
-    uiClient.lockConnector(props.hashId, props.connectorId),
+    $uiClient.lockConnector(props.hashId, props.connectorId),
     'Connector successfully locked',
     'Error at locking connector'
   )
 }
 const unlockConnector = (): void => {
   executeAction(
-    uiClient.unlockConnector(props.hashId, props.connectorId),
+    $uiClient.unlockConnector(props.hashId, props.connectorId),
     'Connector successfully unlocked',
     'Error at unlocking connector'
   )
 }
 const startAutomaticTransactionGenerator = (): void => {
   executeAction(
-    uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
+    $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
     'Automatic transaction generator successfully started',
     'Error at starting automatic transaction generator'
   )
 }
 const stopAutomaticTransactionGenerator = (): void => {
   executeAction(
-    uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
+    $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
     'Automatic transaction generator successfully stopped',
     'Error at stopping automatic transaction generator'
   )

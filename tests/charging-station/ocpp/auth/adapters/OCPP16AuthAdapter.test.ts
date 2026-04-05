@@ -18,6 +18,7 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPP16AuthorizationStatus, OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG_VALID } from '../../../ChargingStationTestConstants.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
 
 await describe('OCPP16AuthAdapter', async () => {
@@ -96,7 +97,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('isValidIdentifier', async () => {
     await it('should validate correct OCPP 1.6 identifier', () => {
-      const identifier = createMockIdentifier('VALID_TAG')
+      const identifier = createMockIdentifier(TEST_ID_TAG_VALID)
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), true)
     })
@@ -149,7 +150,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('authorizeRemote', async () => {
     await it('should perform remote authorization successfully', async () => {
-      const identifier = createMockIdentifier('VALID_TAG')
+      const identifier = createMockIdentifier(TEST_ID_TAG_VALID)
 
       const result = await adapter.authorizeRemote(identifier, 1, 123)
 

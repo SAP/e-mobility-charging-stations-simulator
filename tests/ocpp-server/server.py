@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from functools import partial
 from random import randint
+from typing import ClassVar
 
 import ocpp.v201
 import websockets
@@ -57,10 +58,23 @@ logger = logging.getLogger(__name__)
 # Server defaults
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9000
-DEFAULT_HEARTBEAT_INTERVAL = 60
+DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 60
+DEFAULT_MESSAGE_TIMEOUT_SECONDS = 30
 DEFAULT_TOTAL_COST = 10.0
+DEFAULT_SECURITY_PROFILE = 0
+DEFAULT_CONFIG_SLOT = 1
+DEFAULT_EVSE_ID = 1
+DEFAULT_CONNECTOR_ID = 1
+DEFAULT_OCPP_CSMS_URL = "ws://127.0.0.1:9000"
+DEFAULT_TEST_TOKEN = "test_token"  # noqa: S105
+DEFAULT_TOKEN_TYPE = "ISO14443"  # noqa: S105
+DEFAULT_VENDOR_ID = "TestVendor"
+DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v2.0.bin"
+DEFAULT_LOG_URL = "https://example.com/logs"
+DEFAULT_CUSTOMER_ID = "test_customer_001"
+FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
-SHUTDOWN_TIMEOUT = 30.0
+SHUTDOWN_TIMEOUT_SECONDS = 30.0
 SUBPROTOCOLS: list[websockets.Subprotocol] = [
     websockets.Subprotocol("ocpp2.0"),
     websockets.Subprotocol("ocpp2.0.1"),
@@ -234,7 +248,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._boot_index[0] = idx + 1
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
-            interval=DEFAULT_HEARTBEAT_INTERVAL,
+            interval=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
             status=status,
         )
 
@@ -440,18 +454,23 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_request_start_transaction(self):
         request = ocpp.v201.call.RequestStartTransaction(
-            id_token={"id_token": "test_token", "type": "ISO14443"},
-            evse_id=1,
+            id_token={"id_token": DEFAULT_TEST_TOKEN, "type": DEFAULT_TOKEN_TYPE},
+            evse_id=DEFAULT_EVSE_ID,
             remote_start_id=_random_request_id(),
         )
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_start_transaction)
 
-    async def _send_request_stop_transaction(self):
+    def _get_active_or_fallback_transaction_id(self) -> str:
+        """Return the first active transaction ID, or fall back to a test ID."""
         transaction_id = next(iter(self._active_transactions), "")
         if not transaction_id:
             logger.warning("No active transaction found, using fallback ID")
-            transaction_id = "test_transaction_123"
+            transaction_id = FALLBACK_TRANSACTION_ID
+        return transaction_id
+
+    async def _send_request_stop_transaction(self):
+        transaction_id = self._get_active_or_fallback_transaction_id()
         request = ocpp.v201.call.RequestStopTransaction(transaction_id=transaction_id)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_stop_transaction)
@@ -461,7 +480,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self._call_and_log(request, Action.reset, ResetStatusEnumType.accepted)
 
     async def _send_unlock_connector(self):
-        request = ocpp.v201.call.UnlockConnector(evse_id=1, connector_id=1)
+        request = ocpp.v201.call.UnlockConnector(
+            evse_id=DEFAULT_EVSE_ID, connector_id=DEFAULT_CONNECTOR_ID
+        )
         await self._call_and_log(
             request, Action.unlock_connector, UnlockStatusEnumType.unlocked
         )
@@ -486,7 +507,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_data_transfer(self):
         request = ocpp.v201.call.DataTransfer(
-            vendor_id="TestVendor", message_id="TestMessage", data="test_data"
+            vendor_id=DEFAULT_VENDOR_ID, message_id="TestMessage", data="test_data"
         )
         await self._call_and_log(
             request, Action.data_transfer, DataTransferStatusEnumType.accepted
@@ -512,7 +533,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             request_id=_random_request_id(),
             report=True,
             clear=False,
-            customer_identifier="test_customer_001",
+            customer_identifier=DEFAULT_CUSTOMER_ID,
         )
         await self._call_and_log(
             request,
@@ -547,17 +568,14 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_get_log(self):
         request = ocpp.v201.call.GetLog(
-            log={"remote_location": "https://example.com/logs"},
+            log={"remote_location": DEFAULT_LOG_URL},
             log_type=LogEnumType.diagnostics_log,
             request_id=_random_request_id(),
         )
         await self._call_and_log(request, Action.get_log, LogStatusEnumType.accepted)
 
     async def _send_get_transaction_status(self):
-        transaction_id = next(iter(self._active_transactions), "")
-        if not transaction_id:
-            logger.warning("No active transaction found, using fallback ID")
-            transaction_id = "test_transaction_123"
+        transaction_id = self._get_active_or_fallback_transaction_id()
         request = ocpp.v201.call.GetTransactionStatus(
             transaction_id=transaction_id,
         )
@@ -585,13 +603,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_set_network_profile(self):
         request = ocpp.v201.call.SetNetworkProfile(
-            configuration_slot=1,
+            configuration_slot=DEFAULT_CONFIG_SLOT,
             connection_data={
                 "ocpp_version": "OCPP20",
                 "ocpp_transport": "JSON",
-                "ocpp_csms_url": "ws://127.0.0.1:9000",
-                "message_timeout": 30,
-                "security_profile": 0,
+                "ocpp_csms_url": DEFAULT_OCPP_CSMS_URL,
+                "message_timeout": DEFAULT_MESSAGE_TIMEOUT_SECONDS,
+                "security_profile": DEFAULT_SECURITY_PROFILE,
                 "ocpp_interface": "Wired0",
             },
         )
@@ -605,7 +623,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.UpdateFirmware(
             request_id=_random_request_id(),
             firmware={
-                "location": "https://example.com/firmware/v2.0.bin",
+                "location": DEFAULT_FIRMWARE_URL,
                 "retrieve_date_time": datetime.now(timezone.utc).isoformat(),
             },
         )
@@ -615,52 +633,37 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     # --- Command dispatch ---
 
+    _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
+        Action.clear_cache: "_send_clear_cache",
+        Action.get_base_report: "_send_get_base_report",
+        Action.get_variables: "_send_get_variables",
+        Action.set_variables: "_send_set_variables",
+        Action.request_start_transaction: "_send_request_start_transaction",
+        Action.request_stop_transaction: "_send_request_stop_transaction",
+        Action.reset: "_send_reset",
+        Action.unlock_connector: "_send_unlock_connector",
+        Action.change_availability: "_send_change_availability",
+        Action.trigger_message: "_send_trigger_message",
+        Action.data_transfer: "_send_data_transfer",
+        Action.certificate_signed: "_send_certificate_signed",
+        Action.customer_information: "_send_customer_information",
+        Action.delete_certificate: "_send_delete_certificate",
+        Action.get_installed_certificate_ids: "_send_get_installed_certificate_ids",
+        Action.get_log: "_send_get_log",
+        Action.get_transaction_status: "_send_get_transaction_status",
+        Action.install_certificate: "_send_install_certificate",
+        Action.set_network_profile: "_send_set_network_profile",
+        Action.update_firmware: "_send_update_firmware",
+    }
+
     async def _send_command(self, command_name: Action):
         logger.debug("Sending OCPP command %s", command_name)
         try:
-            match command_name:
-                case Action.clear_cache:
-                    await self._send_clear_cache()
-                case Action.get_base_report:
-                    await self._send_get_base_report()
-                case Action.get_variables:
-                    await self._send_get_variables()
-                case Action.set_variables:
-                    await self._send_set_variables()
-                case Action.request_start_transaction:
-                    await self._send_request_start_transaction()
-                case Action.request_stop_transaction:
-                    await self._send_request_stop_transaction()
-                case Action.reset:
-                    await self._send_reset()
-                case Action.unlock_connector:
-                    await self._send_unlock_connector()
-                case Action.change_availability:
-                    await self._send_change_availability()
-                case Action.trigger_message:
-                    await self._send_trigger_message()
-                case Action.data_transfer:
-                    await self._send_data_transfer()
-                case Action.certificate_signed:
-                    await self._send_certificate_signed()
-                case Action.customer_information:
-                    await self._send_customer_information()
-                case Action.delete_certificate:
-                    await self._send_delete_certificate()
-                case Action.get_installed_certificate_ids:
-                    await self._send_get_installed_certificate_ids()
-                case Action.get_log:
-                    await self._send_get_log()
-                case Action.get_transaction_status:
-                    await self._send_get_transaction_status()
-                case Action.install_certificate:
-                    await self._send_install_certificate()
-                case Action.set_network_profile:
-                    await self._send_set_network_profile()
-                case Action.update_firmware:
-                    await self._send_update_firmware()
-                case _:
-                    logger.warning("Not supported command %s", command_name)
+            handler_name = self._COMMAND_HANDLERS.get(command_name)
+            if handler_name is not None:
+                await getattr(self, handler_name)()
+            else:
+                logger.warning("Not supported command %s", command_name)
         except TimeoutError:
             logger.error("Timeout waiting for %s response", command_name)
         except OCPPError as e:
@@ -804,45 +807,33 @@ def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
     return result
 
 
-def _parse_set_variable_specs(specs_str: str) -> list[dict]:
+def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[dict]:
     result = []
     for entry in specs_str.split(","):
         entry = entry.strip()
         if not entry:
             continue
-        if "=" not in entry or "." not in entry.split("=")[0]:
-            raise argparse.ArgumentTypeError(
-                f"Invalid variable spec '{entry}': expected 'Component.Variable=Value'"
-            )
-        component_var, value = entry.split("=", 1)
+        if require_value:
+            if "=" not in entry or "." not in entry.split("=")[0]:
+                raise argparse.ArgumentTypeError(
+                    f"Invalid variable spec '{entry}':"
+                    " expected 'Component.Variable=Value'"
+                )
+            component_var, value = entry.split("=", 1)
+        else:
+            if "." not in entry:
+                raise argparse.ArgumentTypeError(
+                    f"Invalid variable spec '{entry}': expected 'Component.Variable'"
+                )
+            component_var = entry
         component, variable = component_var.strip().split(".", 1)
-        result.append(
-            {
-                "component": {"name": component.strip()},
-                "variable": {"name": variable.strip()},
-                "attribute_value": value.strip(),
-            }
-        )
-    return result
-
-
-def _parse_get_variable_specs(specs_str: str) -> list[dict]:
-    result = []
-    for entry in specs_str.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        if "." not in entry:
-            raise argparse.ArgumentTypeError(
-                f"Invalid variable spec '{entry}': expected 'Component.Variable'"
-            )
-        component, variable = entry.split(".", 1)
-        result.append(
-            {
-                "component": {"name": component.strip()},
-                "variable": {"name": variable.strip()},
-            }
-        )
+        spec: dict = {
+            "component": {"name": component.strip()},
+            "variable": {"name": variable.strip()},
+        }
+        if require_value:
+            spec["attribute_value"] = value.strip()
+        result.append(spec)
     return result
 
 
@@ -1003,12 +994,12 @@ async def main():
         if parsed_commands is not None and not parsed_commands:
             parser.error("--commands must contain at least one CMD:DELAY entry")
         parsed_set_variables = (
-            _parse_set_variable_specs(args.set_variables)
+            _parse_variable_specs(args.set_variables, require_value=True)
             if args.set_variables
             else None
         )
         parsed_get_variables = (
-            _parse_get_variable_specs(args.get_variables)
+            _parse_variable_specs(args.get_variables, require_value=False)
             if args.get_variables
             else None
         )
@@ -1114,13 +1105,13 @@ async def main():
         await shutdown_event.wait()
 
         try:
-            async with asyncio.timeout(SHUTDOWN_TIMEOUT):
+            async with asyncio.timeout(SHUTDOWN_TIMEOUT_SECONDS):
                 await server.wait_closed()
         except TimeoutError:
             logger.warning(
                 "Shutdown timed out after %.0fs"
                 " — connections may not have closed cleanly",
-                SHUTDOWN_TIMEOUT,
+                SHUTDOWN_TIMEOUT_SECONDS,
             )
 
     logger.info("Server shutdown complete")

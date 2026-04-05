@@ -1,5 +1,6 @@
 import type { AuthConfiguration, Identifier } from '../types/AuthTypes.js'
 
+import { isNotEmptyString } from '../../../../utils/index.js'
 import { IdentifierType } from '../types/AuthTypes.js'
 
 /**
@@ -51,12 +52,7 @@ function isValidConnectorId (connectorId: number | undefined): boolean {
  * @returns True if the value is a non-empty string with at least one non-whitespace character, false otherwise
  */
 function isValidIdentifierValue (value: string): boolean {
-  if (typeof value !== 'string' || value.length === 0) {
-    return false
-  }
-
-  // Must contain at least one non-whitespace character
-  return value.trim().length > 0
+  return isNotEmptyString(value)
 }
 
 /**
@@ -177,9 +173,14 @@ function validateIdentifier (identifier: unknown): boolean {
     case IdentifierType.MOBILE_APP:
     case IdentifierType.NO_AUTHORIZATION:
       // OCPP 2.0 types - use IdToken max length
-      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
+      return (
+        isNotEmptyString(typedIdentifier.value) &&
+        typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
+      )
     case IdentifierType.ID_TAG:
-      return typedIdentifier.value.length > 0 && typedIdentifier.value.length <= MAX_IDTAG_LENGTH
+      return (
+        isNotEmptyString(typedIdentifier.value) && typedIdentifier.value.length <= MAX_IDTAG_LENGTH
+      )
 
     default:
       return false

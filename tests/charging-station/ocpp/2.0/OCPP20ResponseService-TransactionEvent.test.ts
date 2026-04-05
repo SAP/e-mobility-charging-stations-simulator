@@ -83,12 +83,11 @@ await describe('D01 - TransactionEvent Response', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       evseConfiguration: { evsesCount: 1 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = mockStation
     // Set connector transactionId to the UUID string used in request payloads
@@ -282,12 +281,11 @@ await describe('D01 - TransactionEvent Response', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
       evseConfiguration: { evsesCount: 2 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     setupConnectorWithTransaction(multiStation, 1, { transactionId: 10 })
     const connector1 = multiStation.getConnectorStatus(1)

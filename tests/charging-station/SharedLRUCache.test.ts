@@ -19,6 +19,8 @@ import type {
 
 import { Bootstrap } from '../../src/charging-station/Bootstrap.js'
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
+import { StandardParametersKey } from '../../src/types/index.js'
+import { Constants } from '../../src/utils/Constants.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface BootstrapStatic {
@@ -32,9 +34,11 @@ interface BootstrapStatic {
  */
 function createCacheableConfiguration (hash: string): ChargingStationConfiguration {
   return {
-    automaticTransactionGenerator: { enable: false, maxDuration: 120, minDuration: 60 },
+    automaticTransactionGenerator: { ...Constants.DEFAULT_ATG_CONFIGURATION },
     configurationHash: hash,
-    configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '60' }],
+    configurationKey: [
+      { key: StandardParametersKey.HeartbeatInterval, readonly: false, value: '60' },
+    ],
     stationInfo: { chargingStationId: 'test-station' },
   } as unknown as ChargingStationConfiguration
 }

@@ -20,6 +20,7 @@ import {
   Constants,
   convertToDate,
   formatDurationMilliSeconds,
+  isEmpty,
   isValidDate,
   logger,
   logPrefix,
@@ -385,7 +386,7 @@ export class AutomaticTransactionGenerator {
 
   private startConnectors (stopAbsoluteDuration?: boolean): void {
     if (
-      this.connectorsStatus.size > 0 &&
+      !isEmpty(this.connectorsStatus) &&
       this.connectorsStatus.size !== this.chargingStation.getNumberOfConnectors()
     ) {
       this.connectorsStatus.clear()
@@ -497,7 +498,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 
@@ -512,7 +513,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 
@@ -527,7 +528,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
     }
   }
 }

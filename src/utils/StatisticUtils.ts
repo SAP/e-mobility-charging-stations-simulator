@@ -1,5 +1,7 @@
+import { isEmpty, isNotEmptyArray } from './Utils.js'
+
 export const average = (dataSet: number[]): number => {
-  if (!Array.isArray(dataSet) || dataSet.length === 0) {
+  if (!isNotEmptyArray<number>(dataSet)) {
     return 0
   }
   if (dataSet.length === 1) {
@@ -9,7 +11,7 @@ export const average = (dataSet: number[]): number => {
 }
 
 export const median = (dataSet: number[]): number => {
-  if (!Array.isArray(dataSet) || dataSet.length === 0) {
+  if (!isNotEmptyArray<number>(dataSet)) {
     return 0
   }
   if (dataSet.length === 1) {
@@ -35,7 +37,7 @@ export const percentile = (dataSet: number[], percentile: number): number => {
   if (percentile < 0 || percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
-  if (dataSet.length === 0) {
+  if (isEmpty(dataSet)) {
     return 0
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)

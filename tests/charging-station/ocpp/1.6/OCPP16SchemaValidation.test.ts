@@ -19,6 +19,7 @@ import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPP16IncomingRequestCommand, OCPP16RequestCommand } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 
 const AjvConstructor = _Ajv.default
 const ajvFormats = _ajvFormats.default
@@ -126,7 +127,7 @@ await describe('OCPP16SchemaValidation', async () => {
 
     await it('should pass validation when Authorize has valid idTag', () => {
       const validate = makeValidator('Authorize.json')
-      const valid = validate({ idTag: 'TEST-TAG-001' })
+      const valid = validate({ idTag: TEST_ID_TAG })
       assert.strictEqual(valid, true)
     })
 
@@ -166,7 +167,7 @@ await describe('OCPP16SchemaValidation', async () => {
       const validate = makeValidator('StartTransaction.json')
       const valid = validate({
         connectorId: 1,
-        idTag: 'TEST-TAG-001',
+        idTag: TEST_ID_TAG,
         meterStart: 0,
         timestamp: '2025-03-10T12:00:00Z',
       })

@@ -7,7 +7,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
 } from '../../types/index.js'
-import { logger } from '../../utils/index.js'
+import { isNotEmptyArray, logger } from '../../utils/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'UIServiceWorkerBroadcastChannel'
@@ -33,7 +33,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private buildResponsePayload (uuid: string): ResponsePayload {
     const responsesArray = this.responses.get(uuid)?.responses ?? []
     const responsesStatus =
-      responsesArray.length > 0 &&
+      isNotEmptyArray(responsesArray) &&
       responsesArray.every(response => response.status === ResponseStatus.SUCCESS)
         ? ResponseStatus.SUCCESS
         : ResponseStatus.FAILURE

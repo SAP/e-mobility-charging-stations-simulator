@@ -1,7 +1,9 @@
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
-import { logger, truncateId } from '../../../../utils/index.js'
+import { Constants, isEmpty, logger, roundTo, truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
@@ -106,7 +108,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
    * @param options.defaultTtl - Default TTL in seconds (default: 3600)
    * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: 86400000)
-   * @param options.maxEntries - Maximum number of cache entries (default: 1000)
+   * @param options.maxEntries - Maximum number of cache entries (default: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
    * @param options.rateLimit - Rate limiting configuration
    * @param options.rateLimit.enabled - Enable rate limiting (default: false)
    * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
@@ -119,19 +121,21 @@ export class InMemoryAuthCache implements AuthCache {
     maxEntries?: number
     rateLimit?: { enabled?: boolean; maxRequests?: number; windowMs?: number }
   }) {
-    this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
+    this.defaultTtl = options?.defaultTtl ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS
     this.maxAbsoluteLifetimeMs =
       options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
-    this.maxEntries = Math.max(1, options?.maxEntries ?? 1000)
+    this.maxEntries = Math.max(1, options?.maxEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
-      maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window
-      windowMs: options?.rateLimit?.windowMs ?? 60000, // 1 minute window
+      maxRequests:
+        options?.rateLimit?.maxRequests ?? Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: options?.rateLimit?.windowMs ?? Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS,
     }
 
-    const cleanupSeconds = options?.cleanupIntervalSeconds ?? 300
+    const cleanupSeconds =
+      options?.cleanupIntervalSeconds ?? Constants.DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS
     if (cleanupSeconds > 0) {
-      const intervalMs = cleanupSeconds * 1000
+      const intervalMs = secondsToMilliseconds(cleanupSeconds)
       this.cleanupInterval = setInterval(() => {
         this.runCleanup()
       }, intervalMs)
@@ -193,7 +197,10 @@ export class InMemoryAuthCache implements AuthCache {
       if (!authCacheEntry.hasExplicitTtl) {
         const absoluteDeadline = authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs
         if (absoluteDeadline > now) {
-          authCacheEntry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          authCacheEntry.expiresAt = Math.min(
+            now + secondsToMilliseconds(this.defaultTtl),
+            absoluteDeadline
+          )
         }
       }
       this.lruOrder.set(identifier, now)
@@ -213,7 +220,7 @@ export class InMemoryAuthCache implements AuthCache {
       !authCacheEntry.hasExplicitTtl &&
       authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs > now
     ) {
-      authCacheEntry.expiresAt = now + this.defaultTtl * 1000
+      authCacheEntry.expiresAt = now + secondsToMilliseconds(this.defaultTtl)
     }
 
     logger.debug(`${moduleName}: Cache hit for identifier: '${truncateId(identifier)}'`)
@@ -238,7 +245,7 @@ export class InMemoryAuthCache implements AuthCache {
     return {
       evictions: this.stats.evictions,
       expiredEntries: this.stats.expired,
-      hitRate: Math.round(hitRate * 100) / 100,
+      hitRate: roundTo(hitRate, 2),
       hits: this.stats.hits,
       memoryUsage,
       misses: this.stats.misses,
@@ -297,7 +304,10 @@ export class InMemoryAuthCache implements AuthCache {
           if (!entry.hasExplicitTtl) {
             const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
             if (absoluteDeadline > now) {
-              entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+              entry.expiresAt = Math.min(
+                now + secondsToMilliseconds(this.defaultTtl),
+                absoluteDeadline
+              )
             }
           }
           this.stats.expired++
@@ -332,7 +342,7 @@ export class InMemoryAuthCache implements AuthCache {
     const maxTtlSeconds = this.maxAbsoluteLifetimeMs / 1000
     const clampedTtl = Math.min(Math.max(0, ttlSeconds), maxTtlSeconds)
     const now = Date.now()
-    const expiresAt = now + clampedTtl * 1000
+    const expiresAt = now + secondsToMilliseconds(clampedTtl)
 
     this.cache.set(identifier, {
       createdAt: now,
@@ -419,7 +429,7 @@ export class InMemoryAuthCache implements AuthCache {
    * Evict least recently used entry
    */
   private evictLRU (): void {
-    if (this.lruOrder.size === 0) {
+    if (isEmpty(this.lruOrder)) {
       return
     }
 

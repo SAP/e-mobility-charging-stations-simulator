@@ -10,9 +10,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type { Reservation } from '../../../src/types/index.js'
-import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
   restoreConnectorStatus,
@@ -24,25 +22,11 @@ import {
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
 } from '../../../src/types/index.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../ChargingStationTestUtils.js'
-
-/**
- * Creates a mock station with a spied requestHandler for verifying OCPP requests.
- * @param opts - Additional mock station options to merge
- * @returns The station and its requestHandler spy
- */
-function createStationWithRequestHandler (opts?: Partial<MockChargingStationOptions>): {
-  requestHandler: ReturnType<typeof mock.fn>
-  station: ChargingStation
-} {
-  const requestHandler = mock.fn(() => Promise.resolve({}))
-  const { station } = createMockChargingStation({
-    ocppRequestService: { requestHandler },
-    ...opts,
-  })
-  return { requestHandler, station }
-}
+import {
+  createStationWithRequestHandler,
+  standardCleanup,
+} from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from '../ChargingStationTestConstants.js'
 
 await describe('OCPPConnectorStatusOperations', async () => {
   afterEach(() => {
@@ -153,7 +137,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
         connectorStatus.reservation = {
           connectorId: 1,
           expiryDate: new Date().toISOString(),
-          idTag: 'TEST-TAG',
+          idTag: TEST_ID_TAG,
           reservationId: 1,
         } as unknown as Reservation
         connectorStatus.status = ConnectorStatusEnum.Occupied

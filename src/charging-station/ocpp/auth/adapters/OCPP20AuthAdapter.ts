@@ -23,7 +23,7 @@ import {
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../types/index.js'
-import { logger, truncateId } from '../../../../utils/index.js'
+import { getErrorMessage, isEmpty, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -142,7 +142,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       return {
         additionalInfo: {
           connectorId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: getErrorMessage(error),
           transactionId,
         },
         isOffline: false,
@@ -395,7 +395,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
     }
 
     // Check length (OCPP 2.0 spec: max 36 characters)
-    if (identifier.value.length === 0 || identifier.value.length > 36) {
+    if (isEmpty(identifier.value) || identifier.value.length > 36) {
       return false
     }
 

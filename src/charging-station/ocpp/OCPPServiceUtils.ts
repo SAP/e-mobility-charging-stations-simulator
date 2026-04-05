@@ -67,7 +67,7 @@ const moduleName = 'OCPPServiceUtils'
 
 const SOC_MAXIMUM_VALUE = 100
 const UNIT_DIVIDER_KILO = 1000
-const MILLISECONDS_PER_HOUR = 3_600_000
+const MS_PER_HOUR = 3_600_000
 
 export type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -235,7 +235,7 @@ const buildSocMeasurandValue = (
   const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
   const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
     ? getRandomFloatFluctuatedRounded(
-      Number.parseInt(socSampledValueTemplate.value),
+      convertToInt(socSampledValueTemplate.value),
       socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
     )
     : randomInt(socMinimumValue, socMaximumValue + 1)
@@ -292,7 +292,7 @@ const buildVoltageMeasurandValue = (
   }
 
   const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
-    ? Number.parseInt(voltageSampledValueTemplate.value)
+    ? convertToInt(voltageSampledValueTemplate.value)
     : chargingStation.getVoltageOut()
   const fluctuationPercent =
     voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -361,7 +361,7 @@ const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   let phaseMeasurandValue: number | undefined
   if (phaseSampledValueTemplate != null) {
     const templateValue = isNotEmptyString(phaseSampledValueTemplate.value)
-      ? Number.parseInt(phaseSampledValueTemplate.value)
+      ? convertToInt(phaseSampledValueTemplate.value)
       : nominalVoltage
     phaseMeasurandValue = getRandomFloatFluctuatedRounded(
       templateValue,
@@ -401,7 +401,7 @@ const buildEnergyMeasurandValue = (
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMaximumEnergyRounded = roundTo(
-    (connectorMaximumAvailablePower * interval) / MILLISECONDS_PER_HOUR,
+    (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
     2
   )
   const connectorMinimumEnergyRounded = roundTo(energyTemplate.minimumValue ?? 0, 2)
@@ -1155,7 +1155,7 @@ export const buildMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / MILLISECONDS_PER_HOUR,
+      (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
       2
     )
     const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)

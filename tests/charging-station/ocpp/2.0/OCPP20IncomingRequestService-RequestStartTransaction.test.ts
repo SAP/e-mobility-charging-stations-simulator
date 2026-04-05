@@ -63,7 +63,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
         requestHandler: async () => Promise.resolve({}),
       },
@@ -71,7 +70,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     mockStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
@@ -194,7 +193,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
         requestHandler: async () => Promise.resolve({}),
       },
@@ -202,7 +200,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
 
     const stationId = spyChargingStation.stationInfo?.chargingStationId ?? 'unknown'
@@ -682,7 +680,6 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL-START',
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: async (_chargingStation: unknown, commandName: unknown) => {
             if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
@@ -696,7 +693,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
 
       const failStationId = failStation.stationInfo?.chargingStationId ?? 'unknown'

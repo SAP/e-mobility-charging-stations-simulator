@@ -425,7 +425,7 @@ export const computeExponentialBackOffDelay = (options: {
  * @see https://nodejs.org/api/timers.html#settimeoutcallback-delay-args
  */
 export const clampToSafeTimerValue = (delayMs: number): number => {
-  return Math.min(Math.max(0, delayMs), Constants.MAX_SETINTERVAL_DELAY)
+  return Math.min(Math.max(0, delayMs), Constants.MAX_SETINTERVAL_DELAY_MS)
 }
 
 /**

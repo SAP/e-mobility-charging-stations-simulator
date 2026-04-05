@@ -28,7 +28,9 @@
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
+import type { MockChargingStationOptions } from '../charging-station/helpers/StationHelpers.js'
 
+import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
 import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/MockCaches.js'
 
 /**
@@ -195,6 +197,23 @@ export function createLoggerMocks (
 }
 
 /**
+ * Creates a mock charging station with a spied requestHandler for verifying OCPP requests.
+ * @param opts - Additional mock station options to merge
+ * @returns Object with the station and its requestHandler spy
+ */
+export function createStationWithRequestHandler (opts?: Partial<MockChargingStationOptions>): {
+  requestHandler: ReturnType<typeof mock.fn>
+  station: ChargingStation
+} {
+  const requestHandler = mock.fn(async (..._args: unknown[]) => Promise.resolve({}))
+  const { station } = createMockChargingStation({
+    ocppRequestService: { requestHandler },
+    ...opts,
+  })
+  return { requestHandler, station }
+}
+
+/**
  * Create a timer scope for manual control over timer mocking.
  *
  * Use this when you need more control than withMockTimers provides,
@@ -244,6 +263,7 @@ export function createTimerScope (
  * @param station - ChargingStation instance
  * @param connectorId - Connector to setup
  * @param options - Transaction options
+ * @param options.pending - Whether transaction is pending (not started) (default: false)
  * @param options.transactionId - Transaction ID to set
  * @param options.idTag - ID tag for the transaction (default: TAG-{transactionId})
  * @param options.energyImport - Energy import value in Wh (default: 0)
@@ -263,8 +283,9 @@ export function setupConnectorWithTransaction (
   options: {
     energyImport?: number
     idTag?: string
+    pending?: boolean
     remoteStarted?: boolean
-    transactionId: number
+    transactionId: number | string
   }
 ): void {
   const connectorStatus = station.getConnectorStatus(connectorId)
@@ -272,13 +293,18 @@ export function setupConnectorWithTransaction (
     throw new Error(`Connector ${String(connectorId)} not found`)
   }
 
-  connectorStatus.transactionStarted = true
+  if (options.pending === true) {
+    connectorStatus.transactionPending = true
+    connectorStatus.transactionStarted = false
+  } else {
+    connectorStatus.transactionStarted = true
+  }
   connectorStatus.transactionId = options.transactionId
   connectorStatus.transactionIdTag = options.idTag ?? `TAG-${String(options.transactionId)}`
   connectorStatus.transactionEnergyActiveImportRegisterValue = options.energyImport ?? 0
   connectorStatus.transactionRemoteStarted = options.remoteStarted ?? false
   connectorStatus.transactionStart = new Date()
-  connectorStatus.idTagAuthorized = true
+  connectorStatus.idTagAuthorized = options.pending !== true
 }
 
 /**

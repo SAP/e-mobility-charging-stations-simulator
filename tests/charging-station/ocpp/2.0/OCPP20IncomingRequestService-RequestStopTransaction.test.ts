@@ -303,7 +303,6 @@ await describe('F03 - Remote Stop Transaction', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL',
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: async (_chargingStation: unknown, commandName: unknown) => {
             if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
@@ -317,7 +316,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
 
       const failStationId = failStation.stationInfo?.chargingStationId ?? 'unknown'

@@ -26,7 +26,7 @@ import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,
-  DEFAULT_RATE_WINDOW,
+  DEFAULT_RATE_WINDOW_MS,
   isValidCredential,
 } from './UIServerSecurity.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
@@ -70,7 +70,7 @@ export abstract class AbstractUIServer {
         )
     }
     this.responseHandlers = new Map<UUIDv4, ServerResponse | WebSocket>()
-    this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
+    this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW_MS)
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 

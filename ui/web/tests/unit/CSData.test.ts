@@ -11,6 +11,7 @@ import type { ChargingStationData } from '@/types'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import CSData from '@/components/charging-stations/CSData.vue'
 import { useUIClient } from '@/composables'
+import { EMPTY_VALUE_PLACEHOLDER } from '@/composables/Constants'
 import { OCPPVersion } from '@/types'
 
 import { toastMock } from '../setup'
@@ -94,7 +95,7 @@ describe('CSData', () => {
       })
       const wrapper = mountCSData(station)
       const cells = wrapper.findAll('td')
-      expect(cells[9].text()).toBe('Ø')
+      expect(cells[9].text()).toBe(EMPTY_VALUE_PLACEHOLDER)
     })
 
     it('should display WebSocket state as Open when OPEN', () => {
@@ -112,7 +113,7 @@ describe('CSData', () => {
     it('should display WebSocket state as Ø for undefined state', () => {
       const wrapper = mountCSData(createChargingStationData({ wsState: undefined }))
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('Ø')
+      expect(cells[3].text()).toBe(EMPTY_VALUE_PLACEHOLDER)
     })
 
     it('should display registration status', () => {
@@ -124,7 +125,7 @@ describe('CSData', () => {
       const station = createChargingStationData({ bootNotificationResponse: undefined })
       const wrapper = mountCSData(station)
       const cells = wrapper.findAll('td')
-      expect(cells[4].text()).toBe('Ø')
+      expect(cells[4].text()).toBe(EMPTY_VALUE_PLACEHOLDER)
     })
 
     it('should display WebSocket state as Connecting when CONNECTING', () => {

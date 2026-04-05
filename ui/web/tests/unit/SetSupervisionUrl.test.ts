@@ -6,6 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import SetSupervisionUrl from '@/components/actions/SetSupervisionUrl.vue'
+import { uiClientKey } from '@/composables'
 
 import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_STATION_ID } from './constants'
@@ -29,8 +30,10 @@ describe('SetSupervisionUrl', () => {
           globalProperties: {
             $router: mockRouter,
             $toast: toastMock,
-            $uiClient: mockClient,
           } as never,
+        },
+        provide: {
+          [uiClientKey as symbol]: mockClient,
         },
         stubs: {
           Button: ButtonStub,

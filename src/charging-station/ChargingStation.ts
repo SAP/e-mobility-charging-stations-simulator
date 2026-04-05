@@ -100,7 +100,6 @@ import {
   min,
   once,
   promiseWithTimeout,
-  roundTo,
   secureRandom,
   sleep,
   watchJsonFile,
@@ -178,7 +177,7 @@ export class ChargingStation extends EventEmitter {
   public wsConnection: null | WebSocket
 
   public get hasEvses (): boolean {
-    return isEmpty(this.connectors) && this.evses.size > 0
+    return isEmpty(this.connectors) && !isEmpty(this.evses)
   }
 
   public get wsConnectionUrl (): URL {
@@ -276,10 +275,8 @@ export class ChargingStation extends EventEmitter {
       try {
         this.internalStopMessageSequence()
       } catch (error) {
-        logger.error(
-          `${this.logPrefix()} Error while stopping the internal message sequence:`,
-          error
-        )
+        const e = ensureError(error)
+        logger.error(`${this.logPrefix()} Error while stopping the internal message sequence:`, e)
       }
     })
 
@@ -347,7 +344,8 @@ export class ChargingStation extends EventEmitter {
       try {
         await this.stop()
       } catch (error) {
-        logger.error(`${this.logPrefix()} Error stopping station during delete:`, error)
+        const e = ensureError(error)
+        logger.error(`${this.logPrefix()} Error stopping station during delete:`, e)
       }
     }
     AutomaticTransactionGenerator.deleteInstance(this)
@@ -372,9 +370,10 @@ export class ChargingStation extends EventEmitter {
       try {
         rmSync(this.configurationFile, { force: true })
       } catch (error) {
+        const e = ensureError(error)
         logger.error(
           `${this.logPrefix()} Failed to delete configuration file ${this.configurationFile}:`,
-          error
+          e
         )
       }
     }
@@ -448,10 +447,10 @@ export class ChargingStation extends EventEmitter {
     if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
       return convertToInt(
         getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
-          Constants.DEFAULT_EV_CONNECTION_TIMEOUT
+          Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS
       )
     }
-    return Constants.DEFAULT_EV_CONNECTION_TIMEOUT
+    return Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS
   }
 
   /**
@@ -605,9 +604,9 @@ export class ChargingStation extends EventEmitter {
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL_MS.toString()}`
       )
-    return Constants.DEFAULT_HEARTBEAT_INTERVAL
+    return Constants.DEFAULT_HEARTBEAT_INTERVAL_MS
   }
 
   public getLocalAuthListEnabled (): boolean {
@@ -695,7 +694,7 @@ export class ChargingStation extends EventEmitter {
   public getWebSocketPingInterval (): number {
     return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
       ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
-      : Constants.DEFAULT_WS_PING_INTERVAL
+      : Constants.DEFAULT_WS_PING_INTERVAL_SECONDS
   }
 
   public hasConnector (connectorId: number): boolean {
@@ -853,7 +852,7 @@ export class ChargingStation extends EventEmitter {
     params?: { closeOpened?: boolean; terminateOpened?: boolean }
   ): void {
     options = {
-      handshakeTimeout: secondsToMilliseconds(Constants.DEFAULT_WS_HANDSHAKE_TIMEOUT),
+      handshakeTimeout: secondsToMilliseconds(Constants.DEFAULT_WS_HANDSHAKE_TIMEOUT_SECONDS),
       ...this.stationInfo?.wsOptions,
       ...options,
     }
@@ -958,7 +957,8 @@ export class ChargingStation extends EventEmitter {
     try {
       await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
     } catch (error) {
-      logger.error(`${this.logPrefix()} Error during reset stop phase:`, error)
+      const e = ensureError(error)
+      logger.error(`${this.logPrefix()} Error during reset stop phase:`, e)
       return
     }
     await sleep(this.stationInfo?.resetTime ?? 0)
@@ -1059,9 +1059,10 @@ export class ChargingStation extends EventEmitter {
                   this.restartHeartbeat()
                   this.restartWebSocketPing()
                 } catch (error) {
+                  const e = ensureError(error)
                   logger.error(
                     `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                    error
+                    e
                   )
                 }
               }
@@ -1149,8 +1150,8 @@ export class ChargingStation extends EventEmitter {
           try {
             await promiseWithTimeout(
               this.stopMessageSequence(reason, stopTransactions),
-              Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT,
-              `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT)} reached at stopping message sequence`
+              Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS,
+              `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)} reached at stopping message sequence`
             )
           } catch (error: unknown) {
             logger.error(`${this.logPrefix()} Error while stopping message sequence:`, error)
@@ -1232,7 +1233,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private flushMessageBuffer (): void {
-    if (!this.flushingMessageBuffer && this.messageQueue.length > 0) {
+    if (!this.flushingMessageBuffer && isNotEmptyArray<string>(this.messageQueue)) {
       this.flushingMessageBuffer = true
       this.sendMessageBuffer(() => {
         this.flushingMessageBuffer = false
@@ -1483,7 +1484,7 @@ export class ChargingStation extends EventEmitter {
         jitterPercent: 0.2,
         retryNumber: this.wsConnectionRetryCount,
       })
-      : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY)
+      : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY_SECONDS)
   }
 
   private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
@@ -1861,7 +1862,7 @@ export class ChargingStation extends EventEmitter {
   private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       const isTupleFormat =
-        configuration.connectorsStatus.length > 0 &&
+        isNotEmptyArray(configuration.connectorsStatus) &&
         Array.isArray(configuration.connectorsStatus[0])
       const entries: [number, ConnectorStatus][] = isTupleFormat
         ? (configuration.connectorsStatus as [number, ConnectorStatus][])
@@ -1874,7 +1875,7 @@ export class ChargingStation extends EventEmitter {
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       const isTupleFormat =
-        configuration.evsesStatus.length > 0 && Array.isArray(configuration.evsesStatus[0])
+        isNotEmptyArray(configuration.evsesStatus) && Array.isArray(configuration.evsesStatus[0])
       const evseEntries: [number, EvseStatusConfiguration][] = isTupleFormat
         ? (configuration.evsesStatus as [number, EvseStatusConfiguration][])
         : (configuration.evsesStatus as EvseStatusConfiguration[]).map((status, index) => [
@@ -1886,7 +1887,7 @@ export class ChargingStation extends EventEmitter {
         delete evseStatus.connectorsStatus
         const connIsTupleFormat =
           evseStatusConfiguration.connectorsStatus != null &&
-          evseStatusConfiguration.connectorsStatus.length > 0 &&
+          isNotEmptyArray(evseStatusConfiguration.connectorsStatus) &&
           Array.isArray(evseStatusConfiguration.connectorsStatus[0])
         const connEntries: [number, ConnectorStatus][] = connIsTupleFormat
           ? (evseStatusConfiguration.connectorsStatus as [number, ConnectorStatus][])
@@ -2098,7 +2099,7 @@ export class ChargingStation extends EventEmitter {
       addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
-        Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+        Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS.toString()
       )
     }
     this.saveOcppConfiguration()
@@ -2219,8 +2220,9 @@ export class ChargingStation extends EventEmitter {
       }
     } catch (error) {
       if (!Array.isArray(request)) {
+        const e = ensureError(error)
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, error)
+        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, e)
         // OCPP 2.0.1 §4.2.3: respond with CALLERROR using messageId "-1"
         if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
           await this.ocppRequestService
@@ -2329,8 +2331,8 @@ export class ChargingStation extends EventEmitter {
                 baseDelayMs:
                   this.bootNotificationResponse?.interval != null
                     ? secondsToMilliseconds(this.bootNotificationResponse.interval)
-                    : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
-                jitterMs: 1000,
+                    : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL_MS,
+                jitterMs: Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS,
                 retryNumber: registrationRetryCount,
               })
             )
@@ -2373,14 +2375,11 @@ export class ChargingStation extends EventEmitter {
       ++this.wsConnectionRetryCount
       const reconnectDelay = this.getReconnectDelay()
       const reconnectTimeout =
-        reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET > 0
-          ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET
+        reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS > 0
+          ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS
           : 0
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry in ${roundTo(
-          reconnectDelay,
-          2
-        ).toString()}ms, timeout ${reconnectTimeout.toString()}ms`
+        `${this.logPrefix()} WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
       )
       await sleep(reconnectDelay)
       logger.error(
@@ -2437,12 +2436,12 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true) {
           delete configurationData.automaticTransactionGenerator
         }
-        if (this.connectors.size > 0) {
+        if (!isEmpty(this.connectors)) {
           configurationData.connectorsStatus = buildConnectorsStatus(this)
         } else {
           delete configurationData.connectorsStatus
         }
-        if (this.evses.size > 0) {
+        if (!isEmpty(this.evses)) {
           configurationData.evsesStatus = buildEvsesStatus(this)
         } else {
           delete configurationData.evsesStatus
@@ -2454,10 +2453,10 @@ export class ChargingStation extends EventEmitter {
             automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
             configurationKey: configurationData.configurationKey,
             stationInfo: configurationData.stationInfo,
-            ...(this.connectors.size > 0 && {
+            ...(!isEmpty(this.connectors) && {
               connectorsStatus: configurationData.connectorsStatus,
             }),
-            ...(this.evses.size > 0 && {
+            ...(!isEmpty(this.evses) && {
               evsesStatus: configurationData.evsesStatus,
             }),
           } satisfies ChargingStationConfiguration),
@@ -2525,7 +2524,7 @@ export class ChargingStation extends EventEmitter {
     onCompleteCallback: () => void,
     messageIdx?: number
   ): void => {
-    if (this.messageQueue.length > 0) {
+    if (isNotEmptyArray<string>(this.messageQueue)) {
       const message = this.messageQueue[0]
       let beginId: string | undefined
       let commandName: RequestCommand | undefined
@@ -2595,7 +2594,7 @@ export class ChargingStation extends EventEmitter {
       if (!this.isWebSocketConnectionOpened() || isEmpty(this.messageQueue)) {
         this.clearIntervalFlushMessageBuffer()
       }
-    }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
+    }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS)
   }
 
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {

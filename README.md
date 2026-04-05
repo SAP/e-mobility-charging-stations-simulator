@@ -724,6 +724,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Model (type: string) (units: -)
 - :white_check_mark: SupplyPhases (type: integer) (units: -)
 - :white_check_mark: VendorName (type: string) (units: -)
+- :white_check_mark: WebSocketPingInterval (type: integer) (units: seconds)
 
 #### ClockCtrlr
 
@@ -743,6 +744,12 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: ItemsPerMessage (type: integer) (units: -)
 - :white_check_mark: ReportingValueSize (type: integer) (units: characters)
 - :white_check_mark: ValueSize (type: integer) (units: characters)
+
+#### DisplayMessageCtrlr
+
+- :white_check_mark: DisplayMessages (type: integer) (units: -)
+- :white_check_mark: SupportedFormats (type: memberlist) (units: -)
+- :white_check_mark: SupportedPriorities (type: memberlist) (units: -)
 
 #### EVSE
 

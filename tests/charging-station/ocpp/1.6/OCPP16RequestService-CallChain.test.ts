@@ -44,7 +44,6 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
     const { station: mockStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
         requestHandler: async () => Promise.resolve({} as JsonType),
       },
@@ -52,7 +51,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_16,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = mockStation
   })

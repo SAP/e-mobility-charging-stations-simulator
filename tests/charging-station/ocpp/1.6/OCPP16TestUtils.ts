@@ -4,6 +4,7 @@
  *   and configuration key helpers for OCPP 1.6 unit and integration tests.
  */
 
+import { millisecondsToSeconds } from 'date-fns'
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -37,7 +38,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import {
   createMockChargingStation,
   type MockChargingStation,
@@ -139,13 +140,12 @@ export function createOCPP16IncomingRequestTestContext (
   const { station } = createMockChargingStation({
     baseName,
     connectorsCount,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   return { incomingRequestService, station, testableService }
@@ -164,7 +164,6 @@ export function createOCPP16ListenerStation (baseName: string): {
   const { station } = createMockChargingStation({
     baseName,
     connectorsCount: 2,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: requestHandlerMock,
     },
@@ -172,7 +171,7 @@ export function createOCPP16ListenerStation (baseName: string): {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
   return { requestHandlerMock, station }
 }
@@ -194,13 +193,12 @@ export function createOCPP16RequestTestContext (
   const { station } = createMockChargingStation({
     baseName,
     connectorsCount: 2,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   return { requestService, station, testableRequestService }
@@ -225,13 +223,12 @@ export function createOCPP16ResponseTestContext (
   const { station } = createMockChargingStation({
     baseName,
     connectorsCount: 2,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   return { responseService, station }
@@ -255,14 +252,13 @@ export function createStandardStation (
   const { station } = createMockChargingStation({
     baseName,
     connectorsCount,
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
       ocppVersion: OCPPVersion.VERSION_16,
       resetTime: 5000,
       ...stationInfo,
     },
-    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
   return station as MockChargingStation
@@ -327,7 +323,7 @@ export function resetLimits (chargingStation: ChargingStation) {
   upsertConfigurationKey(
     chargingStation,
     OCPP16StandardParametersKey.HeartbeatInterval,
-    Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()
+    millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL_MS).toString()
   )
 }
 
@@ -429,7 +425,7 @@ export const ReservationFixtures = {
   createReservation: (
     connectorId = 1,
     reservationId = 1,
-    idTag = 'TEST-TAG-001',
+    idTag = TEST_ID_TAG,
     expiryDate = new Date(Date.now() + 3600000)
   ) => ({
     connectorId,
@@ -453,7 +449,7 @@ export const ResetFixtures = {
 } as const
 
 export const TransactionFixtures = {
-  createStartTransactionParams: (connectorId = 1, idTag = 'TEST-TAG-001') => ({
+  createStartTransactionParams: (connectorId = 1, idTag = TEST_ID_TAG) => ({
     connectorId,
     idTag,
   }),

@@ -18,6 +18,7 @@ import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/au
 import {
   GetVariableStatusEnumType,
   OCPP20IdTokenEnumType,
+  OCPP20OptionalVariableName,
   OCPPVersion,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
@@ -41,7 +42,6 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
         requestHandler: async () => Promise.resolve({}),
       },
@@ -49,7 +49,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     mockStation = station
     const incomingRequestService = new OCPP20IncomingRequestService()
@@ -81,7 +81,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -142,7 +142,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -185,7 +185,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
         const results = originalGetVariables(station, requests)
         for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
           const req = (requests as { variable?: { name?: string } }[])[i]
-          if (req.variable?.name === 'MasterPassGroupId') {
+          if (req.variable?.name === OCPP20OptionalVariableName.MasterPassGroupId) {
             results[i] = {
               ...results[i],
               attributeStatus: GetVariableStatusEnumType.Accepted,

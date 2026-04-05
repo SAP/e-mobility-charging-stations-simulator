@@ -54,18 +54,17 @@ await describe('B07 - Get Base Report', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppConfiguration: {
         configurationKey: [
           {
             key: StandardParametersKey.HeartbeatInterval,
             readonly: false,
-            value: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+            value: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL_MS).toString(),
           },
           {
             key: StandardParametersKey.MeterValueSampleInterval,
             readonly: false,
-            value: millisecondsToSeconds(Constants.DEFAULT_METER_VALUES_INTERVAL).toString(),
+            value: millisecondsToSeconds(Constants.DEFAULT_METER_VALUES_INTERVAL_MS).toString(),
           },
         ],
       },
@@ -77,7 +76,7 @@ await describe('B07 - Get Base Report', async () => {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = mockStation
 

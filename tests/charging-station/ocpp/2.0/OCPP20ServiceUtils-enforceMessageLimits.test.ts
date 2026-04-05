@@ -10,7 +10,7 @@ import {
   OCPP20ServiceUtils,
   type RejectionReason,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
-import { ReasonCodeEnumType } from '../../../../src/types/index.js'
+import { OCPP20OptionalVariableName, ReasonCodeEnumType } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 interface MockLogger {
@@ -77,7 +77,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
     await it('should return rejected:false and empty results when both limits are 0', () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
-      const items = [makeItem('HeartbeatInterval', '30')]
+      const items = [makeItem(OCPP20OptionalVariableName.HeartbeatInterval, '30')]
 
       const result = OCPP20ServiceUtils.enforceMessageLimits(
         station,
@@ -227,7 +227,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
     await it('should return rejected:false when data size is under the bytes limit', () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
-      const items = [makeItem('HeartbeatInterval', '30')]
+      const items = [makeItem(OCPP20OptionalVariableName.HeartbeatInterval, '30')]
 
       const result = OCPP20ServiceUtils.enforceMessageLimits(
         station,
@@ -339,7 +339,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
     await it('should pass original item to buildRejected callback', () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
-      const item = makeItem('HeartbeatInterval', 'abc')
+      const item = makeItem(OCPP20OptionalVariableName.HeartbeatInterval, 'abc')
       const capturedItems: TestItem[] = []
 
       OCPP20ServiceUtils.enforceMessageLimits(
@@ -363,7 +363,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
     await it('should pass reason with info and reasonCode to buildRejected callback', () => {
       const station = makeMockStation()
       const logger = makeMockLogger()
-      const item = makeItem('WebSocketPingInterval', 'xyz')
+      const item = makeItem(OCPP20OptionalVariableName.WebSocketPingInterval, 'xyz')
       const capturedReasons: RejectionReason[] = []
 
       OCPP20ServiceUtils.enforceMessageLimits(

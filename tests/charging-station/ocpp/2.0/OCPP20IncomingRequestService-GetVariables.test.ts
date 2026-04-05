@@ -45,12 +45,11 @@ await describe('B06 - Get Variables', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = newStation
     incomingRequestService = new OCPP20IncomingRequestService()
@@ -91,7 +90,7 @@ await describe('B06 - Get Variables', async () => {
     assert.strictEqual(firstResult.attributeType, AttributeEnumType.Actual)
     assert.strictEqual(
       firstResult.attributeValue,
-      millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+      millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL_MS).toString()
     )
     assert.strictEqual(firstResult.component.name, OCPP20ComponentName.OCPPCommCtrlr)
     assert.strictEqual(firstResult.variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
@@ -101,7 +100,10 @@ await describe('B06 - Get Variables', async () => {
     const secondResult = response.getVariableResult[1]
     assert.strictEqual(secondResult.attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
-    assert.strictEqual(secondResult.attributeValue, Constants.DEFAULT_WS_PING_INTERVAL.toString())
+    assert.strictEqual(
+      secondResult.attributeValue,
+      Constants.DEFAULT_WS_PING_INTERVAL_SECONDS.toString()
+    )
     assert.strictEqual(secondResult.component.name, OCPP20ComponentName.ChargingStation)
     assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
     assert.strictEqual(secondResult.attributeStatusInfo, undefined)

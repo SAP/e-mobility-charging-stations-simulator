@@ -276,14 +276,13 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       const { station: rejectStation } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 2,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: rejectingMock,
         },
         stationInfo: {
           ocppVersion: OCPPVersion.VERSION_16,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
 
       const request: OCPP16TriggerMessageRequest = {

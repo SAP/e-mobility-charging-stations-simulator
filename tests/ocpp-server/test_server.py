@@ -43,16 +43,16 @@ from ocpp.v201.enums import (
 )
 
 from server import (
-    DEFAULT_HEARTBEAT_INTERVAL,
+    DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     DEFAULT_TOTAL_COST,
+    FALLBACK_TRANSACTION_ID,
     MAX_REQUEST_ID,
     AuthConfig,
     AuthMode,
     ChargePoint,
     ServerConfig,
     _parse_commands,
-    _parse_get_variable_specs,
-    _parse_set_variable_specs,
+    _parse_variable_specs,
     _random_request_id,
     check_positive_number,
     main,
@@ -438,7 +438,7 @@ class TestBootNotificationHandler:
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.accepted
-        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL_SECONDS
         assert isinstance(response.current_time, str)
         assert "T" in response.current_time
 
@@ -543,7 +543,7 @@ class TestBootNotificationHandler:
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.accepted
-        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL_SECONDS
 
 
 class TestHeartbeatHandler:
@@ -794,7 +794,7 @@ class TestTransactionTracking:
         )
         await command_charge_point._send_request_stop_transaction()
         request = command_charge_point.call.call_args[0][0]
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_empty_transaction_id_not_stored(self, charge_point):
         await charge_point.on_transaction_event(
@@ -995,7 +995,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.RequestStopTransaction)
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_send_reset(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.Reset(
@@ -1123,7 +1123,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.GetTransactionStatus)
-        assert request.transaction_id == "test_transaction_123"
+        assert request.transaction_id == FALLBACK_TRANSACTION_ID
 
     async def test_send_install_certificate(self, command_charge_point):
         command_charge_point.call.return_value = (
@@ -1638,8 +1638,9 @@ class TestMultiVariableCommands:
     """Tests for multi-variable SetVariables/GetVariables CLI support."""
 
     def test_parse_set_variable_specs_valid(self):
-        result = _parse_set_variable_specs(
-            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
+        result = _parse_variable_specs(
+            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60",
+            require_value=True,
         )
         assert len(result) == 2
         assert result[0]["component"]["name"] == "OCPPCommCtrlr"
@@ -1650,8 +1651,9 @@ class TestMultiVariableCommands:
         assert result[1]["attribute_value"] == "60"
 
     def test_parse_get_variable_specs_valid(self):
-        result = _parse_get_variable_specs(
-            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval"
+        result = _parse_variable_specs(
+            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval",
+            require_value=False,
         )
         assert len(result) == 2
         assert result[0]["component"]["name"] == "ChargingStation"
@@ -1664,7 +1666,7 @@ class TestMultiVariableCommands:
             argparse.ArgumentTypeError,
             match=r"expected 'Component\.Variable=Value'",
         ):
-            _parse_set_variable_specs("NoComponentVariable=30")
+            _parse_variable_specs("NoComponentVariable=30", require_value=True)
 
     async def test_send_set_variables_uses_custom_data(self, command_charge_point):
         custom_data = [

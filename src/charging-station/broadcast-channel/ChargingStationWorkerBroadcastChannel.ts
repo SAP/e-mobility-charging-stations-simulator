@@ -419,7 +419,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           )
           return key != null
             ? secondsToMilliseconds(convertToInt(key.value))
-            : Constants.DEFAULT_METER_VALUES_INTERVAL
+            : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
         })()
     return await this.chargingStation.ocppRequestService.requestHandler<
       MeterValuesRequest,

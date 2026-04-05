@@ -11,6 +11,7 @@ import {
   OCPP20DeviceInfoVariableName,
   OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
+  OCPP20MessageFormatEnumType,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
@@ -21,7 +22,14 @@ import {
   ReasonCodeEnumType,
   type VariableName,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN, has } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToFloat,
+  convertToInt,
+  convertToIntOrNaN,
+  has,
+  isEmpty,
+} from '../../../utils/index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
 /**
@@ -364,17 +372,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: 'DisableRemoteAuthorization',
   },
 
-  [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'MasterPassGroupId')]: {
-    component: OCPP20ComponentName.AuthCtrlr,
-    dataType: DataEnumType.string,
-    description:
-      'IdTokens that have this id as groupId belong to the Master Pass Group. They can stop any ongoing transaction but cannot start transactions.',
-    maxLength: 36,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'MasterPassGroupId',
-  },
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'OfflineTxForUnknownIdEnabled')]: {
     component: OCPP20ComponentName.AuthCtrlr,
     dataType: DataEnumType.boolean,
@@ -384,6 +381,17 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'OfflineTxForUnknownIdEnabled',
+  },
+  [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, OCPP20OptionalVariableName.MasterPassGroupId)]: {
+    component: OCPP20ComponentName.AuthCtrlr,
+    dataType: DataEnumType.string,
+    description:
+      'IdTokens that have this id as groupId belong to the Master Pass Group. They can stop any ongoing transaction but cannot start transactions.',
+    maxLength: 36,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.MasterPassGroupId,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AuthCtrlr,
@@ -595,7 +603,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.ChargingStation,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS.toString(),
     description:
       'Interval in seconds between WebSocket ping (keep-alive) frames. 0 disables pings.',
     max: 3600,
@@ -749,6 +757,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ReportingValueSize,
   },
+
   [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
@@ -764,7 +773,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ValueSize,
   },
-  // DeviceDataCtrlr Component
+
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20RequiredVariableName.BytesPerMessage
@@ -897,17 +906,51 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
 
-  // EVSE Component
-  [buildRegistryKey(OCPP20ComponentName.EVSE, 'AllowReset')]: {
-    component: OCPP20ComponentName.EVSE,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description: 'Can be used to announce that an EVSE can be reset individually',
+  // DisplayMessageCtrlr Component
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'DisplayMessages')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: '0',
+    description:
+      'Amount of different messages that are currently configured in this Charging Station, via SetDisplayMessageRequest.',
+    min: 0,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Volatile,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'DisplayMessages',
+  },
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'SupportedFormats')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.MemberList,
+    defaultValue: 'ASCII,UTF8',
+    description: 'List of message formats supported by this Charging Station.',
+    enumeration: [
+      OCPP20MessageFormatEnumType.ASCII,
+      OCPP20MessageFormatEnumType.HTML,
+      OCPP20MessageFormatEnumType.URI,
+      OCPP20MessageFormatEnumType.UTF8,
+    ],
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
+    required: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'AllowReset',
+    variable: 'SupportedFormats',
   },
+  [buildRegistryKey(OCPP20ComponentName.DisplayMessageCtrlr, 'SupportedPriorities')]: {
+    component: OCPP20ComponentName.DisplayMessageCtrlr,
+    dataType: DataEnumType.MemberList,
+    defaultValue: 'AlwaysFront,InFront,NormalCycle',
+    description: 'List of the priorities supported by this Charging Station.',
+    enumeration: ['AlwaysFront', 'InFront', 'NormalCycle'],
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SupportedPriorities',
+  },
+
+  // EVSE Component
   [buildRegistryKey(OCPP20ComponentName.EVSE, 'Available')]: {
     component: OCPP20ComponentName.EVSE,
     dataType: DataEnumType.boolean,
@@ -984,6 +1027,16 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20DeviceInfoVariableName.AvailabilityState,
+  },
+  [buildRegistryKey(OCPP20ComponentName.EVSE, OCPP20OptionalVariableName.AllowReset)]: {
+    component: OCPP20ComponentName.EVSE,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Can be used to announce that an EVSE can be reset individually',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.AllowReset,
   },
 
   // FirmwareCtrlr Component
@@ -1412,7 +1465,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+    defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL_MS).toString(),
     description: 'Interval between Heartbeat messages.',
     max: 86400,
     maxLength: 10,
@@ -1470,7 +1523,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS.toString(),
     description:
       '0 disables client side websocket Ping/Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed.',
     min: 0,
@@ -1541,7 +1594,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_MESSAGE_TIMEOUT.toString(),
+    defaultValue: Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS.toString(),
     description: 'Timeout (in seconds) waiting for responses to general OCPP messages.',
     instance: 'Default',
     max: 3600,
@@ -1851,7 +1904,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.SampledDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_TX_UPDATED_INTERVAL.toString(),
+    defaultValue: Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS.toString(),
     description:
       'Interval between sampling of metering data for Updated TransactionEvent messages.',
     max: 3600,
@@ -2298,7 +2351,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.TxCtrlr, OCPP20RequiredVariableName.EVConnectionTimeOut)]: {
     component: OCPP20ComponentName.TxCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString(),
+    defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS.toString(),
     description: 'Timeout for EV to establish connection.',
     max: 3600,
     maxLength: 10,
@@ -2551,7 +2604,7 @@ export function validateValue (
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(rawValue)
+      const num = convertToFloat(rawValue)
       if (variableMetadata.positive && num <= 0) {
         return {
           info: 'Positive decimal > 0 required',
@@ -2611,7 +2664,7 @@ export function validateValue (
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(rawValue)
+      const num = convertToInt(rawValue)
       if (variableMetadata.allowZero && !variableMetadata.positive && num < 0) {
         return {
           info: 'Integer >= 0 required',
@@ -2651,7 +2704,7 @@ export function validateValue (
     }
     case DataEnumType.MemberList:
     case DataEnumType.SequenceList: {
-      if (rawValue.trim().length === 0) {
+      if (isEmpty(rawValue)) {
         return { info: 'List cannot be empty', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
       if (rawValue.startsWith(',') || rawValue.endsWith(',')) {
@@ -2662,7 +2715,7 @@ export function validateValue (
         }
       }
       const tokens = rawValue.split(',').map(t => t.trim())
-      if (tokens.some(t => t.length === 0)) {
+      if (tokens.some(t => isEmpty(t))) {
         return { info: 'Empty list member', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
       const seen = new Set<string>()

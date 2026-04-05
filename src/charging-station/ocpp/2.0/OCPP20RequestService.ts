@@ -3,20 +3,23 @@ import type { ValidateFunction } from 'ajv'
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
+import { getConfigurationKey } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   type CertificateSigningUseEnumType,
   ErrorType,
   type JsonObject,
   type JsonType,
+  OCPP20ComponentName,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   type OCPP20SignCertificateRequest,
   type OCPP20StatusNotificationRequest,
   type OCPP20TransactionEventOptions,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
-import { generateUUID, logger } from '../../../utils/index.js'
+import { generateUUID, getErrorMessage, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
@@ -167,15 +170,16 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.SIGN_CERTIFICATE: {
         let csr: string
         try {
-          const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-            key => key.key === 'SecurityCtrlr.OrganizationName'
+          const configKey = getConfigurationKey(
+            chargingStation,
+            `${OCPP20ComponentName.SecurityCtrlr}.${OCPP20RequiredVariableName.OrganizationName}`
           )
           const orgName = configKey?.value ?? 'Unknown'
           const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
 
           csr = generatePkcs10Csr(stationId, orgName)
         } catch (error) {
-          const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
+          const errorMsg = `Failed to generate CSR: ${getErrorMessage(error)}`
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: ${errorMsg}`
           )

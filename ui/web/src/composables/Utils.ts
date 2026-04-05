@@ -1,11 +1,22 @@
-import type { Ref } from 'vue'
+import type { InjectionKey, Ref } from 'vue'
 
-import { getCurrentInstance } from 'vue'
+import { inject } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import type { ChargingStationData, UUIDv4 } from '@/types'
+import type { ChargingStationData, ConfigurationData, UUIDv4 } from '@/types'
 
+import {
+  EMPTY_VALUE_PLACEHOLDER,
+  SHARED_TOGGLE_BUTTON_KEY_PREFIX,
+  TOGGLE_BUTTON_KEY_PREFIX,
+} from './Constants'
 import { UIClient } from './UIClient'
+
+export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
+export const chargingStationsKey: InjectionKey<Ref<ChargingStationData[]>> =
+  Symbol('chargingStations')
+export const templatesKey: InjectionKey<Ref<string[]>> = Symbol('templates')
+export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
 
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false
@@ -63,12 +74,50 @@ export const getLocalStorage = (): Storage => {
 }
 
 /**
+ * Deletes all localStorage entries whose key includes the given pattern.
+ * @param pattern - Substring to match against localStorage keys
+ */
+export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
+  const keysToDelete: string[] = []
+  for (const key in getLocalStorage()) {
+    if (key.includes(pattern)) {
+      keysToDelete.push(key)
+    }
+  }
+  for (const key of keysToDelete) {
+    deleteFromLocalStorage(key)
+  }
+}
+
+/**
+ * Returns a human-readable name for a WebSocket ready state.
+ * @param state - The WebSocket readyState value
+ * @returns The state name or EMPTY_VALUE_PLACEHOLDER for unknown/undefined states
+ */
+export const getWebSocketStateName = (state: number | undefined): string => {
+  switch (state) {
+    case WebSocket.CLOSED:
+      return 'Closed'
+    case WebSocket.CLOSING:
+      return 'Closing'
+    case WebSocket.CONNECTING:
+      return 'Connecting'
+    case WebSocket.OPEN:
+      return 'Open'
+    default:
+      return EMPTY_VALUE_PLACEHOLDER
+  }
+}
+
+/**
  * Resets the state of a toggle button by removing its entry from localStorage.
  * @param id - The identifier of the toggle button
  * @param shared - Whether the toggle button is shared
  */
 export const resetToggleButtonState = (id: string, shared = false): void => {
-  const key = shared ? `shared-toggle-button-${id}` : `toggle-button-${id}`
+  const key = shared
+    ? `${SHARED_TOGGLE_BUTTON_KEY_PREFIX}${id}`
+    : `${TOGGLE_BUTTON_KEY_PREFIX}${id}`
   deleteFromLocalStorage(key)
 }
 
@@ -86,18 +135,27 @@ export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
 }
 
 export const useUIClient = (): UIClient => {
+  const injected = inject(uiClientKey, undefined)
+  if (injected != null) return injected
   return UIClient.getInstance()
 }
 
-export const useChargingStations = (): Ref<ChargingStationData[]> | undefined => {
-  return getCurrentInstance()?.appContext.config.globalProperties.$chargingStations
+export const useConfiguration = (): Ref<ConfigurationData> => {
+  const injected = inject(configurationKey, undefined)
+  if (injected != null) return injected
+  throw new Error('configuration not provided')
 }
 
-export const refreshChargingStations = async (): Promise<void> => {
-  const ref = useChargingStations()
-  if (ref == null) return
-  const response = await useUIClient().listChargingStations()
-  ref.value = response.chargingStations as ChargingStationData[]
+export const useChargingStations = (): Ref<ChargingStationData[]> => {
+  const injected = inject(chargingStationsKey, undefined)
+  if (injected != null) return injected
+  throw new Error('chargingStations not provided')
+}
+
+export const useTemplates = (): Ref<string[]> => {
+  const injected = inject(templatesKey, undefined)
+  if (injected != null) return injected
+  throw new Error('templates not provided')
 }
 
 export const useExecuteAction = (emit: (event: 'need-refresh') => void) => {

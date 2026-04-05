@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
-  "version": "4.1.1",
+  "version": "4.3.0",
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=10.9.0"
@@ -71,7 +71,7 @@
     "format": "prettier --cache --write .; eslint --cache --fix src tests scripts ./*.js ./*.ts",
     "test": "cross-env NODE_ENV=test node --import tsx --test --test-force-exit 'tests/**/*.test.ts'",
     "test:debug": "cross-env NODE_ENV=test node --import tsx --test --inspect 'tests/**/*.test.ts'",
-    "test:coverage": "mkdir -p coverage && cross-env NODE_ENV=test node --import tsx --test --test-force-exit --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info 'tests/**/*.test.ts'",
+    "test:coverage": "mkdir -p coverage && cross-env NODE_ENV=test node --import tsx --test --test-force-exit --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-reporter=lcov --test-reporter-destination=coverage/lcov.info 'tests/**/*.test.ts'",
     "clinic:clean": "clinic clean",
     "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && pnpm exec rimraf ./dist/evse-simulator.blob"
   },
@@ -107,12 +107,12 @@
     "@cspell/eslint-plugin": "^9.7.0",
     "@eslint/js": "^9.39.4",
     "@mikro-orm/cli": "^6.6.12",
-    "@types/node": "^24.12.0",
+    "@types/node": "^24.12.2",
     "@types/semver": "^7.7.1",
     "@types/ws": "^8.18.1",
     "clinic": "^13.0.0",
     "cross-env": "^10.1.0",
-    "esbuild": "^0.27.5",
+    "esbuild": "^0.28.0",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.4",

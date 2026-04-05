@@ -18,6 +18,7 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG_VALID } from '../../../ChargingStationTestConstants.js'
 import { createMockAuthServiceTestStation, getTestAuthCache } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceImpl', async () => {
@@ -205,7 +206,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
       const identifier: Identifier = {
         type: IdentifierType.ID_TAG,
-        value: 'VALID_TAG',
+        value: TEST_ID_TAG_VALID,
       }
 
       const result = await authService.authorize({

@@ -1,12 +1,17 @@
+import { millisecondsToSeconds } from 'date-fns'
+
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
 import {
+  Constants,
   convertToDate,
   ensureError,
   getErrorMessage,
+  has,
   logger,
+  roundTo,
   truncateId,
 } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../index.js'
@@ -319,7 +324,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const remoteStrategy = this.strategies.get('remote')
     if (remoteStrategy?.getStats) {
       const strategyStatistics = remoteStrategy.getStats()
-      if ('cache' in strategyStatistics) {
+      if (has('cache', strategyStatistics)) {
         const cacheStatistics = strategyStatistics.cache as {
           rateLimit?: {
             blockedRequests: number
@@ -332,13 +337,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     }
 
     return {
-      avgResponseTime: Math.round(avgResponseTime * 100) / 100,
-      cacheHitRate: Math.round(cacheHitRate * 10000) / 100,
+      avgResponseTime: roundTo(avgResponseTime, 2),
+      cacheHitRate: roundTo(cacheHitRate * 100, 2),
       failedAuth: this.metrics.failedAuth,
       lastUpdatedDate: this.metrics.lastReset,
-      localUsageRate: Math.round(localUsageRate * 10000) / 100,
+      localUsageRate: roundTo(localUsageRate * 100, 2),
       rateLimit: rateLimitStatistics,
-      remoteSuccessRate: Math.round(remoteSuccessRate * 10000) / 100,
+      remoteSuccessRate: roundTo(remoteSuccessRate * 100, 2),
       successfulAuth: this.metrics.successfulAuth,
       totalRequests: this.metrics.totalRequests,
     }
@@ -489,7 +494,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (expiryDate != null) {
       const expiry = convertToDate(expiryDate)
       if (expiry != null) {
-        const ttlSeconds = Math.floor((expiry.getTime() - Date.now()) / 1000)
+        const ttlSeconds = millisecondsToSeconds(expiry.getTime() - Date.now())
         if (ttlSeconds <= 0) {
           logger.debug(
             `${this.chargingStation.logPrefix()} ${moduleName}.updateCacheEntry: Skipping expired entry for '${truncateId(identifier)}'`
@@ -555,7 +560,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       obj: AuthStrategy
     ): obj is AuthStrategy & { configure: (config: Record<string, unknown>) => void } => {
       return (
-        'configure' in obj &&
+        has('configure', obj) &&
         typeof (obj as AuthStrategy & { configure?: unknown }).configure === 'function'
       )
     }
@@ -589,7 +594,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       certificateValidationStrict: false,
       localAuthListEnabled: true,
       localPreAuthorize: false,
-      maxCacheEntries: 1000,
+      maxCacheEntries: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES,
       ocppVersion: this.chargingStation.stationInfo?.ocppVersion,
       offlineAuthorizationEnabled: true,
       remoteAuthorization: true,

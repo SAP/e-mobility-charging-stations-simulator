@@ -28,6 +28,7 @@ import {
   extractTimeSeriesValues,
   formatDurationSeconds,
   generateUUID,
+  getErrorMessage,
   JSONStringify,
   logger,
   logPrefix,
@@ -82,7 +83,7 @@ export class PerformanceStatistics {
     try {
       performance.measure(name, markId)
     } catch (error) {
-      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
+      if (getErrorMessage(error).includes('performance mark has not been set')) {
         /* Ignore */
       } else {
         throw error

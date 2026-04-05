@@ -16,7 +16,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
-import { convertToDate, getErrorMessage } from '../../../utils/index.js'
+import { convertToDate, getErrorMessage, isEmpty, isNotEmptyArray } from '../../../utils/index.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -283,7 +283,7 @@ export class OCPP20CertificateManager {
         .map(dirent => dirent.name)
 
       for (const certType of certTypes) {
-        if (filterTypes != null && filterTypes.length > 0) {
+        if (filterTypes != null && isNotEmptyArray(filterTypes)) {
           if (!filterTypes.includes(certType as InstallCertificateUseEnumType)) {
             continue
           }
@@ -439,7 +439,7 @@ export class OCPP20CertificateManager {
       return false
     }
 
-    if (pemData.trim().length === 0) {
+    if (isEmpty(pemData)) {
       return false
     }
 
@@ -486,7 +486,7 @@ export class OCPP20CertificateManager {
       return { valid: true }
     } catch (error) {
       return {
-        reason: `Certificate parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        reason: `Certificate parsing failed: ${getErrorMessage(error)}`,
         valid: false,
       }
     }

@@ -10,13 +10,13 @@
       {{ getSupervisionUrl() }}
     </td>
     <td class="cs-table__column">
-      {{ getWSState() }}
+      {{ getWebSocketStateName(chargingStation.wsState) }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
+      {{ chargingStation.bootNotificationResponse?.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.stationInfo.ocppVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.ocppVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
       {{ chargingStation.stationInfo.templateName }}
@@ -28,7 +28,7 @@
       {{ chargingStation.stationInfo.chargePointModel }}
     </td>
     <td class="cs-table__column">
-      {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.firmwareVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td class="cs-table__column">
       <StateButton
@@ -49,13 +49,13 @@
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
         :off="
           () => {
-            $router.push({ name: 'charging-stations' })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
           }
         "
         :on="
           () => {
             $router.push({
-              name: 'set-supervision-url',
+              name: ROUTE_NAMES.SET_SUPERVISION_URL,
               params: {
                 hashId: chargingStation.stationInfo.hashId,
                 chargingStationId: chargingStation.stationInfo.chargingStationId,
@@ -144,8 +144,10 @@ import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import {
-  deleteFromLocalStorage,
-  getLocalStorage,
+  deleteLocalStorageByKeyPattern,
+  EMPTY_VALUE_PLACEHOLDER,
+  getWebSocketStateName,
+  ROUTE_NAMES,
   useExecuteAction,
   useUIClient,
 } from '@/composables'
@@ -192,22 +194,8 @@ const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
   return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
 }
-const getWSState = (): string => {
-  switch (props.chargingStation?.wsState) {
-    case WebSocket.CLOSED:
-      return 'Closed'
-    case WebSocket.CLOSING:
-      return 'Closing'
-    case WebSocket.CONNECTING:
-      return 'Connecting'
-    case WebSocket.OPEN:
-      return 'Open'
-    default:
-      return 'Ø'
-  }
-}
 
-const uiClient = useUIClient()
+const $uiClient = useUIClient()
 
 const $toast = useToast()
 
@@ -215,41 +203,37 @@ const executeAction = useExecuteAction($emit)
 
 const startChargingStation = (): void => {
   executeAction(
-    uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
+    $uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully started',
     'Error at starting charging station'
   )
 }
 const stopChargingStation = (): void => {
   executeAction(
-    uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
+    $uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully stopped',
     'Error at stopping charging station'
   )
 }
 const openConnection = (): void => {
   executeAction(
-    uiClient.openConnection(props.chargingStation.stationInfo.hashId),
+    $uiClient.openConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully opened',
     'Error at opening connection'
   )
 }
 const closeConnection = (): void => {
   executeAction(
-    uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
+    $uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully closed',
     'Error at closing connection'
   )
 }
 const deleteChargingStation = (): void => {
-  uiClient
+  $uiClient
     .deleteChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
-      for (const key in getLocalStorage()) {
-        if (key.includes(props.chargingStation.stationInfo.hashId)) {
-          deleteFromLocalStorage(key)
-        }
-      }
+      deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
       $emit('need-refresh')
       return $toast.success('Charging station successfully deleted')
     })

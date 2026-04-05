@@ -93,9 +93,9 @@ describe('StartTransaction', () => {
       expect(wrapper.find('[type="checkbox"]').exists()).toBe(true)
     })
 
-    it('should hide authorize checkbox for OCPP 2.0.x', () => {
+    it('should show authorize checkbox for OCPP 2.0.x', () => {
       const wrapper = mountComponent({ ocppVersion: OCPPVersion.VERSION_20 })
-      expect(wrapper.find('[type="checkbox"]').exists()).toBe(false)
+      expect(wrapper.find('[type="checkbox"]').exists()).toBe(true)
     })
   })
 

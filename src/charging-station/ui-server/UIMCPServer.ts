@@ -22,7 +22,13 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, logger } from '../../utils/index.js'
+import {
+  generateUUID,
+  getErrorMessage,
+  isEmpty,
+  isNotEmptyArray,
+  logger,
+} from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   mcpToolSchemas,
@@ -31,7 +37,7 @@ import {
   registerMCPResources,
   registerMCPSchemaResources,
 } from './mcp/index.js'
-import { DEFAULT_MAX_PAYLOAD_SIZE } from './UIServerSecurity.js'
+import { DEFAULT_MAX_PAYLOAD_SIZE_BYTES } from './UIServerSecurity.js'
 import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
@@ -191,7 +197,7 @@ export class UIMCPServer extends AbstractUIServer {
       }
       return s.version !== OCPPVersion.VERSION_20 && s.version !== OCPPVersion.VERSION_201
     })
-    if (mismatched.length > 0) {
+    if (isNotEmptyArray(mismatched)) {
       const ids = mismatched.map(s => s.hashId).join(', ')
       const versions = [...new Set(mismatched.map(s => s.version ?? 'unknown'))].join(', ')
       return UIMCPServer.createToolErrorResponse(
@@ -278,14 +284,13 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
       const isBadRequest =
-        error instanceof SyntaxError ||
-        (error instanceof Error && error.message.includes('Payload too large'))
+        error instanceof SyntaxError || getErrorMessage(error).includes('Payload too large')
       this.sendErrorResponse(res, isBadRequest ? 400 : 500)
     }
   }
 
   private injectOcppJsonSchemas (mcpServer: McpServer): void {
-    if (this.ocppSchemaCache.size === 0) {
+    if (isEmpty(this.ocppSchemaCache)) {
       return
     }
     // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@~1.29.x
@@ -404,11 +409,7 @@ export class UIMCPServer extends AbstractUIServer {
             clearTimeout(pending.timeout)
             this.pendingMcpRequests.delete(uuid)
           }
-          resolve(
-            UIMCPServer.createToolErrorResponse(
-              error instanceof Error ? error.message : String(error)
-            )
-          )
+          resolve(UIMCPServer.createToolErrorResponse(getErrorMessage(error)))
         })
     })
   }
@@ -444,7 +445,7 @@ export class UIMCPServer extends AbstractUIServer {
         cache.set(procedureName, entry)
       }
     }
-    if (cache.size > 0) {
+    if (!isEmpty(cache)) {
       logger.info(
         `${this.logPrefix(moduleName, 'loadOcppSchemas')} OCPP JSON schema injection enabled for ${cache.size.toString()} tool(s)`
       )
@@ -457,7 +458,7 @@ export class UIMCPServer extends AbstractUIServer {
     let received = 0
     for await (const chunk of req) {
       received += (chunk as Buffer).length
-      if (received > DEFAULT_MAX_PAYLOAD_SIZE) {
+      if (received > DEFAULT_MAX_PAYLOAD_SIZE_BYTES) {
         throw new BaseError('Payload too large')
       }
       chunks.push(chunk as Buffer)

@@ -44,12 +44,11 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       evseConfiguration: { evsesCount: 1 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       stationInfo: {
         ocppStrictCompliance: false,
         ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
     })
     station = mockStation
     testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
@@ -83,7 +82,6 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         ocppRequestService: {
           requestHandler: mock.fn(async () => Promise.resolve({})),
         },
@@ -91,7 +89,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       createStationWithCertificateManager(stationWithCert, certManager)
 
@@ -118,12 +116,11 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       createStationWithCertificateManager(stationWithCert, certManager)
 
@@ -165,12 +162,11 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 2,
         evseConfiguration: { evsesCount: 2 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
 
       // Set an active transaction on EVSE 1's connector
@@ -202,12 +198,11 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 2,
         evseConfiguration: { evsesCount: 2 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
         stationInfo: {
           ocppStrictCompliance: false,
           ocppVersion: OCPPVersion.VERSION_201,
         },
-        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL,
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
 
       const request: OCPP20UpdateFirmwareRequest = {

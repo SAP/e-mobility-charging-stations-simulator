@@ -1,3 +1,5 @@
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { JsonObject } from '../../../../types/index.js'
 import type {
   AuthCache,
@@ -418,7 +420,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     config: AuthConfiguration,
     startTime: number
   ): Promise<AuthorizationResult | undefined> {
-    const timeout = config.authorizationTimeout * 1000
+    const timeout = secondsToMilliseconds(config.authorizationTimeout)
 
     try {
       const authPromise = adapter.authorizeRemote(

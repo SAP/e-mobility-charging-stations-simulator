@@ -1,3 +1,5 @@
+import { millisecondsToSeconds } from 'date-fns'
+
 import type {
   AuthContext,
   AuthenticationMethod,
@@ -6,7 +8,7 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { truncateId } from '../../../../utils/index.js'
+import { isEmpty, truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
@@ -25,7 +27,7 @@ function calculateTTL (expiryDate?: Date): number | undefined {
     return undefined
   }
 
-  return Math.floor(ttlMs / 1000)
+  return millisecondsToSeconds(ttlMs)
 }
 
 /**
@@ -167,7 +169,7 @@ function isTemporaryFailure (result: AuthorizationResult): boolean {
  * @returns The first ACCEPTED result, or the first result with merged metadata
  */
 function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult | undefined {
-  if (results.length === 0) {
+  if (isEmpty(results)) {
     return undefined
   }
 

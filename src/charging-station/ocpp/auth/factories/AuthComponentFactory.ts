@@ -9,6 +9,7 @@ import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
+import { Constants } from '../../../../utils/index.js'
 import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
@@ -69,8 +70,8 @@ export class AuthComponentFactory {
    */
   static createAuthCache (config: AuthConfiguration): AuthCache {
     return new InMemoryAuthCache({
-      defaultTtl: config.authorizationCacheLifetime ?? 3600,
-      maxEntries: config.maxCacheEntries ?? 1000,
+      defaultTtl: config.authorizationCacheLifetime ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS,
+      maxEntries: config.maxCacheEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES,
     })
   }
 

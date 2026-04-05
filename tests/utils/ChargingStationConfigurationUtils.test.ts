@@ -20,6 +20,7 @@ import {
   buildEvseEntries,
   buildEvsesStatus,
 } from '../../src/utils/ChargingStationConfigurationUtils.js'
+import { Constants } from '../../src/utils/Constants.js'
 import {
   cleanupChargingStation,
   createMockChargingStation,
@@ -314,7 +315,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
   await describe('buildChargingStationAutomaticTransactionGeneratorConfiguration', async () => {
     await it('should return ATG configuration when present', () => {
-      const atgConfiguration = { enable: true, maxDuration: 120, minDuration: 60 }
+      const atgConfiguration = { ...Constants.DEFAULT_ATG_CONFIGURATION, enable: true }
       const { station } = createMockChargingStation({ connectorsCount: 0 })
       testStation = station
       station.automaticTransactionGenerator = {

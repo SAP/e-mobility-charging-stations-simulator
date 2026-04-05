@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 
 import AddChargingStations from '@/components/actions/AddChargingStations.vue'
+import { templatesKey, uiClientKey } from '@/composables'
 
 import { toastMock } from '../setup'
 import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
@@ -27,10 +28,12 @@ describe('AddChargingStations', () => {
         config: {
           globalProperties: {
             $router: mockRouter,
-            $templates: ref(['template-A.json', 'template-B.json']),
             $toast: toastMock,
-            $uiClient: mockClient,
           } as never,
+        },
+        provide: {
+          [templatesKey as symbol]: ref(['template-A.json', 'template-B.json']),
+          [uiClientKey as symbol]: mockClient,
         },
         stubs: {
           Button: ButtonStub,

@@ -1,7 +1,7 @@
 <template>
   <router-view />
   <Container
-    v-show="$route.name !== 'charging-stations' && $route.name !== 'not-found'"
+    v-show="$route.name !== ROUTE_NAMES.CHARGING_STATIONS && $route.name !== ROUTE_NAMES.NOT_FOUND"
     id="action-container"
     class="action-container"
   >
@@ -11,6 +11,7 @@
 
 <script setup lang="ts">
 import Container from '@/components/Container.vue'
+import { ROUTE_NAMES } from '@/composables'
 </script>
 
 <style scoped>

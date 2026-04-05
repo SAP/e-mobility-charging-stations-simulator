@@ -20,6 +20,7 @@ import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import {
   createMockAuthorizationResult,
   createMockAuthRequest,
+  createMockAuthServiceTestStation,
   createMockOCPPAdapter,
   createTestAuthConfig,
 } from '../helpers/MockFactories.js'
@@ -30,13 +31,7 @@ await describe('CertificateAuthStrategy', async () => {
   let mockOCPP20Adapter: OCPPAuthAdapter
 
   beforeEach(() => {
-    mockStation = {
-      logPrefix: () => '[TEST-CS-001]',
-      stationInfo: {
-        chargingStationId: 'TEST-CS-001',
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-    } as unknown as ChargingStation
+    mockStation = createMockAuthServiceTestStation('001', OCPPVersion.VERSION_201)
 
     mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_201, {
       authorizeRemote: () =>

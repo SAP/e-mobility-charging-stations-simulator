@@ -10,7 +10,11 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPPVersion } from '../../src/types/index.js'
-import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
+import {
+  setupConnectorWithTransaction,
+  standardCleanup,
+  withMockTimers,
+} from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ID_TAG } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
@@ -44,12 +48,7 @@ await describe('ChargingStation Transaction Management', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
-      const connector1 = station.getConnectorStatus(1)
-      if (connector1 != null) {
-        connector1.transactionStarted = true
-        connector1.transactionId = 100
-        connector1.transactionIdTag = TEST_ID_TAG
-      }
+      setupConnectorWithTransaction(station, 1, { idTag: TEST_ID_TAG, transactionId: 100 })
 
       // Act
       const connectorId = station.getConnectorIdByTransactionId(100)
@@ -98,12 +97,7 @@ await describe('ChargingStation Transaction Management', async () => {
       })
       station = result.station
       // Get connector in EVSE 1
-      const connector1 = station.getConnectorStatus(1)
-      if (connector1 != null) {
-        connector1.transactionStarted = true
-        connector1.transactionId = 200
-        connector1.transactionIdTag = TEST_ID_TAG
-      }
+      setupConnectorWithTransaction(station, 1, { idTag: TEST_ID_TAG, transactionId: 200 })
 
       // Act
       const evseId = station.getEvseIdByTransactionId(200)
@@ -116,12 +110,7 @@ await describe('ChargingStation Transaction Management', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
-      const connector1 = station.getConnectorStatus(1)
-      if (connector1 != null) {
-        connector1.transactionStarted = true
-        connector1.transactionId = 300
-        connector1.transactionIdTag = 'MY-TAG-123'
-      }
+      setupConnectorWithTransaction(station, 1, { idTag: 'MY-TAG-123', transactionId: 300 })
 
       // Act
       const idTag = station.getTransactionIdTag(300)
@@ -301,28 +290,21 @@ await describe('ChargingStation Transaction Management', async () => {
       station = result.station
 
       // Set up transactions on connectors 1, 2, and 3
-      const connector1 = station.getConnectorStatus(1)
-      const connector2 = station.getConnectorStatus(2)
-      const connector3 = station.getConnectorStatus(3)
-
-      if (connector1 != null) {
-        connector1.transactionStarted = true
-        connector1.transactionId = 100
-        connector1.transactionIdTag = 'TAG-A'
-        connector1.transactionEnergyActiveImportRegisterValue = 10000
-      }
-      if (connector2 != null) {
-        connector2.transactionStarted = true
-        connector2.transactionId = 101
-        connector2.transactionIdTag = 'TAG-B'
-        connector2.transactionEnergyActiveImportRegisterValue = 20000
-      }
-      if (connector3 != null) {
-        connector3.transactionStarted = true
-        connector3.transactionId = 102
-        connector3.transactionIdTag = 'TAG-C'
-        connector3.transactionEnergyActiveImportRegisterValue = 30000
-      }
+      setupConnectorWithTransaction(station, 1, {
+        energyImport: 10000,
+        idTag: 'TAG-A',
+        transactionId: 100,
+      })
+      setupConnectorWithTransaction(station, 2, {
+        energyImport: 20000,
+        idTag: 'TAG-B',
+        transactionId: 101,
+      })
+      setupConnectorWithTransaction(station, 3, {
+        energyImport: 30000,
+        idTag: 'TAG-C',
+        transactionId: 102,
+      })
 
       // Act & Assert - Running transactions count
       assert.strictEqual(station.getNumberOfRunningTransactions(), 3)
@@ -352,21 +334,16 @@ await describe('ChargingStation Transaction Management', async () => {
       station = result.station
 
       // Set up transaction on connector 1 (EVSE 1) and connector 3 (EVSE 2)
-      const connector1 = station.getConnectorStatus(1)
-      const connector3 = station.getConnectorStatus(3)
-
-      if (connector1 != null) {
-        connector1.transactionStarted = true
-        connector1.transactionId = 500
-        connector1.transactionIdTag = 'EVSE1-TAG'
-        connector1.transactionEnergyActiveImportRegisterValue = 15000
-      }
-      if (connector3 != null) {
-        connector3.transactionStarted = true
-        connector3.transactionId = 501
-        connector3.transactionIdTag = 'EVSE2-TAG'
-        connector3.transactionEnergyActiveImportRegisterValue = 18000
-      }
+      setupConnectorWithTransaction(station, 1, {
+        energyImport: 15000,
+        idTag: 'EVSE1-TAG',
+        transactionId: 500,
+      })
+      setupConnectorWithTransaction(station, 3, {
+        energyImport: 18000,
+        idTag: 'EVSE2-TAG',
+        transactionId: 501,
+      })
 
       // Act & Assert - Running transactions count
       assert.strictEqual(station.getNumberOfRunningTransactions(), 2)
@@ -418,12 +395,7 @@ await describe('ChargingStation Transaction Management', async () => {
       })
       station = result.station
 
-      const connector2 = station.getConnectorStatus(2)
-      if (connector2 != null) {
-        connector2.transactionStarted = true
-        connector2.transactionId = 600
-        connector2.transactionIdTag = 'EVSE-MODE-TAG'
-      }
+      setupConnectorWithTransaction(station, 2, { idTag: 'EVSE-MODE-TAG', transactionId: 600 })
 
       // Act
       const idTag = station.getTransactionIdTag(600)

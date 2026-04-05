@@ -10,7 +10,7 @@ import { gunzipSync } from 'node:zlib'
 import type { UIServerConfiguration, UUIDv4 } from '../../../src/types/index.js'
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
-import { DEFAULT_COMPRESSION_THRESHOLD } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
+import { DEFAULT_COMPRESSION_THRESHOLD_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
@@ -49,7 +49,7 @@ const createHttpServerConfig = () =>
   createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
 
 const createLargePayload = (status: ResponseStatus = ResponseStatus.SUCCESS) => ({
-  data: 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD + 100),
+  data: 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD_BYTES + 100),
   status,
 })
 

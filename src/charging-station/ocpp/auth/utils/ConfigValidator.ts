@@ -1,4 +1,4 @@
-import { logger } from '../../../../utils/index.js'
+import { isNotEmptyArray, logger } from '../../../../utils/index.js'
 import { type AuthConfiguration, AuthenticationError, AuthErrorCode } from '../types/AuthTypes.js'
 
 const moduleName = 'AuthConfigValidator'
@@ -27,7 +27,7 @@ function checkAuthMethodsEnabled (config: AuthConfiguration): void {
   if (hasCertificate) enabledMethods.push('certificate')
   if (hasOffline) enabledMethods.push('offline')
 
-  if (enabledMethods.length > 0) {
+  if (isNotEmptyArray(enabledMethods)) {
     logger.debug(`${moduleName}: Enabled authentication methods: ${enabledMethods.join(', ')}`)
   }
 }

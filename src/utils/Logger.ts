@@ -11,7 +11,7 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 
 import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 import { Configuration } from './Configuration.js'
-import { insertAt, isNotEmptyString } from './Utils.js'
+import { insertAt, isEmpty, isNotEmptyString } from './Utils.js'
 
 let loggerInstance: undefined | WinstonLogger
 
@@ -79,7 +79,7 @@ const getLoggerInstance = (): WinstonLogger => {
     level: logConfiguration.level,
     silent:
       logConfiguration.enabled === false ||
-      logTransports.length === 0 ||
+      isEmpty(logTransports) ||
       process.env.NODE_ENV === 'test',
     transports: logTransports,
   })

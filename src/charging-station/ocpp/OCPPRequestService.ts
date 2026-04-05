@@ -393,7 +393,7 @@ export abstract class OCPPRequestService {
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
                 `Timeout ${formatDurationMilliSeconds(
-                  OCPPConstants.OCPP_WEBSOCKET_TIMEOUT
+                  OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS
                 )} reached for ${
                   params.skipBufferingOnError === false ? '' : 'non '
                 }buffered message id '${messageId}' with content '${messageToSend}'`,
@@ -401,7 +401,7 @@ export abstract class OCPPRequestService {
                 messagePayload instanceof OCPPError ? messagePayload.details : undefined
               )
             )
-          }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT)
+          }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
             PerformanceStatistics.endMeasure(commandName, beginId)
             clearTimeout(sendTimeout)

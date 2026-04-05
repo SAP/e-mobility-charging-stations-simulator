@@ -20,10 +20,10 @@ import {
 } from '../types/index.js'
 import {
   checkWorkerProcessType,
-  DEFAULT_ELEMENT_ADD_DELAY,
+  DEFAULT_ELEMENT_ADD_DELAY_MS,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
-  DEFAULT_WORKER_START_DELAY,
+  DEFAULT_WORKER_START_DELAY_MS,
   WorkerProcessType,
 } from '../worker/index.js'
 import { checkDeprecatedConfigurationKeys } from './ConfigurationMigration.js'
@@ -35,7 +35,14 @@ import {
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
-import { has, isCFEnvironment, mergeDeepRight, once } from './Utils.js'
+import {
+  convertToInt,
+  has,
+  isCFEnvironment,
+  isNotEmptyString,
+  mergeDeepRight,
+  once,
+} from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -65,16 +72,16 @@ const defaultLogConfiguration: LogConfiguration = {
   format: 'simple',
   level: 'info',
   rotate: true,
-  statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
+  statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL_SECONDS,
 }
 
 const defaultWorkerConfiguration: WorkerConfiguration = {
-  elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
+  elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY_MS,
   elementsPerWorker: 'auto',
   poolMaxSize: DEFAULT_POOL_MAX_SIZE,
   poolMinSize: DEFAULT_POOL_MIN_SIZE,
   processType: WorkerProcessType.workerSet,
-  startDelay: DEFAULT_WORKER_START_DELAY,
+  startDelay: DEFAULT_WORKER_START_DELAY_MS,
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -130,8 +137,7 @@ export class Configuration {
   public static getConfigurationData (): ConfigurationData | undefined {
     if (
       Configuration.configurationData == null &&
-      Configuration.configurationFile != null &&
-      Configuration.configurationFile.trim().length > 0
+      isNotEmptyString(Configuration.configurationFile)
     ) {
       try {
         Configuration.configurationData = JSON.parse(
@@ -284,7 +290,7 @@ export class Configuration {
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
       if (uiServerConfiguration.options != null) {
-        uiServerConfiguration.options.port = Number.parseInt(env.PORT ?? '')
+        uiServerConfiguration.options.port = convertToInt(env.PORT ?? '')
       }
     }
     return uiServerConfiguration
@@ -353,10 +359,7 @@ export class Configuration {
   }
 
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
-    if (
-      Configuration.configurationFile == null ||
-      Configuration.configurationFile.trim().length === 0
-    ) {
+    if (!isNotEmptyString(Configuration.configurationFile)) {
       return
     }
     try {
@@ -382,7 +385,7 @@ export class Configuration {
                 Configuration.configurationFileReloading = false
               })
               .catch((error: unknown) => {
-                throw typeof error === 'string' ? new Error(error) : error
+                throw ensureError(error)
               })
           } else {
             Configuration.configurationFileReloading = false

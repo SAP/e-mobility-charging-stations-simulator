@@ -22,6 +22,7 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 import { AutomaticTransactionGenerator } from '../../src/charging-station/AutomaticTransactionGenerator.js'
 import { BaseError } from '../../src/exception/index.js'
 import { type StartTransactionResult } from '../../src/types/index.js'
+import { Constants } from '../../src/utils/Constants.js'
 import { flushMicrotasks } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
 
@@ -37,15 +38,10 @@ function addATGMethodsToStation (station: ChargingStation): void {
     getAutomaticTransactionGeneratorStatuses: () => undefined | unknown[]
   }
   stationExt.getAutomaticTransactionGeneratorConfiguration = () => ({
+    ...Constants.DEFAULT_ATG_CONFIGURATION,
     enable: true,
     idTagDistribution: 'random',
-    maxDelayBetweenTwoTransactions: 30,
-    maxDuration: 120,
-    minDelayBetweenTwoTransactions: 15,
-    minDuration: 60,
-    probabilityOfStart: 1,
     requireAuthorize: false,
-    stopAbsoluteDuration: false,
     stopAfterHours: 1,
   })
   stationExt.getAutomaticTransactionGeneratorStatuses = () => undefined

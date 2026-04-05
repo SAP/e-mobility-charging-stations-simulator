@@ -272,7 +272,7 @@ export const getMaxNumberOfEvses = (evses: Record<string, EvseTemplate> | undefi
   if (evses == null) {
     return -1
   }
-  return Object.keys(evses).length
+  return isEmpty(evses) ? 0 : Object.keys(evses).length
 }
 
 const getMaxNumberOfConnectors = (
@@ -281,7 +281,7 @@ const getMaxNumberOfConnectors = (
   if (connectors == null) {
     return -1
   }
-  return Object.keys(connectors).length
+  return isEmpty(connectors) ? 0 : Object.keys(connectors).length
 }
 
 export const getBootConnectorStatus = (

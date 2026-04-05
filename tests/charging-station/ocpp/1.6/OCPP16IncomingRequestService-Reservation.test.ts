@@ -21,6 +21,7 @@ import {
   OCPP16StandardParametersKey,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG, TEST_RESERVATION_EXPIRY_MS } from '../../ChargingStationTestConstants.js'
 import {
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
@@ -81,7 +82,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       // Arrange
       const { station, testableService } = context
       enableReservationProfile(context)
-      const reservation = ReservationFixtures.createReservation(1, 1, 'TEST-TAG-001')
+      const reservation = ReservationFixtures.createReservation(1, 1, TEST_ID_TAG)
       const request: OCPP16ReserveNowRequest = {
         connectorId: reservation.connectorId,
         expiryDate: reservation.expiryDate,
@@ -103,8 +104,8 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       enableReservationProfile(context, true)
       const request: OCPP16ReserveNowRequest = {
         connectorId: 0,
-        expiryDate: new Date(Date.now() + 3600000),
-        idTag: 'TEST-TAG-001',
+        expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
+        idTag: TEST_ID_TAG,
         reservationId: 10,
       }
 
@@ -122,8 +123,8 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       enableReservationProfile(context, false)
       const request: OCPP16ReserveNowRequest = {
         connectorId: 0,
-        expiryDate: new Date(Date.now() + 3600000),
-        idTag: 'TEST-TAG-001',
+        expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
+        idTag: TEST_ID_TAG,
         reservationId: 10,
       }
 
@@ -145,8 +146,8 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       }
       const request: OCPP16ReserveNowRequest = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
-        idTag: 'TEST-TAG-001',
+        expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
+        idTag: TEST_ID_TAG,
         reservationId: 2,
       }
 
@@ -164,8 +165,8 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const request: OCPP16ReserveNowRequest = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
-        idTag: 'TEST-TAG-001',
+        expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
+        idTag: TEST_ID_TAG,
         reservationId: 3,
       }
 
@@ -182,8 +183,8 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       enableReservationProfile(context)
       const request: OCPP16ReserveNowRequest = {
         connectorId: 99,
-        expiryDate: new Date(Date.now() + 3600000),
-        idTag: 'TEST-TAG-001',
+        expiryDate: new Date(Date.now() + TEST_RESERVATION_EXPIRY_MS),
+        idTag: TEST_ID_TAG,
         reservationId: 4,
       }
 
@@ -207,7 +208,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       enableReservationProfile(context)
 
       // First create a reservation via ReserveNow
-      const reservation = ReservationFixtures.createReservation(1, 42, 'TEST-TAG-001')
+      const reservation = ReservationFixtures.createReservation(1, 42, TEST_ID_TAG)
       const reserveRequest: OCPP16ReserveNowRequest = {
         connectorId: reservation.connectorId,
         expiryDate: reservation.expiryDate,
