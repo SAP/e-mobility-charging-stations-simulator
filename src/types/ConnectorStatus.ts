@@ -24,6 +24,7 @@ export interface ConnectorStatus {
   localAuthorizeIdTag?: string
   locked?: boolean
   MeterValues: SampledValueTemplate[]
+  publicKeySentInTransaction?: boolean
   remoteStartId?: number
   reservation?: Reservation
   status?: ConnectorStatusEnum

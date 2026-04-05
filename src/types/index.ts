@@ -340,6 +340,7 @@ export {
   type ConfigurationKeyType,
   ConnectorPhaseRotation,
   type OCPPConfigurationKey,
+  PublicKeyWithSignedMeterValueEnumType,
   StandardParametersKey,
   SupportedFeatureProfiles,
   VendorParametersKey,

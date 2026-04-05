@@ -22,6 +22,12 @@ export enum ConnectorPhaseRotation {
   Unknown = 'Unknown',
 }
 
+export enum PublicKeyWithSignedMeterValueEnumType {
+  EveryMeterValue = 'EveryMeterValue',
+  Never = 'Never',
+  OncePerTransaction = 'OncePerTransaction',
+}
+
 export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey
 
 export interface OCPPConfigurationKey extends JsonObject {
