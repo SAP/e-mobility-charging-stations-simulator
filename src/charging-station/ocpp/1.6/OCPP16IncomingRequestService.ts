@@ -1228,6 +1228,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         connectorId++
       ) {
         if (
+          chargingStation.isConnectorAvailable(connectorId) &&
           chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false &&
           !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
         ) {
