@@ -81,6 +81,19 @@ SUBPROTOCOLS: list[websockets.Subprotocol] = [
 ]
 
 
+def _log_signed_meter_values(meter_value: list) -> None:
+    """Log signed meter value details from a list of meter value dicts."""
+    for mv in meter_value:
+        for sv in mv.get("sampled_value", []):
+            signed_mv = sv.get("signed_meter_value")
+            if signed_mv is not None:
+                logger.info(
+                    "Received signed meter value: encoding=%s, signing=%s",
+                    signed_mv.get("encoding_method"),
+                    signed_mv.get("signing_method"),
+                )
+
+
 def _random_request_id() -> int:
     """Generate a random OCPP request ID within the valid range."""
     return randint(1, MAX_REQUEST_ID)  # noqa: S311
@@ -294,6 +307,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         transaction_info,
         **kwargs,
     ):
+        meter_value = kwargs.get("meter_value")
         match event_type:
             case TransactionEventEnumType.started:
                 logger.info("Received %s Started", Action.transaction_event)
@@ -314,11 +328,15 @@ class ChargePoint(ocpp.v201.ChargePoint):
                     token_id,
                     id_token_info["status"],
                 )
+                if meter_value is not None:
+                    _log_signed_meter_values(meter_value)
                 return ocpp.v201.call_result.TransactionEvent(
                     id_token_info=id_token_info
                 )
             case TransactionEventEnumType.updated:
                 logger.info("Received %s Updated", Action.transaction_event)
+                if meter_value is not None:
+                    _log_signed_meter_values(meter_value)
                 return ocpp.v201.call_result.TransactionEvent(
                     total_cost=self._total_cost
                 )
@@ -334,6 +352,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     @on(Action.meter_values)
     async def on_meter_values(self, evse_id: int, meter_value, **kwargs):
         logger.info("Received %s", Action.meter_values)
+        _log_signed_meter_values(meter_value)
         return ocpp.v201.call_result.MeterValues()
 
     @on(Action.notify_report)
