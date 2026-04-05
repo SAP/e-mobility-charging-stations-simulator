@@ -1073,7 +1073,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     dataType: DataEnumType.string,
     defaultValue: '',
     description:
-      'Public key for the fiscal meter connected to the EVSE. Base64 encoded, formatted as oca:<encoding>:<content-type>:<key>.',
+      'Public key for the fiscal meter connected to the EVSE. The raw hex key value; the OCA oca:base16:asn1:<key> encoding and Base64 are applied by the signing implementation.',
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],

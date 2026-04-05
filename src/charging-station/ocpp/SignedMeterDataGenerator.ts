@@ -37,7 +37,6 @@ export const generateSignedMeterData = (
   params: SignedMeterDataParams,
   publicKeyHex?: string
 ): SignedMeterData => {
-  const meterValueKwh = (params.meterValue / 1000).toFixed(3)
   const txCode = contextToTxCode(params.context)
 
   const ocmfPayload = {
@@ -51,7 +50,7 @@ export const generateSignedMeterData = (
         RI: '1-0:1.8.0',
         RT: 'AC',
         RU: 'kWh',
-        RV: meterValueKwh,
+        RV: Number((params.meterValue / 1000).toFixed(3)),
         ST: 'G',
         TM: params.timestamp.toISOString(),
         TX: txCode,
@@ -59,7 +58,7 @@ export const generateSignedMeterData = (
     ],
   }
 
-  const simulatedSignature = createHash('sha256').update(JSON.stringify(params)).digest('hex')
+  const simulatedSignature = createHash('sha256').update(JSON.stringify(ocmfPayload)).digest('hex')
 
   const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${SIGNING_METHOD}","SD":"${simulatedSignature}"}`
 

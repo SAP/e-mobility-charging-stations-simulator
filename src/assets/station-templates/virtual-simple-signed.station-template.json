@@ -79,7 +79,7 @@
       {
         "key": "MeterPublicKey1",
         "readonly": true,
-        "value": "b2NhOmJhc2UxNjphc24xOjMwNTYzMDEwMDYwNzJhODY0OGNlM2QwMjAxMDYwNTJiODEwNDAwMGEwMzQyMDAwNDQ2MGEwMmJhMjc2NmQ5YzQ0ZjAyM2VjYzBlNGU1ODY0NGE4N2FkZDFhYWRkNjMxN2U1ZmU0ZGNjZGIyOWIxNjNhMDFkOGE2Mjk3Yzg0YmM1MzBmODY0MzFlOTJmOGQ0NmFiMzc4MzAyNDdjMDVjYmQ5MmZhYzI1MjkyOWU3ZjYx"
+        "value": "3056301006072a8648ce3d020106052b8104000a03420004460a02ba2766d9c44f023ecc0e4e58644a87add1aadd6317e5fe4dccdb29b163a01d8a6297c84bc530f86431e92f8d46ab37830247c05cbd92fac252929e7f61"
       },
       {
         "key": "StartTxnSampledData",
