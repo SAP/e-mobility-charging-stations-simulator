@@ -24,6 +24,7 @@ export interface OCPP20SampledValueSigningConfig {
   publicKeyHex?: string
   publicKeySentInTransaction: boolean
   publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
+  timestamp?: Date
   transactionId: number | string
 }
 
@@ -88,7 +89,7 @@ export function buildOCPP20SampledValue (
       context: fields.context as SignedMeterDataParams['context'],
       meterSerialNumber: signingConfig.meterSerialNumber,
       meterValue: fields.value,
-      timestamp: new Date(),
+      timestamp: signingConfig.timestamp ?? new Date(),
       transactionId: signingConfig.transactionId,
     }
     sampledValue.signedMeterValue = {

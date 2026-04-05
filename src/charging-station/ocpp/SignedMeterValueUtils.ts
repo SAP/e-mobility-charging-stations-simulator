@@ -11,5 +11,9 @@ export const shouldIncludePublicKey = (
       return false
     case PublicKeyWithSignedMeterValueEnumType.OncePerTransaction:
       return !publicKeySentInTransaction
+    default:
+      throw new TypeError(
+        `Unsupported PublicKeyWithSignedMeterValueEnumType value: ${String(config)}`
+      )
   }
 }

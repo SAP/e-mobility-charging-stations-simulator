@@ -935,14 +935,17 @@ export const buildMeterValue = (
             chargingStation,
             buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
           )?.value
-          const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId)
           ocpp20SigningConfig = {
             enabled: true,
             meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
             publicKeyHex,
-            publicKeySentInTransaction: currentConnectorStatus?.publicKeySentInTransaction ?? false,
-            publicKeyWithSignedMeterValue: (publicKeyWithSignedMeterValueStr ??
-              PublicKeyWithSignedMeterValueEnumType.Never) as PublicKeyWithSignedMeterValueEnumType,
+            publicKeySentInTransaction:
+              chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ?? false,
+            publicKeyWithSignedMeterValue: Object.values(
+              PublicKeyWithSignedMeterValueEnumType
+            ).includes(publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
+              ? (publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
+              : PublicKeyWithSignedMeterValueEnumType.Never,
             transactionId,
           }
         }
@@ -965,6 +968,9 @@ export const buildMeterValue = (
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
+  if (ocpp20SigningConfig != null) {
+    ocpp20SigningConfig.timestamp = meterValue.timestamp
+  }
   // SoC measurand
   const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
   if (socMeasurand != null) {

@@ -168,7 +168,8 @@ export class OCPP16ServiceUtils {
         meterStart ?? 0,
         OCPP16MeterValueContext.TRANSACTION_BEGIN,
         transactionId,
-        publicKeySentInTransaction
+        publicKeySentInTransaction,
+        meterValue.timestamp
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
       if (signedResult.publicKeyIncluded && connectorStatus != null) {
@@ -230,7 +231,8 @@ export class OCPP16ServiceUtils {
         meterStop ?? 0,
         OCPP16MeterValueContext.TRANSACTION_END,
         transactionId,
-        publicKeySentInTransaction
+        publicKeySentInTransaction,
+        meterValue.timestamp
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
     }
@@ -646,6 +648,10 @@ export class OCPP16ServiceUtils {
     return key.visible
   }
 
+  /**
+   * @param chargingStation - Target charging station
+   * @returns Whether signed meter value generation is enabled (SampledDataSignReadings=true)
+   */
   public static isSigningEnabled (chargingStation: ChargingStation): boolean {
     return (
       getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)
@@ -800,7 +806,8 @@ export class OCPP16ServiceUtils {
           energyWh,
           OCPP16MeterValueContext.SAMPLE_PERIODIC,
           transactionId,
-          publicKeySentInTransaction
+          publicKeySentInTransaction,
+          (meterValue as OCPP16MeterValue).timestamp
         )
         ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
         if (signedResult.publicKeyIncluded) {
@@ -910,7 +917,8 @@ export class OCPP16ServiceUtils {
     meterValueWh: number,
     context: OCPP16MeterValueContext,
     transactionId: number | string,
-    publicKeySentInTransaction: boolean
+    publicKeySentInTransaction: boolean,
+    timestamp: Date
   ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
     const publicKeyConfig =
       getConfigurationKey(chargingStation, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue)
@@ -934,7 +942,7 @@ export class OCPP16ServiceUtils {
         context: context as SignedMeterDataParams['context'],
         meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
         meterValue: meterValueWh,
-        timestamp: new Date(),
+        timestamp,
         transactionId,
       },
       includePublicKey ? publicKeyHex : undefined

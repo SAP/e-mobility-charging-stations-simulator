@@ -223,25 +223,38 @@ export class OCPP16RequestService extends OCPPRequestService {
           commandParams.transactionId as number,
           true
         )
-        return {
-          idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
-          meterStop: energyActiveImportRegister,
-          timestamp: new Date(),
-          ...((chargingStation.stationInfo?.transactionDataMeterValues === true ||
-            OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
-            connectorId != null && {
-            transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              chargingStation.getConnectorStatus(connectorId)
-                ?.transactionBeginMeterValue as OCPP16MeterValue,
-              OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                chargingStation,
-                connectorId,
-                energyActiveImportRegister
+        {
+          let transactionData: OCPP16MeterValue[] | undefined
+          if (
+            (chargingStation.stationInfo?.transactionDataMeterValues === true ||
+              OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
+            connectorId != null
+          ) {
+            try {
+              transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
+                chargingStation.getConnectorStatus(connectorId)
+                  ?.transactionBeginMeterValue as OCPP16MeterValue,
+                OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                  chargingStation,
+                  connectorId,
+                  energyActiveImportRegister
+                )
               )
-            ),
-          }),
-          ...commandParams,
-        } as unknown as Request
+            } catch (error) {
+              logger.warn(
+                `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Failed to build transaction data meter values for StopTransaction:`,
+                error
+              )
+            }
+          }
+          return {
+            idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
+            meterStop: energyActiveImportRegister,
+            timestamp: new Date(),
+            ...(transactionData != null && { transactionData }),
+            ...commandParams,
+          } as unknown as Request
+        }
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`
