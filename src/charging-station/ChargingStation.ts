@@ -43,6 +43,7 @@ import {
   type IncomingRequestCommand,
   MessageType,
   MeterValueMeasurand,
+  OCPP16VendorParametersKey,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -2031,27 +2032,71 @@ export class ChargingStation extends EventEmitter {
         save: false,
       })
     }
-    // Register signed meter values vendor configuration keys
-    if (getConfigurationKey(this, 'SampledDataSignReadings') == null) {
-      addConfigurationKey(this, 'SampledDataSignReadings', 'false', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'AlignedDataSignReadings') == null) {
-      addConfigurationKey(this, 'AlignedDataSignReadings', 'false', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'SampledDataSignStartedReadings') == null) {
-      addConfigurationKey(this, 'SampledDataSignStartedReadings', 'false', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'SampledDataSignUpdatedReadings') == null) {
-      addConfigurationKey(this, 'SampledDataSignUpdatedReadings', 'false', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'AlignedDataSignUpdatedReadings') == null) {
-      addConfigurationKey(this, 'AlignedDataSignUpdatedReadings', 'false', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'PublicKeyWithSignedMeterValue') == null) {
-      addConfigurationKey(this, 'PublicKeyWithSignedMeterValue', 'Never', { readonly: false })
-    }
-    if (getConfigurationKey(this, 'StartTxnSampledData') == null) {
-      addConfigurationKey(this, 'StartTxnSampledData', '', { readonly: false })
+    // Register signed meter values vendor configuration keys (OCPP 1.6 only)
+    if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignReadings) == null
+      ) {
+        addConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignReadings, 'false', {
+          readonly: false,
+        })
+      }
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignReadings) == null
+      ) {
+        addConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignReadings, 'false', {
+          readonly: false,
+        })
+      }
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignStartedReadings) ==
+        null
+      ) {
+        addConfigurationKey(
+          this,
+          OCPP16VendorParametersKey.SampledDataSignStartedReadings,
+          'false',
+          { readonly: false }
+        )
+      }
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.SampledDataSignUpdatedReadings) ==
+        null
+      ) {
+        addConfigurationKey(
+          this,
+          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+          'false',
+          { readonly: false }
+        )
+      }
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.AlignedDataSignUpdatedReadings) ==
+        null
+      ) {
+        addConfigurationKey(
+          this,
+          OCPP16VendorParametersKey.AlignedDataSignUpdatedReadings,
+          'false',
+          { readonly: false }
+        )
+      }
+      if (
+        getConfigurationKey(this, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue) ==
+        null
+      ) {
+        addConfigurationKey(
+          this,
+          OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
+          'Never',
+          { readonly: false }
+        )
+      }
+      if (getConfigurationKey(this, OCPP16VendorParametersKey.StartTxnSampledData) == null) {
+        addConfigurationKey(this, OCPP16VendorParametersKey.StartTxnSampledData, '', {
+          readonly: false,
+        })
+      }
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&

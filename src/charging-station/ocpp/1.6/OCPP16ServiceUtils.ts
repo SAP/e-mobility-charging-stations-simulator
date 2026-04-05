@@ -235,6 +235,9 @@ export class OCPP16ServiceUtils {
         meterValue.timestamp
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
+      if (signedResult.publicKeyIncluded && connectorStatus != null) {
+        connectorStatus.publicKeySentInTransaction = true
+      }
     }
     return meterValue
   }
