@@ -41,23 +41,9 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     standardCleanup()
   })
 
-  // @spec §5.11 — TC_021_CS: connectorId=0 must be rejected
-  await it('should reject remote start transaction with connectorId=0', async () => {
-    // Arrange
-    const { station, testableService } = testContext
-    const request: RemoteStartTransactionRequest = {
-      connectorId: 0,
-      idTag: TEST_ID_TAG,
-    }
+  // --- Happy path ---
 
-    // Act
-    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
-
-    // Assert
-    assert.strictEqual(response.status, GenericStatus.Rejected)
-  })
-
-  // @spec §5.11 — TC_013_CS: Valid connectorId with available connector
+  // @spec §5.11 — Valid connectorId with available connector
   await it('should accept remote start transaction with valid connectorId and available connector', async () => {
     // Arrange
     const { station, testableService } = testContext
@@ -73,28 +59,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
-  // @spec §5.11 — TC_014_CS: All connectors have active transactions, no connectorId specified
-  await it('should reject remote start transaction when all connectors have active transactions', async () => {
-    // Arrange
-    const { station, testableService } = testContext
-
-    // Set all connectors as having active transactions
-    for (let connectorId = 1; connectorId <= station.getNumberOfConnectors(); connectorId++) {
-      setupConnectorWithTransaction(station, connectorId, { transactionId: connectorId * 100 })
-    }
-
-    const request: RemoteStartTransactionRequest = {
-      idTag: TEST_ID_TAG,
-    }
-
-    // Act
-    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
-
-    // Assert
-    assert.strictEqual(response.status, GenericStatus.Rejected)
-  })
-
-  // @spec §5.11 — TC_015_CS: No connectorId specified, finds first available connector
+  // @spec §5.11 — No connectorId specified, finds first available connector
   await it('should accept remote start transaction without connectorId when connector is available', async () => {
     // Arrange
     const { station, testableService } = testContext
@@ -108,6 +73,42 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     // Assert
     assert.strictEqual(response.status, GenericStatus.Accepted)
   })
+
+  // --- Input validation ---
+
+  // @spec §5.11 — connectorId=0 must be rejected
+  await it('should reject remote start transaction with connectorId=0', async () => {
+    // Arrange
+    const { station, testableService } = testContext
+    const request: RemoteStartTransactionRequest = {
+      connectorId: 0,
+      idTag: TEST_ID_TAG,
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert
+    assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  // @spec §5.11 — Non-existing connector
+  await it('should reject remote start transaction with non-existing connectorId', async () => {
+    // Arrange
+    const { station, testableService } = testContext
+    const request: RemoteStartTransactionRequest = {
+      connectorId: 99,
+      idTag: TEST_ID_TAG,
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert
+    assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  // --- Availability ---
 
   // @spec §5.11 — Connector in Unavailable (Inoperative) status
   await it('should reject remote start transaction when connector is unavailable', async () => {
@@ -175,11 +176,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Assert — should select connector 2 (which is Operative) and accept
     assert.strictEqual(response.status, GenericStatus.Accepted)
-    assert.strictEqual(
-      request.connectorId,
-      2,
-      'should auto-select connector 2 since connector 1 is Inoperative'
-    )
+    assert.strictEqual(request.connectorId, 2)
   })
 
   // @spec §5.11 — All connectors Inoperative, no connectorId specified
@@ -206,12 +203,19 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
-  // @spec §5.11 — Non-existing connector
-  await it('should reject remote start transaction with non-existing connectorId', async () => {
+  // --- Transaction state ---
+
+  // @spec §5.11 — All connectors have active transactions, no connectorId specified
+  await it('should reject remote start transaction when all connectors have active transactions', async () => {
     // Arrange
     const { station, testableService } = testContext
+
+    // Set all connectors as having active transactions
+    for (let connectorId = 1; connectorId <= station.getNumberOfConnectors(); connectorId++) {
+      setupConnectorWithTransaction(station, connectorId, { transactionId: connectorId * 100 })
+    }
+
     const request: RemoteStartTransactionRequest = {
-      connectorId: 99,
       idTag: TEST_ID_TAG,
     }
 
@@ -221,6 +225,8 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     // Assert
     assert.strictEqual(response.status, GenericStatus.Rejected)
   })
+
+  // --- Event listeners ---
 
   await describe('REMOTE_START_TRANSACTION event listener', async () => {
     let incomingRequestService: OCPP16IncomingRequestService

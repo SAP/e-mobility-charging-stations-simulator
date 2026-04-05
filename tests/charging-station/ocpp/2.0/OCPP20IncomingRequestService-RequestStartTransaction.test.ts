@@ -32,6 +32,7 @@ import {
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20OperationalStatusEnumType,
   OCPP20RequestCommand,
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
@@ -87,7 +88,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     OCPPAuthServiceFactory.clearAllInstances()
   })
 
-  // FR: F01.FR.03, F01.FR.04, F01.FR.05, F01.FR.13
+  // FR: F01.FR.03, F01.FR.04, F01.FR.05, F01.FR.13 — TC_F_02_CS
   await it('should handle RequestStartTransaction with valid evseId and idToken', async () => {
     const validRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
@@ -262,7 +263,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response.transactionId, undefined)
   })
 
-  // OCPP 2.0.1 §2.10 ChargingProfile validation tests
+  // OCPP 2.0.1 §2.10 ChargingProfile validation tests — TC_K_37_CS
   await it('should accept RequestStartTransaction with valid TxProfile (no transactionId)', async () => {
     const validChargingProfile: OCPP20ChargingProfileType = {
       chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
@@ -458,6 +459,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
+  // FR: F01.FR.02 — TC_F_03_CS
   await it('should accept RequestStartTransaction when AuthorizeRemoteStart is false', async () => {
     // Arrange
     const variableManager = OCPP20VariableManager.getInstance()
@@ -517,6 +519,51 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.fail('Expected transactionId to be defined')
     }
     assert.ok(response.transactionId.length > 0, 'transactionId should not be empty')
+  })
+
+  // FR: F01 — EVSE availability during auto-selection
+  await it('should skip inoperative EVSEs during auto-selection without evseId', async () => {
+    // Arrange
+    const evse1Status = mockStation.getEvseStatus(1)
+    if (evse1Status != null) {
+      evse1Status.availability = OCPP20OperationalStatusEnumType.Inoperative
+    }
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      idToken: {
+        idToken: 'VALID_TOKEN_123',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 500,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+  })
+
+  // FR: F01 — All EVSEs Inoperative, no evseId specified
+  await it('should reject remote start when all EVSEs are inoperative and no evseId specified', async () => {
+    // Arrange
+    for (const { evseStatus } of mockStation.iterateEvses(true)) {
+      evseStatus.availability = OCPP20OperationalStatusEnumType.Inoperative
+    }
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      idToken: {
+        idToken: 'VALID_TOKEN_123',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 501,
+    }
+
+    // Act
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    // Assert
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   await describe('REQUEST_START_TRANSACTION event listener', async () => {
