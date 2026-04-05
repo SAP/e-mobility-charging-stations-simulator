@@ -162,7 +162,7 @@ export class OCPP16ServiceUtils {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
       const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
-      const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
         chargingStation,
         connectorId,
         meterStart ?? 0,
@@ -170,11 +170,9 @@ export class OCPP16ServiceUtils {
         transactionId,
         publicKeySentInTransaction
       )
-      if (signedSampledValue != null) {
-        meterValue.sampledValue.push(signedSampledValue)
-        if (connectorStatus != null) {
-          connectorStatus.publicKeySentInTransaction = true
-        }
+      meterValue.sampledValue.push(signedResult.sampledValue)
+      if (signedResult.publicKeyIncluded && connectorStatus != null) {
+        connectorStatus.publicKeySentInTransaction = true
       }
     }
     return meterValue
@@ -226,7 +224,7 @@ export class OCPP16ServiceUtils {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
       const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
-      const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
         chargingStation,
         connectorId,
         meterStop ?? 0,
@@ -234,9 +232,7 @@ export class OCPP16ServiceUtils {
         transactionId,
         publicKeySentInTransaction
       )
-      if (signedSampledValue != null) {
-        meterValue.sampledValue.push(signedSampledValue)
-      }
+      meterValue.sampledValue.push(signedResult.sampledValue)
     }
     return meterValue
   }
@@ -798,7 +794,7 @@ export class OCPP16ServiceUtils {
           connectorStatus.transactionId
         )
         const publicKeySentInTransaction = connectorStatus.publicKeySentInTransaction ?? false
-        const signedSampledValue = OCPP16ServiceUtils.buildSignedSampledValue(
+        const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
           chargingStation,
           connectorId,
           energyWh,
@@ -806,8 +802,8 @@ export class OCPP16ServiceUtils {
           transactionId,
           publicKeySentInTransaction
         )
-        if (signedSampledValue != null) {
-          ;(meterValue as OCPP16MeterValue).sampledValue.push(signedSampledValue)
+        ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
+        if (signedResult.publicKeyIncluded) {
           connectorStatus.publicKeySentInTransaction = true
         }
       }
@@ -915,7 +911,7 @@ export class OCPP16ServiceUtils {
     context: OCPP16MeterValueContext,
     transactionId: number | string,
     publicKeySentInTransaction: boolean
-  ): OCPP16SampledValue | undefined {
+  ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
     const publicKeyConfig =
       getConfigurationKey(chargingStation, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue)
         ?.value ?? 'Never'
@@ -943,7 +939,10 @@ export class OCPP16ServiceUtils {
       },
       includePublicKey ? publicKeyHex : undefined
     )
-    return buildSignedOCPP16SampledValue(context, signedData as OCPP16SignedMeterValue)
+    return {
+      publicKeyIncluded: includePublicKey,
+      sampledValue: buildSignedOCPP16SampledValue(context, signedData as OCPP16SignedMeterValue),
+    }
   }
 
   private static readonly composeChargingSchedule = (

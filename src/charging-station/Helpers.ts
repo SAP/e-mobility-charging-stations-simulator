@@ -527,6 +527,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
     delete connectorStatus.transactionEndedMeterValuesSetInterval
   }
   delete connectorStatus.transactionSeqNo
+  delete connectorStatus.publicKeySentInTransaction
   delete connectorStatus.transactionEvseSent
   delete connectorStatus.transactionIdTokenSent
   delete connectorStatus.transactionDeauthorized
