@@ -9,10 +9,7 @@ import { OCPP16VendorParametersKey } from '../../../../src/types/index.js'
 
 await describe('OCPP16VendorParametersKey', async () => {
   await it('should have AlignedDataSignReadings key', () => {
-    assert.strictEqual(
-      OCPP16VendorParametersKey.AlignedDataSignReadings,
-      'AlignedDataSignReadings'
-    )
+    assert.strictEqual(OCPP16VendorParametersKey.AlignedDataSignReadings, 'AlignedDataSignReadings')
   })
 
   await it('should have AlignedDataSignUpdatedReadings key', () => {
@@ -38,10 +35,7 @@ await describe('OCPP16VendorParametersKey', async () => {
   })
 
   await it('should have SampledDataSignReadings key', () => {
-    assert.strictEqual(
-      OCPP16VendorParametersKey.SampledDataSignReadings,
-      'SampledDataSignReadings'
-    )
+    assert.strictEqual(OCPP16VendorParametersKey.SampledDataSignReadings, 'SampledDataSignReadings')
   })
 
   await it('should have SampledDataSignStartedReadings key', () => {

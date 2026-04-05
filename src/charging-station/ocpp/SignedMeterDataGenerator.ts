@@ -18,9 +18,7 @@ export interface SignedMeterDataParams {
 const SIGNING_METHOD = 'ECDSA-secp256r1-SHA256'
 const ENCODING_METHOD = 'OCMF'
 
-const contextToTxCode = (
-  context: SignedMeterDataParams['context']
-): string => {
+const contextToTxCode = (context: SignedMeterDataParams['context']): string => {
   switch (context) {
     case 'Transaction.Begin':
       return 'B'
@@ -61,9 +59,7 @@ export const generateSignedMeterData = (
     ],
   }
 
-  const simulatedSignature = createHash('sha256')
-    .update(JSON.stringify(params))
-    .digest('hex')
+  const simulatedSignature = createHash('sha256').update(JSON.stringify(params)).digest('hex')
 
   const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${SIGNING_METHOD}","SD":"${simulatedSignature}"}`
 

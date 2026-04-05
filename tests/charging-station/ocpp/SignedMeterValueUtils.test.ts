@@ -11,10 +11,7 @@ import { PublicKeyWithSignedMeterValueEnumType } from '../../../src/types/index.
 await describe('SignedMeterValueUtils', async () => {
   await describe('PublicKeyWithSignedMeterValueEnumType', async () => {
     await it('should have EveryMeterValue value', () => {
-      assert.strictEqual(
-        PublicKeyWithSignedMeterValueEnumType.EveryMeterValue,
-        'EveryMeterValue'
-      )
+      assert.strictEqual(PublicKeyWithSignedMeterValueEnumType.EveryMeterValue, 'EveryMeterValue')
     })
 
     await it('should have Never value', () => {

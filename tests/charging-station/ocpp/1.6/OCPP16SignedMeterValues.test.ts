@@ -164,11 +164,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         connectorStatus.transactionId = 42
       }
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
       upsertConfigurationKey(
         station,
         OCPP16VendorParametersKey.SampledDataSignStartedReadings,
@@ -209,11 +205,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         ])
       }
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
 
       const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 1000)
 
@@ -244,11 +236,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         connectorStatus.publicKeySentInTransaction = false
       }
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
       upsertConfigurationKey(
         station,
         OCPP16VendorParametersKey.SampledDataSignStartedReadings,
@@ -313,11 +301,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         connectorStatus.transactionId = 42
       }
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
 
       const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 50000)
 
@@ -348,11 +332,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         connectorStatus.transactionId = 99
       }
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
 
       const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 25000)
       const signedSamples = meterValue.sampledValue.filter(
@@ -388,11 +368,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'true'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
 
       assert.strictEqual(OCPP16ServiceUtils.isSigningEnabled(station), true)
     })
@@ -403,11 +379,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
 
-      upsertConfigurationKey(
-        station,
-        OCPP16VendorParametersKey.SampledDataSignReadings,
-        'false'
-      )
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'false')
 
       assert.strictEqual(OCPP16ServiceUtils.isSigningEnabled(station), false)
     })

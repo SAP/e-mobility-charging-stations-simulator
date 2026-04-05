@@ -156,10 +156,8 @@ export class OCPP16ServiceUtils {
     }
     if (
       OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-      getConfigurationKey(
-        chargingStation,
-        OCPP16VendorParametersKey.SampledDataSignStartedReadings
-      )?.value === 'true'
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignStartedReadings)
+        ?.value === 'true'
     ) {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
@@ -919,10 +917,8 @@ export class OCPP16ServiceUtils {
     publicKeySentInTransaction: boolean
   ): OCPP16SampledValue | undefined {
     const publicKeyConfig =
-      getConfigurationKey(
-        chargingStation,
-        OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
-      )?.value ?? 'Never'
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue)
+        ?.value ?? 'Never'
     const parsedConfig = Object.values(PublicKeyWithSignedMeterValueEnumType).includes(
       publicKeyConfig as PublicKeyWithSignedMeterValueEnumType
     )

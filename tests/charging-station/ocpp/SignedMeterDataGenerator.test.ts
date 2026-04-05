@@ -42,9 +42,7 @@ await describe('SignedMeterDataGenerator', async () => {
 
   await it('should produce valid Base64 in signedMeterData', () => {
     const result = generateSignedMeterData(DEFAULT_PARAMS)
-    const reEncoded = Buffer.from(
-      Buffer.from(result.signedMeterData, 'base64')
-    ).toString('base64')
+    const reEncoded = Buffer.from(Buffer.from(result.signedMeterData, 'base64')).toString('base64')
 
     assert.strictEqual(result.signedMeterData, reEncoded)
   })
@@ -82,9 +80,7 @@ await describe('SignedMeterDataGenerator', async () => {
 
   await it('should produce valid Base64 containing oca:base16:asn1: in buildPublicKeyValue', () => {
     const result = buildPublicKeyValue(TEST_PUBLIC_KEY_HEX)
-    const reEncoded = Buffer.from(
-      Buffer.from(result, 'base64')
-    ).toString('base64')
+    const reEncoded = Buffer.from(Buffer.from(result, 'base64')).toString('base64')
 
     assert.strictEqual(result, reEncoded)
 

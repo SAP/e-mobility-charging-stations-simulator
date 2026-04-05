@@ -938,14 +938,11 @@ export const buildMeterValue = (
           const currentConnectorStatus = chargingStation.getConnectorStatus(connectorId)
           ocpp20SigningConfig = {
             enabled: true,
-            meterSerialNumber:
-              chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
+            meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
             publicKeyHex,
-            publicKeySentInTransaction:
-              currentConnectorStatus?.publicKeySentInTransaction ?? false,
-            publicKeyWithSignedMeterValue:
-              (publicKeyWithSignedMeterValueStr ??
-                PublicKeyWithSignedMeterValueEnumType.Never) as PublicKeyWithSignedMeterValueEnumType,
+            publicKeySentInTransaction: currentConnectorStatus?.publicKeySentInTransaction ?? false,
+            publicKeyWithSignedMeterValue: (publicKeyWithSignedMeterValueStr ??
+              PublicKeyWithSignedMeterValueEnumType.Never) as PublicKeyWithSignedMeterValueEnumType,
             transactionId,
           }
         }
