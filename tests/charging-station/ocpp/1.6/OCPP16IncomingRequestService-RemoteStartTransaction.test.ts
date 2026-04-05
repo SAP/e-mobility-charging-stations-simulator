@@ -174,7 +174,11 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Assert — should select connector 2 (which is Operative) and accept
     assert.strictEqual(response.status, GenericStatus.Accepted)
-    assert.strictEqual(request.connectorId, 2, 'should auto-select connector 2 since connector 1 is Inoperative')
+    assert.strictEqual(
+      request.connectorId,
+      2,
+      'should auto-select connector 2 since connector 1 is Inoperative'
+    )
   })
 
   // @spec §5.11 — All connectors Inoperative, no connectorId specified
