@@ -217,7 +217,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20VendorVariableName.SignUpdatedReadings,
+    variable: OCPP20RequiredVariableName.Measurands,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AlignedDataCtrlr,

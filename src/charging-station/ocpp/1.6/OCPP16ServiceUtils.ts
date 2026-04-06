@@ -43,7 +43,6 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
   OCPPVersion,
-  PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
@@ -70,7 +69,10 @@ import {
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
 import { generateSignedMeterData, type SignedMeterDataParams } from '../SignedMeterDataGenerator.js'
-import { shouldIncludePublicKey } from '../SignedMeterValueUtils.js'
+import {
+  parsePublicKeyWithSignedMeterValue,
+  shouldIncludePublicKey,
+} from '../SignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 
@@ -925,12 +927,8 @@ export class OCPP16ServiceUtils {
   ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
     const publicKeyConfig =
       getConfigurationKey(chargingStation, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue)
-        ?.value ?? 'Never'
-    const parsedConfig = Object.values(PublicKeyWithSignedMeterValueEnumType).includes(
-      publicKeyConfig as PublicKeyWithSignedMeterValueEnumType
-    )
-      ? (publicKeyConfig as PublicKeyWithSignedMeterValueEnumType)
-      : PublicKeyWithSignedMeterValueEnumType.Never
+        ?.value
+    const parsedConfig = parsePublicKeyWithSignedMeterValue(publicKeyConfig)
 
     const meterPublicKeyConfig = getConfigurationKey(
       chargingStation,

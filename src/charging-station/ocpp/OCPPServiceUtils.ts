@@ -33,7 +33,6 @@ import {
   OCPP20ComponentName,
   OCPP20ReadingContextEnumType,
   OCPPVersion,
-  PublicKeyWithSignedMeterValueEnumType,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
@@ -68,6 +67,7 @@ import {
   type OCPP20SampledValueSigningConfig,
 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
+import { parsePublicKeyWithSignedMeterValue } from './SignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
 
@@ -975,11 +975,9 @@ export const buildMeterValue = (
               publicKeySentInTransaction:
                 chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ??
                 false,
-              publicKeyWithSignedMeterValue: Object.values(
-                PublicKeyWithSignedMeterValueEnumType
-              ).includes(publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
-                ? (publicKeyWithSignedMeterValueStr as PublicKeyWithSignedMeterValueEnumType)
-                : PublicKeyWithSignedMeterValueEnumType.Never,
+              publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
+                publicKeyWithSignedMeterValueStr
+              ),
               transactionId,
             }
           }

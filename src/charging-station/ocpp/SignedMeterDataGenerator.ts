@@ -11,6 +11,7 @@ export interface SignedMeterDataParams {
   context: 'Sample.Clock' | 'Sample.Periodic' | 'Transaction.Begin' | 'Transaction.End'
   meterSerialNumber: string
   meterValue: number
+  meterValueUnit?: 'kWh' | 'Wh'
   timestamp: Date
   transactionId: number | string
 }
@@ -38,6 +39,10 @@ export const generateSignedMeterData = (
   publicKeyHex?: string
 ): SignedMeterData => {
   const txCode = contextToTxCode(params.context)
+  const meterValueKwh =
+    params.meterValueUnit === 'kWh'
+      ? Number(params.meterValue.toFixed(3))
+      : Number((params.meterValue / 1000).toFixed(3))
 
   const ocmfPayload = {
     FV: '1.0',
@@ -50,7 +55,7 @@ export const generateSignedMeterData = (
         RI: '1-0:1.8.0',
         RT: 'AC',
         RU: 'kWh',
-        RV: Number((params.meterValue / 1000).toFixed(3)),
+        RV: meterValueKwh,
         ST: 'G',
         TM: params.timestamp.toISOString(),
         TX: txCode,
