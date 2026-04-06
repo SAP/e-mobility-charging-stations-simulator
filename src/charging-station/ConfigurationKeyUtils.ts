@@ -97,17 +97,11 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   ],
   [
     VendorParametersKey.SampledDataSignStartedReadings,
-    buildConfigKey(
-      OCPP20ComponentName.SampledDataCtrlr,
-      VendorParametersKey.SignStartedReadings
-    ),
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignStartedReadings),
   ],
   [
     VendorParametersKey.SampledDataSignUpdatedReadings,
-    buildConfigKey(
-      OCPP20ComponentName.SampledDataCtrlr,
-      VendorParametersKey.SignUpdatedReadings
-    ),
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignUpdatedReadings),
   ],
 ])
 
