@@ -19,4 +19,7 @@ export {
   type SignedMeterData,
   type SignedMeterDataParams,
 } from './SignedMeterDataGenerator.js'
-export { parsePublicKeyWithSignedMeterValue, shouldIncludePublicKey } from './SignedMeterValueUtils.js'
+export {
+  parsePublicKeyWithSignedMeterValue,
+  shouldIncludePublicKey,
+} from './SignedMeterValueUtils.js'

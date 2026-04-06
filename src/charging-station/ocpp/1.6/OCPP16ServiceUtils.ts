@@ -925,9 +925,10 @@ export class OCPP16ServiceUtils {
     publicKeySentInTransaction: boolean,
     timestamp: Date
   ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
-    const publicKeyConfig =
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue)
-        ?.value
+    const publicKeyConfig = getConfigurationKey(
+      chargingStation,
+      OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
+    )?.value
     const parsedConfig = parsePublicKeyWithSignedMeterValue(publicKeyConfig)
 
     const meterPublicKeyConfig = getConfigurationKey(
