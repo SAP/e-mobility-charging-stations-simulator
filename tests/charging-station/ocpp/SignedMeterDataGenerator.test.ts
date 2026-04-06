@@ -111,6 +111,24 @@ await describe('SignedMeterDataGenerator', async () => {
     assert.ok(decoded.includes('"TX":"E"'))
   })
 
+  await it('should produce TX=P for Sample.Periodic', () => {
+    const result = generateSignedMeterData(DEFAULT_PARAMS)
+    const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
+
+    assert.ok(decoded.includes('"TX":"P"'))
+  })
+
+  await it('should produce TX=P for Sample.Clock', () => {
+    const params: SignedMeterDataParams = {
+      ...DEFAULT_PARAMS,
+      context: MeterValueContext.SAMPLE_CLOCK,
+    }
+    const result = generateSignedMeterData(params)
+    const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
+
+    assert.ok(decoded.includes('"TX":"P"'))
+  })
+
   await it('should produce different signedMeterData for different meterValues', () => {
     const result1 = generateSignedMeterData(DEFAULT_PARAMS)
     const result2 = generateSignedMeterData({ ...DEFAULT_PARAMS, meterValue: 99999000 })

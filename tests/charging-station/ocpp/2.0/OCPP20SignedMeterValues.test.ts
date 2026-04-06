@@ -1,3 +1,9 @@
+/**
+ * @file Tests for OCPP 2.0 signed meter value support
+ * @description Verifies signedMeterValue population in sampled value building,
+ *              context-dependent sub-switch logic, and public key inclusion.
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

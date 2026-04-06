@@ -351,6 +351,68 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
     })
   })
 
+  await describe('signing — spec edge cases', async () => {
+    await it('should not sign non-energy measurands even when signing is enabled', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          meterSerialNumber: 'SIM-001',
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+        connectorStatus.transactionId = 42
+      }
+
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+
+      const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 10000)
+      const signedSamples = meterValue.sampledValue.filter(
+        sv => sv.format === OCPP16MeterValueFormat.SIGNED_DATA
+      )
+
+      assert.strictEqual(signedSamples.length, 1)
+      for (const sv of signedSamples) {
+        assert.strictEqual(sv.measurand, OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+      }
+    })
+
+    await it('should force transactionData when signing enabled even without energy template', () => {
+      const { station } = createMockChargingStation({
+        ocppVersion: OCPPVersion.VERSION_16,
+        stationInfo: {
+          meterSerialNumber: 'SIM-001',
+          ocppVersion: OCPPVersion.VERSION_16,
+          transactionDataMeterValues: false,
+        },
+      })
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = createMeterValuesTemplate([
+          {
+            measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: OCPP16MeterValueUnit.WATT_HOUR,
+            value: '0',
+          },
+        ])
+        connectorStatus.transactionId = 42
+      }
+
+      upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+
+      assert.strictEqual(OCPP16ServiceUtils.isSigningEnabled(station), true)
+      assert.strictEqual(station.stationInfo?.transactionDataMeterValues, false)
+    })
+  })
+
   // ─── isSigningEnabled ───────────────────────────────────────────────────
 
   await describe('isSigningEnabled', async () => {
