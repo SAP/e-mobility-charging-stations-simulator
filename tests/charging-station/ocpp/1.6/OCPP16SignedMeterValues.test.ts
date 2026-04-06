@@ -247,6 +247,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
         'OncePerTransaction'
       )
+      upsertConfigurationKey(station, `${OCPP16VendorParametersKey.MeterPublicKey}1`, 'abcd1234')
 
       OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 0)
 

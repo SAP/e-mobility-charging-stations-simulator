@@ -99,7 +99,7 @@ export function buildOCPP20SampledValue (
         includePublicKey ? signingConfig.publicKeyHex : undefined
       ),
     }
-    if (includePublicKey) {
+    if (includePublicKey && signingConfig.publicKeyHex != null) {
       signingConfig.publicKeySentInTransaction = true
     }
   }

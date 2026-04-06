@@ -286,6 +286,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.SignUpdatedReadings,
+    vendorSpecific: true,
   },
 
   // AuthCacheCtrlr Component
@@ -1082,6 +1083,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.PublicKey,
+    vendorSpecific: true,
   },
   [buildRegistryKey(OCPP20ComponentName.FiscalMetering, OCPP20VendorVariableName.SigningMethod)]: {
     component: OCPP20ComponentName.FiscalMetering,
@@ -1093,6 +1095,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.SigningMethod,
+    vendorSpecific: true,
   },
   // ISO15118Ctrlr Component
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr, 'CentralContractValidationAllowed')]: {
@@ -2003,6 +2006,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.SignStartedReadings,
+    vendorSpecific: true,
   },
   [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr,
@@ -2017,6 +2021,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.SignUpdatedReadings,
+    vendorSpecific: true,
   },
   // SecurityCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'AdditionalRootCertificateCheck')]: {

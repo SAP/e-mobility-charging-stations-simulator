@@ -19,7 +19,7 @@ import {
   generateSignedMeterData,
   type SignedMeterDataParams,
 } from '../../../src/charging-station/ocpp/SignedMeterDataGenerator.js'
-import { MeterValueContext } from '../../../src/types/index.js'
+import { MeterValueContext, MeterValueUnit } from '../../../src/types/index.js'
 
 const DEFAULT_PARAMS: SignedMeterDataParams = {
   context: MeterValueContext.SAMPLE_PERIODIC,
@@ -116,5 +116,21 @@ await describe('SignedMeterDataGenerator', async () => {
     const result2 = generateSignedMeterData({ ...DEFAULT_PARAMS, meterValue: 99999000 })
 
     assert.notStrictEqual(result1.signedMeterData, result2.signedMeterData)
+  })
+
+  await it('should handle kWh input without double-dividing', () => {
+    const whParams: SignedMeterDataParams = { ...DEFAULT_PARAMS, meterValue: 12345 }
+    const kwhParams: SignedMeterDataParams = {
+      ...DEFAULT_PARAMS,
+      meterValue: 12.345,
+      meterValueUnit: MeterValueUnit.KILO_WATT_HOUR,
+    }
+    const whResult = generateSignedMeterData(whParams)
+    const kwhResult = generateSignedMeterData(kwhParams)
+    const whDecoded = Buffer.from(whResult.signedMeterData, 'base64').toString('utf8')
+    const kwhDecoded = Buffer.from(kwhResult.signedMeterData, 'base64').toString('utf8')
+
+    assert.ok(whDecoded.includes('"RV":12.345'))
+    assert.ok(kwhDecoded.includes('"RV":12.345'))
   })
 })

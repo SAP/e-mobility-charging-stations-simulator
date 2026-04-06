@@ -950,7 +950,7 @@ export class OCPP16ServiceUtils {
       includePublicKey ? publicKeyHex : undefined
     )
     return {
-      publicKeyIncluded: includePublicKey,
+      publicKeyIncluded: includePublicKey && publicKeyHex != null,
       sampledValue: buildSignedOCPP16SampledValue(context, signedData as OCPP16SignedMeterValue),
     }
   }
