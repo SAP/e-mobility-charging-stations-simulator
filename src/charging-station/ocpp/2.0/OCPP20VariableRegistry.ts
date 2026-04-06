@@ -19,6 +19,7 @@ import {
   OCPP20UnitEnumType,
   OCPP20VendorVariableName,
   PersistenceEnumType,
+  PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
   type VariableName,
 } from '../../../types/index.js'
@@ -1514,8 +1515,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.OptionList,
+    defaultValue: PublicKeyWithSignedMeterValueEnumType.Never,
     description:
       'This Configuration Variable can be used to configure whether a public key needs to be sent with a signed meter value.',
+    enumeration: Object.values(PublicKeyWithSignedMeterValueEnumType),
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
