@@ -1,4 +1,4 @@
-import { PublicKeyWithSignedMeterValueEnumType } from '../../types/ocpp/Configuration.js'
+import { PublicKeyWithSignedMeterValueEnumType } from '../../types/index.js'
 
 const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
   Object.values(PublicKeyWithSignedMeterValueEnumType)

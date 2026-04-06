@@ -19,9 +19,10 @@ import {
   generateSignedMeterData,
   type SignedMeterDataParams,
 } from '../../../src/charging-station/ocpp/SignedMeterDataGenerator.js'
+import { MeterValueContext } from '../../../src/types/index.js'
 
 const DEFAULT_PARAMS: SignedMeterDataParams = {
-  context: 'Sample.Periodic',
+  context: MeterValueContext.SAMPLE_PERIODIC,
   meterSerialNumber: 'SIM-METER-001',
   meterValue: 12345000,
   timestamp: new Date('2025-01-15T10:30:00.000Z'),
@@ -89,7 +90,7 @@ await describe('SignedMeterDataGenerator', async () => {
   })
 
   await it('should produce TX=B for Transaction.Begin', () => {
-    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: 'Transaction.Begin' }
+    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: MeterValueContext.TRANSACTION_BEGIN }
     const result = generateSignedMeterData(params)
     const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
 
@@ -97,7 +98,7 @@ await describe('SignedMeterDataGenerator', async () => {
   })
 
   await it('should produce TX=E for Transaction.End', () => {
-    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: 'Transaction.End' }
+    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: MeterValueContext.TRANSACTION_END }
     const result = generateSignedMeterData(params)
     const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
 

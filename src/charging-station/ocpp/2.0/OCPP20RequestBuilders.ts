@@ -5,7 +5,6 @@ import {
   type ChargingStationInfo,
   type MeterValueContext,
   type MeterValuePhase,
-  MeterValueUnit,
   OCPP16StopTransactionReason,
   type OCPP20BootNotificationRequest,
   OCPP20MeasurandEnumType,
@@ -18,16 +17,6 @@ import {
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
 import { generateSignedMeterData, type SignedMeterDataParams } from '../SignedMeterDataGenerator.js'
 import { shouldIncludePublicKey } from '../SignedMeterValueUtils.js'
-
-const OCPP20_CONTEXT_TO_SIGNED_CONTEXT = new Map<string, SignedMeterDataParams['context']>([
-  ['Sample.Clock', 'Sample.Clock'],
-  ['Sample.Periodic', 'Sample.Periodic'],
-  ['Transaction.Begin', 'Transaction.Begin'],
-  ['Transaction.End', 'Transaction.End'],
-])
-
-const toSignedContext = (context: MeterValueContext): SignedMeterDataParams['context'] =>
-  OCPP20_CONTEXT_TO_SIGNED_CONTEXT.get(context) ?? 'Sample.Periodic'
 
 export interface OCPP20SampledValueSigningConfig {
   enabled: boolean
@@ -97,10 +86,10 @@ export function buildOCPP20SampledValue (
       signingConfig.publicKeySentInTransaction
     )
     const signedMeterDataParams: SignedMeterDataParams = {
-      context: toSignedContext(fields.context),
+      context: fields.context,
       meterSerialNumber: signingConfig.meterSerialNumber,
       meterValue: fields.value,
-      meterValueUnit: fields.unit === MeterValueUnit.KILO_WATT_HOUR ? 'kWh' : 'Wh',
+      meterValueUnit: fields.unit,
       timestamp: signingConfig.timestamp ?? new Date(),
       transactionId: signingConfig.transactionId,
     }

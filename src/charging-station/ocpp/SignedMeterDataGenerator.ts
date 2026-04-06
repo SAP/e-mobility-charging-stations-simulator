@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
 
+import { MeterValueContext, MeterValueUnit } from '../../types/index.js'
+
 export interface SignedMeterData {
   encodingMethod: string
   publicKey: string
@@ -8,10 +10,10 @@ export interface SignedMeterData {
 }
 
 export interface SignedMeterDataParams {
-  context: 'Sample.Clock' | 'Sample.Periodic' | 'Transaction.Begin' | 'Transaction.End'
+  context: MeterValueContext
   meterSerialNumber: string
   meterValue: number
-  meterValueUnit?: 'kWh' | 'Wh'
+  meterValueUnit?: MeterValueUnit
   timestamp: Date
   transactionId: number | string
 }
@@ -19,11 +21,11 @@ export interface SignedMeterDataParams {
 const SIGNING_METHOD = 'ECDSA-secp256r1-SHA256'
 const ENCODING_METHOD = 'OCMF'
 
-const contextToTxCode = (context: SignedMeterDataParams['context']): string => {
+const contextToTxCode = (context: MeterValueContext): string => {
   switch (context) {
-    case 'Transaction.Begin':
+    case MeterValueContext.TRANSACTION_BEGIN:
       return 'B'
-    case 'Transaction.End':
+    case MeterValueContext.TRANSACTION_END:
       return 'E'
     default:
       return 'P'
@@ -40,7 +42,7 @@ export const generateSignedMeterData = (
 ): SignedMeterData => {
   const txCode = contextToTxCode(params.context)
   const meterValueKwh =
-    params.meterValueUnit === 'kWh'
+    params.meterValueUnit === MeterValueUnit.KILO_WATT_HOUR
       ? Number(params.meterValue.toFixed(3))
       : Number((params.meterValue / 1000).toFixed(3))
 

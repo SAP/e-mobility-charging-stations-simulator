@@ -68,7 +68,7 @@ import {
   getSampledValueTemplate,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
-import { generateSignedMeterData, type SignedMeterDataParams } from '../SignedMeterDataGenerator.js'
+import { generateSignedMeterData } from '../SignedMeterDataGenerator.js'
 import {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
@@ -941,7 +941,7 @@ export class OCPP16ServiceUtils {
 
     const signedData = generateSignedMeterData(
       {
-        context: context as SignedMeterDataParams['context'],
+        context,
         meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
         meterValue: meterValueWh,
         timestamp,
