@@ -930,30 +930,28 @@ export const buildMeterValue = (
 
         if (signReadings) {
           let signingEnabledForContext = true
-          if (context != null) {
-            if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
-              signingEnabledForContext =
-                getConfigurationKey(
-                  chargingStation,
-                  buildConfigKey(
-                    OCPP20ComponentName.SampledDataCtrlr,
-                    VendorParametersKey.SignStartedReadings
-                  )
-                )?.value === 'true'
-            } else if (
-              context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
-              context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
-            ) {
-              signingEnabledForContext =
-                getConfigurationKey(
-                  chargingStation,
-                  buildConfigKey(
-                    OCPP20ComponentName.SampledDataCtrlr,
-                    VendorParametersKey.SignUpdatedReadings
-                  )
-                )?.value === 'true'
-            }
-            // context === TRANSACTION_END: always sign (no sub-switch needed)
+          if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
+            signingEnabledForContext =
+              getConfigurationKey(
+                chargingStation,
+                buildConfigKey(
+                  OCPP20ComponentName.SampledDataCtrlr,
+                  VendorParametersKey.SignStartedReadings
+                )
+              )?.value === 'true'
+          } else if (
+            context == null ||
+            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
+            context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+          ) {
+            signingEnabledForContext =
+              getConfigurationKey(
+                chargingStation,
+                buildConfigKey(
+                  OCPP20ComponentName.SampledDataCtrlr,
+                  VendorParametersKey.SignUpdatedReadings
+                )
+              )?.value === 'true'
           }
 
           if (signingEnabledForContext) {

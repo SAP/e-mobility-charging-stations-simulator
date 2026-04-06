@@ -210,6 +210,11 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       )
       addConfigurationKey(
         station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
         buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
         PublicKeyWithSignedMeterValueEnumType.Never
       )
@@ -292,6 +297,11 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings'),
+        'true'
+      )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings'),
         'true'
       )
       addConfigurationKey(

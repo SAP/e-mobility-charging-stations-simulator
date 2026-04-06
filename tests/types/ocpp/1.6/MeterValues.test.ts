@@ -3,7 +3,7 @@
  * @description Tests for OCPP16MeterValueFormat enum and OCPP16SignedMeterValue interface
  */
 
-import { strict as assert } from 'node:assert'
+import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { OCPP16MeterValueFormat, type OCPP16SignedMeterValue } from '../../../../src/types/index.js'

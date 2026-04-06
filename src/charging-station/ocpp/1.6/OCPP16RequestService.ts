@@ -225,12 +225,11 @@ export class OCPP16RequestService extends OCPPRequestService {
         )
         {
           let transactionData: OCPP16MeterValue[] | undefined
-          if (
-            (chargingStation.stationInfo?.transactionDataMeterValues === true ||
-              OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
-            connectorId != null
-          ) {
-            try {
+          const transactionDataExplicit =
+            chargingStation.stationInfo?.transactionDataMeterValues === true
+          const signingForcesTransactionData = OCPP16ServiceUtils.isSigningEnabled(chargingStation)
+          if ((transactionDataExplicit || signingForcesTransactionData) && connectorId != null) {
+            if (transactionDataExplicit) {
               transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
                 chargingStation.getConnectorStatus(connectorId)
                   ?.transactionBeginMeterValue as OCPP16MeterValue,
@@ -240,11 +239,23 @@ export class OCPP16RequestService extends OCPPRequestService {
                   energyActiveImportRegister
                 )
               )
-            } catch (error) {
-              logger.warn(
-                `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Failed to build transaction data meter values for StopTransaction:`,
-                error
-              )
+            } else {
+              try {
+                transactionData = OCPP16ServiceUtils.buildTransactionDataMeterValues(
+                  chargingStation.getConnectorStatus(connectorId)
+                    ?.transactionBeginMeterValue as OCPP16MeterValue,
+                  OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                    chargingStation,
+                    connectorId,
+                    energyActiveImportRegister
+                  )
+                )
+              } catch (error) {
+                logger.warn(
+                  `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Failed to build signed transaction data meter values for StopTransaction:`,
+                  error
+                )
+              }
             }
           }
           return {
