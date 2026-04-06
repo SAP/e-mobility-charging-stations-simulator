@@ -38,6 +38,7 @@ import {
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
+  VendorParametersKey,
 } from '../../types/index.js'
 import {
   ACElectricUtils,
@@ -924,7 +925,7 @@ export const buildMeterValue = (
         const signReadings =
           getConfigurationKey(
             chargingStation,
-            buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings')
+            buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.SignReadings)
           )?.value === 'true'
 
         if (signReadings) {
@@ -934,7 +935,10 @@ export const buildMeterValue = (
               signingEnabledForContext =
                 getConfigurationKey(
                   chargingStation,
-                  buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignStartedReadings')
+                  buildConfigKey(
+                    OCPP20ComponentName.SampledDataCtrlr,
+                    VendorParametersKey.SignStartedReadings
+                  )
                 )?.value === 'true'
             } else if (
               context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
@@ -943,7 +947,10 @@ export const buildMeterValue = (
               signingEnabledForContext =
                 getConfigurationKey(
                   chargingStation,
-                  buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, 'SignUpdatedReadings')
+                  buildConfigKey(
+                    OCPP20ComponentName.SampledDataCtrlr,
+                    VendorParametersKey.SignUpdatedReadings
+                  )
                 )?.value === 'true'
             }
             // context === TRANSACTION_END: always sign (no sub-switch needed)
@@ -952,11 +959,14 @@ export const buildMeterValue = (
           if (signingEnabledForContext) {
             const publicKeyWithSignedMeterValueStr = getConfigurationKey(
               chargingStation,
-              buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue')
+              buildConfigKey(
+                OCPP20ComponentName.OCPPCommCtrlr,
+                StandardParametersKey.PublicKeyWithSignedMeterValue
+              )
             )?.value
             const publicKeyHex = getConfigurationKey(
               chargingStation,
-              buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
+              buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
             ocpp20SigningConfig = {
               enabled: true,

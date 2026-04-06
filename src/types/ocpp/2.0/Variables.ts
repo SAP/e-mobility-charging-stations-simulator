@@ -42,10 +42,12 @@ export enum OCPP20OptionalVariableName {
   MaxCertificateChainSize = 'MaxCertificateChainSize',
   MaxEnergyOnInvalidId = 'MaxEnergyOnInvalidId',
   NonEvseSpecific = 'NonEvseSpecific',
+  PublicKeyWithSignedMeterValue = 'PublicKeyWithSignedMeterValue',
   ReportingValueSize = 'ReportingValueSize',
   RetryBackOffRandomRange = 'RetryBackOffRandomRange',
   RetryBackOffRepeatTimes = 'RetryBackOffRepeatTimes',
   RetryBackOffWaitMinimum = 'RetryBackOffWaitMinimum',
+  SignReadings = 'SignReadings',
   ValueSize = 'ValueSize',
   WebSocketPingInterval = 'WebSocketPingInterval',
 }
@@ -88,6 +90,10 @@ export enum OCPP20RequiredVariableName {
 export enum OCPP20VendorVariableName {
   CertificatePrivateKey = 'CertificatePrivateKey',
   ConnectionUrl = 'ConnectionUrl',
+  PublicKey = 'PublicKey',
+  SigningMethod = 'SigningMethod',
+  SignStartedReadings = 'SignStartedReadings',
+  SignUpdatedReadings = 'SignUpdatedReadings',
   SimulateSignatureVerificationFailure = 'SimulateSignatureVerificationFailure',
 }
 
