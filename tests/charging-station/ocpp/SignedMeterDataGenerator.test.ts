@@ -90,7 +90,10 @@ await describe('SignedMeterDataGenerator', async () => {
   })
 
   await it('should produce TX=B for Transaction.Begin', () => {
-    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: MeterValueContext.TRANSACTION_BEGIN }
+    const params: SignedMeterDataParams = {
+      ...DEFAULT_PARAMS,
+      context: MeterValueContext.TRANSACTION_BEGIN,
+    }
     const result = generateSignedMeterData(params)
     const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
 
@@ -98,7 +101,10 @@ await describe('SignedMeterDataGenerator', async () => {
   })
 
   await it('should produce TX=E for Transaction.End', () => {
-    const params: SignedMeterDataParams = { ...DEFAULT_PARAMS, context: MeterValueContext.TRANSACTION_END }
+    const params: SignedMeterDataParams = {
+      ...DEFAULT_PARAMS,
+      context: MeterValueContext.TRANSACTION_END,
+    }
     const result = generateSignedMeterData(params)
     const decoded = Buffer.from(result.signedMeterData, 'base64').toString('utf8')
 
