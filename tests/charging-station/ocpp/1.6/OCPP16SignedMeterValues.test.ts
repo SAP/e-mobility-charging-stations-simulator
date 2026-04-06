@@ -11,16 +11,18 @@ import { afterEach, describe, it } from 'node:test'
 import { buildSignedOCPP16SampledValue } from '../../../../src/charging-station/ocpp/1.6/OCPP16RequestBuilders.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
+  type OCPP16MeterValue,
   OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
   OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValueUnit,
+  type OCPP16SampledValue,
   type OCPP16SignedMeterValue,
   OCPP16VendorParametersKey,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMeterValuesTemplate, upsertConfigurationKey } from './OCPP16TestUtils.js'
 
@@ -410,6 +412,118 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
       assert.strictEqual(OCPP16ServiceUtils.isSigningEnabled(station), true)
       assert.strictEqual(station.stationInfo?.transactionDataMeterValues, false)
+    })
+  })
+
+  await describe('startUpdatedMeterValues — periodic signing', async () => {
+    await it('should include signed SampledValue in periodic meter values when SampledDataSignUpdatedReadings=true', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        let capturedMeterValue: OCPP16MeterValue | undefined
+        const { station } = createMockChargingStation({
+          ocppRequestService: {
+            requestHandler: (...args: unknown[]): Promise<unknown> => {
+              const payload = args[2] as undefined | { meterValue?: OCPP16MeterValue[] }
+              if (payload?.meterValue?.[0] != null) {
+                capturedMeterValue = payload.meterValue[0]
+              }
+              return Promise.resolve()
+            },
+          },
+          ocppVersion: OCPPVersion.VERSION_16,
+          stationInfo: {
+            meterSerialNumber: 'SIM-001',
+            ocppVersion: OCPPVersion.VERSION_16,
+          },
+        })
+        const connectorStatus = station.getConnectorStatus(1)
+        if (connectorStatus != null) {
+          connectorStatus.MeterValues = createMeterValuesTemplate([
+            {
+              measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+              unit: OCPP16MeterValueUnit.WATT_HOUR,
+              value: '0',
+            },
+          ])
+          connectorStatus.transactionStarted = true
+          connectorStatus.transactionId = 42
+        }
+
+        upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+        upsertConfigurationKey(
+          station,
+          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+          'true'
+        )
+
+        // Act
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
+        t.mock.timers.tick(60000)
+
+        // Assert
+        assert.ok(capturedMeterValue != null)
+        const signedSamples = capturedMeterValue.sampledValue.filter(
+          (sv: OCPP16SampledValue) => sv.format === OCPP16MeterValueFormat.SIGNED_DATA
+        )
+        assert.ok(signedSamples.length > 0)
+        assert.strictEqual(
+          signedSamples[0].measurand,
+          OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        )
+      })
+    })
+
+    await it('should not include signed SampledValue when SampledDataSignUpdatedReadings=false', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        // Arrange
+        let capturedMeterValue: OCPP16MeterValue | undefined
+        const { station } = createMockChargingStation({
+          ocppRequestService: {
+            requestHandler: (...args: unknown[]): Promise<unknown> => {
+              const payload = args[2] as undefined | { meterValue?: OCPP16MeterValue[] }
+              if (payload?.meterValue?.[0] != null) {
+                capturedMeterValue = payload.meterValue[0]
+              }
+              return Promise.resolve()
+            },
+          },
+          ocppVersion: OCPPVersion.VERSION_16,
+          stationInfo: {
+            meterSerialNumber: 'SIM-001',
+            ocppVersion: OCPPVersion.VERSION_16,
+          },
+        })
+        const connectorStatus = station.getConnectorStatus(1)
+        if (connectorStatus != null) {
+          connectorStatus.MeterValues = createMeterValuesTemplate([
+            {
+              measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+              unit: OCPP16MeterValueUnit.WATT_HOUR,
+              value: '0',
+            },
+          ])
+          connectorStatus.transactionStarted = true
+          connectorStatus.transactionId = 42
+        }
+
+        upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+        upsertConfigurationKey(
+          station,
+          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings,
+          'false'
+        )
+
+        // Act
+        OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
+        t.mock.timers.tick(60000)
+
+        // Assert
+        assert.ok(capturedMeterValue != null)
+        const signedSamples = capturedMeterValue.sampledValue.filter(
+          (sv: OCPP16SampledValue) => sv.format === OCPP16MeterValueFormat.SIGNED_DATA
+        )
+        assert.strictEqual(signedSamples.length, 0)
+      })
     })
   })
 
