@@ -46,6 +46,7 @@ import {
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
+  PublicKeyWithSignedMeterValueEnumType,
   RegistrationStatusEnumType,
   RequestCommand,
   type Reservation,
@@ -2058,9 +2059,14 @@ export class ChargingStation extends EventEmitter {
       })
     }
     if (getConfigurationKey(this, VendorParametersKey.PublicKeyWithSignedMeterValue) == null) {
-      addConfigurationKey(this, VendorParametersKey.PublicKeyWithSignedMeterValue, 'Never', {
-        readonly: false,
-      })
+      addConfigurationKey(
+        this,
+        VendorParametersKey.PublicKeyWithSignedMeterValue,
+        PublicKeyWithSignedMeterValueEnumType.Never,
+        {
+          readonly: false,
+        }
+      )
     }
     if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
       if (getConfigurationKey(this, VendorParametersKey.StartTxnSampledData) == null) {
