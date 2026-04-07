@@ -102,3 +102,10 @@ export const TEST_RESERVATION_EXPIRY_MS = TEST_ONE_HOUR_MS
  */
 export const TEST_VALUE_SIZE_LIMIT = 120
 export const TEST_CONFIGURATION_VALUE_SIZE = 60
+
+/**
+ * Fiscal Metering / Signed Meter Values
+ * secp256k1 EC public key from OCA Application Note §5.3
+ */
+export const TEST_PUBLIC_KEY_HEX =
+  '3056301006072a8648ce3d020106052b8104000a03420004460a02ba2766d9c44f023ecc0e4e58644a87add1aadd6317e5fe4dccdb29b163a01d8a6297c84bc530f86431e92f8d46ab37830247c05cbd92fac252929e7f61'

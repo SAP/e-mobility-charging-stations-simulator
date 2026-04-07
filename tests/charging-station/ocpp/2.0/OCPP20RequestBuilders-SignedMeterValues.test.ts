@@ -27,6 +27,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
+  TEST_PUBLIC_KEY_HEX,
   TEST_TRANSACTION_ID_STRING,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -230,6 +231,11 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue'),
         PublicKeyWithSignedMeterValueEnumType.Never
       )
+      addConfigurationKey(
+        station,
+        buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
+        TEST_PUBLIC_KEY_HEX
+      )
 
       const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID_STRING, 0)
 
@@ -324,7 +330,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
-        'abcdef1234567890'
+        TEST_PUBLIC_KEY_HEX
       )
 
       const connectorStatus = station.getConnectorStatus(1)
@@ -389,7 +395,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
-        'abcdef1234567890'
+        TEST_PUBLIC_KEY_HEX
       )
 
       const meterValue = buildMeterValue(
@@ -463,7 +469,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
-        'abcdef1234567890'
+        TEST_PUBLIC_KEY_HEX
       )
 
       const meterValue = buildMeterValue(
@@ -507,7 +513,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       addConfigurationKey(
         station,
         buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey'),
-        'abcdef1234567890'
+        TEST_PUBLIC_KEY_HEX
       )
 
       const meterValue = buildMeterValue(

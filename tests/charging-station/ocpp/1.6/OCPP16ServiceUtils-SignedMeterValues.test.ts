@@ -26,6 +26,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_PUBLIC_KEY_HEX } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMeterValuesTemplate, upsertConfigurationKey } from './OCPP16TestUtils.js'
 
@@ -171,6 +172,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       )
       upsertConfigurationKey(
         station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
+      upsertConfigurationKey(
+        station,
         OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
         'EveryMeterValue'
       )
@@ -217,7 +223,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue,
         'OncePerTransaction'
       )
-      upsertConfigurationKey(station, `${OCPP16VendorParametersKey.MeterPublicKey}1`, 'abcd1234')
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
 
       OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 0)
 
@@ -267,6 +277,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       }
 
       upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
 
       const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 50000)
 
@@ -284,6 +299,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       }
 
       upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
 
       const meterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(station, 1, 25000)
       const signedSamples = meterValue.sampledValue.filter(
@@ -327,6 +347,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         }
 
         upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+        upsertConfigurationKey(
+          station,
+          `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+          TEST_PUBLIC_KEY_HEX
+        )
       })
 
       await it('should not sign non-energy measurands even when signing is enabled', () => {
@@ -414,6 +439,11 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       }
 
       upsertConfigurationKey(station, OCPP16VendorParametersKey.SampledDataSignReadings, 'true')
+      upsertConfigurationKey(
+        station,
+        `${OCPP16VendorParametersKey.MeterPublicKey}1`,
+        TEST_PUBLIC_KEY_HEX
+      )
     })
 
     await it('should include signed SampledValue in periodic meter values when SampledDataSignUpdatedReadings=true', async t => {
