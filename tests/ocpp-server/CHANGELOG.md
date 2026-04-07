@@ -2,10 +2,9 @@
 
 ## [4.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.3.1...ocpp-server@v4.4.0) (2026-04-07)
 
-
 ### 🚀 Features
 
-* **ocpp:** add signed meter values support for OCPP 1.6 and 2.0.x ([#1775](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1775)) ([7d69543](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d69543150e590831d93769443cd82d457c825bc))
+- **ocpp:** add signed meter values support for OCPP 1.6 and 2.0.x ([#1775](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1775)) ([7d69543](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d69543150e590831d93769443cd82d457c825bc))
 
 ## [4.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.3.0...ocpp-server@v4.3.1) (2026-04-05)
 
