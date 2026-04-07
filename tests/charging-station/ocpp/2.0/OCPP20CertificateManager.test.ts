@@ -22,6 +22,8 @@ import {
   INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
   INVALID_PEM_WRONG_MARKERS,
   VALID_PEM_CERTIFICATE_EXTENDED,
+  VALID_X509_CA_CERTIFICATE,
+  VALID_X509_LEAF_CERTIFICATE,
   VALID_X509_PEM_CERTIFICATE,
 } from './OCPP20CertificateTestData.js'
 
@@ -336,8 +338,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     beforeEach(() => {
       manager = new OCPP20CertificateManager()
     })
-    await it('should return correct file path for certificate', () => {
-      const path = manager.getCertificatePath(
+    await it('should return correct file path for certificate', async () => {
+      const path = await manager.getCertificatePath(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
         'SERIAL-12345'
@@ -351,8 +353,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.match(path, /\.pem$/)
     })
 
-    await it('should handle special characters in serial number', () => {
-      const path = manager.getCertificatePath(
+    await it('should handle special characters in serial number', async () => {
+      const path = await manager.getCertificatePath(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
         'SERIAL:ABC/123'
@@ -367,14 +369,14 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.ok(!filename.includes('/'))
     })
 
-    await it('should return different paths for different certificate types', () => {
-      const csmsPath = manager.getCertificatePath(
+    await it('should return different paths for different certificate types', async () => {
+      const csmsPath = await manager.getCertificatePath(
         TEST_CHARGING_STATION_HASH_ID,
         InstallCertificateUseEnumType.CSMSRootCertificate,
         'SERIAL-001'
       )
 
-      const v2gPath = manager.getCertificatePath(
+      const v2gPath = await manager.getCertificatePath(
         TEST_CHARGING_STATION_HASH_ID,
         InstallCertificateUseEnumType.V2GRootCertificate,
         'SERIAL-001'
@@ -385,8 +387,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.ok(v2gPath.includes('V2GRootCertificate'))
     })
 
-    await it('should return path following project convention', () => {
-      const path = manager.getCertificatePath(
+    await it('should return path following project convention', async () => {
+      const path = await manager.getCertificatePath(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
         'SERIAL-12345'
@@ -437,10 +439,10 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.notStrictEqual(result, undefined)
     })
 
-    await it('should sanitize station hash ID for filesystem safety', () => {
+    await it('should sanitize station hash ID for filesystem safety', async () => {
       const maliciousHashId = '../../../etc/passwd'
 
-      const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
+      const path = await manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
 
       assert.ok(!path.includes('..'))
     })
@@ -474,6 +476,33 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.strictEqual(result.valid, false)
       assert.strictEqual(typeof result.reason, 'string')
       assert.ok(result.reason?.includes('No PEM certificate found'))
+    })
+
+    await it('should return valid for a chain where leaf is signed by CA', () => {
+      const chain = `${VALID_X509_LEAF_CERTIFICATE}\n${VALID_X509_CA_CERTIFICATE}`
+      const result = manager.validateCertificateX509(chain)
+
+      assert.strictEqual(result.valid, true)
+    })
+
+    await it('should return invalid when chain has issuer mismatch', () => {
+      const brokenChain = `${VALID_X509_LEAF_CERTIFICATE}\n${VALID_X509_PEM_CERTIFICATE}`
+      const result = manager.validateCertificateX509(brokenChain)
+
+      assert.strictEqual(result.valid, false)
+      assert.ok(
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        result.reason?.includes('issuer mismatch') ||
+          result.reason?.includes('signature verification failed')
+      )
+    })
+
+    await it('should return invalid when chain has expired intermediate', () => {
+      const chainWithExpired = `${VALID_X509_PEM_CERTIFICATE}\n${EXPIRED_X509_PEM_CERTIFICATE}`
+      const result = manager.validateCertificateX509(chainWithExpired)
+
+      assert.strictEqual(result.valid, false)
+      assert.ok(result.reason?.includes('expired'))
     })
   })
 })

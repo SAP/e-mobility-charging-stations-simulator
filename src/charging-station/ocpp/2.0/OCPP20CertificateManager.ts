@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { createHash, X509Certificate } from 'node:crypto'
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { hash, X509Certificate } from 'node:crypto'
+import { mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../ChargingStation.js'
@@ -17,6 +17,7 @@ import {
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
 import { convertToDate, getErrorMessage, isEmpty, isNotEmptyArray } from '../../../utils/index.js'
+import { extractDerIssuer } from './Asn1DerUtils.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -107,11 +108,8 @@ export class OCPP20CertificateManager {
    * - issuerKeyHash: Hash of the issuer's public key (from the issuer certificate)
    * - serialNumber: The certificate's serial number
    * @remarks
-   * **RFC 6960 §4.1.1 deviation**: Per RFC 6960, `issuerNameHash` must be the hash of the
-   * DER-encoded issuer distinguished name. This implementation hashes the string DN
-   * representation from `X509Certificate.issuer` as a simulation approximation. Full RFC 6960
-   * compliance would require ASN.1/DER encoding of the issuer name, which is outside the scope
-   * of this simulator. See also: mock CSR generation in the SignCertificate handler.
+   * **RFC 6960 §4.1.1 compliant**: `issuerNameHash` is computed from the DER-encoded issuer
+   * distinguished name extracted from the raw X.509 certificate, per RFC 6960 requirements.
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm to use (default: SHA256)
    * @param issuerCertPem - Optional PEM-encoded issuer certificate for issuerKeyHash computation.
@@ -136,10 +134,9 @@ export class OCPP20CertificateManager {
       const firstCertPem = this.extractFirstCertificate(pemData)
       const x509 = new X509Certificate(firstCertPem)
 
-      // RFC 6960 §4.1.1 deviation: spec requires hash of DER-encoded issuer distinguished name.
-      // Using string DN from X509Certificate.issuer as simulation approximation
-      // (ASN.1/DER encoding of the issuer name is out of scope for this simulator).
-      const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
+      // RFC 6960 §4.1.1: issuerNameHash is the hash of the DER-encoded issuer DN
+      const issuerDer = extractDerIssuer(x509.raw)
+      const issuerNameHash = hash(algorithmName, issuerDer, 'hex')
 
       // RFC 6960 §4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
       // Determine which public key to use for issuerKeyHash
@@ -167,7 +164,7 @@ export class OCPP20CertificateManager {
         }) as Buffer
       }
 
-      const issuerKeyHash = createHash(algorithmName).update(issuerPublicKeyDer).digest('hex')
+      const issuerKeyHash = hash(algorithmName, issuerPublicKeyDer, 'hex')
 
       const serialNumber = x509.serialNumber
 
@@ -195,7 +192,7 @@ export class OCPP20CertificateManager {
     hashData: CertificateHashDataType
   ): Promise<DeleteCertificateResult> {
     try {
-      const basePath = this.getStationCertificatesBasePath(stationHashId)
+      const basePath = await this.getStationCertificatesBasePath(stationHashId)
 
       if (!(await this.pathExists(basePath))) {
         return { status: DeleteCertificateStatusEnumType.NotFound }
@@ -213,7 +210,7 @@ export class OCPP20CertificateManager {
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
-          this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
+          await this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = await readFile(filePath, 'utf8')
             const certHash = this.computeCertificateHash(pemData, hashData.hashAlgorithm)
@@ -246,12 +243,12 @@ export class OCPP20CertificateManager {
    * @param serialNumber - Certificate serial number
    * @returns Full path where the certificate should be stored
    */
-  public getCertificatePath (
+  public async getCertificatePath (
     stationHashId: string,
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     serialNumber: string
-  ): string {
-    const basePath = this.getStationCertificatesBasePath(stationHashId)
+  ): Promise<string> {
+    const basePath = await this.getStationCertificatesBasePath(stationHashId)
     const sanitizedSerial = this.sanitizeSerial(serialNumber)
     return join(basePath, certType, `${sanitizedSerial}.pem`)
   }
@@ -271,7 +268,7 @@ export class OCPP20CertificateManager {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
     try {
-      const basePath = this.getStationCertificatesBasePath(stationHashId)
+      const basePath = await this.getStationCertificatesBasePath(stationHashId)
 
       if (!(await this.pathExists(basePath))) {
         return { certificateHashDataChain }
@@ -295,7 +292,7 @@ export class OCPP20CertificateManager {
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
-          this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
+          await this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = await readFile(filePath, 'utf8')
             const hashData = this.computeCertificateHash(pemData, hashAlgorithm)
@@ -332,7 +329,7 @@ export class OCPP20CertificateManager {
     hashAlgorithm?: HashAlgorithmEnumType
   ): Promise<boolean> {
     try {
-      const certFilePath = this.getCertificatePath(
+      const certFilePath = await this.getCertificatePath(
         stationHashId,
         CertificateSigningUseEnumType.ChargingStationCertificate,
         ''
@@ -350,7 +347,7 @@ export class OCPP20CertificateManager {
 
       for (const file of pemFiles) {
         const filePath = join(dirPath, file)
-        this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
+        await this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
         try {
           const pemData = await readFile(filePath, 'utf8')
           const hashData = this.computeCertificateHash(
@@ -406,9 +403,9 @@ export class OCPP20CertificateManager {
         serialNumber = this.generateFallbackSerialNumber(firstCertPem)
       }
 
-      const filePath = this.getCertificatePath(stationHashId, certType, serialNumber)
+      const filePath = await this.getCertificatePath(stationHashId, certType, serialNumber)
 
-      this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
+      await this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
       const dirPath = resolve(filePath, '..')
       if (!(await this.pathExists(dirPath))) {
@@ -452,37 +449,53 @@ export class OCPP20CertificateManager {
   }
 
   /**
-   * Validates a PEM certificate using X.509 structural parsing.
-   * Checks validity period (notBefore/notAfter) and issuer presence per A02.FR.06.
-   *
-   * **Design choice**: Only the first certificate in a PEM chain is validated.
-   * Full chain-of-trust verification (A02.FR.06 hierarchy check) is not implemented —
-   * the simulator performs structural validation only, consistent with the medium-depth
-   * X.509 scope defined in the audit remediation plan.
-   * @param pem - PEM-encoded certificate data (may contain a chain; only first cert is validated)
+   * Validates a PEM certificate chain using X.509 structural parsing.
+   * Checks validity period (notBefore/notAfter) for all certificates and verifies
+   * chain-of-trust by checking issuance and signature for each consecutive pair.
+   * @param pem - PEM-encoded certificate data (may contain a chain, ordered leaf → intermediate → root)
    * @returns Validation result with reason on failure
    */
   public validateCertificateX509 (pem: string): ValidateCertificateX509Result {
     try {
-      const firstCertMatch = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/.exec(
-        pem
+      const pemCertificates = pem.match(
+        /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
       )
-      if (firstCertMatch == null) {
+      if (pemCertificates == null || pemCertificates.length === 0) {
         return { reason: 'No PEM certificate found', valid: false }
       }
-      const cert = new X509Certificate(firstCertMatch[0])
+
+      const certs = pemCertificates.map(p => new X509Certificate(p))
       const now = new Date()
-      const validFromDate = convertToDate(cert.validFrom)
-      const validToDate = convertToDate(cert.validTo)
-      if (validFromDate != null && now < validFromDate) {
-        return { reason: 'Certificate is not yet valid', valid: false }
+
+      for (const cert of certs) {
+        const validFromDate = convertToDate(cert.validFrom)
+        const validToDate = convertToDate(cert.validTo)
+        if (validFromDate != null && now < validFromDate) {
+          return { reason: 'Certificate is not yet valid', valid: false }
+        }
+        if (validToDate != null && now > validToDate) {
+          return { reason: 'Certificate has expired', valid: false }
+        }
+        if (!cert.issuer.trim()) {
+          return { reason: 'Certificate has no issuer', valid: false }
+        }
       }
-      if (validToDate != null && now > validToDate) {
-        return { reason: 'Certificate has expired', valid: false }
+
+      for (let i = 0; i < certs.length - 1; i++) {
+        if (!certs[i].checkIssued(certs[i + 1])) {
+          return {
+            reason: 'Certificate chain verification failed: issuer mismatch',
+            valid: false,
+          }
+        }
+        if (!certs[i].verify(certs[i + 1].publicKey)) {
+          return {
+            reason: 'Certificate chain verification failed: signature verification failed',
+            valid: false,
+          }
+        }
       }
-      if (!cert.issuer.trim()) {
-        return { reason: 'Certificate has no issuer', valid: false }
-      }
+
       return { valid: true }
     } catch (error) {
       return {
@@ -519,10 +532,8 @@ export class OCPP20CertificateManager {
     // Use first 64 bytes as issuer name proxy: in DER-encoded X.509, the issuer DN
     // typically resides within this range, providing a stable hash for matching.
     const issuerNameSliceEnd = Math.min(64, contentBuffer.length)
-    const issuerNameHash = createHash(algorithmName)
-      .update(contentBuffer.subarray(0, issuerNameSliceEnd))
-      .digest('hex')
-    const issuerKeyHash = createHash(algorithmName).update(contentBuffer).digest('hex')
+    const issuerNameHash = hash(algorithmName, contentBuffer.subarray(0, issuerNameSliceEnd), 'hex')
+    const issuerKeyHash = hash(algorithmName, contentBuffer, 'hex')
 
     const serialNumber = this.generateFallbackSerialNumber(pemData)
 
@@ -546,7 +557,7 @@ export class OCPP20CertificateManager {
   }
 
   private generateFallbackSerialNumber (pemData: string): string {
-    return createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
+    return hash('sha256', pemData, 'hex').substring(0, 16).toUpperCase()
   }
 
   private getHashAlgorithmName (hashAlgorithm: HashAlgorithmEnumType): string {
@@ -568,14 +579,14 @@ export class OCPP20CertificateManager {
    * @returns Validated base path for certificate storage
    * @throws {Error} If path validation fails (path traversal attempt)
    */
-  private getStationCertificatesBasePath (stationHashId: string): string {
+  private async getStationCertificatesBasePath (stationHashId: string): Promise<string> {
     const sanitizedHashId = this.sanitizePath(stationHashId)
     const basePath = join(
       OCPP20CertificateManager.BASE_CERT_PATH,
       sanitizedHashId,
       OCPP20CertificateManager.CERT_FOLDER
     )
-    this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+    await this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
     return basePath
   }
 
@@ -621,11 +632,25 @@ export class OCPP20CertificateManager {
     return serial.replace(/:/g, '-').replace(/[/\\<>"|?*]/g, '_')
   }
 
-  private validateCertificatePath (certificateFileName: string, baseDir: string): string {
-    const baseResolved = resolve(baseDir)
-    const fileResolved = resolve(baseDir, certificateFileName)
+  private async validateCertificatePath (
+    certificateFileName: string,
+    baseDir: string
+  ): Promise<string> {
+    // Resolve symlinks when paths exist; falls back to resolve() for not-yet-created paths
+    let baseResolved: string
+    try {
+      baseResolved = await realpath(resolve(baseDir))
+    } catch {
+      baseResolved = resolve(baseDir)
+    }
 
-    // Check if resolved path is within the base directory
+    let fileResolved: string
+    try {
+      fileResolved = await realpath(resolve(baseDir, certificateFileName))
+    } catch {
+      fileResolved = resolve(baseDir, certificateFileName)
+    }
+
     if (!fileResolved.startsWith(baseResolved + sep) && fileResolved !== baseResolved) {
       throw new BaseError(
         `Path traversal attempt detected: certificate path '${certificateFileName}' resolves outside base directory`

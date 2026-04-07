@@ -4,15 +4,20 @@
  */
 
 import assert from 'node:assert/strict'
+import { X509Certificate } from 'node:crypto'
 import { afterEach, describe, it } from 'node:test'
 
 import {
   derInteger,
   derLength,
   derSequence,
+  extractDerIssuer,
   generatePkcs10Csr,
+  readDerLength,
+  skipDerElement,
 } from '../../../../src/charging-station/ocpp/2.0/Asn1DerUtils.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { VALID_X509_PEM_CERTIFICATE } from './OCPP20CertificateTestData.js'
 
 await describe('ASN.1 DER encoding utilities', async () => {
   afterEach(() => {
@@ -109,6 +114,78 @@ await describe('ASN.1 DER encoding utilities', async () => {
         contentLines[contentLines.length - 1].length <= 64,
         'last line length should be at most 64 characters'
       )
+    })
+  })
+
+  await describe('readDerLength', async () => {
+    await it('should parse short form length', () => {
+      const buf = Buffer.from([42])
+      const result = readDerLength(buf, 0)
+      assert.strictEqual(result.length, 42)
+      assert.strictEqual(result.end, 1)
+    })
+
+    await it('should parse single-byte long form (0x81)', () => {
+      const buf = Buffer.from([0x81, 200])
+      const result = readDerLength(buf, 0)
+      assert.strictEqual(result.length, 200)
+      assert.strictEqual(result.end, 2)
+    })
+
+    await it('should parse two-byte long form (0x82)', () => {
+      const buf = Buffer.from([0x82, 0x01, 0x2c])
+      const result = readDerLength(buf, 0)
+      assert.strictEqual(result.length, 300)
+      assert.strictEqual(result.end, 3)
+    })
+
+    await it('should throw RangeError for empty buffer', () => {
+      assert.throws(() => readDerLength(Buffer.alloc(0), 0), RangeError)
+    })
+
+    await it('should throw RangeError for numBytes > 3', () => {
+      const buf = Buffer.from([0x84, 0x01, 0x00, 0x00, 0x00])
+      assert.throws(() => readDerLength(buf, 0), RangeError)
+    })
+  })
+
+  await describe('skipDerElement', async () => {
+    await it('should skip a short TLV element', () => {
+      const buf = Buffer.from([0x02, 0x01, 0x00])
+      const nextOffset = skipDerElement(buf, 0)
+      assert.strictEqual(nextOffset, 3)
+    })
+
+    await it('should skip a longer TLV element', () => {
+      const buf = Buffer.from([0x30, 0x03, 0xaa, 0xbb, 0xcc, 0xff])
+      const nextOffset = skipDerElement(buf, 0)
+      assert.strictEqual(nextOffset, 5)
+    })
+
+    await it('should throw RangeError for offset beyond buffer', () => {
+      assert.throws(() => skipDerElement(Buffer.from([0x02]), 5), RangeError)
+    })
+  })
+
+  await describe('extractDerIssuer', async () => {
+    await it('should extract DER issuer bytes from a real X.509 certificate', () => {
+      const x509 = new X509Certificate(VALID_X509_PEM_CERTIFICATE)
+      const issuerDer = extractDerIssuer(x509.raw)
+
+      assert.ok(Buffer.isBuffer(issuerDer))
+      assert.ok(issuerDer.length > 0)
+      assert.strictEqual(issuerDer[0], 0x30)
+    })
+
+    await it('should produce consistent output for the same certificate', () => {
+      const x509 = new X509Certificate(VALID_X509_PEM_CERTIFICATE)
+      const first = extractDerIssuer(x509.raw)
+      const second = extractDerIssuer(x509.raw)
+      assert.deepStrictEqual(first, second)
+    })
+
+    await it('should throw RangeError for truncated DER data', () => {
+      assert.throws(() => extractDerIssuer(Buffer.from([0x30, 0x03])), RangeError)
     })
   })
 })

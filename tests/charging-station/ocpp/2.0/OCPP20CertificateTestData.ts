@@ -97,6 +97,32 @@ SIb3DQEBCwUAA0EAexpired==
  */
 export const EMPTY_PEM_CERTIFICATE = ''
 
+/**
+ * Real EC P-256 CA certificate (CN=TestRootCA, valid 2026-2036).
+ * Used as issuer for VALID_X509_LEAF_CERTIFICATE.
+ */
+export const VALID_X509_CA_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBGDCBwAIJAMY5KBDzNkHGMAoGCCqGSM49BAMCMBUxEzARBgNVBAMMClRlc3RS
+b290Q0EwHhcNMjYwNDA3MjIxMjU1WhcNMzYwNDA0MjIxMjU1WjAVMRMwEQYDVQQD
+DApUZXN0Um9vdENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhOoqHSLrnwVr
+0Nu78E9rGDQmhGK1qvr2W7ye7yXMHgfFGYMuVr7ejCj6TXk2YPSS8ADRwCRj8R6S
+JFomGI2soDAKBggqhkjOPQQDAgNHADBEAiBDCuKOo0v3y/ZTGSf20GQyTtmfibV5
+5t1yXJkVTudOMgIgWqQXoyjI/k2s+T9U38X4S9yTeMkjeNb3FEYVq5kaA5w=
+-----END CERTIFICATE-----`
+
+/**
+ * Real EC P-256 leaf certificate (CN=TestLeaf, valid 2026-2036).
+ * Signed by VALID_X509_CA_CERTIFICATE.
+ */
+export const VALID_X509_LEAF_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBGDCBvgIJAJn8LXzPXkayMAoGCCqGSM49BAMCMBUxEzARBgNVBAMMClRlc3RS
+b290Q0EwHhcNMjYwNDA3MjIxMjU1WhcNMzYwNDA0MjIxMjU1WjATMREwDwYDVQQD
+DAhUZXN0TGVhZjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABDMWqNhqXlWIksJi
+fYrEQLdPlWG4zAfvc/1q7npD5d+OJu4uwbseA2uXf8/wHgQYrpD3jkXT4b/amhyv
+W1dCq+0wCgYIKoZIzj0EAwIDSQAwRgIhAPnXKKIs+8sE+W+3AH9zE3Z51I1ndCks
+wD0Gud+kCORgAiEArgyP/lVR0Vh9NWe8iTNVXOyc4s8Jn0J+CF9UsUIGuFA=
+-----END CERTIFICATE-----`
+
 // ============================================================================
 // Real X.509 Certificates (parseable by node:crypto X509Certificate)
 // ============================================================================

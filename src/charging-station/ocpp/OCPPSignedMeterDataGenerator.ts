@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { hash } from 'node:crypto'
 
 import {
   EncodingMethodEnumType,
@@ -74,7 +74,7 @@ export const generateSignedMeterData = (
     ],
   }
 
-  const simulatedSignature = createHash('sha256').update(JSON.stringify(ocmfPayload)).digest('hex')
+  const simulatedSignature = hash('sha256', JSON.stringify(ocmfPayload), 'hex')
 
   // OCMF includes the signing algorithm in the SA field of signedMeterData.
   // Per OCA Application Note Table 11: "If it is already included in the
