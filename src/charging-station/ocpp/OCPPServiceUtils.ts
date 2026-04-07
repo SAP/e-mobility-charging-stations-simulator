@@ -69,6 +69,7 @@ import { OCPPConstants } from './OCPPConstants.js'
 import {
   parsePublicKeyWithSignedMeterValue,
   type SampledValueSigningConfig,
+  validateSigningPrerequisites,
 } from './OCPPSignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
@@ -969,22 +970,33 @@ export const buildMeterValue = (
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
-            const signingMethod = getConfigurationKey(
+            const configuredSigningMethod = getConfigurationKey(
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.SigningMethod)
             )?.value as SigningMethodEnumType | undefined
-            signingConfig = {
-              enabled: true,
-              meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
+
+            const prerequisiteResult = validateSigningPrerequisites(
               publicKeyHex,
-              publicKeySentInTransaction:
-                chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ??
-                false,
-              publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
-                publicKeyWithSignedMeterValueStr
-              ),
-              signingMethod,
-              transactionId,
+              configuredSigningMethod
+            )
+            if (prerequisiteResult.enabled) {
+              signingConfig = {
+                enabled: true,
+                meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
+                publicKeyHex,
+                publicKeySentInTransaction:
+                  chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ??
+                  false,
+                publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
+                  publicKeyWithSignedMeterValueStr
+                ),
+                signingMethod: prerequisiteResult.signingMethod,
+                transactionId,
+              }
+            } else {
+              logger.warn(
+                `${chargingStation.logPrefix()} ${moduleName}.buildMeterValue: Signed meter values disabled: ${prerequisiteResult.reason}`
+              )
             }
           }
         }

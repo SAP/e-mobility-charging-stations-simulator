@@ -5,8 +5,16 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { shouldIncludePublicKey } from '../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
-import { PublicKeyWithSignedMeterValueEnumType } from '../../../src/types/index.js'
+import {
+  deriveSigningMethodFromPublicKeyHex,
+  shouldIncludePublicKey,
+  validateSigningPrerequisites,
+} from '../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
+import {
+  PublicKeyWithSignedMeterValueEnumType,
+  SigningMethodEnumType,
+} from '../../../src/types/index.js'
+import { TEST_PUBLIC_KEY_HEX } from '../ChargingStationTestConstants.js'
 
 await describe('SignedMeterValueUtils', async () => {
   await describe('PublicKeyWithSignedMeterValueEnumType', async () => {
@@ -72,6 +80,83 @@ await describe('SignedMeterValueUtils', async () => {
         shouldIncludePublicKey(PublicKeyWithSignedMeterValueEnumType.OncePerTransaction, true),
         false
       )
+    })
+  })
+
+  await describe('deriveSigningMethodFromPublicKeyHex', async () => {
+    await it('should derive secp256k1 from OCA spec §5.3 public key', () => {
+      assert.strictEqual(
+        deriveSigningMethodFromPublicKeyHex(TEST_PUBLIC_KEY_HEX),
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+    })
+
+    await it('should derive secp256r1 from key with OID 06082a8648ce3d030107', () => {
+      const secp256r1Key = '3059301306072a8648ce3d020106082a8648ce3d03010703420004abcd'
+      assert.strictEqual(
+        deriveSigningMethodFromPublicKeyHex(secp256r1Key),
+        SigningMethodEnumType.ECDSA_secp256r1_SHA256
+      )
+    })
+
+    await it('should handle mixed case hex', () => {
+      assert.strictEqual(
+        deriveSigningMethodFromPublicKeyHex(TEST_PUBLIC_KEY_HEX.toUpperCase()),
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+    })
+
+    await it('should return undefined for unrecognized key', () => {
+      assert.strictEqual(deriveSigningMethodFromPublicKeyHex('deadbeef'), undefined)
+    })
+
+    await it('should return undefined for empty string', () => {
+      assert.strictEqual(deriveSigningMethodFromPublicKeyHex(''), undefined)
+    })
+  })
+
+  await describe('validateSigningPrerequisites', async () => {
+    await it('should return enabled with derived method when no configured method', () => {
+      const result = validateSigningPrerequisites(TEST_PUBLIC_KEY_HEX, undefined)
+      assert.strictEqual(result.enabled, true)
+      assert.strictEqual(
+        (result as { signingMethod: SigningMethodEnumType }).signingMethod,
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+    })
+
+    await it('should return enabled when configured method matches key curve', () => {
+      const result = validateSigningPrerequisites(
+        TEST_PUBLIC_KEY_HEX,
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+      assert.strictEqual(result.enabled, true)
+    })
+
+    await it('should return disabled when public key is undefined', () => {
+      const result = validateSigningPrerequisites(undefined, undefined)
+      assert.strictEqual(result.enabled, false)
+      assert.ok((result as { reason: string }).reason.includes('Public key'))
+    })
+
+    await it('should return disabled when public key is empty', () => {
+      const result = validateSigningPrerequisites('', undefined)
+      assert.strictEqual(result.enabled, false)
+    })
+
+    await it('should return disabled when key has unrecognized curve', () => {
+      const result = validateSigningPrerequisites('deadbeef', undefined)
+      assert.strictEqual(result.enabled, false)
+      assert.ok((result as { reason: string }).reason.includes('Cannot derive'))
+    })
+
+    await it('should return disabled when configured method mismatches key curve', () => {
+      const result = validateSigningPrerequisites(
+        TEST_PUBLIC_KEY_HEX,
+        SigningMethodEnumType.ECDSA_secp256r1_SHA256
+      )
+      assert.strictEqual(result.enabled, false)
+      assert.ok((result as { reason: string }).reason.includes('mismatch'))
     })
   })
 })
