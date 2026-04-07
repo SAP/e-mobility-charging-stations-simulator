@@ -96,7 +96,7 @@ export default defineConfig([
               'UIMCP',
               'Streamable',
               'modelcontextprotocol',
-              // Signed meter values (OCA Application Note)
+              // Signed meter values
               'OCMF',
               'ocmf',
               'secp',
