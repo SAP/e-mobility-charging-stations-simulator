@@ -901,8 +901,8 @@ export const buildMeterValue = (
     context?: MeterValueContext,
     phase?: MeterValuePhase
   ) => SampledValue
-  let ocpp20SigningConfig: SampledValueSigningConfig | undefined
-  const ocpp20SigningState = { publicKeyIncluded: false }
+  let signingConfig: SampledValueSigningConfig | undefined
+  const signingState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
       if (connectorId == null) {
@@ -969,7 +969,7 @@ export const buildMeterValue = (
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
-            ocpp20SigningConfig = {
+            signingConfig = {
               enabled: true,
               meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
               publicKeyHex,
@@ -995,10 +995,10 @@ export const buildMeterValue = (
             value,
             ctx,
             phase,
-            ocpp20SigningConfig
+            signingConfig
           )
           if (result.publicKeyIncluded) {
-            ocpp20SigningState.publicKeyIncluded = true
+            signingState.publicKeyIncluded = true
           }
           return result.sampledValue
         }
@@ -1014,8 +1014,8 @@ export const buildMeterValue = (
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
-  if (ocpp20SigningConfig != null) {
-    ocpp20SigningConfig.timestamp = meterValue.timestamp
+  if (signingConfig != null) {
+    signingConfig.timestamp = meterValue.timestamp
   }
   // SoC measurand
   const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
@@ -1261,7 +1261,7 @@ export const buildMeterValue = (
       { interval }
     )
   }
-  if (ocpp20SigningState.publicKeyIncluded && connectorStatus != null) {
+  if (signingState.publicKeyIncluded && connectorStatus != null) {
     connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue
