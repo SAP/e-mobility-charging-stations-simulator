@@ -14,6 +14,7 @@ import { buildOCPP20SampledValue } from '../../../../src/charging-station/ocpp/2
 import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { type SampledValueSigningConfig } from '../../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
 import {
+  EncodingMethodEnumType,
   MeterValueMeasurand,
   OCPP20ComponentName,
   OCPP20ReadingContextEnumType,
@@ -68,7 +69,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         sampledValue.signedMeterValue.signingMethod,
         SigningMethodEnumType.ECDSA_secp256r1_SHA256
       )
-      assert.strictEqual(sampledValue.signedMeterValue.encodingMethod, 'OCMF')
+      assert.strictEqual(sampledValue.signedMeterValue.encodingMethod, EncodingMethodEnumType.OCMF)
     })
 
     await it('should not add signedMeterValue when signing is disabled', () => {
@@ -246,7 +247,10 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         energySampledValue.signedMeterValue.signingMethod,
         SigningMethodEnumType.ECDSA_secp256r1_SHA256
       )
-      assert.strictEqual(energySampledValue.signedMeterValue.encodingMethod, 'OCMF')
+      assert.strictEqual(
+        energySampledValue.signedMeterValue.encodingMethod,
+        EncodingMethodEnumType.OCMF
+      )
     })
 
     await it('should not add signedMeterValue when SignReadings is not configured', () => {

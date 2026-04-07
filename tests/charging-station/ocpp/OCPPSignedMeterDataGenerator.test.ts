@@ -20,6 +20,7 @@ import {
   type SignedMeterDataParams,
 } from '../../../src/charging-station/ocpp/OCPPSignedMeterDataGenerator.js'
 import {
+  EncodingMethodEnumType,
   MeterValueContext,
   MeterValueUnit,
   SigningMethodEnumType,
@@ -68,7 +69,7 @@ await describe('SignedMeterDataGenerator', async () => {
   await it('should set encodingMethod to OCMF', () => {
     const result = generateSignedMeterData(DEFAULT_PARAMS)
 
-    assert.strictEqual(result.encodingMethod, 'OCMF')
+    assert.strictEqual(result.encodingMethod, EncodingMethodEnumType.OCMF)
   })
 
   await it('should return empty publicKey when no publicKeyHex provided', () => {

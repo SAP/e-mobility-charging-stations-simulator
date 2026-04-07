@@ -339,6 +339,7 @@ export { type GenericResponse, GenericStatus, RegistrationStatusEnumType } from 
 export {
   type ConfigurationKeyType,
   ConnectorPhaseRotation,
+  EncodingMethodEnumType,
   type OCPPConfigurationKey,
   PublicKeyWithSignedMeterValueEnumType,
   SigningMethodEnumType,

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 
 import {
+  EncodingMethodEnumType,
   type JsonObject,
   MeterValueContext,
   MeterValueUnit,
@@ -9,7 +10,7 @@ import {
 import { roundTo } from '../../utils/index.js'
 
 export interface SignedMeterData extends JsonObject {
-  encodingMethod: string
+  encodingMethod: EncodingMethodEnumType
   publicKey: string
   signedMeterData: string
   signingMethod: SigningMethodEnumType
@@ -25,7 +26,7 @@ export interface SignedMeterDataParams {
 }
 
 const DEFAULT_SIGNING_METHOD = SigningMethodEnumType.ECDSA_secp256r1_SHA256
-const ENCODING_METHOD = 'OCMF'
+const DEFAULT_ENCODING_METHOD = EncodingMethodEnumType.OCMF
 
 const contextToTxCode = (context: MeterValueContext): string => {
   switch (context) {
@@ -78,7 +79,7 @@ export const generateSignedMeterData = (
   const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${resolvedSigningMethod}","SD":"${simulatedSignature}"}`
 
   return {
-    encodingMethod: ENCODING_METHOD,
+    encodingMethod: DEFAULT_ENCODING_METHOD,
     publicKey: publicKeyHex != null ? buildPublicKeyValue(publicKeyHex) : '',
     signedMeterData: Buffer.from(ocmfString).toString('base64'),
     signingMethod: resolvedSigningMethod,

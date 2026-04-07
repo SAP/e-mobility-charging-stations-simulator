@@ -22,6 +22,11 @@ export enum ConnectorPhaseRotation {
   Unknown = 'Unknown',
 }
 
+export enum EncodingMethodEnumType {
+  EDL = 'EDL',
+  OCMF = 'OCMF',
+}
+
 export enum PublicKeyWithSignedMeterValueEnumType {
   EveryMeterValue = 'EveryMeterValue',
   Never = 'Never',

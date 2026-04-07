@@ -13,6 +13,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { buildSignedOCPP16SampledValue } from '../../../../src/charging-station/ocpp/1.6/OCPP16RequestBuilders.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
+  EncodingMethodEnumType,
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
   OCPP16MeterValueFormat,
@@ -39,7 +40,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
   await describe('buildSignedOCPP16SampledValue', async () => {
     await it('should return SampledValue with format=SignedData', () => {
       const signedData: OCPP16SignedMeterValue = {
-        encodingMethod: 'OCMF',
+        encodingMethod: EncodingMethodEnumType.OCMF,
         publicKey: '',
         signedMeterData: 'dGVzdA==',
         signingMethod: '',
@@ -55,7 +56,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
     await it('should set measurand to Energy.Active.Import.Register', () => {
       const signedData: OCPP16SignedMeterValue = {
-        encodingMethod: 'OCMF',
+        encodingMethod: EncodingMethodEnumType.OCMF,
         publicKey: '',
         signedMeterData: 'dGVzdA==',
         signingMethod: '',
@@ -71,7 +72,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
     await it('should set location to Outlet', () => {
       const signedData: OCPP16SignedMeterValue = {
-        encodingMethod: 'OCMF',
+        encodingMethod: EncodingMethodEnumType.OCMF,
         publicKey: '',
         signedMeterData: 'dGVzdA==',
         signingMethod: '',
@@ -87,7 +88,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
     await it('should set value to JSON-serialized SignedMeterValue', () => {
       const signedData: OCPP16SignedMeterValue = {
-        encodingMethod: 'OCMF',
+        encodingMethod: EncodingMethodEnumType.OCMF,
         publicKey: 'abc123',
         signedMeterData: 'dGVzdA==',
         signingMethod: '',
@@ -99,7 +100,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       )
 
       const parsed = JSON.parse(result.value) as OCPP16SignedMeterValue
-      assert.strictEqual(parsed.encodingMethod, 'OCMF')
+      assert.strictEqual(parsed.encodingMethod, EncodingMethodEnumType.OCMF)
       assert.strictEqual(parsed.signingMethod, '')
       assert.strictEqual(parsed.signedMeterData, 'dGVzdA==')
       assert.strictEqual(parsed.publicKey, 'abc123')
@@ -107,7 +108,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
     await it('should use the provided context', () => {
       const signedData: OCPP16SignedMeterValue = {
-        encodingMethod: 'OCMF',
+        encodingMethod: EncodingMethodEnumType.OCMF,
         publicKey: '',
         signedMeterData: 'dGVzdA==',
         signingMethod: '',
@@ -296,7 +297,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       assert.strictEqual(typeof parsed.signingMethod, 'string')
       assert.strictEqual(typeof parsed.signedMeterData, 'string')
       assert.strictEqual(typeof parsed.publicKey, 'string')
-      assert.strictEqual(parsed.encodingMethod, 'OCMF')
+      assert.strictEqual(parsed.encodingMethod, EncodingMethodEnumType.OCMF)
       assert.strictEqual(parsed.signingMethod, SigningMethodEnumType.ECDSA_secp256r1_SHA256)
     })
   })

@@ -2,7 +2,7 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type { CustomDataType, OCPP20UnitEnumType } from './Common.js'
 
-import { type SigningMethodEnumType } from '../Configuration.js'
+import { type EncodingMethodEnumType, type SigningMethodEnumType } from '../Configuration.js'
 
 export enum OCPP20LocationEnumType {
   Body = 'Body',
@@ -91,7 +91,7 @@ export interface OCPP20SampledValue extends JsonObject {
 
 export interface OCPP20SignedMeterValue extends JsonObject {
   customData?: CustomDataType
-  encodingMethod: string // maxLength: 50
+  encodingMethod: EncodingMethodEnumType | string // maxLength: 50
   publicKey: string // Base64 encoded, maxLength: 2500
   signedMeterData: string // Base64 encoded, maxLength: 2500
   signingMethod: '' | SigningMethodEnumType // maxLength: 50
