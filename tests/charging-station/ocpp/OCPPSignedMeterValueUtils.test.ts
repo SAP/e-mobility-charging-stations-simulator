@@ -91,8 +91,9 @@ await describe('SignedMeterValueUtils', async () => {
       )
     })
 
-    await it('should derive secp256r1 from key with OID 06082a8648ce3d030107', () => {
-      const secp256r1Key = '3059301306072a8648ce3d020106082a8648ce3d03010703420004abcd'
+    await it('should derive secp256r1 from valid prime256v1 key', () => {
+      const secp256r1Key =
+        '3059301306072a8648ce3d020106082a8648ce3d03010703420004effb01ac755dad9574b89873e42e9f2f7a33a3b106f2d1662d0909a16f1e5a5355b022fec98119f1877b958f2240fc9c0e113cb94ee75b44c9ef79c9ed8627e0'
       assert.strictEqual(
         deriveSigningMethodFromPublicKeyHex(secp256r1Key),
         SigningMethodEnumType.ECDSA_secp256r1_SHA256

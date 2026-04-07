@@ -1,3 +1,5 @@
+import { createPublicKey } from 'node:crypto'
+
 import { BaseError } from '../../exception/index.js'
 import {
   PublicKeyWithSignedMeterValueEnumType,
@@ -24,27 +26,33 @@ export interface SigningConfig {
   signingMethod?: SigningMethodEnumType
 }
 
-// EC curve OID hex → SigningMethodEnumType (OCA Application Note Table 12)
-const EC_CURVE_OID_MAP = new Map<string, SigningMethodEnumType>([
-  ['06052b8104000a', SigningMethodEnumType.ECDSA_secp256k1_SHA256],
-  ['06052b8104001f', SigningMethodEnumType.ECDSA_secp192k1_SHA256],
-  ['06052b81040022', SigningMethodEnumType.ECDSA_secp384r1_SHA256],
-  ['06082a8648ce3d030101', SigningMethodEnumType.ECDSA_secp192r1_SHA256],
-  ['06082a8648ce3d030107', SigningMethodEnumType.ECDSA_secp256r1_SHA256],
-  ['06092b240303020801010b', SigningMethodEnumType.ECDSA_brainpool384r1_SHA256],
-  ['06092b2403030208010107', SigningMethodEnumType.ECDSA_brainpool256r1_SHA256],
+const NODE_CURVE_TO_SIGNING_METHOD = new Map<string, SigningMethodEnumType>([
+  ['brainpoolP256r1', SigningMethodEnumType.ECDSA_brainpool256r1_SHA256],
+  ['brainpoolP384r1', SigningMethodEnumType.ECDSA_brainpool384r1_SHA256],
+  ['prime192v1', SigningMethodEnumType.ECDSA_secp192r1_SHA256],
+  ['prime256v1', SigningMethodEnumType.ECDSA_secp256r1_SHA256],
+  ['secp192k1', SigningMethodEnumType.ECDSA_secp192k1_SHA256],
+  ['secp256k1', SigningMethodEnumType.ECDSA_secp256k1_SHA256],
+  ['secp384r1', SigningMethodEnumType.ECDSA_secp384r1_SHA256],
 ])
 
 export const deriveSigningMethodFromPublicKeyHex = (
   publicKeyHex: string
 ): SigningMethodEnumType | undefined => {
-  const hex = publicKeyHex.toLowerCase().replace(/[^0-9a-f]/g, '')
-  for (const [oid, method] of EC_CURVE_OID_MAP) {
-    if (hex.includes(oid)) {
-      return method
+  try {
+    const key = createPublicKey({
+      format: 'der',
+      key: Buffer.from(publicKeyHex, 'hex'),
+      type: 'spki',
+    })
+    if (key.asymmetricKeyType !== 'ec') {
+      return undefined
     }
+    const namedCurve = key.asymmetricKeyDetails?.namedCurve
+    return namedCurve != null ? NODE_CURVE_TO_SIGNING_METHOD.get(namedCurve) : undefined
+  } catch {
+    return undefined
   }
-  return undefined
 }
 
 export interface SigningPrerequisiteResult {
