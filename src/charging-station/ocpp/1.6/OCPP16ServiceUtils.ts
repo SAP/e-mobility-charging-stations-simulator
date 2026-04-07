@@ -38,7 +38,6 @@ import {
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   type OCPP16SampledValue,
-  type OCPP16SignedMeterValue,
   OCPP16StandardParametersKey,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
@@ -177,7 +176,7 @@ export class OCPP16ServiceUtils {
         transactionId,
         publicKeySentInTransaction,
         meterValue.timestamp,
-        signingCfg.publicKeyConfig,
+        signingCfg.publicKeyWithSignedMeterValue,
         signingCfg.publicKeyHex
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
@@ -245,7 +244,7 @@ export class OCPP16ServiceUtils {
         transactionId,
         publicKeySentInTransaction,
         meterValue.timestamp,
-        signingCfg.publicKeyConfig,
+        signingCfg.publicKeyWithSignedMeterValue,
         signingCfg.publicKeyHex
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
@@ -828,7 +827,7 @@ export class OCPP16ServiceUtils {
           transactionId,
           publicKeySentInTransaction,
           (meterValue as OCPP16MeterValue).timestamp,
-          signingCfg.publicKeyConfig,
+          signingCfg.publicKeyWithSignedMeterValue,
           signingCfg.publicKeyHex
         )
         ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
@@ -935,21 +934,24 @@ export class OCPP16ServiceUtils {
 
   private static buildSignedSampledValue (
     meterSerialNumber: string,
-    meterValueWh: number,
+    meterValue: number,
     context: OCPP16MeterValueContext,
     transactionId: number | string,
     publicKeySentInTransaction: boolean,
     timestamp: Date,
-    publicKeyConfig: PublicKeyWithSignedMeterValueEnumType,
+    publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType,
     publicKeyHex?: string
   ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
-    const includePublicKey = shouldIncludePublicKey(publicKeyConfig, publicKeySentInTransaction)
+    const includePublicKey = shouldIncludePublicKey(
+      publicKeyWithSignedMeterValue,
+      publicKeySentInTransaction
+    )
 
     const signedData = generateSignedMeterData(
       {
         context,
         meterSerialNumber,
-        meterValue: meterValueWh,
+        meterValue,
         timestamp,
         transactionId,
       },
@@ -957,7 +959,7 @@ export class OCPP16ServiceUtils {
     )
     return {
       publicKeyIncluded: includePublicKey && publicKeyHex != null,
-      sampledValue: buildSignedOCPP16SampledValue(context, signedData as OCPP16SignedMeterValue),
+      sampledValue: buildSignedOCPP16SampledValue(context, signedData),
     }
   }
 
@@ -1042,21 +1044,21 @@ export class OCPP16ServiceUtils {
     connectorId: number
   ): {
       meterSerialNumber: string
-      publicKeyConfig: PublicKeyWithSignedMeterValueEnumType
       publicKeyHex?: string
+      publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
     } {
     return {
       meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
-      publicKeyConfig: parsePublicKeyWithSignedMeterValue(
+      publicKeyHex: getConfigurationKey(
+        chargingStation,
+        `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
+      )?.value,
+      publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
         getConfigurationKey(
           chargingStation,
           OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
         )?.value
       ),
-      publicKeyHex: getConfigurationKey(
-        chargingStation,
-        `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
-      )?.value,
     }
   }
 }

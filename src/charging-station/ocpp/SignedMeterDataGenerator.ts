@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
 
-import { MeterValueContext, MeterValueUnit } from '../../types/index.js'
+import { type JsonObject, MeterValueContext, MeterValueUnit } from '../../types/index.js'
 
-export interface SignedMeterData {
+export interface SignedMeterData extends JsonObject {
   encodingMethod: string
   publicKey: string
   signedMeterData: string
