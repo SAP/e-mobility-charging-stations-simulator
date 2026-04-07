@@ -55,10 +55,10 @@ await describe('SignedMeterDataGenerator', async () => {
     assert.ok(decoded.startsWith('OCMF|'))
   })
 
-  await it('should set signingMethod to ECDSA-secp256r1-SHA256', () => {
+  await it('should set signingMethod to empty string when included in signedMeterData', () => {
     const result = generateSignedMeterData(DEFAULT_PARAMS)
 
-    assert.strictEqual(result.signingMethod, 'ECDSA-secp256r1-SHA256')
+    assert.strictEqual(result.signingMethod, '')
   })
 
   await it('should set encodingMethod to OCMF', () => {

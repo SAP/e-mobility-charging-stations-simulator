@@ -65,7 +65,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       )
 
       assert.ok(sampledValue.signedMeterValue != null)
-      assert.strictEqual(sampledValue.signedMeterValue.signingMethod, 'ECDSA-secp256r1-SHA256')
+      assert.strictEqual(sampledValue.signedMeterValue.signingMethod, '')
       assert.strictEqual(sampledValue.signedMeterValue.encodingMethod, 'OCMF')
     })
 
@@ -240,10 +240,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       ) as OCPP20SampledValue | undefined
       assert.notStrictEqual(energySampledValue, undefined)
       assert.ok(energySampledValue?.signedMeterValue != null)
-      assert.strictEqual(
-        energySampledValue.signedMeterValue.signingMethod,
-        'ECDSA-secp256r1-SHA256'
-      )
+      assert.strictEqual(energySampledValue.signedMeterValue.signingMethod, '')
       assert.strictEqual(energySampledValue.signedMeterValue.encodingMethod, 'OCMF')
     })
 

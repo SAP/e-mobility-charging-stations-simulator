@@ -73,6 +73,6 @@ export const generateSignedMeterData = (
     encodingMethod: ENCODING_METHOD,
     publicKey: publicKeyHex != null ? buildPublicKeyValue(publicKeyHex) : '',
     signedMeterData: Buffer.from(ocmfString).toString('base64'),
-    signingMethod: SIGNING_METHOD,
+    signingMethod: '',
   }
 }

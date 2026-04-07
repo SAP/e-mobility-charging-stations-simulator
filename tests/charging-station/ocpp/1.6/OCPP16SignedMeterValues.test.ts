@@ -41,7 +41,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         encodingMethod: 'OCMF',
         publicKey: '',
         signedMeterData: 'dGVzdA==',
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: '',
       }
 
       const result = buildSignedOCPP16SampledValue(
@@ -57,7 +57,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         encodingMethod: 'OCMF',
         publicKey: '',
         signedMeterData: 'dGVzdA==',
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: '',
       }
 
       const result = buildSignedOCPP16SampledValue(
@@ -73,7 +73,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         encodingMethod: 'OCMF',
         publicKey: '',
         signedMeterData: 'dGVzdA==',
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: '',
       }
 
       const result = buildSignedOCPP16SampledValue(
@@ -89,7 +89,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         encodingMethod: 'OCMF',
         publicKey: 'abc123',
         signedMeterData: 'dGVzdA==',
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: '',
       }
 
       const result = buildSignedOCPP16SampledValue(
@@ -99,7 +99,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
       const parsed = JSON.parse(result.value) as OCPP16SignedMeterValue
       assert.strictEqual(parsed.encodingMethod, 'OCMF')
-      assert.strictEqual(parsed.signingMethod, 'ECDSA-secp256r1-SHA256')
+      assert.strictEqual(parsed.signingMethod, '')
       assert.strictEqual(parsed.signedMeterData, 'dGVzdA==')
       assert.strictEqual(parsed.publicKey, 'abc123')
     })
@@ -109,7 +109,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         encodingMethod: 'OCMF',
         publicKey: '',
         signedMeterData: 'dGVzdA==',
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: '',
       }
 
       const result = buildSignedOCPP16SampledValue(
@@ -296,7 +296,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       assert.strictEqual(typeof parsed.signedMeterData, 'string')
       assert.strictEqual(typeof parsed.publicKey, 'string')
       assert.strictEqual(parsed.encodingMethod, 'OCMF')
-      assert.strictEqual(parsed.signingMethod, 'ECDSA-secp256r1-SHA256')
+      assert.strictEqual(parsed.signingMethod, '')
     })
   })
 
