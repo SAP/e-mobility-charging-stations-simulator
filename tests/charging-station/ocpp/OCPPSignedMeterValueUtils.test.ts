@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { shouldIncludePublicKey } from '../../../src/charging-station/ocpp/SignedMeterValueUtils.js'
+import { shouldIncludePublicKey } from '../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
 import { PublicKeyWithSignedMeterValueEnumType } from '../../../src/types/index.js'
 
 await describe('SignedMeterValueUtils', async () => {

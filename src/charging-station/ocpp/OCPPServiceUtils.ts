@@ -67,7 +67,7 @@ import {
   type OCPP20SampledValueSigningConfig,
 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { parsePublicKeyWithSignedMeterValue } from './SignedMeterValueUtils.js'
+import { parsePublicKeyWithSignedMeterValue } from './OCPPSignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
 

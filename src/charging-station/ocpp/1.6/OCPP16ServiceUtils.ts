@@ -69,11 +69,11 @@ import {
   getSampledValueTemplate,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
-import { generateSignedMeterData } from '../SignedMeterDataGenerator.js'
+import { generateSignedMeterData } from '../OCPPSignedMeterDataGenerator.js'
 import {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
-} from '../SignedMeterValueUtils.js'
+} from '../OCPPSignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
 

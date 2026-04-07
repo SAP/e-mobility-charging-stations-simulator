@@ -18,8 +18,8 @@ export {
   generateSignedMeterData,
   type SignedMeterData,
   type SignedMeterDataParams,
-} from './SignedMeterDataGenerator.js'
+} from './OCPPSignedMeterDataGenerator.js'
 export {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
-} from './SignedMeterValueUtils.js'
+} from './OCPPSignedMeterValueUtils.js'

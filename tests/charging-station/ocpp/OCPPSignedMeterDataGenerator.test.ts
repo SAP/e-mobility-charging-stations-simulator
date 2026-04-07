@@ -18,7 +18,7 @@ import {
   buildPublicKeyValue,
   generateSignedMeterData,
   type SignedMeterDataParams,
-} from '../../../src/charging-station/ocpp/SignedMeterDataGenerator.js'
+} from '../../../src/charging-station/ocpp/OCPPSignedMeterDataGenerator.js'
 import { MeterValueContext, MeterValueUnit } from '../../../src/types/index.js'
 
 const DEFAULT_PARAMS: SignedMeterDataParams = {

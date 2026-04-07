@@ -15,8 +15,11 @@ import {
   type SampledValueTemplate,
 } from '../../../types/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
-import { generateSignedMeterData, type SignedMeterDataParams } from '../SignedMeterDataGenerator.js'
-import { shouldIncludePublicKey } from '../SignedMeterValueUtils.js'
+import {
+  generateSignedMeterData,
+  type SignedMeterDataParams,
+} from '../OCPPSignedMeterDataGenerator.js'
+import { shouldIncludePublicKey } from '../OCPPSignedMeterValueUtils.js'
 
 export interface OCPP20SampledValueSigningConfig {
   enabled: boolean
