@@ -7,12 +7,22 @@ import {
   type MeterValuePhase,
   OCPP16StopTransactionReason,
   type OCPP20BootNotificationRequest,
+  OCPP20MeasurandEnumType,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
   OCPP20TriggerReasonEnumType,
   type SampledValueTemplate,
 } from '../../../types/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
+import {
+  generateSignedMeterData,
+  type SignedMeterDataParams,
+} from '../OCPPSignedMeterDataGenerator.js'
+import {
+  type SampledValueSigningConfig,
+  shouldIncludePublicKey,
+  type SignedSampledValueResult,
+} from '../OCPPSignedMeterValueUtils.js'
 
 export const buildOCPP20BootNotificationRequest = (
   stationInfo: ChargingStationInfo,
@@ -43,16 +53,18 @@ export const buildOCPP20BootNotificationRequest = (
  * @param value - The measured value.
  * @param context - The reading context.
  * @param phase - The phase of the measurement.
- * @returns The built OCPP 2.0 sampled value.
+ * @param signingConfig - Optional signing configuration for generating signedMeterValue.
+ * @returns The built OCPP 2.0 sampled value with signing metadata.
  */
 export function buildOCPP20SampledValue (
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP20SampledValue {
+  phase?: MeterValuePhase,
+  signingConfig?: SampledValueSigningConfig
+): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
-  return {
+  const sampledValue: OCPP20SampledValue = {
     context: fields.context,
     location: fields.location,
     measurand: fields.measurand,
@@ -60,6 +72,35 @@ export function buildOCPP20SampledValue (
     value: fields.value,
     ...(fields.phase != null && { phase: fields.phase }),
   } as OCPP20SampledValue
+
+  let publicKeyIncluded = false
+
+  if (
+    signingConfig?.enabled === true &&
+    fields.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+  ) {
+    const includePublicKey = shouldIncludePublicKey(
+      signingConfig.publicKeyWithSignedMeterValue,
+      signingConfig.publicKeySentInTransaction
+    )
+    const signedMeterDataParams: SignedMeterDataParams = {
+      context: fields.context,
+      meterSerialNumber: signingConfig.meterSerialNumber,
+      meterValue: fields.value,
+      meterValueUnit: fields.unit,
+      timestamp: signingConfig.timestamp ?? new Date(),
+      transactionId: signingConfig.transactionId,
+    }
+    sampledValue.signedMeterValue = {
+      ...generateSignedMeterData(
+        signedMeterDataParams,
+        includePublicKey ? signingConfig.publicKeyHex : undefined
+      ),
+    }
+    publicKeyIncluded = includePublicKey && signingConfig.publicKeyHex != null
+  }
+
+  return { publicKeyIncluded, sampledValue }
 }
 
 export const mapStopReasonToOCPP20 = (

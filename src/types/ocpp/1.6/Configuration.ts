@@ -55,5 +55,13 @@ export enum OCPP16SupportedFeatureProfiles {
 }
 
 export enum OCPP16VendorParametersKey {
+  AlignedDataSignReadings = 'AlignedDataSignReadings',
+  AlignedDataSignUpdatedReadings = 'AlignedDataSignUpdatedReadings',
   ConnectionUrl = 'ConnectionUrl',
+  MeterPublicKey = 'MeterPublicKey',
+  PublicKeyWithSignedMeterValue = 'PublicKeyWithSignedMeterValue',
+  SampledDataSignReadings = 'SampledDataSignReadings',
+  SampledDataSignStartedReadings = 'SampledDataSignStartedReadings',
+  SampledDataSignUpdatedReadings = 'SampledDataSignUpdatedReadings',
+  StartTxnSampledData = 'StartTxnSampledData',
 }

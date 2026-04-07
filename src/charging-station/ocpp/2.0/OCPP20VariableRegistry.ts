@@ -19,6 +19,7 @@ import {
   OCPP20UnitEnumType,
   OCPP20VendorVariableName,
   PersistenceEnumType,
+  PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
   type VariableName,
 } from '../../../types/index.js'
@@ -146,17 +147,18 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'SendDuringIdle',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'SignReadings')]: {
-    component: OCPP20ComponentName.AlignedDataCtrlr,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description:
-      'If set to true, the Charging Station SHALL include signed meter values in the SampledValueType in the MeterValuesRequest to the CSMS.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'SignReadings',
-  },
+  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20OptionalVariableName.SignReadings)]:
+    {
+      component: OCPP20ComponentName.AlignedDataCtrlr,
+      dataType: DataEnumType.boolean,
+      defaultValue: 'false',
+      description:
+        'If set to true, the Charging Station SHALL include signed meter values in the SampledValueType in the MeterValuesRequest to the CSMS.',
+      mutability: MutabilityEnumType.ReadWrite,
+      persistence: PersistenceEnumType.Persistent,
+      supportedAttributes: [AttributeEnumType.Actual],
+      variable: OCPP20OptionalVariableName.SignReadings,
+    },
   [buildRegistryKey(
     OCPP20ComponentName.AlignedDataCtrlr,
     OCPP20RequiredVariableName.AlignedDataInterval
@@ -272,6 +274,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxEndedMeasurands,
   },
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr,
+    OCPP20VendorVariableName.SignUpdatedReadings
+  )]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Updated) for those measurands configured in AlignedDataTxUpdatedMeasurands. Only has effect if AlignedDataCtrlr.SignReadings is true.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.SignUpdatedReadings,
+    vendorSpecific: true,
+  },
 
   // AuthCacheCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.AuthCacheCtrlr, 'Available')]: {
@@ -371,7 +388,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'DisableRemoteAuthorization',
   },
-
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'OfflineTxForUnknownIdEnabled')]: {
     component: OCPP20ComponentName.AuthCtrlr,
     dataType: DataEnumType.boolean,
@@ -720,6 +736,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.TimeSource,
   },
 
+  // DeviceDataCtrlr Component
   // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
@@ -757,7 +774,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ReportingValueSize,
   },
-
   [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
@@ -773,7 +789,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ValueSize,
   },
-
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20RequiredVariableName.BytesPerMessage
@@ -1053,6 +1068,32 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
+    vendorSpecific: true,
+  },
+
+  // FiscalMetering Component
+  [buildRegistryKey(OCPP20ComponentName.FiscalMetering, OCPP20VendorVariableName.PublicKey)]: {
+    component: OCPP20ComponentName.FiscalMetering,
+    dataType: DataEnumType.string,
+    defaultValue: '',
+    description:
+      'Public key for the fiscal meter connected to the EVSE. The raw hex key value; the OCA oca:base16:asn1:<key> encoding and Base64 are applied by the signing implementation.',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.PublicKey,
+    vendorSpecific: true,
+  },
+  [buildRegistryKey(OCPP20ComponentName.FiscalMetering, OCPP20VendorVariableName.SigningMethod)]: {
+    component: OCPP20ComponentName.FiscalMetering,
+    dataType: DataEnumType.string,
+    defaultValue: 'ECDSA-secp256r1-SHA256',
+    description:
+      'Method used to create the digital signature for signed meter values. See OCA Application Note v1.0 Table 12 for valid values.',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.SigningMethod,
     vendorSpecific: true,
   },
 
@@ -1438,16 +1479,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'FieldLength',
   },
-  [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'PublicKeyWithSignedMeterValue')]: {
-    component: OCPP20ComponentName.OCPPCommCtrlr,
-    dataType: DataEnumType.OptionList,
-    description:
-      'This Configuration Variable can be used to configure whether a public key needs to be sent with a signed meter value.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'PublicKeyWithSignedMeterValue',
-  },
   [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'QueueAllMessages')]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
     dataType: DataEnumType.boolean,
@@ -1476,6 +1507,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20OptionalVariableName.HeartbeatInterval,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr,
+    OCPP20OptionalVariableName.PublicKeyWithSignedMeterValue
+  )]: {
+    component: OCPP20ComponentName.OCPPCommCtrlr,
+    dataType: DataEnumType.OptionList,
+    defaultValue: PublicKeyWithSignedMeterValueEnumType.Never,
+    description:
+      'This Configuration Variable can be used to configure whether a public key needs to be sent with a signed meter value.',
+    enumeration: Object.values(PublicKeyWithSignedMeterValueEnumType),
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20OptionalVariableName.PublicKeyWithSignedMeterValue,
   },
   [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr,
@@ -1743,17 +1789,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'RegisterValuesWithoutPhases',
   },
-  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'SignReadings')]: {
-    component: OCPP20ComponentName.SampledDataCtrlr,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description:
-      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest to the CSMS',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'SignReadings',
-  },
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, OCPP20MeasurandEnumType.CURRENT_IMPORT)]:
     {
       component: OCPP20ComponentName.SampledDataCtrlr,
@@ -1809,6 +1844,18 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20MeasurandEnumType.VOLTAGE,
     vendorSpecific: true,
   },
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, OCPP20OptionalVariableName.SignReadings)]:
+    {
+      component: OCPP20ComponentName.SampledDataCtrlr,
+      dataType: DataEnumType.boolean,
+      defaultValue: 'false',
+      description:
+        'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest to the CSMS',
+      mutability: MutabilityEnumType.ReadWrite,
+      persistence: PersistenceEnumType.Persistent,
+      supportedAttributes: [AttributeEnumType.Actual],
+      variable: OCPP20OptionalVariableName.SignReadings,
+    },
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, OCPP20RequiredVariableName.Enabled)]: {
     component: OCPP20ComponentName.SampledDataCtrlr,
     dataType: DataEnumType.boolean,
@@ -1946,6 +1993,36 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxUpdatedMeasurands,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SampledDataCtrlr,
+    OCPP20VendorVariableName.SignStartedReadings
+  )]: {
+    component: OCPP20ComponentName.SampledDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Started or Updated) to the CSMS for those measurands configured in SampledDataTxStartedMeasurands.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.SignStartedReadings,
+    vendorSpecific: true,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SampledDataCtrlr,
+    OCPP20VendorVariableName.SignUpdatedReadings
+  )]: {
+    component: OCPP20ComponentName.SampledDataCtrlr,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If set to true, the Charging Station SHALL include signed meter values in the TransactionEventRequest (Updated) to the CSMS for those measurands configured in SampledDataTxUpdatedMeasurands. This setting only has an effect if SampledDataCtrlr.SignReadings is set to true.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.SignUpdatedReadings,
+    vendorSpecific: true,
   },
 
   // SecurityCtrlr Component

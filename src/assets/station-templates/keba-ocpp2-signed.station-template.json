@@ -1,0 +1,151 @@
+{
+  "supervisionUrls": ["ws://localhost:9000"],
+  "supervisionUrlOcppConfiguration": true,
+  "supervisionUrlOcppKey": "CentralSystemAddress",
+  "idTagsFile": "idtags.json",
+  "baseName": "CS-KEBA-OCPP2-SIGNED",
+  "chargePointModel": "KC-P30-ESS400C2-E0R",
+  "chargePointVendor": "Keba AG",
+  "firmwareVersion": "1.10.1",
+  "power": 22080,
+  "powerUnit": "W",
+  "numberOfConnectors": 1,
+  "randomConnectors": false,
+  "amperageLimitationOcppKey": "MaxAvailableCurrent",
+  "amperageLimitationUnit": "mA",
+  "ocppVersion": "2.0.1",
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "AuthCtrlr.AuthorizeRemoteStart",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AuthCtrlr.LocalAuthorizationOffline",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "AuthCtrlr.LocalPreAuthorization",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AuthCtrlr.OfflineTxForUnknownIdEnabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "OCPPCommCtrlr.WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "LocalAuthListCtrlr.Enabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "OCPPCommCtrlr.MessageAttemptInterval.TransactionEvent",
+        "readonly": false,
+        "value": "20"
+      },
+      {
+        "key": "OCPPCommCtrlr.MessageAttempts.TransactionEvent",
+        "readonly": false,
+        "value": "3"
+      },
+      {
+        "key": "ReservationCtrlr.Enabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "ReservationCtrlr.NonEvseSpecific",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SampledDataCtrlr.TxUpdatedMeasurands",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
+      },
+      {
+        "key": "TxCtrlr.EVConnectionTimeOut",
+        "readonly": false,
+        "value": "180"
+      },
+      {
+        "key": "SampledDataCtrlr.SignReadings",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "SampledDataCtrlr.SignStartedReadings",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "SampledDataCtrlr.SignUpdatedReadings",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "OCPPCommCtrlr.PublicKeyWithSignedMeterValue",
+        "readonly": false,
+        "value": "EveryMeterValue"
+      },
+      {
+        "key": "FiscalMetering.PublicKey",
+        "readonly": true,
+        "value": "3056301006072a8648ce3d020106052b8104000a03420004460a02ba2766d9c44f023ecc0e4e58644a87add1aadd6317e5fe4dccdb29b163a01d8a6297c84bc530f86431e92f8d46ab37830247c05cbd92fac252929e7f61"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 30,
+    "maxDuration": 60,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "Connectors": {
+        "1": {
+          "MeterValues": [
+            {
+              "unit": "V",
+              "measurand": "Voltage"
+            },
+            {
+              "unit": "W",
+              "measurand": "Power.Active.Import"
+            },
+            {
+              "unit": "A",
+              "measurand": "Current.Import"
+            },
+            {
+              "unit": "Wh"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

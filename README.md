@@ -672,6 +672,17 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 - _none_
 
+#### Vendor-specific Configuration Keys
+
+- :white_check_mark: AlignedDataSignReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: AlignedDataSignUpdatedReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: MeterPublicKey[ConnectorID] (type: string) (units: -) **(vendor-specific)**
+- :white_check_mark: PublicKeyWithSignedMeterValue (type: optionlist) (units: -) **(vendor-specific)**
+- :white_check_mark: SampledDataSignReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: SampledDataSignStartedReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: SampledDataSignUpdatedReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: StartTxnSampledData (type: memberlist) (units: -) **(vendor-specific)**
+
 ### Version 2.0.x
 
 #### AlignedDataCtrlr
@@ -682,6 +693,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Measurands (type: memberlist) (units: -)
 - :white_check_mark: SendDuringIdle (type: boolean) (units: -)
 - :white_check_mark: SignReadings (type: boolean) (units: -)
+- :white_check_mark: SignUpdatedReadings (type: boolean) (units: -) **(vendor-specific)**
 - :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
 - :white_check_mark: TxEndedMeasurands (type: memberlist) (units: -)
 
@@ -765,6 +777,11 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 - :white_check_mark: SimulateSignatureVerificationFailure (type: boolean) (units: -) **(vendor-specific)**
 
+#### FiscalMetering
+
+- :white_check_mark: PublicKey (type: string) (units: -) **(vendor-specific)**
+- :white_check_mark: SigningMethod (type: string) (units: -) **(vendor-specific)**
+
 #### ISO15118Ctrlr
 
 - :white_check_mark: CentralContractValidationAllowed (type: boolean) (units: -)
@@ -833,6 +850,8 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: Enabled (type: boolean) (units: -)
 - :white_check_mark: RegisterValuesWithoutPhases (type: boolean) (units: -)
 - :white_check_mark: SignReadings (type: boolean) (units: -)
+- :white_check_mark: SignStartedReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: SignUpdatedReadings (type: boolean) (units: -) **(vendor-specific)**
 - :white_check_mark: TxEndedInterval (type: integer) (units: seconds)
 - :white_check_mark: TxEndedMeasurands (type: memberlist) (units: -)
 - :white_check_mark: TxStartedMeasurands (type: memberlist) (units: -)

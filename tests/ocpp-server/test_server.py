@@ -724,6 +724,102 @@ class TestTransactionEventHandler:
         assert response.total_cost is None
         assert response.id_token_info is None
 
+    async def test_started_with_signed_meter_value(self, charge_point):
+        signed_mv = {
+            "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
+            "signing_method": "ECDSA-secp256r1-SHA256",
+            "encoding_method": "OCMF",
+            "public_key": "b2NhOmJhc2UxNjphc24xOmZha2VrZXk=",
+        }
+        mv = {
+            "timestamp": TEST_TIMESTAMP,
+            "sampled_value": [
+                {
+                    "value": 0.0,
+                    "measurand": "Energy.Active.Import.Register",
+                    "signed_meter_value": signed_mv,
+                }
+            ],
+        }
+        response = await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+            meter_value=[mv],
+        )
+        assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
+        assert response.id_token_info["status"] == AuthorizationStatusEnumType.accepted
+
+    async def test_updated_with_signed_meter_value(self, charge_point):
+        signed_mv = {
+            "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
+            "signing_method": "ECDSA-secp256r1-SHA256",
+            "encoding_method": "OCMF",
+            "public_key": "b2NhOmJhc2UxNjphc24xOmZha2VrZXk=",
+        }
+        mv = {
+            "timestamp": TEST_TIMESTAMP,
+            "sampled_value": [
+                {
+                    "value": 1500.5,
+                    "measurand": "Energy.Active.Import.Register",
+                    "signed_meter_value": signed_mv,
+                }
+            ],
+        }
+        response = await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.updated,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="MeterValuePeriodic",
+            seq_no=1,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            meter_value=[mv],
+        )
+        assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
+        assert response.total_cost == DEFAULT_TOTAL_COST
+
+    async def test_ended_with_signed_meter_value(self, charge_point):
+        signed_mv = {
+            "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
+            "signing_method": "ECDSA-secp256r1-SHA256",
+            "encoding_method": "OCMF",
+            "public_key": "b2NhOmJhc2UxNjphc24xOmZha2VrZXk=",
+        }
+        begin_mv = {
+            "timestamp": TEST_TIMESTAMP,
+            "sampled_value": [
+                {
+                    "value": 0.0,
+                    "measurand": "Energy.Active.Import.Register",
+                    "context": "Transaction.Begin",
+                    "signed_meter_value": signed_mv,
+                }
+            ],
+        }
+        end_mv = {
+            "timestamp": TEST_TIMESTAMP,
+            "sampled_value": [
+                {
+                    "value": 15000.5,
+                    "measurand": "Energy.Active.Import.Register",
+                    "context": "Transaction.End",
+                    "signed_meter_value": signed_mv,
+                }
+            ],
+        }
+        response = await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.ended,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="EVDeparture",
+            seq_no=2,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            meter_value=[begin_mv, end_mv],
+        )
+        assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
+
 
 class TestDataTransferHandler:
     """Tests for the DataTransfer incoming handler."""
@@ -844,6 +940,28 @@ class TestNotificationHandlers:
         response = await charge_point.on_meter_values(
             evse_id=TEST_EVSE_ID,
             meter_value=[{"timestamp": TEST_TIMESTAMP}],
+        )
+        assert isinstance(response, ocpp.v201.call_result.MeterValues)
+
+    async def test_meter_values_with_signed_meter_value(self, charge_point):
+        signed_mv = {
+            "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
+            "signing_method": "ECDSA-secp256r1-SHA256",
+            "encoding_method": "OCMF",
+            "public_key": "b2NhOmJhc2UxNjphc24xOmZha2VrZXk=",
+        }
+        mv = {
+            "timestamp": TEST_TIMESTAMP,
+            "sampled_value": [
+                {
+                    "value": 1500.5,
+                    "measurand": "Energy.Active.Import.Register",
+                    "signed_meter_value": signed_mv,
+                }
+            ],
+        }
+        response = await charge_point.on_meter_values(
+            evse_id=TEST_EVSE_ID, meter_value=[mv]
         )
         assert isinstance(response, ocpp.v201.call_result.MeterValues)
 

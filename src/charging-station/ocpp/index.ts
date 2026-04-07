@@ -13,3 +13,16 @@ export {
   stopTransactionOnConnector,
 } from './OCPPServiceOperations.js'
 export { buildBootNotificationRequest, buildMeterValue } from './OCPPServiceUtils.js'
+export {
+  buildPublicKeyValue,
+  generateSignedMeterData,
+  type SignedMeterData,
+  type SignedMeterDataParams,
+} from './OCPPSignedMeterDataGenerator.js'
+export {
+  parsePublicKeyWithSignedMeterValue,
+  type SampledValueSigningConfig,
+  shouldIncludePublicKey,
+  type SignedSampledValueResult,
+  type SigningConfig,
+} from './OCPPSignedMeterValueUtils.js'

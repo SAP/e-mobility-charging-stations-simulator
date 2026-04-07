@@ -6,6 +6,7 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
+  type MeterValue,
   OCPP20AuthorizationStatusEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
@@ -871,6 +872,9 @@ export class OCPP20ServiceUtils {
       chargingStation,
       transactionId
     )
+    if (isNotEmptyArray(startedMeterValues) && connectorStatus != null) {
+      connectorStatus.transactionBeginMeterValue = startedMeterValues[0] as MeterValue
+    }
     const response = await OCPP20ServiceUtils.sendTransactionEvent(
       chargingStation,
       OCPP20TransactionEventEnumType.Started,
@@ -1135,6 +1139,9 @@ export class OCPP20ServiceUtils {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
       []) as OCPP20MeterValue[]
+    const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
+      | OCPP20MeterValue
+      | undefined
 
     try {
       const measurandsKey = buildConfigKey(
@@ -1149,14 +1156,22 @@ export class OCPP20ServiceUtils {
         OCPP20ReadingContextEnumType.TRANSACTION_END
       ) as OCPP20MeterValue
       if (isNotEmptyArray(finalMeterValue.sampledValue)) {
-        return [...endedMeterValues, finalMeterValue]
+        return [
+          ...(beginMeterValue != null ? [beginMeterValue] : []),
+          ...endedMeterValues,
+          finalMeterValue,
+        ]
       }
     } catch (error) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${(error as Error).message}`
       )
     }
-    return isNotEmptyArray(endedMeterValues) ? endedMeterValues : []
+    const meterValues: OCPP20MeterValue[] = [
+      ...(beginMeterValue != null ? [beginMeterValue] : []),
+      ...endedMeterValues,
+    ]
+    return isNotEmptyArray(meterValues) ? meterValues : []
   }
 
   private static readVariableAsIntervalMs (

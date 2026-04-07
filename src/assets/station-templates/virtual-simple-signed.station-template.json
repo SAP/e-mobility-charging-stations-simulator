@@ -1,0 +1,149 @@
+{
+  "idTagsFile": "idtags.json",
+  "baseName": "CS-BASIC-SIGNED",
+  "chargePointModel": "Simulator simple",
+  "chargePointVendor": "Ovomaltin",
+  "power": 50000,
+  "powerUnit": "W",
+  "powerSharedByConnectors": true,
+  "currentOutType": "DC",
+  "numberOfConnectors": 3,
+  "randomConnectors": false,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "SoC,Energy.Active.Import.Register,Voltage"
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger,Reservation"
+      },
+      {
+        "key": "LocalAuthListEnabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "SampledDataSignReadings",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "SampledDataSignStartedReadings",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "SampledDataSignUpdatedReadings",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AlignedDataSignReadings",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AlignedDataSignUpdatedReadings",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "PublicKeyWithSignedMeterValue",
+        "readonly": false,
+        "value": "EveryMeterValue"
+      },
+      {
+        "key": "MeterPublicKey1",
+        "readonly": true,
+        "value": "3056301006072a8648ce3d020106052b8104000a03420004460a02ba2766d9c44f023ecc0e4e58644a87add1aadd6317e5fe4dccdb29b163a01d8a6297c84bc530f86431e92f8d46ab37830247c05cbd92fac252929e7f61"
+      },
+      {
+        "key": "StartTxnSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 60,
+    "maxDuration": 80,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Connectors": {
+    "0": {},
+    "1": {
+      "bootStatus": "Available",
+      "MeterValues": [
+        {
+          "unit": "Percent",
+          "context": "Sample.Periodic",
+          "measurand": "SoC",
+          "location": "EV"
+        },
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    },
+    "2": {
+      "bootStatus": "Preparing",
+      "MeterValues": [
+        {
+          "unit": "Percent",
+          "context": "Sample.Periodic",
+          "measurand": "SoC",
+          "location": "EV"
+        },
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    },
+    "3": {
+      "bootStatus": "Faulted",
+      "MeterValues": [
+        {
+          "unit": "Percent",
+          "context": "Sample.Periodic",
+          "measurand": "SoC",
+          "location": "EV"
+        },
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    }
+  }
+}

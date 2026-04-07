@@ -46,6 +46,7 @@ import {
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
+  PublicKeyWithSignedMeterValueEnumType,
   RegistrationStatusEnumType,
   RequestCommand,
   type Reservation,
@@ -58,6 +59,7 @@ import {
   type StopTransactionReason,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
+  VendorParametersKey,
   type Voltage,
   WebSocketCloseEventStatusCode,
   type WSError,
@@ -2029,6 +2031,46 @@ export class ChargingStation extends EventEmitter {
     ) {
       deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey, {
         save: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.SampledDataSignReadings) == null) {
+      addConfigurationKey(this, VendorParametersKey.SampledDataSignReadings, 'false', {
+        readonly: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.AlignedDataSignReadings) == null) {
+      addConfigurationKey(this, VendorParametersKey.AlignedDataSignReadings, 'false', {
+        readonly: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.SampledDataSignStartedReadings) == null) {
+      addConfigurationKey(this, VendorParametersKey.SampledDataSignStartedReadings, 'false', {
+        readonly: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.SampledDataSignUpdatedReadings) == null) {
+      addConfigurationKey(this, VendorParametersKey.SampledDataSignUpdatedReadings, 'false', {
+        readonly: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.AlignedDataSignUpdatedReadings) == null) {
+      addConfigurationKey(this, VendorParametersKey.AlignedDataSignUpdatedReadings, 'false', {
+        readonly: false,
+      })
+    }
+    if (getConfigurationKey(this, VendorParametersKey.PublicKeyWithSignedMeterValue) == null) {
+      addConfigurationKey(
+        this,
+        VendorParametersKey.PublicKeyWithSignedMeterValue,
+        PublicKeyWithSignedMeterValueEnumType.Never,
+        {
+          readonly: false,
+        }
+      )
+    }
+    if (getConfigurationKey(this, VendorParametersKey.StartTxnSampledData) == null) {
+      addConfigurationKey(this, VendorParametersKey.StartTxnSampledData, '', {
+        readonly: false,
       })
     }
     if (

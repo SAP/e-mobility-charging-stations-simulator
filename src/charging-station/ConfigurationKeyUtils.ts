@@ -6,6 +6,7 @@ import {
   OCPP20ComponentName,
   OCPPVersion,
   StandardParametersKey,
+  VendorParametersKey,
 } from '../types/index.js'
 import { logger } from '../utils/index.js'
 
@@ -74,6 +75,37 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   [
     StandardParametersKey.WebSocketPingInterval,
     buildConfigKey(OCPP20ComponentName.OCPPCommCtrlr, StandardParametersKey.WebSocketPingInterval),
+  ],
+  [
+    VendorParametersKey.AlignedDataSignReadings,
+    buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, StandardParametersKey.SignReadings),
+  ],
+  [
+    VendorParametersKey.AlignedDataSignUpdatedReadings,
+    buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, VendorParametersKey.SignUpdatedReadings),
+  ],
+  [
+    VendorParametersKey.PublicKeyWithSignedMeterValue,
+    buildConfigKey(
+      OCPP20ComponentName.OCPPCommCtrlr,
+      StandardParametersKey.PublicKeyWithSignedMeterValue
+    ),
+  ],
+  [
+    VendorParametersKey.SampledDataSignReadings,
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.SignReadings),
+  ],
+  [
+    VendorParametersKey.SampledDataSignStartedReadings,
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignStartedReadings),
+  ],
+  [
+    VendorParametersKey.SampledDataSignUpdatedReadings,
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignUpdatedReadings),
+  ],
+  [
+    VendorParametersKey.StartTxnSampledData,
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.TxStartedMeasurands),
   ],
 ])
 
