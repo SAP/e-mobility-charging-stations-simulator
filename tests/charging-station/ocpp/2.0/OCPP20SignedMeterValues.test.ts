@@ -56,7 +56,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      const sampledValue = buildOCPP20SampledValue(
+      const { sampledValue } = buildOCPP20SampledValue(
         energyTemplate,
         1500,
         undefined,
@@ -70,7 +70,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should not add signedMeterValue when signing is disabled', () => {
-      const sampledValue = buildOCPP20SampledValue(energyTemplate, 1500)
+      const { sampledValue } = buildOCPP20SampledValue(energyTemplate, 1500)
 
       assert.strictEqual(sampledValue.signedMeterValue, undefined)
     })
@@ -84,7 +84,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      const sampledValue = buildOCPP20SampledValue(
+      const { sampledValue } = buildOCPP20SampledValue(
         voltageTemplate,
         230,
         undefined,
@@ -105,7 +105,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      const sampledValue = buildOCPP20SampledValue(
+      const { sampledValue } = buildOCPP20SampledValue(
         energyTemplate,
         1500,
         undefined,
@@ -126,7 +126,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      const sampledValue = buildOCPP20SampledValue(
+      const { sampledValue } = buildOCPP20SampledValue(
         energyTemplate,
         1500,
         undefined,
@@ -147,11 +147,24 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      assert.strictEqual(signingConfig.publicKeySentInTransaction, false)
+      const firstResult = buildOCPP20SampledValue(
+        energyTemplate,
+        1500,
+        undefined,
+        undefined,
+        signingConfig
+      )
+      assert.strictEqual(firstResult.publicKeyIncluded, true)
 
-      buildOCPP20SampledValue(energyTemplate, 1500, undefined, undefined, signingConfig)
-
-      assert.strictEqual(signingConfig.publicKeySentInTransaction, true)
+      signingConfig.publicKeySentInTransaction = true
+      const secondResult = buildOCPP20SampledValue(
+        energyTemplate,
+        1500,
+        undefined,
+        undefined,
+        signingConfig
+      )
+      assert.strictEqual(secondResult.publicKeyIncluded, false)
     })
 
     await it('should not include publicKey on second call with OncePerTransaction', () => {
@@ -164,7 +177,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
         transactionId: 'tx-1',
       }
 
-      const sampledValue = buildOCPP20SampledValue(
+      const { sampledValue } = buildOCPP20SampledValue(
         energyTemplate,
         1500,
         undefined,

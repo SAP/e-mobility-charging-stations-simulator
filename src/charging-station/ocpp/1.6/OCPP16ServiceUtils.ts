@@ -8,6 +8,8 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
+import type { PublicKeyWithSignedMeterValueEnumType } from '../../../types/index.js'
+
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -164,14 +166,19 @@ export class OCPP16ServiceUtils {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
       const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
-      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+      const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
         chargingStation,
-        connectorId,
+        connectorId
+      )
+      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+        signingCfg.meterSerialNumber,
         meterStart ?? 0,
         OCPP16MeterValueContext.TRANSACTION_BEGIN,
         transactionId,
         publicKeySentInTransaction,
-        meterValue.timestamp
+        meterValue.timestamp,
+        signingCfg.publicKeyConfig,
+        signingCfg.publicKeyHex
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
       if (signedResult.publicKeyIncluded && connectorStatus != null) {
@@ -227,14 +234,19 @@ export class OCPP16ServiceUtils {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
       const publicKeySentInTransaction = connectorStatus?.publicKeySentInTransaction ?? false
-      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+      const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
         chargingStation,
-        connectorId,
+        connectorId
+      )
+      const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+        signingCfg.meterSerialNumber,
         meterStop ?? 0,
         OCPP16MeterValueContext.TRANSACTION_END,
         transactionId,
         publicKeySentInTransaction,
-        meterValue.timestamp
+        meterValue.timestamp,
+        signingCfg.publicKeyConfig,
+        signingCfg.publicKeyHex
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
       if (signedResult.publicKeyIncluded && connectorStatus != null) {
@@ -805,14 +817,19 @@ export class OCPP16ServiceUtils {
           connectorStatus.transactionId
         )
         const publicKeySentInTransaction = connectorStatus.publicKeySentInTransaction ?? false
-        const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+        const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
           chargingStation,
-          connectorId,
+          connectorId
+        )
+        const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+          signingCfg.meterSerialNumber,
           energyWh,
           OCPP16MeterValueContext.SAMPLE_PERIODIC,
           transactionId,
           publicKeySentInTransaction,
-          (meterValue as OCPP16MeterValue).timestamp
+          (meterValue as OCPP16MeterValue).timestamp,
+          signingCfg.publicKeyConfig,
+          signingCfg.publicKeyHex
         )
         ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
         if (signedResult.publicKeyIncluded) {
@@ -917,32 +934,21 @@ export class OCPP16ServiceUtils {
   }
 
   private static buildSignedSampledValue (
-    chargingStation: ChargingStation,
-    connectorId: number,
+    meterSerialNumber: string,
     meterValueWh: number,
     context: OCPP16MeterValueContext,
     transactionId: number | string,
     publicKeySentInTransaction: boolean,
-    timestamp: Date
+    timestamp: Date,
+    publicKeyConfig: PublicKeyWithSignedMeterValueEnumType,
+    publicKeyHex?: string
   ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
-    const publicKeyConfig = getConfigurationKey(
-      chargingStation,
-      OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
-    )?.value
-    const parsedConfig = parsePublicKeyWithSignedMeterValue(publicKeyConfig)
-
-    const meterPublicKeyConfig = getConfigurationKey(
-      chargingStation,
-      `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
-    )
-    const publicKeyHex = meterPublicKeyConfig?.value
-
-    const includePublicKey = shouldIncludePublicKey(parsedConfig, publicKeySentInTransaction)
+    const includePublicKey = shouldIncludePublicKey(publicKeyConfig, publicKeySentInTransaction)
 
     const signedData = generateSignedMeterData(
       {
         context,
-        meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
+        meterSerialNumber,
         meterValue: meterValueWh,
         timestamp,
         transactionId,
@@ -1028,6 +1034,29 @@ export class OCPP16ServiceUtils {
         }
       }
       return chargingSchedule
+    }
+  }
+
+  private static readSigningConfigForConnector (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): {
+      meterSerialNumber: string
+      publicKeyConfig: PublicKeyWithSignedMeterValueEnumType
+      publicKeyHex?: string
+    } {
+    return {
+      meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
+      publicKeyConfig: parsePublicKeyWithSignedMeterValue(
+        getConfigurationKey(
+          chargingStation,
+          OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
+        )?.value
+      ),
+      publicKeyHex: getConfigurationKey(
+        chargingStation,
+        `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
+      )?.value,
     }
   }
 }

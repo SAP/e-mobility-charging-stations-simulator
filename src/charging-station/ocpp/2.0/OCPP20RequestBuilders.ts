@@ -51,6 +51,11 @@ export const buildOCPP20BootNotificationRequest = (
   reason: bootReason,
 })
 
+export interface OCPP20SampledValueSigningResult {
+  publicKeyIncluded: boolean
+  sampledValue: OCPP20SampledValue
+}
+
 /**
  * Builds an OCPP 2.0 sampled value from a template and measurement data.
  * @param sampledValueTemplate - The sampled value template to use.
@@ -58,7 +63,7 @@ export const buildOCPP20BootNotificationRequest = (
  * @param context - The reading context.
  * @param phase - The phase of the measurement.
  * @param signingConfig - Optional signing configuration for generating signedMeterValue.
- * @returns The built OCPP 2.0 sampled value.
+ * @returns The built OCPP 2.0 sampled value with signing metadata.
  */
 export function buildOCPP20SampledValue (
   sampledValueTemplate: SampledValueTemplate,
@@ -66,7 +71,7 @@ export function buildOCPP20SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase,
   signingConfig?: OCPP20SampledValueSigningConfig
-): OCPP20SampledValue {
+): OCPP20SampledValueSigningResult {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
   const sampledValue: OCPP20SampledValue = {
     context: fields.context,
@@ -76,6 +81,8 @@ export function buildOCPP20SampledValue (
     value: fields.value,
     ...(fields.phase != null && { phase: fields.phase }),
   } as OCPP20SampledValue
+
+  let publicKeyIncluded = false
 
   if (
     signingConfig?.enabled === true &&
@@ -99,12 +106,10 @@ export function buildOCPP20SampledValue (
         includePublicKey ? signingConfig.publicKeyHex : undefined
       ),
     }
-    if (includePublicKey && signingConfig.publicKeyHex != null) {
-      signingConfig.publicKeySentInTransaction = true
-    }
+    publicKeyIncluded = includePublicKey && signingConfig.publicKeyHex != null
   }
 
-  return sampledValue
+  return { publicKeyIncluded, sampledValue }
 }
 
 export const mapStopReasonToOCPP20 = (

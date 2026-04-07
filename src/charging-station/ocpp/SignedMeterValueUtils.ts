@@ -1,3 +1,4 @@
+import { BaseError } from '../../exception/index.js'
 import { PublicKeyWithSignedMeterValueEnumType } from '../../types/index.js'
 
 const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
@@ -23,7 +24,7 @@ export const shouldIncludePublicKey = (
     case PublicKeyWithSignedMeterValueEnumType.OncePerTransaction:
       return !publicKeySentInTransaction
     default:
-      throw new TypeError(
+      throw new BaseError(
         `Unsupported PublicKeyWithSignedMeterValueEnumType value: ${String(config)}`
       )
   }

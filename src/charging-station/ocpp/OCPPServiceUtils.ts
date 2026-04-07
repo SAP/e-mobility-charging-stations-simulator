@@ -900,6 +900,7 @@ export const buildMeterValue = (
     phase?: MeterValuePhase
   ) => SampledValue
   let ocpp20SigningConfig: OCPP20SampledValueSigningConfig | undefined
+  const ocpp20SigningState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
       if (connectorId == null) {
@@ -986,7 +987,19 @@ export const buildMeterValue = (
           value: number,
           ctx?: MeterValueContext,
           phase?: MeterValuePhase
-        ) => buildOCPP20SampledValue(sampledValueTemplate, value, ctx, phase, ocpp20SigningConfig)
+        ) => {
+          const result = buildOCPP20SampledValue(
+            sampledValueTemplate,
+            value,
+            ctx,
+            phase,
+            ocpp20SigningConfig
+          )
+          if (result.publicKeyIncluded) {
+            ocpp20SigningState.publicKeyIncluded = true
+          }
+          return result.sampledValue
+        }
       }
       break
     default:
@@ -1246,7 +1259,7 @@ export const buildMeterValue = (
       { interval }
     )
   }
-  if (ocpp20SigningConfig?.publicKeySentInTransaction === true && connectorStatus != null) {
+  if (ocpp20SigningState.publicKeyIncluded && connectorStatus != null) {
     connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue
