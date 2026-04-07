@@ -1,13 +1,18 @@
 import { createHash } from 'node:crypto'
 
-import { type JsonObject, MeterValueContext, MeterValueUnit } from '../../types/index.js'
+import {
+  type JsonObject,
+  MeterValueContext,
+  MeterValueUnit,
+  SigningMethodEnumType,
+} from '../../types/index.js'
 import { roundTo } from '../../utils/index.js'
 
 export interface SignedMeterData extends JsonObject {
   encodingMethod: string
   publicKey: string
   signedMeterData: string
-  signingMethod: string
+  signingMethod: SigningMethodEnumType
 }
 
 export interface SignedMeterDataParams {
@@ -19,7 +24,7 @@ export interface SignedMeterDataParams {
   transactionId: number | string
 }
 
-const SIGNING_METHOD = 'ECDSA-secp256r1-SHA256'
+const DEFAULT_SIGNING_METHOD = SigningMethodEnumType.ECDSA_secp256r1_SHA256
 const ENCODING_METHOD = 'OCMF'
 
 const contextToTxCode = (context: MeterValueContext): string => {
@@ -39,8 +44,10 @@ export const buildPublicKeyValue = (hexKey: string): string => {
 
 export const generateSignedMeterData = (
   params: SignedMeterDataParams,
-  publicKeyHex?: string
+  publicKeyHex?: string,
+  signingMethod?: SigningMethodEnumType
 ): SignedMeterData => {
+  const resolvedSigningMethod = signingMethod ?? DEFAULT_SIGNING_METHOD
   const txCode = contextToTxCode(params.context)
   const meterValueKwh =
     params.meterValueUnit === MeterValueUnit.KILO_WATT_HOUR
@@ -68,12 +75,12 @@ export const generateSignedMeterData = (
 
   const simulatedSignature = createHash('sha256').update(JSON.stringify(ocmfPayload)).digest('hex')
 
-  const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${SIGNING_METHOD}","SD":"${simulatedSignature}"}`
+  const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${resolvedSigningMethod}","SD":"${simulatedSignature}"}`
 
   return {
     encodingMethod: ENCODING_METHOD,
     publicKey: publicKeyHex != null ? buildPublicKeyValue(publicKeyHex) : '',
     signedMeterData: Buffer.from(ocmfString).toString('base64'),
-    signingMethod: '',
+    signingMethod: resolvedSigningMethod,
   }
 }

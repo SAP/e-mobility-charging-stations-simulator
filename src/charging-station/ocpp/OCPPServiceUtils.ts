@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { BootReasonEnumType } from '../../types/index.js'
+import type { BootReasonEnumType, SigningMethodEnumType } from '../../types/index.js'
 
 import { buildConfigKey } from '../../charging-station/ConfigurationKeyUtils.js'
 import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
@@ -969,6 +969,10 @@ export const buildMeterValue = (
               chargingStation,
               buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey)
             )?.value
+            const signingMethod = getConfigurationKey(
+              chargingStation,
+              buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.SigningMethod)
+            )?.value as SigningMethodEnumType | undefined
             signingConfig = {
               enabled: true,
               meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
@@ -979,6 +983,7 @@ export const buildMeterValue = (
               publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
                 publicKeyWithSignedMeterValueStr
               ),
+              signingMethod,
               transactionId,
             }
           }

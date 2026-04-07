@@ -681,6 +681,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: SampledDataSignReadings (type: boolean) (units: -) **(vendor-specific)**
 - :white_check_mark: SampledDataSignStartedReadings (type: boolean) (units: -) **(vendor-specific)**
 - :white_check_mark: SampledDataSignUpdatedReadings (type: boolean) (units: -) **(vendor-specific)**
+- :white_check_mark: SigningMethod (type: string) (units: -) **(vendor-specific)**
 - :white_check_mark: StartTxnSampledData (type: memberlist) (units: -) **(vendor-specific)**
 
 ### Version 2.0.x

@@ -28,6 +28,16 @@ export enum PublicKeyWithSignedMeterValueEnumType {
   OncePerTransaction = 'OncePerTransaction',
 }
 
+export enum SigningMethodEnumType {
+  ECDSA_brainpool256r1_SHA256 = 'ECDSA-brainpool256r1-SHA256',
+  ECDSA_brainpool384r1_SHA256 = 'ECDSA-brainpool384r1-SHA256',
+  ECDSA_secp192k1_SHA256 = 'ECDSA-secp192k1-SHA256',
+  ECDSA_secp192r1_SHA256 = 'ECDSA-secp192r1-SHA256',
+  ECDSA_secp256k1_SHA256 = 'ECDSA-secp256k1-SHA256',
+  ECDSA_secp256r1_SHA256 = 'ECDSA-secp256r1-SHA256',
+  ECDSA_secp384r1_SHA256 = 'ECDSA-secp384r1-SHA256',
+}
+
 export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey
 
 export interface OCPPConfigurationKey extends JsonObject {

@@ -8,6 +8,8 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
+import type { SigningMethodEnumType } from '../../../types/index.js'
+
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -947,7 +949,8 @@ export class OCPP16ServiceUtils {
         timestamp,
         transactionId,
       },
-      includePublicKey ? signingConfig.publicKeyHex : undefined
+      includePublicKey ? signingConfig.publicKeyHex : undefined,
+      signingConfig.signingMethod
     )
     return {
       publicKeyIncluded: includePublicKey && signingConfig.publicKeyHex != null,
@@ -1047,6 +1050,8 @@ export class OCPP16ServiceUtils {
           OCPP16VendorParametersKey.PublicKeyWithSignedMeterValue
         )?.value
       ),
+      signingMethod: getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SigningMethod)
+        ?.value as SigningMethodEnumType | undefined,
     }
   }
 }

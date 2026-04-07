@@ -85,6 +85,10 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
     buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, VendorParametersKey.SignUpdatedReadings),
   ],
   [
+    VendorParametersKey.MeterPublicKey,
+    buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.PublicKey),
+  ],
+  [
     VendorParametersKey.PublicKeyWithSignedMeterValue,
     buildConfigKey(
       OCPP20ComponentName.OCPPCommCtrlr,
@@ -102,6 +106,10 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   [
     VendorParametersKey.SampledDataSignUpdatedReadings,
     buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignUpdatedReadings),
+  ],
+  [
+    VendorParametersKey.SigningMethod,
+    buildConfigKey(OCPP20ComponentName.FiscalMetering, VendorParametersKey.SigningMethod),
   ],
   [
     VendorParametersKey.StartTxnSampledData,

@@ -21,6 +21,7 @@ import {
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
   type SampledValueTemplate,
+  SigningMethodEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -63,7 +64,10 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       )
 
       assert.ok(sampledValue.signedMeterValue != null)
-      assert.strictEqual(sampledValue.signedMeterValue.signingMethod, '')
+      assert.strictEqual(
+        sampledValue.signedMeterValue.signingMethod,
+        SigningMethodEnumType.ECDSA_secp256r1_SHA256
+      )
       assert.strictEqual(sampledValue.signedMeterValue.encodingMethod, 'OCMF')
     })
 
@@ -238,7 +242,10 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
       ) as OCPP20SampledValue | undefined
       assert.notStrictEqual(energySampledValue, undefined)
       assert.ok(energySampledValue?.signedMeterValue != null)
-      assert.strictEqual(energySampledValue.signedMeterValue.signingMethod, '')
+      assert.strictEqual(
+        energySampledValue.signedMeterValue.signingMethod,
+        SigningMethodEnumType.ECDSA_secp256r1_SHA256
+      )
       assert.strictEqual(energySampledValue.signedMeterValue.encodingMethod, 'OCMF')
     })
 

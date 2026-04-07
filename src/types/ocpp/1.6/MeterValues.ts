@@ -1,6 +1,8 @@
 import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 
+import { type SigningMethodEnumType } from '../Configuration.js'
+
 export enum OCPP16MeterValueContext {
   INTERRUPTION_BEGIN = 'Interruption.Begin',
   INTERRUPTION_END = 'Interruption.End',
@@ -109,5 +111,5 @@ export interface OCPP16SignedMeterValue extends JsonObject {
   encodingMethod: string
   publicKey: string
   signedMeterData: string
-  signingMethod: string
+  signingMethod: '' | SigningMethodEnumType
 }

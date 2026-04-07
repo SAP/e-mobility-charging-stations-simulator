@@ -1,5 +1,9 @@
 import { BaseError } from '../../exception/index.js'
-import { PublicKeyWithSignedMeterValueEnumType, type SampledValue } from '../../types/index.js'
+import {
+  PublicKeyWithSignedMeterValueEnumType,
+  type SampledValue,
+  type SigningMethodEnumType,
+} from '../../types/index.js'
 
 export interface SampledValueSigningConfig extends SigningConfig {
   enabled: boolean
@@ -17,6 +21,7 @@ export interface SigningConfig {
   meterSerialNumber: string
   publicKeyHex?: string
   publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
+  signingMethod?: SigningMethodEnumType
 }
 
 const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(

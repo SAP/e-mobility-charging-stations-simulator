@@ -19,7 +19,11 @@ import {
   generateSignedMeterData,
   type SignedMeterDataParams,
 } from '../../../src/charging-station/ocpp/OCPPSignedMeterDataGenerator.js'
-import { MeterValueContext, MeterValueUnit } from '../../../src/types/index.js'
+import {
+  MeterValueContext,
+  MeterValueUnit,
+  SigningMethodEnumType,
+} from '../../../src/types/index.js'
 
 const DEFAULT_PARAMS: SignedMeterDataParams = {
   context: MeterValueContext.SAMPLE_PERIODIC,
@@ -55,10 +59,10 @@ await describe('SignedMeterDataGenerator', async () => {
     assert.ok(decoded.startsWith('OCMF|'))
   })
 
-  await it('should set signingMethod to empty string when included in signedMeterData', () => {
+  await it('should set signingMethod to ECDSA-secp256r1-SHA256', () => {
     const result = generateSignedMeterData(DEFAULT_PARAMS)
 
-    assert.strictEqual(result.signingMethod, '')
+    assert.strictEqual(result.signingMethod, SigningMethodEnumType.ECDSA_secp256r1_SHA256)
   })
 
   await it('should set encodingMethod to OCMF', () => {

@@ -52,6 +52,10 @@ await describe('OCPP16VendorParametersKey', async () => {
     )
   })
 
+  await it('should have SigningMethod key', () => {
+    assert.strictEqual(OCPP16VendorParametersKey.SigningMethod, 'SigningMethod')
+  })
+
   await it('should have StartTxnSampledData key', () => {
     assert.strictEqual(OCPP16VendorParametersKey.StartTxnSampledData, 'StartTxnSampledData')
   })

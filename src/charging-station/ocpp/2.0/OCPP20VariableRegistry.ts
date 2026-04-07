@@ -21,6 +21,7 @@ import {
   PersistenceEnumType,
   PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
+  SigningMethodEnumType,
   type VariableName,
 } from '../../../types/index.js'
 import {
@@ -1087,7 +1088,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.FiscalMetering, OCPP20VendorVariableName.SigningMethod)]: {
     component: OCPP20ComponentName.FiscalMetering,
     dataType: DataEnumType.string,
-    defaultValue: 'ECDSA-secp256r1-SHA256',
+    defaultValue: SigningMethodEnumType.ECDSA_secp256r1_SHA256,
     description:
       'Method used to create the digital signature for signed meter values. See OCA Application Note v1.0 Table 12 for valid values.',
     mutability: MutabilityEnumType.ReadOnly,

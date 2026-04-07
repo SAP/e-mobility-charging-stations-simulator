@@ -6,7 +6,11 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { OCPP16MeterValueFormat, type OCPP16SignedMeterValue } from '../../../../src/types/index.js'
+import {
+  OCPP16MeterValueFormat,
+  type OCPP16SignedMeterValue,
+  SigningMethodEnumType,
+} from '../../../../src/types/index.js'
 
 await describe('OCPP 1.6 meter value types', async () => {
   await describe('OCPP16MeterValueFormat', async () => {
@@ -25,10 +29,13 @@ await describe('OCPP 1.6 meter value types', async () => {
         encodingMethod: 'OCMF',
         publicKey: 'b2NhOmJhc2UxNjphc24xOmZha2VrZXk=', // cspell:disable-line
         signedMeterData: 'T0NNRnx7fXxmYWtlc2lnbmF0dXJl', // cspell:disable-line
-        signingMethod: 'ECDSA-secp256r1-SHA256',
+        signingMethod: SigningMethodEnumType.ECDSA_secp256r1_SHA256,
       }
       assert.strictEqual(signedMeterValue.encodingMethod, 'OCMF')
-      assert.strictEqual(signedMeterValue.signingMethod, 'ECDSA-secp256r1-SHA256')
+      assert.strictEqual(
+        signedMeterValue.signingMethod,
+        SigningMethodEnumType.ECDSA_secp256r1_SHA256
+      )
       assert.ok(signedMeterValue.publicKey.length > 0)
       assert.ok(signedMeterValue.signedMeterData.length > 0)
     })

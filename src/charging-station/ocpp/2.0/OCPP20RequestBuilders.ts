@@ -94,7 +94,8 @@ export function buildOCPP20SampledValue (
     sampledValue.signedMeterValue = {
       ...generateSignedMeterData(
         signedMeterDataParams,
-        includePublicKey ? signingConfig.publicKeyHex : undefined
+        includePublicKey ? signingConfig.publicKeyHex : undefined,
+        signingConfig.signingMethod
       ),
     }
     publicKeyIncluded = includePublicKey && signingConfig.publicKeyHex != null

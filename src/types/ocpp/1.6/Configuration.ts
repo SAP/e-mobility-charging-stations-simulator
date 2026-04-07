@@ -63,5 +63,6 @@ export enum OCPP16VendorParametersKey {
   SampledDataSignReadings = 'SampledDataSignReadings',
   SampledDataSignStartedReadings = 'SampledDataSignStartedReadings',
   SampledDataSignUpdatedReadings = 'SampledDataSignUpdatedReadings',
+  SigningMethod = 'SigningMethod',
   StartTxnSampledData = 'StartTxnSampledData',
 }
