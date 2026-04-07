@@ -104,7 +104,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@cspell/eslint-plugin": "^9.8.0",
+    "@cspell/eslint-plugin": "^10.0.0",
     "@eslint/js": "^9.39.4",
     "@mikro-orm/cli": "^6.6.12",
     "@types/node": "^24.12.2",
