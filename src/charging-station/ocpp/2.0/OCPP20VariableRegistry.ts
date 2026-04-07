@@ -125,7 +125,6 @@ const DECIMAL_ONLY_PATTERN = /^-?\d+\.\d+$/
 // - Only add rationale comments where simulator intentionally restricts or extends (e.g. enumeration trimming, volatile choice).
 // - Avoid verbose line or row numbers; keep comments concise.
 export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
-
   // AlignedDataCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'Available')]: {
     component: OCPP20ComponentName.AlignedDataCtrlr,
