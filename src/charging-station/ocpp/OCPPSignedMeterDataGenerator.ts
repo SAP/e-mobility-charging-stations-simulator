@@ -13,7 +13,7 @@ export interface SignedMeterData extends JsonObject {
   encodingMethod: EncodingMethodEnumType
   publicKey: string
   signedMeterData: string
-  signingMethod: SigningMethodEnumType
+  signingMethod: '' | SigningMethodEnumType
 }
 
 export interface SignedMeterDataParams {
@@ -76,12 +76,15 @@ export const generateSignedMeterData = (
 
   const simulatedSignature = createHash('sha256').update(JSON.stringify(ocmfPayload)).digest('hex')
 
+  // OCMF includes the signing algorithm in the SA field of signedMeterData.
+  // Per OCA Application Note Table 11: "If it is already included in the
+  // signedMeterData, then this SHALL be an empty string."
   const ocmfString = `OCMF|${JSON.stringify(ocmfPayload)}|{"SA":"${resolvedSigningMethod}","SD":"${simulatedSignature}"}`
 
   return {
     encodingMethod: DEFAULT_ENCODING_METHOD,
     publicKey: publicKeyHex != null ? buildPublicKeyValue(publicKeyHex) : '',
     signedMeterData: Buffer.from(ocmfString).toString('base64'),
-    signingMethod: resolvedSigningMethod,
+    signingMethod: '',
   }
 }

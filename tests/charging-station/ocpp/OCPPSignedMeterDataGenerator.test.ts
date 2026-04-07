@@ -23,7 +23,6 @@ import {
   EncodingMethodEnumType,
   MeterValueContext,
   MeterValueUnit,
-  SigningMethodEnumType,
 } from '../../../src/types/index.js'
 
 const DEFAULT_PARAMS: SignedMeterDataParams = {
@@ -60,10 +59,10 @@ await describe('SignedMeterDataGenerator', async () => {
     assert.ok(decoded.startsWith('OCMF|'))
   })
 
-  await it('should set signingMethod to ECDSA-secp256r1-SHA256', () => {
+  await it('should set signingMethod to empty string per OCA spec when using OCMF', () => {
     const result = generateSignedMeterData(DEFAULT_PARAMS)
 
-    assert.strictEqual(result.signingMethod, SigningMethodEnumType.ECDSA_secp256r1_SHA256)
+    assert.strictEqual(result.signingMethod, '')
   })
 
   await it('should set encodingMethod to OCMF', () => {

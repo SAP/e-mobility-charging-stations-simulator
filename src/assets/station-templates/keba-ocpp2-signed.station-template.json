@@ -105,6 +105,11 @@
         "key": "FiscalMetering.PublicKey",
         "readonly": true,
         "value": "3056301006072a8648ce3d020106052b8104000a03420004460a02ba2766d9c44f023ecc0e4e58644a87add1aadd6317e5fe4dccdb29b163a01d8a6297c84bc530f86431e92f8d46ab37830247c05cbd92fac252929e7f61"
+      },
+      {
+        "key": "FiscalMetering.SigningMethod",
+        "readonly": true,
+        "value": "ECDSA-secp256k1-SHA256"
       }
     ]
   },

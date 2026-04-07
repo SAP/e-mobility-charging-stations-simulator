@@ -24,7 +24,6 @@ import {
   type OCPP16SignedMeterValue,
   OCPP16VendorParametersKey,
   OCPPVersion,
-  SigningMethodEnumType,
 } from '../../../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -298,7 +297,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
       assert.strictEqual(typeof parsed.signedMeterData, 'string')
       assert.strictEqual(typeof parsed.publicKey, 'string')
       assert.strictEqual(parsed.encodingMethod, EncodingMethodEnumType.OCMF)
-      assert.strictEqual(parsed.signingMethod, SigningMethodEnumType.ECDSA_secp256r1_SHA256)
+      assert.strictEqual(parsed.signingMethod, '')
     })
   })
 
