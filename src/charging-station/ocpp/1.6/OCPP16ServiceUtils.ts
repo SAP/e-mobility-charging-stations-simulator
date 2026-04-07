@@ -73,6 +73,7 @@ import { generateSignedMeterData } from '../OCPPSignedMeterDataGenerator.js'
 import {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
+  type SignedSampledValueResult,
 } from '../OCPPSignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
@@ -941,7 +942,7 @@ export class OCPP16ServiceUtils {
     timestamp: Date,
     publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType,
     publicKeyHex?: string
-  ): { publicKeyIncluded: boolean; sampledValue: OCPP16SampledValue } {
+  ): SignedSampledValueResult<OCPP16SampledValue> {
     const includePublicKey = shouldIncludePublicKey(
       publicKeyWithSignedMeterValue,
       publicKeySentInTransaction

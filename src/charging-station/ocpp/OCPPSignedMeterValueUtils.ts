@@ -1,5 +1,10 @@
 import { BaseError } from '../../exception/index.js'
-import { PublicKeyWithSignedMeterValueEnumType } from '../../types/index.js'
+import { PublicKeyWithSignedMeterValueEnumType, type SampledValue } from '../../types/index.js'
+
+export interface SignedSampledValueResult<T extends SampledValue = SampledValue> {
+  publicKeyIncluded: boolean
+  sampledValue: T
+}
 
 const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
   Object.values(PublicKeyWithSignedMeterValueEnumType)

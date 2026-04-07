@@ -19,7 +19,10 @@ import {
   generateSignedMeterData,
   type SignedMeterDataParams,
 } from '../OCPPSignedMeterDataGenerator.js'
-import { shouldIncludePublicKey } from '../OCPPSignedMeterValueUtils.js'
+import {
+  shouldIncludePublicKey,
+  type SignedSampledValueResult,
+} from '../OCPPSignedMeterValueUtils.js'
 
 export interface OCPP20SampledValueSigningConfig {
   enabled: boolean
@@ -54,11 +57,6 @@ export const buildOCPP20BootNotificationRequest = (
   reason: bootReason,
 })
 
-export interface OCPP20SampledValueSigningResult {
-  publicKeyIncluded: boolean
-  sampledValue: OCPP20SampledValue
-}
-
 /**
  * Builds an OCPP 2.0 sampled value from a template and measurement data.
  * @param sampledValueTemplate - The sampled value template to use.
@@ -74,7 +72,7 @@ export function buildOCPP20SampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase,
   signingConfig?: OCPP20SampledValueSigningConfig
-): OCPP20SampledValueSigningResult {
+): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
   const sampledValue: OCPP20SampledValue = {
     context: fields.context,
