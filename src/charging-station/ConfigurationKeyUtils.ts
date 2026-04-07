@@ -103,6 +103,13 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
     VendorParametersKey.SampledDataSignUpdatedReadings,
     buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, VendorParametersKey.SignUpdatedReadings),
   ],
+  [
+    VendorParametersKey.StartTxnSampledData,
+    buildConfigKey(
+      OCPP20ComponentName.SampledDataCtrlr,
+      StandardParametersKey.TxStartedMeasurands
+    ),
+  ],
 ])
 
 const resolveKey = (

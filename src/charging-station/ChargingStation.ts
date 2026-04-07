@@ -2068,12 +2068,10 @@ export class ChargingStation extends EventEmitter {
         }
       )
     }
-    if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
-      if (getConfigurationKey(this, VendorParametersKey.StartTxnSampledData) == null) {
-        addConfigurationKey(this, VendorParametersKey.StartTxnSampledData, '', {
-          readonly: false,
-        })
-      }
+    if (getConfigurationKey(this, VendorParametersKey.StartTxnSampledData) == null) {
+      addConfigurationKey(this, VendorParametersKey.StartTxnSampledData, '', {
+        readonly: false,
+      })
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
