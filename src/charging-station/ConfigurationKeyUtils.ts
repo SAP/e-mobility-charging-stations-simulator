@@ -105,10 +105,7 @@ const OCPP2_PARAMETER_KEY_MAP = new Map<ConfigurationKeyType, ConfigurationKeyTy
   ],
   [
     VendorParametersKey.StartTxnSampledData,
-    buildConfigKey(
-      OCPP20ComponentName.SampledDataCtrlr,
-      StandardParametersKey.TxStartedMeasurands
-    ),
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.TxStartedMeasurands),
   ],
 ])
 
