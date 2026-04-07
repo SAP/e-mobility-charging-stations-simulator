@@ -735,6 +735,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TimeSource,
   },
+
+  // DeviceDataCtrlr Component
   // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
