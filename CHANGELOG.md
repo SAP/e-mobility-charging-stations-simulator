@@ -1,5 +1,31 @@
 # Changelog
 
+## [4.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.3.1...simulator@v4.4.0) (2026-04-07)
+
+
+### 🚀 Features
+
+* **ocpp:** add EncodingMethodEnumType enum for signed meter value encoding methods ([8e89879](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8e89879f009ea191ef060e961aec6046394124f1))
+* **ocpp:** add signed meter values support for OCPP 1.6 and 2.0.x ([#1775](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1775)) ([7d69543](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d69543150e590831d93769443cd82d457c825bc))
+* **ocpp:** add signing prerequisites validation and EC curve auto-derivation ([7b072f9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7b072f9dc1f4095335c4aeecacb5a40c023d1d2d))
+* **ocpp:** auto-derive signing method from EC public key curve ([9a630bd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9a630bd9d6ba7a3d84014aa6ba6f885377803c79))
+
+
+### 🐞 Bug Fixes
+
+* **ocpp:** conform signingMethod to OCA spec and fix template curve mismatch ([b5f45a4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b5f45a446f19687b1a38f92ac07da9a8a14224fd))
+* **ocpp:** populate signingMethod field and add SigningMethodEnumType enum ([90bb3ab](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/90bb3ab86e864f29c4dbc34749c8725b6c8ed789))
+* **ocpp:** use Volatile instead of invented Ephemeral for CertificatePrivateKey persistence ([d73a43d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d73a43d926e9a11cf38d5d57294ba47baa117a87))
+
+
+### ✨ Polish
+
+* **crypto:** modernize crypto APIs and harden certificate handling ([66d6967](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/66d6967de66c742f8db1a9ea1e81f1a5c56c2ff7))
+* **ocpp:** use Node.js crypto for EC curve derivation ([05820aa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/05820aae196f01dcee2cdf82dbbbcdde69841d4a))
+* **tests:** harmonize crypto test data and improve test quality ([972eb54](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/972eb54e9abaa8ca1caaef67811dd778ea4b002d))
+* **tests:** harmonize test file names and [@file](https://github.com/file) descriptions ([f5d6dd4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f5d6dd4e457e79d88474f86c987af3bc1876d2bf))
+* **tests:** rename OCPP16VendorParametersKey test to match source file ([b459fa1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b459fa16e9d6e4418d7aaf4017e2464d9f711976))
+
 ## [4.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.3.0...simulator@v4.3.1) (2026-04-05)
 
 ### 🐞 Bug Fixes
