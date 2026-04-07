@@ -344,6 +344,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 logger.info("Received %s Ended", Action.transaction_event)
                 transaction_id = transaction_info.get("transaction_id", "")
                 self._active_transactions.pop(transaction_id, None)
+                if meter_value is not None:
+                    _log_signed_meter_values(meter_value)
                 return ocpp.v201.call_result.TransactionEvent()
             case _:
                 logger.warning("Unknown transaction event type: %s", event_type)
