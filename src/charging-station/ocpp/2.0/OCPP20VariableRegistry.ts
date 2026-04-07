@@ -125,6 +125,7 @@ const DECIMAL_ONLY_PATTERN = /^-?\d+\.\d+$/
 // - Only add rationale comments where simulator intentionally restricts or extends (e.g. enumeration trimming, volatile choice).
 // - Avoid verbose line or row numbers; keep comments concise.
 export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
+
   // AlignedDataCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'Available')]: {
     component: OCPP20ComponentName.AlignedDataCtrlr,
@@ -388,7 +389,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'DisableRemoteAuthorization',
   },
-
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr, 'OfflineTxForUnknownIdEnabled')]: {
     component: OCPP20ComponentName.AuthCtrlr,
     dataType: DataEnumType.boolean,
@@ -774,7 +774,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ReportingValueSize,
   },
-
   [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
@@ -790,7 +789,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20OptionalVariableName.ValueSize,
   },
-
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20RequiredVariableName.BytesPerMessage
@@ -1098,6 +1096,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20VendorVariableName.SigningMethod,
     vendorSpecific: true,
   },
+
   // ISO15118Ctrlr Component
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr, 'CentralContractValidationAllowed')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr,
@@ -1195,7 +1194,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'RequestMeteringReceipt',
   },
-
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr, 'SeccId')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr,
     dataType: DataEnumType.string,
@@ -1217,6 +1215,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'V2GCertificateInstallationEnabled',
   },
+
   // LocalAuthListCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Available')]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr,
@@ -1282,7 +1281,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
-
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Enabled)]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr,
     dataType: DataEnumType.boolean,
@@ -1309,6 +1307,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
+
   // MonitoringCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr, 'ActiveMonitoringBase')]: {
     component: OCPP20ComponentName.MonitoringCtrlr,
@@ -1424,7 +1423,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
   },
-
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr,
     OCPP20RequiredVariableName.ItemsPerMessage,
@@ -1459,6 +1457,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
+
   // OCPPCommCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, 'ActiveNetworkProfile')]: {
     component: OCPP20ComponentName.OCPPCommCtrlr,
@@ -1703,7 +1702,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.OfflineThreshold,
   },
-
   [buildRegistryKey(OCPP20ComponentName.OCPPCommCtrlr, OCPP20RequiredVariableName.ResetRetries)]: {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr,
@@ -1732,6 +1730,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.UnlockOnEVSideDisconnect,
   },
+
   // ReservationCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.ReservationCtrlr, 'Available')]: {
     component: OCPP20ComponentName.ReservationCtrlr,
@@ -1743,7 +1742,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-
   [buildRegistryKey(
     OCPP20ComponentName.ReservationCtrlr,
     OCPP20OptionalVariableName.NonEvseSpecific
@@ -1768,6 +1766,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
   },
+
   // SampledDataCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr, 'Available')]: {
     component: OCPP20ComponentName.SampledDataCtrlr,
@@ -1995,7 +1994,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxUpdatedMeasurands,
   },
-
   [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr,
     OCPP20VendorVariableName.SignStartedReadings
@@ -2026,6 +2024,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20VendorVariableName.SignUpdatedReadings,
     vendorSpecific: true,
   },
+
   // SecurityCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, 'AdditionalRootCertificateCheck')]: {
     component: OCPP20ComponentName.SecurityCtrlr,
