@@ -736,7 +736,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TimeSource,
   },
-
   // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
@@ -2131,7 +2130,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.OrganizationName,
   },
-
   // Enumeration limited to profiles 1..3 commonly used; spec allows additional profiles via extensions.
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr, OCPP20RequiredVariableName.SecurityProfile)]:
     {
