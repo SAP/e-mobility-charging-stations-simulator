@@ -98,7 +98,6 @@ export enum OCPP20VendorVariableName {
 }
 
 export enum PersistenceEnumType {
-  Ephemeral = 'Ephemeral',
   Persistent = 'Persistent',
   Volatile = 'Volatile',
 }

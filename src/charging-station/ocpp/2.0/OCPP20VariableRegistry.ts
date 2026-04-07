@@ -2161,7 +2161,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     description: 'Private key material upload placeholder; write-only for security.',
     maxLength: 2048,
     mutability: MutabilityEnumType.WriteOnly,
-    persistence: PersistenceEnumType.Ephemeral,
+    persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.CertificatePrivateKey,
     vendorSpecific: true,
