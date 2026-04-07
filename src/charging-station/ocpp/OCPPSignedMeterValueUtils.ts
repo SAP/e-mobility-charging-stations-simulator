@@ -6,6 +6,12 @@ export interface SignedSampledValueResult<T extends SampledValue = SampledValue>
   sampledValue: T
 }
 
+export interface SigningConfig {
+  meterSerialNumber: string
+  publicKeyHex?: string
+  publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
+}
+
 const PUBLIC_KEY_WITH_SIGNED_METER_VALUE_VALUES = new Set<string>(
   Object.values(PublicKeyWithSignedMeterValueEnumType)
 )

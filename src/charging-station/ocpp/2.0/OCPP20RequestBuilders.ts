@@ -22,12 +22,11 @@ import {
 import {
   shouldIncludePublicKey,
   type SignedSampledValueResult,
+  type SigningConfig,
 } from '../OCPPSignedMeterValueUtils.js'
 
-export interface OCPP20SampledValueSigningConfig {
+export interface OCPP20SampledValueSigningConfig extends SigningConfig {
   enabled: boolean
-  meterSerialNumber: string
-  publicKeyHex?: string
   publicKeySentInTransaction: boolean
   publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
   timestamp?: Date

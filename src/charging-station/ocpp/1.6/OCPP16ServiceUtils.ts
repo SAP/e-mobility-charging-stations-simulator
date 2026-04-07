@@ -8,8 +8,6 @@ import {
   isWithinInterval,
 } from 'date-fns'
 
-import type { PublicKeyWithSignedMeterValueEnumType } from '../../../types/index.js'
-
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -74,6 +72,7 @@ import {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
   type SignedSampledValueResult,
+  type SigningConfig,
 } from '../OCPPSignedMeterValueUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { buildOCPP16SampledValue, buildSignedOCPP16SampledValue } from './OCPP16RequestBuilders.js'
@@ -171,14 +170,12 @@ export class OCPP16ServiceUtils {
         connectorId
       )
       const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
-        signingCfg.meterSerialNumber,
+        signingCfg,
         meterStart ?? 0,
         OCPP16MeterValueContext.TRANSACTION_BEGIN,
         transactionId,
         publicKeySentInTransaction,
-        meterValue.timestamp,
-        signingCfg.publicKeyWithSignedMeterValue,
-        signingCfg.publicKeyHex
+        meterValue.timestamp
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
       if (signedResult.publicKeyIncluded && connectorStatus != null) {
@@ -239,14 +236,12 @@ export class OCPP16ServiceUtils {
         connectorId
       )
       const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
-        signingCfg.meterSerialNumber,
+        signingCfg,
         meterStop ?? 0,
         OCPP16MeterValueContext.TRANSACTION_END,
         transactionId,
         publicKeySentInTransaction,
-        meterValue.timestamp,
-        signingCfg.publicKeyWithSignedMeterValue,
-        signingCfg.publicKeyHex
+        meterValue.timestamp
       )
       meterValue.sampledValue.push(signedResult.sampledValue)
       if (signedResult.publicKeyIncluded && connectorStatus != null) {
@@ -822,14 +817,12 @@ export class OCPP16ServiceUtils {
           connectorId
         )
         const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
-          signingCfg.meterSerialNumber,
+          signingCfg,
           energyWh,
           OCPP16MeterValueContext.SAMPLE_PERIODIC,
           transactionId,
           publicKeySentInTransaction,
-          (meterValue as OCPP16MeterValue).timestamp,
-          signingCfg.publicKeyWithSignedMeterValue,
-          signingCfg.publicKeyHex
+          (meterValue as OCPP16MeterValue).timestamp
         )
         ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
         if (signedResult.publicKeyIncluded) {
@@ -934,32 +927,30 @@ export class OCPP16ServiceUtils {
   }
 
   private static buildSignedSampledValue (
-    meterSerialNumber: string,
+    signingConfig: SigningConfig,
     meterValue: number,
     context: OCPP16MeterValueContext,
     transactionId: number | string,
     publicKeySentInTransaction: boolean,
-    timestamp: Date,
-    publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType,
-    publicKeyHex?: string
+    timestamp: Date
   ): SignedSampledValueResult<OCPP16SampledValue> {
     const includePublicKey = shouldIncludePublicKey(
-      publicKeyWithSignedMeterValue,
+      signingConfig.publicKeyWithSignedMeterValue,
       publicKeySentInTransaction
     )
 
     const signedData = generateSignedMeterData(
       {
         context,
-        meterSerialNumber,
+        meterSerialNumber: signingConfig.meterSerialNumber,
         meterValue,
         timestamp,
         transactionId,
       },
-      includePublicKey ? publicKeyHex : undefined
+      includePublicKey ? signingConfig.publicKeyHex : undefined
     )
     return {
-      publicKeyIncluded: includePublicKey && publicKeyHex != null,
+      publicKeyIncluded: includePublicKey && signingConfig.publicKeyHex != null,
       sampledValue: buildSignedOCPP16SampledValue(context, signedData),
     }
   }
@@ -1043,11 +1034,7 @@ export class OCPP16ServiceUtils {
   private static readSigningConfigForConnector (
     chargingStation: ChargingStation,
     connectorId: number
-  ): {
-      meterSerialNumber: string
-      publicKeyHex?: string
-      publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
-    } {
+  ): SigningConfig {
     return {
       meterSerialNumber: chargingStation.stationInfo?.meterSerialNumber ?? 'SIMULATOR',
       publicKeyHex: getConfigurationKey(

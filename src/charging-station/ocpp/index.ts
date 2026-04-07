@@ -23,4 +23,5 @@ export {
   parsePublicKeyWithSignedMeterValue,
   shouldIncludePublicKey,
   type SignedSampledValueResult,
+  type SigningConfig,
 } from './OCPPSignedMeterValueUtils.js'
