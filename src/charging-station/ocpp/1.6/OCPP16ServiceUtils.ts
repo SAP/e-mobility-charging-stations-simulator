@@ -935,7 +935,7 @@ export class OCPP16ServiceUtils {
       chargingStation,
       `${OCPP16VendorParametersKey.MeterPublicKey}${connectorId.toString()}`
     )
-    const publicKeyHex = meterPublicKeyConfig?.value ?? undefined
+    const publicKeyHex = meterPublicKeyConfig?.value
 
     const includePublicKey = shouldIncludePublicKey(parsedConfig, publicKeySentInTransaction)
 
