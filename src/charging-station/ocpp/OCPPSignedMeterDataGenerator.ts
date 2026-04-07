@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 
 import { type JsonObject, MeterValueContext, MeterValueUnit } from '../../types/index.js'
+import { roundTo } from '../../utils/index.js'
 
 export interface SignedMeterData extends JsonObject {
   encodingMethod: string
@@ -43,8 +44,8 @@ export const generateSignedMeterData = (
   const txCode = contextToTxCode(params.context)
   const meterValueKwh =
     params.meterValueUnit === MeterValueUnit.KILO_WATT_HOUR
-      ? Number(params.meterValue.toFixed(3))
-      : Number((params.meterValue / 1000).toFixed(3))
+      ? roundTo(params.meterValue, 3)
+      : roundTo(params.meterValue / 1000, 3)
 
   const ocmfPayload = {
     FV: '1.0',
