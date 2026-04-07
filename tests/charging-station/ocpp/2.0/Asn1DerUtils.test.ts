@@ -1,10 +1,10 @@
 /**
  * @file Tests for Asn1DerUtils
- * @description Unit tests for ASN.1 DER encoding primitives and PKCS#10 CSR generation
+ * @description Unit tests for ASN.1 DER encoding, parsing, and PKCS#10 CSR generation
  */
 
 import assert from 'node:assert/strict'
-import { X509Certificate } from 'node:crypto'
+import { hash, X509Certificate } from 'node:crypto'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -118,25 +118,25 @@ await describe('ASN.1 DER encoding utilities', async () => {
   })
 
   await describe('readDerLength', async () => {
-    await it('should parse short form length', () => {
-      const buf = Buffer.from([42])
-      const result = readDerLength(buf, 0)
+    await it('should round-trip with derLength for short form', () => {
+      const encoded = derLength(42)
+      const result = readDerLength(encoded, 0)
       assert.strictEqual(result.length, 42)
-      assert.strictEqual(result.end, 1)
+      assert.strictEqual(result.end, encoded.length)
     })
 
-    await it('should parse single-byte long form (0x81)', () => {
-      const buf = Buffer.from([0x81, 200])
-      const result = readDerLength(buf, 0)
+    await it('should round-trip with derLength for single-byte long form', () => {
+      const encoded = derLength(200)
+      const result = readDerLength(encoded, 0)
       assert.strictEqual(result.length, 200)
-      assert.strictEqual(result.end, 2)
+      assert.strictEqual(result.end, encoded.length)
     })
 
-    await it('should parse two-byte long form (0x82)', () => {
-      const buf = Buffer.from([0x82, 0x01, 0x2c])
-      const result = readDerLength(buf, 0)
+    await it('should round-trip with derLength for two-byte long form', () => {
+      const encoded = derLength(300)
+      const result = readDerLength(encoded, 0)
       assert.strictEqual(result.length, 300)
-      assert.strictEqual(result.end, 3)
+      assert.strictEqual(result.end, encoded.length)
     })
 
     await it('should throw RangeError for empty buffer', () => {
@@ -175,6 +175,14 @@ await describe('ASN.1 DER encoding utilities', async () => {
       assert.ok(Buffer.isBuffer(issuerDer))
       assert.ok(issuerDer.length > 0)
       assert.strictEqual(issuerDer[0], 0x30)
+    })
+
+    await it('should extract issuer that differs from hashing the string DN', () => {
+      const x509 = new X509Certificate(VALID_X509_PEM_CERTIFICATE)
+      const issuerDer = extractDerIssuer(x509.raw)
+      const derHash = hash('sha256', issuerDer, 'hex')
+      const stringHash = hash('sha256', x509.issuer, 'hex')
+      assert.notStrictEqual(derHash, stringHash)
     })
 
     await it('should produce consistent output for the same certificate', () => {

@@ -490,11 +490,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = manager.validateCertificateX509(brokenChain)
 
       assert.strictEqual(result.valid, false)
-      assert.ok(
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        result.reason?.includes('issuer mismatch') ||
-          result.reason?.includes('signature verification failed')
-      )
+      assert.match(result.reason ?? '', /issuer mismatch|signature verification failed/)
     })
 
     await it('should return invalid when chain has expired intermediate', () => {
