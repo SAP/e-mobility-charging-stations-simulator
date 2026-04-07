@@ -1,6 +1,13 @@
 import { BaseError } from '../../exception/index.js'
 import { PublicKeyWithSignedMeterValueEnumType, type SampledValue } from '../../types/index.js'
 
+export interface SampledValueSigningConfig extends SigningConfig {
+  enabled: boolean
+  publicKeySentInTransaction: boolean
+  timestamp?: Date
+  transactionId: number | string
+}
+
 export interface SignedSampledValueResult<T extends SampledValue = SampledValue> {
   publicKeyIncluded: boolean
   sampledValue: T

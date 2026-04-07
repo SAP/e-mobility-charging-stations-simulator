@@ -11,7 +11,6 @@ import {
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
   OCPP20TriggerReasonEnumType,
-  type PublicKeyWithSignedMeterValueEnumType,
   type SampledValueTemplate,
 } from '../../../types/index.js'
 import { resolveSampledValueFields } from '../OCPPServiceUtils.js'
@@ -20,18 +19,10 @@ import {
   type SignedMeterDataParams,
 } from '../OCPPSignedMeterDataGenerator.js'
 import {
+  type SampledValueSigningConfig,
   shouldIncludePublicKey,
   type SignedSampledValueResult,
-  type SigningConfig,
 } from '../OCPPSignedMeterValueUtils.js'
-
-export interface OCPP20SampledValueSigningConfig extends SigningConfig {
-  enabled: boolean
-  publicKeySentInTransaction: boolean
-  publicKeyWithSignedMeterValue: PublicKeyWithSignedMeterValueEnumType
-  timestamp?: Date
-  transactionId: number | string
-}
 
 export const buildOCPP20BootNotificationRequest = (
   stationInfo: ChargingStationInfo,
@@ -70,7 +61,7 @@ export function buildOCPP20SampledValue (
   value: number,
   context?: MeterValueContext,
   phase?: MeterValuePhase,
-  signingConfig?: OCPP20SampledValueSigningConfig
+  signingConfig?: SampledValueSigningConfig
 ): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
   const sampledValue: OCPP20SampledValue = {

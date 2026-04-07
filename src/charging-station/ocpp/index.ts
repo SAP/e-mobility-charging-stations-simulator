@@ -21,6 +21,7 @@ export {
 } from './OCPPSignedMeterDataGenerator.js'
 export {
   parsePublicKeyWithSignedMeterValue,
+  type SampledValueSigningConfig,
   shouldIncludePublicKey,
   type SignedSampledValueResult,
   type SigningConfig,

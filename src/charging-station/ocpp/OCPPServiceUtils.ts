@@ -64,10 +64,12 @@ import {
 import {
   buildOCPP20BootNotificationRequest,
   buildOCPP20SampledValue,
-  type OCPP20SampledValueSigningConfig,
 } from './2.0/OCPP20RequestBuilders.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { parsePublicKeyWithSignedMeterValue } from './OCPPSignedMeterValueUtils.js'
+import {
+  parsePublicKeyWithSignedMeterValue,
+  type SampledValueSigningConfig,
+} from './OCPPSignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
 
@@ -899,7 +901,7 @@ export const buildMeterValue = (
     context?: MeterValueContext,
     phase?: MeterValuePhase
   ) => SampledValue
-  let ocpp20SigningConfig: OCPP20SampledValueSigningConfig | undefined
+  let ocpp20SigningConfig: SampledValueSigningConfig | undefined
   const ocpp20SigningState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:

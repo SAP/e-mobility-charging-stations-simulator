@@ -10,11 +10,9 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
-import {
-  buildOCPP20SampledValue,
-  type OCPP20SampledValueSigningConfig,
-} from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
+import { buildOCPP20SampledValue } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { type SampledValueSigningConfig } from '../../../../src/charging-station/ocpp/OCPPSignedMeterValueUtils.js'
 import {
   MeterValueMeasurand,
   OCPP20ComponentName,
@@ -47,7 +45,7 @@ const voltageTemplate: SampledValueTemplate = {
 await describe('OCPP 2.0 Signed Meter Values', async () => {
   await describe('buildOCPP20SampledValue with signing config', async () => {
     await it('should add signedMeterValue when signing is enabled for energy measurand', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeyHex: 'abcdef1234567890',
@@ -76,7 +74,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should not add signedMeterValue for non-energy measurands', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeySentInTransaction: false,
@@ -96,7 +94,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should include publicKey when configured as EveryMeterValue', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeyHex: 'abcdef1234567890',
@@ -117,7 +115,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should set publicKey to empty string when configured as Never', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeyHex: 'abcdef1234567890',
@@ -138,7 +136,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should set publicKeySentInTransaction after including publicKey with OncePerTransaction', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeyHex: 'abcdef1234567890',
@@ -168,7 +166,7 @@ await describe('OCPP 2.0 Signed Meter Values', async () => {
     })
 
     await it('should not include publicKey on second call with OncePerTransaction', () => {
-      const signingConfig: OCPP20SampledValueSigningConfig = {
+      const signingConfig: SampledValueSigningConfig = {
         enabled: true,
         meterSerialNumber: 'SIM-METER-001',
         publicKeyHex: 'abcdef1234567890',
