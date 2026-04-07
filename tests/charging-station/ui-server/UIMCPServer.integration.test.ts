@@ -1,5 +1,5 @@
 /**
- * @file UIMCPServer Integration Tests
+ * @file Tests for UIMCPServer integration
  * @description HTTP integration tests verifying MCP endpoint responds correctly
  */
 

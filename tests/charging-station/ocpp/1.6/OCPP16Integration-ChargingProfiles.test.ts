@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 1.6 Charging Profile Management — Integration
+ * @file Tests for OCPP 1.6 Charging Profile Management integration
  * @see OCPP 1.6 — §9.3 SetChargingProfile, §9.1 ClearChargingProfile, §9.2 GetCompositeSchedule
  * @description Multi-step integration tests verifying roundtrip flows across SetChargingProfile,
  *   ClearChargingProfile, and GetCompositeSchedule handlers for OCPP 1.6 Smart Charging

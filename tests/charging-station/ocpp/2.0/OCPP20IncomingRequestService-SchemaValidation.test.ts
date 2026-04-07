@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 2.0 JSON schema validation (negative tests)
+ * @file Tests for OCPP20IncomingRequestService JSON schema validation (negative tests)
  * @description Verifies that OCPP 2.0.1 JSON schemas correctly reject invalid payloads
  * when compiled with AJV. Tests the schemas directly (not through service plumbing),
  * which ensures correctness regardless of path resolution in tsx/dist modes.

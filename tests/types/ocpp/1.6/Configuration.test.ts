@@ -1,6 +1,6 @@
 /**
- * @file Tests for OCPP16VendorParametersKey enum
- * @description Unit tests for signed meter values vendor configuration keys
+ * @file Tests for OCPP 1.6 Configuration types
+ * @description Unit tests for OCPP16VendorParametersKey enum values
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'

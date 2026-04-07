@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 2.0 GroupId-based stop transaction authorization
+ * @file Tests for OCPP20IncomingRequestService GroupId-based stop transaction
  * @description Unit tests for C01.FR.03, C09.FR.03, C09.FR.07 conformance
  */
 

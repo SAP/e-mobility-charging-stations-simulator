@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPPAuthServiceImpl.updateCacheEntry
+ * @file Tests for OCPP20ResponseService cache update
  * @description Unit tests for auth cache updates per OCPP 2.0.1
  * C10.FR.01/05, C12.FR.06, C02.FR.03, C03.FR.02
  */

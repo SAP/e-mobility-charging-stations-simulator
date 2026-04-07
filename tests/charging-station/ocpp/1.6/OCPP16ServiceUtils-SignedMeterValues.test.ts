@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 1.6 signed meter value support
+ * @file Tests for OCPP16ServiceUtils signed meter value support
  * @module OCPP 1.6 — Signed MeterValues (OCA Application Note v1.0)
  * @description Verifies signed meter value integration in transaction begin/end functions,
  * buildSignedOCPP16SampledValue, and periodic meter values.

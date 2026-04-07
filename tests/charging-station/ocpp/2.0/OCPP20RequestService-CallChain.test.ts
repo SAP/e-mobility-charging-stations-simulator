@@ -1,5 +1,5 @@
 /**
- * @file Call chain integration tests for OCPP 2.0 request pipeline
+ * @file Tests for OCPP20RequestService call chain integration
  * @description Verifies that requestHandler → buildRequestPayload → sendMessage
  *   is the single path for all outgoing requests. Minimal params in, complete
  *   spec-compliant payload in sendMessage.

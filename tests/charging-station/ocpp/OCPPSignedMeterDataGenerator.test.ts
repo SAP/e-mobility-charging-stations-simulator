@@ -1,5 +1,5 @@
 /**
- * @file Tests for SignedMeterDataGenerator
+ * @file Tests for OCPPSignedMeterDataGenerator
  * @description Verifies OCMF-like signed meter data generation for simulation purposes.
  *
  * Covers:

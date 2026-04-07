@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP20ServiceUtils.computeReconnectDelay
+ * @file Tests for OCPP20ServiceUtils reconnect delay computation
  * @description Verifies OCPP 2.0.1 §8.1-§8.3 RetryBackOff reconnection delay computation,
  * including default values, variable-configured values, and retry capping.
  */

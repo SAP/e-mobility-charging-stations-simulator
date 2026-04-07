@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP20ServiceUtils.updateAuthorizationCache
+ * @file Tests for OCPP20ServiceUtils authorization cache
  * @description Verifies the static helper that delegates auth cache updates to OCPPAuthService,
  * covering the C10.FR.04 AuthorizeResponse path and graceful error handling.
  */

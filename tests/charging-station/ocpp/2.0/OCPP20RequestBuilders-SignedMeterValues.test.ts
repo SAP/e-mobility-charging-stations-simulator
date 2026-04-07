@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 2.0 signed meter value support
+ * @file Tests for OCPP20RequestBuilders signed meter value support
  * @description Verifies signedMeterValue population in sampled value building,
  *              context-dependent sub-switch logic, and public key inclusion.
  */

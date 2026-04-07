@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP16 Integration — Configuration Management
+ * @file Tests for OCPP 1.6 Configuration Management integration
  * @see OCPP 1.6 — §5.4 ChangeConfiguration, §5.8 GetConfiguration
  * @description Multi-step integration tests verifying ChangeConfiguration → GetConfiguration
  *   roundtrips for OCPP 1.6 configuration management flows

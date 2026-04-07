@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 1.6 integration — Transaction lifecycle
+ * @file Tests for OCPP 1.6 Transaction lifecycle integration
  * @module OCPP 1.6 — §5.11 RemoteStartTransaction, §5.12 RemoteStopTransaction,
  *   §5.14 StartTransaction (response), §5.16 StopTransaction (response)
  * @description Multi-step integration tests crossing IncomingRequestService, RequestService,

@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP 2.0 integration (SetVariables → GetVariables consistency)
+ * @file Tests for OCPP 2.0 integration
  * @description Verifies that SetVariables and GetVariables produce consistent results
  */
 

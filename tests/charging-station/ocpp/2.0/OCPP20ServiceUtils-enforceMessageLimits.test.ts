@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP20ServiceUtils.enforceMessageLimits
+ * @file Tests for OCPP20ServiceUtils message limits enforcement
  * @description Verifies message limit enforcement logic for OCPP 2.0 payloads
  */
 

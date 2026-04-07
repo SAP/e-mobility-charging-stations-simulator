@@ -1,5 +1,5 @@
 /**
- * @file Tests for SignedMeterValueUtils
+ * @file Tests for OCPPSignedMeterValueUtils
  * @description Unit tests for PublicKeyWithSignedMeterValueEnumType and shouldIncludePublicKey helper
  */
 import assert from 'node:assert/strict'

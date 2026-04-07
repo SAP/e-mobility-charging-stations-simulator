@@ -1,5 +1,5 @@
 /**
- * @file ChargingStation Integration Tests
+ * @file Tests for ChargingStation integration
  * @description Integration test suite that verifies all ChargingStation test modules work together.
  *
  * Related domain-specific test files:

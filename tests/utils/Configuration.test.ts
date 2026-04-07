@@ -1,5 +1,5 @@
 /**
- * @file Tests for Configuration static class
+ * @file Tests for Configuration
  * @description Verifies configuration loading, section building, and deprecated key handling
  *
  * Covers:

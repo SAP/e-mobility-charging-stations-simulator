@@ -1,5 +1,5 @@
 /**
- * @file OCPP 1.6 MeterValues types test suite
+ * @file Tests for OCPP 1.6 MeterValues types
  * @description Tests for OCPP16MeterValueFormat enum and OCPP16SignedMeterValue interface
  */
 
