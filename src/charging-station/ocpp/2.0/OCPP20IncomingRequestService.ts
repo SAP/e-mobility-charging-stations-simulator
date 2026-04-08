@@ -34,6 +34,7 @@ import {
   type JsonType,
   LogStatusEnumType,
   MessageTriggerEnumType,
+  OCPP20AuthorizationStatusEnumType,
   type OCPP20BootNotificationRequest,
   type OCPP20BootNotificationResponse,
   type OCPP20CertificateSignedRequest,
@@ -882,12 +883,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
       const manager = authService.getLocalAuthListManager()
       if (manager == null) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: No local auth list manager, returning Failed`
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: No local auth list manager available`
         )
         return {
           status: OCPP20SendLocalListStatusEnumType.Failed,
-          statusInfo: { reasonCode: ReasonCodeEnumType.NotEnabled },
+          statusInfo: {
+            additionalInfo: 'Local auth list manager unavailable',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
         }
       }
       if (commandPayload.versionNumber <= 0) {
@@ -923,7 +927,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               : undefined,
           identifier: item.idToken.idToken,
           metadata: { idTokenType: item.idToken.type },
-          status: item.idTokenInfo?.status ?? 'Invalid',
+          status: item.idTokenInfo?.status ?? OCPP20AuthorizationStatusEnumType.Invalid,
         }))
         await manager.setEntries(entries, versionNumber)
       } else {

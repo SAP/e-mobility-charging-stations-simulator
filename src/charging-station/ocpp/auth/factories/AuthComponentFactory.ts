@@ -8,14 +8,9 @@ import type {
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPError } from '../../../../exception/index.js'
-import {
-  ErrorType,
-  OCPP16StandardParametersKey,
-  OCPP20ComponentName,
-  OCPPVersion,
-} from '../../../../types/index.js'
+import { ErrorType, OCPP16StandardParametersKey, OCPPVersion } from '../../../../types/index.js'
 import { Constants, convertToIntOrNaN } from '../../../../utils/index.js'
-import { buildConfigKey, getConfigurationKey } from '../../../ConfigurationKeyUtils.js'
+import { getConfigurationKey } from '../../../ConfigurationKeyUtils.js'
 import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
@@ -223,12 +218,7 @@ export class AuthComponentFactory {
         OCPP16StandardParametersKey.LocalAuthListMaxLength
       )
     } else {
-      // 'Entries' is the LocalAuthListCtrlr variable for total storage capacity.
-      // Not in OCPP 2.0 variable name enums (ItemsPerMessage is the per-message limit, not capacity).
-      configKey = getConfigurationKey(
-        chargingStation,
-        buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Entries')
-      )
+      return undefined
     }
     if (configKey?.value != null) {
       const parsed = convertToIntOrNaN(configKey.value)

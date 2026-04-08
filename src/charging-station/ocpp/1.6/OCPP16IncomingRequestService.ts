@@ -1530,7 +1530,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               : undefined,
           identifier: item.idTag,
           parentId: item.idTagInfo?.parentIdTag,
-          status: item.idTagInfo?.status ?? 'Invalid',
+          status: item.idTagInfo?.status ?? OCPP16AuthorizationStatus.INVALID,
         }))
         await manager.setEntries(entries, listVersion)
       } else {
