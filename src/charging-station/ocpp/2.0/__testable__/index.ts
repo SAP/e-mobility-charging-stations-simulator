@@ -152,6 +152,10 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation
   ) => Promise<OCPP20GetLocalListVersionResponse>
 
+  /**
+   * Handles OCPP 2.0.1 GetLog request from central system.
+   * Accepts log upload and simulates upload lifecycle.
+   */
   handleRequestGetLog: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetLogRequest
@@ -198,6 +202,10 @@ export interface TestableOCPP20IncomingRequestService {
     commandPayload: OCPP20SendLocalListRequest
   ) => Promise<OCPP20SendLocalListResponse>
 
+  /**
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
+   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected.
+   */
   handleRequestSetNetworkProfile: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetNetworkProfileRequest

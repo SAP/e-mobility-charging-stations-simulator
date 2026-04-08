@@ -72,19 +72,27 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
    * @throws {Error} if maxEntries is set and adding new entries would exceed the limit
    */
   public applyDifferentialUpdate (entries: DifferentialAuthEntry[], version: number): Promise<void> {
+    if (this.maxEntries != null) {
+      let netNewCount = 0
+      for (const entry of entries) {
+        if (entry.status != null && !this.entries.has(entry.identifier)) {
+          netNewCount++
+        }
+        if (entry.status == null && this.entries.has(entry.identifier)) {
+          netNewCount--
+        }
+      }
+      if (this.entries.size + netNewCount > this.maxEntries) {
+        return Promise.reject(
+          new Error(
+            `${moduleName}: Cannot apply differential update — would exceed maximum capacity of ${String(this.maxEntries)} entries`
+          )
+        )
+      }
+    }
+
     for (const entry of entries) {
       if (entry.status != null) {
-        if (
-          this.maxEntries != null &&
-          !this.entries.has(entry.identifier) &&
-          this.entries.size >= this.maxEntries
-        ) {
-          return Promise.reject(
-            new Error(
-              `${moduleName}: Cannot add entry '${truncateId(entry.identifier)}' — maximum capacity of ${String(this.maxEntries)} entries reached`
-            )
-          )
-        }
         this.entries.set(entry.identifier, entry as LocalAuthEntry)
       } else {
         this.entries.delete(entry.identifier)

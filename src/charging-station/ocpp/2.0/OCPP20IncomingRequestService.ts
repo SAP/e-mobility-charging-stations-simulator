@@ -880,6 +880,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           statusInfo: { reasonCode: ReasonCodeEnumType.NotEnabled },
         }
       }
+      if (commandPayload.versionNumber <= 0) {
+        return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      }
       const manager = authService.getLocalAuthListManager()
       if (manager == null) {
         logger.info(

@@ -12,7 +12,6 @@ import {
   ErrorType,
   OCPP16StandardParametersKey,
   OCPP20ComponentName,
-  OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../types/index.js'
 import { Constants, convertToIntOrNaN } from '../../../../utils/index.js'
@@ -224,12 +223,11 @@ export class AuthComponentFactory {
         OCPP16StandardParametersKey.LocalAuthListMaxLength
       )
     } else {
+      // 'Entries' is the LocalAuthListCtrlr variable for total storage capacity.
+      // Not in OCPP 2.0 variable name enums (ItemsPerMessage is the per-message limit, not capacity).
       configKey = getConfigurationKey(
         chargingStation,
-        buildConfigKey(
-          OCPP20ComponentName.LocalAuthListCtrlr,
-          OCPP20RequiredVariableName.ItemsPerMessage
-        )
+        buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Entries')
       )
     }
     if (configKey?.value != null) {

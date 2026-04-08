@@ -251,5 +251,32 @@ await describe('InMemoryLocalAuthListManager', async () => {
 
       assert.strictEqual(result?.status, 'Blocked')
     })
+
+    await it('should not partially mutate on capacity error in applyDifferentialUpdate', async () => {
+      const limitedManager = new InMemoryLocalAuthListManager(3)
+      await limitedManager.setEntries(
+        [createEntry('TAG001'), createEntry('TAG002'), createEntry('TAG003')],
+        1
+      )
+
+      await assert.rejects(
+        limitedManager.applyDifferentialUpdate(
+          [
+            { identifier: 'TAG004', status: 'Accepted' },
+            { identifier: 'TAG005', status: 'Accepted' },
+          ],
+          2
+        ),
+        { message: /maximum capacity of 3 entries/ }
+      )
+
+      const entries = await limitedManager.getAllEntries()
+      assert.strictEqual(entries.length, 3)
+      const identifiers = entries.map(e => e.identifier).sort()
+      assert.deepStrictEqual(identifiers, ['TAG001', 'TAG002', 'TAG003'])
+
+      const version = await limitedManager.getVersion()
+      assert.strictEqual(version, 1)
+    })
   })
 })
