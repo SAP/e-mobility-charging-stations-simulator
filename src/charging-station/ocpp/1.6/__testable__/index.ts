@@ -271,8 +271,7 @@ export function createTestableIncomingRequestService (
     handleRequestGetCompositeSchedule: serviceImpl.handleRequestGetCompositeSchedule.bind(service),
     handleRequestGetConfiguration: serviceImpl.handleRequestGetConfiguration.bind(service),
     handleRequestGetDiagnostics: serviceImpl.handleRequestGetDiagnostics.bind(service),
-    handleRequestGetLocalListVersion:
-      serviceImpl.handleRequestGetLocalListVersion.bind(service),
+    handleRequestGetLocalListVersion: serviceImpl.handleRequestGetLocalListVersion.bind(service),
     handleRequestRemoteStartTransaction:
       serviceImpl.handleRequestRemoteStartTransaction.bind(service),
     handleRequestRemoteStopTransaction:

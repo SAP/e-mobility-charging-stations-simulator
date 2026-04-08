@@ -303,8 +303,9 @@ export class OCPP16Constants extends OCPPConstants {
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED: OCPP16SendLocalListResponse =
     Object.freeze({ status: OCPP16UpdateStatus.Accepted })
 
-  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED: OCPP16SendLocalListResponse =
-    Object.freeze({ status: OCPP16UpdateStatus.Failed })
+  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED: OCPP16SendLocalListResponse = Object.freeze(
+    { status: OCPP16UpdateStatus.Failed }
+  )
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED: OCPP16SendLocalListResponse =
     Object.freeze({ status: OCPP16UpdateStatus.NotSupported })

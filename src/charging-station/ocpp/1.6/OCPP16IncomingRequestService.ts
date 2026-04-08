@@ -1521,7 +1521,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (updateType === OCPP16UpdateType.Full) {
         const entries = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
-            item.idTagInfo?.expiryDate != null ? convertToDate(item.idTagInfo.expiryDate) : undefined,
+            item.idTagInfo?.expiryDate != null
+              ? convertToDate(item.idTagInfo.expiryDate)
+              : undefined,
           identifier: item.idTag,
           parentId: item.idTagInfo?.parentIdTag,
           status: item.idTagInfo?.status ?? 'Invalid',
@@ -1530,7 +1532,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         const diffEntries: DifferentialAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
-            item.idTagInfo?.expiryDate != null ? convertToDate(item.idTagInfo.expiryDate) : undefined,
+            item.idTagInfo?.expiryDate != null
+              ? convertToDate(item.idTagInfo.expiryDate)
+              : undefined,
           identifier: item.idTag,
           parentId: item.idTagInfo?.parentIdTag,
           status: item.idTagInfo?.status,
