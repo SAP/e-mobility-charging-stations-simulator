@@ -1492,11 +1492,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-      const manager = authService.getLocalAuthListManager()
-      if (manager == null) {
+      if (!chargingStation.getLocalAuthListEnabled()) {
         return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
       }
-      if (!chargingStation.getLocalAuthListEnabled()) {
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
         return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
       }
       if (commandPayload.listVersion <= 0) {

@@ -73,16 +73,19 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
    */
   public applyDifferentialUpdate (entries: DifferentialAuthEntry[], version: number): Promise<void> {
     if (this.maxEntries != null) {
-      let netNewCount = 0
+      const newIdentifiers = new Set<string>()
+      const removedIdentifiers = new Set<string>()
       for (const entry of entries) {
         if (entry.status != null && !this.entries.has(entry.identifier)) {
-          netNewCount++
-        }
-        if (entry.status == null && this.entries.has(entry.identifier)) {
-          netNewCount--
+          newIdentifiers.add(entry.identifier)
+          removedIdentifiers.delete(entry.identifier)
+        } else if (entry.status == null && this.entries.has(entry.identifier)) {
+          removedIdentifiers.add(entry.identifier)
+          newIdentifiers.delete(entry.identifier)
         }
       }
-      if (this.entries.size + netNewCount > this.maxEntries) {
+      const netNew = newIdentifiers.size - removedIdentifiers.size
+      if (this.entries.size + netNew > this.maxEntries) {
         return Promise.reject(
           new Error(
             `${moduleName}: Cannot apply differential update — would exceed maximum capacity of ${String(this.maxEntries)} entries`
@@ -93,7 +96,7 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
 
     for (const entry of entries) {
       if (entry.status != null) {
-        this.entries.set(entry.identifier, entry as LocalAuthEntry)
+        this.entries.set(entry.identifier, { ...entry, status: entry.status })
       } else {
         this.entries.delete(entry.identifier)
         logger.debug(
