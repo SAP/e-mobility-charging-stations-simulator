@@ -398,6 +398,12 @@ export interface OCPPAuthService {
   getConfiguration(): AuthConfiguration
 
   /**
+   * Get the local authorization list manager
+   * @returns Local authorization list manager or undefined if not enabled
+   */
+  getLocalAuthListManager(): LocalAuthListManager | undefined
+
+  /**
    * Get authentication statistics
    */
   getStats(): AuthStats

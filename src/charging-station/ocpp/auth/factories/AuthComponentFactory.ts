@@ -13,6 +13,7 @@ import { Constants } from '../../../../utils/index.js'
 import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
+import { InMemoryLocalAuthListManager } from '../cache/InMemoryLocalAuthListManager.js'
 import { CertificateAuthStrategy } from '../strategies/CertificateAuthStrategy.js'
 import { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 import { RemoteAuthStrategy } from '../strategies/RemoteAuthStrategy.js'
@@ -93,23 +94,21 @@ export class AuthComponentFactory {
   }
 
   /**
-   * Create local auth list manager (delegated to service implementation)
-   *
-   * TODO: Implement concrete LocalAuthListManager for OCPP 1.6 §3.5 and OCPP 2.0.1 §C13/C14
-   * compliance. Until implemented, LocalAuthStrategy operates with cache and offline
-   * fallback only. The OCPP 1.6 §3.5.3 guard in RemoteAuthStrategy (skip caching for
-   * local-list identifiers) is inactive without a manager.
-   * @param chargingStation - Charging station instance (unused, reserved for future use)
-   * @param config - Authentication configuration (unused, reserved for future use)
-   * @returns Always undefined as manager creation is not yet implemented
+   * Create local auth list manager
+   * @param chargingStation - Charging station instance (reserved for future use)
+   * @param config - Authentication configuration controlling local auth list behavior
+   * @returns In-memory local auth list manager if enabled, undefined otherwise
    */
   static createLocalAuthListManager (
     chargingStation: ChargingStation,
     config: AuthConfiguration
-  ): undefined {
-    // Manager creation is delegated to OCPPAuthServiceImpl
-    // This method exists for API completeness
-    return undefined
+  ): LocalAuthListManager | undefined {
+    if (!config.localAuthListEnabled) {
+      return undefined
+    }
+
+    // TODO: read maxEntries from config when LocalAuthListMaxLength is available
+    return new InMemoryLocalAuthListManager()
   }
 
   /**

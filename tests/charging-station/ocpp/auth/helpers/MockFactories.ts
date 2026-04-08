@@ -127,6 +127,7 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
       /* empty */
     },
     getConfiguration: () => ({}) as AuthConfiguration,
+    getLocalAuthListManager: () => undefined,
     getStats: () => ({
       avgResponseTime: 0,
       cacheHitRate: 0,

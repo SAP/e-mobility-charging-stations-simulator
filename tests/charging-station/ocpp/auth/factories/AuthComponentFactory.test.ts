@@ -2,7 +2,7 @@
  * @file Tests for AuthComponentFactory
  * @description Unit tests for authentication component factory
  */
-/* eslint-disable @typescript-eslint/no-confusing-void-expression */
+
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
@@ -93,7 +93,7 @@ await describe('AuthComponentFactory', async () => {
   })
 
   await describe('createLocalAuthListManager', async () => {
-    await it('should return undefined (delegated to service)', () => {
+    await it('should create local auth list manager when enabled', () => {
       const { station: chargingStation } = createMockChargingStation()
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
@@ -101,6 +101,23 @@ await describe('AuthComponentFactory', async () => {
         authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: true,
+        localPreAuthorize: false,
+        offlineAuthorizationEnabled: false,
+      }
+
+      const result = AuthComponentFactory.createLocalAuthListManager(chargingStation, config)
+
+      assert.notStrictEqual(result, undefined)
+    })
+
+    await it('should return undefined when local auth list disabled', () => {
+      const { station: chargingStation } = createMockChargingStation()
+      const config: AuthConfiguration = {
+        allowOfflineTxForUnknownId: false,
+        authorizationCacheEnabled: false,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
+        certificateAuthEnabled: false,
+        localAuthListEnabled: false,
         localPreAuthorize: false,
         offlineAuthorizationEnabled: false,
       }
