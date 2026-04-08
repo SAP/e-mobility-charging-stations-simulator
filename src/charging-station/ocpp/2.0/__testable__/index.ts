@@ -31,6 +31,7 @@ import type {
   OCPP20GetBaseReportResponse,
   OCPP20GetInstalledCertificateIdsRequest,
   OCPP20GetInstalledCertificateIdsResponse,
+  OCPP20GetLocalListVersionResponse,
   OCPP20GetLogRequest,
   OCPP20GetLogResponse,
   OCPP20GetTransactionStatusRequest,
@@ -46,6 +47,8 @@ import type {
   OCPP20RequestStopTransactionResponse,
   OCPP20ResetRequest,
   OCPP20ResetResponse,
+  OCPP20SendLocalListRequest,
+  OCPP20SendLocalListResponse,
   OCPP20SetNetworkProfileRequest,
   OCPP20SetNetworkProfileResponse,
   OCPP20SetVariablesRequest,
@@ -145,10 +148,10 @@ export interface TestableOCPP20IncomingRequestService {
     commandPayload: OCPP20GetInstalledCertificateIdsRequest
   ) => Promise<OCPP20GetInstalledCertificateIdsResponse>
 
-  /**
-   * Handles OCPP 2.0.1 GetLog request from central system.
-   * Accepts log upload and simulates upload lifecycle.
-   */
+  handleRequestGetLocalListVersion: (
+    chargingStation: ChargingStation
+  ) => Promise<OCPP20GetLocalListVersionResponse>
+
   handleRequestGetLog: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetLogRequest
@@ -190,10 +193,11 @@ export interface TestableOCPP20IncomingRequestService {
     commandPayload: OCPP20ResetRequest
   ) => Promise<OCPP20ResetResponse>
 
-  /**
-   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
-   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected.
-   */
+  handleRequestSendLocalList: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SendLocalListRequest
+  ) => Promise<OCPP20SendLocalListResponse>
+
   handleRequestSetNetworkProfile: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetNetworkProfileRequest
@@ -281,11 +285,13 @@ export function createTestableIncomingRequestService (
     handleRequestGetBaseReport: serviceImpl.handleRequestGetBaseReport.bind(service),
     handleRequestGetInstalledCertificateIds:
       serviceImpl.handleRequestGetInstalledCertificateIds.bind(service),
+    handleRequestGetLocalListVersion: serviceImpl.handleRequestGetLocalListVersion.bind(service),
     handleRequestGetLog: serviceImpl.handleRequestGetLog.bind(service),
     handleRequestGetTransactionStatus: serviceImpl.handleRequestGetTransactionStatus.bind(service),
     handleRequestGetVariables: serviceImpl.handleRequestGetVariables.bind(service),
     handleRequestInstallCertificate: serviceImpl.handleRequestInstallCertificate.bind(service),
     handleRequestReset: serviceImpl.handleRequestReset.bind(service),
+    handleRequestSendLocalList: serviceImpl.handleRequestSendLocalList.bind(service),
     handleRequestSetNetworkProfile: serviceImpl.handleRequestSetNetworkProfile.bind(service),
     handleRequestSetVariables: serviceImpl.handleRequestSetVariables.bind(service),
     handleRequestStartTransaction: serviceImpl.handleRequestStartTransaction.bind(service),

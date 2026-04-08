@@ -62,6 +62,7 @@ import {
   type OCPP20GetBaseReportResponse,
   type OCPP20GetInstalledCertificateIdsRequest,
   type OCPP20GetInstalledCertificateIdsResponse,
+  type OCPP20GetLocalListVersionResponse,
   type OCPP20GetLogRequest,
   type OCPP20GetLogResponse,
   type OCPP20GetTransactionStatusRequest,
@@ -96,6 +97,9 @@ import {
   type OCPP20ResetResponse,
   type OCPP20SecurityEventNotificationRequest,
   type OCPP20SecurityEventNotificationResponse,
+  type OCPP20SendLocalListRequest,
+  type OCPP20SendLocalListResponse,
+  OCPP20SendLocalListStatusEnumType,
   type OCPP20SetNetworkProfileRequest,
   type OCPP20SetNetworkProfileResponse,
   type OCPP20SetVariablesRequest,
@@ -108,6 +112,7 @@ import {
   OCPP20TriggerReasonEnumType,
   type OCPP20UnlockConnectorRequest,
   type OCPP20UnlockConnectorResponse,
+  OCPP20UpdateEnumType,
   type OCPP20UpdateFirmwareRequest,
   type OCPP20UpdateFirmwareResponse,
   OCPP20VendorVariableName,
@@ -149,6 +154,9 @@ import {
 import {
   AuthContext,
   AuthorizationStatus,
+  type DifferentialAuthEntry,
+  InMemoryLocalAuthListManager,
+  type LocalAuthEntry,
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
 } from '../auth/index.js'
@@ -284,6 +292,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.toRequestHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
       ],
       [
+        OCPP20IncomingRequestCommand.GET_LOCAL_LIST_VERSION,
+        this.toRequestHandler(this.handleRequestGetLocalListVersion.bind(this)),
+      ],
+      [
         OCPP20IncomingRequestCommand.GET_LOG,
         this.toRequestHandler(this.handleRequestGetLog.bind(this)),
       ],
@@ -310,6 +322,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.RESET,
         this.toRequestHandler(this.handleRequestReset.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.SEND_LOCAL_LIST,
+        this.toRequestHandler(this.handleRequestSendLocalList.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
@@ -800,6 +816,127 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         error
       )
       return OCPP20Constants.OCPP_RESPONSE_REJECTED
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 GetLocalListVersion request.
+   * Returns the current version number of the local authorization list.
+   * Per D01.FR.03: Returns 0 when local auth list is not enabled or not available.
+   * @param chargingStation - The charging station instance
+   * @returns Promise resolving to GetLocalListVersionResponse
+   */
+  protected async handleRequestGetLocalListVersion (
+    chargingStation: ChargingStation
+  ): Promise<OCPP20GetLocalListVersionResponse> {
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const config = authService.getConfiguration()
+      if (!config.localAuthListEnabled) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Local auth list disabled, returning version 0`
+        )
+        return { versionNumber: 0 }
+      }
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: No local auth list manager, returning version 0`
+        )
+        return { versionNumber: 0 }
+      }
+      const version = await manager.getVersion()
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Returning version ${version.toString()}`
+      )
+      return { versionNumber: version }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Error getting version:`,
+        error
+      )
+      return { versionNumber: 0 }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 SendLocalList request.
+   * Applies full or differential updates to the local authorization list.
+   * Per D02.FR.01: Returns Failed if LocalAuthListCtrlr is not enabled.
+   * @param chargingStation - The charging station instance
+   * @param commandPayload - SendLocalList request payload
+   * @returns Promise resolving to SendLocalListResponse
+   */
+  protected async handleRequestSendLocalList (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SendLocalListRequest
+  ): Promise<OCPP20SendLocalListResponse> {
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const config = authService.getConfiguration()
+      if (!config.localAuthListEnabled) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list disabled, returning Failed`
+        )
+        return {
+          status: OCPP20SendLocalListStatusEnumType.Failed,
+          statusInfo: { reasonCode: ReasonCodeEnumType.NotEnabled },
+        }
+      }
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: No local auth list manager, returning Failed`
+        )
+        return {
+          status: OCPP20SendLocalListStatusEnumType.Failed,
+          statusInfo: { reasonCode: ReasonCodeEnumType.NotEnabled },
+        }
+      }
+
+      if (!(manager instanceof InMemoryLocalAuthListManager)) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Manager does not support batch operations`
+        )
+        return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      }
+
+      const { localAuthorizationList, updateType, versionNumber } = commandPayload
+
+      if (updateType === OCPP20UpdateEnumType.Full) {
+        const entries: LocalAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
+          expiryDate:
+            item.idTokenInfo?.cacheExpiryDateTime != null
+              ? convertToDate(item.idTokenInfo.cacheExpiryDateTime)
+              : undefined,
+          identifier: item.idToken.idToken,
+          metadata: { idTokenType: item.idToken.type },
+          status: item.idTokenInfo?.status ?? 'Invalid',
+        }))
+        await manager.setEntries(entries, versionNumber)
+      } else {
+        const diffEntries: DifferentialAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
+          expiryDate:
+            item.idTokenInfo?.cacheExpiryDateTime != null
+              ? convertToDate(item.idTokenInfo.cacheExpiryDateTime)
+              : undefined,
+          identifier: item.idToken.idToken,
+          metadata: { idTokenType: item.idToken.type },
+          status: item.idTokenInfo?.status,
+        }))
+        await manager.applyDifferentialUpdate(diffEntries, versionNumber)
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${versionNumber.toString()}`
+      )
+      return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Error updating local auth list:`,
+        error
+      )
+      return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
     }
   }
 

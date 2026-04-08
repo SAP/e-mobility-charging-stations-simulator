@@ -29,6 +29,7 @@
               },
               "status": {
                 "type": "string",
+                "additionalProperties": false,
                 "enum": ["Accepted", "Blocked", "Expired", "Invalid", "ConcurrentTx"]
               }
             },
@@ -42,6 +43,7 @@
     },
     "updateType": {
       "type": "string",
+      "additionalProperties": false,
       "enum": ["Differential", "Full"]
     }
   },
