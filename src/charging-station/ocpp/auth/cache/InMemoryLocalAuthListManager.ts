@@ -148,6 +148,8 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
    * @throws {Error} if maxEntries is set and the entries array exceeds the limit
    */
   public setEntries (entries: LocalAuthEntry[], version: number): Promise<void> {
+    // Conservative check: uses array length rather than unique identifiers count,
+    // as OCPP messages should not contain duplicate entries per spec
     if (this.maxEntries != null && entries.length > this.maxEntries) {
       return Promise.reject(
         new Error(

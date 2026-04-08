@@ -1248,7 +1248,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
       }
       return { listVersion: await manager.getVersion() }
-    } catch {
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Error getting version:`,
+        error
+      )
       return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
     }
   }
@@ -1550,7 +1554,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${String(listVersion)}`
       )
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
-    } catch {
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Error updating local auth list:`,
+        error
+      )
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
     }
   }
