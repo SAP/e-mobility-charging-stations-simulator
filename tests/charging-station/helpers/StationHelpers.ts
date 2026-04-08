@@ -510,7 +510,12 @@ export function createMockChargingStation (
       return heartbeatInterval * 1000 // Return in ms
     },
     getLocalAuthListEnabled (): boolean {
-      return false // Default to false in mock
+      const key = this.ocppConfiguration.configurationKey?.find(
+        (k: { key: string }) =>
+          k.key === 'LocalAuthListEnabled' || k.key === 'LocalAuthListCtrlr.Enabled'
+      )
+      if (key?.value == null) return false
+      return key.value === 'true' || key.value === '1'
     },
     getNumberOfConnectors (): number {
       return this.iterateConnectors(true).reduce(count => count + 1, 0)

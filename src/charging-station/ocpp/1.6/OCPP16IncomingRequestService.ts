@@ -109,6 +109,7 @@ import {
   Configuration,
   convertToDate,
   convertToInt,
+  convertToIntOrNaN,
   ensureError,
   formatDurationMilliSeconds,
   handleIncomingRequestError,
@@ -1489,34 +1490,34 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
     }
-    const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-    const manager = authService.getLocalAuthListManager()
-    if (manager == null) {
-      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
-    }
-    const localAuthListEnabled = getConfigurationKey(
-      chargingStation,
-      OCPP16StandardParametersKey.LocalAuthListEnabled
-    )
-    if (localAuthListEnabled?.value === 'false') {
-      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
-    }
-    if (commandPayload.listVersion <= 0) {
-      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
-    }
-    const sendLocalListMaxLength = getConfigurationKey(
-      chargingStation,
-      OCPP16StandardParametersKey.SendLocalListMaxLength
-    )
-    if (
-      sendLocalListMaxLength?.value != null &&
-      commandPayload.localAuthorizationList != null &&
-      commandPayload.localAuthorizationList.length > Number.parseInt(sendLocalListMaxLength.value)
-    ) {
-      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
-    }
-    const { listVersion, localAuthorizationList, updateType } = commandPayload
     try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+      }
+      if (!chargingStation.getLocalAuthListEnabled()) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+      }
+      if (commandPayload.listVersion <= 0) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      }
+      const sendLocalListMaxLength = getConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.SendLocalListMaxLength
+      )
+      if (sendLocalListMaxLength?.value != null) {
+        const maxLength = convertToIntOrNaN(sendLocalListMaxLength.value)
+        if (
+          Number.isInteger(maxLength) &&
+          maxLength > 0 &&
+          commandPayload.localAuthorizationList != null &&
+          commandPayload.localAuthorizationList.length > maxLength
+        ) {
+          return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+        }
+      }
+      const { listVersion, localAuthorizationList, updateType } = commandPayload
       if (updateType === OCPP16UpdateType.Full) {
         const entries = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
@@ -1545,13 +1546,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         }))
         await manager.applyDifferentialUpdate(diffEntries, listVersion)
       }
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${String(listVersion)}`
+      )
+      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
     } catch {
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
     }
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${String(listVersion)}`
-    )
-    return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
   }
 
   private handleRequestSetChargingProfile (

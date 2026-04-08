@@ -32,6 +32,27 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
   let originalGetInstance: typeof OCPPAuthServiceFactory.getInstance
 
+  /**
+   * Enable the local auth list on the mock station by adding the configuration key.
+   * @param enabled - Whether to enable or disable the local auth list
+   */
+  function setLocalAuthListEnabled (enabled: boolean): void {
+    station.ocppConfiguration ??= { configurationKey: [] }
+    station.ocppConfiguration.configurationKey ??= []
+    const key = station.ocppConfiguration.configurationKey.find(
+      k => k.key === 'LocalAuthListCtrlr.Enabled'
+    )
+    if (key != null) {
+      key.value = String(enabled)
+    } else {
+      station.ocppConfiguration.configurationKey.push({
+        key: 'LocalAuthListCtrlr.Enabled',
+        readonly: false,
+        value: String(enabled),
+      })
+    }
+  }
+
   beforeEach(() => {
     const { station: mockStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -47,6 +68,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     const incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
     originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
+    setLocalAuthListEnabled(true)
   })
 
   afterEach(() => {
@@ -75,6 +97,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     })
 
     await it('should return version 0 when local auth list disabled', async () => {
+      setLocalAuthListEnabled(false)
       const mockAuthService = {
         getConfiguration: () => ({ localAuthListEnabled: false }),
         getLocalAuthListManager: () => undefined,
@@ -202,6 +225,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     })
 
     await it('should return Failed when disabled (with statusInfo)', async () => {
+      setLocalAuthListEnabled(false)
       const mockAuthService = {
         getConfiguration: () => ({ localAuthListEnabled: false }),
         getLocalAuthListManager: () => undefined,

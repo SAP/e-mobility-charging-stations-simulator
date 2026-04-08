@@ -830,8 +830,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20GetLocalListVersionResponse> {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-      const config = authService.getConfiguration()
-      if (!config.localAuthListEnabled) {
+      if (!chargingStation.getLocalAuthListEnabled()) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Local auth list disabled, returning version 0`
         )
@@ -872,8 +871,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20SendLocalListResponse> {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-      const config = authService.getConfiguration()
-      if (!config.localAuthListEnabled) {
+      if (!chargingStation.getLocalAuthListEnabled()) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list disabled, returning Failed`
         )
@@ -902,12 +900,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           OCPP20RequiredVariableName.ItemsPerMessage
         )
       )
-      if (
-        itemsPerMessageKey?.value != null &&
-        localAuthorizationList != null &&
-        localAuthorizationList.length > Number.parseInt(itemsPerMessageKey.value)
-      ) {
-        return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      if (itemsPerMessageKey?.value != null) {
+        const itemsPerMessage = convertToIntOrNaN(itemsPerMessageKey.value)
+        if (
+          Number.isInteger(itemsPerMessage) &&
+          itemsPerMessage > 0 &&
+          localAuthorizationList != null &&
+          localAuthorizationList.length > itemsPerMessage
+        ) {
+          return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+        }
       }
 
       if (updateType === OCPP20UpdateEnumType.Full) {
