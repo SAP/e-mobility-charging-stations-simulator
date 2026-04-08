@@ -25,6 +25,7 @@ import {
   OCPPVersion,
   RegistrationStatusEnumType,
 } from '../../../src/types/index.js'
+import { convertToBoolean } from '../../../src/utils/index.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CHARGING_STATION_HASH_ID,
@@ -514,8 +515,7 @@ export function createMockChargingStation (
         (k: { key: string }) =>
           k.key === 'LocalAuthListEnabled' || k.key === 'LocalAuthListCtrlr.Enabled'
       )
-      if (key?.value == null) return false
-      return key.value === 'true' || key.value === '1'
+      return key?.value != null ? convertToBoolean(key.value) : false
     },
     getNumberOfConnectors (): number {
       return this.iterateConnectors(true).reduce(count => count + 1, 0)
