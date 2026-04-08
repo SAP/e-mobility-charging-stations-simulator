@@ -903,6 +903,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       const { localAuthorizationList, updateType, versionNumber } = commandPayload
 
+      const itemsPerMessageKey = getConfigurationKey(
+        chargingStation,
+        buildConfigKey(
+          OCPP20ComponentName.LocalAuthListCtrlr,
+          OCPP20RequiredVariableName.ItemsPerMessage
+        )
+      )
+      if (
+        itemsPerMessageKey?.value != null &&
+        localAuthorizationList != null &&
+        localAuthorizationList.length > Number.parseInt(itemsPerMessageKey.value)
+      ) {
+        return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      }
+
       if (updateType === OCPP20UpdateEnumType.Full) {
         const entries: LocalAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
@@ -915,6 +930,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }))
         await manager.setEntries(entries, versionNumber)
       } else {
+        // D02.FR.08: For differential updates, version must be greater than current
+        const currentVersion = await manager.getVersion()
+        if (versionNumber <= currentVersion) {
+          return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH
+        }
         const diffEntries: DifferentialAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
             item.idTokenInfo?.cacheExpiryDateTime != null

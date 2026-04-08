@@ -8,8 +8,15 @@ import type {
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPError } from '../../../../exception/index.js'
-import { ErrorType, OCPPVersion } from '../../../../types/index.js'
-import { Constants } from '../../../../utils/index.js'
+import {
+  ErrorType,
+  OCPP16StandardParametersKey,
+  OCPP20ComponentName,
+  OCPP20RequiredVariableName,
+  OCPPVersion,
+} from '../../../../types/index.js'
+import { Constants, convertToIntOrNaN } from '../../../../utils/index.js'
+import { buildConfigKey, getConfigurationKey } from '../../../ConfigurationKeyUtils.js'
 import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
@@ -107,8 +114,10 @@ export class AuthComponentFactory {
       return undefined
     }
 
-    // TODO: read maxEntries from config when LocalAuthListMaxLength is available
-    return new InMemoryLocalAuthListManager()
+    const maxEntries =
+      config.maxLocalAuthListEntries ??
+      AuthComponentFactory.readMaxLocalAuthListEntries(chargingStation)
+    return new InMemoryLocalAuthListManager(maxEntries)
   }
 
   /**
@@ -204,5 +213,31 @@ export class AuthComponentFactory {
    */
   static validateConfiguration (config: AuthConfiguration): void {
     AuthConfigValidator.validate(config)
+  }
+
+  private static readMaxLocalAuthListEntries (chargingStation: ChargingStation): number | undefined {
+    const ocppVersion = chargingStation.stationInfo?.ocppVersion
+    let configKey: ReturnType<typeof getConfigurationKey>
+    if (ocppVersion === OCPPVersion.VERSION_16) {
+      configKey = getConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.LocalAuthListMaxLength
+      )
+    } else {
+      configKey = getConfigurationKey(
+        chargingStation,
+        buildConfigKey(
+          OCPP20ComponentName.LocalAuthListCtrlr,
+          OCPP20RequiredVariableName.ItemsPerMessage
+        )
+      )
+    }
+    if (configKey?.value != null) {
+      const parsed = convertToIntOrNaN(configKey.value)
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        return parsed
+      }
+    }
+    return undefined
   }
 }

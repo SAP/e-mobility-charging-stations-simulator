@@ -1530,6 +1530,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         }))
         await manager.setEntries(entries, listVersion)
       } else {
+        // OCPP 1.6 §5.15: For differential updates, version must be greater than current
+        const currentVersion = await manager.getVersion()
+        if (listVersion <= currentVersion) {
+          return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH
+        }
         const diffEntries: DifferentialAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
           expiryDate:
             item.idTagInfo?.expiryDate != null

@@ -328,5 +328,65 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.NotSupported)
     })
+
+    await it('should return VersionMismatch for differential update with version <= current', async () => {
+      const { station, testableService } = context
+      enableLocalAuthListProfile(context)
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      setupMockAuthService(station, manager)
+
+      const request: OCPP16SendLocalListRequest = {
+        listVersion: 3,
+        localAuthorizationList: [
+          { idTag: 'TAG-002', idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } },
+        ],
+        updateType: OCPP16UpdateType.Differential,
+      }
+
+      const response = await testableService.handleRequestSendLocalList(station, request)
+
+      assert.strictEqual(response.status, OCPP16UpdateStatus.VersionMismatch)
+    })
+
+    await it('should return VersionMismatch for differential update with version equal to current', async () => {
+      const { station, testableService } = context
+      enableLocalAuthListProfile(context)
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      setupMockAuthService(station, manager)
+
+      const request: OCPP16SendLocalListRequest = {
+        listVersion: 5,
+        localAuthorizationList: [
+          { idTag: 'TAG-002', idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } },
+        ],
+        updateType: OCPP16UpdateType.Differential,
+      }
+
+      const response = await testableService.handleRequestSendLocalList(station, request)
+
+      assert.strictEqual(response.status, OCPP16UpdateStatus.VersionMismatch)
+    })
+
+    await it('should accept Full update regardless of version (no VersionMismatch)', async () => {
+      const { station, testableService } = context
+      enableLocalAuthListProfile(context)
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      setupMockAuthService(station, manager)
+
+      const request: OCPP16SendLocalListRequest = {
+        listVersion: 3,
+        localAuthorizationList: [
+          { idTag: 'TAG-002', idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } },
+        ],
+        updateType: OCPP16UpdateType.Full,
+      }
+
+      const response = await testableService.handleRequestSendLocalList(station, request)
+
+      assert.strictEqual(response.status, OCPP16UpdateStatus.Accepted)
+    })
   })
 })

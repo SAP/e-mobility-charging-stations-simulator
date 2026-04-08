@@ -408,5 +408,80 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
       assert.notStrictEqual(entry, undefined)
       assert.ok(entry?.expiryDate instanceof Date)
     })
+
+    await it('should return VersionMismatch for differential update with version < current', async () => {
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
+      const mockAuthService = {
+        getConfiguration: () => ({ localAuthListEnabled: true }),
+        getLocalAuthListManager: () => manager,
+      }
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): typeof mockAuthService => mockAuthService,
+      })
+
+      const response = await testableService.handleRequestSendLocalList(station, {
+        localAuthorizationList: [
+          {
+            idToken: { idToken: 'NEW_TOKEN', type: OCPP20IdTokenEnumType.ISO14443 },
+            idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted },
+          },
+        ],
+        updateType: OCPP20UpdateEnumType.Differential,
+        versionNumber: 3,
+      })
+
+      assert.strictEqual(response.status, OCPP20SendLocalListStatusEnumType.VersionMismatch)
+    })
+
+    await it('should return VersionMismatch for differential update with version equal to current', async () => {
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
+      const mockAuthService = {
+        getConfiguration: () => ({ localAuthListEnabled: true }),
+        getLocalAuthListManager: () => manager,
+      }
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): typeof mockAuthService => mockAuthService,
+      })
+
+      const response = await testableService.handleRequestSendLocalList(station, {
+        localAuthorizationList: [
+          {
+            idToken: { idToken: 'NEW_TOKEN', type: OCPP20IdTokenEnumType.ISO14443 },
+            idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted },
+          },
+        ],
+        updateType: OCPP20UpdateEnumType.Differential,
+        versionNumber: 5,
+      })
+
+      assert.strictEqual(response.status, OCPP20SendLocalListStatusEnumType.VersionMismatch)
+    })
+
+    await it('should accept Full update regardless of version (no VersionMismatch)', async () => {
+      const manager = new InMemoryLocalAuthListManager()
+      await manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
+      const mockAuthService = {
+        getConfiguration: () => ({ localAuthListEnabled: true }),
+        getLocalAuthListManager: () => manager,
+      }
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): typeof mockAuthService => mockAuthService,
+      })
+
+      const response = await testableService.handleRequestSendLocalList(station, {
+        localAuthorizationList: [
+          {
+            idToken: { idToken: 'NEW_TOKEN', type: OCPP20IdTokenEnumType.ISO14443 },
+            idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted },
+          },
+        ],
+        updateType: OCPP20UpdateEnumType.Full,
+        versionNumber: 3,
+      })
+
+      assert.strictEqual(response.status, OCPP20SendLocalListStatusEnumType.Accepted)
+    })
   })
 })
