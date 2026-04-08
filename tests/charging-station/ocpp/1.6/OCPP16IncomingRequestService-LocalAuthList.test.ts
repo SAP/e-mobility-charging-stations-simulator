@@ -12,9 +12,7 @@ import type {
   LocalAuthListManager,
   OCPPAuthService,
 } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
-import type {
-  OCPP16SendLocalListRequest,
-} from '../../../../src/types/index.js'
+import type { OCPP16SendLocalListRequest } from '../../../../src/types/index.js'
 
 import { InMemoryLocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/cache/InMemoryLocalAuthListManager.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
@@ -57,25 +55,15 @@ function createMockAuthService (manager: LocalAuthListManager | undefined): OCPP
 /**
  * @param context - Test context with station and service
  */
-function enableLocalAuthListProfile (
-  context: OCPP16IncomingRequestTestContext
-): void {
+function enableLocalAuthListProfile (context: OCPP16IncomingRequestTestContext): void {
   const { station } = context
   upsertConfigurationKey(
     station,
     OCPP16StandardParametersKey.SupportedFeatureProfiles,
     'Core,LocalAuthListManagement'
   )
-  upsertConfigurationKey(
-    station,
-    OCPP16StandardParametersKey.LocalAuthListEnabled,
-    'true'
-  )
-  upsertConfigurationKey(
-    station,
-    OCPP16StandardParametersKey.SendLocalListMaxLength,
-    '20'
-  )
+  upsertConfigurationKey(station, OCPP16StandardParametersKey.LocalAuthListEnabled, 'true')
+  upsertConfigurationKey(station, OCPP16StandardParametersKey.SendLocalListMaxLength, '20')
 }
 
 /**
@@ -120,11 +108,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return -1 when feature profile disabled', async () => {
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
       const response = await testableService.handleRequestGetLocalListVersion(station)
 
@@ -145,10 +129,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries(
-        [{ identifier: 'TAG-001', status: 'Accepted' }],
-        5
-      )
+      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
       setupMockAuthService(station, manager)
 
       const response = await testableService.handleRequestGetLocalListVersion(station)
@@ -220,11 +201,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return NotSupported when feature profile disabled', async () => {
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
       const request: OCPP16SendLocalListRequest = {
         listVersion: 1,
@@ -316,11 +293,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
     await it('should return Failed when list exceeds SendLocalListMaxLength', async () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SendLocalListMaxLength,
-        '1'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SendLocalListMaxLength, '1')
       const manager = new InMemoryLocalAuthListManager()
       setupMockAuthService(station, manager)
 
@@ -341,11 +314,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
     await it('should return NotSupported when LocalAuthListEnabled is false', async () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.LocalAuthListEnabled,
-        'false'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.LocalAuthListEnabled, 'false')
       const manager = new InMemoryLocalAuthListManager()
       setupMockAuthService(station, manager)
 
