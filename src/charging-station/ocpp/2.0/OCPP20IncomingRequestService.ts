@@ -155,7 +155,6 @@ import {
   AuthContext,
   AuthorizationStatus,
   type DifferentialAuthEntry,
-  InMemoryLocalAuthListManager,
   type LocalAuthEntry,
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
@@ -892,13 +891,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           status: OCPP20SendLocalListStatusEnumType.Failed,
           statusInfo: { reasonCode: ReasonCodeEnumType.NotEnabled },
         }
-      }
-
-      if (!(manager instanceof InMemoryLocalAuthListManager)) {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Manager does not support batch operations`
-        )
-        return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
       }
 
       const { localAuthorizationList, updateType, versionNumber } = commandPayload

@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { DifferentialAuthEntry } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryLocalAuthListManager.js'
+import type { DifferentialAuthEntry } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 import type { LocalAuthEntry } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { InMemoryLocalAuthListManager } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryLocalAuthListManager.js'
@@ -236,12 +236,9 @@ await describe('InMemoryLocalAuthListManager', async () => {
       await limitedManager.addEntry(createEntry('tag-001'))
       await limitedManager.addEntry(createEntry('tag-002'))
 
-      assert.throws(
-        () => {
-          void limitedManager.addEntry(createEntry('tag-003'))
-        },
-        { message: /maximum capacity of 2 entries reached/ }
-      )
+      await assert.rejects(limitedManager.addEntry(createEntry('tag-003')), {
+        message: /maximum capacity of 2 entries reached/,
+      })
     })
 
     await it('should not block updates to existing entries', async () => {

@@ -329,6 +329,10 @@ export const createMockLocalAuthListManager = (
     new Promise<void>(resolve => {
       resolve()
     }),
+  applyDifferentialUpdate: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
   clearAll: () =>
     new Promise<void>(resolve => {
       resolve()
@@ -346,6 +350,10 @@ export const createMockLocalAuthListManager = (
       resolve(1)
     }),
   removeEntry: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  setEntries: () =>
     new Promise<void>(resolve => {
       resolve()
     }),

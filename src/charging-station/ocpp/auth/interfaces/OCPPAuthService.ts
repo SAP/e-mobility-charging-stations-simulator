@@ -254,6 +254,27 @@ export interface CertificateInfo {
 }
 
 /**
+ * Entry used in differential update operations.
+ *
+ * When `status` is defined, the entry is added or updated in the list.
+ * When `status` is `undefined`, the entry is removed from the list.
+ * This models the OCPP behavior where absent idTagInfo (1.6) or
+ * absent idTokenInfo (2.0) signals removal.
+ */
+export interface DifferentialAuthEntry {
+  /** Optional expiry date */
+  expiryDate?: Date
+  /** Identifier value */
+  identifier: string
+  /** Entry metadata */
+  metadata?: Record<string, unknown>
+  /** Optional parent identifier */
+  parentId?: string
+  /** Authorization status — undefined signals removal */
+  status?: string
+}
+
+/**
  * Supporting types for interfaces
  */
 export interface LocalAuthEntry {
@@ -284,6 +305,14 @@ export interface LocalAuthListManager {
   addEntry(entry: LocalAuthEntry): Promise<void>
 
   /**
+   * Apply a differential update to the list
+   * Entries with status are added/updated; entries without status are removed
+   * @param entries - Differential entries to apply
+   * @param version - New list version number
+   */
+  applyDifferentialUpdate(entries: DifferentialAuthEntry[], version: number): Promise<void>
+
+  /**
    * Clear all entries from the local authorization list
    */
   clearAll(): Promise<void>
@@ -310,6 +339,13 @@ export interface LocalAuthListManager {
    * @param identifier - Identifier to remove
    */
   removeEntry(identifier: string): Promise<void>
+
+  /**
+   * Replace all entries with a new set (Full update)
+   * @param entries - New entries for the list
+   * @param version - New list version number
+   */
+  setEntries(entries: LocalAuthEntry[], version: number): Promise<void>
 
   /**
    * Update list version

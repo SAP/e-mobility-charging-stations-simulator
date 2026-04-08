@@ -248,7 +248,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
       assert.strictEqual(response.status, OCPP16UpdateStatus.Failed)
     })
 
-    await it('should return NotSupported when manager not instanceof InMemoryLocalAuthListManager', async () => {
+    await it('should return NotSupported when manager is undefined', async () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       setupMockAuthService(station, undefined)

@@ -119,12 +119,7 @@ import {
   sleep,
   truncateId,
 } from '../../../utils/index.js'
-import {
-  AuthContext,
-  type DifferentialAuthEntry,
-  InMemoryLocalAuthListManager,
-  OCPPAuthServiceFactory,
-} from '../auth/index.js'
+import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -1245,12 +1240,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
     }
-    const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
-    const manager = authService.getLocalAuthListManager()
-    if (manager == null) {
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
+      }
+      return { listVersion: await manager.getVersion() }
+    } catch {
       return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
     }
-    return { listVersion: await manager.getVersion() }
   }
 
   /**
@@ -1490,12 +1489,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
     }
-    if (commandPayload.listVersion <= 0) {
-      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
-    }
     const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
     const manager = authService.getLocalAuthListManager()
-    if (!(manager instanceof InMemoryLocalAuthListManager)) {
+    if (manager == null) {
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
     }
     const localAuthListEnabled = getConfigurationKey(
@@ -1504,6 +1500,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     )
     if (localAuthListEnabled?.value === 'false') {
       return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+    }
+    if (commandPayload.listVersion <= 0) {
+      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
     }
     const sendLocalListMaxLength = getConfigurationKey(
       chargingStation,
