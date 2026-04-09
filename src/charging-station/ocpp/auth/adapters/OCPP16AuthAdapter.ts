@@ -8,7 +8,7 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { getConfigurationKey } from '../../../../charging-station/ConfigurationKeyUtils.js'
+import { getConfigurationKey } from '../../../../charging-station/index.js'
 import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,

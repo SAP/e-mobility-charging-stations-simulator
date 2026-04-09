@@ -20,13 +20,13 @@ import {
   type VariableType,
 } from '../../../types/index.js'
 import { Constants, convertToIntOrNaN, isEmpty, logger } from '../../../utils/index.js'
-import { type ChargingStation } from '../../ChargingStation.js'
 import {
   addConfigurationKey,
   buildConfigKey,
+  type ChargingStation,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from '../../ConfigurationKeyUtils.js'
+} from '../../index.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import {
   applyPostProcess,

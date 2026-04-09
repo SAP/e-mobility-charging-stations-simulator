@@ -1,6 +1,6 @@
 import { millisecondsToSeconds } from 'date-fns'
 
-import type { ChargingStation } from '../../ChargingStation.js'
+import type { ChargingStation } from '../../index.js'
 
 import {
   AttributeEnumType,
@@ -1239,18 +1239,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'DisablePostAuthorize',
   },
-  [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Entries')]: {
-    component: OCPP20ComponentName.LocalAuthListCtrlr,
-    dataType: DataEnumType.integer,
-    defaultValue: '0',
-    description: 'Amount of IdTokens currently in the Local Authorization List',
-    min: 0,
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Volatile,
-    required: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Entries',
-  },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, 'Storage')]: {
     characteristics: {
       maxLimit: 1048576, // 1MB default
@@ -1292,6 +1280,18 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.Enabled,
+  },
+  [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Entries)]: {
+    component: OCPP20ComponentName.LocalAuthListCtrlr,
+    dataType: DataEnumType.integer,
+    defaultValue: '0',
+    description: 'Amount of IdTokens currently in the Local Authorization List',
+    min: 0,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Volatile,
+    required: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Entries,
   },
   [buildRegistryKey(
     OCPP20ComponentName.LocalAuthListCtrlr,

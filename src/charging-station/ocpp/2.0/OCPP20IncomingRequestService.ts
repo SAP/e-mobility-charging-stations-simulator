@@ -146,12 +146,14 @@ import {
   truncateId,
   validateUUID,
 } from '../../../utils/index.js'
-import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
+  buildConfigKey,
+  getConfigurationKey,
   hasPendingReservation,
   hasPendingReservations,
   resetConnectorStatus,
-} from '../../Helpers.js'
+  setConfigurationKeyValue,
+} from '../../index.js'
 import {
   AuthContext,
   AuthorizationStatus,
@@ -950,6 +952,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${versionNumber.toString()}`
+      )
+      setConfigurationKeyValue(
+        chargingStation,
+        buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Entries),
+        manager.getAllEntries().length.toString()
       )
       return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
     } catch (error) {

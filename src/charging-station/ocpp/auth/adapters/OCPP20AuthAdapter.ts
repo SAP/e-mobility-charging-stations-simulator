@@ -14,7 +14,6 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { OCPP20ServiceUtils } from '../../2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
@@ -24,6 +23,7 @@ import {
   OCPPVersion,
 } from '../../../../types/index.js'
 import { getErrorMessage, isEmpty, logger, truncateId } from '../../../../utils/index.js'
+import { OCPP20ServiceUtils } from '../../index.js'
 import {
   AuthContext,
   AuthenticationMethod,

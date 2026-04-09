@@ -51,7 +51,7 @@ import {
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
-import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../../index.js'
 import {
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
