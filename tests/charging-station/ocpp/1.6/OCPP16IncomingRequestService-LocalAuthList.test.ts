@@ -95,44 +95,44 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
   // =========================================================================
 
   await describe('handleRequestGetLocalListVersion', async () => {
-    await it('should return 0 for empty list', async () => {
+    await it('should return 0 for empty list', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
       setupMockAuthService(station, manager)
 
-      const response = await testableService.handleRequestGetLocalListVersion(station)
+      const response = testableService.handleRequestGetLocalListVersion(station)
 
       assert.strictEqual(response.listVersion, 0)
     })
 
-    await it('should return -1 when feature profile disabled', async () => {
+    await it('should return -1 when feature profile disabled', () => {
       const { station, testableService } = context
       upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
-      const response = await testableService.handleRequestGetLocalListVersion(station)
+      const response = testableService.handleRequestGetLocalListVersion(station)
 
       assert.strictEqual(response.listVersion, -1)
     })
 
-    await it('should return -1 when manager undefined', async () => {
+    await it('should return -1 when manager undefined', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       setupMockAuthService(station, undefined)
 
-      const response = await testableService.handleRequestGetLocalListVersion(station)
+      const response = testableService.handleRequestGetLocalListVersion(station)
 
       assert.strictEqual(response.listVersion, -1)
     })
 
-    await it('should return current version after update', async () => {
+    await it('should return current version after update', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
       setupMockAuthService(station, manager)
 
-      const response = await testableService.handleRequestGetLocalListVersion(station)
+      const response = testableService.handleRequestGetLocalListVersion(station)
 
       assert.strictEqual(response.listVersion, 5)
     })
@@ -143,7 +143,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
   // =========================================================================
 
   await describe('handleRequestSendLocalList', async () => {
-    await it('should accept Full update and replace list', async () => {
+    await it('should accept Full update and replace list', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
@@ -158,19 +158,19 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
-      assert.strictEqual(await manager.getVersion(), 1)
-      const entries = await manager.getAllEntries()
+      assert.strictEqual(manager.getVersion(), 1)
+      const entries = manager.getAllEntries()
       assert.strictEqual(entries.length, 2)
     })
 
-    await it('should accept Differential update with adds and removes', async () => {
+    await it('should accept Differential update with adds and removes', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries(
+      manager.setEntries(
         [
           { identifier: 'TAG-001', status: 'Accepted' },
           { identifier: 'TAG-002', status: 'Accepted' },
@@ -188,18 +188,18 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Differential,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
-      assert.strictEqual(await manager.getVersion(), 2)
-      const entry001 = await manager.getEntry('TAG-001')
+      assert.strictEqual(manager.getVersion(), 2)
+      const entry001 = manager.getEntry('TAG-001')
       assert.strictEqual(entry001, undefined)
-      const entry003 = await manager.getEntry('TAG-003')
+      const entry003 = manager.getEntry('TAG-003')
       assert.notStrictEqual(entry003, undefined)
       assert.strictEqual(entry003?.status, 'Accepted')
     })
 
-    await it('should return NotSupported when feature profile disabled', async () => {
+    await it('should return NotSupported when feature profile disabled', () => {
       const { station, testableService } = context
       upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
@@ -209,12 +209,12 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
-    await it('should return Failed with listVersion=-1', async () => {
+    await it('should return Failed with listVersion=-1', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
@@ -226,12 +226,12 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
-    await it('should return Failed with listVersion=0', async () => {
+    await it('should return Failed with listVersion=0', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
@@ -243,12 +243,12 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
-    await it('should return NotSupported when manager is undefined', async () => {
+    await it('should return NotSupported when manager is undefined', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       setupMockAuthService(station, undefined)
@@ -259,16 +259,16 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
-    await it('should accept Full update with empty list to clear all entries', async () => {
+    await it('should accept Full update with empty list to clear all entries', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries(
+      manager.setEntries(
         [
           { identifier: 'TAG-001', status: 'Accepted' },
           { identifier: 'TAG-002', status: 'Accepted' },
@@ -282,15 +282,15 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
-      assert.strictEqual(await manager.getVersion(), 2)
-      const entries = await manager.getAllEntries()
+      assert.strictEqual(manager.getVersion(), 2)
+      const entries = manager.getAllEntries()
       assert.strictEqual(entries.length, 0)
     })
 
-    await it('should return Failed when list exceeds SendLocalListMaxLength', async () => {
+    await it('should return Failed when list exceeds SendLocalListMaxLength', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       upsertConfigurationKey(station, OCPP16StandardParametersKey.SendLocalListMaxLength, '1')
@@ -306,12 +306,12 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
-    await it('should return NotSupported when LocalAuthListEnabled is false', async () => {
+    await it('should return NotSupported when LocalAuthListEnabled is false', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       upsertConfigurationKey(station, OCPP16StandardParametersKey.LocalAuthListEnabled, 'false')
@@ -324,16 +324,16 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
-    await it('should return VersionMismatch for differential update with version <= current', async () => {
+    await it('should return VersionMismatch for differential update with version <= current', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
       setupMockAuthService(station, manager)
 
       const request: OCPP16SendLocalListRequest = {
@@ -344,16 +344,16 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Differential,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.VERSION_MISMATCH)
     })
 
-    await it('should return VersionMismatch for differential update with version equal to current', async () => {
+    await it('should return VersionMismatch for differential update with version equal to current', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
       setupMockAuthService(station, manager)
 
       const request: OCPP16SendLocalListRequest = {
@@ -364,16 +364,16 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Differential,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.VERSION_MISMATCH)
     })
 
-    await it('should accept Full update regardless of version (no VersionMismatch)', async () => {
+    await it('should accept Full update regardless of version (no VersionMismatch)', () => {
       const { station, testableService } = context
       enableLocalAuthListProfile(context)
       const manager = new InMemoryLocalAuthListManager()
-      await manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
+      manager.setEntries([{ identifier: 'TAG-001', status: 'Accepted' }], 5)
       setupMockAuthService(station, manager)
 
       const request: OCPP16SendLocalListRequest = {
@@ -384,7 +384,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
         updateType: OCPP16UpdateType.Full,
       }
 
-      const response = await testableService.handleRequestSendLocalList(station, request)
+      const response = testableService.handleRequestSendLocalList(station, request)
 
       assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
     })

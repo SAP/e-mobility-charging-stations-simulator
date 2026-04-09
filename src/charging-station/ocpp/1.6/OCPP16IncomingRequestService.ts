@@ -1227,11 +1227,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
    * Handles OCPP 1.6 GetLocalListVersion request from central system.
    * Returns the version number of the local authorization list.
    * @param chargingStation - The charging station instance processing the request
-   * @returns Promise resolving to GetLocalListVersionResponse with list version
+   * @returns GetLocalListVersionResponse with list version
    */
-  private async handleRequestGetLocalListVersion (
+  private handleRequestGetLocalListVersion (
     chargingStation: ChargingStation
-  ): Promise<OCPP16GetLocalListVersionResponse> {
+  ): OCPP16GetLocalListVersionResponse {
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -1247,7 +1247,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (manager == null) {
         return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
       }
-      return { listVersion: await manager.getVersion() }
+      return { listVersion: manager.getVersion() }
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Error getting version:`,
@@ -1481,10 +1481,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
-  private async handleRequestSendLocalList (
+  private handleRequestSendLocalList (
     chargingStation: ChargingStation,
     commandPayload: OCPP16SendLocalListRequest
-  ): Promise<OCPP16SendLocalListResponse> {
+  ): OCPP16SendLocalListResponse {
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -1532,10 +1532,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           parentId: item.idTagInfo?.parentIdTag,
           status: item.idTagInfo?.status ?? OCPP16AuthorizationStatus.INVALID,
         }))
-        await manager.setEntries(entries, listVersion)
+        manager.setEntries(entries, listVersion)
       } else {
         // OCPP 1.6 §5.15: For differential updates, version must be greater than current
-        const currentVersion = await manager.getVersion()
+        const currentVersion = manager.getVersion()
         if (listVersion <= currentVersion) {
           return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH
         }
@@ -1548,7 +1548,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           parentId: item.idTagInfo?.parentIdTag,
           status: item.idTagInfo?.status,
         }))
-        await manager.applyDifferentialUpdate(diffEntries, listVersion)
+        manager.applyDifferentialUpdate(diffEntries, listVersion)
       }
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${String(listVersion)}`

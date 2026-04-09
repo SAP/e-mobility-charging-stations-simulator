@@ -55,6 +55,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration controlling local auth behavior
    * @returns Authorization result from local list, cache, or offline fallback; undefined if not found locally
    */
+  // eslint-disable-next-line @typescript-eslint/require-await -- Interface requires Promise return; implementation is synchronous
   public async authenticate (
     request: AuthRequest,
     config: AuthConfiguration
@@ -77,7 +78,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // 1. Try local authorization list first (highest priority)
       if (config.localAuthListEnabled && this.localAuthListManager) {
-        const localResult = await this.checkLocalAuthList(request, config)
+        const localResult = this.checkLocalAuthList(request, config)
         if (localResult) {
           logger.debug(`${moduleName}: Found in local auth list: ${localResult.status}`)
           this.stats.localListHits++
@@ -301,13 +302,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param identifier - Unique identifier string to look up
    * @returns True if the identifier exists in the local authorization list
    */
-  public async isInLocalList (identifier: string): Promise<boolean> {
+  public isInLocalList (identifier: string): boolean {
     if (!this.localAuthListManager) {
       return false
     }
 
     try {
-      const entry = await this.localAuthListManager.getEntry(identifier)
+      const entry = this.localAuthListManager.getEntry(identifier)
       return !!entry
     } catch (error) {
       const errorMessage = getErrorMessage(error)
@@ -374,16 +375,16 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration (unused in local list check)
    * @returns Authorization result from local list if found; undefined otherwise
    */
-  private async checkLocalAuthList (
+  private checkLocalAuthList (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     if (!this.localAuthListManager) {
       return undefined
     }
 
     try {
-      const entry = await this.localAuthListManager.getEntry(request.identifier.value)
+      const entry = this.localAuthListManager.getEntry(request.identifier.value)
       if (!entry) {
         return undefined
       }

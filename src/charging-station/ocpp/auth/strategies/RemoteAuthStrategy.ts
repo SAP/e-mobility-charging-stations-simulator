@@ -118,7 +118,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
         // NOTE: This guard is inactive until LocalAuthListManager is implemented.
         // When localAuthListManager is undefined, all results are cached unconditionally.
         if (this.authCache && config.localAuthListEnabled && this.localAuthListManager) {
-          const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
+          const isInLocalList = this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
             logger.debug(
               `${moduleName}: Skipping cache for local list identifier: '${truncateId(request.identifier.value)}'`

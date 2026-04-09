@@ -302,7 +302,7 @@ export interface LocalAuthListManager {
    * Add or update an entry in the local authorization list
    * @param entry - Authorization list entry
    */
-  addEntry(entry: LocalAuthEntry): Promise<void>
+  addEntry(entry: LocalAuthEntry): void
 
   /**
    * Apply a differential update to the list
@@ -310,47 +310,47 @@ export interface LocalAuthListManager {
    * @param entries - Differential entries to apply
    * @param version - New list version number
    */
-  applyDifferentialUpdate(entries: DifferentialAuthEntry[], version: number): Promise<void>
+  applyDifferentialUpdate(entries: DifferentialAuthEntry[], version: number): void
 
   /**
    * Clear all entries from the local authorization list
    */
-  clearAll(): Promise<void>
+  clearAll(): void
 
   /**
    * Get all entries (for synchronization)
    */
-  getAllEntries(): Promise<LocalAuthEntry[]>
+  getAllEntries(): LocalAuthEntry[]
 
   /**
    * Get an entry from the local authorization list
    * @param identifier - Identifier to look up
    * @returns Authorization entry or undefined if not found
    */
-  getEntry(identifier: string): Promise<LocalAuthEntry | undefined>
+  getEntry(identifier: string): LocalAuthEntry | undefined
 
   /**
    * Get list version/update count
    */
-  getVersion(): Promise<number>
+  getVersion(): number
 
   /**
    * Remove an entry from the local authorization list
    * @param identifier - Identifier to remove
    */
-  removeEntry(identifier: string): Promise<void>
+  removeEntry(identifier: string): void
 
   /**
    * Replace all entries with a new set (Full update)
    * @param entries - New entries for the list
    * @param version - New list version number
    */
-  setEntries(entries: LocalAuthEntry[], version: number): Promise<void>
+  setEntries(entries: LocalAuthEntry[], version: number): void
 
   /**
    * Update list version
    */
-  updateVersion(version: number): Promise<void>
+  updateVersion(version: number): void
 }
 
 /**

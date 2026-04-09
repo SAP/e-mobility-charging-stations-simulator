@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
-  LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -342,16 +341,9 @@ await describe('RemoteAuthStrategy', async () => {
       }
 
       mockLocalAuthListManager.getEntry = (identifier: string) =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          if (identifier === 'LOCAL_AUTH_TAG') {
-            resolve({
-              identifier: 'LOCAL_AUTH_TAG',
-              status: 'Active',
-            })
-          } else {
-            resolve(undefined)
-          }
-        })
+        identifier === 'LOCAL_AUTH_TAG'
+          ? { identifier: 'LOCAL_AUTH_TAG', status: 'Active' }
+          : undefined
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -372,10 +364,7 @@ await describe('RemoteAuthStrategy', async () => {
         cachedKey = key
       }
 
-      mockLocalAuthListManager.getEntry = () =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          resolve(undefined)
-        })
+      mockLocalAuthListManager.getEntry = () => undefined
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,

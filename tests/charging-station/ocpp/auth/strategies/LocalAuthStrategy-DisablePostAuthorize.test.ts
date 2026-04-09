@@ -87,13 +87,10 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   await describe('C14.FR.03 - local list post-authorize', async () => {
     await it('should accept non-Accepted local list token without re-auth when DisablePostAuthorize=true', async () => {
       const localListManager = createMockLocalAuthListManager({
-        getEntry: () =>
-          new Promise(resolve => {
-            resolve({
-              identifier: 'BLOCKED-TAG',
-              status: 'Blocked',
-            })
-          }),
+        getEntry: () => ({
+          identifier: 'BLOCKED-TAG',
+          status: 'Blocked',
+        }),
       })
       strategy = new LocalAuthStrategy(localListManager, undefined)
       const config = createTestAuthConfig({

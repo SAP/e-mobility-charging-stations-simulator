@@ -140,7 +140,7 @@ export interface TestableOCPP16IncomingRequestService {
 
   handleRequestGetLocalListVersion: (
     chargingStation: ChargingStation
-  ) => Promise<OCPP16GetLocalListVersionResponse>
+  ) => OCPP16GetLocalListVersionResponse
 
   /**
    * Handles OCPP 1.6 RemoteStartTransaction request from central system.
@@ -181,7 +181,7 @@ export interface TestableOCPP16IncomingRequestService {
   handleRequestSendLocalList: (
     chargingStation: ChargingStation,
     commandPayload: OCPP16SendLocalListRequest
-  ) => Promise<OCPP16SendLocalListResponse>
+  ) => OCPP16SendLocalListResponse
 
   /**
    * Handles OCPP 1.6 SetChargingProfile request from central system.

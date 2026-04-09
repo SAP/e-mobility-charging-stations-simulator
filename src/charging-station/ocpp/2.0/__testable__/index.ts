@@ -150,7 +150,7 @@ export interface TestableOCPP20IncomingRequestService {
 
   handleRequestGetLocalListVersion: (
     chargingStation: ChargingStation
-  ) => Promise<OCPP20GetLocalListVersionResponse>
+  ) => OCPP20GetLocalListVersionResponse
 
   /**
    * Handles OCPP 2.0.1 GetLog request from central system.
@@ -200,7 +200,7 @@ export interface TestableOCPP20IncomingRequestService {
   handleRequestSendLocalList: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SendLocalListRequest
-  ) => Promise<OCPP20SendLocalListResponse>
+  ) => OCPP20SendLocalListResponse
 
   /**
    * Handles OCPP 2.0.1 SetNetworkProfile request from central system.

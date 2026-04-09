@@ -824,11 +824,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * Returns the current version number of the local authorization list.
    * Per D01.FR.03: Returns 0 when local auth list is not enabled or not available.
    * @param chargingStation - The charging station instance
-   * @returns Promise resolving to GetLocalListVersionResponse
+   * @returns GetLocalListVersionResponse
    */
-  protected async handleRequestGetLocalListVersion (
+  protected handleRequestGetLocalListVersion (
     chargingStation: ChargingStation
-  ): Promise<OCPP20GetLocalListVersionResponse> {
+  ): OCPP20GetLocalListVersionResponse {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       if (!chargingStation.getLocalAuthListEnabled()) {
@@ -844,7 +844,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return { versionNumber: 0 }
       }
-      const version = await manager.getVersion()
+      const version = manager.getVersion()
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Returning version ${version.toString()}`
       )
@@ -864,12 +864,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * Per D02.FR.01: Returns Failed if LocalAuthListCtrlr is not enabled.
    * @param chargingStation - The charging station instance
    * @param commandPayload - SendLocalList request payload
-   * @returns Promise resolving to SendLocalListResponse
+   * @returns SendLocalListResponse
    */
-  protected async handleRequestSendLocalList (
+  protected handleRequestSendLocalList (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SendLocalListRequest
-  ): Promise<OCPP20SendLocalListResponse> {
+  ): OCPP20SendLocalListResponse {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       if (!chargingStation.getLocalAuthListEnabled()) {
@@ -929,10 +929,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           metadata: { idTokenType: item.idToken.type },
           status: item.idTokenInfo?.status ?? OCPP20AuthorizationStatusEnumType.Invalid,
         }))
-        await manager.setEntries(entries, versionNumber)
+        manager.setEntries(entries, versionNumber)
       } else {
         // D02.FR.08: For differential updates, version must be greater than current
-        const currentVersion = await manager.getVersion()
+        const currentVersion = manager.getVersion()
         if (versionNumber <= currentVersion) {
           return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH
         }
@@ -945,7 +945,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           metadata: { idTokenType: item.idToken.type },
           status: item.idTokenInfo?.status,
         }))
-        await manager.applyDifferentialUpdate(diffEntries, versionNumber)
+        manager.applyDifferentialUpdate(diffEntries, versionNumber)
       }
 
       logger.info(

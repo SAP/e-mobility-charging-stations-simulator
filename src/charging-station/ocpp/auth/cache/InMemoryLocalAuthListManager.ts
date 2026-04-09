@@ -42,19 +42,16 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
 
   /**
    * @param entry - Authorization list entry
-   * @returns Promise that resolves when the entry is added
    * @throws {Error} if maxEntries is set and adding a new entry would exceed the limit
    */
-  public addEntry (entry: LocalAuthEntry): Promise<void> {
+  public addEntry (entry: LocalAuthEntry): void {
     if (
       this.maxEntries != null &&
       !this.entries.has(entry.identifier) &&
       this.entries.size >= this.maxEntries
     ) {
-      return Promise.reject(
-        new Error(
-          `${moduleName}: Cannot add entry '${truncateId(entry.identifier)}' — maximum capacity of ${String(this.maxEntries)} entries reached`
-        )
+      throw new Error(
+        `${moduleName}: Cannot add entry '${truncateId(entry.identifier)}' — maximum capacity of ${String(this.maxEntries)} entries reached`
       )
     }
 
@@ -62,16 +59,14 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
     logger.debug(
       `${moduleName}: Added/updated entry for identifier: '${truncateId(entry.identifier)}'`
     )
-    return Promise.resolve()
   }
 
   /**
    * @param entries - Differential entries to apply
    * @param version - New list version number
-   * @returns Promise that resolves when the update is applied
    * @throws {Error} if maxEntries is set and adding new entries would exceed the limit
    */
-  public applyDifferentialUpdate (entries: DifferentialAuthEntry[], version: number): Promise<void> {
+  public applyDifferentialUpdate (entries: DifferentialAuthEntry[], version: number): void {
     if (this.maxEntries != null) {
       const newIdentifiers = new Set<string>()
       const removedIdentifiers = new Set<string>()
@@ -86,10 +81,8 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
       }
       const netNew = newIdentifiers.size - removedIdentifiers.size
       if (this.entries.size + netNew > this.maxEntries) {
-        return Promise.reject(
-          new Error(
-            `${moduleName}: Cannot apply differential update — would exceed maximum capacity of ${String(this.maxEntries)} entries`
-          )
+        throw new Error(
+          `${moduleName}: Cannot apply differential update — would exceed maximum capacity of ${String(this.maxEntries)} entries`
         )
       }
     }
@@ -109,52 +102,46 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
     logger.info(
       `${moduleName}: Applied differential update — ${String(entries.length)} entries processed, version=${String(version)}`
     )
-    return Promise.resolve()
   }
 
-  public clearAll (): Promise<void> {
+  public clearAll (): void {
     const count = this.entries.size
     this.entries.clear()
 
     logger.info(`${moduleName}: Cleared ${String(count)} entries`)
-    return Promise.resolve()
   }
 
-  public getAllEntries (): Promise<LocalAuthEntry[]> {
-    return Promise.resolve([...this.entries.values()])
+  public getAllEntries (): LocalAuthEntry[] {
+    return [...this.entries.values()]
   }
 
-  public getEntry (identifier: string): Promise<LocalAuthEntry | undefined> {
-    return Promise.resolve(this.entries.get(identifier))
+  public getEntry (identifier: string): LocalAuthEntry | undefined {
+    return this.entries.get(identifier)
   }
 
-  public getVersion (): Promise<number> {
-    return Promise.resolve(this.version)
+  public getVersion (): number {
+    return this.version
   }
 
-  public removeEntry (identifier: string): Promise<void> {
+  public removeEntry (identifier: string): void {
     const deleted = this.entries.delete(identifier)
 
     if (deleted) {
       logger.debug(`${moduleName}: Removed entry for identifier: '${truncateId(identifier)}'`)
     }
-    return Promise.resolve()
   }
 
   /**
    * @param entries - New entries for the list
    * @param version - New list version number
-   * @returns Promise that resolves when the entries are set
    * @throws {Error} if maxEntries is set and the entries array exceeds the limit
    */
-  public setEntries (entries: LocalAuthEntry[], version: number): Promise<void> {
+  public setEntries (entries: LocalAuthEntry[], version: number): void {
     // Conservative check: uses array length rather than unique identifiers count,
     // as OCPP messages should not contain duplicate entries per spec
     if (this.maxEntries != null && entries.length > this.maxEntries) {
-      return Promise.reject(
-        new Error(
-          `${moduleName}: Cannot set ${String(entries.length)} entries — maximum capacity of ${String(this.maxEntries)} entries exceeded`
-        )
+      throw new Error(
+        `${moduleName}: Cannot set ${String(entries.length)} entries — maximum capacity of ${String(this.maxEntries)} entries exceeded`
       )
     }
 
@@ -168,12 +155,10 @@ export class InMemoryLocalAuthListManager implements LocalAuthListManager {
     logger.info(
       `${moduleName}: Full update — ${String(entries.length)} entries set, version=${String(version)}`
     )
-    return Promise.resolve()
   }
 
-  public updateVersion (version: number): Promise<void> {
+  public updateVersion (version: number): void {
     this.version = version
     logger.debug(`${moduleName}: Version updated to ${String(version)}`)
-    return Promise.resolve()
   }
 }
