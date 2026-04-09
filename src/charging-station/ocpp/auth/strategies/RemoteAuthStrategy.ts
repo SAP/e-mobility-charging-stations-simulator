@@ -114,9 +114,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
         logger.debug(`${moduleName}: Remote authorization: ${result.status}`)
         this.stats.successfulRemoteAuth++
 
-        // Check if identifier is in Local Auth List — do not cache (OCPP 1.6 §3.5.3)
-        // NOTE: This guard is inactive until LocalAuthListManager is implemented.
-        // When localAuthListManager is undefined, all results are cached unconditionally.
+        // Skip caching for identifiers already in Local Auth List (OCPP 1.6 §3.5.3)
         if (this.authCache && config.localAuthListEnabled && this.localAuthListManager) {
           const isInLocalList = this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
