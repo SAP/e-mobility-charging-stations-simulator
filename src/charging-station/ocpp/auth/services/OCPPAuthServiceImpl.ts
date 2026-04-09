@@ -207,7 +207,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param request - Authorization request containing identifier, context, and options
    * @returns Promise resolving to the authorization result with status and metadata
    */
-  public async authorize (request: AuthRequest): Promise<AuthorizationResult> {
+  public authorize (request: AuthRequest): Promise<AuthorizationResult> {
     return this.authenticate(request)
   }
 
