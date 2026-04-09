@@ -319,7 +319,7 @@ export const createMockAuthServiceTestStation = (
 /**
  * Create a mock LocalAuthListManager for testing.
  * @param overrides - Partial LocalAuthListManager methods to override defaults
- * @returns Mock LocalAuthListManager with stubbed async methods
+ * @returns Mock LocalAuthListManager with stubbed methods
  */
 export const createMockLocalAuthListManager = (
   overrides?: Partial<LocalAuthListManager>

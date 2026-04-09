@@ -96,7 +96,7 @@ export class AuthComponentFactory {
 
   /**
    * Create local auth list manager
-   * @param chargingStation - Charging station instance (reserved for future use)
+   * @param chargingStation - Charging station instance used to read local auth list capacity from station configuration
    * @param config - Authentication configuration controlling local auth list behavior
    * @returns In-memory local auth list manager if enabled, undefined otherwise
    */
