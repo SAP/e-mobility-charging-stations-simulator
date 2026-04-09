@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
+import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
@@ -16,7 +17,9 @@ import {
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
   OCPP20AuthorizationStatusEnumType,
+  OCPP20ComponentName,
   OCPP20IdTokenEnumType,
+  OCPP20RequiredVariableName,
   OCPP20SendLocalListStatusEnumType,
   OCPP20UpdateEnumType,
   OCPPVersion,
@@ -26,6 +29,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   let station: ChargingStation
@@ -33,24 +37,15 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   let originalGetInstance: typeof OCPPAuthServiceFactory.getInstance
 
   /**
-   * Enable the local auth list on the mock station by adding the configuration key.
+   * Toggle the LocalAuthListCtrlr.Enabled configuration key on the mock station.
    * @param enabled - Whether to enable or disable the local auth list
    */
   function setLocalAuthListEnabled (enabled: boolean): void {
-    station.ocppConfiguration ??= { configurationKey: [] }
-    station.ocppConfiguration.configurationKey ??= []
-    const key = station.ocppConfiguration.configurationKey.find(
-      k => k.key === 'LocalAuthListCtrlr.Enabled'
+    upsertConfigurationKey(
+      station,
+      buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Enabled),
+      String(enabled)
     )
-    if (key != null) {
-      key.value = String(enabled)
-    } else {
-      station.ocppConfiguration.configurationKey.push({
-        key: 'LocalAuthListCtrlr.Enabled',
-        readonly: false,
-        value: String(enabled),
-      })
-    }
   }
 
   beforeEach(() => {
