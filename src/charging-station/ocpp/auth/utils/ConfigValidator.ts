@@ -42,6 +42,10 @@ function validate (config: AuthConfiguration): void {
     validateCacheConfig(config)
   }
 
+  if (config.localAuthListEnabled) {
+    validateLocalAuthListConfig(config)
+  }
+
   validateTimeout(config)
   validateOfflineConfig(config)
   checkAuthMethodsEnabled(config)
@@ -103,7 +107,13 @@ function validateCacheConfig (config: AuthConfiguration): void {
       )
     }
   }
+}
 
+/**
+ * Validate local auth list configuration values.
+ * @param config - Authentication configuration with local auth list settings
+ */
+function validateLocalAuthListConfig (config: AuthConfiguration): void {
   if (config.maxLocalAuthListEntries !== undefined) {
     if (!Number.isInteger(config.maxLocalAuthListEntries)) {
       throw new AuthenticationError(
