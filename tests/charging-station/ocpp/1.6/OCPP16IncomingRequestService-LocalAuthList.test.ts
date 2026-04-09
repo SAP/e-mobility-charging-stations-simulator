@@ -160,7 +160,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Accepted)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
       assert.strictEqual(await manager.getVersion(), 1)
       const entries = await manager.getAllEntries()
       assert.strictEqual(entries.length, 2)
@@ -190,7 +190,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Accepted)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
       assert.strictEqual(await manager.getVersion(), 2)
       const entry001 = await manager.getEntry('TAG-001')
       assert.strictEqual(entry001, undefined)
@@ -211,7 +211,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.NotSupported)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
     await it('should return Failed with listVersion=-1', async () => {
@@ -228,7 +228,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Failed)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
     await it('should return Failed with listVersion=0', async () => {
@@ -245,7 +245,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Failed)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
     await it('should return NotSupported when manager is undefined', async () => {
@@ -261,7 +261,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.NotSupported)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
     await it('should accept Full update with empty list to clear all entries', async () => {
@@ -284,7 +284,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Accepted)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
       assert.strictEqual(await manager.getVersion(), 2)
       const entries = await manager.getAllEntries()
       assert.strictEqual(entries.length, 0)
@@ -308,7 +308,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Failed)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.FAILED)
     })
 
     await it('should return NotSupported when LocalAuthListEnabled is false', async () => {
@@ -326,7 +326,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.NotSupported)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.NOT_SUPPORTED)
     })
 
     await it('should return VersionMismatch for differential update with version <= current', async () => {
@@ -346,7 +346,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.VersionMismatch)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.VERSION_MISMATCH)
     })
 
     await it('should return VersionMismatch for differential update with version equal to current', async () => {
@@ -366,7 +366,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.VersionMismatch)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.VERSION_MISMATCH)
     })
 
     await it('should accept Full update regardless of version (no VersionMismatch)', async () => {
@@ -386,7 +386,7 @@ await describe('OCPP16IncomingRequestService — LocalAuthList', async () => {
 
       const response = await testableService.handleRequestSendLocalList(station, request)
 
-      assert.strictEqual(response.status, OCPP16UpdateStatus.Accepted)
+      assert.strictEqual(response.status, OCPP16UpdateStatus.ACCEPTED)
     })
   })
 })

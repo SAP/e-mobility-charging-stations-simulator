@@ -57,10 +57,10 @@ export enum OCPP16UnlockStatus {
 }
 
 export enum OCPP16UpdateStatus {
-  Accepted = 'Accepted',
-  Failed = 'Failed',
-  NotSupported = 'NotSupported',
-  VersionMismatch = 'VersionMismatch',
+  ACCEPTED = 'Accepted',
+  FAILED = 'Failed',
+  NOT_SUPPORTED = 'NotSupported',
+  VERSION_MISMATCH = 'VersionMismatch',
 }
 
 export interface ChangeConfigurationResponse extends JsonObject {

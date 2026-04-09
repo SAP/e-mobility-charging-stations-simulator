@@ -301,15 +301,15 @@ export class OCPP16Constants extends OCPPConstants {
     Object.freeze({ listVersion: -1 })
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED: OCPP16SendLocalListResponse =
-    Object.freeze({ status: OCPP16UpdateStatus.Accepted })
+    Object.freeze({ status: OCPP16UpdateStatus.ACCEPTED })
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED: OCPP16SendLocalListResponse = Object.freeze(
-    { status: OCPP16UpdateStatus.Failed }
+    { status: OCPP16UpdateStatus.FAILED }
   )
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED: OCPP16SendLocalListResponse =
-    Object.freeze({ status: OCPP16UpdateStatus.NotSupported })
+    Object.freeze({ status: OCPP16UpdateStatus.NOT_SUPPORTED })
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH: OCPP16SendLocalListResponse =
-    Object.freeze({ status: OCPP16UpdateStatus.VersionMismatch })
+    Object.freeze({ status: OCPP16UpdateStatus.VERSION_MISMATCH })
 }
