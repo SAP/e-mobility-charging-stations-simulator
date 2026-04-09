@@ -35,15 +35,18 @@ from ocpp.v201.enums import (
     RequestStartStopStatusEnumType,
     ResetEnumType,
     ResetStatusEnumType,
+    SendLocalListStatusEnumType,
     SetNetworkProfileStatusEnumType,
     TransactionEventEnumType,
     TriggerMessageStatusEnumType,
     UnlockStatusEnumType,
+    UpdateEnumType,
     UpdateFirmwareStatusEnumType,
 )
 
 from server import (
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    DEFAULT_LOCAL_LIST_VERSION,
     DEFAULT_TOTAL_COST,
     FALLBACK_TRANSACTION_ID,
     MAX_REQUEST_ID,
@@ -213,6 +216,7 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         availability_status=OperationalStatusEnumType.operative,
         set_variables=None,
         get_variables=None,
+        local_list_tokens=None,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -358,9 +362,11 @@ class TestHandlerCoverage:
         "_send_customer_information",
         "_send_delete_certificate",
         "_send_get_installed_certificate_ids",
+        "_send_get_local_list_version",
         "_send_get_log",
         "_send_get_transaction_status",
         "_send_install_certificate",
+        "_send_send_local_list",
         "_send_set_network_profile",
         "_send_update_firmware",
     ]
@@ -1221,6 +1227,15 @@ class TestOutgoingCommands:
         assert isinstance(request, ocpp.v201.call.GetInstalledCertificateIds)
         assert isinstance(request.certificate_type, list)
 
+    async def test_send_get_local_list_version(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetLocalListVersion(version_number=5)
+        )
+        await command_charge_point._send_get_local_list_version()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetLocalListVersion)
+
     async def test_send_get_log(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.GetLog(
             status=LogStatusEnumType.accepted
@@ -1271,6 +1286,32 @@ class TestOutgoingCommands:
         assert isinstance(request, ocpp.v201.call.SetNetworkProfile)
         assert request.configuration_slot == 1
         assert isinstance(request.connection_data, dict)
+
+    async def test_send_send_local_list(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.SendLocalList(
+            status=SendLocalListStatusEnumType.accepted
+        )
+        await command_charge_point._send_send_local_list()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.SendLocalList)
+        assert request.version_number == DEFAULT_LOCAL_LIST_VERSION
+        assert request.update_type == UpdateEnumType.full
+        assert len(request.local_authorization_list) > 0
+
+    async def test_send_send_local_list_custom_tokens(self, command_charge_point):
+        command_charge_point._local_list_tokens = ["TOKEN_A", "TOKEN_B"]
+        command_charge_point.call.return_value = ocpp.v201.call_result.SendLocalList(
+            status=SendLocalListStatusEnumType.accepted
+        )
+        await command_charge_point._send_send_local_list()
+        request = command_charge_point.call.call_args[0][0]
+        assert len(request.local_authorization_list) == 2
+        tokens = [
+            entry["id_token"]["id_token"] for entry in request.local_authorization_list
+        ]
+        assert "TOKEN_A" in tokens
+        assert "TOKEN_B" in tokens
 
     async def test_send_update_firmware(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.UpdateFirmware(
@@ -1355,6 +1396,11 @@ class TestOutgoingCommands:
             "_send_set_network_profile",
             ocpp.v201.call_result.SetNetworkProfile,
             SetNetworkProfileStatusEnumType.rejected,
+        ),
+        (
+            "_send_send_local_list",
+            ocpp.v201.call_result.SendLocalList,
+            SendLocalListStatusEnumType.failed,
         ),
         (
             "_send_update_firmware",
