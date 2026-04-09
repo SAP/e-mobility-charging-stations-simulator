@@ -18,12 +18,14 @@ import type {
   StopTransactionReason,
 } from '../../../src/types/index.js'
 
+import { getConfigurationKey } from '../../../src/charging-station/index.js'
 import {
   AvailabilityType,
   ConnectorStatusEnum,
   CurrentType,
   OCPPVersion,
   RegistrationStatusEnumType,
+  StandardParametersKey,
 } from '../../../src/types/index.js'
 import { convertToBoolean } from '../../../src/utils/index.js'
 import {
@@ -511,9 +513,9 @@ export function createMockChargingStation (
       return heartbeatInterval * 1000 // Return in ms
     },
     getLocalAuthListEnabled (): boolean {
-      const key = this.ocppConfiguration.configurationKey?.find(
-        (k: { key: string }) =>
-          k.key === 'LocalAuthListEnabled' || k.key === 'LocalAuthListCtrlr.Enabled'
+      const key = getConfigurationKey(
+        this as unknown as ChargingStation,
+        StandardParametersKey.LocalAuthListEnabled
       )
       return key?.value != null ? convertToBoolean(key.value) : false
     },
