@@ -214,6 +214,7 @@ export const createMockOCPPAdapter = (
     value: typeof identifier === 'string' ? identifier : identifier.idToken,
   }),
   getConfigurationSchema: () => ({}),
+  getMaxLocalAuthListEntries: () => undefined,
   isRemoteAvailable: () => true,
   ocppVersion,
   validateConfiguration: (_config: AuthConfiguration) => true,

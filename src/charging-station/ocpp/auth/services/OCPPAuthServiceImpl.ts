@@ -33,7 +33,6 @@ import {
   type Identifier,
   IdentifierType,
 } from '../types/AuthTypes.js'
-import { AuthHelpers } from '../utils/AuthHelpers.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
 const moduleName = 'OCPPAuthServiceImpl'
@@ -375,6 +374,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    */
   public initialize (): void {
     this.initializeAdapter()
+    if (this.adapter != null) {
+      this.config.maxLocalAuthListEntries ??= this.adapter.getMaxLocalAuthListEntries()
+    }
     this.initializeStrategies()
   }
 
@@ -606,7 +608,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       localAuthListEnabled: true,
       localPreAuthorize: false,
       maxCacheEntries: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES,
-      maxLocalAuthListEntries: AuthHelpers.readMaxLocalAuthListEntries(this.chargingStation),
       ocppVersion: this.chargingStation.stationInfo?.ocppVersion,
       offlineAuthorizationEnabled: true,
       remoteAuthorization: true,

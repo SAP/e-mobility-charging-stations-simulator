@@ -394,6 +394,12 @@ export interface OCPPAuthAdapter<TVersionId = unknown> {
   getConfigurationSchema(): JsonObject
 
   /**
+   * Get the maximum number of entries allowed in the local auth list.
+   * @returns Maximum entries from station configuration, or undefined if not configured
+   */
+  getMaxLocalAuthListEntries(): number | undefined
+
+  /**
    * Check if remote authorization is available
    */
   isRemoteAvailable(): boolean
