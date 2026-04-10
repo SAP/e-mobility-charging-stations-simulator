@@ -61,23 +61,25 @@ src/
 
 ## Design Patterns
 
-| Pattern              | Where                                                           | Detail                                                          |
-| -------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- | ---------- |
-| Singleton            | Bootstrap, Configuration, PerformanceStatistics, UIClient (Vue) | Lazy `getInstance()`                                            |
-| Strategy             | Auth subsystem                                                  | Local/Remote/Certificate strategies with priority chain         |
-| Factory              | WorkerFactory, StorageFactory, AuthComponentFactory             | Create implementations from config                              |
-| EventEmitter         | ChargingStation, Bootstrap                                      | State change events                                             |
-| SRPC                 | UI WebSocket                                                    | `[uuid, procedureName, payload]` request/response correlation   |
-| Barrel exports       | All components                                                  | `index.ts` re-exports public API                                |
-| Discriminated unions | OCPP types                                                      | `BootNotificationRequest = OCPP16...                            | OCPP20...` |
-| `as const` merge     | OCPP enums                                                      | `ConnectorStatusEnum = { ...OCPP16..., ...OCPP20... } as const` |
+| Pattern              | Where                                                           | Detail                                                                 |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Singleton            | Bootstrap, Configuration, PerformanceStatistics, UIClient (Vue) | Lazy `getInstance()`                                                   |
+| Strategy             | Auth subsystem                                                  | Local/Remote/Certificate strategies with priority chain                |
+| Factory              | WorkerFactory, StorageFactory, AuthComponentFactory             | Create implementations from config                                     |
+| EventEmitter         | ChargingStation, Bootstrap                                      | State change events                                                    |
+| SRPC                 | UI WebSocket                                                    | `[uuid, procedureName, payload]` request/response correlation          |
+| Barrel exports       | All components                                                  | `index.ts` re-exports public API                                       |
+| Discriminated unions | OCPP types                                                      | `BootNotificationRequest = OCPP16BootNotificationRequest \| OCPP20...` |
+| `as const` merge     | OCPP enums                                                      | `ConnectorStatusEnum = { ...OCPP16..., ...OCPP20... } as const`        |
 
 ## Auth Subsystem (`ocpp/auth/`)
 
 - **OCPPAuthServiceImpl**: Strategy priority chain (local → remote → certificate)
-- **3 strategies**: LocalAuthStrategy (cache + local list), RemoteAuthStrategy (CSMS), CertificateAuthStrategy (X.509)
+- **3 strategies**: LocalAuthStrategy (cache + local auth list lookup), RemoteAuthStrategy (CSMS network calls), CertificateAuthStrategy (X.509)
 - **InMemoryAuthCache**: LRU with TTL, rate limiting, periodic cleanup
-- **AuthComponentFactory**: Creates adapters, strategies, caches with DI
+- **InMemoryLocalAuthListManager**: CSMS-managed authorization list with Full/Differential updates, version tracking, capacity limits
+- **AuthComponentFactory**: Creates adapters, strategies, caches, managers from config
+- **AuthHelpers**: Cross-version utility functions (TTL calculation, config key reading, result formatting)
 - **Version adapters**: OCPP16AuthAdapter, OCPP20AuthAdapter
 
 ## UI Server (`ui-server/`)
@@ -111,6 +113,18 @@ tests/
 | OCPP Server | Ubuntu, macOS, Windows | Python 3.12, 3.13       | Ubuntu + Python 3.13 |
 
 Gated steps (lint, typecheck, coverage, SonarCloud) run only on the gated platform. Build + test run on all platforms.
+
+## OCPP Specification Documents (`docs/`)
+
+```
+docs/
+├── ocpp16/                    # OCPP 1.6 specs, errata, security whitepaper, JSON schemas
+├── ocpp2/                     # OCPP 2.0.1 specs, test cases, certification profiles
+├── ocpp21/                    # OCPP 2.1 specs, errata, appendices
+└── signed_meter_values-v10-1.md
+```
+
+24 markdown files covering all supported OCPP versions. Authoritative spec references for implementing OCPP commands. Indexed in QMD as `ocpp-specs` collection (see `suggested_commands` memory for search commands).
 
 ## Key Dependencies
 
