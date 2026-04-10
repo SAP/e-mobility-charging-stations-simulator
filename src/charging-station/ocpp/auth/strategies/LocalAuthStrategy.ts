@@ -55,11 +55,10 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration controlling local auth behavior
    * @returns Authorization result from local list, cache, or offline fallback; undefined if not found locally
    */
-  // eslint-disable-next-line @typescript-eslint/require-await -- Interface requires Promise return; implementation is synchronous
-  public async authenticate (
+  public authenticate (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     if (!this.isInitialized) {
       throw new AuthenticationError(
         'LocalAuthStrategy not initialized',

@@ -123,12 +123,12 @@ export interface AuthStrategy {
    * Authenticate using this strategy
    * @param request - Authentication request
    * @param config - Current configuration
-   * @returns Promise resolving to authorization result, undefined if not handled
+   * @returns Authorization result, undefined if not handled
    */
   authenticate(
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined>
+  ): AuthorizationResult | Promise<AuthorizationResult | undefined> | undefined
 
   /**
    * Check if this strategy can handle the given request
