@@ -8,8 +8,11 @@ import { fileURLToPath } from 'node:url'
 
 import type { BootReasonEnumType, SigningMethodEnumType } from '../../types/index.js'
 
-import { buildConfigKey } from '../../charging-station/ConfigurationKeyUtils.js'
-import { type ChargingStation, getConfigurationKey } from '../../charging-station/index.js'
+import {
+  buildConfigKey,
+  type ChargingStation,
+  getConfigurationKey,
+} from '../../charging-station/index.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   type BootNotificationRequest,
