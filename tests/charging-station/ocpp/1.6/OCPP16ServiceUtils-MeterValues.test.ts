@@ -17,7 +17,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { createMeterValuesTemplate } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ServiceUtils — MeterValues', async () => {

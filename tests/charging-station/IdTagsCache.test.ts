@@ -21,7 +21,7 @@ import { getIdTagsFile } from '../../src/charging-station/Helpers.js'
 import { IdTagsCache } from '../../src/charging-station/IdTagsCache.js'
 import { IdTagDistribution } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from './ChargingStationTestUtils.js'
+import { createMockChargingStation } from './helpers/StationHelpers.js'
 
 const TEST_ID_TAGS = ['TAG-001', 'TAG-002', 'TAG-003']
 const TEST_ID_TAGS_FILE = 'test-idtags.json'

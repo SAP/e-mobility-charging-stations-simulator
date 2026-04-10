@@ -10,7 +10,7 @@ import type {
   OCPP20UnlockConnectorRequest,
   OCPP20UnlockConnectorResponse,
 } from '../../../../src/types/index.js'
-import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
+import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -23,7 +23,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 /**
  * Create a mock station suitable for UnlockConnector tests.

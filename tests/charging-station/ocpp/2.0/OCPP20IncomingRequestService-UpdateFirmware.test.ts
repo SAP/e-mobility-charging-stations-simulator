@@ -28,7 +28,7 @@ import {
   withMockTimers,
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
   createMockCertificateManager,
   createMockStationWithRequestTracking,

@@ -27,7 +27,7 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_PUBLIC_KEY_HEX } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { createMeterValuesTemplate, upsertConfigurationKey } from './OCPP16TestUtils.js'
 
 await describe('OCPP 1.6 — Signed MeterValues', async () => {

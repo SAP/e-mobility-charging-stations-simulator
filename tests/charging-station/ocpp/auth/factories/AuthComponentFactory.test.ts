@@ -12,7 +12,7 @@ import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/a
 import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { TEST_AUTHORIZATION_TIMEOUT_MS } from '../../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../../helpers/StationHelpers.js'
 
 await describe('AuthComponentFactory', async () => {
   afterEach(() => {

@@ -16,7 +16,7 @@ import {
   setToLocalStorage,
   useExecuteAction,
   validateUUID,
-} from '@/composables/Utils'
+} from '@/composables'
 
 import { toastMock } from '../setup'
 

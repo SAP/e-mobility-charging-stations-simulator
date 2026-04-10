@@ -10,8 +10,7 @@ import type { ChargingStationData } from '@/types'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import CSData from '@/components/charging-stations/CSData.vue'
-import { useUIClient } from '@/composables'
-import { EMPTY_VALUE_PLACEHOLDER } from '@/composables/Constants'
+import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
 import { OCPPVersion } from '@/types'
 
 import { toastMock } from '../setup'

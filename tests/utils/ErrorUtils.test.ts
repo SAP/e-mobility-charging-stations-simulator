@@ -24,7 +24,7 @@ import {
 } from '../../src/utils/ErrorUtils.js'
 import { logger } from '../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../charging-station/ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../charging-station/helpers/StationHelpers.js'
 import {
   createConsoleMocks,
   createLoggerMocks,

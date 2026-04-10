@@ -228,6 +228,22 @@ const TEST_STATION_NAME = 'CS-TEST-001'
 
 Available constants: `tests/charging-station/ChargingStationTestConstants.ts`
 
+### Direct Imports (No Re-Export Hubs)
+
+Import from the file that **defines** the symbol — never through an intermediate re-export file.
+
+```typescript
+// ✅ Good - Direct to defining module
+import { createMockChargingStation } from './helpers/StationHelpers.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { MockWebSocket } from './mocks/MockWebSocket.js'
+
+// ❌ Bad - Through re-export hub
+import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
+```
+
+**Exception**: `src/` barrel imports (e.g., `src/types/index.js`) are the public API of production modules — use them as-is.
+
 ---
 
 ## 7. Assertions

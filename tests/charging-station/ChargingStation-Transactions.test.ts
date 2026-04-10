@@ -16,7 +16,7 @@ import {
   withMockTimers,
 } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ID_TAG } from './ChargingStationTestConstants.js'
-import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Transaction Management', async () => {
   await describe('Transaction Query', async () => {

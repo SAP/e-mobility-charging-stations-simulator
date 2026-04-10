@@ -21,7 +21,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
   createOCPP20RequestTestContext,
   type TestableOCPP20RequestService,

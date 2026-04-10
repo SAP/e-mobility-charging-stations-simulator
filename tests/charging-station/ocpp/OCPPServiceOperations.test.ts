@@ -27,7 +27,7 @@ import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../helpers/StationHelpers.js'
 import {
   createMockAuthorizationResult,
   createMockAuthService,

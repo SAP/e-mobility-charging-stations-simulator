@@ -30,7 +30,7 @@ import {
   TEST_PUBLIC_KEY_HEX,
   TEST_TRANSACTION_ID_STRING,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 const energyTemplate: SampledValueTemplate = {
   measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,

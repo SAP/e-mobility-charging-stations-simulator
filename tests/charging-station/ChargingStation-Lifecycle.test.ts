@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Lifecycle', async () => {
   await describe('Start/Stop Operations', async () => {

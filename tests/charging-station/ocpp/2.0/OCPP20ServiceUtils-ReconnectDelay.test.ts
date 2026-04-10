@@ -19,7 +19,7 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 const DEFAULT_WAIT_MINIMUM_SECONDS = 30

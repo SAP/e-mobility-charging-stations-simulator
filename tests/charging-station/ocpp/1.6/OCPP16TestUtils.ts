@@ -43,7 +43,7 @@ import {
   createMockChargingStation,
   type MockChargingStation,
   type MockOCPPRequestService,
-} from '../../ChargingStationTestUtils.js'
+} from '../../helpers/StationHelpers.js'
 
 // ============================================================================
 // Test Context Types

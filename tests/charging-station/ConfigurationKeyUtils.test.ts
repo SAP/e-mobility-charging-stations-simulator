@@ -17,7 +17,7 @@ import {
 import { OCPP20ComponentName, OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from './ChargingStationTestUtils.js'
+import { createMockChargingStation } from './helpers/StationHelpers.js'
 
 const TEST_KEY_1 = 'TestKey1'
 const MIXED_CASE_KEY = 'MiXeDkEy'

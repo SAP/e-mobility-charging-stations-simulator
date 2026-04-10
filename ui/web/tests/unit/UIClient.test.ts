@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UIClient } from '@/composables/UIClient'
+import { UIClient } from '@/composables'
 import {
   AuthenticationType,
   OCPP20TransactionEventEnumType,

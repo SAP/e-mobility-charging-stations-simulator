@@ -27,7 +27,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
   resetLimits,
   resetReportingValueSize,

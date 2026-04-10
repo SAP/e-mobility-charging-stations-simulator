@@ -30,7 +30,7 @@ import { mock } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { MockChargingStationOptions } from '../charging-station/helpers/StationHelpers.js'
 
-import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../charging-station/helpers/StationHelpers.js'
 import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/MockCaches.js'
 
 /**

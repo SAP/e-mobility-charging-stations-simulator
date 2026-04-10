@@ -22,7 +22,7 @@ import {
 import {
   cleanupChargingStation,
   createMockChargingStation,
-} from '../charging-station/ChargingStationTestUtils.js'
+} from '../charging-station/helpers/StationHelpers.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('MessageChannelUtils', async () => {

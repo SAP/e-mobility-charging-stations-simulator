@@ -21,14 +21,9 @@ import {
   TEST_TRANSACTION_ENERGY_WH,
   TEST_TRANSACTION_ID,
 } from './ChargingStationTestConstants.js'
-import {
-  cleanupChargingStation,
-  createMockChargingStation,
-  MockIdTagsCache,
-  MockSharedLRUCache,
-  MockWebSocket,
-  WebSocketReadyState,
-} from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
+import { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
+import { MockWebSocket, WebSocketReadyState } from './mocks/MockWebSocket.js'
 
 await describe('ChargingStation', async () => {
   await describe('Test Utilities', async () => {

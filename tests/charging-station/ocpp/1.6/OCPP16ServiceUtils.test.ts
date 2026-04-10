@@ -39,7 +39,7 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 import { createCommandsSupport } from './OCPP16TestUtils.js'
 

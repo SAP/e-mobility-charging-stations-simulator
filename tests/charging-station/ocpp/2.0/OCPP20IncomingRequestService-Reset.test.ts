@@ -11,7 +11,7 @@ import type {
   OCPP20ResetResponse,
   Reservation,
 } from '../../../../src/types/index.js'
-import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
+import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'

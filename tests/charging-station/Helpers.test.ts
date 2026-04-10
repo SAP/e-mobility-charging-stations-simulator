@@ -42,7 +42,7 @@ import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.
 import {
   createMockChargingStation,
   createMockChargingStationTemplate,
-} from './ChargingStationTestUtils.js'
+} from './helpers/StationHelpers.js'
 
 await describe('Helpers', async () => {
   let chargingStationTemplate: ChargingStationTemplate

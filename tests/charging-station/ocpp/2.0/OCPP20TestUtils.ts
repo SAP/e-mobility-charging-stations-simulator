@@ -37,7 +37,7 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 import {
   createMockChargingStation,
   type MockChargingStation,
-} from '../../ChargingStationTestUtils.js'
+} from '../../helpers/StationHelpers.js'
 
 // ============================================================================
 // Testable Interfaces

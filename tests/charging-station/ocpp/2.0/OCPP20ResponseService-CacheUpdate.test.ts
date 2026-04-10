@@ -22,7 +22,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_TOKEN_ISO14443,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { getTestAuthCache } from '../auth/helpers/MockFactories.js'
 
 await describe('C10 - TransactionEventResponse Cache Update', async () => {

@@ -23,8 +23,8 @@ import { AutomaticTransactionGenerator } from '../../src/charging-station/Automa
 import { BaseError } from '../../src/exception/index.js'
 import { type StartTransactionResult } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
-import { flushMicrotasks } from '../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
+import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { createMockChargingStation } from './helpers/StationHelpers.js'
 
 type ConnectorStatus = ReturnType<AutomaticTransactionGenerator['connectorsStatus']['get']>
 

@@ -10,7 +10,7 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
-import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Configuration Management', async () => {
   // ===== B02/B03 BOOT NOTIFICATION BEHAVIOR TESTS =====

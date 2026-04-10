@@ -98,7 +98,7 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **Station factory**: `createMockChargingStation(options?)` returns `{ station, mocks }` with MockWebSocket, parentPortMessages, file system mocks
 - **Auth factories**: `createMockAuthRequest()`, `createMockAuthorizationResult()`, `createMockAuthService()` in `tests/charging-station/ocpp/auth/helpers/MockFactories.ts`
 - **Transaction setup**: `setupConnectorWithTransaction(station, connectorId, { transactionId, idTag? })`
-- **Re-export hub**: `tests/charging-station/ChargingStationTestUtils.ts` aggregates all test utilities
+- **Direct imports**: Test files import from the defining module, not through re-export hubs. `src/` barrels remain (public API)
 - **`__testable__` pattern**: `ocpp/1.6/__testable__/` and `ocpp/2.0/__testable__/` directories expose internal classes (e.g., `OCPP20VariableManagerTestable`, `OCPP20RequestServiceTestable`) for unit testing private internals. Import from `__testable__/index.ts` barrel in tests only
 
 ## Python Conventions (tests/ocpp-server/)

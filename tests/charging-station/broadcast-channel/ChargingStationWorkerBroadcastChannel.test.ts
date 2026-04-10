@@ -27,7 +27,7 @@ import {
 import { Constants } from '../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_TRANSACTION_ID_STRING } from '../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../helpers/StationHelpers.js'
 import { createMockStationWithRequestTracking } from '../ocpp/2.0/OCPP20TestUtils.js'
 
 // ============================================================================

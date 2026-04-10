@@ -8,8 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UIClient } from '@/composables'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
-import { useUIClient } from '@/composables'
-import { EMPTY_VALUE_PLACEHOLDER } from '@/composables/Constants'
+import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
 import { OCPP16ChargePointStatus } from '@/types'
 
 import { toastMock } from '../setup'

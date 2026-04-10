@@ -10,7 +10,7 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 import { RegistrationStatusEnumType, RequestCommand } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS } from './ChargingStationTestConstants.js'
-import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Resilience', async () => {
   await describe('Error Recovery and Resilience', async () => {

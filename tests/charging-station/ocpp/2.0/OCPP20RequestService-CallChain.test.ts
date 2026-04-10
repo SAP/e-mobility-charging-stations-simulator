@@ -13,7 +13,7 @@ import {
   createTestableRequestService,
   type SendMessageMock,
   type TestableOCPP20RequestService,
-} from '../../../../src/charging-station/ocpp/2.0/__testable__/OCPP20RequestServiceTestable.js'
+} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
   ConnectorStatusEnum,
   OCPP20ConnectorStatusEnumType,
@@ -27,7 +27,7 @@ import {
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestPayload → sendMessage', async () => {
   let service: TestableOCPP20RequestService

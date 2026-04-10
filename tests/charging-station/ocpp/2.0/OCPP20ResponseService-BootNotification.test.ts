@@ -15,7 +15,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
+import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -31,7 +31,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 /**
  * Create a mock station suitable for BootNotification response tests.

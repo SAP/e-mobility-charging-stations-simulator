@@ -32,7 +32,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 interface TestableOCPP20ResponseService {
   handleResponseTransactionEvent: (

@@ -22,10 +22,7 @@ import {
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-import {
-  cleanupChargingStation,
-  createMockChargingStation,
-} from '../../ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from '../../helpers/StationHelpers.js'
 
 await describe('G03 - Remote Start Pre-Authorization', async () => {
   let service: OCPP20IncomingRequestService | undefined

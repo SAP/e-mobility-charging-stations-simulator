@@ -11,7 +11,7 @@ import { resetConnectorStatus } from '../../src/charging-station/Helpers.js'
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
-import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
 await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('Connector Query', async () => {
