@@ -79,7 +79,7 @@ src/
 - **InMemoryAuthCache**: LRU with TTL, rate limiting, periodic cleanup
 - **InMemoryLocalAuthListManager**: CSMS-managed authorization list with Full/Differential updates, version tracking, capacity limits
 - **AuthComponentFactory**: Creates adapters, strategies, caches, managers from config
-- **AuthHelpers**: Cross-version utility functions (TTL calculation, config key reading, result formatting)
+- **AuthHelpers**: Cross-version utility functions (TTL calculation, result formatting, logging sanitization)
 - **Version adapters**: OCPP16AuthAdapter, OCPP20AuthAdapter
 
 ## UI Server (`ui-server/`)
