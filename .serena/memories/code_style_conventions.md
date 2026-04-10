@@ -4,9 +4,9 @@
 
 - **Naming**: camelCase for variables/functions/methods, PascalCase for classes/types/enums/interfaces, SCREAMING_SNAKE_CASE for all constants (production and test)
 - **Constant unit suffixes**: Time/size constants MUST include unit in name: `_MS`, `_SECONDS`, `_BYTES`. Counts/ratios/strings: no suffix. No inline `// Ms` comments — the name IS the documentation
-- **Async**: Prefer async/await over raw Promises; fire-and-forget wrapped in `void`; handle rejections with try/catch
+- **Async**: Use async/await only for genuinely asynchronous operations. Do not wrap synchronous code in Promises or mark methods `async` without `await`. Fire-and-forget wrapped in `void`; handle rejections with try/catch. Interface methods return `Promise` only when at least one implementation is genuinely async (e.g., `AuthStrategy.authenticate()` — remote strategy does network I/O)
 - **Error handling**: Typed errors (`BaseError`, `OCPPError`) with structured properties; avoid generic `Error`; use `instanceof` guards (not `as` casts)
-- **`new Error()` in utils/ and worker/**: Acceptable — `BaseError` lives in `exception/` which cannot be imported from utils (see Common Pitfalls)
+- **`new Error()` in utils/, worker/, and auth/cache/**: Acceptable — `BaseError` lives in `exception/` which cannot be imported from these modules without circular dependencies (see Common Pitfalls)
 - **Null safety**: Avoid non-null assertions (`!`); use optional chaining (`?.`) and nullish coalescing (`??`)
 - **Type safety**: Prefer explicit types over `any`; use type guards and discriminated unions; no `as any`, `@ts-ignore`, `@ts-expect-error`
 
