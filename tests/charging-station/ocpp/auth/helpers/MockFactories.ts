@@ -7,7 +7,6 @@ import assert from 'node:assert/strict'
 import type { ChargingStation } from '../../../../../src/charging-station/index.js'
 import type {
   AuthCache,
-  LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,
   OCPPAuthService,
@@ -127,6 +126,7 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
       /* empty */
     },
     getConfiguration: () => ({}) as AuthConfiguration,
+    getLocalAuthListManager: () => undefined,
     getStats: () => ({
       avgResponseTime: 0,
       cacheHitRate: 0,
@@ -214,6 +214,7 @@ export const createMockOCPPAdapter = (
     value: typeof identifier === 'string' ? identifier : identifier.idToken,
   }),
   getConfigurationSchema: () => ({}),
+  getMaxLocalAuthListEntries: () => undefined,
   isRemoteAvailable: () => true,
   ocppVersion,
   validateConfiguration: (_config: AuthConfiguration) => true,
@@ -319,39 +320,32 @@ export const createMockAuthServiceTestStation = (
 /**
  * Create a mock LocalAuthListManager for testing.
  * @param overrides - Partial LocalAuthListManager methods to override defaults
- * @returns Mock LocalAuthListManager with stubbed async methods
+ * @returns Mock LocalAuthListManager with stubbed methods
  */
 export const createMockLocalAuthListManager = (
   overrides?: Partial<LocalAuthListManager>
 ): LocalAuthListManager => ({
-  addEntry: () =>
-    new Promise<void>(resolve => {
-      resolve()
-    }),
-  clearAll: () =>
-    new Promise<void>(resolve => {
-      resolve()
-    }),
-  getAllEntries: () =>
-    new Promise<LocalAuthEntry[]>(resolve => {
-      resolve([])
-    }),
-  getEntry: () =>
-    new Promise<LocalAuthEntry | undefined>(resolve => {
-      resolve(undefined)
-    }),
-  getVersion: () =>
-    new Promise<number>(resolve => {
-      resolve(1)
-    }),
-  removeEntry: () =>
-    new Promise<void>(resolve => {
-      resolve()
-    }),
-  updateVersion: () =>
-    new Promise<void>(resolve => {
-      resolve()
-    }),
+  addEntry: () => {
+    /* empty */
+  },
+  applyDifferentialUpdate: () => {
+    /* empty */
+  },
+  clearAll: () => {
+    /* empty */
+  },
+  getAllEntries: () => [],
+  getEntry: () => undefined,
+  getVersion: () => 1,
+  removeEntry: () => {
+    /* empty */
+  },
+  setEntries: () => {
+    /* empty */
+  },
+  updateVersion: () => {
+    /* empty */
+  },
   ...overrides,
 })
 

@@ -65,8 +65,10 @@ export interface AuthComponentFactory {
 
   /**
    * Create a local auth list manager
+   * @param config - Authentication configuration controlling local auth list behavior
+   * @returns In-memory local auth list manager if enabled, undefined otherwise
    */
-  createLocalAuthListManager(): LocalAuthListManager
+  createLocalAuthListManager(config: AuthConfiguration): LocalAuthListManager | undefined
 
   /**
    * Create a strategy by name
@@ -123,12 +125,12 @@ export interface AuthStrategy {
    * Authenticate using this strategy
    * @param request - Authentication request
    * @param config - Current configuration
-   * @returns Promise resolving to authorization result, undefined if not handled
+   * @returns Authorization result, undefined if not handled
    */
   authenticate(
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined>
+  ): AuthorizationResult | Promise<AuthorizationResult | undefined> | undefined
 
   /**
    * Check if this strategy can handle the given request
@@ -254,6 +256,27 @@ export interface CertificateInfo {
 }
 
 /**
+ * Entry used in differential update operations.
+ *
+ * When `status` is defined, the entry is added or updated in the list.
+ * When `status` is `undefined`, the entry is removed from the list.
+ * This models the OCPP behavior where absent idTagInfo (1.6) or
+ * absent idTokenInfo (2.0) signals removal.
+ */
+export interface DifferentialAuthEntry {
+  /** Optional expiry date */
+  expiryDate?: Date
+  /** Identifier value */
+  identifier: string
+  /** Entry metadata */
+  metadata?: Record<string, unknown>
+  /** Optional parent identifier */
+  parentId?: string
+  /** Authorization status — undefined signals removal */
+  status?: string
+}
+
+/**
  * Supporting types for interfaces
  */
 export interface LocalAuthEntry {
@@ -281,40 +304,55 @@ export interface LocalAuthListManager {
    * Add or update an entry in the local authorization list
    * @param entry - Authorization list entry
    */
-  addEntry(entry: LocalAuthEntry): Promise<void>
+  addEntry(entry: LocalAuthEntry): void
+
+  /**
+   * Apply a differential update to the list
+   * Entries with status are added/updated; entries without status are removed
+   * @param entries - Differential entries to apply
+   * @param version - New list version number
+   */
+  applyDifferentialUpdate(entries: DifferentialAuthEntry[], version: number): void
 
   /**
    * Clear all entries from the local authorization list
    */
-  clearAll(): Promise<void>
+  clearAll(): void
 
   /**
    * Get all entries (for synchronization)
    */
-  getAllEntries(): Promise<LocalAuthEntry[]>
+  getAllEntries(): LocalAuthEntry[]
 
   /**
    * Get an entry from the local authorization list
    * @param identifier - Identifier to look up
    * @returns Authorization entry or undefined if not found
    */
-  getEntry(identifier: string): Promise<LocalAuthEntry | undefined>
+  getEntry(identifier: string): LocalAuthEntry | undefined
 
   /**
    * Get list version/update count
    */
-  getVersion(): Promise<number>
+  getVersion(): number
 
   /**
    * Remove an entry from the local authorization list
    * @param identifier - Identifier to remove
    */
-  removeEntry(identifier: string): Promise<void>
+  removeEntry(identifier: string): void
+
+  /**
+   * Replace all entries with a new set (Full update)
+   * @param entries - New entries for the list
+   * @param version - New list version number
+   */
+  setEntries(entries: LocalAuthEntry[], version: number): void
 
   /**
    * Update list version
    */
-  updateVersion(version: number): Promise<void>
+  updateVersion(version: number): void
 }
 
 /**
@@ -358,6 +396,12 @@ export interface OCPPAuthAdapter<TVersionId = unknown> {
   getConfigurationSchema(): JsonObject
 
   /**
+   * Get the maximum number of entries allowed in the local auth list.
+   * @returns Maximum entries from station configuration, or undefined if not configured
+   */
+  getMaxLocalAuthListEntries(): number | undefined
+
+  /**
    * Check if remote authorization is available
    */
   isRemoteAvailable(): boolean
@@ -396,6 +440,12 @@ export interface OCPPAuthService {
    * Get current authentication configuration
    */
   getConfiguration(): AuthConfiguration
+
+  /**
+   * Get the local authorization list manager
+   * @returns Local authorization list manager or undefined if not enabled
+   */
+  getLocalAuthListManager(): LocalAuthListManager | undefined
 
   /**
    * Get authentication statistics

@@ -29,7 +29,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   })
 
   await describe('C10.FR.03 - cache post-authorize', async () => {
-    await it('should accept non-Accepted cached token without re-auth when DisablePostAuthorize=true', async () => {
+    await it('should accept non-Accepted cached token without re-auth when DisablePostAuthorize=true', () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
@@ -49,7 +49,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
 
       // Act
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       // Assert
       assert.notStrictEqual(result, undefined)
@@ -57,7 +57,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
-    await it('should trigger re-auth for non-Accepted cached token when DisablePostAuthorize=false', async () => {
+    await it('should trigger re-auth for non-Accepted cached token when DisablePostAuthorize=false', () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
@@ -77,7 +77,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
 
       // Act
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       // Assert - undefined signals orchestrator should try remote strategy
       assert.strictEqual(result, undefined)
@@ -85,15 +85,12 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   })
 
   await describe('C14.FR.03 - local list post-authorize', async () => {
-    await it('should accept non-Accepted local list token without re-auth when DisablePostAuthorize=true', async () => {
+    await it('should accept non-Accepted local list token without re-auth when DisablePostAuthorize=true', () => {
       const localListManager = createMockLocalAuthListManager({
-        getEntry: () =>
-          new Promise(resolve => {
-            resolve({
-              identifier: 'BLOCKED-TAG',
-              status: 'Blocked',
-            })
-          }),
+        getEntry: () => ({
+          identifier: 'BLOCKED-TAG',
+          status: 'Blocked',
+        }),
       })
       strategy = new LocalAuthStrategy(localListManager, undefined)
       const config = createTestAuthConfig({
@@ -105,7 +102,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
         identifier: createMockIdentifier('BLOCKED-TAG', IdentifierType.ISO14443),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
@@ -114,7 +111,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   })
 
   await describe('default behavior', async () => {
-    await it('should trigger re-auth when DisablePostAuthorize not configured (defaults to enabled)', async () => {
+    await it('should trigger re-auth when DisablePostAuthorize not configured (defaults to enabled)', () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
@@ -133,7 +130,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
 
       // Act
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       // Assert - undefined signals orchestrator should try remote strategy (C10.FR.03)
       assert.strictEqual(result, undefined)

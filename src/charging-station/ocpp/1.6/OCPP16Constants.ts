@@ -1,4 +1,10 @@
-import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types/index.js'
+import {
+  type ConnectorStatusTransition,
+  OCPP16ChargePointStatus,
+  type OCPP16GetLocalListVersionResponse,
+  type OCPP16SendLocalListResponse,
+  OCPP16UpdateStatus,
+} from '../../../types/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 
 export class OCPP16Constants extends OCPPConstants {
@@ -289,5 +295,21 @@ export class OCPP16Constants extends OCPPConstants {
       // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
     ])
 
-  static readonly DEFAULT_IDTAG = '00000000'
+  static readonly OCPP_DEFAULT_IDTAG = '00000000'
+
+  static readonly OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED: OCPP16GetLocalListVersionResponse =
+    Object.freeze({ listVersion: -1 })
+
+  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED: OCPP16SendLocalListResponse =
+    Object.freeze({ status: OCPP16UpdateStatus.ACCEPTED })
+
+  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED: OCPP16SendLocalListResponse = Object.freeze(
+    { status: OCPP16UpdateStatus.FAILED }
+  )
+
+  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED: OCPP16SendLocalListResponse =
+    Object.freeze({ status: OCPP16UpdateStatus.NOT_SUPPORTED })
+
+  static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH: OCPP16SendLocalListResponse =
+    Object.freeze({ status: OCPP16UpdateStatus.VERSION_MISMATCH })
 }

@@ -8,16 +8,18 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { getConfigurationKey } from '../../../../charging-station/ConfigurationKeyUtils.js'
+import { getConfigurationKey } from '../../../../charging-station/index.js'
 import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
+  OCPP16StandardParametersKey,
   OCPPVersion,
   RequestCommand,
   StandardParametersKey,
 } from '../../../../types/index.js'
 import {
   convertToBoolean,
+  convertToIntOrNaN,
   getErrorMessage,
   isEmpty,
   logger,
@@ -216,8 +218,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   }
 
   /**
-   * Get OCPP 1.6 specific configuration schema
-   * @returns JSON schema object describing valid OCPP 1.6 auth configuration properties
+   * @returns Configuration schema object for OCPP 1.6 authorization settings
    */
   getConfigurationSchema (): JsonObject {
     return {
@@ -256,6 +257,24 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
       required: ['localAuthListEnabled', 'remoteAuthorization'],
       type: 'object',
     }
+  }
+
+  /**
+   * Read maximum local auth list entries from OCPP 1.6 LocalAuthListMaxLength config key.
+   * @returns Maximum entries limit, or undefined if not configured
+   */
+  getMaxLocalAuthListEntries (): number | undefined {
+    const configKey = getConfigurationKey(
+      this.chargingStation,
+      OCPP16StandardParametersKey.LocalAuthListMaxLength
+    )
+    if (configKey?.value != null) {
+      const parsed = convertToIntOrNaN(configKey.value)
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        return parsed
+      }
+    }
+    return undefined
   }
 
   /**

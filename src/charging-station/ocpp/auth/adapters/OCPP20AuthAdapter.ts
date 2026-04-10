@@ -295,7 +295,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Get OCPP 2.0 specific configuration schema
    * @returns Configuration schema object for OCPP 2.0 authorization settings
    */
   getConfigurationSchema (): JsonObject {
@@ -335,6 +334,13 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       required: ['authorizeRemoteStart', 'localAuthorizeOffline'],
       type: 'object',
     }
+  }
+
+  /**
+   * @returns Always undefined — OCPP 2.0 defines capacity via LocalAuthListCtrlr.Storage (bytes), not entry count
+   */
+  getMaxLocalAuthListEntries (): number | undefined {
+    return undefined
   }
 
   /**

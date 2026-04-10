@@ -42,6 +42,10 @@ function validate (config: AuthConfiguration): void {
     validateCacheConfig(config)
   }
 
+  if (config.localAuthListEnabled) {
+    validateLocalAuthListConfig(config)
+  }
+
   validateTimeout(config)
   validateOfflineConfig(config)
   checkAuthMethodsEnabled(config)
@@ -100,6 +104,28 @@ function validateCacheConfig (config: AuthConfiguration): void {
     if (config.maxCacheEntries < 10) {
       logger.warn(
         `${moduleName}: maxCacheEntries is very small (${String(config.maxCacheEntries)}). Cache may be ineffective with frequent evictions.`
+      )
+    }
+  }
+}
+
+/**
+ * Validate local auth list configuration values.
+ * @param config - Authentication configuration with local auth list settings
+ */
+function validateLocalAuthListConfig (config: AuthConfiguration): void {
+  if (config.maxLocalAuthListEntries !== undefined) {
+    if (!Number.isInteger(config.maxLocalAuthListEntries)) {
+      throw new AuthenticationError(
+        'maxLocalAuthListEntries must be an integer',
+        AuthErrorCode.CONFIGURATION_ERROR
+      )
+    }
+
+    if (config.maxLocalAuthListEntries <= 0) {
+      throw new AuthenticationError(
+        `maxLocalAuthListEntries must be > 0, got ${String(config.maxLocalAuthListEntries)}`,
+        AuthErrorCode.CONFIGURATION_ERROR
       )
     }
   }

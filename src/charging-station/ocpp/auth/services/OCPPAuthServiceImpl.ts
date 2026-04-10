@@ -20,6 +20,7 @@ import {
   type AuthCache,
   type AuthStats,
   type AuthStrategy,
+  type LocalAuthListManager,
   type OCPPAuthService,
 } from '../interfaces/OCPPAuthService.js'
 import {
@@ -41,6 +42,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   private authCache?: AuthCache
   private readonly chargingStation: ChargingStation
   private config: AuthConfiguration
+  private localAuthListManager?: LocalAuthListManager
   private readonly metrics: {
     cacheHits: number
     cacheMisses: number
@@ -205,7 +207,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @param request - Authorization request containing identifier, context, and options
    * @returns Promise resolving to the authorization result with status and metadata
    */
-  public async authorize (request: AuthRequest): Promise<AuthorizationResult> {
+  public authorize (request: AuthRequest): Promise<AuthorizationResult> {
     return this.authenticate(request)
   }
 
@@ -297,6 +299,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   }
 
   /**
+   * Get the local authorization list manager
+   * @returns Local authorization list manager or undefined if not enabled
+   */
+  public getLocalAuthListManager (): LocalAuthListManager | undefined {
+    return this.localAuthListManager
+  }
+
+  /**
    * Get authentication statistics
    * @returns Authentication statistics including cache and rate limiting metrics
    */
@@ -364,6 +374,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    */
   public initialize (): void {
     this.initializeAdapter()
+    if (this.adapter != null) {
+      this.config.maxLocalAuthListEntries ??= this.adapter.getMaxLocalAuthListEntries()
+    }
     this.initializeStrategies()
   }
 
@@ -620,11 +633,12 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     }
 
     this.authCache = AuthComponentFactory.createAuthCache(this.config)
+    this.localAuthListManager = AuthComponentFactory.createLocalAuthListManager(this.config)
 
     const strategies = AuthComponentFactory.createStrategies(
       this.chargingStation,
       this.adapter,
-      undefined, // manager - delegated to OCPPAuthServiceImpl
+      this.localAuthListManager,
       this.authCache,
       this.config
     )

@@ -8,6 +8,7 @@
  * @module ocpp/auth
  */
 
+export { InMemoryLocalAuthListManager } from './cache/InMemoryLocalAuthListManager.js'
 export type {
   AuthCache,
   AuthComponentFactory,
@@ -16,6 +17,7 @@ export type {
   CacheStats,
   CertificateAuthProvider,
   CertificateInfo,
+  DifferentialAuthEntry,
   LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,

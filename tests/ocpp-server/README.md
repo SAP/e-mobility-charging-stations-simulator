@@ -112,6 +112,7 @@ These flags customize the payload of specific commands:
   - `Inoperative` — Connector unavailable
 - `--set-variables <SPECS>`: SetVariables data as `Component.Variable=Value,...` (values must not contain commas)
 - `--get-variables <SPECS>`: GetVariables data as `Component.Variable,...`
+- `--local-list-tokens TOKEN ...`: Tokens to include in SendLocalList (default: test token)
 
 ```shell
 poetry run python server.py --command TriggerMessage --trigger-message BootNotification --delay 5
@@ -119,6 +120,8 @@ poetry run python server.py --command Reset --reset-type OnIdle --delay 5
 poetry run python server.py --command ChangeAvailability --availability-status Inoperative --delay 5
 poetry run python server.py --command SetVariables --delay 5 \
   --set-variables "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
+poetry run python server.py --command GetLocalListVersion --delay 5
+poetry run python server.py --command SendLocalList --delay 5 --local-list-tokens token1 token2
 ```
 
 ## Supported OCPP 2.0.1 Messages
@@ -133,6 +136,7 @@ poetry run python server.py --command SetVariables --delay 5 \
 - `DeleteCertificate` — Delete a certificate on the charging station
 - `GetBaseReport` — Request a full device model report
 - `GetInstalledCertificateIds` — List installed certificate IDs
+- `GetLocalListVersion` — Get the version number of the local authorization list
 - `GetLog` — Request log upload
 - `GetTransactionStatus` — Get status of a transaction
 - `GetVariables` — Get variable values
@@ -140,6 +144,7 @@ poetry run python server.py --command SetVariables --delay 5 \
 - `RequestStartTransaction` — Remote start a transaction
 - `RequestStopTransaction` — Remote stop a transaction
 - `Reset` — Reset the charging station
+- `SendLocalList` — Send a local authorization list update
 - `SetNetworkProfile` — Set the network connection profile
 - `SetVariables` — Set variable values
 - `TriggerMessage` — Trigger a specific message from the station

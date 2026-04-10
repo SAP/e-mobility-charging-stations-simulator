@@ -59,6 +59,7 @@ export enum OCPP20RequiredVariableName {
   CertificateEntries = 'CertificateEntries',
   DateTime = 'DateTime',
   Enabled = 'Enabled',
+  Entries = 'Entries',
   EVConnectionTimeOut = 'EVConnectionTimeOut',
   FileTransferProtocols = 'FileTransferProtocols',
   ItemsPerMessage = 'ItemsPerMessage',

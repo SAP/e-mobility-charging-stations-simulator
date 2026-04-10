@@ -51,7 +51,7 @@ import {
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
-import { buildConfigKey, getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { buildConfigKey, getConfigurationKey } from '../../index.js'
 import {
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
@@ -87,6 +87,7 @@ export class OCPP20ServiceUtils {
       [OCPP20IncomingRequestCommand.DELETE_CERTIFICATE, 'DeleteCertificate'],
       [OCPP20IncomingRequestCommand.GET_BASE_REPORT, 'GetBaseReport'],
       [OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS, 'GetInstalledCertificateIds'],
+      [OCPP20IncomingRequestCommand.GET_LOCAL_LIST_VERSION, 'GetLocalListVersion'],
       [OCPP20IncomingRequestCommand.GET_LOG, 'GetLog'],
       [OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS, 'GetTransactionStatus'],
       [OCPP20IncomingRequestCommand.GET_VARIABLES, 'GetVariables'],
@@ -94,6 +95,7 @@ export class OCPP20ServiceUtils {
       [OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION, 'RequestStartTransaction'],
       [OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION, 'RequestStopTransaction'],
       [OCPP20IncomingRequestCommand.RESET, 'Reset'],
+      [OCPP20IncomingRequestCommand.SEND_LOCAL_LIST, 'SendLocalList'],
       [OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE, 'SetNetworkProfile'],
       [OCPP20IncomingRequestCommand.SET_VARIABLES, 'SetVariables'],
       [OCPP20IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],

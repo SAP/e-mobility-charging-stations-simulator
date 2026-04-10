@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
-  LocalAuthEntry,
   LocalAuthListManager,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
@@ -103,16 +102,13 @@ await describe('LocalAuthStrategy', async () => {
       strategy.initialize(config)
     })
 
-    await it('should authenticate using local auth list', async () => {
-      mockLocalAuthListManager.getEntry = () =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          resolve({
-            expiryDate: new Date(Date.now() + 86400000),
-            identifier: 'LOCAL_TAG',
-            metadata: { source: 'local' },
-            status: 'accepted',
-          })
-        })
+    await it('should authenticate using local auth list', () => {
+      mockLocalAuthListManager.getEntry = () => ({
+        expiryDate: new Date(Date.now() + 86400000),
+        identifier: 'LOCAL_TAG',
+        metadata: { source: 'local' },
+        status: 'accepted',
+      })
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -122,14 +118,14 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('LOCAL_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
     })
 
-    await it('should authenticate using cache', async () => {
+    await it('should authenticate using cache', () => {
       mockAuthCache.get = () =>
         createMockAuthorizationResult({
           cacheTtl: 300,
@@ -142,14 +138,14 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('CACHED_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
-    await it('should use offline fallback for transaction stop', async () => {
+    await it('should use offline fallback for transaction stop', () => {
       const config = createTestAuthConfig({ offlineAuthorizationEnabled: true })
       const request = createMockAuthRequest({
         allowOffline: true,
@@ -157,7 +153,7 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
@@ -165,13 +161,13 @@ await describe('LocalAuthStrategy', async () => {
       assert.strictEqual(result.isOffline, true)
     })
 
-    await it('should return undefined when no local auth available', async () => {
+    await it('should return undefined when no local auth available', () => {
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
         identifier: createMockIdentifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
       assert.strictEqual(result, undefined)
     })
   })
@@ -219,25 +215,19 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('isInLocalList', async () => {
-    await it('should return true when identifier is in local list', async () => {
-      mockLocalAuthListManager.getEntry = () =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          resolve({
-            identifier: 'LOCAL_TAG',
-            status: 'accepted',
-          })
-        })
+    await it('should return true when identifier is in local list', () => {
+      mockLocalAuthListManager.getEntry = () => ({
+        identifier: 'LOCAL_TAG',
+        status: 'accepted',
+      })
 
-      assert.strictEqual(await strategy.isInLocalList('LOCAL_TAG'), true)
+      assert.strictEqual(strategy.isInLocalList('LOCAL_TAG'), true)
     })
 
-    await it('should return false when identifier is not in local list', async () => {
-      mockLocalAuthListManager.getEntry = () =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          resolve(undefined)
-        })
+    await it('should return false when identifier is not in local list', () => {
+      mockLocalAuthListManager.getEntry = () => undefined
 
-      assert.strictEqual(await strategy.isInLocalList('UNKNOWN_TAG'), false)
+      assert.strictEqual(strategy.isInLocalList('UNKNOWN_TAG'), false)
     })
   })
 

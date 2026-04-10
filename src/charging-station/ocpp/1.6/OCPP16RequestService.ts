@@ -176,7 +176,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
         return {
-          idTag: OCPP16Constants.DEFAULT_IDTAG,
+          idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
@@ -189,7 +189,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
-          idTag: OCPP16Constants.DEFAULT_IDTAG,
+          idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
             commandParams.connectorId as number,
             true

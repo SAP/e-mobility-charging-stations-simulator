@@ -9,6 +9,7 @@ import type {
 } from './ChargingProfile.js'
 import type { OCPP16StandardParametersKey, OCPP16VendorParametersKey } from './Configuration.js'
 import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus.js'
+import type { OCPP16IdTagInfo } from './Transaction.js'
 
 export enum OCPP16AvailabilityType {
   Inoperative = 'Inoperative',
@@ -35,10 +36,12 @@ export enum OCPP16IncomingRequestCommand {
   GET_COMPOSITE_SCHEDULE = 'GetCompositeSchedule',
   GET_CONFIGURATION = 'GetConfiguration',
   GET_DIAGNOSTICS = 'GetDiagnostics',
+  GET_LOCAL_LIST_VERSION = 'GetLocalListVersion',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
   RESERVE_NOW = 'ReserveNow',
   RESET = 'Reset',
+  SEND_LOCAL_LIST = 'SendLocalList',
   SET_CHARGING_PROFILE = 'SetChargingProfile',
   TRIGGER_MESSAGE = 'TriggerMessage',
   UNLOCK_CONNECTOR = 'UnlockConnector',
@@ -67,6 +70,11 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
 }
 
+export enum OCPP16UpdateType {
+  Differential = 'Differential',
+  Full = 'Full',
+}
+
 export enum ResetType {
   HARD = 'Hard',
   SOFT = 'Soft',
@@ -87,6 +95,11 @@ export interface GetDiagnosticsRequest extends JsonObject {
   retryInterval?: number
   startTime?: Date
   stopTime?: Date
+}
+
+export interface OCPP16AuthorizationData extends JsonObject {
+  idTag: string
+  idTagInfo?: OCPP16IdTagInfo
 }
 
 export interface OCPP16BootNotificationRequest extends JsonObject {
@@ -139,6 +152,8 @@ export interface OCPP16GetCompositeScheduleRequest extends JsonObject {
   duration: number
 }
 
+export type OCPP16GetLocalListVersionRequest = EmptyObject
+
 export type OCPP16HeartbeatRequest = EmptyObject
 
 export interface OCPP16ReserveNowRequest extends JsonObject {
@@ -147,6 +162,12 @@ export interface OCPP16ReserveNowRequest extends JsonObject {
   idTag: string
   parentIdTag?: string
   reservationId: number
+}
+
+export interface OCPP16SendLocalListRequest extends JsonObject {
+  listVersion: number
+  localAuthorizationList?: OCPP16AuthorizationData[]
+  updateType: OCPP16UpdateType
 }
 
 export interface OCPP16StatusNotificationRequest extends JsonObject {

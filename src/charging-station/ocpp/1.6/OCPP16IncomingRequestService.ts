@@ -68,6 +68,7 @@ import {
   type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16GetCompositeScheduleRequest,
   type OCPP16GetCompositeScheduleResponse,
+  type OCPP16GetLocalListVersionResponse,
   type OCPP16HeartbeatRequest,
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
@@ -78,6 +79,8 @@ import {
   OCPP16RequestCommand,
   type OCPP16ReserveNowRequest,
   type OCPP16ReserveNowResponse,
+  type OCPP16SendLocalListRequest,
+  type OCPP16SendLocalListResponse,
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
@@ -90,6 +93,7 @@ import {
   OCPP16TriggerMessageStatus,
   type OCPP16UpdateFirmwareRequest,
   type OCPP16UpdateFirmwareResponse,
+  OCPP16UpdateType,
   type OCPPConfigurationKey,
   OCPPVersion,
   type RemoteStartTransactionRequest,
@@ -105,6 +109,7 @@ import {
   Configuration,
   convertToDate,
   convertToInt,
+  convertToIntOrNaN,
   ensureError,
   formatDurationMilliSeconds,
   handleIncomingRequestError,
@@ -115,7 +120,7 @@ import {
   sleep,
   truncateId,
 } from '../../../utils/index.js'
-import { AuthContext } from '../auth/index.js'
+import { AuthContext, type DifferentialAuthEntry, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -222,6 +227,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         this.toRequestHandler(this.handleRequestGetDiagnostics.bind(this)),
       ],
       [
+        OCPP16IncomingRequestCommand.GET_LOCAL_LIST_VERSION,
+        this.toRequestHandler(this.handleRequestGetLocalListVersion.bind(this)),
+      ],
+      [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
         this.toRequestHandler(this.handleRequestRemoteStartTransaction.bind(this)),
       ],
@@ -236,6 +245,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.RESET,
         this.toRequestHandler(this.handleRequestReset.bind(this)),
+      ],
+      [
+        OCPP16IncomingRequestCommand.SEND_LOCAL_LIST,
+        this.toRequestHandler(this.handleRequestSendLocalList.bind(this)),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
@@ -1211,6 +1224,40 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
+   * Handles OCPP 1.6 GetLocalListVersion request from central system.
+   * Returns the version number of the local authorization list.
+   * @param chargingStation - The charging station instance processing the request
+   * @returns GetLocalListVersionResponse with list version
+   */
+  private handleRequestGetLocalListVersion (
+    chargingStation: ChargingStation
+  ): OCPP16GetLocalListVersionResponse {
+    if (
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        chargingStation,
+        OCPP16SupportedFeatureProfiles.LocalAuthListManagement,
+        OCPP16IncomingRequestCommand.GET_LOCAL_LIST_VERSION
+      )
+    ) {
+      return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
+    }
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
+      }
+      return { listVersion: manager.getVersion() }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Error getting version:`,
+        error
+      )
+      return OCPP16Constants.OCPP_GET_LOCAL_LIST_VERSION_RESPONSE_NOT_SUPPORTED
+    }
+  }
+
+  /**
    * Handles OCPP 1.6 RemoteStartTransaction request from central system
    * Initiates charging transaction on specified or available connector
    * @param chargingStation - The charging station instance processing the request
@@ -1432,6 +1479,88 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )}`
     )
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
+  }
+
+  private handleRequestSendLocalList (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16SendLocalListRequest
+  ): OCPP16SendLocalListResponse {
+    if (
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        chargingStation,
+        OCPP16SupportedFeatureProfiles.LocalAuthListManagement,
+        OCPP16IncomingRequestCommand.SEND_LOCAL_LIST
+      )
+    ) {
+      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+    }
+    try {
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
+      if (!chargingStation.getLocalAuthListEnabled()) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+      }
+      const manager = authService.getLocalAuthListManager()
+      if (manager == null) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+      }
+      if (commandPayload.listVersion <= 0) {
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      }
+      const sendLocalListMaxLength = getConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.SendLocalListMaxLength
+      )
+      if (sendLocalListMaxLength?.value != null) {
+        const maxLength = convertToIntOrNaN(sendLocalListMaxLength.value)
+        if (
+          Number.isInteger(maxLength) &&
+          maxLength > 0 &&
+          commandPayload.localAuthorizationList != null &&
+          commandPayload.localAuthorizationList.length > maxLength
+        ) {
+          return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+        }
+      }
+      const { listVersion, localAuthorizationList, updateType } = commandPayload
+      if (updateType === OCPP16UpdateType.Full) {
+        const entries = (localAuthorizationList ?? []).map(item => ({
+          expiryDate:
+            item.idTagInfo?.expiryDate != null
+              ? convertToDate(item.idTagInfo.expiryDate)
+              : undefined,
+          identifier: item.idTag,
+          parentId: item.idTagInfo?.parentIdTag,
+          status: item.idTagInfo?.status ?? OCPP16AuthorizationStatus.INVALID,
+        }))
+        manager.setEntries(entries, listVersion)
+      } else {
+        // OCPP 1.6 §5.15: For differential updates, version must be greater than current
+        const currentVersion = manager.getVersion()
+        if (listVersion <= currentVersion) {
+          return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_VERSION_MISMATCH
+        }
+        const diffEntries: DifferentialAuthEntry[] = (localAuthorizationList ?? []).map(item => ({
+          expiryDate:
+            item.idTagInfo?.expiryDate != null
+              ? convertToDate(item.idTagInfo.expiryDate)
+              : undefined,
+          identifier: item.idTag,
+          parentId: item.idTagInfo?.parentIdTag,
+          status: item.idTagInfo?.status,
+        }))
+        manager.applyDifferentialUpdate(diffEntries, listVersion)
+      }
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${String(listVersion)}`
+      )
+      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Error updating local auth list:`,
+        error
+      )
+      return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+    }
   }
 
   private handleRequestSetChargingProfile (

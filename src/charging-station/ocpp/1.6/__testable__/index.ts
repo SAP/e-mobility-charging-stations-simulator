@@ -34,9 +34,12 @@ import type {
   OCPP16DataTransferResponse,
   OCPP16GetCompositeScheduleRequest,
   OCPP16GetCompositeScheduleResponse,
+  OCPP16GetLocalListVersionResponse,
   OCPP16RequestCommand,
   OCPP16ReserveNowRequest,
   OCPP16ReserveNowResponse,
+  OCPP16SendLocalListRequest,
+  OCPP16SendLocalListResponse,
   OCPP16TriggerMessageRequest,
   OCPP16TriggerMessageResponse,
   OCPP16UpdateFirmwareRequest,
@@ -135,6 +138,10 @@ export interface TestableOCPP16IncomingRequestService {
     commandPayload: GetDiagnosticsRequest
   ) => Promise<GetDiagnosticsResponse>
 
+  handleRequestGetLocalListVersion: (
+    chargingStation: ChargingStation
+  ) => OCPP16GetLocalListVersionResponse
+
   /**
    * Handles OCPP 1.6 RemoteStartTransaction request from central system.
    * Initiates charging transaction on specified or available connector.
@@ -170,6 +177,11 @@ export interface TestableOCPP16IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ) => GenericResponse
+
+  handleRequestSendLocalList: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16SendLocalListRequest
+  ) => OCPP16SendLocalListResponse
 
   /**
    * Handles OCPP 1.6 SetChargingProfile request from central system.
@@ -259,12 +271,14 @@ export function createTestableIncomingRequestService (
     handleRequestGetCompositeSchedule: serviceImpl.handleRequestGetCompositeSchedule.bind(service),
     handleRequestGetConfiguration: serviceImpl.handleRequestGetConfiguration.bind(service),
     handleRequestGetDiagnostics: serviceImpl.handleRequestGetDiagnostics.bind(service),
+    handleRequestGetLocalListVersion: serviceImpl.handleRequestGetLocalListVersion.bind(service),
     handleRequestRemoteStartTransaction:
       serviceImpl.handleRequestRemoteStartTransaction.bind(service),
     handleRequestRemoteStopTransaction:
       serviceImpl.handleRequestRemoteStopTransaction.bind(service),
     handleRequestReserveNow: serviceImpl.handleRequestReserveNow.bind(service),
     handleRequestReset: serviceImpl.handleRequestReset.bind(service),
+    handleRequestSendLocalList: serviceImpl.handleRequestSendLocalList.bind(service),
     handleRequestSetChargingProfile: serviceImpl.handleRequestSetChargingProfile.bind(service),
     handleRequestTriggerMessage: serviceImpl.handleRequestTriggerMessage.bind(service),
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),

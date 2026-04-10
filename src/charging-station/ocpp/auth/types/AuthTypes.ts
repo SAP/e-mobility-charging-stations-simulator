@@ -141,6 +141,9 @@ export interface AuthConfiguration extends JsonObject {
   /** Maximum cache entries */
   maxCacheEntries?: number
 
+  /** Maximum local auth list entries */
+  maxLocalAuthListEntries?: number
+
   /** OCPP protocol version configured on the charging station */
   ocppVersion?: string
 

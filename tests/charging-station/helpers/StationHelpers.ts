@@ -18,13 +18,16 @@ import type {
   StopTransactionReason,
 } from '../../../src/types/index.js'
 
+import { getConfigurationKey } from '../../../src/charging-station/index.js'
 import {
   AvailabilityType,
   ConnectorStatusEnum,
   CurrentType,
   OCPPVersion,
   RegistrationStatusEnumType,
+  StandardParametersKey,
 } from '../../../src/types/index.js'
+import { convertToBoolean } from '../../../src/utils/index.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CHARGING_STATION_HASH_ID,
@@ -510,7 +513,11 @@ export function createMockChargingStation (
       return heartbeatInterval * 1000 // Return in ms
     },
     getLocalAuthListEnabled (): boolean {
-      return false // Default to false in mock
+      const key = getConfigurationKey(
+        this as unknown as ChargingStation,
+        StandardParametersKey.LocalAuthListEnabled
+      )
+      return key?.value != null ? convertToBoolean(key.value) : false
     },
     getNumberOfConnectors (): number {
       return this.iterateConnectors(true).reduce(count => count + 1, 0)

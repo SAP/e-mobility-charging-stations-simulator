@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
-  LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -342,16 +341,9 @@ await describe('RemoteAuthStrategy', async () => {
       }
 
       mockLocalAuthListManager.getEntry = (identifier: string) =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          if (identifier === 'LOCAL_AUTH_TAG') {
-            resolve({
-              identifier: 'LOCAL_AUTH_TAG',
-              status: 'Active',
-            })
-          } else {
-            resolve(undefined)
-          }
-        })
+        identifier === 'LOCAL_AUTH_TAG'
+          ? { identifier: 'LOCAL_AUTH_TAG', status: 'Active' }
+          : undefined
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -372,10 +364,7 @@ await describe('RemoteAuthStrategy', async () => {
         cachedKey = key
       }
 
-      mockLocalAuthListManager.getEntry = () =>
-        new Promise<LocalAuthEntry | undefined>(resolve => {
-          resolve(undefined)
-        })
+      mockLocalAuthListManager.getEntry = () => undefined
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -388,6 +377,29 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'REMOTE_AUTH_TAG')
+    })
+
+    await it('should cache result when getEntry throws', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = (key: string) => {
+        cachedKey = key
+      }
+
+      mockLocalAuthListManager.getEntry = () => {
+        throw new Error('Local list lookup failed')
+      }
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+        localAuthListEnabled: true,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier('FAILING_TAG', IdentifierType.ID_TAG),
+      })
+
+      await strategy.authenticate(request, config)
+      assert.strictEqual(cachedKey, 'FAILING_TAG')
     })
   })
 

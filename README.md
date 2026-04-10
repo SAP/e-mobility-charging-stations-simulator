@@ -521,8 +521,8 @@ make SUBMODULES_INIT=true
 
 #### Local Auth List Management Profile
 
-- :x: GetLocalListVersion
-- :x: SendLocalList
+- :white_check_mark: GetLocalListVersion
+- :white_check_mark: SendLocalList
 
 #### Reservation Profile
 
@@ -562,8 +562,8 @@ make SUBMODULES_INIT=true
 
 #### D. LocalAuthorizationListManagement
 
-- :x: GetLocalListVersion
-- :x: SendLocalList
+- :white_check_mark: GetLocalListVersion
+- :white_check_mark: SendLocalList
 
 #### E. Transactions
 
@@ -654,8 +654,8 @@ All kind of OCPP parameters are supported in charging station configuration or c
 #### Local Auth List Management Profile
 
 - :white_check_mark: LocalAuthListEnabled (type: boolean) (units: -)
-- :x: LocalAuthListMaxLength (type: integer) (units: -)
-- :x: SendLocalListMaxLength (type: integer) (units: -)
+- :white_check_mark: LocalAuthListMaxLength (type: integer) (units: -)
+- :white_check_mark: SendLocalListMaxLength (type: integer) (units: -)
 
 #### Reservation Profile
 

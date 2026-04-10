@@ -43,10 +43,12 @@ from ocpp.v201.enums import (
     ReportBaseEnumType,
     ResetEnumType,
     ResetStatusEnumType,
+    SendLocalListStatusEnumType,
     SetNetworkProfileStatusEnumType,
     TransactionEventEnumType,
     TriggerMessageStatusEnumType,
     UnlockStatusEnumType,
+    UpdateEnumType,
     UpdateFirmwareStatusEnumType,
 )
 from websockets import ConnectionClosed
@@ -71,6 +73,7 @@ DEFAULT_TOKEN_TYPE = "ISO14443"  # noqa: S105
 DEFAULT_VENDOR_ID = "TestVendor"
 DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v2.0.bin"
 DEFAULT_LOG_URL = "https://example.com/logs"
+DEFAULT_LOCAL_LIST_VERSION = 1
 DEFAULT_CUSTOMER_ID = "test_customer_001"
 FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
@@ -144,6 +147,7 @@ class ServerConfig:
     availability_status: OperationalStatusEnumType = OperationalStatusEnumType.operative
     set_variables_data: list[dict] | None = None
     get_variables_data: list[dict] | None = None
+    local_list_tokens: list[str] | None = None
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -161,6 +165,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _charge_points: set["ChargePoint"]
     _set_variables_data: list[dict] | None
     _get_variables_data: list[dict] | None
+    _local_list_tokens: list[str] | None
 
     def __init__(
         self,
@@ -181,6 +186,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         charge_points: set["ChargePoint"] | None = None,
         set_variables_data: list[dict] | None = None,
         get_variables_data: list[dict] | None = None,
+        local_list_tokens: list[str] | None = None,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
         cp_id = connection.request.path.strip("/").split("/")[-1]
@@ -202,6 +208,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._availability_status = availability_status
         self._set_variables_data = set_variables_data
         self._get_variables_data = get_variables_data
+        self._local_list_tokens = local_list_tokens
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
@@ -500,6 +507,26 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.Reset(type=self._reset_type)
         await self._call_and_log(request, Action.reset, ResetStatusEnumType.accepted)
 
+    async def _send_send_local_list(self):
+        tokens = self._local_list_tokens or [DEFAULT_TEST_TOKEN]
+        local_authorization_list = [
+            {
+                "id_token": {"id_token": token, "type": DEFAULT_TOKEN_TYPE},
+                "id_token_info": {
+                    "status": AuthorizationStatusEnumType.accepted,
+                },
+            }
+            for token in tokens
+        ]
+        request = ocpp.v201.call.SendLocalList(
+            version_number=DEFAULT_LOCAL_LIST_VERSION,
+            update_type=UpdateEnumType.full,
+            local_authorization_list=local_authorization_list,
+        )
+        await self._call_and_log(
+            request, Action.send_local_list, SendLocalListStatusEnumType.accepted
+        )
+
     async def _send_unlock_connector(self):
         request = ocpp.v201.call.UnlockConnector(
             evse_id=DEFAULT_EVSE_ID, connector_id=DEFAULT_CONNECTOR_ID
@@ -587,6 +614,15 @@ class ChargePoint(ocpp.v201.ChargePoint):
             GetInstalledCertificateStatusEnumType.accepted,
         )
 
+    async def _send_get_local_list_version(self):
+        request = ocpp.v201.call.GetLocalListVersion()
+        response = await self.call(request, suppress=False)
+        logger.info(
+            "%s response: version_number=%s",
+            Action.get_local_list_version,
+            response.version_number,
+        )
+
     async def _send_get_log(self):
         request = ocpp.v201.call.GetLog(
             log={"remote_location": DEFAULT_LOG_URL},
@@ -662,6 +698,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         Action.request_start_transaction: "_send_request_start_transaction",
         Action.request_stop_transaction: "_send_request_stop_transaction",
         Action.reset: "_send_reset",
+        Action.send_local_list: "_send_send_local_list",
         Action.unlock_connector: "_send_unlock_connector",
         Action.change_availability: "_send_change_availability",
         Action.trigger_message: "_send_trigger_message",
@@ -670,6 +707,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         Action.customer_information: "_send_customer_information",
         Action.delete_certificate: "_send_delete_certificate",
         Action.get_installed_certificate_ids: "_send_get_installed_certificate_ids",
+        Action.get_local_list_version: "_send_get_local_list_version",
         Action.get_log: "_send_get_log",
         Action.get_transaction_status: "_send_get_transaction_status",
         Action.install_certificate: "_send_install_certificate",
@@ -771,6 +809,7 @@ async def on_connect(
         charge_points=charge_points,
         set_variables_data=config.set_variables_data,
         get_variables_data=config.get_variables_data,
+        local_list_tokens=config.local_list_tokens,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
@@ -1004,6 +1043,12 @@ async def main():
             '(e.g., "ChargingStation.AvailabilityState")'
         ),
     )
+    parser.add_argument(
+        "--local-list-tokens",
+        nargs="*",
+        default=None,
+        help="Tokens to include in SendLocalList (default: test token)",
+    )
 
     args, _ = parser.parse_known_args()
     group.required = args.command is not None
@@ -1073,6 +1118,7 @@ async def main():
         availability_status=args.availability_status,
         set_variables_data=parsed_set_variables,
         get_variables_data=parsed_get_variables,
+        local_list_tokens=args.local_list_tokens,
     )
 
     logger.info(

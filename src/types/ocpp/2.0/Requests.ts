@@ -26,6 +26,7 @@ import type {
   OCPP20ChargingProfileType,
   OCPP20ConnectorStatusEnumType,
   OCPP20EVSEType,
+  OCPP20IdTokenInfoType,
   OCPP20IdTokenType,
 } from './Transaction.js'
 import type {
@@ -43,6 +44,7 @@ export enum OCPP20IncomingRequestCommand {
   DELETE_CERTIFICATE = 'DeleteCertificate',
   GET_BASE_REPORT = 'GetBaseReport',
   GET_INSTALLED_CERTIFICATE_IDS = 'GetInstalledCertificateIds',
+  GET_LOCAL_LIST_VERSION = 'GetLocalListVersion',
   GET_LOG = 'GetLog',
   GET_TRANSACTION_STATUS = 'GetTransactionStatus',
   GET_VARIABLES = 'GetVariables',
@@ -50,6 +52,7 @@ export enum OCPP20IncomingRequestCommand {
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
   RESET = 'Reset',
+  SEND_LOCAL_LIST = 'SendLocalList',
   SET_NETWORK_PROFILE = 'SetNetworkProfile',
   SET_VARIABLES = 'SetVariables',
   TRIGGER_MESSAGE = 'TriggerMessage',
@@ -73,6 +76,17 @@ export enum OCPP20RequestCommand {
   SIGN_CERTIFICATE = 'SignCertificate',
   STATUS_NOTIFICATION = 'StatusNotification',
   TRANSACTION_EVENT = 'TransactionEvent',
+}
+
+export enum OCPP20UpdateEnumType {
+  Differential = 'Differential',
+  Full = 'Full',
+}
+
+export interface OCPP20AuthorizationData extends JsonObject {
+  customData?: CustomDataType
+  idToken: OCPP20IdTokenType
+  idTokenInfo?: OCPP20IdTokenInfoType
 }
 
 export interface OCPP20AuthorizeRequest extends JsonObject {
@@ -151,6 +165,8 @@ export interface OCPP20GetInstalledCertificateIdsRequest extends JsonObject {
   customData?: CustomDataType
 }
 
+export type OCPP20GetLocalListVersionRequest = EmptyObject
+
 export interface OCPP20GetLogRequest extends JsonObject {
   customData?: CustomDataType
   log: LogParametersType
@@ -227,6 +243,13 @@ export interface OCPP20SecurityEventNotificationRequest extends JsonObject {
   techInfo?: string
   timestamp: Date
   type: string
+}
+
+export interface OCPP20SendLocalListRequest extends JsonObject {
+  customData?: CustomDataType
+  localAuthorizationList?: OCPP20AuthorizationData[]
+  updateType: OCPP20UpdateEnumType
+  versionNumber: number
 }
 
 export interface OCPP20SetNetworkProfileRequest extends JsonObject {

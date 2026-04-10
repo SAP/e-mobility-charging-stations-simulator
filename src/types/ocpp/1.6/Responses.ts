@@ -56,6 +56,13 @@ export enum OCPP16UnlockStatus {
   UNLOCKED = 'Unlocked',
 }
 
+export enum OCPP16UpdateStatus {
+  ACCEPTED = 'Accepted',
+  FAILED = 'Failed',
+  NOT_SUPPORTED = 'NotSupported',
+  VERSION_MISMATCH = 'VersionMismatch',
+}
+
 export interface ChangeConfigurationResponse extends JsonObject {
   status: OCPP16ConfigurationStatus
 }
@@ -99,12 +106,20 @@ export interface OCPP16GetCompositeScheduleResponse extends JsonObject {
   status: GenericStatus
 }
 
+export interface OCPP16GetLocalListVersionResponse extends JsonObject {
+  listVersion: number
+}
+
 export interface OCPP16HeartbeatResponse extends JsonObject {
   currentTime: Date
 }
 
 export interface OCPP16ReserveNowResponse extends JsonObject {
   status: OCPP16ReservationStatus
+}
+
+export interface OCPP16SendLocalListResponse extends JsonObject {
+  status: OCPP16UpdateStatus
 }
 
 export type OCPP16StatusNotificationResponse = EmptyObject
