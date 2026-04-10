@@ -124,7 +124,7 @@ docs/
 └── signed_meter_values-v10-1.md
 ```
 
-24 markdown files covering all supported OCPP versions. Authoritative spec references for implementing OCPP commands. Indexed in QMD as `ocpp-specs` collection (see `suggested_commands` memory for search commands).
+24 markdown files covering OCPP 1.6, 2.0.1, 2.1. Indexed in QMD as `ocpp-specs` collection.
 
 ## Key Dependencies
 

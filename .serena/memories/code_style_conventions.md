@@ -6,7 +6,7 @@
 - **Constant unit suffixes**: Time/size constants MUST include unit in name: `_MS`, `_SECONDS`, `_BYTES`. Counts/ratios/strings: no suffix. No inline `// Ms` comments — the name IS the documentation
 - **Async**: Use async/await only for genuinely asynchronous operations. Do not wrap synchronous code in Promises or mark methods `async` without `await`. Fire-and-forget wrapped in `void`; handle rejections with try/catch. Interface methods return `Promise` only when at least one implementation is genuinely async (e.g., `AuthStrategy.authenticate()` — remote strategy does network I/O)
 - **Error handling**: Typed errors (`BaseError`, `OCPPError`) with structured properties; avoid generic `Error`; use `instanceof` guards (not `as` casts)
-- **`new Error()` in utils/, worker/, and auth/cache/**: Acceptable — `BaseError` lives in `exception/` which cannot be imported from these modules without circular dependencies (see Common Pitfalls)
+- **`new Error()` in utils/, worker/, and auth/cache/**: Acceptable (circular dependency constraint)
 - **Null safety**: Avoid non-null assertions (`!`); use optional chaining (`?.`) and nullish coalescing (`??`)
 - **Type safety**: Prefer explicit types over `any`; use type guards and discriminated unions; no `as any`, `@ts-ignore`, `@ts-expect-error`
 
@@ -30,7 +30,7 @@
 ## Utility Usage Rules
 
 - **Emptiness checks**: Use `isEmpty()` / `isNotEmptyArray()` instead of `.length === 0` / `.size > 0` (except in worker/)
-- **Number parsing**: Use `convertToInt()` / `convertToFloat()` instead of `Number.parseInt()` / `Number.parseFloat()`. Exception: when NaN fallback is needed (e.g., `getLimitFromSampledValueTemplateCustomValue` — keep `Number.parseFloat`)
+- **Number parsing**: Use `convertToInt()` / `convertToFloat()` instead of `Number.parseInt()` / `Number.parseFloat()`. Exception: when NaN fallback is intentional
 - **Cloning**: Use `clone()` — never `JSON.parse(JSON.stringify())`
 - **Random**: Use `secureRandom()` / `generateUUID()` — not direct `randomBytes()` / `randomUUID()` (except in worker/ which has its own copies)
 
@@ -66,7 +66,7 @@
 - **Format**: `${chargingStation.logPrefix()} ${moduleName}.methodName: Message`
 - **Daily rotation** enabled by default; configurable max files/size
 - **Log config**: `src/utils/Configuration.ts` canonical defaults
-- **`console.*` is acceptable ONLY** in: `start.ts` (entry point), `Configuration.ts`/`ConfigurationMigration.ts` (static init, logger not ready), `ErrorUtils.ts` (uncaught handlers, logger may be null), `WorkerUtils.ts` (standalone, no logger access). Everywhere else: use `logger`
+- **`console.*` is acceptable ONLY** in: `start.ts`, `Configuration.ts`, `ConfigurationMigration.ts`, `ErrorUtils.ts`, `WorkerUtils.ts`. Everywhere else: use `logger`
 
 ## Configuration
 
@@ -116,4 +116,4 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
 - **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
 - **OCPP server is Python**: Uses Poetry, not pnpm. Linter is ruff (not pylint/flake8). Type checker is mypy
-- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js` — causes circular via `OCPPError → OCPPConstants → utils/Constants`
+- **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js`

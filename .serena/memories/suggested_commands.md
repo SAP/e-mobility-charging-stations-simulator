@@ -132,27 +132,15 @@ Header max length: 100 characters.
 
 ## OCPP Spec Search (QMD)
 
-`docs/` is indexed as QMD collection `ocpp-specs` (24 markdown files, 3213 chunks).
+Collection `ocpp-specs` — OCPP 1.6, 2.0.1, 2.1 specs from `docs/` (24 files, 3213 chunks).
 
-```bash
-# BM25 keyword search (always works)
-qmd search "D01.FR SendLocalList requirements" --collections ocpp-specs
+**Project-specific gotchas**:
 
-# Hybrid search with LLM expand + rerank (needs env -u CI in agent context)
-env -u CI qmd query "what happens when LocalAuthListEnabled is disabled" --collections ocpp-specs
-
-# Vector similarity only
-qmd vsearch "functional requirements for local authorization list" --collections ocpp-specs
-```
+- `CI=true` disables LLM ops → prefix `env -u CI` on all `qmd query` / `qmd vsearch` calls. `qmd search` (BM25 only) works without it.
+- Collection flag: `-c` or `--collection` (singular).
+- Result limit flag: `-n`.
 
 Re-index after spec updates: `qmd update --pull && qmd embed`
-
-**Setup**: QMD stores absolute paths. Use a stable path:
-
-```bash
-qmd collection add /Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git/docs --name ocpp-specs
-qmd embed
-```
 
 ---
 
