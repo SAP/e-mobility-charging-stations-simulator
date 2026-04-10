@@ -65,8 +65,10 @@ export interface AuthComponentFactory {
 
   /**
    * Create a local auth list manager
+   * @param config - Authentication configuration controlling local auth list behavior
+   * @returns In-memory local auth list manager if enabled, undefined otherwise
    */
-  createLocalAuthListManager(): LocalAuthListManager
+  createLocalAuthListManager(config: AuthConfiguration): LocalAuthListManager | undefined
 
   /**
    * Create a strategy by name

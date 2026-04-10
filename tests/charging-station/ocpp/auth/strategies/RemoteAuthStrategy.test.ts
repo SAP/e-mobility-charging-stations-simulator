@@ -378,6 +378,29 @@ await describe('RemoteAuthStrategy', async () => {
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'REMOTE_AUTH_TAG')
     })
+
+    await it('should cache result when getEntry throws', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = (key: string) => {
+        cachedKey = key
+      }
+
+      mockLocalAuthListManager.getEntry = () => {
+        throw new Error('Local list lookup failed')
+      }
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+        localAuthListEnabled: true,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier('FAILING_TAG', IdentifierType.ID_TAG),
+      })
+
+      await strategy.authenticate(request, config)
+      assert.strictEqual(cachedKey, 'FAILING_TAG')
+    })
   })
 
   await describe('adapter management', async () => {

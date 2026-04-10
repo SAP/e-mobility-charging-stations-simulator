@@ -116,7 +116,14 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
         // Skip caching for identifiers already in Local Auth List (OCPP 1.6 §3.5.3)
         if (this.authCache && config.localAuthListEnabled && this.localAuthListManager) {
-          const isInLocalList = this.localAuthListManager.getEntry(request.identifier.value)
+          let isInLocalList = false
+          try {
+            isInLocalList = this.localAuthListManager.getEntry(request.identifier.value) != null
+          } catch (error) {
+            logger.warn(
+              `${moduleName}: Failed to check local auth list for '${truncateId(request.identifier.value)}': ${getErrorMessage(error)}`
+            )
+          }
           if (isInLocalList) {
             logger.debug(
               `${moduleName}: Skipping cache for local list identifier: '${truncateId(request.identifier.value)}'`

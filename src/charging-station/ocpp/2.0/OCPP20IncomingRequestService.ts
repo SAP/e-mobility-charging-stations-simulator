@@ -147,12 +147,12 @@ import {
   validateUUID,
 } from '../../../utils/index.js'
 import {
+  addConfigurationKey,
   buildConfigKey,
   getConfigurationKey,
   hasPendingReservation,
   hasPendingReservations,
   resetConnectorStatus,
-  setConfigurationKeyValue,
 } from '../../index.js'
 import {
   AuthContext,
@@ -832,13 +832,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation
   ): OCPP20GetLocalListVersionResponse {
     try {
-      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       if (!chargingStation.getLocalAuthListEnabled()) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Local auth list disabled, returning version 0`
-        )
         return { versionNumber: 0 }
       }
+      const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       const manager = authService.getLocalAuthListManager()
       if (manager == null) {
         logger.info(
@@ -953,10 +950,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Local auth list updated (${updateType}), version=${versionNumber.toString()}`
       )
-      setConfigurationKeyValue(
+      addConfigurationKey(
         chargingStation,
         buildConfigKey(OCPP20ComponentName.LocalAuthListCtrlr, OCPP20RequiredVariableName.Entries),
-        manager.getAllEntries().length.toString()
+        manager.getAllEntries().length.toString(),
+        { readonly: true },
+        { overwrite: true, save: false }
       )
       return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
     } catch (error) {
