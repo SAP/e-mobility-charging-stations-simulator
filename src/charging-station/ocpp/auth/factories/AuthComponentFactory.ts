@@ -8,9 +8,8 @@ import type {
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPError } from '../../../../exception/index.js'
-import { ErrorType, OCPP16StandardParametersKey, OCPPVersion } from '../../../../types/index.js'
-import { Constants, convertToIntOrNaN } from '../../../../utils/index.js'
-import { getConfigurationKey } from '../../../index.js'
+import { ErrorType, OCPPVersion } from '../../../../types/index.js'
+import { Constants } from '../../../../utils/index.js'
 import { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
@@ -96,21 +95,15 @@ export class AuthComponentFactory {
 
   /**
    * Create local auth list manager
-   * @param chargingStation - Charging station instance used to read local auth list capacity from station configuration
    * @param config - Authentication configuration controlling local auth list behavior
    * @returns In-memory local auth list manager if enabled, undefined otherwise
    */
-  static createLocalAuthListManager (
-    chargingStation: ChargingStation,
-    config: AuthConfiguration
-  ): LocalAuthListManager | undefined {
+  static createLocalAuthListManager (config: AuthConfiguration): LocalAuthListManager | undefined {
     if (!config.localAuthListEnabled) {
       return undefined
     }
 
-    const maxEntries =
-      config.maxLocalAuthListEntries ??
-      AuthComponentFactory.readMaxLocalAuthListEntries(chargingStation)
+    const maxEntries = config.maxLocalAuthListEntries
     return new InMemoryLocalAuthListManager(maxEntries)
   }
 
@@ -207,25 +200,5 @@ export class AuthComponentFactory {
    */
   static validateConfiguration (config: AuthConfiguration): void {
     AuthConfigValidator.validate(config)
-  }
-
-  private static readMaxLocalAuthListEntries (chargingStation: ChargingStation): number | undefined {
-    const ocppVersion = chargingStation.stationInfo?.ocppVersion
-    let configKey: ReturnType<typeof getConfigurationKey>
-    if (ocppVersion === OCPPVersion.VERSION_16) {
-      configKey = getConfigurationKey(
-        chargingStation,
-        OCPP16StandardParametersKey.LocalAuthListMaxLength
-      )
-    } else {
-      return undefined
-    }
-    if (configKey?.value != null) {
-      const parsed = convertToIntOrNaN(configKey.value)
-      if (!Number.isNaN(parsed) && parsed > 0) {
-        return parsed
-      }
-    }
-    return undefined
   }
 }

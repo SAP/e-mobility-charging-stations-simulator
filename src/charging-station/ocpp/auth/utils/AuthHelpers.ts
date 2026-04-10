@@ -1,5 +1,6 @@
 import { millisecondsToSeconds } from 'date-fns'
 
+import type { ChargingStation } from '../../../index.js'
 import type {
   AuthContext,
   AuthenticationMethod,
@@ -8,7 +9,9 @@ import type {
   Identifier,
 } from '../types/AuthTypes.js'
 
-import { isEmpty, truncateId } from '../../../../utils/index.js'
+import { OCPP16StandardParametersKey, OCPPVersion } from '../../../../types/index.js'
+import { convertToIntOrNaN, isEmpty, truncateId } from '../../../../utils/index.js'
+import { getConfigurationKey } from '../../../index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
@@ -194,6 +197,29 @@ function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult 
 }
 
 /**
+ * Read the maximum local auth list entries from the charging station's OCPP configuration.
+ * @param chargingStation - Charging station to read configuration from
+ * @returns Maximum entries limit, or undefined if not configured
+ */
+function readMaxLocalAuthListEntries (chargingStation: ChargingStation): number | undefined {
+  const ocppVersion = chargingStation.stationInfo?.ocppVersion
+  if (ocppVersion !== OCPPVersion.VERSION_16) {
+    return undefined
+  }
+  const configKey = getConfigurationKey(
+    chargingStation,
+    OCPP16StandardParametersKey.LocalAuthListMaxLength
+  )
+  if (configKey?.value != null) {
+    const parsed = convertToIntOrNaN(configKey.value)
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+  return undefined
+}
+
+/**
  * Strip sensitive data from an authorization result for safe logging.
  * @param result - Authorization result to sanitize
  * @returns Object with only safe-to-log fields
@@ -220,5 +246,6 @@ export const AuthHelpers = {
   isResultValid,
   isTemporaryFailure,
   mergeAuthResults,
+  readMaxLocalAuthListEntries,
   sanitizeForLogging,
 }

@@ -94,7 +94,6 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createLocalAuthListManager', async () => {
     await it('should create local auth list manager when enabled', () => {
-      const { station: chargingStation } = createMockChargingStation()
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -105,13 +104,12 @@ await describe('AuthComponentFactory', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      const result = AuthComponentFactory.createLocalAuthListManager(chargingStation, config)
+      const result = AuthComponentFactory.createLocalAuthListManager(config)
 
       assert.notStrictEqual(result, undefined)
     })
 
     await it('should return undefined when local auth list disabled', () => {
-      const { station: chargingStation } = createMockChargingStation()
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -122,7 +120,7 @@ await describe('AuthComponentFactory', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      const result = AuthComponentFactory.createLocalAuthListManager(chargingStation, config)
+      const result = AuthComponentFactory.createLocalAuthListManager(config)
 
       assert.strictEqual(result, undefined)
     })
