@@ -238,7 +238,7 @@ await describe('OCPP Authentication', async () => {
     })
 
     // C13.FR.01.INT.01 - Local Auth List exclusion (R17)
-    await it('C13.FR.01.INT.01: identifiers from local auth list are not cached', async () => {
+    await it('C13.FR.01.INT.01: identifiers from local auth list are not cached', () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         const listManager = createMockLocalAuthListManager({
@@ -256,7 +256,7 @@ await describe('OCPP Authentication', async () => {
         const request = createMockAuthRequest({
           identifier: createMockIdentifier('LIST-ID'),
         })
-        const result = await strategy.authenticate(request, config)
+        const result = strategy.authenticate(request, config)
 
         // Should be authorized from local list
         assert.notStrictEqual(result, undefined)

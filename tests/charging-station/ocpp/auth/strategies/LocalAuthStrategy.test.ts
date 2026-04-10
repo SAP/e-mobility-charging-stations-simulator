@@ -102,7 +102,7 @@ await describe('LocalAuthStrategy', async () => {
       strategy.initialize(config)
     })
 
-    await it('should authenticate using local auth list', async () => {
+    await it('should authenticate using local auth list', () => {
       mockLocalAuthListManager.getEntry = () => ({
         expiryDate: new Date(Date.now() + 86400000),
         identifier: 'LOCAL_TAG',
@@ -118,14 +118,14 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('LOCAL_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
     })
 
-    await it('should authenticate using cache', async () => {
+    await it('should authenticate using cache', () => {
       mockAuthCache.get = () =>
         createMockAuthorizationResult({
           cacheTtl: 300,
@@ -138,14 +138,14 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('CACHED_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
-    await it('should use offline fallback for transaction stop', async () => {
+    await it('should use offline fallback for transaction stop', () => {
       const config = createTestAuthConfig({ offlineAuthorizationEnabled: true })
       const request = createMockAuthRequest({
         allowOffline: true,
@@ -153,7 +153,7 @@ await describe('LocalAuthStrategy', async () => {
         identifier: createMockIdentifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
@@ -161,13 +161,13 @@ await describe('LocalAuthStrategy', async () => {
       assert.strictEqual(result.isOffline, true)
     })
 
-    await it('should return undefined when no local auth available', async () => {
+    await it('should return undefined when no local auth available', () => {
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
         identifier: createMockIdentifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = strategy.authenticate(request, config)
       assert.strictEqual(result, undefined)
     })
   })
