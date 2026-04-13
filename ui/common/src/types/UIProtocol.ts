@@ -57,7 +57,7 @@ export enum ServerNotification {
 }
 
 export interface BroadcastChannelResponsePayload extends JsonObject {
-  id: string
+  hashId: string | undefined
   status: ResponseStatus
 }
 

@@ -66,7 +66,8 @@ export const registerSignalHandlers = (): void => {
     if (process.stderr.isTTY) {
       process.stderr.write('\u001b[?25h')
     }
-    process.exitCode = code
+
+    process.exit(code)
   }
 
   process.on('SIGINT', () => {
