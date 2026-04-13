@@ -1,4 +1,7 @@
-import { lilconfig } from 'lilconfig'
+import { readFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+import process from 'node:process'
 import { type UIServerConfig, uiServerConfigSchema } from 'ui-common'
 
 import {
@@ -20,6 +23,11 @@ interface ParsedUrl {
   secure: boolean
 }
 
+const getXdgConfigPath = (): string => {
+  const xdgConfigHome = process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config')
+  return join(xdgConfigHome, 'evse-cli', 'config.json')
+}
+
 const parseServerUrl = (url: string): ParsedUrl => {
   const parsed = new URL(url)
   const secure = parsed.protocol === 'wss:'
@@ -31,30 +39,30 @@ const parseServerUrl = (url: string): ParsedUrl => {
   }
 }
 
+const readJsonFile = async (filePath: string): Promise<unknown> => {
+  const content = await readFile(filePath, 'utf8')
+  return JSON.parse(content) as unknown
+}
+
 const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConfig>> => {
-  if (configPath != null) {
-    try {
-      const result = await lilconfig('evse-cli').load(configPath)
-      if (result?.config != null) {
-        const parsed = result.config as Record<string, unknown>
-        return (parsed.uiServer ?? parsed) as Partial<UIServerConfig>
-      }
-      return {}
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error)
-      throw new Error(`Failed to load configuration file '${configPath}': ${message}`)
-    }
-  }
+  const targetPath = configPath ?? getXdgConfigPath()
   try {
-    const result = await lilconfig('evse-cli').search()
-    if (result?.config != null) {
-      const parsed = result.config as Record<string, unknown>
+    const raw = await readJsonFile(targetPath)
+    if (raw != null && typeof raw === 'object' && !Array.isArray(raw)) {
+      const parsed = raw as Record<string, unknown>
       return (parsed.uiServer ?? parsed) as Partial<UIServerConfig>
     }
     return {}
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to load configuration: ${message}`)
+    if (
+      configPath != null ||
+      !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
+    ) {
+      const message = error instanceof Error ? error.message : String(error)
+      const context = configPath != null ? `'${configPath}'` : `'${targetPath}'`
+      throw new Error(`Failed to load configuration file ${context}: ${message}`)
+    }
+    return {}
   }
 }
 
@@ -77,7 +85,6 @@ export const loadConfig = async (options: LoadConfigOptions = {}): Promise<UISer
     cliOverrides.secure = parsed.secure
   }
 
-  // Merge precedence: defaults < file config < CLI overrides
   const merged = {
     ...defaults,
     ...fileConfig,

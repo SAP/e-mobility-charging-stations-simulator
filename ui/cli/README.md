@@ -25,24 +25,43 @@ See the [simulator configuration](../../README.md#charging-stations-simulator-co
 
 ## Installation
 
+### Quick install
+
+```shell
+cd ui/cli
+./install.sh
+```
+
+This builds the CLI and installs it to `~/.local/bin/evse-cli`. Options:
+
+| Flag              | Description                                             |
+| ----------------- | ------------------------------------------------------- |
+| `--bin-dir <dir>` | Install to a custom directory (default: `~/.local/bin`) |
+| `--no-build`      | Skip the build step (use existing `dist/cli.js`)        |
+
+Ensure `~/.local/bin` is in your `$PATH`:
+
+```shell
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Manual build
+
 ```shell
 pnpm install
 pnpm --filter cli build
+node ui/cli/dist/cli.js --help
 ```
-
-The compiled binary is at `dist/cli.js`.
 
 ## Configuration
 
-The CLI reads configuration from a JSON file. It searches the following locations (in order):
+The CLI reads its configuration from the XDG config directory:
 
-- Path specified by `--config <path>`
-- `.evse-clirc.json`, `.evse-clirc`
-- `evse-cli.config.json`
-- `package.json` under `evse-cli` key
-- Parent directories (up to home)
+```
+${XDG_CONFIG_HOME:-$HOME/.config}/evse-cli/config.json
+```
 
-### Config file format
+The install script creates a default config file. To override, edit `~/.config/evse-cli/config.json`:
 
 ```json
 {
@@ -64,7 +83,9 @@ The CLI reads configuration from a JSON file. It searches the following location
 
 ### Configuration precedence
 
-Defaults < config file < CLI flags (highest priority).
+Defaults < config file < `--config <path>` < `--url <url>` (highest priority).
+
+Use `--config <path>` to load a specific config file instead of the XDG default.
 
 | Option     | Default     |
 | ---------- | ----------- |
