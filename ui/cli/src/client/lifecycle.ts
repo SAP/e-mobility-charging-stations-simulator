@@ -40,19 +40,21 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
 
   try {
     await client.connect()
+  } catch (error: unknown) {
+    spinner?.fail()
+    client.disconnect()
+    throw new ConnectionError(url, error)
+  }
+
+  try {
     if (spinner != null) {
       spinner.text = `Sending ${procedureName}...`
     }
-
     const response: ResponsePayload = await client.sendRequest(procedureName, payload)
     spinner?.stop()
-
     formatter.output(response)
   } catch (error: unknown) {
     spinner?.fail()
-    if (error instanceof Error && error.message.includes('connect')) {
-      throw new ConnectionError(url, error)
-    }
     throw error
   } finally {
     client.disconnect()

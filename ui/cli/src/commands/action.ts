@@ -15,9 +15,9 @@ export const runAction = async (
   payload: RequestPayload
 ): Promise<void> => {
   const rootOpts = program.opts<GlobalOptions>()
-  const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.url })
   const formatter = createFormatter(rootOpts.json)
   try {
+    const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.url })
     await executeCommand({ config, formatter, payload, procedureName })
     process.exit(0)
   } catch (error: unknown) {

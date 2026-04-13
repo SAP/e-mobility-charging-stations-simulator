@@ -35,12 +35,17 @@ const parseServerUrl = (url: string): ParsedUrl => {
 
 const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConfig>> => {
   if (configPath != null) {
-    const result = await lilconfig('evse-cli').load(configPath)
-    if (result?.config != null) {
-      const parsed = result.config as Record<string, unknown>
-      return (parsed.uiServer ?? parsed) as Partial<UIServerConfig>
+    try {
+      const result = await lilconfig('evse-cli').load(configPath)
+      if (result?.config != null) {
+        const parsed = result.config as Record<string, unknown>
+        return (parsed.uiServer ?? parsed) as Partial<UIServerConfig>
+      }
+      return {}
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(`Failed to load configuration file '${configPath}': ${message}`)
     }
-    return {}
   }
   const result = await lilconfig('evse-cli').search()
   if (result?.config != null) {

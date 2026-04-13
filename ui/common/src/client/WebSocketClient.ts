@@ -36,7 +36,11 @@ export class WebSocketClient {
         resolve()
       }
       this.ws.onerror = event => {
-        reject(new Error(event.message))
+        const err =
+          event.error instanceof Error
+            ? event.error
+            : new Error(event.message.length > 0 ? event.message : 'WebSocket connection error')
+        reject(err)
       }
       this.ws.onmessage = event => {
         this.handleMessage(event.data)
