@@ -22,6 +22,10 @@ const createWsFactory = (): WebSocketFactory => {
   }
 }
 
+let activeClient: undefined | WebSocketClient
+let activeSpinner: ReturnType<typeof ora> | undefined
+let cleanupInProgress = false
+
 export interface ExecuteOptions {
   config: UIServerConfig
   formatter: Formatter
@@ -43,6 +47,9 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   const factory = createWsFactory()
   const client = new WebSocketClient(factory, config, timeoutMs)
 
+  activeSpinner = spinner ?? undefined
+  activeClient = client
+
   try {
     await client.connect()
   } catch (error: unknown) {
@@ -62,15 +69,18 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
     spinner?.fail()
     throw error
   } finally {
+    activeClient = undefined
+    activeSpinner = undefined
     client.disconnect()
   }
 }
 
 export const registerSignalHandlers = (): void => {
   const cleanup = (code: number): void => {
-    if (process.stderr.isTTY) {
-      process.stderr.write('\u001b[?25h')
-    }
+    if (cleanupInProgress) return
+    cleanupInProgress = true
+    activeSpinner?.stop()
+    activeClient?.disconnect()
 
     process.exit(code)
   }
