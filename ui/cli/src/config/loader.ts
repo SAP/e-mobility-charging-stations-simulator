@@ -1,7 +1,5 @@
-import type { UIServerConfig } from 'ui-common'
-
 import { lilconfig } from 'lilconfig'
-import { uiServerConfigSchema } from 'ui-common'
+import { type UIServerConfig, uiServerConfigSchema } from 'ui-common'
 
 import {
   DEFAULT_HOST,

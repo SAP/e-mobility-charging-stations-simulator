@@ -1,9 +1,7 @@
-import type { ResponsePayload } from 'ui-common'
-
 import chalk from 'chalk'
 import Table from 'cli-table3'
 import process from 'node:process'
-import { ResponseStatus } from 'ui-common'
+import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.status === ResponseStatus.FAILURE) {

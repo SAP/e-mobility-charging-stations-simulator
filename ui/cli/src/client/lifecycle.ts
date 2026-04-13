@@ -1,9 +1,14 @@
-import type { ProcedureName, RequestPayload, ResponsePayload, UIServerConfig } from 'ui-common'
-import type { WebSocketFactory, WebSocketLike } from 'ui-common'
-
 import process from 'node:process'
 import ora from 'ora'
-import { WebSocketClient } from 'ui-common'
+import {
+  type ProcedureName,
+  type RequestPayload,
+  type ResponsePayload,
+  type UIServerConfig,
+  WebSocketClient,
+  type WebSocketFactory,
+  type WebSocketLike,
+} from 'ui-common'
 import { WebSocket as WsWebSocket } from 'ws'
 
 import type { Formatter } from '../output/formatter.js'

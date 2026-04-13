@@ -1,7 +1,5 @@
-import type { ResponsePayload } from 'ui-common'
-
 import process from 'node:process'
-import { ResponseStatus } from 'ui-common'
+import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
 export const outputJson = (payload: ResponsePayload): void => {
   process.stdout.write(JSON.stringify(payload, null, 2) + '\n')

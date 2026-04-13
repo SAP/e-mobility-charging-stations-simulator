@@ -1,8 +1,5 @@
-import type { Command } from 'commander'
-import type { RequestPayload } from 'ui-common'
-
-import { Command as Cmd } from 'commander'
-import { ProcedureName } from 'ui-common'
+import { Command as Cmd, type Command } from 'commander'
+import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
