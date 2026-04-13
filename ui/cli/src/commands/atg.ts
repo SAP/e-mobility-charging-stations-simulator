@@ -3,8 +3,13 @@ import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
-const parseCommaSeparatedInts = (value: string): number[] =>
-  value.split(',').map(s => Number.parseInt(s.trim(), 10))
+const parseCommaSeparatedInts = (value: string): number[] => {
+  const parsed = value.split(',').map(s => Number.parseInt(s.trim(), 10))
+  if (parsed.some(n => Number.isNaN(n))) {
+    throw new Error(`Invalid connector IDs: '${value}' (expected comma-separated integers)`)
+  }
+  return parsed
+}
 
 export const createAtgCommands = (program: Command): Command => {
   const cmd = new Command('atg').description('Automatic Transaction Generator management')
