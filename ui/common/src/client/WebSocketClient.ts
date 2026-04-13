@@ -4,10 +4,24 @@ import type { ProcedureName, RequestPayload, ResponsePayload } from '../types/UI
 import type { UUIDv4 } from '../types/UUID.js'
 import type { ClientConfig, ResponseHandler, WebSocketFactory, WebSocketLike } from './types.js'
 
-import { ResponseStatus } from '../types/UIProtocol.js'
+import { AuthenticationType, ResponseStatus } from '../types/UIProtocol.js'
 import { randomUUID, validateUUID } from '../utils/UUID.js'
 
 const UI_WEBSOCKET_REQUEST_TIMEOUT_MS = 60_000
+
+export class ServerFailureError extends Error {
+  public readonly payload: ResponsePayload
+
+  public constructor (payload: ResponsePayload) {
+    const details =
+      payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0
+        ? `: ${payload.hashIdsFailed.length.toString()} station(s) failed`
+        : ''
+    super(`Server returned failure status${details}`)
+    this.name = 'ServerFailureError'
+    this.payload = payload
+  }
+}
 
 export class WebSocketClient {
   private readonly config: ClientConfig
@@ -92,7 +106,8 @@ export class WebSocketClient {
     const auth = this.config.authentication
     if (
       auth?.enabled === true &&
-      auth.type === 'protocol-basic-auth' &&
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      auth.type === AuthenticationType.PROTOCOL_BASIC_AUTH &&
       auth.username != null &&
       auth.password != null
     ) {
@@ -140,7 +155,7 @@ export class WebSocketClient {
     if (payload.status === ResponseStatus.SUCCESS) {
       handler.resolve(payload)
     } else {
-      handler.reject(payload)
+      handler.reject(new ServerFailureError(payload))
     }
   }
 }

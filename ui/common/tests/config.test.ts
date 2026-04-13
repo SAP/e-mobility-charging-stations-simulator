@@ -81,4 +81,56 @@ await describe('config schema validation', async () => {
     })
     assert.strictEqual(result.success, true)
   })
+
+  await it('should reject auth config when enabled with protocol-basic-auth but missing credentials', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        type: 'protocol-basic-auth',
+      },
+      host: 'localhost',
+      port: 8080,
+    })
+    assert.strictEqual(result.success, false)
+  })
+
+  await it('should reject auth config when enabled with protocol-basic-auth but empty username', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        password: 'admin',
+        type: 'protocol-basic-auth',
+        username: '',
+      },
+      host: 'localhost',
+      port: 8080,
+    })
+    assert.strictEqual(result.success, false)
+  })
+
+  await it('should accept auth config when enabled with protocol-basic-auth and credentials present', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        password: 'admin',
+        type: 'protocol-basic-auth',
+        username: 'admin',
+      },
+      host: 'localhost',
+      port: 8080,
+    })
+    assert.strictEqual(result.success, true)
+  })
+
+  await it('should accept auth config when disabled with protocol-basic-auth and no credentials', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: false,
+        type: 'protocol-basic-auth',
+      },
+      host: 'localhost',
+      port: 8080,
+    })
+    assert.strictEqual(result.success, true)
+  })
 })

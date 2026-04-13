@@ -1,9 +1,10 @@
+import type { AuthenticationType } from '../types/UIProtocol.js'
 import type { ResponsePayload } from '../types/UIProtocol.js'
 
 export interface AuthenticationConfig {
   enabled: boolean
   password?: string
-  type: string
+  type: AuthenticationType
   username?: string
 }
 

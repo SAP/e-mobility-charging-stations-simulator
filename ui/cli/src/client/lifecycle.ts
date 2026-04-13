@@ -61,13 +61,12 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   }
 }
 
-export const registerSignalHandlers = (client?: { disconnect: () => void }): void => {
+export const registerSignalHandlers = (): void => {
   const cleanup = (code: number): void => {
     if (process.stderr.isTTY) {
       process.stderr.write('\u001b[?25h')
     }
-    client?.disconnect()
-    process.exit(code)
+    process.exitCode = code
   }
 
   process.on('SIGINT', () => {

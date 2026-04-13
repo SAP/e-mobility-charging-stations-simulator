@@ -2,12 +2,24 @@ import { z } from 'zod'
 
 import { AuthenticationType } from '../types/UIProtocol.js'
 
-export const authenticationConfigSchema = z.object({
-  enabled: z.boolean(),
-  password: z.string().optional(),
-  type: z.enum(AuthenticationType),
-  username: z.string().optional(),
-})
+export const authenticationConfigSchema = z
+  .object({
+    enabled: z.boolean(),
+    password: z.string().optional(),
+    type: z.enum(AuthenticationType),
+    username: z.string().optional(),
+  })
+  .refine(
+    data =>
+      !data.enabled ||
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      data.type !== AuthenticationType.PROTOCOL_BASIC_AUTH ||
+      (data.username != null && data.username.length > 0 && data.password != null),
+    {
+      message:
+        'username and password are required when authentication is enabled with protocol-basic-auth',
+    }
+  )
 
 export const uiServerConfigSchema = z.object({
   authentication: authenticationConfigSchema.optional(),

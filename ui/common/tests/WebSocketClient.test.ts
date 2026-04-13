@@ -4,8 +4,8 @@ import { describe, it } from 'node:test'
 import type { WebSocketFactory, WebSocketLike } from '../src/client/types.js'
 import type { ResponsePayload } from '../src/types/UIProtocol.js'
 
-import { WebSocketClient } from '../src/client/WebSocketClient.js'
-import { ProcedureName, ResponseStatus } from '../src/types/UIProtocol.js'
+import { ServerFailureError, WebSocketClient } from '../src/client/WebSocketClient.js'
+import { AuthenticationType, ProcedureName, ResponseStatus } from '../src/types/UIProtocol.js'
 
 /**
  * @returns Mock WebSocket with trigger methods for testing.
@@ -102,7 +102,7 @@ await describe('WebSocketClient', async () => {
       authentication: {
         enabled: true,
         password: 'admin',
-        type: 'protocol-basic-auth',
+        type: AuthenticationType.PROTOCOL_BASIC_AUTH,
         username: 'admin',
       },
       host: 'localhost',
@@ -174,6 +174,43 @@ await describe('WebSocketClient', async () => {
     await assert.rejects(async () => {
       await p1
     })
+  })
+
+  await it('should reject with ServerFailureError containing the payload', async () => {
+    const mockWs = createMockWS()
+    const factory: WebSocketFactory = () => mockWs
+    const client = new WebSocketClient(factory, {
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    const request = client.sendRequest(ProcedureName.START_SIMULATOR, {})
+    const uuid = (JSON.parse(mockWs.sentMessages[0]) as unknown[])[0] as string
+    const failurePayload: ResponsePayload = {
+      hashIdsFailed: ['station-1', 'station-2'],
+      status: ResponseStatus.FAILURE,
+    }
+    mockWs.triggerMessage(JSON.stringify([uuid, failurePayload]))
+
+    await assert.rejects(
+      async () => {
+        await request
+      },
+      (error: unknown) => {
+        assert.ok(error instanceof ServerFailureError)
+        assert.ok(error instanceof Error)
+        assert.strictEqual(error.name, 'ServerFailureError')
+        assert.strictEqual(error.message, 'Server returned failure status: 2 station(s) failed')
+        assert.strictEqual(error.payload.status, ResponseStatus.FAILURE)
+        assert.deepStrictEqual(error.payload.hashIdsFailed, ['station-1', 'station-2'])
+        return true
+      }
+    )
   })
 
   await it('should handle connection errors', async () => {

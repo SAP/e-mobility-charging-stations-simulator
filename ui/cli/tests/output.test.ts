@@ -106,7 +106,7 @@ await describe('output formatters', async () => {
     const output = captureStderr(() => {
       outputTable(payload)
     })
-    assert.ok(output.includes('Failed'))
+    assert.ok(output.includes('Status: failure'))
   })
 
   await it('should write generic success when no hash IDs in table mode', () => {

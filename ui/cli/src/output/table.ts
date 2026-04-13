@@ -7,8 +7,7 @@ import { ResponseStatus } from 'ui-common'
 
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.status === ResponseStatus.FAILURE) {
-    outputFailure(payload)
-    return
+    process.stderr.write(chalk.red(`✗ Status: ${payload.status}\n`))
   }
 
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
@@ -35,12 +34,10 @@ export const outputTable = (payload: ResponsePayload): void => {
     (payload.hashIdsSucceeded == null || payload.hashIdsSucceeded.length === 0) &&
     (payload.hashIdsFailed == null || payload.hashIdsFailed.length === 0)
   ) {
-    displayGenericPayload(payload)
+    if (payload.status === ResponseStatus.SUCCESS) {
+      displayGenericPayload(payload)
+    }
   }
-}
-
-const outputFailure = (_payload: ResponsePayload): void => {
-  process.stderr.write(chalk.red(`✗ Failed: ${_payload.status}\n`))
 }
 
 const displayGenericPayload = (payload: ResponsePayload): void => {
