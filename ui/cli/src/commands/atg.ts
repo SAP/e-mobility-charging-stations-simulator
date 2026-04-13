@@ -3,7 +3,8 @@ import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
-const parseIntList = (value: string): number[] => value.split(',').map(s => parseInt(s.trim(), 10))
+const parseIntList = (value: string): number[] =>
+  value.split(',').map(s => Number.parseInt(s.trim(), 10))
 
 export const createAtgCommands = (program: Command): Command => {
   const cmd = new Cmd('atg').description('Automatic Transaction Generator management')

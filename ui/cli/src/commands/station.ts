@@ -33,7 +33,7 @@ export const createStationCommands = (program: Command): Command => {
     .command('add')
     .description('Add charging stations from template')
     .requiredOption('-t, --template <name>', 'station template name')
-    .requiredOption('-n, --count <n>', 'number of stations to add', parseInt)
+    .requiredOption('-n, --count <n>', 'number of stations to add', Number.parseInt)
     .option('--supervision-url <url>', 'supervision URL for new stations')
     .option('--auto-start', 'auto-start added stations', false)
     .option('--persistent-config', 'enable persistent OCPP configuration', false)

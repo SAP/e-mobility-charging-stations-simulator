@@ -9,7 +9,7 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('start [hashIds...]')
     .description('Start a transaction')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
     .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
     .action(async (hashIds: string[], options: { connectorId: number; idTag: string }) => {
       const payload: RequestPayload = {
@@ -23,7 +23,7 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('stop [hashIds...]')
     .description('Stop a transaction')
-    .requiredOption('--transaction-id <id>', 'transaction ID', parseInt)
+    .requiredOption('--transaction-id <id>', 'transaction ID', Number.parseInt)
     .action(async (hashIds: string[], options: { transactionId: number }) => {
       const payload: RequestPayload = {
         transactionId: options.transactionId,

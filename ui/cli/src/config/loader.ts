@@ -23,7 +23,7 @@ interface ParsedUrl {
 const parseServerUrl = (url: string): ParsedUrl => {
   const parsed = new URL(url)
   const secure = parsed.protocol === 'wss:'
-  const port = parsed.port !== '' ? parseInt(parsed.port, 10) : secure ? 443 : 80
+  const port = parsed.port !== '' ? Number.parseInt(parsed.port, 10) : secure ? 443 : 80
   return {
     host: parsed.hostname,
     port,

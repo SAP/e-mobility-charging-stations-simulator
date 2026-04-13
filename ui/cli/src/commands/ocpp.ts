@@ -98,7 +98,7 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('meter-values [hashIds...]')
     .description('Send OCPP MeterValues')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
@@ -142,7 +142,7 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('status-notification [hashIds...]')
     .description('Send OCPP StatusNotification')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
     .requiredOption('--error-code <code>', 'connector error code')
     .requiredOption('--status <status>', 'connector status')
     .action(
