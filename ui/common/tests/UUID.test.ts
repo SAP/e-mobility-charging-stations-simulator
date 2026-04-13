@@ -21,6 +21,14 @@ await describe('UUID utilities', async () => {
     assert.strictEqual(validateUUID('550e8400-e29b-31d4-a716-446655440000'), false) // v3 not v4
   })
 
+  await it('should reject non-string values', () => {
+    assert.strictEqual(validateUUID(123), false)
+    assert.strictEqual(validateUUID(null), false)
+    assert.strictEqual(validateUUID(undefined), false)
+    assert.strictEqual(validateUUID({}), false)
+    assert.strictEqual(validateUUID(true), false)
+  })
+
   await it('should generate unique UUIDs', () => {
     const uuids = new Set(Array.from({ length: 100 }, () => randomUUID()))
     assert.strictEqual(uuids.size, 100)

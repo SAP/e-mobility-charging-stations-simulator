@@ -145,7 +145,7 @@ export class WebSocketClient {
     }
     if (!Array.isArray(message) || message.length !== 2) return
     const [uuid, responsePayload] = message as [unknown, unknown]
-    if (typeof uuid !== 'string' || !validateUUID(uuid)) return
+    if (!validateUUID(uuid)) return
     const handler = this.responseHandlers.get(uuid)
     if (handler == null) return
     clearTimeout(handler.timeoutId)

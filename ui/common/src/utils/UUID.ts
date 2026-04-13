@@ -8,6 +8,6 @@ export const randomUUID = (): UUIDv4 => {
   return cryptoRandomUUID() as UUIDv4
 }
 
-export const validateUUID = (uuid: string): uuid is UUIDv4 => {
-  return UUID_V4_REGEX.test(uuid)
+export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
+  return typeof uuid === 'string' && UUID_V4_REGEX.test(uuid)
 }
