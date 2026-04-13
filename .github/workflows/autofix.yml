@@ -37,4 +37,14 @@ jobs:
           pnpm format
           pnpm lint:fix
 
+      - working-directory: ui/common
+        run: |
+          pnpm format
+          pnpm lint:fix
+
+      - working-directory: ui/cli
+        run: |
+          pnpm format
+          pnpm lint:fix
+
       - uses: autofix-ci/action@7a166d7532b277f34e16238930461bf77f9d7ed8
