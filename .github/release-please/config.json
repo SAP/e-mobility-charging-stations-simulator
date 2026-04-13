@@ -7,12 +7,8 @@
   "include-v-in-tag": true,
   "packages": {
     ".": {
-      "exclude-paths": ["ui/web", "ui/common", "ui/cli", "tests/ocpp-server"],
+      "exclude-paths": ["ui/common", "ui/cli", "ui/web", "tests/ocpp-server"],
       "component": "simulator",
-      "extra-files": ["sonar-project.properties"]
-    },
-    "ui/web": {
-      "component": "webui",
       "extra-files": ["sonar-project.properties"]
     },
     "ui/common": {
@@ -21,6 +17,10 @@
     },
     "ui/cli": {
       "component": "cli",
+      "extra-files": ["sonar-project.properties"]
+    },
+    "ui/web": {
+      "component": "webui",
       "extra-files": ["sonar-project.properties"]
     },
     "tests/ocpp-server": {

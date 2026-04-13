@@ -32,17 +32,17 @@ jobs:
 
       - run: pnpm format
 
-      - working-directory: ui/web
-        run: |
-          pnpm format
-          pnpm lint:fix
-
       - working-directory: ui/common
         run: |
           pnpm format
           pnpm lint:fix
 
       - working-directory: ui/cli
+        run: |
+          pnpm format
+          pnpm lint:fix
+
+      - working-directory: ui/web
         run: |
           pnpm format
           pnpm lint:fix

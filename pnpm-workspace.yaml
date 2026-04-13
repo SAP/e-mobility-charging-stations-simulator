@@ -1,8 +1,8 @@
 packages:
   - ./
-  - ./ui/web
   - ./ui/common
   - ./ui/cli
+  - ./ui/web
 
 overrides:
   bn.js@<5.2.3: '>=5.2.3'
