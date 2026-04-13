@@ -3,7 +3,7 @@ import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
-const parseIntList = (value: string): number[] =>
+const parseCommaSeparatedInts = (value: string): number[] =>
   value.split(',').map(s => Number.parseInt(s.trim(), 10))
 
 export const createAtgCommands = (program: Command): Command => {
@@ -12,7 +12,7 @@ export const createAtgCommands = (program: Command): Command => {
   cmd
     .command('start [hashIds...]')
     .description('Start ATG on station(s)')
-    .option('--connector-ids <ids>', 'comma-separated connector IDs', parseIntList)
+    .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
         ...(options.connectorIds != null && { connectorIds: options.connectorIds }),
@@ -24,7 +24,7 @@ export const createAtgCommands = (program: Command): Command => {
   cmd
     .command('stop [hashIds...]')
     .description('Stop ATG on station(s)')
-    .option('--connector-ids <ids>', 'comma-separated connector IDs', parseIntList)
+    .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
         ...(options.connectorIds != null && { connectorIds: options.connectorIds }),
