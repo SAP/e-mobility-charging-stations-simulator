@@ -206,7 +206,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build-cli:
-    needs: [check-secrets]
+    needs: [check-secrets, build-common]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]

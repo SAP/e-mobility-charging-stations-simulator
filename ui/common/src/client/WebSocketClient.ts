@@ -33,6 +33,15 @@ export class WebSocketClient {
       const url = this.buildUrl()
       this.ws = this.factory(url, protocols)
       this.ws.onopen = () => {
+        if (this.ws != null) {
+          this.ws.onerror = event => {
+            const err =
+              event.error instanceof Error
+                ? event.error
+                : new Error(event.message.length > 0 ? event.message : 'WebSocket error')
+            this.failAllPending(err)
+          }
+        }
         resolve()
       }
       this.ws.onerror = event => {
@@ -101,10 +110,15 @@ export class WebSocketClient {
   }
 
   private clearHandlers (): void {
-    for (const [uuid, handler] of this.responseHandlers) {
+    this.failAllPending(new Error('Connection closed'))
+  }
+
+  private failAllPending (error: Error): void {
+    const handlers = [...this.responseHandlers.values()]
+    this.responseHandlers.clear()
+    for (const handler of handlers) {
       clearTimeout(handler.timeoutId)
-      handler.reject(new Error('Connection closed'))
-      this.responseHandlers.delete(uuid)
+      handler.reject(error)
     }
   }
 

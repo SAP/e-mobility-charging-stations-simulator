@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { argv } from 'node:process'
 
+import { registerSignalHandlers } from './client/lifecycle.js'
 import { createAtgCommands } from './commands/atg.js'
 import { createConnectionCommands } from './commands/connection.js'
 import { createConnectorCommands } from './commands/connector.js'
@@ -35,4 +36,5 @@ program.addCommand(createOcppCommands(program))
 program.addCommand(createPerformanceCommands(program))
 program.addCommand(createSupervisionCommands(program))
 
+registerSignalHandlers()
 await program.parseAsync(argv)

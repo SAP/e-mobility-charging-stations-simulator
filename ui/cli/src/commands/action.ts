@@ -19,9 +19,9 @@ export const runAction = async (
   try {
     const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.url })
     await executeCommand({ config, formatter, payload, procedureName })
-    process.exit(0)
+    process.exitCode = 0
   } catch (error: unknown) {
     formatter.error(error)
-    process.exit(1)
+    process.exitCode = 1
   }
 }

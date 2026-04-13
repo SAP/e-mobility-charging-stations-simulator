@@ -72,8 +72,8 @@ await describe('output formatters', async () => {
     assert.strictEqual(parsed.status, ResponseStatus.FAILURE)
   })
 
-  await it('should write error JSON to stderr', () => {
-    const output = captureStderr(() => {
+  await it('should write error JSON to stdout', () => {
+    const output = captureStdout(() => {
       outputJsonError(new Error('test error'))
     })
     const parsed = JSON.parse(output) as { error: boolean; message: string; status: string }
@@ -83,7 +83,7 @@ await describe('output formatters', async () => {
   })
 
   await it('should handle non-Error objects in JSON error output', () => {
-    const output = captureStderr(() => {
+    const output = captureStdout(() => {
       outputJsonError('string error')
     })
     const parsed = JSON.parse(output) as { message: string }
@@ -158,7 +158,7 @@ await describe('output formatters', async () => {
 
   await it('should handle error with JSON formatter', () => {
     const formatter = createFormatter(true)
-    const output = captureStderr(() => {
+    const output = captureStdout(() => {
       formatter.error(new Error('json err'))
     })
     const parsed = JSON.parse(output) as { message: string }

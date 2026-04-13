@@ -202,13 +202,12 @@ node dist/cli.js station start abc123 def456
 
 ## Exit Codes
 
-| Code  | Meaning                                                               |
-| ----- | --------------------------------------------------------------------- |
-| `0`   | Success                                                               |
-| `1`   | Command failed (connection error, server error, authentication error) |
-| `2`   | Usage error (invalid arguments, missing required options)             |
-| `130` | Interrupted (SIGINT / Ctrl+C)                                         |
-| `143` | Terminated (SIGTERM)                                                  |
+| Code  | Meaning                                                    |
+| ----- | ---------------------------------------------------------- |
+| `0`   | Success                                                    |
+| `1`   | Error (connection, server, authentication, or usage error) |
+| `130` | Interrupted (SIGINT / Ctrl+C)                              |
+| `143` | Terminated (SIGTERM)                                       |
 
 ## Environment Variables
 

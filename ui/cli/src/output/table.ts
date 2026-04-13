@@ -31,7 +31,10 @@ export const outputTable = (payload: ResponsePayload): void => {
     process.stderr.write(table.toString() + '\n')
   }
 
-  if (payload.hashIdsSucceeded == null && payload.hashIdsFailed == null) {
+  if (
+    (payload.hashIdsSucceeded == null || payload.hashIdsSucceeded.length === 0) &&
+    (payload.hashIdsFailed == null || payload.hashIdsFailed.length === 0)
+  ) {
     displayGenericPayload(payload)
   }
 }
