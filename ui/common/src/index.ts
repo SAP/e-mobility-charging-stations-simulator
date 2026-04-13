@@ -1,6 +1,7 @@
 export * from './client/types.js'
 export * from './client/WebSocketClient.js'
 export * from './config/schema.js'
+export * from './constants.js'
 export * from './types/ConfigurationType.js'
 export * from './types/JsonType.js'
 export * from './types/UIProtocol.js'

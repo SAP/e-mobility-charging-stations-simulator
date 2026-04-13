@@ -4,10 +4,9 @@ import type { ProcedureName, RequestPayload, ResponsePayload } from '../types/UI
 import type { UUIDv4 } from '../types/UUID.js'
 import type { ClientConfig, ResponseHandler, WebSocketFactory, WebSocketLike } from './types.js'
 
+import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from '../constants.js'
 import { AuthenticationType, ResponseStatus } from '../types/UIProtocol.js'
 import { randomUUID, validateUUID } from '../utils/UUID.js'
-
-const UI_WEBSOCKET_REQUEST_TIMEOUT_MS = 60_000
 
 export class ServerFailureError extends Error {
   public readonly payload: ResponsePayload
