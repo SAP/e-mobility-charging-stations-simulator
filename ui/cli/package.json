@@ -23,8 +23,9 @@
     "lint": "cross-env TIMING=1 eslint --cache .",
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix .",
     "format": "prettier --cache --write .; eslint --cache --fix .",
-    "test": "cross-env NODE_ENV=test node --import tsx --test --test-force-exit 'tests/**/*.test.ts'",
-    "test:coverage": "mkdir -p coverage && cross-env NODE_ENV=test node --import tsx --test --test-force-exit --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-reporter=lcov --test-reporter-destination=coverage/lcov.info 'tests/**/*.test.ts'",
+    "test": "cross-env NODE_ENV=test node --import tsx --test --test-force-exit 'tests/*.test.ts'",
+    "test:integration": "cross-env NODE_ENV=test node --import tsx --test --test-force-exit 'tests/integration/**/*.test.ts'",
+    "test:coverage": "mkdir -p coverage && cross-env NODE_ENV=test node --import tsx --test --test-force-exit --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-reporter=lcov --test-reporter-destination=coverage/lcov.info 'tests/*.test.ts'",
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
