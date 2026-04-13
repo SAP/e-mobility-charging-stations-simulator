@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const cliPath = join(__dirname, '../../dist/cli.js')
 
 const runCli = (args: string[]): Promise<{ code: number; stderr: string; stdout: string }> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const stdoutChunks: Buffer[] = []
     const stderrChunks: Buffer[] = []
     const child = spawn('node', [cliPath, ...args], {
@@ -17,7 +17,7 @@ const runCli = (args: string[]): Promise<{ code: number; stderr: string; stdout:
     })
     child.stdout.on('data', (chunk: Buffer) => stdoutChunks.push(chunk))
     child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk))
-    child.on('close', (code) => {
+    child.on('close', code => {
       resolve({
         code: code ?? 1,
         stderr: Buffer.concat(stderrChunks).toString(),
