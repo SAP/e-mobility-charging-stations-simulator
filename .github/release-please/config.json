@@ -32,7 +32,7 @@
     {
       "type": "linked-versions",
       "groupName": "simulator-ui-ocpp-server",
-      "components": ["simulator", "webui", "ui-common", "cli", "ocpp-server"]
+      "components": ["simulator", "ui-common", "cli", "webui", "ocpp-server"]
     }
   ],
   "changelog-sections": [
