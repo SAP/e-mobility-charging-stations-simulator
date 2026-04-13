@@ -4,6 +4,7 @@
     "target": "ESNext",
     "module": "NodeNext",
     "lib": ["ESNext"],
+    "types": ["node"],
     "removeComments": true,
     "strict": true,
     "moduleResolution": "NodeNext",
