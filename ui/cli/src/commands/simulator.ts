@@ -1,12 +1,10 @@
-import type { Command } from 'commander'
-
-import { Command as Cmd } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createSimulatorCommands = (program: Command): Command => {
-  const cmd = new Cmd('simulator').description('Simulator lifecycle management')
+  const cmd = new Command('simulator').description('Simulator lifecycle management')
 
   cmd
     .command('state')

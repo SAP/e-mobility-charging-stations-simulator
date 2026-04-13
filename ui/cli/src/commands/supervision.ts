@@ -1,10 +1,10 @@
-import { Command as Cmd, type Command } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createSupervisionCommands = (program: Command): Command => {
-  const cmd = new Cmd('supervision').description('Supervision URL management')
+  const cmd = new Command('supervision').description('Supervision URL management')
 
   cmd
     .command('set-url [hashIds...]')

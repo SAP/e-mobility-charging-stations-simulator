@@ -1,10 +1,10 @@
-import { Command as Cmd, type Command } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createStationCommands = (program: Command): Command => {
-  const cmd = new Cmd('station').description('Charging station management')
+  const cmd = new Command('station').description('Charging station management')
 
   cmd
     .command('list')

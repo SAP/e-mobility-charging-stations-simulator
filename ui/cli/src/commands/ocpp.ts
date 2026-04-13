@@ -1,10 +1,10 @@
-import { Command as Cmd, type Command } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createOcppCommands = (program: Command): Command => {
-  const cmd = new Cmd('ocpp').description('OCPP protocol commands')
+  const cmd = new Command('ocpp').description('OCPP protocol commands')
 
   cmd
     .command('authorize [hashIds...]')

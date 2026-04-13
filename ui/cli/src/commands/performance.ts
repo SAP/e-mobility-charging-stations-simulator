@@ -1,12 +1,10 @@
-import type { Command } from 'commander'
-
-import { Command as Cmd } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createPerformanceCommands = (program: Command): Command => {
-  const cmd = new Cmd('performance').description('Performance statistics')
+  const cmd = new Command('performance').description('Performance statistics')
 
   cmd
     .command('stats')

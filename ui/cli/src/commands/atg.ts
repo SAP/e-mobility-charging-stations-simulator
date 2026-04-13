@@ -1,4 +1,4 @@
-import { Command as Cmd, type Command } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
@@ -7,7 +7,7 @@ const parseIntList = (value: string): number[] =>
   value.split(',').map(s => Number.parseInt(s.trim(), 10))
 
 export const createAtgCommands = (program: Command): Command => {
-  const cmd = new Cmd('atg').description('Automatic Transaction Generator management')
+  const cmd = new Command('atg').description('Automatic Transaction Generator management')
 
   cmd
     .command('start [hashIds...]')

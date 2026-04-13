@@ -1,12 +1,10 @@
-import type { Command } from 'commander'
-
-import { Command as Cmd } from 'commander'
+import { Command } from 'commander'
 import { ProcedureName } from 'ui-common'
 
 import { runAction } from './action.js'
 
 export const createTemplateCommands = (program: Command): Command => {
-  const cmd = new Cmd('template').description('Template management')
+  const cmd = new Command('template').description('Template management')
 
   cmd
     .command('list')
