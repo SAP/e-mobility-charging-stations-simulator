@@ -32,7 +32,7 @@ await describe('WS Adapter', async () => {
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
     let receivedData: string | undefined
-    adapter.onmessage = (event) => {
+    adapter.onmessage = event => {
       receivedData = event.data
     }
 
@@ -56,7 +56,7 @@ await describe('WS Adapter', async () => {
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
     let receivedData: string | undefined
-    adapter.onmessage = (event) => {
+    adapter.onmessage = event => {
       receivedData = event.data
     }
 
@@ -80,7 +80,7 @@ await describe('WS Adapter', async () => {
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
     let receivedData: string | undefined
-    adapter.onmessage = (event) => {
+    adapter.onmessage = event => {
       receivedData = event.data
     }
 
@@ -104,7 +104,7 @@ await describe('WS Adapter', async () => {
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
     let receivedData: string | undefined
-    adapter.onmessage = (event) => {
+    adapter.onmessage = event => {
       receivedData = event.data
     }
 
@@ -187,7 +187,7 @@ await describe('WS Adapter', async () => {
 
     let receivedError: unknown
     let receivedMessage: string | undefined
-    adapter.onerror = (event) => {
+    adapter.onerror = event => {
       receivedError = event.error
       receivedMessage = event.message
     }
@@ -217,7 +217,7 @@ await describe('WS Adapter', async () => {
 
     let receivedCode: number | undefined
     let receivedReason: string | undefined
-    adapter.onclose = (event) => {
+    adapter.onclose = event => {
       receivedCode = event.code
       receivedReason = event.reason
     }
