@@ -1,8 +1,8 @@
-import { Buffer } from 'node:buffer'
-
 import type { WebSocketLike } from 'ui-common'
-import { WebSocketReadyState } from 'ui-common'
-import { WebSocket as WsWebSocket } from 'ws'
+import type { WebSocketReadyState } from 'ui-common'
+import type { WebSocket as WsWebSocket } from 'ws'
+
+import { Buffer } from 'node:buffer'
 
 const toDataString = (data: WsWebSocket.Data): string => {
   if (Buffer.isBuffer(data)) {
@@ -23,14 +23,14 @@ export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
   let oncloseCallback: ((event: { code: number; reason: string }) => void) | null = null
   let onopenCallback: (() => void) | null = null
 
-  ws.onmessage = (event) => {
+  ws.onmessage = event => {
     if (onmessageCallback != null) {
       const data = toDataString(event.data)
       onmessageCallback({ data })
     }
   }
 
-  ws.onerror = (event) => {
+  ws.onerror = event => {
     if (onerrorCallback != null) {
       let error: Error
       let message: string
@@ -45,7 +45,7 @@ export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
     }
   }
 
-  ws.onclose = (event) => {
+  ws.onclose = event => {
     if (oncloseCallback != null) {
       oncloseCallback({ code: event.code, reason: event.reason })
     }
@@ -58,43 +58,43 @@ export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
   }
 
   return {
-    get onclose (): ((event: { code: number; reason: string }) => void) | null {
+    close(code?: number, reason?: string): void {
+      ws.close(code, reason)
+    },
+    get onclose(): ((event: { code: number; reason: string }) => void) | null {
       return oncloseCallback
     },
-    set onclose (callback: ((event: { code: number; reason: string }) => void) | null) {
+
+    set onclose(callback: ((event: { code: number; reason: string }) => void) | null) {
       oncloseCallback = callback
     },
-
-    get onerror (): ((event: { error: unknown; message: string }) => void) | null {
+    get onerror(): ((event: { error: unknown; message: string }) => void) | null {
       return onerrorCallback
     },
-    set onerror (callback: ((event: { error: unknown; message: string }) => void) | null) {
+
+    set onerror(callback: ((event: { error: unknown; message: string }) => void) | null) {
       onerrorCallback = callback
     },
-
-    get onmessage (): ((event: { data: string }) => void) | null {
+    get onmessage(): ((event: { data: string }) => void) | null {
       return onmessageCallback
     },
-    set onmessage (callback: ((event: { data: string }) => void) | null) {
+
+    set onmessage(callback: ((event: { data: string }) => void) | null) {
       onmessageCallback = callback
     },
-
-    get onopen (): (() => void) | null {
+    get onopen(): (() => void) | null {
       return onopenCallback
     },
-    set onopen (callback: (() => void) | null) {
+
+    set onopen(callback: (() => void) | null) {
       onopenCallback = callback
     },
 
-    close (code?: number, reason?: string): void {
-      ws.close(code, reason)
-    },
-
-    get readyState (): WebSocketReadyState {
+    get readyState(): WebSocketReadyState {
       return ws.readyState as WebSocketReadyState
     },
 
-    send (data: string): void {
+    send(data: string): void {
       ws.send(data)
     },
   }

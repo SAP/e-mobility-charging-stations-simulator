@@ -15,11 +15,11 @@ import { WebSocket as WsWebSocket } from 'ws'
 import type { Formatter } from '../output/formatter.js'
 
 import { ConnectionError } from './errors.js'
+import { createWsAdapter } from './ws-adapter.js'
 
 const createWsFactory = (): WebSocketFactory => {
   return (url: string, protocols: string | string[]): WebSocketLike => {
-    const ws = new WsWebSocket(url, protocols)
-    return ws as unknown as WebSocketLike
+    return createWsAdapter(new WsWebSocket(url, protocols))
   }
 }
 

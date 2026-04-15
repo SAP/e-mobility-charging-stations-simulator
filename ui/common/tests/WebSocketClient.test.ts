@@ -354,4 +354,37 @@ await describe('WebSocketClient', async () => {
       { message: 'WebSocket closed before connection established (code: 1000)' }
     )
   })
+
+  await it('should respect explicit short timeout on sendRequest', async () => {
+    const mockWs = createMockWS()
+    const factory: WebSocketFactory = () => mockWs
+    const client = new WebSocketClient(factory, {
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    const startTime = Date.now()
+    const requestPromise = client.sendRequest(ProcedureName.SIMULATOR_STATE, {}, 50)
+
+    // Don't send a response — let it timeout
+    await assert.rejects(
+      async () => {
+        await requestPromise
+      },
+      (error: unknown) => {
+        const elapsed = Date.now() - startTime
+        assert.ok(error instanceof Error)
+        assert.ok(error.message.includes('timed out'))
+        assert.ok(error.message.includes('50ms'))
+        // Should timeout around 50ms, definitely not 60s
+        assert.ok(elapsed < 500, `Expected timeout within 500ms, got ${elapsed}ms`)
+        return true
+      }
+    )
+  })
 })

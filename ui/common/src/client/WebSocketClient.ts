@@ -98,7 +98,8 @@ export class WebSocketClient {
 
   public sendRequest (
     procedureName: ProcedureName,
-    payload: RequestPayload
+    payload: RequestPayload,
+    timeoutMs?: number
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
       if (this.ws?.readyState !== WebSocketReadyState.OPEN) {
@@ -107,12 +108,13 @@ export class WebSocketClient {
       }
       const uuid = randomUUID()
       const message = JSON.stringify([uuid, procedureName, payload])
+      const effectiveTimeoutMs = timeoutMs ?? this.timeoutMs
       const timeoutId = setTimeout(() => {
         this.responseHandlers.delete(uuid)
         reject(
-          new Error(`Request '${procedureName}' timed out after ${this.timeoutMs.toString()}ms`)
+          new Error(`Request '${procedureName}' timed out after ${effectiveTimeoutMs.toString()}ms`)
         )
-      }, this.timeoutMs)
+      }, effectiveTimeoutMs)
       this.responseHandlers.set(uuid, { reject, resolve, timeoutId })
       this.ws.send(message)
     })
