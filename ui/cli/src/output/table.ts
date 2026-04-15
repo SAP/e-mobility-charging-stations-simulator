@@ -3,13 +3,18 @@ import Table from 'cli-table3'
 import process from 'node:process'
 import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
+const hashIdTable = (ids: string[]) => {
+  const table = new Table({ head: [chalk.white('Hash ID')] })
+  for (const id of ids) {
+    table.push([id])
+  }
+  return table
+}
+
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
     process.stdout.write(chalk.green(`✓ Succeeded (${String(payload.hashIdsSucceeded.length)}):\n`))
-    const table = new Table({ head: [chalk.white('Hash ID')] })
-    for (const id of payload.hashIdsSucceeded) {
-      table.push([id])
-    }
+    const table = hashIdTable(payload.hashIdsSucceeded)
     process.stdout.write(table.toString() + '\n')
   }
 
@@ -22,10 +27,7 @@ export const outputTable = (payload: ResponsePayload): void => {
       }
       process.stderr.write(table.toString() + '\n')
     } else {
-      const table = new Table({ head: [chalk.white('Hash ID')] })
-      for (const id of payload.hashIdsFailed) {
-        table.push([id])
-      }
+      const table = hashIdTable(payload.hashIdsFailed)
       process.stderr.write(table.toString() + '\n')
     }
   }

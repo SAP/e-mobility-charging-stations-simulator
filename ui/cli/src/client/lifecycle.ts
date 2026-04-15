@@ -24,7 +24,7 @@ const createWsFactory = (): WebSocketFactory => {
 }
 
 let activeClient: undefined | WebSocketClient
-let activeSpinner: ReturnType<typeof ora> | undefined
+let activeSpinner: null | ReturnType<typeof ora> | undefined
 let cleanupInProgress = false
 
 export interface ExecuteOptions {
@@ -47,7 +47,7 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
     ? ora({ stream: process.stderr }).start(`Connecting to ${url}`)
     : null
 
-  activeSpinner = spinner ?? undefined
+  activeSpinner = spinner
   activeClient = client
 
   const budget = timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS

@@ -217,11 +217,7 @@ await describe('WS Adapter', async () => {
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
-    const callback = (event: { data: string }): undefined => {
-      // eslint-disable-next-line no-void
-      void event
-      return undefined
-    }
+    const callback = (event: { data: string }): undefined => undefined
     adapter.onmessage = callback
     assert.strictEqual(adapter.onmessage, callback)
 
@@ -234,11 +230,7 @@ await describe('WS Adapter', async () => {
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
-    const callback = (event: { error: unknown; message: string }): undefined => {
-      // eslint-disable-next-line no-void
-      void event
-      return undefined
-    }
+    const callback = (_event: { error: unknown; message: string }): undefined => undefined
     adapter.onerror = callback
     assert.strictEqual(adapter.onerror, callback)
 
@@ -251,11 +243,7 @@ await describe('WS Adapter', async () => {
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
-    const callback = (event: { code: number; reason: string }): undefined => {
-      // eslint-disable-next-line no-void
-      void event
-      return undefined
-    }
+    const callback = (_event: { code: number; reason: string }): undefined => undefined
     adapter.onclose = callback
     assert.strictEqual(adapter.onclose, callback)
 

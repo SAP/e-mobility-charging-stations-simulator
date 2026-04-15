@@ -416,6 +416,7 @@ await describe('WebSocketClient', async () => {
       (error: unknown) => {
         assert.ok(error instanceof Error)
         assert.ok(error.message.includes('Invalid timeout'))
+        assert.ok(error.message.includes('0ms'))
         return true
       }
     )
@@ -444,6 +445,7 @@ await describe('WebSocketClient', async () => {
       (error: unknown) => {
         assert.ok(error instanceof Error)
         assert.ok(error.message.includes('Invalid timeout'))
+        assert.ok(error.message.includes('-1ms'))
         return true
       }
     )
