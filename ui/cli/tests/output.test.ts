@@ -165,4 +165,76 @@ await describe('output formatters', async () => {
     })
     assert.ok(output.includes('table err'))
   })
+
+  await it('should display responsesFailed with errorMessage in two-column table', () => {
+    const payload = {
+      hashIdsFailed: ['cs-001'],
+      responsesFailed: [
+        {
+          command: 'startChargingStation',
+          errorMessage: 'Station not found',
+          hashId: 'cs-001',
+          status: ResponseStatus.FAILURE,
+        },
+      ],
+      status: ResponseStatus.FAILURE,
+    }
+    const output = captureStderr(() => {
+      outputTable(payload)
+    })
+    assert.ok(output.includes('Station not found'))
+    assert.ok(output.includes('cs-001'))
+    assert.ok(output.includes('Error'))
+  })
+
+  await it('should display responsesFailed with missing errorMessage as Unknown error', () => {
+    const payload = {
+      hashIdsFailed: ['cs-002'],
+      responsesFailed: [
+        {
+          command: 'stopChargingStation',
+          hashId: 'cs-002',
+          status: ResponseStatus.FAILURE,
+        },
+      ],
+      status: ResponseStatus.FAILURE,
+    }
+    const output = captureStderr(() => {
+      outputTable(payload)
+    })
+    assert.ok(output.includes('Unknown error'))
+    assert.ok(output.includes('cs-002'))
+  })
+
+  await it('should display responsesFailed with undefined hashId as (unknown)', () => {
+    const payload = {
+      hashIdsFailed: ['cs-003'],
+      responsesFailed: [
+        {
+          command: 'openConnection',
+          errorMessage: 'Timeout',
+          hashId: undefined,
+          status: ResponseStatus.FAILURE,
+        },
+      ],
+      status: ResponseStatus.FAILURE,
+    }
+    const output = captureStderr(() => {
+      outputTable(payload)
+    })
+    assert.ok(output.includes('(unknown)'))
+    assert.ok(output.includes('Timeout'))
+  })
+
+  await it('should display hashIdsFailed without responsesFailed as single-column table', () => {
+    const payload = {
+      hashIdsFailed: ['cs-001'],
+      status: ResponseStatus.FAILURE,
+    }
+    const output = captureStderr(() => {
+      outputTable(payload)
+    })
+    assert.ok(output.includes('cs-001'))
+    assert.ok(!output.includes('Error'))
+  })
 })

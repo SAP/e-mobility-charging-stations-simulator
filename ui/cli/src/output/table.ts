@@ -17,11 +17,19 @@ export const outputTable = (payload: ResponsePayload): void => {
 
   if (payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0) {
     process.stderr.write(chalk.red(`✗ Failed (${payload.hashIdsFailed.length.toString()}):\n`))
-    const table = new Table({ head: [chalk.white('Hash ID')] })
-    for (const id of payload.hashIdsFailed) {
-      table.push([id])
+    if (payload.responsesFailed != null && payload.responsesFailed.length > 0) {
+      const table = new Table({ head: [chalk.white('Hash ID'), chalk.white('Error')] })
+      for (const entry of payload.responsesFailed) {
+        table.push([entry.hashId ?? '(unknown)', entry.errorMessage ?? 'Unknown error'])
+      }
+      process.stderr.write(table.toString() + '\n')
+    } else {
+      const table = new Table({ head: [chalk.white('Hash ID')] })
+      for (const id of payload.hashIdsFailed) {
+        table.push([id])
+      }
+      process.stderr.write(table.toString() + '\n')
     }
-    process.stderr.write(table.toString() + '\n')
   }
 
   if (
