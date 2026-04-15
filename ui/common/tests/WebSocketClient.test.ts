@@ -312,4 +312,52 @@ await describe('WebSocketClient', async () => {
     mockWs.triggerMessage(JSON.stringify([1, 2, 3]))
     mockWs.triggerMessage(JSON.stringify(['not-a-uuid', {}]))
   })
+
+  await it('should ignore malformed response payload', async () => {
+    const mockWs = createMockWS()
+    const factory: WebSocketFactory = () => mockWs
+    const client = new WebSocketClient(factory, {
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    const requestPromise = client.sendRequest(ProcedureName.SIMULATOR_STATE, {})
+    const uuid = (JSON.parse(mockWs.sentMessages[0]) as unknown[])[0] as string
+
+    // Send malformed responses — should be ignored, not crash
+    mockWs.triggerMessage(JSON.stringify([uuid, null]))
+    mockWs.triggerMessage(JSON.stringify([uuid, 42]))
+    mockWs.triggerMessage(JSON.stringify([uuid, 'string']))
+
+    // The request should still be pending (neither resolved nor rejected by malformed messages)
+    // Send a proper response to complete it
+    mockWs.triggerMessage(JSON.stringify([uuid, { status: ResponseStatus.SUCCESS }]))
+    const result = await requestPromise
+    assert.strictEqual(result.status, ResponseStatus.SUCCESS)
+  })
+
+  await it('should reject connect if socket closes before open', async () => {
+    const mockWs = createMockWS()
+    const factory: WebSocketFactory = () => mockWs
+    const client = new WebSocketClient(factory, {
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    const connectPromise = client.connect()
+    // Close without opening — simulates handshake rejection
+    mockWs.triggerClose()
+    await assert.rejects(
+      async () => {
+        await connectPromise
+      },
+      { message: 'WebSocket closed before connection established (code: 1000)' }
+    )
+  })
 })

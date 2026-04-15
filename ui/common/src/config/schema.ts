@@ -14,7 +14,10 @@ export const authenticationConfigSchema = z
       !data.enabled ||
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       data.type !== AuthenticationType.PROTOCOL_BASIC_AUTH ||
-      (data.username != null && data.username.length > 0 && data.password != null),
+      (data.username != null &&
+        data.username.length > 0 &&
+        data.password != null &&
+        data.password.length > 0),
     {
       message:
         'username and password are required when authentication is enabled with protocol-basic-auth',

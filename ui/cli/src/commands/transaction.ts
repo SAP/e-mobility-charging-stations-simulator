@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
-import { runAction } from './action.js'
+import { parseInteger, runAction } from './action.js'
 
 export const createTransactionCommands = (program: Command): Command => {
   const cmd = new Command('transaction').description('Transaction management')
@@ -9,7 +9,7 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('start [hashIds...]')
     .description('Start a transaction')
-    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
     .action(async (hashIds: string[], options: { connectorId: number; idTag: string }) => {
       const payload: RequestPayload = {
@@ -23,7 +23,7 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('stop [hashIds...]')
     .description('Stop a transaction')
-    .requiredOption('--transaction-id <id>', 'transaction ID', Number.parseInt)
+    .requiredOption('--transaction-id <id>', 'transaction ID', parseInteger)
     .action(async (hashIds: string[], options: { transactionId: number }) => {
       const payload: RequestPayload = {
         transactionId: options.transactionId,

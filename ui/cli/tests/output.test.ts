@@ -101,12 +101,12 @@ await describe('output formatters', async () => {
     assert.ok(output.includes('cs-001'))
   })
 
-  await it('should write failure output to stderr in table mode', () => {
-    const payload = { status: ResponseStatus.FAILURE }
-    const output = captureStderr(() => {
+  await it('should display generic payload when no hash IDs present', () => {
+    const payload = { state: { version: '1.0' }, status: ResponseStatus.SUCCESS }
+    const output = captureStdout(() => {
       outputTable(payload)
     })
-    assert.ok(output.includes('Status: failure'))
+    assert.ok(output.includes('version'))
   })
 
   await it('should write generic success when no hash IDs in table mode', () => {

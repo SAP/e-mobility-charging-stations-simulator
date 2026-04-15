@@ -1,13 +1,12 @@
+import type { ResponsePayload } from 'ui-common'
+
 import chalk from 'chalk'
 import Table from 'cli-table3'
 import process from 'node:process'
-import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
+// outputTable is only called with SUCCESS payloads — FAILURE payloads
+// are rejected as ServerFailureError and routed to formatter.error() instead.
 export const outputTable = (payload: ResponsePayload): void => {
-  if (payload.status === ResponseStatus.FAILURE) {
-    process.stderr.write(chalk.red(`✗ Status: ${payload.status}\n`))
-  }
-
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
     process.stdout.write(
       chalk.green(`✓ Succeeded (${payload.hashIdsSucceeded.length.toString()}):\n`)
@@ -32,9 +31,7 @@ export const outputTable = (payload: ResponsePayload): void => {
     (payload.hashIdsSucceeded == null || payload.hashIdsSucceeded.length === 0) &&
     (payload.hashIdsFailed == null || payload.hashIdsFailed.length === 0)
   ) {
-    if (payload.status === ResponseStatus.SUCCESS) {
-      displayGenericPayload(payload)
-    }
+    displayGenericPayload(payload)
   }
 }
 

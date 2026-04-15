@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
-import { runAction } from './action.js'
+import { parseInteger, runAction } from './action.js'
 
 export const createOcppCommands = (program: Command): Command => {
   const cmd = new Command('ocpp').description('OCPP protocol commands')
@@ -98,7 +98,7 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('meter-values [hashIds...]')
     .description('Send OCPP MeterValues')
-    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
@@ -142,7 +142,7 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('status-notification [hashIds...]')
     .description('Send OCPP StatusNotification')
-    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .requiredOption('--error-code <code>', 'connector error code')
     .requiredOption('--status <status>', 'connector status')
     .action(

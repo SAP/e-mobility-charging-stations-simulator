@@ -30,6 +30,9 @@ const getXdgConfigPath = (): string => {
 
 const parseServerUrl = (url: string): ParsedUrl => {
   const parsed = new URL(url)
+  if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+    throw new Error(`Invalid URL scheme '${parsed.protocol}' — expected ws: or wss:`)
+  }
   const secure = parsed.protocol === 'wss:'
   const port = parsed.port !== '' ? Number.parseInt(parsed.port, 10) : secure ? 443 : 80
   return {

@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
-import { runAction } from './action.js'
+import { parseInteger, runAction } from './action.js'
 
 export const createStationCommands = (program: Command): Command => {
   const cmd = new Command('station').description('Charging station management')
@@ -33,7 +33,7 @@ export const createStationCommands = (program: Command): Command => {
     .command('add')
     .description('Add charging stations from template')
     .requiredOption('-t, --template <name>', 'station template name')
-    .requiredOption('-n, --count <n>', 'number of stations to add', Number.parseInt)
+    .requiredOption('-n, --count <n>', 'number of stations to add', parseInteger)
     .option('--supervision-url <url>', 'supervision URL for new stations')
     .option('--auto-start', 'auto-start added stations', false)
     .option('--persistent-config', 'enable persistent OCPP configuration', false)

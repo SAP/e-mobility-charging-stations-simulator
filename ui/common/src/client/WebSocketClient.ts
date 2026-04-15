@@ -45,7 +45,9 @@ export class WebSocketClient {
       const protocols = this.buildProtocols()
       const url = this.buildUrl()
       this.ws = this.factory(url, protocols)
+      let settled = false
       this.ws.onopen = () => {
+        settled = true
         if (this.ws != null) {
           this.ws.onerror = event => {
             const err =
@@ -58,6 +60,7 @@ export class WebSocketClient {
         resolve()
       }
       this.ws.onerror = event => {
+        settled = true
         const err =
           event.error instanceof Error
             ? event.error
@@ -67,7 +70,15 @@ export class WebSocketClient {
       this.ws.onmessage = event => {
         this.handleMessage(event.data)
       }
-      this.ws.onclose = () => {
+      this.ws.onclose = event => {
+        if (!settled) {
+          settled = true
+          reject(
+            new Error(
+              `WebSocket closed before connection established (code: ${event.code.toString()})`
+            )
+          )
+        }
         this.clearHandlers()
       }
     })
@@ -146,6 +157,13 @@ export class WebSocketClient {
     if (!Array.isArray(message) || message.length !== 2) return
     const [uuid, responsePayload] = message as [unknown, unknown]
     if (!validateUUID(uuid)) return
+    if (
+      responsePayload == null ||
+      typeof responsePayload !== 'object' ||
+      !('status' in responsePayload)
+    ) {
+      return
+    }
     const handler = this.responseHandlers.get(uuid)
     if (handler == null) return
     clearTimeout(handler.timeoutId)

@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
-import { runAction } from './action.js'
+import { parseInteger, runAction } from './action.js'
 
 export const createConnectorCommands = (program: Command): Command => {
   const cmd = new Command('connector').description('Connector management')
@@ -9,7 +9,7 @@ export const createConnectorCommands = (program: Command): Command => {
   cmd
     .command('lock [hashIds...]')
     .description('Lock a connector')
-    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
@@ -21,7 +21,7 @@ export const createConnectorCommands = (program: Command): Command => {
   cmd
     .command('unlock [hashIds...]')
     .description('Unlock a connector')
-    .requiredOption('--connector-id <id>', 'connector ID', Number.parseInt)
+    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
