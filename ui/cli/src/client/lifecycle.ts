@@ -46,6 +46,9 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   activeClient = client
 
   const budget = timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS
+  if (!Number.isFinite(budget) || budget <= 0) {
+    throw new Error(`Invalid timeout: ${String(budget)}ms (must be > 0)`)
+  }
   const startTime = Date.now()
 
   let connectTimeoutId: ReturnType<typeof setTimeout> | undefined

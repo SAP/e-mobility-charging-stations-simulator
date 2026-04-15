@@ -34,4 +34,21 @@ await describe('lifecycle', async () => {
   await it('should export executeCommand function', () => {
     assert.strictEqual(typeof executeCommand, 'function')
   })
+
+  await it('should reject executeCommand with NaN timeout', async () => {
+    await assert.rejects(
+      executeCommand({
+        config: { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+        formatter: { error: () => undefined, output: () => undefined },
+        payload: {},
+        procedureName: 'listChargingStations' as never,
+        timeoutMs: Number.NaN,
+      }),
+      (error: Error) => {
+        assert.ok(error.message.includes('Invalid timeout'))
+        assert.ok(error.message.includes('NaN'))
+        return true
+      }
+    )
+  })
 })
