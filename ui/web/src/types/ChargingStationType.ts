@@ -323,7 +323,7 @@ export const IncomingRequestCommand = {
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  currentTime: string
+  currentTime: Date
   interval: number
   status: OCPP16RegistrationStatus
 }
@@ -351,17 +351,17 @@ export interface Status extends JsonObject {
   acceptedStartTransactionRequests?: number
   acceptedStopTransactionRequests?: number
   authorizeRequests?: number
-  lastRunDate?: string
+  lastRunDate?: Date
   rejectedAuthorizeRequests?: number
   rejectedStartTransactionRequests?: number
   rejectedStopTransactionRequests?: number
   skippedConsecutiveTransactions?: number
   skippedTransactions?: number
   start?: boolean
-  startDate?: string
+  startDate?: Date
   startTransactionRequests?: number
-  stopDate?: string
-  stoppedDate?: string
+  stopDate?: Date
+  stoppedDate?: Date
   stopTransactionRequests?: number
 }
 

@@ -38,7 +38,7 @@ export function createChargingStationData (
 ): ChargingStationData {
   return {
     bootNotificationResponse: {
-      currentTime: '2024-01-01T00:00:00.000Z',
+      currentTime: new Date('2024-01-01T00:00:00Z'),
       interval: 60,
       status: OCPP16RegistrationStatus.ACCEPTED,
     },
