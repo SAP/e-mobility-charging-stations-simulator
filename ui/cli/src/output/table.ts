@@ -42,8 +42,11 @@ export const outputTable = (payload: ResponsePayload): void => {
 
 const displayGenericPayload = (payload: ResponsePayload): void => {
   const { status, ...rest } = payload
-  if (Object.keys(rest).length > 0) {
-    process.stdout.write(JSON.stringify(rest, null, 2) + '\n')
+  const meaningful = Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v != null && !(Array.isArray(v) && v.length === 0))
+  )
+  if (Object.keys(meaningful).length > 0) {
+    process.stdout.write(JSON.stringify(meaningful, null, 2) + '\n')
   } else if (status === ResponseStatus.SUCCESS) {
     process.stdout.write(chalk.green('✓ Success\n'))
   } else {

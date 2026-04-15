@@ -170,20 +170,24 @@ export class WebSocketClient {
     if (
       responsePayload == null ||
       typeof responsePayload !== 'object' ||
-      !('status' in responsePayload)
+      !('status' in responsePayload) ||
+      typeof (responsePayload as { status: unknown }).status !== 'string'
     ) {
-      clearTimeout(handler.timeoutId)
-      this.responseHandlers.delete(uuid)
+      this.settleHandler(uuid, handler)
       handler.reject(new Error('Server sent malformed response payload'))
       return
     }
-    clearTimeout(handler.timeoutId)
-    this.responseHandlers.delete(uuid)
+    this.settleHandler(uuid, handler)
     const payload = responsePayload as ResponsePayload
     if (payload.status === ResponseStatus.SUCCESS) {
       handler.resolve(payload)
     } else {
       handler.reject(new ServerFailureError(payload))
     }
+  }
+
+  private settleHandler (uuid: UUIDv4, handler: ResponseHandler): void {
+    clearTimeout(handler.timeoutId)
+    this.responseHandlers.delete(uuid)
   }
 }

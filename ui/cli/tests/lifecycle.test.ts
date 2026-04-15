@@ -20,6 +20,17 @@ await describe('lifecycle', async () => {
     assert.strictEqual(err.cause, cause)
   })
 
+  await it('should create ConnectionError without cause suffix when cause message is empty', () => {
+    const err = new ConnectionError('ws://localhost:8080', new Error(''))
+    assert.strictEqual(err.message, 'Failed to connect to ws://localhost:8080')
+  })
+
+  await it('should create ConnectionError without cause suffix when cause is not an Error', () => {
+    const err = new ConnectionError('ws://localhost:8080', 'string cause')
+    assert.strictEqual(err.message, 'Failed to connect to ws://localhost:8080')
+    assert.strictEqual(err.cause, 'string cause')
+  })
+
   await it('should export executeCommand function', () => {
     assert.strictEqual(typeof executeCommand, 'function')
   })

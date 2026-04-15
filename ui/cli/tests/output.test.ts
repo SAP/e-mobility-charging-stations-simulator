@@ -9,32 +9,18 @@ import { printError } from '../src/output/human.js'
 import { outputJson, outputJsonError } from '../src/output/json.js'
 import { outputTable } from '../src/output/table.js'
 
-const captureStdout = (fn: () => void): string => {
+const captureStream = (stream: 'stderr' | 'stdout', fn: () => void): string => {
+  const target = stream === 'stdout' ? process.stdout : process.stderr
   const chunks: string[] = []
-  const original = process.stdout.write.bind(process.stdout)
-  process.stdout.write = ((chunk: string): boolean => {
+  const original = target.write.bind(target)
+  target.write = ((chunk: string): boolean => {
     chunks.push(chunk)
     return true
-  }) as typeof process.stdout.write
+  }) as typeof target.write
   try {
     fn()
   } finally {
-    process.stdout.write = original
-  }
-  return chunks.join('')
-}
-
-const captureStderr = (fn: () => void): string => {
-  const chunks: string[] = []
-  const original = process.stderr.write.bind(process.stderr)
-  process.stderr.write = ((chunk: string): boolean => {
-    chunks.push(chunk)
-    return true
-  }) as typeof process.stderr.write
-  try {
-    fn()
-  } finally {
-    process.stderr.write = original
+    target.write = original
   }
   return chunks.join('')
 }
@@ -57,7 +43,7 @@ await describe('output formatters', async () => {
       hashIdsSucceeded: ['cs-001', 'cs-002'],
       status: ResponseStatus.SUCCESS,
     }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputJson(payload)
     })
     const parsed = JSON.parse(output) as typeof payload
@@ -67,7 +53,7 @@ await describe('output formatters', async () => {
 
   await it('should write valid JSON to stdout for failure payload', () => {
     const payload = { status: ResponseStatus.FAILURE }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputJson(payload)
     })
     const parsed = JSON.parse(output) as typeof payload
@@ -75,7 +61,7 @@ await describe('output formatters', async () => {
   })
 
   await it('should write error JSON to stdout', () => {
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputJsonError(new Error('test error'))
     })
     const parsed = JSON.parse(output) as { error: boolean; message: string; status: string }
@@ -85,7 +71,7 @@ await describe('output formatters', async () => {
   })
 
   await it('should handle non-Error objects in JSON error output', () => {
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputJsonError('string error')
     })
     const parsed = JSON.parse(output) as { message: string }
@@ -97,7 +83,7 @@ await describe('output formatters', async () => {
       hashIdsSucceeded: ['cs-001'],
       status: ResponseStatus.SUCCESS,
     }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('cs-001'))
@@ -105,7 +91,7 @@ await describe('output formatters', async () => {
 
   await it('should display generic payload when no hash IDs present', () => {
     const payload = { state: { version: '1.0' }, status: ResponseStatus.SUCCESS }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('version'))
@@ -113,14 +99,14 @@ await describe('output formatters', async () => {
 
   await it('should write generic success when no hash IDs in table mode', () => {
     const payload = { status: ResponseStatus.SUCCESS }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('Success'))
   })
 
   await it('should write error message via printError', () => {
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       printError('oops')
     })
     assert.ok(output.includes('oops'))
@@ -132,7 +118,7 @@ await describe('output formatters', async () => {
       hashIdsSucceeded: ['cs-100'],
       status: ResponseStatus.SUCCESS,
     }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       formatter.output(payload)
     })
     const parsed = JSON.parse(output) as typeof payload
@@ -145,7 +131,7 @@ await describe('output formatters', async () => {
       hashIdsSucceeded: ['cs-200'],
       status: ResponseStatus.SUCCESS,
     }
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       formatter.output(payload)
     })
     assert.ok(output.includes('cs-200'))
@@ -153,7 +139,7 @@ await describe('output formatters', async () => {
 
   await it('should handle error with JSON formatter', () => {
     const formatter = createFormatter(true)
-    const output = captureStdout(() => {
+    const output = captureStream('stdout', () => {
       formatter.error(new Error('json err'))
     })
     const parsed = JSON.parse(output) as { message: string }
@@ -162,7 +148,7 @@ await describe('output formatters', async () => {
 
   await it('should handle error with table formatter', () => {
     const formatter = createFormatter(false)
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       formatter.error(new Error('table err'))
     })
     assert.ok(output.includes('table err'))
@@ -181,7 +167,7 @@ await describe('output formatters', async () => {
       ],
       status: ResponseStatus.FAILURE,
     }
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('Station not found'))
@@ -201,7 +187,7 @@ await describe('output formatters', async () => {
       ],
       status: ResponseStatus.FAILURE,
     }
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('Unknown error'))
@@ -221,7 +207,7 @@ await describe('output formatters', async () => {
       ],
       status: ResponseStatus.FAILURE,
     }
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('(unknown)'))
@@ -233,10 +219,17 @@ await describe('output formatters', async () => {
       hashIdsFailed: ['cs-001'],
       status: ResponseStatus.FAILURE,
     }
-    const output = captureStderr(() => {
+    const output = captureStream('stderr', () => {
       outputTable(payload)
     })
     assert.ok(output.includes('cs-001'))
     assert.ok(!output.includes('Error'))
+  })
+
+  await it('should display generic failure status on stderr', () => {
+    const output = captureStream('stderr', () => {
+      outputTable({ status: ResponseStatus.FAILURE })
+    })
+    assert.ok(output.includes('failure'))
   })
 })
