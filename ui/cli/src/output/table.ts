@@ -41,18 +41,3 @@ const displayGenericPayload = (payload: ResponsePayload): void => {
     process.stdout.write(chalk.green('✓ Success\n'))
   }
 }
-
-export const outputTableList = <T extends Record<string, unknown>>(
-  items: T[],
-  columns: { header: string; key: keyof T }[]
-): void => {
-  if (items.length === 0) {
-    process.stdout.write(chalk.dim('(no items)\n'))
-    return
-  }
-  const table = new Table({ head: columns.map(c => chalk.white(c.header)) })
-  for (const item of items) {
-    table.push(columns.map(c => String(item[c.key] ?? '')))
-  }
-  process.stdout.write(table.toString() + '\n')
-}

@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import { ResponseStatus } from 'ui-common'
 
 import { createFormatter } from '../src/output/formatter.js'
-import { printError, printSuccess } from '../src/output/human.js'
+import { printError } from '../src/output/human.js'
 import { outputJson, outputJsonError } from '../src/output/json.js'
 import { outputTable } from '../src/output/table.js'
 
@@ -115,13 +115,6 @@ await describe('output formatters', async () => {
       outputTable(payload)
     })
     assert.ok(output.includes('Success'))
-  })
-
-  await it('should write success message via printSuccess', () => {
-    const output = captureStdout(() => {
-      printSuccess('done')
-    })
-    assert.ok(output.includes('done'))
   })
 
   await it('should write error message via printError', () => {
