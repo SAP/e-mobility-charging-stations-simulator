@@ -70,7 +70,7 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
     ) {
       const message = error instanceof Error ? error.message : String(error)
       const context = configPath != null ? `'${configPath}'` : `'${targetPath}'`
-      throw new Error(`Failed to load configuration file ${context}: ${message}`)
+      throw new Error(`Failed to load configuration file ${context}: ${message}`, { cause: error })
     }
     return {}
   }
