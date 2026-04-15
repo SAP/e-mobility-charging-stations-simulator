@@ -193,7 +193,7 @@ const getSimulatorState = (): void => {
     $uiClient
       .simulatorState()
       .then((response: ResponsePayload) => {
-        simulatorState.value = response.state as SimulatorState
+        simulatorState.value = response.state as unknown as SimulatorState
         return undefined
       })
       .finally(() => {

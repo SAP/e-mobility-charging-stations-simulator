@@ -19,18 +19,22 @@ export {
   OCPPVersion,
 } from './ChargingStationType'
 export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
+export { ApplicationProtocol, Protocol, type SimulatorState } from './UIProtocol'
 export {
-  ApplicationProtocol,
   AuthenticationType,
+  type BroadcastChannelResponsePayload,
+  type JsonObject,
+  type JsonPrimitive,
+  type JsonType,
   ProcedureName,
-  Protocol,
   type ProtocolNotification,
+  type ProtocolRequest,
+  type ProtocolRequestHandler,
   type ProtocolResponse,
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
   ServerNotification,
-  type SimulatorState,
-} from './UIProtocol'
-export type { UUIDv4 } from './UUID'
+  type UUIDv4,
+} from 'ui-common'

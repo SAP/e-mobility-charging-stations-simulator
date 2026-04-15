@@ -77,6 +77,7 @@ export class MockWebSocket {
   static readonly CLOSED = 3
   static readonly CLOSING = 2
   static readonly CONNECTING = 0
+  static lastInstance: MockWebSocket | null = null
   static readonly OPEN = 1
 
   addEventListener: ReturnType<typeof vi.fn>
@@ -98,6 +99,7 @@ export class MockWebSocket {
     public readonly url = '',
     public readonly protocols: string | string[] = []
   ) {
+    MockWebSocket.lastInstance = this
     this.addEventListener = vi.fn()
     this.close = vi.fn()
     this.removeEventListener = vi.fn()

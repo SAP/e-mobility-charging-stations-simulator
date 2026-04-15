@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /**
  * @file Tests for UIClient composable
  * @description Unit tests for WebSocket client singleton, connection lifecycle,
@@ -21,6 +22,7 @@ import { MockWebSocket } from './helpers'
 
 // Reset singleton between tests
 beforeEach(() => {
+  MockWebSocket.lastInstance = null
   // @ts-expect-error — accessing private static property for testing
   UIClient.instance = null
   vi.stubGlobal('WebSocket', MockWebSocket)
@@ -28,6 +30,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  MockWebSocket.lastInstance = null
   // @ts-expect-error — accessing private static property for testing
   UIClient.instance = null
 })
@@ -72,23 +75,20 @@ describe('UIClient', () => {
 
   describe('WebSocket connection', () => {
     it('should connect with ws:// URL format', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       expect(ws.url).toBe('ws://localhost:8080')
     })
 
     it('should connect with wss:// when secure is true', () => {
-      const client = UIClient.getInstance(createUIServerConfig({ secure: true }))
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig({ secure: true }))
+      const ws = MockWebSocket.lastInstance!
       expect(ws.url).toBe('wss://localhost:8080')
     })
 
     it('should use protocol version as subprotocol without auth', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       expect(ws.protocols).toBe('ui0.0.1')
     })
 
@@ -101,9 +101,8 @@ describe('UIClient', () => {
           username: 'user',
         },
       })
-      const client = UIClient.getInstance(config)
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(config)
+      const ws = MockWebSocket.lastInstance!
       expect(ws.protocols).toBeInstanceOf(Array)
       const protocols = ws.protocols as string[]
       expect(protocols[0]).toBe('ui0.0.1')
@@ -111,30 +110,28 @@ describe('UIClient', () => {
     })
 
     it('should show success toast on WebSocket open', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       ws.simulateOpen()
       expect(toastMock.success).toHaveBeenCalledWith(expect.stringContaining('successfully opened'))
     })
 
     it('should log error on WebSocket error', () => {
       const consoleSpy = vi.spyOn(console, 'error')
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       ws.simulateError()
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Error in WebSocket'),
-        expect.any(Event)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        expect.objectContaining({ error: expect.any(Error), message: expect.any(String) })
       )
     })
 
     it('should handle WebSocket close event', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       ws.simulateClose()
     })
   })
@@ -142,12 +139,11 @@ describe('UIClient', () => {
   describe('request/response handling', () => {
     it('should resolve promise on SUCCESS response', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateOpen()
 
       const promise = client.listChargingStations()
-      const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
+      const uuid = (JSON.parse(ws.sentMessages[0]) as string[])[0]
       ws.simulateMessage([uuid, { status: ResponseStatus.SUCCESS }])
 
       const result = await promise
@@ -156,105 +152,83 @@ describe('UIClient', () => {
 
     it('should reject promise on FAILURE response', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateOpen()
 
       const promise = client.listChargingStations()
-      const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
+      const uuid = (JSON.parse(ws.sentMessages[0]) as string[])[0]
       ws.simulateMessage([uuid, { status: ResponseStatus.FAILURE }])
 
-      await expect(promise).rejects.toEqual(
-        expect.objectContaining({ status: ResponseStatus.FAILURE })
-      )
+      await expect(promise).rejects.toThrow(/failure status/)
     })
 
     it('should reject with Error on unknown response status', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateOpen()
 
       const promise = client.listChargingStations()
-      const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
+      const uuid = (JSON.parse(ws.sentMessages[0]) as string[])[0]
       ws.simulateMessage([uuid, { status: 'unknown' }])
 
-      await expect(promise).rejects.toThrow(/not supported/)
+      await expect(promise).rejects.toThrow(/failure status/)
     })
 
     it('should reject when WebSocket is not open', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
-      ws.readyState = WebSocket.CLOSED
 
-      await expect(client.listChargingStations()).rejects.toThrow('connection closed')
+      await expect(client.listChargingStations()).rejects.toThrow('WebSocket is not open')
     })
 
     it('should reject when ws.send throws', async () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateOpen()
       ws.send.mockImplementation(() => {
         throw new Error('send failed')
       })
 
-      await expect(client.startSimulator()).rejects.toThrow('error Error: send failed')
+      await expect(client.startSimulator()).rejects.toThrow('send failed')
     })
 
     it('should handle invalid JSON response gracefully', () => {
       const consoleSpy = vi.spyOn(console, 'error')
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
 
       ws.onmessage?.({ data: 'not json' } as MessageEvent<string>)
 
-      expect(toastMock.error).toHaveBeenCalledWith('Invalid response JSON format')
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Invalid response JSON format',
-        expect.any(SyntaxError)
-      )
+      expect(toastMock.error).not.toHaveBeenCalled()
+      expect(consoleSpy).not.toHaveBeenCalled()
     })
 
     it('should handle non-array response gracefully', () => {
       const consoleSpy = vi.spyOn(console, 'error')
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
 
       ws.simulateMessage({ notAnArray: true })
 
-      expect(toastMock.error).toHaveBeenCalledWith('Response not an array')
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Response not an array:',
-        expect.objectContaining({ notAnArray: true })
-      )
+      expect(toastMock.error).not.toHaveBeenCalled()
+      expect(consoleSpy).not.toHaveBeenCalled()
     })
 
-    it('should throw on response with unknown UUID', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+    it('should silently ignore response with unknown UUID', () => {
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
 
       const fakeUUID = crypto.randomUUID()
-      expect(() => {
-        ws.simulateMessage([fakeUUID, { status: ResponseStatus.SUCCESS }])
-      }).toThrow('Not a response to a request')
+      ws.simulateMessage([fakeUUID, { status: ResponseStatus.SUCCESS }])
     })
 
-    it('should show error toast on response with invalid UUID', () => {
+    it('should silently ignore response with invalid UUID', () => {
       const consoleSpy = vi.spyOn(console, 'error')
-      const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      UIClient.getInstance(createUIServerConfig())
+      const ws = MockWebSocket.lastInstance!
       ws.simulateMessage(['not-a-valid-uuid', { status: ResponseStatus.SUCCESS }])
-      expect(toastMock.error).toHaveBeenCalledWith('Unknown message format')
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Unknown message format:',
-        expect.arrayContaining(['not-a-valid-uuid'])
-      )
+
+      expect(toastMock.error).not.toHaveBeenCalled()
+      expect(consoleSpy).not.toHaveBeenCalled()
     })
   })
 
@@ -263,8 +237,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       const listener = vi.fn()
       client.onRefresh(listener)
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateMessage([ServerNotification.REFRESH])
       expect(listener).toHaveBeenCalledOnce()
     })
@@ -274,8 +247,7 @@ describe('UIClient', () => {
       const listener = vi.fn()
       const unsubscribe = client.onRefresh(listener)
       unsubscribe()
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       ws.simulateMessage([ServerNotification.REFRESH])
       expect(listener).not.toHaveBeenCalled()
     })
@@ -435,39 +407,38 @@ describe('UIClient', () => {
   describe('event listener management', () => {
     it('should register WebSocket event listener', () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       const listener = vi.fn()
 
-      client.registerWSEventListener('message', listener)
+      client.registerWSEventListener('open', listener)
+      ws.simulateOpen()
 
-      expect(ws.addEventListener).toHaveBeenCalledWith('message', listener, undefined)
+      expect(listener).toHaveBeenCalledOnce()
     })
 
     it('should unregister WebSocket event listener', () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const ws = client.ws as MockWebSocket
+      const ws = MockWebSocket.lastInstance!
       const listener = vi.fn()
 
-      client.unregisterWSEventListener('message', listener)
+      client.registerWSEventListener('open', listener)
+      client.unregisterWSEventListener('open', listener)
+      ws.simulateOpen()
 
-      expect(ws.removeEventListener).toHaveBeenCalledWith('message', listener, undefined)
+      expect(listener).not.toHaveBeenCalled()
     })
   })
 
   describe('setConfiguration', () => {
     it('should close existing WebSocket and open new connection', () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      // @ts-expect-error — accessing private property for testing
-      const oldWs = client.ws as MockWebSocket
+      const oldWs = MockWebSocket.lastInstance!
       oldWs.simulateOpen()
 
       client.setConfiguration(createUIServerConfig({ port: 9090 }))
 
       expect(oldWs.close).toHaveBeenCalled()
-      // @ts-expect-error — accessing private property for testing
-      const newWs = client.ws as MockWebSocket
+      const newWs = MockWebSocket.lastInstance!
       expect(newWs).not.toBe(oldWs)
       expect(newWs.url).toBe('ws://localhost:9090')
     })

@@ -1,4 +1,6 @@
-import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
+import type { AuthenticationType, ProtocolVersion } from 'ui-common'
+
+import type { Protocol } from './UIProtocol'
 
 export interface ConfigurationData {
   theme?: string

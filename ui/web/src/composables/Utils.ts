@@ -122,7 +122,7 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
 }
 
 export const randomUUID = (): UUIDv4 => {
-  return crypto.randomUUID()
+  return crypto.randomUUID() as UUIDv4
 }
 
 export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {

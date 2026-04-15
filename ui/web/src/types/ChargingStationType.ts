@@ -1,5 +1,3 @@
-import type { JsonObject } from './JsonType'
-
 export enum AmpereUnits {
   AMPERE = 'A',
   CENTI_AMPERE = 'cA',
@@ -323,7 +321,7 @@ export const IncomingRequestCommand = {
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  currentTime: Date
+  currentTime: string
   interval: number
   status: OCPP16RegistrationStatus
 }
@@ -351,17 +349,17 @@ export interface Status extends JsonObject {
   acceptedStartTransactionRequests?: number
   acceptedStopTransactionRequests?: number
   authorizeRequests?: number
-  lastRunDate?: Date
+  lastRunDate?: string
   rejectedAuthorizeRequests?: number
   rejectedStartTransactionRequests?: number
   rejectedStopTransactionRequests?: number
   skippedConsecutiveTransactions?: number
   skippedTransactions?: number
   start?: boolean
-  startDate?: Date
+  startDate?: string
   startTransactionRequests?: number
-  stopDate?: Date
-  stoppedDate?: Date
+  stopDate?: string
+  stoppedDate?: string
   stopTransactionRequests?: number
 }
 
@@ -369,3 +367,7 @@ interface CommandsSupport extends JsonObject {
   incomingCommands: Record<IncomingRequestCommand, boolean>
   outgoingCommands?: Record<RequestCommand, boolean>
 }
+
+type JsonObject = { [key in string]?: (JsonObject | JsonPrimitive)[] | JsonObject | JsonPrimitive }
+
+type JsonPrimitive = boolean | null | number | string
