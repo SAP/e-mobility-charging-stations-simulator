@@ -53,7 +53,11 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
     const raw = await readJsonFile(targetPath)
     if (raw != null && typeof raw === 'object' && !Array.isArray(raw)) {
       const parsed = raw as Record<string, unknown>
-      return (parsed.uiServer ?? parsed) as Partial<UIServerConfig>
+      const uiServer = parsed.uiServer ?? parsed
+      if (Array.isArray(uiServer)) {
+        throw new Error('Config contains multiple uiServer entries; the CLI supports only one')
+      }
+      return uiServer as Partial<UIServerConfig>
     }
     return {}
   } catch (error: unknown) {

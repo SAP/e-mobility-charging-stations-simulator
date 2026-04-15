@@ -35,24 +35,28 @@ export const createStationCommands = (program: Command): Command => {
     .requiredOption('-t, --template <name>', 'station template name')
     .requiredOption('-n, --count <n>', 'number of stations to add', parseInteger)
     .option('--supervision-url <url>', 'supervision URL for new stations')
-    .option('--auto-start', 'auto-start added stations', false)
-    .option('--persistent-config', 'enable persistent OCPP configuration', false)
-    .option('--ocpp-strict', 'enable OCPP strict compliance', false)
+    .option('--auto-start', 'auto-start added stations')
+    .option('--persistent-config', 'enable persistent OCPP configuration')
+    .option('--ocpp-strict', 'enable OCPP strict compliance')
     .action(
       async (options: {
-        autoStart: boolean
+        autoStart?: true
         count: number
-        ocppStrict: boolean
-        persistentConfig: boolean
+        ocppStrict?: true
+        persistentConfig?: true
         supervisionUrl?: string
         template: string
       }) => {
         const payload: RequestPayload = {
           numberOfStations: options.count,
           options: {
-            autoStart: options.autoStart,
-            ocppStrictCompliance: options.ocppStrict,
-            persistentConfiguration: options.persistentConfig,
+            ...(options.autoStart != null && { autoStart: options.autoStart }),
+            ...(options.ocppStrict != null && {
+              ocppStrictCompliance: options.ocppStrict,
+            }),
+            ...(options.persistentConfig != null && {
+              persistentConfiguration: options.persistentConfig,
+            }),
             ...(options.supervisionUrl != null && {
               supervisionUrls: options.supervisionUrl,
             }),
@@ -66,10 +70,10 @@ export const createStationCommands = (program: Command): Command => {
   cmd
     .command('delete [hashIds...]')
     .description('Delete charging station(s)')
-    .option('--delete-config', 'delete station configuration files', false)
-    .action(async (hashIds: string[], options: { deleteConfig: boolean }) => {
+    .option('--delete-config', 'delete station configuration files')
+    .action(async (hashIds: string[], options: { deleteConfig?: true }) => {
       const payload: RequestPayload = {
-        deleteConfiguration: options.deleteConfig,
+        ...(options.deleteConfig != null && { deleteConfiguration: options.deleteConfig }),
         ...(hashIds.length > 0 && { hashIds }),
       }
       await runAction(program, ProcedureName.DELETE_CHARGING_STATIONS, payload)
