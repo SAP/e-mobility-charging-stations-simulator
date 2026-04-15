@@ -51,11 +51,12 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   activeSpinner = spinner ?? undefined
   activeClient = client
 
+  let connectTimeoutId: ReturnType<typeof setTimeout> | undefined
   try {
     await Promise.race([
       client.connect(),
       new Promise<never>((_resolve, reject) => {
-        setTimeout(() => {
+        connectTimeoutId = setTimeout(() => {
           reject(new Error(`Connection to ${url} timed out`))
         }, timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS)
       }),
@@ -64,6 +65,8 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
     spinner?.fail()
     client.disconnect()
     throw new ConnectionError(url, error)
+  } finally {
+    clearTimeout(connectTimeoutId)
   }
 
   try {
