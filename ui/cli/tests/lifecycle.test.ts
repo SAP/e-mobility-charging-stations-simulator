@@ -1,7 +1,4 @@
-/**
- * @file Unit tests for CLI lifecycle and error types
- * @description Tests for connection lifecycle management and error handling
- */
+/** @file Unit tests for CLI lifecycle and error types */
 
 import assert from 'node:assert'
 import { describe, it } from 'node:test'

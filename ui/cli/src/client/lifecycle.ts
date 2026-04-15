@@ -8,7 +8,6 @@ import {
   type UIServerConfig,
   WebSocketClient,
   type WebSocketFactory,
-  type WebSocketLike,
 } from 'ui-common'
 import { WebSocket as WsWebSocket } from 'ws'
 
@@ -17,11 +16,8 @@ import type { Formatter } from '../output/formatter.js'
 import { ConnectionError } from './errors.js'
 import { createWsAdapter } from './ws-adapter.js'
 
-const createWsFactory = (): WebSocketFactory => {
-  return (url: string, protocols: string | string[]): WebSocketLike => {
-    return createWsAdapter(new WsWebSocket(url, protocols))
-  }
-}
+const wsFactory: WebSocketFactory = (url, protocols) =>
+  createWsAdapter(new WsWebSocket(url, protocols))
 
 let activeClient: undefined | WebSocketClient
 let activeSpinner: null | ReturnType<typeof ora> | undefined
@@ -38,8 +34,7 @@ export interface ExecuteOptions {
 export const executeCommand = async (options: ExecuteOptions): Promise<void> => {
   const { config, formatter, payload, procedureName, timeoutMs } = options
 
-  const factory = createWsFactory()
-  const client = new WebSocketClient(factory, config, timeoutMs)
+  const client = new WebSocketClient(wsFactory, config, timeoutMs)
   const { url } = client
 
   const isInteractive = process.stderr.isTTY

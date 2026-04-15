@@ -17,10 +17,10 @@ const toDataString = (data: WsWebSocket.Data): string => {
 }
 
 export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
-  let onmessageCallback: ((event: { data: string }) => void) | null = null
-  let onerrorCallback: ((event: { error: unknown; message: string }) => void) | null = null
-  let oncloseCallback: ((event: { code: number; reason: string }) => void) | null = null
-  let onopenCallback: (() => void) | null = null
+  let onmessageCallback: WebSocketLike['onmessage'] = null
+  let onerrorCallback: WebSocketLike['onerror'] = null
+  let oncloseCallback: WebSocketLike['onclose'] = null
+  let onopenCallback: WebSocketLike['onopen'] = null
 
   ws.onmessage = event => {
     if (onmessageCallback != null) {
@@ -31,15 +31,10 @@ export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
 
   ws.onerror = event => {
     if (onerrorCallback != null) {
-      let error: Error
-      let message: string
-      if (event instanceof Error) {
-        error = event
-        message = event.message
-      } else {
-        message = typeof event === 'string' ? event : 'Unknown error'
-        error = new Error(message)
-      }
+      const raw = event as { error?: unknown; message?: string }
+      const error =
+        raw.error instanceof Error ? raw.error : new Error(raw.message ?? 'Unknown error')
+      const message = raw.message ?? error.message
       onerrorCallback({ error, message })
     }
   }
@@ -60,32 +55,32 @@ export const createWsAdapter = (ws: WsWebSocket): WebSocketLike => {
     close (code?: number, reason?: string): void {
       ws.close(code, reason)
     },
-    get onclose (): ((event: { code: number; reason: string }) => void) | null {
+    get onclose () {
       return oncloseCallback
     },
 
-    set onclose (callback: ((event: { code: number; reason: string }) => void) | null) {
+    set onclose (callback) {
       oncloseCallback = callback
     },
-    get onerror (): ((event: { error: unknown; message: string }) => void) | null {
+    get onerror () {
       return onerrorCallback
     },
 
-    set onerror (callback: ((event: { error: unknown; message: string }) => void) | null) {
+    set onerror (callback) {
       onerrorCallback = callback
     },
-    get onmessage (): ((event: { data: string }) => void) | null {
+    get onmessage () {
       return onmessageCallback
     },
 
-    set onmessage (callback: ((event: { data: string }) => void) | null) {
+    set onmessage (callback) {
       onmessageCallback = callback
     },
-    get onopen (): (() => void) | null {
+    get onopen () {
       return onopenCallback
     },
 
-    set onopen (callback: (() => void) | null) {
+    set onopen (callback) {
       onopenCallback = callback
     },
 

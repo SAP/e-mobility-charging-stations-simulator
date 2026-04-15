@@ -1,7 +1,4 @@
-/**
- * @file Unit tests for the SRPC WebSocket client
- * @description Tests for WebSocketClient connection, request/response handling, and timeout validation
- */
+/** @file Unit tests for the SRPC WebSocket client */
 
 import assert from 'node:assert'
 import { describe, it } from 'node:test'

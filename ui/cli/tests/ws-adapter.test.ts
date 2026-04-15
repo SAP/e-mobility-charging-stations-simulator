@@ -1,7 +1,4 @@
-/**
- * @file Unit tests for the WebSocket adapter (ws → WebSocketLike)
- * @description Tests for converting ws library WebSocket to WebSocketLike interface
- */
+/** @file Unit tests for the WebSocket adapter (ws → WebSocketLike) */
 
 import type { WebSocket } from 'ws'
 
@@ -136,7 +133,6 @@ await describe('WS Adapter', async () => {
 
   await it('should forward onerror event with error shape', () => {
     const mockWs = createMockWs()
-
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
     let receivedError: unknown
@@ -146,13 +142,14 @@ await describe('WS Adapter', async () => {
       receivedMessage = event.message
     }
 
-    const testError = new Error('connection failed')
-    mockWs.onerror?.(testError)
+    const cause = new Error('connection failed')
+    // Simulate ws ErrorEvent (has .error and .message properties)
+    mockWs.onerror?.({ error: cause, message: 'connection failed' })
 
     assert.ok(receivedError instanceof Error)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const error = receivedError as Error
-    assert.strictEqual(error.message, 'connection failed')
+    if (receivedError instanceof Error) {
+      assert.strictEqual(receivedError.message, 'connection failed')
+    }
     assert.strictEqual(receivedMessage, 'connection failed')
   })
 
@@ -164,7 +161,7 @@ await describe('WS Adapter', async () => {
       receivedMessage = event.message
     }
     mockWs.onerror?.('connection refused')
-    assert.strictEqual(receivedMessage, 'connection refused')
+    assert.strictEqual(receivedMessage, 'Unknown error')
   })
 
   await it('should forward onerror with fallback for unknown event type', () => {
@@ -176,6 +173,21 @@ await describe('WS Adapter', async () => {
     }
     mockWs.onerror?.(42 as unknown as Error)
     assert.strictEqual(receivedMessage, 'Unknown error')
+  })
+
+  await it('should forward onerror when event has error but no message', () => {
+    const mockWs = createMockWs()
+    const adapter = createWsAdapter(mockWs as unknown as WebSocket)
+    let receivedMessage = ''
+    let receivedError: unknown
+    adapter.onerror = event => {
+      receivedError = event.error
+      receivedMessage = event.message
+    }
+    const cause = new Error('ECONNREFUSED')
+    mockWs.onerror?.({ error: cause })
+    assert.ok(receivedError instanceof Error)
+    assert.strictEqual(receivedMessage, 'ECONNREFUSED')
   })
 
   await it('should forward onclose event with code and reason', () => {

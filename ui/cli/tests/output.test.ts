@@ -1,7 +1,4 @@
-/**
- * @file Unit tests for CLI output formatters (JSON and table)
- * @description Tests for JSON and table output formatting functions
- */
+/** @file Unit tests for CLI output formatters (JSON and table) */
 
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
