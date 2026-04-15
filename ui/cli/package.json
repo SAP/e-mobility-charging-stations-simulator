@@ -32,7 +32,7 @@
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",
-    "ora": "^8.2.0",
+    "ora": "^9.3.0",
     "ui-common": "workspace:*",
     "ws": "^8.20.0"
   },
