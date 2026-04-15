@@ -533,7 +533,9 @@ await describe('WebSocketClient', async () => {
       () => mockWs,
       { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
       undefined,
-      notification => { notifications.push(notification) }
+      notification => {
+        notifications.push(notification)
+      }
     )
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -554,14 +556,16 @@ await describe('WebSocketClient', async () => {
       factory,
       { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
       undefined,
-      notification => { notifications.push(notification) }
+      notification => {
+        notifications.push(notification)
+      }
     )
     const connectPromise = client.connect()
     mockWs.triggerOpen()
     await connectPromise
 
     const requestPromise = client.sendRequest(ProcedureName.SIMULATOR_STATE, {})
-    const uuid = JSON.parse(mockWs.sentMessages[0])[0] as string
+    const uuid = (JSON.parse(mockWs.sentMessages[0]) as unknown[])[0] as string
     mockWs.triggerMessage(JSON.stringify([uuid, { status: ResponseStatus.SUCCESS }]))
     await requestPromise
 
@@ -571,10 +575,12 @@ await describe('WebSocketClient', async () => {
 
   await it('should NOT fire onNotification when callback is undefined', async () => {
     const mockWs = createMockWs()
-    const client = new WebSocketClient(
-      () => mockWs,
-      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' }
-    )
+    const client = new WebSocketClient(() => mockWs, {
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
     await connectPromise
