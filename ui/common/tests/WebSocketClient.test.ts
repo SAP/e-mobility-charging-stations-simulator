@@ -1,3 +1,8 @@
+/**
+ * @file Unit tests for the SRPC WebSocket client
+ * @description Tests for WebSocketClient connection, request/response handling, and timeout validation
+ */
+
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
@@ -383,6 +388,62 @@ await describe('WebSocketClient', async () => {
         assert.ok(error.message.includes('50ms'))
         // Should timeout around 50ms, definitely not 60s
         assert.ok(elapsed < 500, `Expected timeout within 500ms, got ${elapsed.toString()}ms`)
+        return true
+      }
+    )
+  })
+
+  await it('should reject sendRequest with timeoutMs = 0', async () => {
+    const mockWs = createMockWS()
+    const client = new WebSocketClient(
+      () => mockWs,
+      {
+        host: 'localhost',
+        port: 8080,
+        protocol: 'ui',
+        version: '0.0.1',
+      },
+      5000
+    )
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    await assert.rejects(
+      async () => {
+        await client.sendRequest(ProcedureName.SIMULATOR_STATE, {}, 0)
+      },
+      (error: unknown) => {
+        assert.ok(error instanceof Error)
+        assert.ok(error.message.includes('Invalid timeout'))
+        return true
+      }
+    )
+  })
+
+  await it('should reject sendRequest with timeoutMs = -1', async () => {
+    const mockWs = createMockWS()
+    const client = new WebSocketClient(
+      () => mockWs,
+      {
+        host: 'localhost',
+        port: 8080,
+        protocol: 'ui',
+        version: '0.0.1',
+      },
+      5000
+    )
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    await assert.rejects(
+      async () => {
+        await client.sendRequest(ProcedureName.SIMULATOR_STATE, {}, -1)
+      },
+      (error: unknown) => {
+        assert.ok(error instanceof Error)
+        assert.ok(error.message.includes('Invalid timeout'))
         return true
       }
     )

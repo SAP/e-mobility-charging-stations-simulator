@@ -1,5 +1,4 @@
-import type { WebSocketLike } from 'ui-common'
-import type { WebSocketReadyState } from 'ui-common'
+import type { WebSocketLike, WebSocketReadyState } from 'ui-common'
 import type { WebSocket as WsWebSocket } from 'ws'
 
 import { Buffer } from 'node:buffer'

@@ -1,3 +1,8 @@
+/**
+ * @file Unit tests for the WebSocket adapter (ws → WebSocketLike)
+ * @description Tests for converting ws library WebSocket to WebSocketLike interface
+ */
+
 import type { WebSocket } from 'ws'
 
 import assert from 'node:assert'
@@ -17,17 +22,19 @@ interface MockWs {
   send: (data: string) => void
 }
 
+const createMockWs = (): MockWs => ({
+  close: () => undefined,
+  onclose: null,
+  onerror: null,
+  onmessage: null,
+  onopen: null,
+  readyState: WebSocketReadyState.OPEN,
+  send: () => undefined,
+})
+
 await describe('WS Adapter', async () => {
   await it('should convert Buffer data to string in onmessage', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -43,15 +50,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should convert ArrayBuffer data to string in onmessage', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -67,15 +66,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should convert Buffer[] data to string in onmessage', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -91,15 +82,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should pass through string data in onmessage', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -114,15 +97,8 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should delegate readyState getter to ws', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.CONNECTING,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
+    mockWs.readyState = WebSocketReadyState.CONNECTING
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -131,16 +107,9 @@ await describe('WS Adapter', async () => {
 
   await it('should delegate send() to ws', () => {
     let sentData: string | undefined
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: (data: string) => {
-        sentData = data
-      },
+    const mockWs = createMockWs()
+    mockWs.send = (data: string) => {
+      sentData = data
     }
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
@@ -152,17 +121,10 @@ await describe('WS Adapter', async () => {
   await it('should delegate close() to ws', () => {
     let closeCode: number | undefined
     let closeReason: string | undefined
-    const mockWs: MockWs = {
-      close: (code?: number, reason?: string) => {
-        closeCode = code
-        closeReason = reason
-      },
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
+    const mockWs = createMockWs()
+    mockWs.close = (code?: number, reason?: string) => {
+      closeCode = code
+      closeReason = reason
     }
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
@@ -173,15 +135,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should forward onerror event with error shape', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -202,16 +156,31 @@ await describe('WS Adapter', async () => {
     assert.strictEqual(receivedMessage, 'connection failed')
   })
 
-  await it('should forward onclose event with code and reason', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.CLOSED,
-      send: () => undefined,
+  await it('should forward onerror when event is a string', () => {
+    const mockWs = createMockWs()
+    const adapter = createWsAdapter(mockWs as unknown as WebSocket)
+    let receivedMessage = ''
+    adapter.onerror = event => {
+      receivedMessage = event.message
     }
+    mockWs.onerror?.('connection refused')
+    assert.strictEqual(receivedMessage, 'connection refused')
+  })
+
+  await it('should forward onerror with fallback for unknown event type', () => {
+    const mockWs = createMockWs()
+    const adapter = createWsAdapter(mockWs as unknown as WebSocket)
+    let receivedMessage = ''
+    adapter.onerror = event => {
+      receivedMessage = event.message
+    }
+    mockWs.onerror?.(42 as unknown as Error)
+    assert.strictEqual(receivedMessage, 'Unknown error')
+  })
+
+  await it('should forward onclose event with code and reason', () => {
+    const mockWs = createMockWs()
+    mockWs.readyState = WebSocketReadyState.CLOSED
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -229,15 +198,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should forward onopen event', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -252,15 +213,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should have getter and setter for onmessage', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -277,15 +230,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should have getter and setter for onerror', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -302,15 +247,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should have getter and setter for onclose', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 
@@ -327,15 +264,7 @@ await describe('WS Adapter', async () => {
   })
 
   await it('should have getter and setter for onopen', () => {
-    const mockWs: MockWs = {
-      close: () => undefined,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-      onopen: null,
-      readyState: WebSocketReadyState.OPEN,
-      send: () => undefined,
-    }
+    const mockWs = createMockWs()
 
     const adapter = createWsAdapter(mockWs as unknown as WebSocket)
 

@@ -109,6 +109,10 @@ export class WebSocketClient {
       const uuid = randomUUID()
       const message = JSON.stringify([uuid, procedureName, payload])
       const effectiveTimeoutMs = timeoutMs ?? this.timeoutMs
+      if (!Number.isFinite(effectiveTimeoutMs) || effectiveTimeoutMs <= 0) {
+        reject(new Error(`Invalid timeout: ${String(effectiveTimeoutMs)}ms (must be > 0)`))
+        return
+      }
       const timeoutId = setTimeout(() => {
         this.responseHandlers.delete(uuid)
         reject(

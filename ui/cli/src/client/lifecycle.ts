@@ -56,6 +56,7 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   let connectTimeoutId: ReturnType<typeof setTimeout> | undefined
   try {
     const connectPromise = client.connect()
+    // Prevent unhandled rejection when timeout wins the race and connect rejects later
     connectPromise.catch(() => undefined)
     await Promise.race([
       connectPromise,

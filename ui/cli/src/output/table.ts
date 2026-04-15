@@ -5,9 +5,7 @@ import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
-    process.stdout.write(
-      chalk.green(`✓ Succeeded (${payload.hashIdsSucceeded.length.toString()}):\n`)
-    )
+    process.stdout.write(chalk.green(`✓ Succeeded (${String(payload.hashIdsSucceeded.length)}):\n`))
     const table = new Table({ head: [chalk.white('Hash ID')] })
     for (const id of payload.hashIdsSucceeded) {
       table.push([id])
@@ -16,7 +14,7 @@ export const outputTable = (payload: ResponsePayload): void => {
   }
 
   if (payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0) {
-    process.stderr.write(chalk.red(`✗ Failed (${payload.hashIdsFailed.length.toString()}):\n`))
+    process.stderr.write(chalk.red(`✗ Failed (${String(payload.hashIdsFailed.length)}):\n`))
     if (payload.responsesFailed != null && payload.responsesFailed.length > 0) {
       const table = new Table({ head: [chalk.white('Hash ID'), chalk.white('Error')] })
       for (const entry of payload.responsesFailed) {
