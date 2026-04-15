@@ -4,8 +4,6 @@ import chalk from 'chalk'
 import Table from 'cli-table3'
 import process from 'node:process'
 
-// outputTable is only called with SUCCESS payloads — FAILURE payloads
-// are rejected as ServerFailureError and routed to formatter.error() instead.
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
     process.stdout.write(
