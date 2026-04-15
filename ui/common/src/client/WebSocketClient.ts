@@ -24,10 +24,16 @@ export class ServerFailureError extends Error {
 }
 
 export class WebSocketClient {
+  public get url (): string {
+    const scheme = this.config.secure === true ? 'wss' : 'ws'
+    return `${scheme}://${this.config.host}:${this.config.port.toString()}`
+  }
+
   private readonly config: ClientConfig
   private readonly factory: WebSocketFactory
   private readonly responseHandlers: Map<UUIDv4, ResponseHandler>
   private readonly timeoutMs: number
+
   private ws?: WebSocketLike
 
   public constructor (
@@ -44,7 +50,7 @@ export class WebSocketClient {
   public connect (): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const protocols = this.buildProtocols()
-      const url = this.buildUrl()
+      const url = this.url
       this.ws = this.factory(url, protocols)
       let settled = false
       this.ws.onopen = () => {
@@ -128,11 +134,6 @@ export class WebSocketClient {
       return [primary, `authorization.basic.${encoded}`]
     }
     return primary
-  }
-
-  private buildUrl (): string {
-    const scheme = this.config.secure === true ? 'wss' : 'ws'
-    return `${scheme}://${this.config.host}:${this.config.port.toString()}`
   }
 
   private clearHandlers (): void {

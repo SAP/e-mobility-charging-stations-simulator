@@ -40,3 +40,4 @@ export const configurationSchema = z.object({
 
 export type Configuration = z.infer<typeof configurationSchema>
 export type UIServerConfig = z.infer<typeof uiServerConfigSchema>
+export type { UIServerConfig as UIServerConfigurationSection }

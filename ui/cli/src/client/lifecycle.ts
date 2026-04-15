@@ -38,15 +38,14 @@ export interface ExecuteOptions {
 export const executeCommand = async (options: ExecuteOptions): Promise<void> => {
   const { config, formatter, payload, procedureName, timeoutMs } = options
 
-  const url = `${config.secure ? 'wss' : 'ws'}://${config.host}:${config.port.toString()}`
+  const factory = createWsFactory()
+  const client = new WebSocketClient(factory, config, timeoutMs)
+  const { url } = client
 
   const isInteractive = process.stderr.isTTY
   const spinner = isInteractive
     ? ora({ stream: process.stderr }).start(`Connecting to ${url}`)
     : null
-
-  const factory = createWsFactory()
-  const client = new WebSocketClient(factory, config, timeoutMs)
 
   activeSpinner = spinner ?? undefined
   activeClient = client
