@@ -313,7 +313,7 @@ await describe('WebSocketClient', async () => {
     mockWs.triggerMessage(JSON.stringify(['not-a-uuid', {}]))
   })
 
-  await it('should ignore malformed response payload', async () => {
+  await it('should reject on malformed response payload with matching UUID', async () => {
     const mockWs = createMockWS()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
@@ -329,16 +329,10 @@ await describe('WebSocketClient', async () => {
     const requestPromise = client.sendRequest(ProcedureName.SIMULATOR_STATE, {})
     const uuid = (JSON.parse(mockWs.sentMessages[0]) as unknown[])[0] as string
 
-    // Send malformed responses — should be ignored, not crash
     mockWs.triggerMessage(JSON.stringify([uuid, null]))
-    mockWs.triggerMessage(JSON.stringify([uuid, 42]))
-    mockWs.triggerMessage(JSON.stringify([uuid, 'string']))
-
-    // The request should still be pending (neither resolved nor rejected by malformed messages)
-    // Send a proper response to complete it
-    mockWs.triggerMessage(JSON.stringify([uuid, { status: ResponseStatus.SUCCESS }]))
-    const result = await requestPromise
-    assert.strictEqual(result.status, ResponseStatus.SUCCESS)
+    await assert.rejects(async () => requestPromise, {
+      message: 'Server sent malformed response payload',
+    })
   })
 
   await it('should reject connect if socket closes before open', async () => {

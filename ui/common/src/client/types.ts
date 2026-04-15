@@ -1,6 +1,13 @@
 import type { AuthenticationType } from '../types/UIProtocol.js'
 import type { ResponsePayload } from '../types/UIProtocol.js'
 
+export const enum WebSocketReadyState {
+  CONNECTING = 0,
+  OPEN = 1,
+  CLOSING = 2,
+  CLOSED = 3,
+}
+
 export interface AuthenticationConfig {
   enabled: boolean
   password?: string
@@ -17,8 +24,6 @@ export interface ClientConfig {
   version: string
 }
 
-export type ReadyState = 0 | 1 | 2 | 3 // CONNECTING, OPEN, CLOSING, CLOSED
-
 export interface ResponseHandler {
   reject: (reason?: unknown) => void
   resolve: (value: ResponsePayload) => void
@@ -33,6 +38,6 @@ export interface WebSocketLike {
   onerror: ((event: { error: unknown; message: string }) => void) | null
   onmessage: ((event: { data: string }) => void) | null
   onopen: (() => void) | null
-  readonly readyState: ReadyState
+  readonly readyState: WebSocketReadyState
   send(data: string): void
 }

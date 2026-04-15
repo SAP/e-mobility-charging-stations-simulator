@@ -7,6 +7,7 @@ import type { ClientConfig, ResponseHandler, WebSocketFactory, WebSocketLike } f
 import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from '../constants.js'
 import { AuthenticationType, ResponseStatus } from '../types/UIProtocol.js'
 import { randomUUID, validateUUID } from '../utils/UUID.js'
+import { WebSocketReadyState } from './types.js'
 
 export class ServerFailureError extends Error {
   public readonly payload: ResponsePayload
@@ -94,7 +95,7 @@ export class WebSocketClient {
     payload: RequestPayload
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
-      if (this.ws?.readyState !== 1) {
+      if (this.ws?.readyState !== WebSocketReadyState.OPEN) {
         reject(new Error('WebSocket is not open'))
         return
       }
@@ -157,15 +158,18 @@ export class WebSocketClient {
     if (!Array.isArray(message) || message.length !== 2) return
     const [uuid, responsePayload] = message as [unknown, unknown]
     if (!validateUUID(uuid)) return
+    const handler = this.responseHandlers.get(uuid)
+    if (handler == null) return
     if (
       responsePayload == null ||
       typeof responsePayload !== 'object' ||
       !('status' in responsePayload)
     ) {
+      clearTimeout(handler.timeoutId)
+      this.responseHandlers.delete(uuid)
+      handler.reject(new Error('Server sent malformed response payload'))
       return
     }
-    const handler = this.responseHandlers.get(uuid)
-    if (handler == null) return
     clearTimeout(handler.timeoutId)
     this.responseHandlers.delete(uuid)
     const payload = responsePayload as ResponsePayload
