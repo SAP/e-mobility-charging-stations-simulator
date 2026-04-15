@@ -4,6 +4,7 @@ import {
   type ProcedureName,
   type RequestPayload,
   type ResponsePayload,
+  UI_WEBSOCKET_REQUEST_TIMEOUT_MS,
   type UIServerConfig,
   WebSocketClient,
   type WebSocketFactory,
@@ -51,7 +52,14 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   activeClient = client
 
   try {
-    await client.connect()
+    await Promise.race([
+      client.connect(),
+      new Promise<never>((_resolve, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Connection to ${url} timed out`))
+        }, timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS)
+      }),
+    ])
   } catch (error: unknown) {
     spinner?.fail()
     client.disconnect()
