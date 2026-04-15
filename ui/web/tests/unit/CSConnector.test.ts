@@ -9,7 +9,7 @@ import type { UIClient } from '@/composables'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
-import { OCPP16ChargePointStatus } from '@/types'
+import { OCPP16ChargePointStatus } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import { createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from './constants'

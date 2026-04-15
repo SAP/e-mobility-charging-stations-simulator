@@ -3,10 +3,9 @@
  * @description MockWebSocket, withSetup composable helper, mock factories.
  */
 import { flushPromises } from '@vue/test-utils'
+import { ResponseStatus } from 'ui-common'
 import { vi } from 'vitest'
 import { type App, createApp } from 'vue'
-
-import { ResponseStatus } from '@/types'
 
 export { flushPromises as flushAllPromises }
 

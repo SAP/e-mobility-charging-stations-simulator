@@ -1,3 +1,5 @@
+import type { JsonObject } from 'ui-common'
+
 export enum AmpereUnits {
   AMPERE = 'A',
   CENTI_AMPERE = 'cA',
@@ -367,8 +369,3 @@ interface CommandsSupport extends JsonObject {
   incomingCommands: Record<IncomingRequestCommand, boolean>
   outgoingCommands?: Record<RequestCommand, boolean>
 }
-
-// Local non-recursive JsonObject avoids Vue UnwrapRef<T> infinite instantiation (TS2589)
-type JsonObject = { [key in string]?: (JsonObject | JsonPrimitive)[] | JsonObject | JsonPrimitive }
-
-type JsonPrimitive = boolean | null | number | string

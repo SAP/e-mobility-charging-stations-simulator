@@ -5,7 +5,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
-import type { ChargingStationData } from '@/types'
+import type { ChargingStationData } from '@/types/ChargingStationType'
 
 import CSTable from '@/components/charging-stations/CSTable.vue'
 

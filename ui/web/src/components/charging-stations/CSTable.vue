@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ChargingStationData } from '@/types'
+import type { ChargingStationData } from '@/types/ChargingStationType'
 
 import CSData from '@/components/charging-stations/CSData.vue'
 

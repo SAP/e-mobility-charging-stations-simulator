@@ -9,7 +9,7 @@ import type { UIClient } from '@/composables'
 
 import StartTransaction from '@/components/actions/StartTransaction.vue'
 import { useUIClient } from '@/composables'
-import { OCPPVersion } from '@/types'
+import { OCPPVersion } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_ID_TAG, TEST_STATION_ID } from './constants'

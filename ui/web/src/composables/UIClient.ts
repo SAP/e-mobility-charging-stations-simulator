@@ -1,21 +1,26 @@
-import { createBrowserWsAdapter, WebSocketClient, type WebSocketFactory } from 'ui-common'
-import { useToast } from 'vue-toast-notification'
-
 import {
-  ApplicationProtocol,
   AuthenticationType,
-  type ChargingStationOptions,
-  OCPP20IdTokenEnumType,
-  OCPP20TransactionEventEnumType,
-  type OCPP20TransactionEventRequest,
-  OCPPVersion,
+  createBrowserWsAdapter,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
   ServerNotification,
-  type UIServerConfigurationSection,
-} from '@/types'
+  WebSocketClient,
+  type WebSocketFactory,
+} from 'ui-common'
+import { useToast } from 'vue-toast-notification'
+
+import type { UIServerConfigurationSection } from '@/types/ConfigurationType'
+
+import {
+  type ChargingStationOptions,
+  OCPP20IdTokenEnumType,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
+} from '@/types/ChargingStationType'
+import { ApplicationProtocol } from '@/types/UIProtocol'
 
 export class UIClient {
   private static instance: null | UIClient = null

@@ -43,7 +43,7 @@ import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt, resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
-import { type OCPPVersion } from '@/types'
+import { type OCPPVersion } from '@/types/ChargingStationType'
 
 const props = defineProps<{
   chargingStationId: string

@@ -6,12 +6,12 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UIClient } from '@/composables'
-import type { ChargingStationData } from '@/types'
+import type { ChargingStationData } from '@/types/ChargingStationType'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import CSData from '@/components/charging-stations/CSData.vue'
 import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
-import { OCPPVersion } from '@/types'
+import { OCPPVersion } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import {

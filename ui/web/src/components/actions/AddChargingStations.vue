@@ -113,9 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import type { UUIDv4 } from 'ui-common'
 
-import type { UUIDv4 } from '@/types'
+import { ref, watch } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
 import {

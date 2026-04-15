@@ -4,6 +4,7 @@
  *   simulator state display, CSTable visibility, UI server selector, and error handling.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { ResponseStatus } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 
@@ -16,7 +17,6 @@ import {
   uiClientKey,
   useUIClient,
 } from '@/composables'
-import { ResponseStatus } from '@/types'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 
 import { toastMock } from '../setup'

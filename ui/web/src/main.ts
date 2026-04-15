@@ -1,7 +1,8 @@
 import { type App as AppType, type Component, createApp, ref } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
 
-import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
+import type { ChargingStationData } from '@/types/ChargingStationType'
+import type { ConfigurationData, UIServerConfigurationSection } from '@/types/ConfigurationType'
 
 import App from '@/App.vue'
 import {

@@ -104,16 +104,14 @@
 </template>
 
 <script setup lang="ts">
+import type { ResponsePayload, UUIDv4 } from 'ui-common'
+
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import type {
-  ChargingStationData,
-  ResponsePayload,
-  SimulatorState,
-  UIServerConfigurationSection,
-  UUIDv4,
-} from '@/types'
+import type { ChargingStationData } from '@/types/ChargingStationType'
+import type { UIServerConfigurationSection } from '@/types/ConfigurationType'
+import type { SimulatorState } from '@/types/UIProtocol'
 
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
