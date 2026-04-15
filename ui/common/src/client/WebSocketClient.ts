@@ -39,7 +39,8 @@ export class WebSocketClient {
   public constructor (
     factory: WebSocketFactory,
     config: ClientConfig,
-    timeoutMs = UI_WEBSOCKET_REQUEST_TIMEOUT_MS
+    timeoutMs = UI_WEBSOCKET_REQUEST_TIMEOUT_MS,
+    private readonly onNotification?: (notification: unknown[]) => void
   ) {
     this.factory = factory
     this.config = config
@@ -162,7 +163,12 @@ export class WebSocketClient {
     } catch {
       return
     }
-    if (!Array.isArray(message) || message.length !== 2) return
+    if (!Array.isArray(message)) return
+    if (message.length === 1) {
+      this.onNotification?.(message)
+      return
+    }
+    if (message.length !== 2) return
     const [uuid, responsePayload] = message as [unknown, unknown]
     if (!validateUUID(uuid)) return
     const handler = this.responseHandlers.get(uuid)

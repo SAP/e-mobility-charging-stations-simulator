@@ -525,4 +525,64 @@ await describe('WebSocketClient', async () => {
       return true
     })
   })
+
+  await it('should fire onNotification for 1-element server notification', async () => {
+    const notifications: unknown[][] = []
+    const mockWs = createMockWs()
+    const client = new WebSocketClient(
+      () => mockWs,
+      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+      undefined,
+      notification => { notifications.push(notification) }
+    )
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    mockWs.triggerMessage('["refresh"]')
+
+    assert.strictEqual(notifications.length, 1)
+    assert.deepStrictEqual(notifications[0], ['refresh'])
+    client.disconnect()
+  })
+
+  await it('should NOT fire onNotification for 2-element response', async () => {
+    const notifications: unknown[][] = []
+    const mockWs = createMockWs()
+    const factory: WebSocketFactory = () => mockWs
+    const client = new WebSocketClient(
+      factory,
+      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+      undefined,
+      notification => { notifications.push(notification) }
+    )
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    const requestPromise = client.sendRequest(ProcedureName.SIMULATOR_STATE, {})
+    const uuid = JSON.parse(mockWs.sentMessages[0])[0] as string
+    mockWs.triggerMessage(JSON.stringify([uuid, { status: ResponseStatus.SUCCESS }]))
+    await requestPromise
+
+    assert.strictEqual(notifications.length, 0)
+    client.disconnect()
+  })
+
+  await it('should NOT fire onNotification when callback is undefined', async () => {
+    const mockWs = createMockWs()
+    const client = new WebSocketClient(
+      () => mockWs,
+      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' }
+    )
+    const connectPromise = client.connect()
+    mockWs.triggerOpen()
+    await connectPromise
+
+    // Should not throw when no callback registered
+    assert.doesNotThrow(() => {
+      mockWs.triggerMessage('["refresh"]')
+    })
+    client.disconnect()
+  })
 })
