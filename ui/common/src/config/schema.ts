@@ -29,9 +29,9 @@ export const uiServerConfigSchema = z.object({
   host: z.string().min(1),
   name: z.string().optional(),
   port: z.number().int().min(1).max(65535),
-  protocol: z.string().min(1).default('ui'),
-  secure: z.boolean().optional().default(false),
-  version: z.string().min(1).default('0.0.1'),
+  protocol: z.string().min(1),
+  secure: z.boolean().optional(),
+  version: z.string().min(1),
 })
 
 export const configurationSchema = z.object({

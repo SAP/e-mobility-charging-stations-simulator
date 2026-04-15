@@ -14,19 +14,21 @@ await describe('config schema validation', async () => {
     assert.strictEqual(result.success, true)
   })
 
-  await it('should apply default values', () => {
-    const config = uiServerConfigSchema.parse({
+  await it('should reject config with empty protocol', () => {
+    const result = uiServerConfigSchema.safeParse({
       host: 'localhost',
       port: 8080,
+      protocol: '',
+      version: '0.0.1',
     })
-    assert.strictEqual(config.protocol, 'ui')
-    assert.strictEqual(config.version, '0.0.1')
-    assert.strictEqual(config.secure, false)
+    assert.strictEqual(result.success, false)
   })
 
   await it('should reject missing required host field', () => {
     const result = uiServerConfigSchema.safeParse({
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
   })
@@ -43,6 +45,8 @@ await describe('config schema validation', async () => {
     const result = uiServerConfigSchema.safeParse({
       host: '',
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
   })
@@ -90,6 +94,8 @@ await describe('config schema validation', async () => {
       },
       host: 'localhost',
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
   })
@@ -104,6 +110,8 @@ await describe('config schema validation', async () => {
       },
       host: 'localhost',
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
   })
@@ -118,6 +126,8 @@ await describe('config schema validation', async () => {
       },
       host: 'localhost',
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, true)
   })
@@ -130,6 +140,8 @@ await describe('config schema validation', async () => {
       },
       host: 'localhost',
       port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
     })
     assert.strictEqual(result.success, true)
   })

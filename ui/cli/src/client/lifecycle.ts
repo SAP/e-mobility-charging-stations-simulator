@@ -52,8 +52,10 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
 
   let connectTimeoutId: ReturnType<typeof setTimeout> | undefined
   try {
+    const connectPromise = client.connect()
+    connectPromise.catch(() => undefined)
     await Promise.race([
-      client.connect(),
+      connectPromise,
       new Promise<never>((_resolve, reject) => {
         connectTimeoutId = setTimeout(() => {
           reject(new Error(`Connection to ${url} timed out`))
