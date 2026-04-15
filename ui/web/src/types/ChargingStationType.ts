@@ -368,6 +368,7 @@ interface CommandsSupport extends JsonObject {
   outgoingCommands?: Record<RequestCommand, boolean>
 }
 
+// Local non-recursive JsonObject avoids Vue UnwrapRef<T> infinite instantiation (TS2589)
 type JsonObject = { [key in string]?: (JsonObject | JsonPrimitive)[] | JsonObject | JsonPrimitive }
 
 type JsonPrimitive = boolean | null | number | string

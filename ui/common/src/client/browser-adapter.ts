@@ -25,8 +25,9 @@ export const createBrowserWsAdapter = (ws: BrowserWebSocket): WebSocketLike => {
 
   ws.onerror = event => {
     if (onerrorCallback != null) {
-      const error = new Error('WebSocket error')
-      const message = 'WebSocket error'
+      const raw = event as { message?: string }
+      const message = raw.message ?? 'WebSocket error'
+      const error = new Error(message)
       onerrorCallback({ error, message })
     }
   }

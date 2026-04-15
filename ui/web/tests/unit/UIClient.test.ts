@@ -133,6 +133,7 @@ describe('UIClient', () => {
       UIClient.getInstance(createUIServerConfig())
       const ws = MockWebSocket.lastInstance!
       ws.simulateClose()
+      expect(toastMock.info).toHaveBeenCalledWith(expect.stringContaining('closed'))
     })
   })
 
@@ -219,6 +220,7 @@ describe('UIClient', () => {
 
       const fakeUUID = crypto.randomUUID()
       ws.simulateMessage([fakeUUID, { status: ResponseStatus.SUCCESS }])
+      expect(toastMock.error).not.toHaveBeenCalled()
     })
 
     it('should silently ignore response with invalid UUID', () => {

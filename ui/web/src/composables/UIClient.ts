@@ -19,6 +19,7 @@ import {
 
 export class UIClient {
   private static instance: null | UIClient = null
+  private abortConnection: () => void
   private client: WebSocketClient
   private readonly refreshListeners: Set<() => void>
   private uiServerConfiguration: UIServerConfigurationSection
@@ -28,8 +29,12 @@ export class UIClient {
     this.uiServerConfiguration = uiServerConfiguration
     this.refreshListeners = new Set()
     this.wsEventTarget = new EventTarget()
-    this.client = this.createClient()
-    this.client.connect().catch(() => undefined)
+    const { abort, client } = this.createClientWithAbort()
+    this.client = client
+    this.abortConnection = abort
+    this.client.connect().catch((error: unknown) => {
+      console.error('WebSocket connect failed', error)
+    })
   }
 
   public static getInstance (uiServerConfiguration?: UIServerConfigurationSection): UIClient {
@@ -114,10 +119,15 @@ export class UIClient {
   }
 
   public setConfiguration (uiServerConfiguration: UIServerConfigurationSection): void {
+    this.abortConnection()
     this.client.disconnect()
     this.uiServerConfiguration = uiServerConfiguration
-    this.client = this.createClient()
-    this.client.connect().catch(() => undefined)
+    const { abort, client } = this.createClientWithAbort()
+    this.client = client
+    this.abortConnection = abort
+    this.client.connect().catch((error: unknown) => {
+      console.error('WebSocket connect failed', error)
+    })
   }
 
   public async setSupervisionUrl (hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
@@ -240,7 +250,8 @@ export class UIClient {
     this.wsEventTarget.removeEventListener(event, listener as EventListener, options)
   }
 
-  private createClient (): WebSocketClient {
+  private createClientWithAbort (): { abort: () => void; client: WebSocketClient } {
+    let aborted = false
     const config = this.uiServerConfiguration
     const uiUrl = `${config.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${config.host}:${config.port.toString()}`
     const uiProtocols =
@@ -258,6 +269,9 @@ export class UIClient {
 
     const eventTarget = this.wsEventTarget
 
+    // Factory builds its own URL/protocols because WebSocketClient.buildProtocols()
+    // uses Node.js Buffer for base64 encoding, which isn't available in the browser.
+    // Browser uses btoa() instead. Both produce identical output.
     const factory: WebSocketFactory = (_url, _protocols) => {
       const adapter = createBrowserWsAdapter(
         new WebSocket(uiUrl, uiProtocols) as unknown as Parameters<typeof createBrowserWsAdapter>[0]
@@ -272,9 +286,12 @@ export class UIClient {
         },
         set onclose (handler) {
           adapter.onclose = event => {
+            if (aborted) return
             handler?.(event)
             useToast().info('WebSocket to UI server closed')
-            eventTarget.dispatchEvent(new Event('close'))
+            eventTarget.dispatchEvent(
+              new CloseEvent('close', { code: event.code, reason: event.reason })
+            )
           }
         },
         get onerror () {
@@ -282,6 +299,7 @@ export class UIClient {
         },
         set onerror (handler) {
           adapter.onerror = event => {
+            if (aborted) return
             handler?.(event)
             useToast().error(
               `Error in WebSocket to UI server '${config.host}:${config.port.toString()}'`
@@ -304,6 +322,7 @@ export class UIClient {
         },
         set onopen (handler) {
           adapter.onopen = () => {
+            if (aborted) return
             handler?.()
             useToast().success(
               `WebSocket to UI server '${config.host}:${config.port.toString()}' successfully opened`
@@ -320,7 +339,7 @@ export class UIClient {
       }
     }
 
-    return new WebSocketClient(
+    const client = new WebSocketClient(
       factory,
       {
         authentication: config.authentication,
@@ -339,6 +358,13 @@ export class UIClient {
         }
       }
     )
+
+    return {
+      abort: () => {
+        aborted = true
+      },
+      client,
+    }
   }
 
   private async sendRequest (
