@@ -73,7 +73,9 @@ export interface RequestPayload extends JsonObject {
 }
 
 export interface ResponsePayload extends JsonObject {
-  hashIds?: string[]
+  hashIdsFailed?: string[]
+  hashIdsSucceeded?: string[]
+  responsesFailed?: JsonObject[]
   status: ResponseStatus
 }
 

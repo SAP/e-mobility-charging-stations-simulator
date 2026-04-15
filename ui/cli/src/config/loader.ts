@@ -57,6 +57,9 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
       if (Array.isArray(uiServer)) {
         throw new Error('Config contains multiple uiServer entries; the CLI supports only one')
       }
+      if (typeof uiServer !== 'object') {
+        throw new Error('Config uiServer must be an object')
+      }
       return uiServer as Partial<UIServerConfig>
     }
     return {}
