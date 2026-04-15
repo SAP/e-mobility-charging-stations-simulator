@@ -62,7 +62,7 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
       }
       return uiServer as Partial<UIServerConfig>
     }
-    return {}
+    throw new Error(`Config file '${targetPath}' must contain a JSON object`)
   } catch (error: unknown) {
     if (
       configPath != null ||

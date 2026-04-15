@@ -1,5 +1,4 @@
-import type { AuthenticationType } from '../types/UIProtocol.js'
-import type { ResponsePayload } from '../types/UIProtocol.js'
+import type { AuthenticationType, ResponsePayload } from '../types/UIProtocol.js'
 
 export const enum WebSocketReadyState {
   CONNECTING = 0,
