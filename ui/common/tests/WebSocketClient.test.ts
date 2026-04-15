@@ -382,7 +382,7 @@ await describe('WebSocketClient', async () => {
         assert.ok(error.message.includes('timed out'))
         assert.ok(error.message.includes('50ms'))
         // Should timeout around 50ms, definitely not 60s
-        assert.ok(elapsed < 500, `Expected timeout within 500ms, got ${elapsed}ms`)
+        assert.ok(elapsed < 500, `Expected timeout within 500ms, got ${elapsed.toString()}ms`)
         return true
       }
     )
