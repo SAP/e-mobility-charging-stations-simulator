@@ -1,5 +1,7 @@
 packages:
   - ./
+  - ./ui/common
+  - ./ui/cli
   - ./ui/web
 
 overrides:

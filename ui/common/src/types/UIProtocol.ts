@@ -1,10 +1,5 @@
-import type { JsonObject } from './JsonType'
-import type { UUIDv4 } from './UUID'
-
-export enum ApplicationProtocol {
-  WS = 'ws',
-  WSS = 'wss',
-}
+import type { JsonObject } from './JsonType.js'
+import type { UUIDv4 } from './UUID.js'
 
 export enum AuthenticationType {
   PROTOCOL_BASIC_AUTH = 'protocol-basic-auth',
@@ -13,17 +8,24 @@ export enum AuthenticationType {
 export enum ProcedureName {
   ADD_CHARGING_STATIONS = 'addChargingStations',
   AUTHORIZE = 'authorize',
+  BOOT_NOTIFICATION = 'bootNotification',
   CLOSE_CONNECTION = 'closeConnection',
+  DATA_TRANSFER = 'dataTransfer',
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
   GET_15118_EV_CERTIFICATE = 'get15118EVCertificate',
   GET_CERTIFICATE_STATUS = 'getCertificateStatus',
+  HEARTBEAT = 'heartbeat',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   LIST_TEMPLATES = 'listTemplates',
   LOCK_CONNECTOR = 'lockConnector',
   LOG_STATUS_NOTIFICATION = 'logStatusNotification',
+  METER_VALUES = 'meterValues',
   NOTIFY_CUSTOMER_INFORMATION = 'notifyCustomerInformation',
   NOTIFY_REPORT = 'notifyReport',
   OPEN_CONNECTION = 'openConnection',
+  PERFORMANCE_STATISTICS = 'performanceStatistics',
   SECURITY_EVENT_NOTIFICATION = 'securityEventNotification',
   SET_SUPERVISION_URL = 'setSupervisionUrl',
   SIGN_CERTIFICATE = 'signCertificate',
@@ -32,16 +34,13 @@ export enum ProcedureName {
   START_CHARGING_STATION = 'startChargingStation',
   START_SIMULATOR = 'startSimulator',
   START_TRANSACTION = 'startTransaction',
+  STATUS_NOTIFICATION = 'statusNotification',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',
   STOP_TRANSACTION = 'stopTransaction',
   TRANSACTION_EVENT = 'transactionEvent',
   UNLOCK_CONNECTOR = 'unlockConnector',
-}
-
-export enum Protocol {
-  UI = 'ui',
 }
 
 export enum ProtocolVersion {
@@ -57,13 +56,20 @@ export enum ServerNotification {
   REFRESH = 'refresh',
 }
 
+export interface BroadcastChannelResponsePayload extends JsonObject {
+  hashId: string | undefined
+  status: ResponseStatus
+}
+
 export type ProtocolNotification = [ServerNotification]
 
 export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
 export type ProtocolRequestHandler = (
-  payload: RequestPayload
-) => Promise<ResponsePayload> | ResponsePayload
+  uuid?: UUIDv4,
+  procedureName?: ProcedureName,
+  payload?: RequestPayload
+) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export type ProtocolResponse = [UUIDv4, ResponsePayload]
 
@@ -75,19 +81,6 @@ export interface RequestPayload extends JsonObject {
 export interface ResponsePayload extends JsonObject {
   hashIdsFailed?: string[]
   hashIdsSucceeded?: string[]
-  responsesFailed?: JsonObject[]
+  responsesFailed?: BroadcastChannelResponsePayload[]
   status: ResponseStatus
-}
-
-export interface SimulatorState extends JsonObject {
-  started: boolean
-  templateStatistics: Record<string, TemplateStatistics>
-  version: string
-}
-
-interface TemplateStatistics extends JsonObject {
-  added: number
-  configured: number
-  indexes: number[]
-  started: number
 }

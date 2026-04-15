@@ -32,9 +32,13 @@ jobs:
 
       - run: pnpm format
 
+      - working-directory: ui/common
+        run: pnpm format
+
+      - working-directory: ui/cli
+        run: pnpm format
+
       - working-directory: ui/web
-        run: |
-          pnpm format
-          pnpm lint:fix
+        run: pnpm format
 
       - uses: autofix-ci/action@7a166d7532b277f34e16238930461bf77f9d7ed8

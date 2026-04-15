@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "removeComments": true,
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitOverride": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}

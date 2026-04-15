@@ -2,6 +2,8 @@ coverage
 dist
 outputs
 .nyc_output
+ui/common
+ui/cli
 ui/web
 pnpm-lock.yaml
 package-lock.json

@@ -1,0 +1,43 @@
+import { z } from 'zod'
+
+import { AuthenticationType } from '../types/UIProtocol.js'
+
+export const authenticationConfigSchema = z
+  .object({
+    enabled: z.boolean(),
+    password: z.string().optional(),
+    type: z.enum(AuthenticationType),
+    username: z.string().optional(),
+  })
+  .refine(
+    data =>
+      !data.enabled ||
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      data.type !== AuthenticationType.PROTOCOL_BASIC_AUTH ||
+      (data.username != null &&
+        data.username.length > 0 &&
+        data.password != null &&
+        data.password.length > 0),
+    {
+      message:
+        'username and password are required when authentication is enabled with protocol-basic-auth',
+    }
+  )
+
+export const uiServerConfigSchema = z.object({
+  authentication: authenticationConfigSchema.optional(),
+  host: z.string().min(1),
+  name: z.string().optional(),
+  port: z.number().int().min(1).max(65535),
+  protocol: z.string().min(1),
+  secure: z.boolean().optional(),
+  version: z.string().min(1),
+})
+
+export const configurationSchema = z.object({
+  uiServer: z.union([uiServerConfigSchema, z.array(uiServerConfigSchema)]),
+})
+
+export type Configuration = z.infer<typeof configurationSchema>
+export type UIServerConfig = z.infer<typeof uiServerConfigSchema>
+export type { UIServerConfig as UIServerConfigurationSection }
