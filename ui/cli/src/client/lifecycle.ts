@@ -50,6 +50,9 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
   activeSpinner = spinner ?? undefined
   activeClient = client
 
+  const budget = timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS
+  const startTime = Date.now()
+
   let connectTimeoutId: ReturnType<typeof setTimeout> | undefined
   try {
     const connectPromise = client.connect()
@@ -59,7 +62,7 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
       new Promise<never>((_resolve, reject) => {
         connectTimeoutId = setTimeout(() => {
           reject(new Error(`Connection to ${url} timed out`))
-        }, timeoutMs ?? UI_WEBSOCKET_REQUEST_TIMEOUT_MS)
+        }, budget)
       }),
     ])
   } catch (error: unknown) {
@@ -70,11 +73,18 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
     clearTimeout(connectTimeoutId)
   }
 
+  const remaining = budget - (Date.now() - startTime)
+  if (remaining <= 0) {
+    spinner?.fail()
+    client.disconnect()
+    throw new ConnectionError(url, new Error('Connection consumed entire timeout budget'))
+  }
+
   try {
     if (spinner != null) {
       spinner.text = `Sending ${procedureName}...`
     }
-    const response: ResponsePayload = await client.sendRequest(procedureName, payload)
+    const response: ResponsePayload = await client.sendRequest(procedureName, payload, remaining)
     spinner?.stop()
     formatter.output(response)
   } catch (error: unknown) {
