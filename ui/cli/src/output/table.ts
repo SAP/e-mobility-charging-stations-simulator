@@ -1,8 +1,7 @@
-import type { ResponsePayload } from 'ui-common'
-
 import chalk from 'chalk'
 import Table from 'cli-table3'
 import process from 'node:process'
+import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
@@ -34,10 +33,12 @@ export const outputTable = (payload: ResponsePayload): void => {
 }
 
 const displayGenericPayload = (payload: ResponsePayload): void => {
-  const { status: _, ...rest } = payload
+  const { status, ...rest } = payload
   if (Object.keys(rest).length > 0) {
     process.stdout.write(JSON.stringify(rest, null, 2) + '\n')
-  } else {
+  } else if (status === ResponseStatus.SUCCESS) {
     process.stdout.write(chalk.green('✓ Success\n'))
+  } else {
+    process.stderr.write(chalk.red(`✗ ${status}\n`))
   }
 }
