@@ -7,6 +7,8 @@ import {
   type ChargingStationData,
   type ChargingStationInfo,
   type ConnectorStatus,
+  DEFAULT_HOST,
+  DEFAULT_PORT,
   type EvseEntry,
   OCPP16AvailabilityType,
   OCPP16ChargePointStatus,
@@ -22,7 +24,7 @@ import {
 export const TEST_HASH_ID = 'test-hash-id-abc123'
 export const TEST_ID_TAG = 'RFID-TAG-001'
 export const TEST_STATION_ID = 'CS-TEST-001'
-export const TEST_WS_URL = 'ws://localhost:8080'
+export const TEST_WS_URL = `ws://${DEFAULT_HOST}:${DEFAULT_PORT.toString()}`
 
 // ── Factory Functions ─────────────────────────────────────────────────────────
 
@@ -108,8 +110,8 @@ export function createUIServerConfig (
   overrides?: Partial<UIServerConfigurationSection>
 ): UIServerConfigurationSection {
   return {
-    host: 'localhost',
-    port: 8080,
+    host: DEFAULT_HOST,
+    port: DEFAULT_PORT,
     protocol: Protocol.UI,
     version: ProtocolVersion['0.0.1'],
     ...overrides,

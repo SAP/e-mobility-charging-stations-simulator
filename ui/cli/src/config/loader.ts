@@ -2,15 +2,14 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import { uiServerConfigSchema, type UIServerConfigurationSection } from 'ui-common'
-
 import {
   DEFAULT_HOST,
   DEFAULT_PORT,
-  DEFAULT_PROTOCOL,
-  DEFAULT_SECURE,
-  DEFAULT_VERSION,
-} from './defaults.js'
+  uiServerConfigSchema,
+  type UIServerConfigurationSection,
+} from 'ui-common'
+
+import { DEFAULT_PROTOCOL, DEFAULT_SECURE, DEFAULT_VERSION } from './defaults.js'
 
 interface LoadConfigOptions {
   configPath?: string

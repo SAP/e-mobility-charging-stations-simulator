@@ -3,14 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
+import { DEFAULT_HOST, DEFAULT_PORT } from 'ui-common'
 
-import {
-  DEFAULT_HOST,
-  DEFAULT_PORT,
-  DEFAULT_PROTOCOL,
-  DEFAULT_SECURE,
-  DEFAULT_VERSION,
-} from '../src/config/defaults.js'
+import { DEFAULT_PROTOCOL, DEFAULT_SECURE, DEFAULT_VERSION } from '../src/config/defaults.js'
 import { loadConfig } from '../src/config/loader.js'
 
 let tempDir: string
