@@ -16,8 +16,7 @@ import type {
   ServerNotification, // enum — 'refresh'
   ProtocolRequest, // [UUIDv4, ProcedureName, RequestPayload]
   ProtocolResponse, // [UUIDv4, ResponsePayload]
-  UIServerConfigurationSection, // UI server config interface
-  UIServerConfig, // Zod-inferred UI server config type
+  UIServerConfigurationSection, // UI server config type (Zod-inferred)
   Configuration, // Full config type (single or multiple servers)
   UUIDv4, // Branded UUID type
   JsonType, // JSON value type

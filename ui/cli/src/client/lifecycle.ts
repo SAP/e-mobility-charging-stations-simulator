@@ -5,7 +5,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   UI_WEBSOCKET_REQUEST_TIMEOUT_MS,
-  type UIServerConfig,
+  type UIServerConfigurationSection,
   WebSocketClient,
   type WebSocketFactory,
 } from 'ui-common'
@@ -24,7 +24,7 @@ let activeSpinner: null | ReturnType<typeof ora> | undefined
 let cleanupInProgress = false
 
 export interface ExecuteOptions {
-  config: UIServerConfig
+  config: UIServerConfigurationSection
   formatter: Formatter
   payload: RequestPayload
   procedureName: ProcedureName

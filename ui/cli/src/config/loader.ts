@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
-import { type UIServerConfig, uiServerConfigSchema } from 'ui-common'
+import { uiServerConfigSchema, type UIServerConfigurationSection } from 'ui-common'
 
 import {
   DEFAULT_HOST,
@@ -47,7 +47,9 @@ const readJsonFile = async (filePath: string): Promise<unknown> => {
   return JSON.parse(content) as unknown
 }
 
-const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConfig>> => {
+const loadConfigFile = async (
+  configPath?: string
+): Promise<Partial<UIServerConfigurationSection>> => {
   const targetPath = configPath ?? getXdgConfigPath()
   try {
     const raw = await readJsonFile(targetPath)
@@ -60,7 +62,7 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
       if (typeof uiServer !== 'object') {
         throw new Error('Config uiServer must be an object')
       }
-      return uiServer as Partial<UIServerConfig>
+      return uiServer as Partial<UIServerConfigurationSection>
     }
     throw new Error(`Config file '${targetPath}' must contain a JSON object`)
   } catch (error: unknown) {
@@ -76,8 +78,10 @@ const loadConfigFile = async (configPath?: string): Promise<Partial<UIServerConf
   }
 }
 
-export const loadConfig = async (options: LoadConfigOptions = {}): Promise<UIServerConfig> => {
-  const defaults: UIServerConfig = {
+export const loadConfig = async (
+  options: LoadConfigOptions = {}
+): Promise<UIServerConfigurationSection> => {
+  const defaults: UIServerConfigurationSection = {
     host: DEFAULT_HOST,
     port: DEFAULT_PORT,
     protocol: DEFAULT_PROTOCOL,
@@ -87,7 +91,7 @@ export const loadConfig = async (options: LoadConfigOptions = {}): Promise<UISer
 
   const fileConfig = await loadConfigFile(options.configPath)
 
-  const cliOverrides: Partial<UIServerConfig> = {}
+  const cliOverrides: Partial<UIServerConfigurationSection> = {}
   if (options.url != null) {
     const parsed = parseServerUrl(options.url)
     cliOverrides.host = parsed.host
