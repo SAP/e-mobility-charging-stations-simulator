@@ -4,8 +4,8 @@ networks:
 services:
   e-mobility-charging-stations-dashboard:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: ../../..
+      dockerfile: ui/web/docker/Dockerfile
     networks:
       - ev_network
     ports:
