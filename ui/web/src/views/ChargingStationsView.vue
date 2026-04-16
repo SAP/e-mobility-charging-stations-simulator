@@ -104,7 +104,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ChargingStationData, ResponsePayload, SimulatorState, UIServerConfigurationSection, UUIDv4 } from 'ui-common'
+import type {
+  ChargingStationData,
+  ResponsePayload,
+  SimulatorState,
+  UIServerConfigurationSection,
+  UUIDv4,
+} from 'ui-common'
 
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
