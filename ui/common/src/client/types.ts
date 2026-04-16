@@ -1,4 +1,5 @@
-import type { AuthenticationType, ResponsePayload } from '../types/UIProtocol.js'
+import type { UIServerConfigurationSection } from '../config/schema.js'
+import type { ResponsePayload } from '../types/UIProtocol.js'
 
 export const enum WebSocketReadyState {
   CONNECTING = 0,
@@ -7,21 +8,9 @@ export const enum WebSocketReadyState {
   CLOSED = 3,
 }
 
-export interface AuthenticationConfig {
-  enabled: boolean
-  password?: string
-  type: AuthenticationType
-  username?: string
-}
+export type AuthenticationConfig = NonNullable<UIServerConfigurationSection['authentication']>
 
-export interface ClientConfig {
-  authentication?: AuthenticationConfig
-  host: string
-  port: number
-  protocol: string
-  secure?: boolean
-  version: string
-}
+export type ClientConfig = Omit<UIServerConfigurationSection, 'name'>
 
 export interface ResponseHandler {
   reject: (reason?: unknown) => void

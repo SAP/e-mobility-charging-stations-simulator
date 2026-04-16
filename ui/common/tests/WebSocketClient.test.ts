@@ -7,7 +7,13 @@ import type { WebSocketFactory, WebSocketLike } from '../src/client/types.js'
 import type { ResponsePayload } from '../src/types/UIProtocol.js'
 
 import { ServerFailureError, WebSocketClient } from '../src/client/WebSocketClient.js'
-import { AuthenticationType, ProcedureName, ResponseStatus } from '../src/types/UIProtocol.js'
+import {
+  AuthenticationType,
+  ProcedureName,
+  Protocol,
+  ProtocolVersion,
+  ResponseStatus,
+} from '../src/types/UIProtocol.js'
 
 /**
  * @returns Mock WebSocket with trigger methods for testing.
@@ -85,8 +91,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -109,8 +115,8 @@ await describe('WebSocketClient', async () => {
       },
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -126,8 +132,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -154,8 +160,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -184,8 +190,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -228,8 +234,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerError('Connection refused')
@@ -247,8 +253,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -267,8 +273,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -293,9 +299,9 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'example.com',
       port: 443,
-      protocol: 'ui',
+      protocol: Protocol.UI,
       secure: true,
-      version: '0.0.1',
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -309,8 +315,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -328,8 +334,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -350,8 +356,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     // Close without opening — simulates handshake rejection
@@ -370,8 +376,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
@@ -404,8 +410,8 @@ await describe('WebSocketClient', async () => {
       {
         host: 'localhost',
         port: 8080,
-        protocol: 'ui',
-        version: '0.0.1',
+        protocol: Protocol.UI,
+        version: ProtocolVersion['0.0.1'],
       },
       5000
     )
@@ -433,8 +439,8 @@ await describe('WebSocketClient', async () => {
       {
         host: 'localhost',
         port: 8080,
-        protocol: 'ui',
-        version: '0.0.1',
+        protocol: Protocol.UI,
+        version: ProtocolVersion['0.0.1'],
       },
       5000
     )
@@ -461,8 +467,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     setTimeout(() => {
       mockWs.triggerOpen()
@@ -485,8 +491,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     setTimeout(() => {
       mockWs.triggerOpen()
@@ -509,8 +515,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(factory, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     setTimeout(() => {
       mockWs.triggerOpen()
@@ -531,7 +537,7 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWs()
     const client = new WebSocketClient(
       () => mockWs,
-      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+      { host: 'localhost', port: 8080, protocol: Protocol.UI, version: ProtocolVersion['0.0.1'] },
       undefined,
       notification => {
         notifications.push(notification)
@@ -554,7 +560,7 @@ await describe('WebSocketClient', async () => {
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(
       factory,
-      { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+      { host: 'localhost', port: 8080, protocol: Protocol.UI, version: ProtocolVersion['0.0.1'] },
       undefined,
       notification => {
         notifications.push(notification)
@@ -578,8 +584,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(() => mockWs, {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     })
     const connectPromise = client.connect()
     mockWs.triggerOpen()
