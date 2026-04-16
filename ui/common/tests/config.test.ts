@@ -24,6 +24,26 @@ await describe('config schema validation', async () => {
     assert.strictEqual(result.success, false)
   })
 
+  await it('should reject config with protocol not in Protocol enum', () => {
+    const result = uiServerConfigSchema.safeParse({
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ws',
+      version: '0.0.1',
+    })
+    assert.strictEqual(result.success, false)
+  })
+
+  await it('should reject config with version not in ProtocolVersion enum', () => {
+    const result = uiServerConfigSchema.safeParse({
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '2.0',
+    })
+    assert.strictEqual(result.success, false)
+  })
+
   await it('should reject missing required host field', () => {
     const result = uiServerConfigSchema.safeParse({
       port: 8080,

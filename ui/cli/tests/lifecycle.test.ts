@@ -2,6 +2,7 @@
 
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
+import { Protocol, ProtocolVersion } from 'ui-common'
 
 import { ConnectionError } from '../src/client/errors.js'
 import { executeCommand } from '../src/client/lifecycle.js'
@@ -36,7 +37,6 @@ await describe('lifecycle', async () => {
   })
 
   await it('should reject executeCommand with NaN timeout', async () => {
-    const { Protocol, ProtocolVersion } = await import('ui-common')
     await assert.rejects(
       executeCommand({
         config: {
