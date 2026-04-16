@@ -9,6 +9,7 @@ import {
   type UIServerConfigurationSection,
 } from 'ui-common'
 
+import { extractErrorMessage } from '../utils/errors.js'
 import { DEFAULT_PROTOCOL, DEFAULT_SECURE, DEFAULT_VERSION } from './defaults.js'
 
 interface LoadConfigOptions {
@@ -69,7 +70,7 @@ const loadConfigFile = async (
       configPath != null ||
       !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
     ) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = extractErrorMessage(error)
       const context = configPath != null ? `'${configPath}'` : `'${targetPath}'`
       throw new Error(`Failed to load configuration file ${context}: ${message}`, { cause: error })
     }
