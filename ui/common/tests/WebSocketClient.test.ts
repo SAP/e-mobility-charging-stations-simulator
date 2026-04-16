@@ -3,7 +3,7 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
-import type { WebSocketFactory, WebSocketLike } from '../src/client/types.js'
+import type { WebSocketFactory } from '../src/client/types.js'
 import type { ResponsePayload } from '../src/types/UIProtocol.js'
 
 import { ServerFailureError, WebSocketClient } from '../src/client/WebSocketClient.js'
@@ -14,79 +14,11 @@ import {
   ProtocolVersion,
   ResponseStatus,
 } from '../src/types/UIProtocol.js'
-
-/**
- * @returns Mock WebSocket with trigger methods for testing.
- */
-function createMockWs (): WebSocketLike & {
-  sentMessages: string[]
-  triggerClose: () => void
-  triggerError: (message: string) => void
-  triggerMessage: (data: string) => void
-  triggerOpen: () => void
-} {
-  let oncloseFn: ((event: { code: number; reason: string }) => void) | null = null
-  let onerrorFn: ((event: { error: unknown; message: string }) => void) | null = null
-  let onmessageFn: ((event: { data: string }) => void) | null = null
-  let onopenFn: (() => void) | null = null
-  const sentMessages: string[] = []
-  let readyState: 0 | 1 | 2 | 3 = 1
-
-  return {
-    close () {
-      readyState = 3
-      oncloseFn?.({ code: 1000, reason: '' })
-    },
-    get onclose () {
-      return oncloseFn
-    },
-    set onclose (l: ((event: { code: number; reason: string }) => void) | null) {
-      oncloseFn = l
-    },
-    get onerror () {
-      return onerrorFn
-    },
-    set onerror (l: ((event: { error: unknown; message: string }) => void) | null) {
-      onerrorFn = l
-    },
-    get onmessage () {
-      return onmessageFn
-    },
-    set onmessage (l: ((event: { data: string }) => void) | null) {
-      onmessageFn = l
-    },
-    get onopen () {
-      return onopenFn
-    },
-    set onopen (l: (() => void) | null) {
-      onopenFn = l
-    },
-    get readyState () {
-      return readyState
-    },
-    send (data) {
-      sentMessages.push(data)
-    },
-    sentMessages,
-    triggerClose () {
-      readyState = 3
-      oncloseFn?.({ code: 1000, reason: '' })
-    },
-    triggerError (message) {
-      onerrorFn?.({ error: new Error(message), message })
-    },
-    triggerMessage (data) {
-      onmessageFn?.({ data })
-    },
-    triggerOpen () {
-      onopenFn?.()
-    },
-  }
-}
+import { createMockWebSocketLike } from './mocks.js'
 
 await describe('WebSocketClient', async () => {
   await it('should connect successfully', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -100,7 +32,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should build protocol-basic-auth credentials correctly', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     let capturedProtocols: string | string[] = ''
     const factory: WebSocketFactory = (_url, protocols) => {
       capturedProtocols = protocols
@@ -127,7 +59,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should send SRPC formatted request', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -155,7 +87,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should correlate responses by UUID', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -185,7 +117,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject with ServerFailureError containing the payload', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -229,7 +161,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should handle connection errors', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -248,7 +180,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject pending requests on disconnect', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -268,7 +200,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject request when WebSocket is not open', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -290,7 +222,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should build wss URL when secure is true', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     let capturedUrl = ''
     const factory: WebSocketFactory = url => {
       capturedUrl = url
@@ -310,7 +242,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should ignore malformed messages', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -329,7 +261,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject on malformed response payload with matching UUID', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -351,7 +283,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject connect if socket closes before open', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -371,7 +303,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should respect explicit short timeout on sendRequest', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -404,7 +336,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject sendRequest with timeoutMs = 0', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(
       () => mockWs,
       {
@@ -433,7 +365,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject sendRequest with timeoutMs = -1', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(
       () => mockWs,
       {
@@ -462,7 +394,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject sendRequest with NaN timeout', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -486,7 +418,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject sendRequest with Infinity timeout', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -510,7 +442,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should reject pending requests when post-connect error occurs', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
       host: 'localhost',
@@ -534,7 +466,7 @@ await describe('WebSocketClient', async () => {
 
   await it('should fire onNotification for 1-element server notification', async () => {
     const notifications: unknown[][] = []
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(
       () => mockWs,
       { host: 'localhost', port: 8080, protocol: Protocol.UI, version: ProtocolVersion['0.0.1'] },
@@ -556,7 +488,7 @@ await describe('WebSocketClient', async () => {
 
   await it('should NOT fire onNotification for 2-element response', async () => {
     const notifications: unknown[][] = []
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(
       factory,
@@ -580,7 +512,7 @@ await describe('WebSocketClient', async () => {
   })
 
   await it('should NOT fire onNotification when callback is undefined', async () => {
-    const mockWs = createMockWs()
+    const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(() => mockWs, {
       host: 'localhost',
       port: 8080,
