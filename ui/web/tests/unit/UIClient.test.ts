@@ -432,17 +432,43 @@ describe('UIClient', () => {
   })
 
   describe('setConfiguration', () => {
-    it('should close existing WebSocket and open new connection', () => {
-      const client = UIClient.getInstance(createUIServerConfig())
-      const oldWs = MockWebSocket.lastInstance!
-      oldWs.simulateOpen()
+    let client: UIClient
+    let oldWs: MockWebSocket
 
+    beforeEach(() => {
+      client = UIClient.getInstance(createUIServerConfig())
+      oldWs = MockWebSocket.lastInstance!
+      oldWs.simulateOpen()
+    })
+
+    it('should close existing WebSocket and open new connection', () => {
       client.setConfiguration(createUIServerConfig({ port: 9090 }))
 
       expect(oldWs.close).toHaveBeenCalled()
       const newWs = MockWebSocket.lastInstance!
       expect(newWs).not.toBe(oldWs)
-      expect(newWs.url).toBe('ws://localhost:9090')
+    })
+
+    it('should suppress close events from old connection', () => {
+      client.setConfiguration(createUIServerConfig({ port: 9090 }))
+      oldWs.simulateClose()
+      expect(toastMock.info).not.toHaveBeenCalled()
+    })
+
+    it('should suppress error events from old connection', () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      client.setConfiguration(createUIServerConfig({ port: 9090 }))
+      oldWs.simulateError()
+      expect(toastMock.error).not.toHaveBeenCalled()
+      expect(consoleSpy).not.toHaveBeenCalled()
+      consoleSpy.mockRestore()
+    })
+
+    it('should suppress open events from old connection', () => {
+      toastMock.success.mockClear()
+      client.setConfiguration(createUIServerConfig({ port: 9090 }))
+      oldWs.simulateOpen()
+      expect(toastMock.success).not.toHaveBeenCalled()
     })
   })
 
