@@ -1,4 +1,5 @@
 import type { WebSocketLike } from './types.js'
+import type { WebSocketReadyState } from './types.js'
 
 interface BrowserWebSocket {
   close(code?: number, reason?: string): void
@@ -25,9 +26,10 @@ export const createBrowserWsAdapter = (ws: BrowserWebSocket): WebSocketLike => {
 
   ws.onerror = event => {
     if (onerrorCallback != null) {
-      const raw = event as { message?: string }
-      const message = raw.message ?? 'WebSocket error'
-      const error = new Error(message)
+      const raw = event as { error?: unknown; message?: string }
+      const error =
+        raw.error instanceof Error ? raw.error : new Error(raw.message ?? 'WebSocket error')
+      const message = raw.message ?? error.message
       onerrorCallback({ error, message })
     }
   }
@@ -77,8 +79,8 @@ export const createBrowserWsAdapter = (ws: BrowserWebSocket): WebSocketLike => {
       onopenCallback = callback
     },
 
-    get readyState (): number {
-      return ws.readyState
+    get readyState (): WebSocketReadyState {
+      return ws.readyState as WebSocketReadyState
     },
 
     send (data: string): void {
