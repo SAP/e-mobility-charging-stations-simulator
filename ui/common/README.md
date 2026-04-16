@@ -29,7 +29,7 @@ import type {
 SRPC WebSocket client with dependency injection. Consumers provide a WebSocket factory so the client works in any environment.
 
 ```typescript
-import { WebSocketClient, ProcedureName } from 'ui-common'
+import { WebSocketClient, ProcedureName, Protocol, ProtocolVersion } from 'ui-common'
 import type { WebSocketFactory, WebSocketLike } from 'ui-common'
 import { WebSocket } from 'ws'
 
@@ -39,8 +39,8 @@ const factory: WebSocketFactory = (url, protocols) =>
 const client = new WebSocketClient(factory, {
   host: 'localhost',
   port: 8080,
-  protocol: 'ui',
-  version: '0.0.1',
+  protocol: Protocol.UI,
+  version: ProtocolVersion['0.0.1'],
   authentication: {
     enabled: true,
     type: 'protocol-basic-auth',
@@ -81,3 +81,29 @@ const valid = validateUUID(id) // boolean
 | `pnpm format`        | Run Prettier and ESLint auto-fix |
 | `pnpm test`          | Run unit tests                   |
 | `pnpm test:coverage` | Run unit tests with coverage     |
+
+## Architecture Decisions
+
+### ADR 1: Separate Config Loading Strategies (CLI vs Web)
+
+The CLI and Web UI load configuration from fundamentally different sources and therefore have separate, non-shared loaders.
+
+| Aspect       | CLI (`ui/cli/src/config/loader.ts`)  | Web (`ui/web/src/composables/UIClient.ts`) |
+| ------------ | ------------------------------------ | ------------------------------------------ |
+| Source       | Filesystem (XDG path) + `--url` flag | HTTP fetch of `config.json`                |
+| Precedence   | 3-level: defaults < file < `--url`   | Single source, no merging                  |
+| Multi-server | Rejected (single server only)        | Supported (array)                          |
+| Validation   | `uiServerConfigSchema.parse()`       | None (future improvement)                  |
+
+A shared loader abstraction would couple fundamentally different I/O strategies (filesystem vs HTTP) without meaningful code reuse. The only shared piece is `uiServerConfigSchema` from this package, which the CLI already uses for validation.
+
+### ADR 2: ClientConfig Derived from UIServerConfigurationSection
+
+`ClientConfig` (the `WebSocketClient` constructor parameter) is derived from `UIServerConfigurationSection` (the Zod-inferred config type) rather than being a separate hand-written interface:
+
+```typescript
+// ui/common/src/client/types.ts
+export type ClientConfig = Omit<UIServerConfigurationSection, 'name'>
+```
+
+`UIServerConfigurationSection` has an optional `name` field used for display purposes; `WebSocketClient` does not need it. Both consumers (`UIClient.ts` in web and `lifecycle.ts` in CLI) already pass `UIServerConfigurationSection` objects to `WebSocketClient` — TypeScript accepts this because `Omit<T, 'name'>` is structurally compatible with `T` when `name` is optional. This derivation eliminates the previous drift where `ClientConfig` used loose `string` types for `protocol` and `version` while `UIServerConfigurationSection` used the stricter `Protocol` and `ProtocolVersion` enums.
