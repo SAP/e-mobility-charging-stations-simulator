@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-node dist/start.js
+exec node dist/start.js

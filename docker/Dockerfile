@@ -7,9 +7,6 @@ RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
   && npm install -g --ignore-scripts corepack \
   && corepack enable \
-  && corepack prepare pnpm@latest --activate \
-  && pnpm set progress=false \
-  && pnpm config set depth 0 \
   && pnpm install --ignore-scripts --frozen-lockfile \
   && cp docker/config.json src/assets/config.json \
   && cp docker/idtags.json src/assets/idtags.json \
@@ -33,4 +30,5 @@ RUN set -ex \
   && chmod +x /run.sh \
   && chmod +x /autoconfig.sh
 
+EXPOSE 8080
 ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /run.sh"]

@@ -224,7 +224,13 @@ export class UIClient {
     }
     if (typeof options.transactionId === 'string') {
       return {
-        errorMessage: 'OCPP 1.6 requires numeric transactionId',
+        responsesFailed: [
+          {
+            errorMessage: 'OCPP 1.6 requires numeric transactionId',
+            hashId,
+            status: ResponseStatus.FAILURE,
+          },
+        ],
         status: ResponseStatus.FAILURE,
       }
     }

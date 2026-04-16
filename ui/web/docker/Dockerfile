@@ -6,9 +6,6 @@ COPY . ./
 RUN set -ex \
   && npm install -g --ignore-scripts corepack \
   && corepack enable \
-  && corepack prepare pnpm@latest --activate \
-  && pnpm set progress=false \
-  && pnpm config set depth 0 \
   && pnpm install --ignore-scripts --frozen-lockfile \
   && cp ui/web/docker/config.json ui/web/public/config.json \
   && pnpm --filter webui build

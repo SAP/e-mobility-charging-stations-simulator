@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-node start.js
+exec node start.js
