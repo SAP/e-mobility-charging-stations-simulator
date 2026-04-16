@@ -159,7 +159,7 @@ export interface ChargingStationData extends JsonObject {
   started: boolean
   stationInfo: ChargingStationInfo
   supervisionUrl: string
-  wsState?: typeof WebSocket.CLOSED
+  wsState?: 0 | 1 | 2 | 3
 }
 
 export interface ChargingStationInfo extends JsonObject {
