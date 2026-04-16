@@ -1,5 +1,4 @@
 import {
-  AuthenticationType,
   createBrowserWsAdapter,
   ProcedureName,
   type RequestPayload,
@@ -20,7 +19,6 @@ import {
   type OCPP20TransactionEventRequest,
   OCPPVersion,
 } from '@/types/ChargingStationType'
-import { ApplicationProtocol } from '@/types/UIProtocol'
 
 export class UIClient {
   private static instance: null | UIClient = null
@@ -258,28 +256,11 @@ export class UIClient {
   private createClientWithAbort (): { abort: () => void; client: WebSocketClient } {
     let aborted = false
     const config = this.uiServerConfiguration
-    const uiUrl = `${config.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${config.host}:${config.port.toString()}`
-    const uiProtocols =
-      config.authentication?.enabled === true &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      config.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
-        ? [
-            `${config.protocol}${config.version}`,
-            `authorization.basic.${btoa(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${config.authentication.username}:${config.authentication.password}`
-            ).replace(/={1,2}$/, '')}`,
-          ]
-        : `${config.protocol}${config.version}`
-
     const eventTarget = this.wsEventTarget
 
-    // Factory builds its own URL/protocols because WebSocketClient.buildProtocols()
-    // uses Node.js Buffer for base64 encoding, which isn't available in the browser.
-    // Browser uses btoa() instead. Both produce identical output.
-    const factory: WebSocketFactory = (_url, _protocols) => {
+    const factory: WebSocketFactory = (url, protocols) => {
       const adapter = createBrowserWsAdapter(
-        new WebSocket(uiUrl, uiProtocols) as unknown as Parameters<typeof createBrowserWsAdapter>[0]
+        new WebSocket(url, protocols) as unknown as Parameters<typeof createBrowserWsAdapter>[0]
       )
 
       return {

@@ -1,5 +1,3 @@
-import { Buffer } from 'node:buffer'
-
 import type { ProcedureName, RequestPayload, ResponsePayload } from '../types/UIProtocol.js'
 import type { UUIDv4 } from '../types/UUID.js'
 import type { ClientConfig, ResponseHandler, WebSocketFactory, WebSocketLike } from './types.js'
@@ -135,9 +133,7 @@ export class WebSocketClient {
       auth.username != null &&
       auth.password != null
     ) {
-      const encoded = Buffer.from(`${auth.username}:${auth.password}`)
-        .toString('base64')
-        .replace(/={1,2}$/, '')
+      const encoded = btoa(`${auth.username}:${auth.password}`).replace(/={1,2}$/, '')
       return [primary, `authorization.basic.${encoded}`]
     }
     return primary

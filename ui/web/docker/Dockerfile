@@ -16,7 +16,10 @@ RUN set -ex \
 FROM node:lts-alpine
 
 WORKDIR /usr/app
-COPY --from=builder /usr/builder/ui/web ./
+COPY --from=builder /usr/builder/ui/web/dist ./dist
+COPY --from=builder /usr/builder/ui/web/start.js ./
+COPY --from=builder /usr/builder/ui/web/package.json ./
+COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY ui/web/docker/run.sh /run.sh
 COPY ui/web/docker/autoconfig.sh /autoconfig.sh
 RUN set -ex \
