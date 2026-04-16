@@ -36,9 +36,15 @@ await describe('lifecycle', async () => {
   })
 
   await it('should reject executeCommand with NaN timeout', async () => {
+    const { Protocol, ProtocolVersion } = await import('ui-common')
     await assert.rejects(
       executeCommand({
-        config: { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+        config: {
+          host: 'localhost',
+          port: 8080,
+          protocol: Protocol.UI,
+          version: ProtocolVersion['0.0.1'],
+        },
         formatter: { error: () => undefined, output: () => undefined },
         payload: {},
         procedureName: 'listChargingStations' as never,

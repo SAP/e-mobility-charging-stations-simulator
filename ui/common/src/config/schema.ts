@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { AuthenticationType } from '../types/UIProtocol.js'
+import { AuthenticationType, Protocol, ProtocolVersion } from '../types/UIProtocol.js'
 
 export const authenticationConfigSchema = z
   .object({
@@ -29,9 +29,9 @@ export const uiServerConfigSchema = z.object({
   host: z.string().min(1),
   name: z.string().optional(),
   port: z.number().int().min(1).max(65535),
-  protocol: z.string().min(1),
+  protocol: z.enum(Protocol),
   secure: z.boolean().optional(),
-  version: z.string().min(1),
+  version: z.enum(ProtocolVersion),
 })
 
 export const configurationSchema = z.object({
@@ -39,4 +39,5 @@ export const configurationSchema = z.object({
 })
 
 export type Configuration = z.infer<typeof configurationSchema>
-export type UIServerConfig = z.infer<typeof uiServerConfigSchema>
+export type UIServerConfig = UIServerConfigurationSection
+export type UIServerConfigurationSection = z.infer<typeof uiServerConfigSchema>
