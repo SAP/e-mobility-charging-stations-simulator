@@ -1,3 +1,4 @@
+export * from './client/adapter.js'
 export * from './client/browser-adapter.js'
 export * from './client/types.js'
 export * from './client/WebSocketClient.js'

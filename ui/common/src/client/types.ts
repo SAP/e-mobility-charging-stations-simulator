@@ -12,6 +12,8 @@ export type AuthenticationConfig = NonNullable<UIServerConfigurationSection['aut
 
 export type ClientConfig = Omit<UIServerConfigurationSection, 'name'>
 
+export type DataConverter = (data: unknown) => string
+
 export interface ResponseHandler {
   reject: (reason?: unknown) => void
   resolve: (value: ResponsePayload) => void
