@@ -1,5 +1,6 @@
-import type { WebSocketLike } from './types.js'
 import type { WebSocketReadyState } from './types.js'
+
+import { type WebSocketLike } from './types.js'
 
 interface BrowserWebSocket {
   close(code?: number, reason?: string): void

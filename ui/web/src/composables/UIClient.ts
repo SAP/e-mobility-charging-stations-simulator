@@ -1,24 +1,20 @@
 import {
+  type ChargingStationOptions,
   createBrowserWsAdapter,
+  OCPP20IdTokenEnumType,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
   ServerNotification,
+  type UIServerConfigurationSection,
   WebSocketClient,
   type WebSocketFactory,
 } from 'ui-common'
 import { useToast } from 'vue-toast-notification'
-
-import type { UIServerConfigurationSection } from '@/types/ConfigurationType'
-
-import {
-  type ChargingStationOptions,
-  OCPP20IdTokenEnumType,
-  OCPP20TransactionEventEnumType,
-  type OCPP20TransactionEventRequest,
-  OCPPVersion,
-} from '@/types/ChargingStationType'
 
 export class UIClient {
   private static instance: null | UIClient = null

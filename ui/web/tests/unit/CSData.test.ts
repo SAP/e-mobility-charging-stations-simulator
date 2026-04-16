@@ -1,17 +1,18 @@
+import type { ChargingStationData } from 'ui-common'
+
 /**
  * @file Tests for CSData component
  * @description Unit tests for charging station row display, actions, and connector entry generation.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { OCPPVersion } from 'ui-common'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UIClient } from '@/composables'
-import type { ChargingStationData } from '@/types/ChargingStationType'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import CSData from '@/components/charging-stations/CSData.vue'
 import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
-import { OCPPVersion } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import {

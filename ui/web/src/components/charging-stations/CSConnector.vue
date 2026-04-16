@@ -66,9 +66,9 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from 'vue-toast-notification'
+import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import type { ConnectorStatus, OCPPVersion, Status } from '@/types/ChargingStationType'
+import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'

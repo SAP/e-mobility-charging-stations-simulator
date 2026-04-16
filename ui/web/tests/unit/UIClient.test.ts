@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { AuthenticationType, ProcedureName, ResponseStatus, ServerNotification } from 'ui-common'
 /**
  * @file Tests for UIClient composable
  * @description Unit tests for WebSocket client singleton, connection lifecycle,
  *   request/response handling, and all simulator/station operations.
  */
+import {
+  AuthenticationType,
+  OCPP20TransactionEventEnumType,
+  OCPPVersion,
+  ProcedureName,
+  ResponseStatus,
+  ServerNotification,
+} from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UIClient } from '@/composables'
-import { OCPP20TransactionEventEnumType, OCPPVersion } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import { createUIServerConfig, TEST_HASH_ID, TEST_ID_TAG } from './constants'

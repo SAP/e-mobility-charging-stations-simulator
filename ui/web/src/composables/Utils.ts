@@ -1,11 +1,8 @@
-import type { UUIDv4 } from 'ui-common'
+import type { ChargingStationData, ConfigurationData, UUIDv4 } from 'ui-common'
 import type { InjectionKey, Ref } from 'vue'
 
 import { inject } from 'vue'
 import { useToast } from 'vue-toast-notification'
-
-import type { ChargingStationData } from '@/types/ChargingStationType'
-import type { ConfigurationData } from '@/types/ConfigurationType'
 
 import {
   EMPTY_VALUE_PLACEHOLDER,

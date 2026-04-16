@@ -3,13 +3,13 @@
  * @description Unit tests for connector row display, transaction actions, and ATG controls.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { OCPP16ChargePointStatus } from 'ui-common'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UIClient } from '@/composables'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { EMPTY_VALUE_PLACEHOLDER, useUIClient } from '@/composables'
-import { OCPP16ChargePointStatus } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import { createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from './constants'

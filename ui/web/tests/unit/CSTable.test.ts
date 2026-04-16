@@ -1,11 +1,11 @@
+import type { ChargingStationData } from 'ui-common'
+
 /**
  * @file Tests for CSTable component
  * @description Unit tests for charging station table column headers and row rendering.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-
-import type { ChargingStationData } from '@/types/ChargingStationType'
 
 import CSTable from '@/components/charging-stations/CSTable.vue'
 

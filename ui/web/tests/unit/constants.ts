@@ -3,10 +3,6 @@
  * @description Factory functions (NOT static objects) for ChargingStationData,
  *   ConnectorStatus, and other test fixtures. Using factories prevents shared state.
  */
-import { ProtocolVersion } from 'ui-common'
-
-import type { UIServerConfigurationSection } from '@/types/ConfigurationType'
-
 import {
   type ChargingStationData,
   type ChargingStationInfo,
@@ -16,8 +12,10 @@ import {
   OCPP16ChargePointStatus,
   OCPP16RegistrationStatus,
   OCPPVersion,
-} from '@/types/ChargingStationType'
-import { Protocol } from '@/types/UIProtocol'
+  Protocol,
+  ProtocolVersion,
+  type UIServerConfigurationSection,
+} from 'ui-common'
 
 // ── Shared Test Constants ─────────────────────────────────────────────────────
 

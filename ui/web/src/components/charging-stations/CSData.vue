@@ -134,10 +134,10 @@
 </template>
 
 <script setup lang="ts">
+import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
+
 import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
-
-import type { ChargingStationData, ConnectorEntry, Status } from '@/types/ChargingStationType'
 
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'

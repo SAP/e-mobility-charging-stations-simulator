@@ -3,13 +3,13 @@
  * @description Unit tests for start transaction form — OCPP version branching, authorization flow, and navigation.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { OCPPVersion } from 'ui-common'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { UIClient } from '@/composables'
 
 import StartTransaction from '@/components/actions/StartTransaction.vue'
 import { useUIClient } from '@/composables'
-import { OCPPVersion } from '@/types/ChargingStationType'
 
 import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_ID_TAG, TEST_STATION_ID } from './constants'

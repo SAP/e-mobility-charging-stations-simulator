@@ -1,4 +1,4 @@
-import type { JsonObject } from 'ui-common'
+import type { JsonObject } from './JsonType.js'
 
 export enum AmpereUnits {
   AMPERE = 'A',
@@ -161,9 +161,7 @@ export interface ChargingStationData extends JsonObject {
   supervisionUrl: string
   wsState?:
     | typeof WebSocket.CLOSED
-    | typeof WebSocket.CLOSING
-    | typeof WebSocket.CONNECTING
-    | typeof WebSocket.OPEN
+
 }
 
 export interface ChargingStationInfo extends JsonObject {

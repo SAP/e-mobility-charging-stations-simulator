@@ -1,6 +1,11 @@
 import type { JsonObject } from './JsonType.js'
 import type { UUIDv4 } from './UUID.js'
 
+export enum ApplicationProtocol {
+  WS = 'ws',
+  WSS = 'wss',
+}
+
 export enum AuthenticationType {
   PROTOCOL_BASIC_AUTH = 'protocol-basic-auth',
 }
@@ -41,6 +46,10 @@ export enum ProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
   TRANSACTION_EVENT = 'transactionEvent',
   UNLOCK_CONNECTOR = 'unlockConnector',
+}
+
+export enum Protocol {
+  UI = 'ui',
 }
 
 export enum ProtocolVersion {
@@ -85,4 +94,17 @@ export interface ResponsePayload extends JsonObject {
   hashIdsSucceeded?: string[]
   responsesFailed?: BroadcastChannelResponsePayload[]
   status: ResponseStatus
+}
+
+export interface SimulatorState {
+  started: boolean
+  templateStatistics: Record<string, TemplateStatistics>
+  version: string
+}
+
+export interface TemplateStatistics {
+  added: number
+  configured: number
+  indexes: number[]
+  started: number
 }

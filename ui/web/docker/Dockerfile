@@ -26,4 +26,5 @@ RUN set -ex \
   && chmod +x /run.sh \
   && chmod +x /autoconfig.sh
 
+EXPOSE 3030
 ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /run.sh"]
