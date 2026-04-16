@@ -4,7 +4,7 @@ import type { WebSocketLike } from '../src/client/types.js'
 
 export interface MockWebSocketLike extends WebSocketLike {
   sentMessages: string[]
-  triggerClose: () => void
+  triggerClose: (code?: number, reason?: string) => void
   triggerError: (message: string) => void
   triggerMessage: (data: string) => void
   triggerOpen: () => void
@@ -22,9 +22,9 @@ export function createMockWebSocketLike (): MockWebSocketLike {
   let readyState: 0 | 1 | 2 | 3 = 1
 
   return {
-    close () {
+    close (code?: number, reason?: string) {
       readyState = 3
-      oncloseFn?.({ code: 1000, reason: '' })
+      oncloseFn?.({ code: code ?? 1000, reason: reason ?? '' })
     },
     get onclose () {
       return oncloseFn
@@ -57,9 +57,9 @@ export function createMockWebSocketLike (): MockWebSocketLike {
       sentMessages.push(data)
     },
     sentMessages,
-    triggerClose () {
+    triggerClose (code?: number, reason?: string) {
       readyState = 3
-      oncloseFn?.({ code: 1000, reason: '' })
+      oncloseFn?.({ code: code ?? 1000, reason: reason ?? '' })
     },
     triggerError (message) {
       onerrorFn?.({ error: new Error(message), message })
