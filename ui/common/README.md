@@ -81,29 +81,3 @@ const valid = validateUUID(id) // boolean
 | `pnpm format`        | Run Prettier and ESLint auto-fix |
 | `pnpm test`          | Run unit tests                   |
 | `pnpm test:coverage` | Run unit tests with coverage     |
-
-## Architecture Decisions
-
-### ADR 1: Separate Config Loading Strategies (CLI vs Web)
-
-The CLI and Web UI load configuration from fundamentally different sources and therefore have separate, non-shared loaders.
-
-| Aspect       | CLI (`ui/cli/src/config/loader.ts`)  | Web (`ui/web/src/composables/UIClient.ts`) |
-| ------------ | ------------------------------------ | ------------------------------------------ |
-| Source       | Filesystem (XDG path) + `--url` flag | HTTP fetch of `config.json`                |
-| Precedence   | 3-level: defaults < file < `--url`   | Single source, no merging                  |
-| Multi-server | Rejected (single server only)        | Supported (array)                          |
-| Validation   | `uiServerConfigSchema.parse()`       | None (future improvement)                  |
-
-A shared loader abstraction would couple fundamentally different I/O strategies (filesystem vs HTTP) without meaningful code reuse. The only shared piece is `uiServerConfigSchema` from this package, which the CLI already uses for validation.
-
-### ADR 2: ClientConfig Derived from UIServerConfigurationSection
-
-`ClientConfig` (the `WebSocketClient` constructor parameter) is derived from `UIServerConfigurationSection` (the Zod-inferred config type) rather than being a separate hand-written interface:
-
-```typescript
-// ui/common/src/client/types.ts
-export type ClientConfig = Omit<UIServerConfigurationSection, 'name'>
-```
-
-`UIServerConfigurationSection` has an optional `name` field used for display purposes; `WebSocketClient` does not need it. Both consumers (`UIClient.ts` in web and `lifecycle.ts` in CLI) already pass `UIServerConfigurationSection` objects to `WebSocketClient` — TypeScript accepts this because `Omit<T, 'name'>` is structurally compatible with `T` when `name` is optional. This derivation eliminates the previous drift where `ClientConfig` used loose `string` types for `protocol` and `version` while `UIServerConfigurationSection` used the stricter `Protocol` and `ProtocolVersion` enums.
