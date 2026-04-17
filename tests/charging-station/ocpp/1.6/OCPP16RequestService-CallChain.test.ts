@@ -34,7 +34,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
     const responseService = new OCPP16ResponseService()
     requestService = new OCPP16RequestService(responseService)
 
-    sendMessageMock = mock.fn(() => Promise.resolve({} as JsonType))
+    sendMessageMock = mock.fn(async () => Promise.resolve({} as JsonType))
     Object.defineProperty(requestService, 'sendMessage', {
       configurable: true,
       value: sendMessageMock,

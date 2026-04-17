@@ -236,7 +236,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ) => Promise<void>
         },
         'simulateFirmwareUpdateLifecycle',
-        () => Promise.resolve()
+        async () => Promise.resolve()
       )
     })
 
@@ -291,7 +291,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           ) => Promise<void>
         },
         'simulateFirmwareUpdateLifecycle',
-        () => Promise.reject(new Error('firmware lifecycle error'))
+        async () => Promise.reject(new Error('firmware lifecycle error'))
       )
 
       const request: OCPP20UpdateFirmwareRequest = {

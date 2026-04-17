@@ -84,8 +84,8 @@ function buildMockMongoClient (): {
     },
   }
   const mockClient: MockMongoClient = {
-    close: () => Promise.resolve(),
-    connect: () => Promise.resolve(),
+    close: async () => Promise.resolve(),
+    connect: async () => Promise.resolve(),
     db: (_name: string) => mockDb,
   }
   return { collectionCalls, mockClient, replaceOneCalls }
@@ -178,8 +178,8 @@ await describe('MongoDBStorage', async () => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
       const failingClient: MockMongoClient = {
-        close: () => Promise.reject(new Error('close failed')),
-        connect: () => Promise.resolve(),
+        close: async () => Promise.reject(new Error('close failed')),
+        connect: async () => Promise.resolve(),
         db: () => ({}) as MockDb,
       }
       storage.setClient(failingClient)
@@ -226,8 +226,8 @@ await describe('MongoDBStorage', async () => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
       const failingClient: MockMongoClient = {
-        close: () => Promise.resolve(),
-        connect: () => Promise.reject(new Error('connect failed')),
+        close: async () => Promise.resolve(),
+        connect: async () => Promise.reject(new Error('connect failed')),
         db: () => ({}) as MockDb,
       }
       storage.setClient(failingClient)
@@ -390,11 +390,11 @@ await describe('MongoDBStorage', async () => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
       const failingCollection: MockCollection = {
-        replaceOne: () => Promise.reject(new Error('replaceOne failed')),
+        replaceOne: async () => Promise.reject(new Error('replaceOne failed')),
       }
       const failingClient: MockMongoClient = {
-        close: () => Promise.resolve(),
-        connect: () => Promise.resolve(),
+        close: async () => Promise.resolve(),
+        connect: async () => Promise.resolve(),
         db: () => ({ collection: () => failingCollection }) as unknown as MockDb,
       }
       storage.setClient(failingClient)

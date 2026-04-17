@@ -69,10 +69,10 @@ function buildMockOrm (): { mockOrm: MockOrm; upsertCalls: unknown[] } {
     },
   }
   const mockOrm: MockOrm = {
-    close: () => Promise.resolve(),
+    close: async () => Promise.resolve(),
     em: mockEm,
     schema: {
-      updateSchema: () => Promise.resolve(),
+      updateSchema: async () => Promise.resolve(),
     },
   }
   return { mockOrm, upsertCalls }
@@ -146,9 +146,9 @@ await describe('MikroOrmStorage', async () => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
       const failingOrm: MockOrm = {
-        close: () => Promise.reject(new Error('close failed')),
-        em: { fork: () => ({}) as MockEntityManager, upsert: () => Promise.resolve({}) },
-        schema: { updateSchema: () => Promise.resolve() },
+        close: async () => Promise.reject(new Error('close failed')),
+        em: { fork: () => ({}) as MockEntityManager, upsert: async () => Promise.resolve({}) },
+        schema: { updateSchema: async () => Promise.resolve() },
       }
       storage.setOrm(failingOrm)
 
@@ -291,12 +291,12 @@ await describe('MikroOrmStorage', async () => {
       const errorMock = t.mock.method(logger, 'error')
       const failingEm: MockEntityManager = {
         fork: () => failingEm,
-        upsert: () => Promise.reject(new Error('upsert failed')),
+        upsert: async () => Promise.reject(new Error('upsert failed')),
       }
       const failingOrm: MockOrm = {
-        close: () => Promise.resolve(),
+        close: async () => Promise.resolve(),
         em: failingEm,
-        schema: { updateSchema: () => Promise.resolve() },
+        schema: { updateSchema: async () => Promise.resolve() },
       }
       storage.setOrm(failingOrm)
 

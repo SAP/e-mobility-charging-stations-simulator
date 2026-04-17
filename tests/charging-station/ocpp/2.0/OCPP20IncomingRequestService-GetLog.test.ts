@@ -101,7 +101,7 @@ await describe('K01 - GetLog', async () => {
           ) => Promise<void>
         },
         'simulateLogUploadLifecycle',
-        () => Promise.resolve()
+        async () => Promise.resolve()
       )
     })
 
@@ -154,7 +154,7 @@ await describe('K01 - GetLog', async () => {
           ) => Promise<void>
         },
         'simulateLogUploadLifecycle',
-        () => Promise.reject(new Error('log upload error'))
+        async () => Promise.reject(new Error('log upload error'))
       )
 
       const request: OCPP20GetLogRequest = {

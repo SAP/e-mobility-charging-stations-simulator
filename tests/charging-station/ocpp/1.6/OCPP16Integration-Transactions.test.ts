@@ -56,7 +56,7 @@ function createIntegrationContext (): {
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 2,
     ocppRequestService: {
-      requestHandler: () => Promise.resolve({}),
+      requestHandler: async () => Promise.resolve({}),
     },
     stationInfo: {
       ocppStrictCompliance: false,

@@ -174,7 +174,7 @@ await describe('N32 - CustomerInformation', async () => {
           ) => Promise<void>
         },
         'sendNotifyCustomerInformation',
-        () => Promise.resolve()
+        async () => Promise.resolve()
       )
     })
 
@@ -261,7 +261,7 @@ await describe('N32 - CustomerInformation', async () => {
           ) => Promise<void>
         },
         'sendNotifyCustomerInformation',
-        () => Promise.reject(new Error('notification error'))
+        async () => Promise.reject(new Error('notification error'))
       )
 
       const request: OCPP20CustomerInformationRequest = {

@@ -198,7 +198,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       // Arrange
       setupConnectorWithTransaction(listenerStation, 1, { transactionId: 42 })
 
-      const mockRemoteStop = mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', () =>
+      const mockRemoteStop = mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', async () =>
         Promise.resolve({ status: GenericStatus.Accepted } satisfies GenericResponse)
       )
 
@@ -224,7 +224,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
 
     await it('should NOT call remoteStopTransaction when response is Rejected', () => {
       // Arrange
-      const mockRemoteStop = mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', () =>
+      const mockRemoteStop = mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', async () =>
         Promise.resolve({ status: GenericStatus.Rejected } satisfies GenericResponse)
       )
 
@@ -247,7 +247,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       // Arrange
       setupConnectorWithTransaction(listenerStation, 1, { transactionId: 77 })
 
-      mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', () =>
+      mock.method(OCPP16ServiceUtils, 'remoteStopTransaction', async () =>
         Promise.reject(new Error('remoteStopTransaction failed'))
       )
 

@@ -417,7 +417,7 @@ await describe('UIMCPServer', async () => {
 
     await it('should return error response when both ocpp16Payload and ocpp20Payload are provided', async () => {
       const mockService = {
-        requestHandler: () => Promise.resolve(undefined),
+        requestHandler: async () => Promise.resolve(undefined),
       }
       const input = {
         ocpp16Payload: { idTag: 'TAG1' },
@@ -436,7 +436,7 @@ await describe('UIMCPServer', async () => {
         createMockChargingStationDataWithVersion(TEST_HASH_ID, OCPPVersion.VERSION_20)
       )
       const mockService = {
-        requestHandler: () => Promise.resolve(undefined),
+        requestHandler: async () => Promise.resolve(undefined),
       }
       const input = {
         hashIds: [TEST_HASH_ID],
@@ -478,7 +478,7 @@ await describe('UIMCPServer', async () => {
 
     await it('should return error response when service throws', async () => {
       const mockService = {
-        requestHandler: () => Promise.reject(new Error('Service failure')),
+        requestHandler: async () => Promise.reject(new Error('Service failure')),
       }
 
       const result = await server.callInvokeProcedure(
@@ -494,7 +494,7 @@ await describe('UIMCPServer', async () => {
       await withMockTimers(t, ['setTimeout'], async () => {
         // Arrange - service returns undefined (broadcast/async) and never resolves
         const mockService = {
-          requestHandler: () => Promise.resolve(undefined),
+          requestHandler: async () => Promise.resolve(undefined),
         }
 
         // Act

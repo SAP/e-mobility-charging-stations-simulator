@@ -176,7 +176,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
           updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
         },
         'updateFirmwareSimulation',
-        mock.fn(() => Promise.resolve())
+        mock.fn(async () => Promise.resolve())
       )
     })
 
@@ -249,7 +249,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
           updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
         },
         'updateFirmwareSimulation',
-        mock.fn(() => Promise.reject(new Error('firmware simulation error')))
+        mock.fn(async () => Promise.reject(new Error('firmware simulation error')))
       )
 
       const request: OCPP16UpdateFirmwareRequest = {

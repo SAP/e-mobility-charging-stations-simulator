@@ -438,7 +438,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Arrange
     const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
     const throwingAuthService = createMockAuthService({
-      authorize: () => Promise.reject(new Error('Auth service unavailable')),
+      authorize: async () => Promise.reject(new Error('Auth service unavailable')),
     })
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, throwingAuthService)
 

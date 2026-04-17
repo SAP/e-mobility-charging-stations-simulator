@@ -376,7 +376,7 @@ await describe('B07 - Get Base Report', async () => {
           ) => Promise<void>
         },
         'sendNotifyReportRequest',
-        () => Promise.resolve()
+        async () => Promise.resolve()
       )
     })
 
@@ -429,7 +429,7 @@ await describe('B07 - Get Base Report', async () => {
           ) => Promise<void>
         },
         'sendNotifyReportRequest',
-        () => Promise.reject(new Error('notify report error'))
+        async () => Promise.reject(new Error('notify report error'))
       )
 
       const request: OCPP20GetBaseReportRequest = {

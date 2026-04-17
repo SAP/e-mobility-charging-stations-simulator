@@ -490,7 +490,7 @@ await describe('OCPPServiceOperations', async () => {
       // Arrange
       const { station } = createMockChargingStation()
       injectMockAuthService(station, {
-        authorize: () => Promise.reject(new Error('Test auth service error')),
+        authorize: async () => Promise.reject(new Error('Test auth service error')),
       })
 
       // Act
