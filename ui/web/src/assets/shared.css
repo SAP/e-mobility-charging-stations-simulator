@@ -1,0 +1,59 @@
+/* Shared component styles */
+
+/* ── Data table ────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  table-layout: fixed;
+  background-color: var(--color-bg-surface);
+  border-collapse: collapse;
+  empty-cells: show;
+}
+
+.data-table--bordered {
+  border: solid 0.25px var(--color-border);
+}
+
+.data-table__caption {
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 0.5rem;
+}
+
+.data-table__head > tr {
+  background-color: var(--color-bg-header);
+}
+
+.data-table tr {
+  border: solid 0.25px var(--color-border-row);
+}
+
+.data-table tr:nth-of-type(even) {
+  background-color: var(--color-bg-hover);
+}
+
+.data-table th,
+.data-table td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.25rem;
+}
+
+.data-table td {
+  overflow-wrap: break-word;
+}
+
+/* ── Action views ──────────────────────────────────────────────────── */
+.action-header {
+  min-width: max-content;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
+  padding: var(--spacing-lg);
+}
+
+/* ── Focus ring ────────────────────────────────────────────────────── */
+.focus-outline:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}

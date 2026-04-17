@@ -1,6 +1,7 @@
-import type { ChargingStationData, ConfigurationData, UUIDv4 } from 'ui-common'
+import type { ChargingStationData, ConfigurationData } from 'ui-common'
 import type { InjectionKey, Ref } from 'vue'
 
+import { randomUUID, validateUUID } from 'ui-common'
 import { inject } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -120,18 +121,7 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
   deleteFromLocalStorage(key)
 }
 
-export const randomUUID = (): UUIDv4 => {
-  return crypto.randomUUID() as UUIDv4
-}
-
-export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
-  if (typeof uuid !== 'string') {
-    return false
-  }
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
-    uuid
-  )
-}
+export { randomUUID, validateUUID }
 
 export const useUIClient = (): UIClient => {
   const injected = inject(uiClientKey, undefined)
@@ -157,14 +147,20 @@ export const useTemplates = (): Ref<string[]> => {
   throw new Error('templates not provided')
 }
 
-export const useExecuteAction = (emit: (event: 'need-refresh') => void) => {
+export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
   const $toast = useToast()
-  return (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
+  return (
+    action: Promise<unknown>,
+    successMsg: string,
+    errorMsg: string,
+    onFinally?: () => void
+  ): void => {
     action
       .then(() => {
-        emit('need-refresh')
+        emit?.('need-refresh')
         return $toast.success(successMsg)
       })
+      .finally(onFinally)
       .catch((error: unknown) => {
         $toast.error(errorMsg)
         console.error(`${errorMsg}:`, error)

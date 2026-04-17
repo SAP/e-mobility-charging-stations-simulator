@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { parseInteger, runAction } from './action.js'
+import { buildHashIdsPayload, pickDefined } from './payload.js'
 
 export const createStationCommands = (program: Command): Command => {
   const cmd = new Command('station').description('Charging station management')
@@ -17,7 +18,7 @@ export const createStationCommands = (program: Command): Command => {
     .command('start [hashIds...]')
     .description('Start charging station(s)')
     .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
+      const payload: RequestPayload = buildHashIdsPayload(hashIds)
       await runAction(program, ProcedureName.START_CHARGING_STATION, payload)
     })
 
@@ -25,7 +26,7 @@ export const createStationCommands = (program: Command): Command => {
     .command('stop [hashIds...]')
     .description('Stop charging station(s)')
     .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
+      const payload: RequestPayload = buildHashIdsPayload(hashIds)
       await runAction(program, ProcedureName.STOP_CHARGING_STATION, payload)
     })
 
@@ -49,18 +50,12 @@ export const createStationCommands = (program: Command): Command => {
       }) => {
         const payload: RequestPayload = {
           numberOfStations: options.count,
-          options: {
-            ...(options.autoStart != null && { autoStart: options.autoStart }),
-            ...(options.ocppStrict != null && {
-              ocppStrictCompliance: options.ocppStrict,
-            }),
-            ...(options.persistentConfig != null && {
-              persistentConfiguration: options.persistentConfig,
-            }),
-            ...(options.supervisionUrl != null && {
-              supervisionUrls: options.supervisionUrl,
-            }),
-          },
+          options: pickDefined(options as Record<string, unknown>, {
+            autoStart: 'autoStart',
+            ocppStrict: 'ocppStrictCompliance',
+            persistentConfig: 'persistentConfiguration',
+            supervisionUrl: 'supervisionUrls',
+          }) as RequestPayload,
           template: options.template,
         }
         await runAction(program, ProcedureName.ADD_CHARGING_STATIONS, payload)
@@ -74,7 +69,7 @@ export const createStationCommands = (program: Command): Command => {
     .action(async (hashIds: string[], options: { deleteConfig?: true }) => {
       const payload: RequestPayload = {
         ...(options.deleteConfig != null && { deleteConfiguration: options.deleteConfig }),
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.DELETE_CHARGING_STATIONS, payload)
     })

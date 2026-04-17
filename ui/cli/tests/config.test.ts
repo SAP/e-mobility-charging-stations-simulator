@@ -3,9 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { DEFAULT_HOST, DEFAULT_PORT } from 'ui-common'
+import { DEFAULT_HOST, DEFAULT_PORT, DEFAULT_PROTOCOL, DEFAULT_PROTOCOL_VERSION, DEFAULT_SECURE } from 'ui-common'
 
-import { DEFAULT_PROTOCOL, DEFAULT_SECURE, DEFAULT_VERSION } from '../src/config/defaults.js'
 import { loadConfig } from '../src/config/loader.js'
 
 let tempDir: string
@@ -32,7 +31,7 @@ await describe('CLI config loader', async () => {
     assert.strictEqual(config.host, DEFAULT_HOST)
     assert.strictEqual(config.port, DEFAULT_PORT)
     assert.strictEqual(config.protocol, DEFAULT_PROTOCOL)
-    assert.strictEqual(config.version, DEFAULT_VERSION)
+    assert.strictEqual(config.version, DEFAULT_PROTOCOL_VERSION)
     assert.strictEqual(config.secure, DEFAULT_SECURE)
   })
 

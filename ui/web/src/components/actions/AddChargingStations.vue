@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action">
+  <h1 class="action-header">
     Add Charging Stations
   </h1>
   <p>Template:</p>
@@ -84,29 +84,7 @@
   <br>
   <Button
     id="action-button"
-    @click="
-      () => {
-        $uiClient
-          .addChargingStations(state.template, state.numberOfStations, {
-            supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
-            autoStart: convertToBoolean(state.autoStart),
-            persistentConfiguration: convertToBoolean(state.persistentConfiguration),
-            ocppStrictCompliance: convertToBoolean(state.ocppStrictCompliance),
-            enableStatistics: convertToBoolean(state.enableStatistics),
-          })
-          .then(() => {
-            $toast.success('Charging stations successfully added')
-          })
-          .finally(() => {
-            resetToggleButtonState('add-charging-stations', true)
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-          })
-          .catch((error: Error) => {
-            $toast.error('Error at adding charging stations')
-            console.error('Error at adding charging stations:', error)
-          })
-      }
-    "
+    @click="addChargingStations()"
   >
     Add Charging Stations
   </Button>
@@ -116,6 +94,7 @@
 import type { UUIDv4 } from 'ui-common'
 
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import Button from '@/components/buttons/Button.vue'
 import {
@@ -123,6 +102,7 @@ import {
   randomUUID,
   resetToggleButtonState,
   ROUTE_NAMES,
+  useExecuteAction,
   useTemplates,
   useUIClient,
 } from '@/composables'
@@ -148,21 +128,35 @@ const state = ref<{
 })
 
 const $uiClient = useUIClient()
+const $router = useRouter()
 const $templates = useTemplates()
+const executeAction = useExecuteAction()
 
 watch($templates, () => {
   state.value.renderTemplates = randomUUID()
 })
+
+const addChargingStations = (): void => {
+  executeAction(
+    $uiClient.addChargingStations(state.value.template, state.value.numberOfStations, {
+      autoStart: convertToBoolean(state.value.autoStart),
+      enableStatistics: convertToBoolean(state.value.enableStatistics),
+      ocppStrictCompliance: convertToBoolean(state.value.ocppStrictCompliance),
+      persistentConfiguration: convertToBoolean(state.value.persistentConfiguration),
+      supervisionUrls:
+        state.value.supervisionUrl.length > 0 ? state.value.supervisionUrl : undefined,
+    }),
+    'Charging stations successfully added',
+    'Error at adding charging stations',
+    () => {
+      resetToggleButtonState('add-charging-stations', true)
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    }
+  )
+}
 </script>
 
 <style scoped>
-.action {
-  min-width: max-content;
-  color: var(--color-text-strong);
-  background-color: var(--color-bg-caption);
-  padding: var(--spacing-lg);
-}
-
 .number-of-stations {
   width: auto;
   max-width: 6rem;

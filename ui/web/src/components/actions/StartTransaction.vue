@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action">
+  <h1 class="action-header">
     Start Transaction
   </h1>
   <h2>{{ chargingStationId }}</h2>
@@ -109,13 +109,6 @@ const handleStartTransaction = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.action {
-  min-width: max-content;
-  color: var(--color-text-strong);
-  background-color: var(--color-bg-caption);
-  padding: var(--spacing-lg);
-}
-
 .idtag {
   text-align: center;
 }

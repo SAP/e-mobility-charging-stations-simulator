@@ -5,12 +5,13 @@ import process from 'node:process'
 import {
   DEFAULT_HOST,
   DEFAULT_PORT,
+  DEFAULT_PROTOCOL,
+  DEFAULT_PROTOCOL_VERSION,
+  DEFAULT_SECURE,
+  extractErrorMessage,
   uiServerConfigSchema,
   type UIServerConfigurationSection,
 } from 'ui-common'
-
-import { extractErrorMessage } from '../utils/errors.js'
-import { DEFAULT_PROTOCOL, DEFAULT_SECURE, DEFAULT_VERSION } from './defaults.js'
 
 interface LoadConfigOptions {
   configPath?: string
@@ -86,7 +87,7 @@ export const loadConfig = async (
     port: DEFAULT_PORT,
     protocol: DEFAULT_PROTOCOL,
     secure: DEFAULT_SECURE,
-    version: DEFAULT_VERSION,
+    version: DEFAULT_PROTOCOL_VERSION,
   }
 
   const fileConfig = await loadConfigFile(options.configPath)

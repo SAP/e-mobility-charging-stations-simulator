@@ -1,6 +1,7 @@
 import process from 'node:process'
 import ora from 'ora'
 import {
+  ConnectionError,
   type ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -13,7 +14,6 @@ import { WebSocket as WsWebSocket } from 'ws'
 
 import type { Formatter } from '../output/formatter.js'
 
-import { ConnectionError } from './errors.js'
 import { createWsAdapter } from './ws-adapter.js'
 
 const wsFactory: WebSocketFactory = (url, protocols) =>

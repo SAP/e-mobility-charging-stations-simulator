@@ -2,9 +2,8 @@
 
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { Protocol, ProtocolVersion } from 'ui-common'
+import { ConnectionError, Protocol, ProtocolVersion } from 'ui-common'
 
-import { ConnectionError } from '../src/client/errors.js'
 import { executeCommand } from '../src/client/lifecycle.js'
 
 await describe('lifecycle', async () => {

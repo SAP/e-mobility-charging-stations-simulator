@@ -12,26 +12,30 @@ import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_STATION_ID } from './constants'
 import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
+vi.mock('vue-router', async importOriginal => {
+  const actual: Record<string, unknown> = await importOriginal()
+  return {
+    ...actual,
+    useRouter: vi.fn(),
+  }
+})
+
+import { useRouter } from 'vue-router'
+
 describe('SetSupervisionUrl', () => {
   let mockClient: MockUIClient
   let mockRouter: { push: ReturnType<typeof vi.fn> }
 
   /**
-   * Mounts SetSupervisionUrl with mock UIClient, router, and toast.
    * @param props - Props to override defaults
    * @returns Mounted component wrapper
    */
   function mountComponent (props = {}) {
     mockClient = createMockUIClient()
     mockRouter = { push: vi.fn() }
+    vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
     return mount(SetSupervisionUrl, {
       global: {
-        config: {
-          globalProperties: {
-            $router: mockRouter,
-            $toast: toastMock,
-          } as never,
-        },
         provide: {
           [uiClientKey as symbol]: mockClient,
         },

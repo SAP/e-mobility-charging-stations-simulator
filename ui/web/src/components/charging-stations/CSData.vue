@@ -1,36 +1,36 @@
 <template>
-  <tr class="cs-table__row">
-    <td class="cs-table__column">
+  <tr>
+    <td>
       {{ chargingStation.stationInfo.chargingStationId }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.started === true ? 'Yes' : 'No' }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ getSupervisionUrl() }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ getWebSocketStateName(chargingStation.wsState) }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.bootNotificationResponse?.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.stationInfo.ocppVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.stationInfo.templateName }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.stationInfo.chargePointVendor }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.stationInfo.chargePointModel }}
     </td>
-    <td class="cs-table__column">
+    <td>
       {{ chargingStation.stationInfo.firmwareVersion ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
-    <td class="cs-table__column">
+    <td>
       <StateButton
         :active="chargingStation.started === true"
         :off="() => stopChargingStation()"
@@ -72,49 +72,31 @@
         Delete Charging Station
       </Button>
     </td>
-    <td class="cs-table__connectors-column">
-      <table class="connectors-table">
-        <thead class="connectors-table__head">
-          <tr class="connectors-table__row">
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+    <td class="cs-data__connectors-cell">
+      <table class="data-table">
+        <thead class="data-table__head">
+          <tr>
+            <th scope="col">
               Identifier
             </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+            <th scope="col">
               Status
             </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+            <th scope="col">
               Locked
             </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+            <th scope="col">
               Transaction
             </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+            <th scope="col">
               ATG Started
             </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
+            <th scope="col">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody class="connectors-table__body">
+        <tbody>
           <CSConnector
             v-for="entry in getConnectorEntries()"
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
@@ -245,29 +227,8 @@ const deleteChargingStation = (): void => {
 </script>
 
 <style scoped>
-.connectors-table {
-  width: 100%;
-  table-layout: fixed;
-  background-color: var(--color-bg-surface);
-  border-collapse: collapse;
-  empty-cells: show;
-}
-
-.connectors-table__head .connectors-table__row {
-  background-color: var(--color-bg-header);
-}
-
-:deep(.connectors-table__row) {
-  border: solid 0.25px var(--color-border-row);
-}
-
-:deep(.connectors-table__row:nth-of-type(even)) {
-  background-color: var(--color-bg-hover);
-}
-
-:deep(.connectors-table__column) {
-  text-align: center;
-  vertical-align: middle;
-  padding: 0.25rem;
+.cs-data__connectors-cell {
+  vertical-align: top;
+  padding: 0;
 }
 </style>

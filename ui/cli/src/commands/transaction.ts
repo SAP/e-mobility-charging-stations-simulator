@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { parseInteger, runAction } from './action.js'
+import { buildHashIdsPayload } from './payload.js'
 
 export const createTransactionCommands = (program: Command): Command => {
   const cmd = new Command('transaction').description('Transaction management')
@@ -15,7 +16,7 @@ export const createTransactionCommands = (program: Command): Command => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
         idTag: options.idTag,
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.START_TRANSACTION, payload)
     })
@@ -27,7 +28,7 @@ export const createTransactionCommands = (program: Command): Command => {
     .action(async (hashIds: string[], options: { transactionId: number }) => {
       const payload: RequestPayload = {
         transactionId: options.transactionId,
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.STOP_TRANSACTION, payload)
     })

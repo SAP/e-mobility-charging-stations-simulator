@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { parseInteger, runAction } from './action.js'
+import { buildHashIdsPayload, pickDefined } from './payload.js'
 
 export const createOcppCommands = (program: Command): Command => {
   const cmd = new Command('ocpp').description('OCPP protocol commands')
@@ -13,17 +14,9 @@ export const createOcppCommands = (program: Command): Command => {
     .action(async (hashIds: string[], options: { idTag: string }) => {
       const payload: RequestPayload = {
         idTag: options.idTag,
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.AUTHORIZE, payload)
-    })
-
-  cmd
-    .command('boot-notification [hashIds...]')
-    .description('Send OCPP BootNotification')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.BOOT_NOTIFICATION, payload)
     })
 
   cmd
@@ -38,62 +31,16 @@ export const createOcppCommands = (program: Command): Command => {
         options: { data?: string; messageId?: string; vendorId?: string }
       ) => {
         const payload: RequestPayload = {
-          ...(options.vendorId != null && { vendorId: options.vendorId }),
-          ...(options.messageId != null && { messageId: options.messageId }),
-          ...(options.data != null && { data: options.data }),
-          ...(hashIds.length > 0 && { hashIds }),
-        }
+          ...pickDefined(options as Record<string, unknown>, {
+            data: 'data',
+            messageId: 'messageId',
+            vendorId: 'vendorId',
+          }),
+          ...buildHashIdsPayload(hashIds),
+        } as RequestPayload
         await runAction(program, ProcedureName.DATA_TRANSFER, payload)
       }
     )
-
-  cmd
-    .command('diagnostics-status-notification [hashIds...]')
-    .description('Send OCPP DiagnosticsStatusNotification')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION, payload)
-    })
-
-  cmd
-    .command('firmware-status-notification [hashIds...]')
-    .description('Send OCPP FirmwareStatusNotification')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.FIRMWARE_STATUS_NOTIFICATION, payload)
-    })
-
-  cmd
-    .command('get-15118-ev-certificate [hashIds...]')
-    .description('Send OCPP Get15118EVCertificate')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.GET_15118_EV_CERTIFICATE, payload)
-    })
-
-  cmd
-    .command('get-certificate-status [hashIds...]')
-    .description('Send OCPP GetCertificateStatus')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.GET_CERTIFICATE_STATUS, payload)
-    })
-
-  cmd
-    .command('heartbeat [hashIds...]')
-    .description('Send OCPP Heartbeat')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.HEARTBEAT, payload)
-    })
-
-  cmd
-    .command('log-status-notification [hashIds...]')
-    .description('Send OCPP LogStatusNotification')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.LOG_STATUS_NOTIFICATION, payload)
-    })
 
   cmd
     .command('meter-values [hashIds...]')
@@ -102,41 +49,9 @@ export const createOcppCommands = (program: Command): Command => {
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.METER_VALUES, payload)
-    })
-
-  cmd
-    .command('notify-customer-information [hashIds...]')
-    .description('Send OCPP NotifyCustomerInformation')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.NOTIFY_CUSTOMER_INFORMATION, payload)
-    })
-
-  cmd
-    .command('notify-report [hashIds...]')
-    .description('Send OCPP NotifyReport')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.NOTIFY_REPORT, payload)
-    })
-
-  cmd
-    .command('security-event-notification [hashIds...]')
-    .description('Send OCPP SecurityEventNotification')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.SECURITY_EVENT_NOTIFICATION, payload)
-    })
-
-  cmd
-    .command('sign-certificate [hashIds...]')
-    .description('Send OCPP SignCertificate')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.SIGN_CERTIFICATE, payload)
     })
 
   cmd
@@ -154,19 +69,35 @@ export const createOcppCommands = (program: Command): Command => {
           connectorId: options.connectorId,
           errorCode: options.errorCode,
           status: options.status,
-          ...(hashIds.length > 0 && { hashIds }),
+          ...buildHashIdsPayload(hashIds),
         }
         await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload)
       }
     )
 
-  cmd
-    .command('transaction-event [hashIds...]')
-    .description('Send OCPP TransactionEvent')
-    .action(async (hashIds: string[]) => {
-      const payload: RequestPayload = hashIds.length > 0 ? { hashIds } : {}
-      await runAction(program, ProcedureName.TRANSACTION_EVENT, payload)
-    })
+  const simpleOcppCommands: [string, string, ProcedureName][] = [
+    ['boot-notification', 'Send OCPP BootNotification', ProcedureName.BOOT_NOTIFICATION],
+    ['diagnostics-status-notification', 'Send OCPP DiagnosticsStatusNotification', ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION],
+    ['firmware-status-notification', 'Send OCPP FirmwareStatusNotification', ProcedureName.FIRMWARE_STATUS_NOTIFICATION],
+    ['get-15118-ev-certificate', 'Send OCPP Get15118EVCertificate', ProcedureName.GET_15118_EV_CERTIFICATE],
+    ['get-certificate-status', 'Send OCPP GetCertificateStatus', ProcedureName.GET_CERTIFICATE_STATUS],
+    ['heartbeat', 'Send OCPP Heartbeat', ProcedureName.HEARTBEAT],
+    ['log-status-notification', 'Send OCPP LogStatusNotification', ProcedureName.LOG_STATUS_NOTIFICATION],
+    ['notify-customer-information', 'Send OCPP NotifyCustomerInformation', ProcedureName.NOTIFY_CUSTOMER_INFORMATION],
+    ['notify-report', 'Send OCPP NotifyReport', ProcedureName.NOTIFY_REPORT],
+    ['security-event-notification', 'Send OCPP SecurityEventNotification', ProcedureName.SECURITY_EVENT_NOTIFICATION],
+    ['sign-certificate', 'Send OCPP SignCertificate', ProcedureName.SIGN_CERTIFICATE],
+    ['transaction-event', 'Send OCPP TransactionEvent', ProcedureName.TRANSACTION_EVENT],
+  ]
+
+  for (const [name, description, procedureName] of simpleOcppCommands) {
+    cmd
+      .command(`${name} [hashIds...]`)
+      .description(description)
+      .action(async (hashIds: string[]) => {
+        await runAction(program, procedureName, buildHashIdsPayload(hashIds))
+      })
+  }
 
   return cmd
 }

@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action">
+  <h1 class="action-header">
     Set Supervision Url
   </h1>
   <h2>{{ chargingStationId }}</h2>
@@ -15,23 +15,7 @@
   <br>
   <Button
     id="action-button"
-    @click="
-      () => {
-        $uiClient
-          .setSupervisionUrl(hashId, state.supervisionUrl)
-          .then(() => {
-            $toast.success('Supervision url successfully set')
-          })
-          .finally(() => {
-            resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-          })
-          .catch((error: Error) => {
-            $toast.error('Error at setting supervision url')
-            console.error('Error at setting supervision url:', error)
-          })
-      }
-    "
+    @click="setSupervisionUrl()"
   >
     Set Supervision Url
   </Button>
@@ -39,9 +23,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import Button from '@/components/buttons/Button.vue'
-import { resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
+import { resetToggleButtonState, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   chargingStationId: string
@@ -53,16 +38,23 @@ const state = ref<{ supervisionUrl: string }>({
 })
 
 const $uiClient = useUIClient()
+const $router = useRouter()
+const executeAction = useExecuteAction()
+
+const setSupervisionUrl = (): void => {
+  executeAction(
+    $uiClient.setSupervisionUrl(props.hashId, state.value.supervisionUrl),
+    'Supervision url successfully set',
+    'Error at setting supervision url',
+    () => {
+      resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    }
+  )
+}
 </script>
 
 <style scoped>
-.action {
-  min-width: max-content;
-  color: var(--color-text-strong);
-  background-color: var(--color-bg-caption);
-  padding: var(--spacing-lg);
-}
-
 .supervision-url {
   width: 100%;
   max-width: 40rem;

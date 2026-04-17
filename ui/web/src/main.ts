@@ -22,6 +22,8 @@ import { router } from '@/router'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
+import './assets/shared.css'
+
 const DEFAULT_THEME = 'tokyo-night-storm'
 
 const loadTheme = async (theme: string): Promise<void> => {

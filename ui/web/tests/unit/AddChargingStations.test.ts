@@ -12,25 +12,27 @@ import { templatesKey, uiClientKey } from '@/composables'
 import { toastMock } from '../setup'
 import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
+vi.mock('vue-router', async importOriginal => {
+  const actual: Record<string, unknown> = await importOriginal()
+  return {
+    ...actual,
+    useRouter: vi.fn(),
+  }
+})
+
+import { useRouter } from 'vue-router'
+
 describe('AddChargingStations', () => {
   let mockClient: MockUIClient
   let mockRouter: { push: ReturnType<typeof vi.fn> }
 
-  /**
-   * Mounts AddChargingStations with mock UIClient, router, and templates.
-   * @returns Mounted component wrapper
-   */
+  /** @returns Mounted component wrapper */
   function mountComponent () {
     mockClient = createMockUIClient()
     mockRouter = { push: vi.fn() }
+    vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
     return mount(AddChargingStations, {
       global: {
-        config: {
-          globalProperties: {
-            $router: mockRouter,
-            $toast: toastMock,
-          } as never,
-        },
         provide: {
           [templatesKey as symbol]: ref(['template-A.json', 'template-B.json']),
           [uiClientKey as symbol]: mockClient,

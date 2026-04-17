@@ -1,7 +1,5 @@
 import process from 'node:process'
-import { type ResponsePayload, ResponseStatus } from 'ui-common'
-
-import { extractErrorMessage } from '../utils/errors.js'
+import { extractErrorMessage, type ResponsePayload, ResponseStatus } from 'ui-common'
 
 export const outputJson = (payload: ResponsePayload): void => {
   process.stdout.write(JSON.stringify(payload, null, 2) + '\n')

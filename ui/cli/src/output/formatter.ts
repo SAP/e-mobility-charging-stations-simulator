@@ -1,6 +1,5 @@
-import type { ResponsePayload } from 'ui-common'
+import { extractErrorMessage, type ResponsePayload } from 'ui-common'
 
-import { extractErrorMessage } from '../utils/errors.js'
 import { printError } from './human.js'
 import { outputJson, outputJsonError } from './json.js'
 import { outputTable } from './table.js'

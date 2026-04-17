@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
+import { buildHashIdsPayload } from './payload.js'
 
 export const createSupervisionCommands = (program: Command): Command => {
   const cmd = new Command('supervision').description('Supervision URL management')
@@ -13,7 +14,7 @@ export const createSupervisionCommands = (program: Command): Command => {
     .action(async (hashIds: string[], options: { url: string }) => {
       const payload: RequestPayload = {
         url: options.url,
-        ...(hashIds.length > 0 && { hashIds }),
+        ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.SET_SUPERVISION_URL, payload)
     })
