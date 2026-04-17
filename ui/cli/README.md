@@ -98,7 +98,7 @@ Use `--config <path>` to load a specific config file instead of the XDG default.
 ## Usage
 
 ```shell
-node dist/cli.js [global-options] <command> [subcommand] [options]
+evse-cli [global-options] <command> [subcommand] [options]
 ```
 
 ### Global Options
@@ -111,24 +111,43 @@ node dist/cli.js [global-options] <command> [subcommand] [options]
 | `--server-url <url>`  | WebSocket URL (overrides config host/port/secure) |
 | `-h, --help`          | Show help                                         |
 
-### Commands
+### Using hashIds
+
+Most commands accept optional `[hashId...]` arguments to target specific stations. Omitting them applies the command to all stations.
+
+Hash IDs support **prefix matching** — you can use a short prefix instead of the full ID. The CLI resolves it automatically:
+
+```shell
+# Full hash:
+evse-cli station start e9041c294a82a2d6aa194a801c3ba39d6b24d1cb...
+
+# Short prefix (copied from `station list` output):
+evse-cli station start e9041c294a82
+
+# Even shorter (as long as it's unambiguous):
+evse-cli station start e904
+```
+
+If a prefix matches multiple stations, the CLI returns an error.
+
+### Simulator Commands
 
 #### simulator
 
 ```shell
-node dist/cli.js simulator state   # Get simulator state and statistics
-node dist/cli.js simulator start   # Start the simulator
-node dist/cli.js simulator stop    # Stop the simulator
+evse-cli simulator state   # Get simulator state and statistics
+evse-cli simulator start   # Start the simulator
+evse-cli simulator stop    # Stop the simulator
 ```
 
 #### station
 
 ```shell
-node dist/cli.js station list                          # List all charging stations
-node dist/cli.js station start [hashId...]             # Start station(s)
-node dist/cli.js station stop [hashId...]              # Stop station(s)
-node dist/cli.js station add -t <template> -n <count>  # Add stations from template
-node dist/cli.js station delete [hashId...]            # Delete station(s)
+evse-cli station list                          # List all charging stations
+evse-cli station start [hashId...]             # Start station(s)
+evse-cli station stop [hashId...]              # Stop station(s)
+evse-cli station add -t <template> -n <count>  # Add stations from template
+evse-cli station delete [hashId...]            # Delete station(s)
 ```
 
 **`station add` options:**
@@ -140,38 +159,44 @@ node dist/cli.js station delete [hashId...]            # Delete station(s)
 | `--supervision-url <url>` | No       | Override supervision URL  |
 | `--auto-start`            | No       | Auto-start added stations |
 
+**`station delete` options:**
+
+| Option            | Required | Description                   |
+| ----------------- | -------- | ----------------------------- |
+| `--delete-config` | No       | Also delete persistent config |
+
 #### template
 
 ```shell
-node dist/cli.js template list     # List available station templates
+evse-cli template list     # List available station templates
 ```
 
 #### connection
 
 ```shell
-node dist/cli.js connection open [hashId...]   # Open WebSocket connection
-node dist/cli.js connection close [hashId...]  # Close WebSocket connection
+evse-cli connection open [hashId...]   # Open WebSocket connection to CSMS
+evse-cli connection close [hashId...]  # Close WebSocket connection to CSMS
 ```
 
 #### connector
 
 ```shell
-node dist/cli.js connector lock --connector-id <id> [hashId...]   # Lock connector
-node dist/cli.js connector unlock --connector-id <id> [hashId...]  # Unlock connector
+evse-cli connector lock --connector-id <id> [hashId...]    # Lock connector
+evse-cli connector unlock --connector-id <id> [hashId...]  # Unlock connector
 ```
 
 #### atg
 
 ```shell
-node dist/cli.js atg start [hashId...] [--connector-ids <ids...>]  # Start ATG
-node dist/cli.js atg stop [hashId...]  [--connector-ids <ids...>]  # Stop ATG
+evse-cli atg start [hashId...] [--connector-ids <ids...>]  # Start ATG
+evse-cli atg stop [hashId...]  [--connector-ids <ids...>]  # Stop ATG
 ```
 
 #### transaction
 
 ```shell
-node dist/cli.js transaction start --connector-id <id> --id-tag <tag> [hashId...]
-node dist/cli.js transaction stop --transaction-id <id> [hashId...]
+evse-cli transaction start --connector-id <id> --id-tag <tag> [hashId...]
+evse-cli transaction stop --transaction-id <id> [hashId...]
 ```
 
 #### ocpp
@@ -179,47 +204,53 @@ node dist/cli.js transaction stop --transaction-id <id> [hashId...]
 Send OCPP commands directly to charging stations:
 
 ```shell
-node dist/cli.js ocpp heartbeat [hashId...]
-node dist/cli.js ocpp authorize --id-tag <tag> [hashId...]
-node dist/cli.js ocpp boot-notification [hashId...]
+evse-cli ocpp heartbeat [hashId...]
+evse-cli ocpp authorize --id-tag <tag> [hashId...]
+evse-cli ocpp boot-notification [hashId...]
+evse-cli ocpp status-notification --connector-id <id> --error-code <code> --status <status> [hashId...]
+evse-cli ocpp meter-values --connector-id <id> [hashId...]
+evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>] [hashId...]
 ```
 
-Available OCPP commands: `authorize`, `boot-notification`, `data-transfer`, `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `heartbeat`, `log-status-notification`, `meter-values`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `status-notification`, `transaction-event`.
-
-#### performance
-
-```shell
-node dist/cli.js performance stats  # Get performance statistics
-```
+Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
 #### supervision
 
 ```shell
-node dist/cli.js supervision set-url --supervision-url <url> [hashId...]  # Set supervision URL
+evse-cli supervision set-url --supervision-url <url> [hashId...]  # Set supervision URL
 ```
 
-### JSON Output Mode
-
-Use `--json` for machine-readable output on stdout:
+#### performance
 
 ```shell
-node dist/cli.js --json simulator state
-# {"status":"success","state":{...}}
+evse-cli performance stats  # Get performance statistics
 ```
 
-Errors are written to stdout as JSON in `--json` mode.
+### Local Commands
 
-### Using hashIds
+#### skill
 
-Most station commands accept optional `[hashId...]` variadic arguments. Omitting them applies the command to all stations:
+Install the embedded [Agent Skills](https://agentskills.io) skill for AI agent integration:
 
 ```shell
-# All stations:
-node dist/cli.js station start
-
-# Specific stations:
-node dist/cli.js station start abc123 def456
+evse-cli skill show                # Print the SKILL.md to stdout
+evse-cli skill install             # Install to .agents/skills/evse-simulator/
+evse-cli skill install --global    # Install to ~/.agents/skills/evse-simulator/
+evse-cli skill install --force     # Overwrite existing installation
 ```
+
+Works with OpenCode, Claude Code, GitHub Copilot, Cursor, and other compatible agents.
+
+### Output Modes
+
+| Mode            | Flag     | Description                            |
+| --------------- | -------- | -------------------------------------- |
+| Human (default) | —        | Colored tables, status icons, counters |
+| JSON            | `--json` | Structured JSON on stdout              |
+
+Hash IDs are truncated in human mode for readability. Use `--json` for full hash IDs.
+
+Errors in `--json` mode are written to stdout as structured JSON.
 
 ## Exit Codes
 

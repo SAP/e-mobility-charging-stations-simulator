@@ -1,4 +1,4 @@
-import type { ConnectorEntry, EvseEntry, ResponsePayload } from 'ui-common'
+import type { ChargingStationData, ResponsePayload } from 'ui-common'
 
 import chalk from 'chalk'
 import process from 'node:process'
@@ -11,6 +11,10 @@ import {
   truncateId,
   wsIcon,
 } from './format.js'
+
+export type StationListPayload = ResponsePayload & {
+  chargingStations: ChargingStationData[]
+}
 
 type PerformancePayload = ResponsePayload & {
   performanceStatistics: unknown[]
@@ -37,23 +41,6 @@ type SimulatorStatePayload = ResponsePayload & {
   }
 }
 
-type StationPayload = ResponsePayload & {
-  chargingStations: {
-    connectors?: ConnectorEntry[]
-    evses?: EvseEntry[]
-    started?: boolean
-    stationInfo: {
-      chargingStationId: string
-      hashId: string
-      ocppVersion?: string
-      templateName?: string
-    }
-    supervisionUrl?: string
-    timestamp?: number
-    wsState?: number
-  }[]
-}
-
 type TemplatePayload = ResponsePayload & {
   templates: string[]
 }
@@ -72,7 +59,7 @@ const isSimulatorState = (p: ResponsePayload): p is SimulatorStatePayload => {
   )
 }
 
-const isStationList = (p: ResponsePayload): p is StationPayload =>
+const isStationList = (p: ResponsePayload): p is StationListPayload =>
   'chargingStations' in p && Array.isArray(p.chargingStations)
 
 const isTemplateList = (p: ResponsePayload): p is TemplatePayload =>
@@ -135,7 +122,7 @@ const renderSimulatorState = (payload: SimulatorStatePayload): void => {
   )
 }
 
-const renderStationList = (payload: StationPayload): void => {
+const renderStationList = (payload: StationListPayload): void => {
   const stations = payload.chargingStations
   if (stations.length === 0) {
     process.stdout.write(chalk.dim('No charging stations\n'))
@@ -152,13 +139,13 @@ const renderStationList = (payload: StationPayload): void => {
       chalk.dim(truncateId(si.hashId)),
       `${wsIcon(cs.wsState)} ${chalk.dim(`${available.toString()}/${total.toString()}`)}`,
       chalk.dim(si.ocppVersion ?? '–'),
-      chalk.dim(si.templateName?.replace('.station-template', '') ?? '–'),
+      chalk.dim(si.templateName.replace('.station-template', '')),
       fuzzyTime(cs.timestamp),
     ])
   }
   process.stdout.write(`${table.toString()}\n`)
 
-  const started = stations.filter(s => s.started === true).length
+  const started = stations.filter(s => s.started).length
   const connected = stations.filter(s => s.wsState === 1).length
   process.stdout.write(
     chalk.dim(

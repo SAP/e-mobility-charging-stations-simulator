@@ -25,19 +25,20 @@ let cleanupInProgress = false
 
 export interface ExecuteOptions {
   config: UIServerConfigurationSection
-  formatter: Formatter
+  formatter?: Formatter
   payload: RequestPayload
   procedureName: ProcedureName
+  silent?: boolean
   timeoutMs?: number
 }
 
-export const executeCommand = async (options: ExecuteOptions): Promise<void> => {
-  const { config, formatter, payload, procedureName, timeoutMs } = options
+export const executeCommand = async (options: ExecuteOptions): Promise<ResponsePayload> => {
+  const { config, formatter, payload, procedureName, silent, timeoutMs } = options
 
   const client = new WebSocketClient(wsFactory, config, timeoutMs)
   const { url } = client
 
-  const isInteractive = process.stderr.isTTY
+  const isInteractive = !silent && process.stderr.isTTY
   const spinner = isInteractive
     ? ora({ stream: process.stderr }).start(`Connecting to ${url}`)
     : null
@@ -85,7 +86,8 @@ export const executeCommand = async (options: ExecuteOptions): Promise<void> => 
     }
     const response: ResponsePayload = await client.sendRequest(procedureName, payload, remaining)
     spinner?.stop()
-    formatter.output(response)
+    formatter?.output(response)
+    return response
   } catch (error: unknown) {
     spinner?.fail()
     throw error

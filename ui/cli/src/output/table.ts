@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import process from 'node:process'
 import { type ResponsePayload, ResponseStatus } from 'ui-common'
 
-import { borderlessTable } from './format.js'
+import { borderlessTable, truncateId } from './format.js'
 import { tryRenderPayload } from './renderers.js'
 
 export const outputTable = (payload: ResponsePayload): void => {
@@ -14,7 +14,7 @@ export const outputTable = (payload: ResponsePayload): void => {
     )
     const table = borderlessTable(['Hash ID'])
     for (const id of payload.hashIdsSucceeded) {
-      table.push([id])
+      table.push([truncateId(id)])
     }
     process.stdout.write(table.toString() + '\n')
   }
@@ -24,13 +24,13 @@ export const outputTable = (payload: ResponsePayload): void => {
     if (payload.responsesFailed != null && payload.responsesFailed.length > 0) {
       const table = borderlessTable(['Hash ID', 'Error'])
       for (const entry of payload.responsesFailed) {
-        table.push([entry.hashId ?? '(unknown)', entry.errorMessage ?? 'Unknown error'])
+        table.push([truncateId(entry.hashId ?? '(unknown)'), entry.errorMessage ?? 'Unknown error'])
       }
       process.stderr.write(table.toString() + '\n')
     } else {
       const table = borderlessTable(['Hash ID'])
       for (const id of payload.hashIdsFailed) {
-        table.push([id])
+        table.push([truncateId(id)])
       }
       process.stderr.write(table.toString() + '\n')
     }

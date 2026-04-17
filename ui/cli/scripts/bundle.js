@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { env } from 'node:process'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf8'))
+const skill = readFileSync('./skills/evse-simulator/SKILL.md', 'utf8')
 
 const isDevelopmentBuild = env.BUILD === 'development'
 
@@ -16,6 +17,7 @@ await build({
   bundle: true,
   define: {
     __CLI_VERSION__: JSON.stringify(pkg.version),
+    __EMBEDDED_SKILL__: JSON.stringify(skill),
     'process.env.WS_NO_BUFFER_UTIL': JSON.stringify('1'),
     'process.env.WS_NO_UTF_8_VALIDATE': JSON.stringify('1'),
   },

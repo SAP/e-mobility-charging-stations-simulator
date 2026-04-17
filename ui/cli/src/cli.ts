@@ -8,6 +8,7 @@ import { createConnectorCommands } from './commands/connector.js'
 import { createOcppCommands } from './commands/ocpp.js'
 import { createPerformanceCommands } from './commands/performance.js'
 import { createSimulatorCommands } from './commands/simulator.js'
+import { createSkillCommands } from './commands/skill.js'
 import { createStationCommands } from './commands/station.js'
 import { createSupervisionCommands } from './commands/supervision.js'
 import { createTemplateCommands } from './commands/template.js'
@@ -35,6 +36,7 @@ program.addCommand(createTransactionCommands(program))
 program.addCommand(createOcppCommands(program))
 program.addCommand(createPerformanceCommands(program))
 program.addCommand(createSupervisionCommands(program))
+program.addCommand(createSkillCommands())
 
 registerSignalHandlers()
 await program.parseAsync(argv)
