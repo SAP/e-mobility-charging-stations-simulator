@@ -5,7 +5,6 @@ import type {
 } from 'ui-common'
 
 import { type App as AppType, type Component, createApp, ref } from 'vue'
-import ToastPlugin from 'vue-toast-notification'
 
 import App from '@/App.vue'
 import {
@@ -34,8 +33,6 @@ const loadTheme = async (theme: string): Promise<void> => {
     await import(`./assets/themes/${DEFAULT_THEME}.css`)
   }
 }
-
-const app = createApp(App as Component)
 
 const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {
   await loadTheme(config.theme ?? DEFAULT_THEME)
@@ -67,24 +64,34 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   app.provide(chargingStationsKey, chargingStations)
   app.provide(templatesKey, templates)
   app.provide(uiClientKey, uiClient)
-  app.use(router).use(ToastPlugin).mount('#app')
+  app.use(router).mount('#app')
 }
 
-try {
-  const response = await fetch('/config.json')
-  if (!response.ok) {
-    // TODO: add code for UI notifications or other error handling logic
-    console.error('Failed to fetch app configuration')
-  } else {
-    try {
-      const config = (await response.json()) as ConfigurationData
-      await initializeApp(app, config)
-    } catch (error: unknown) {
-      // TODO: add code for UI notifications or other error handling logic
-      console.error('Error at deserializing JSON app configuration:', error)
-    }
+const bootstrap = async (): Promise<void> => {
+  const app = createApp(App as Component)
+  let response: Response
+  try {
+    response = await fetch('/config.json')
+  } catch (error: unknown) {
+    console.error('Error at fetching app configuration:', error)
+    return
   }
-} catch (error: unknown) {
-  // TODO: add code for UI notifications or other error handling logic
-  console.error('Error at fetching app configuration:', error)
+  if (!response.ok) {
+    console.error('Failed to fetch app configuration')
+    return
+  }
+  let config: ConfigurationData
+  try {
+    config = (await response.json()) as ConfigurationData
+  } catch (error: unknown) {
+    console.error('Error at deserializing JSON app configuration:', error)
+    return
+  }
+  try {
+    await initializeApp(app, config)
+  } catch (error: unknown) {
+    console.error('Error at initializing app:', error)
+  }
 }
+
+bootstrap().catch(console.error)
