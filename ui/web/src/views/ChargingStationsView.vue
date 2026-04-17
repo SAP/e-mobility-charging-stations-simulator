@@ -210,14 +210,9 @@ const handleUIServerChange = (): void => {
   $uiClient.registerWSEventListener(
     'error',
     () => {
-      state.value.uiServerIndex = getFromLocalStorage<number>(
-        UI_SERVER_CONFIGURATION_INDEX_KEY,
-        0
-      )
+      state.value.uiServerIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
       $uiClient.setConfiguration(
-        ($configuration.value.uiServer as UIServerConfigurationSection[])[
-          state.value.uiServerIndex
-        ]
+        ($configuration.value.uiServer as UIServerConfigurationSection[])[state.value.uiServerIndex]
       )
       registerWSEventListeners()
     },
