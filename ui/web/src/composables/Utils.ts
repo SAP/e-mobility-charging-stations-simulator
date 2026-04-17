@@ -36,12 +36,7 @@ export const getLocalStorage = (): Storage => {
  * @param pattern - Substring to match against localStorage keys
  */
 export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
-  const keysToDelete: string[] = []
-  for (const key in getLocalStorage()) {
-    if (key.includes(pattern)) {
-      keysToDelete.push(key)
-    }
-  }
+  const keysToDelete = Object.keys(localStorage).filter(key => key.includes(pattern))
   for (const key of keysToDelete) {
     deleteFromLocalStorage(key)
   }

@@ -90,12 +90,6 @@ function mountView (
 
   return mount(ChargingStationsView, {
     global: {
-      config: {
-        globalProperties: {
-          $route: { name: 'charging-stations', params: {}, query: {} },
-          $router: { back: vi.fn(), push: vi.fn(), replace: vi.fn() },
-        } as never,
-      },
       provide: {
         [chargingStationsKey as symbol]: ref(chargingStations),
         [configurationKey as symbol]: ref(configuration),
