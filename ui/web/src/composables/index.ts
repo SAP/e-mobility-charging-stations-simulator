@@ -9,13 +9,10 @@ export { UIClient } from './UIClient'
 export {
   chargingStationsKey,
   configurationKey,
-  convertToBoolean,
-  convertToInt,
   deleteFromLocalStorage,
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
   getLocalStorage,
-  getWebSocketStateName,
   resetToggleButtonState,
   setToLocalStorage,
   templatesKey,
@@ -23,6 +20,7 @@ export {
   useChargingStations,
   useConfiguration,
   useExecuteAction,
+  useFetchData,
   useTemplates,
   useUIClient,
 } from './Utils'

@@ -3,12 +3,10 @@
  * @description Unit tests for type conversion, localStorage, UUID, and toggle state utilities.
  */
 import { flushPromises } from '@vue/test-utils'
-import { randomUUID, validateUUID } from 'ui-common'
+import { convertToBoolean, convertToInt, randomUUID, validateUUID } from 'ui-common'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  convertToBoolean,
-  convertToInt,
   deleteFromLocalStorage,
   getFromLocalStorage,
   getLocalStorage,

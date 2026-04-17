@@ -1,14 +1,10 @@
-import type { ChargingStationData, ConfigurationData } from 'ui-common'
+import type { ChargingStationData, ConfigurationData, ResponsePayload } from 'ui-common'
 import type { InjectionKey, Ref } from 'vue'
 
-import { inject } from 'vue'
+import { inject, ref as vueRef } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import {
-  EMPTY_VALUE_PLACEHOLDER,
-  SHARED_TOGGLE_BUTTON_KEY_PREFIX,
-  TOGGLE_BUTTON_KEY_PREFIX,
-} from './Constants'
+import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants'
 import { UIClient } from './UIClient'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
@@ -16,43 +12,6 @@ export const chargingStationsKey: InjectionKey<Ref<ChargingStationData[]>> =
   Symbol('chargingStations')
 export const templatesKey: InjectionKey<Ref<string[]>> = Symbol('templates')
 export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
-
-export const convertToBoolean = (value: unknown): boolean => {
-  let result = false
-  if (value != null) {
-    // Check the type
-    if (typeof value === 'boolean') {
-      return value
-    } else if (typeof value === 'string') {
-      const normalized = value.trim().toLowerCase()
-      result = normalized === 'true' || normalized === '1'
-    } else if (typeof value === 'number' && value === 1) {
-      result = true
-    }
-  }
-  return result
-}
-
-export const convertToInt = (value: unknown): number => {
-  if (value == null) {
-    return 0
-  }
-  if (Number.isSafeInteger(value)) {
-    return value as number
-  }
-  if (typeof value === 'number') {
-    return Math.trunc(value)
-  }
-  let changedValue: number = value as number
-  if (typeof value === 'string') {
-    changedValue = Number.parseInt(value)
-  }
-  if (Number.isNaN(changedValue)) {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    throw new Error(`Cannot convert to integer: '${value.toString()}'`)
-  }
-  return changedValue
-}
 
 export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
   const item = localStorage.getItem(key)
@@ -85,26 +44,6 @@ export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
   }
   for (const key of keysToDelete) {
     deleteFromLocalStorage(key)
-  }
-}
-
-/**
- * Returns a human-readable name for a WebSocket ready state.
- * @param state - The WebSocket readyState value
- * @returns The state name or EMPTY_VALUE_PLACEHOLDER for unknown/undefined states
- */
-export const getWebSocketStateName = (state: number | undefined): string => {
-  switch (state) {
-    case WebSocket.CLOSED:
-      return 'Closed'
-    case WebSocket.CLOSING:
-      return 'Closing'
-    case WebSocket.CONNECTING:
-      return 'Connecting'
-    case WebSocket.OPEN:
-      return 'Open'
-    default:
-      return EMPTY_VALUE_PLACEHOLDER
   }
 }
 
@@ -169,4 +108,33 @@ export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
         console.error(`${errorMsg}:`, error)
       })
   }
+}
+
+export const useFetchData = (
+  clientFn: () => Promise<ResponsePayload>,
+  onSuccess: (response: ResponsePayload) => void,
+  errorMsg: string,
+  onError?: () => void
+): { fetch: () => void; fetching: Ref<boolean> } => {
+  const fetching = vueRef(false)
+  const $toast = useToast()
+  const fetch = (): void => {
+    if (!fetching.value) {
+      fetching.value = true
+      clientFn()
+        .then((response: ResponsePayload) => {
+          onSuccess(response)
+          return undefined
+        })
+        .finally(() => {
+          fetching.value = false
+        })
+        .catch((error: unknown) => {
+          onError?.()
+          $toast.error(errorMsg)
+          console.error(`${errorMsg}:`, error)
+        })
+    }
+  }
+  return { fetch, fetching }
 }

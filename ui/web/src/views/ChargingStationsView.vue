@@ -107,7 +107,6 @@
 import {
   type ChargingStationData,
   randomUUID,
-  type ResponsePayload,
   type SimulatorState,
   type UIServerConfigurationSection,
   type UUIDv4,
@@ -128,6 +127,7 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
+  useFetchData,
   useTemplates,
   useUIClient,
 } from '@/composables'
@@ -142,16 +142,10 @@ const simulatorLabel = (action: string): string =>
   }`
 
 const state = ref<{
-  gettingChargingStations: boolean
-  gettingSimulatorState: boolean
-  gettingTemplates: boolean
   renderAddChargingStations: UUIDv4
   renderChargingStations: UUIDv4
   uiServerIndex: number
 }>({
-  gettingChargingStations: false,
-  gettingSimulatorState: false,
-  gettingTemplates: false,
   renderAddChargingStations: randomUUID(),
   renderChargingStations: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
@@ -186,64 +180,31 @@ const $uiClient = useUIClient()
 
 const $toast = useToast()
 
-const getSimulatorState = (): void => {
-  if (state.value.gettingSimulatorState === false) {
-    state.value.gettingSimulatorState = true
-    $uiClient
-      .simulatorState()
-      .then((response: ResponsePayload) => {
-        simulatorState.value = response.state as unknown as SimulatorState
-        return undefined
-      })
-      .finally(() => {
-        state.value.gettingSimulatorState = false
-      })
-      .catch((error: Error) => {
-        $toast.error('Error at fetching simulator state')
-        console.error('Error at fetching simulator state:', error)
-      })
-  }
-}
+const { fetch: getSimulatorState } = useFetchData(
+  () => $uiClient.simulatorState(),
+  (response) => {
+    simulatorState.value = response.state as unknown as SimulatorState
+  },
+  'Error at fetching simulator state'
+)
 
-const getTemplates = (): void => {
-  if (state.value.gettingTemplates === false) {
-    state.value.gettingTemplates = true
-    $uiClient
-      .listTemplates()
-      .then((response: ResponsePayload) => {
-        $templates.value = response.templates as string[]
-        return undefined
-      })
-      .finally(() => {
-        state.value.gettingTemplates = false
-      })
-      .catch((error: Error) => {
-        clearTemplates()
-        $toast.error('Error at fetching charging station templates')
-        console.error('Error at fetching charging station templates:', error)
-      })
-  }
-}
+const { fetch: getTemplates } = useFetchData(
+  () => $uiClient.listTemplates(),
+  (response) => {
+    $templates.value = response.templates as string[]
+  },
+  'Error at fetching charging station templates',
+  clearTemplates
+)
 
-const getChargingStations = (): void => {
-  if (state.value.gettingChargingStations === false) {
-    state.value.gettingChargingStations = true
-    $uiClient
-      .listChargingStations()
-      .then((response: ResponsePayload) => {
-        $chargingStations.value = response.chargingStations as ChargingStationData[]
-        return undefined
-      })
-      .finally(() => {
-        state.value.gettingChargingStations = false
-      })
-      .catch((error: Error) => {
-        clearChargingStations()
-        $toast.error('Error at fetching charging stations')
-        console.error('Error at fetching charging stations:', error)
-      })
-  }
-}
+const { fetch: getChargingStations } = useFetchData(
+  () => $uiClient.listChargingStations(),
+  (response) => {
+    $chargingStations.value = response.chargingStations as ChargingStationData[]
+  },
+  'Error at fetching charging stations',
+  clearChargingStations
+)
 
 const getData = (): void => {
   getSimulatorState()

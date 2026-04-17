@@ -37,13 +37,13 @@
 </template>
 
 <script setup lang="ts">
-import { type OCPPVersion } from 'ui-common'
+import { convertToInt, type OCPPVersion } from 'ui-common'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToInt, resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
+import { resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
 
 const props = defineProps<{
   chargingStationId: string

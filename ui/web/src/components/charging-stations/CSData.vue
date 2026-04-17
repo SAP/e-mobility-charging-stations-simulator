@@ -10,7 +10,7 @@
       {{ getSupervisionUrl() }}
     </td>
     <td>
-      {{ getWebSocketStateName(chargingStation.wsState) }}
+      {{ getWebSocketStateName(chargingStation.wsState) ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
     <td>
       {{ chargingStation.bootNotificationResponse?.status ?? EMPTY_VALUE_PLACEHOLDER }}
@@ -116,8 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
-
+import { type ChargingStationData, type ConnectorEntry, getWebSocketStateName, type Status } from 'ui-common'
 import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -128,7 +127,6 @@ import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import {
   deleteLocalStorageByKeyPattern,
   EMPTY_VALUE_PLACEHOLDER,
-  getWebSocketStateName,
   ROUTE_NAMES,
   useExecuteAction,
   useUIClient,
