@@ -128,7 +128,7 @@
     "skott": "^0.35.10",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "~6.0.2",
+    "typescript": "~6.0.3",
     "vue-eslint-parser": "^10.4.0"
   },
   "pnpm": {
