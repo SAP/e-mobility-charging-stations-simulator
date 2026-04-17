@@ -1,9 +1,9 @@
 /**
  * @file Tests for Utils composable
- * @description Unit tests for type conversion, localStorage, UUID, and toggle state utilities.
+ * @description Unit tests for localStorage, toggle state, useExecuteAction, and useFetchData utilities.
  */
 import { flushPromises } from '@vue/test-utils'
-import { convertToBoolean, convertToInt, randomUUID, ResponseStatus, validateUUID } from 'ui-common'
+import { ResponseStatus } from 'ui-common'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -19,132 +19,6 @@ import {
 import { toastMock } from '../setup'
 
 describe('Utils', () => {
-  describe('convertToBoolean', () => {
-    it('should return true for boolean true', () => {
-      expect(convertToBoolean(true)).toBe(true)
-    })
-
-    it('should return false for boolean false', () => {
-      expect(convertToBoolean(false)).toBe(false)
-    })
-
-    it('should return true for string "true"', () => {
-      expect(convertToBoolean('true')).toBe(true)
-    })
-
-    it('should return true for string "True" (case-insensitive)', () => {
-      expect(convertToBoolean('True')).toBe(true)
-    })
-
-    it('should return true for string "TRUE" (case-insensitive)', () => {
-      expect(convertToBoolean('TRUE')).toBe(true)
-    })
-
-    it('should return false for string "FALSE" (case-insensitive)', () => {
-      expect(convertToBoolean('FALSE')).toBe(false)
-    })
-
-    it('should return true for string "1"', () => {
-      expect(convertToBoolean('1')).toBe(true)
-    })
-
-    it('should return true for numeric 1', () => {
-      expect(convertToBoolean(1)).toBe(true)
-    })
-
-    it('should return false for string "false"', () => {
-      expect(convertToBoolean('false')).toBe(false)
-    })
-
-    it('should return false for string "0"', () => {
-      expect(convertToBoolean('0')).toBe(false)
-    })
-
-    it('should return false for numeric 0', () => {
-      expect(convertToBoolean(0)).toBe(false)
-    })
-
-    it('should return false for null', () => {
-      expect(convertToBoolean(null)).toBe(false)
-    })
-
-    it('should return false for undefined', () => {
-      expect(convertToBoolean(undefined)).toBe(false)
-    })
-
-    it('should return false for empty string', () => {
-      expect(convertToBoolean('')).toBe(false)
-    })
-
-    it('should return false for arbitrary string', () => {
-      expect(convertToBoolean('random')).toBe(false)
-    })
-
-    it('should return false for numeric 2', () => {
-      expect(convertToBoolean(2)).toBe(false)
-    })
-
-    it('should return true for whitespace-padded "true"', () => {
-      expect(convertToBoolean(' true ')).toBe(true)
-    })
-
-    it('should return true for whitespace-padded "1"', () => {
-      expect(convertToBoolean(' 1 ')).toBe(true)
-    })
-
-    it('should return false for whitespace-padded "false"', () => {
-      expect(convertToBoolean(' false ')).toBe(false)
-    })
-
-    it('should return true for whitespace-padded "TRUE"', () => {
-      expect(convertToBoolean(' TRUE ')).toBe(true)
-    })
-  })
-
-  describe('convertToInt', () => {
-    it('should return integer for integer input', () => {
-      expect(convertToInt(42)).toBe(42)
-    })
-
-    it('should truncate float to integer', () => {
-      expect(convertToInt(42.7)).toBe(42)
-    })
-
-    it('should truncate negative float to integer', () => {
-      expect(convertToInt(-42.7)).toBe(-42)
-    })
-
-    it('should parse string integer', () => {
-      expect(convertToInt('42')).toBe(42)
-    })
-
-    it('should parse negative string integer', () => {
-      expect(convertToInt('-42')).toBe(-42)
-    })
-
-    it('should return 0 for null', () => {
-      expect(convertToInt(null)).toBe(0)
-    })
-
-    it('should return 0 for undefined', () => {
-      expect(convertToInt(undefined)).toBe(0)
-    })
-
-    it('should throw error for non-numeric string', () => {
-      expect(() => convertToInt('abc')).toThrow(Error)
-      expect(() => convertToInt('abc')).toThrow("Cannot convert to integer: 'abc'")
-    })
-
-    it('should throw error for empty string', () => {
-      expect(() => convertToInt('')).toThrow(Error)
-    })
-
-    it('should return NaN for NaN input', () => {
-      const result = convertToInt(Number.NaN)
-      expect(Number.isNaN(result)).toBe(true)
-    })
-  })
-
   describe('localStorage utilities', () => {
     afterEach(() => {
       localStorage.clear()
@@ -200,57 +74,6 @@ describe('Utils', () => {
       const result = getLocalStorage()
 
       expect(result).toBe(localStorage)
-    })
-  })
-
-  describe('UUID', () => {
-    it('should generate valid UUID v4', () => {
-      const uuid = randomUUID()
-
-      expect(validateUUID(uuid)).toBe(true)
-    })
-
-    it('should generate different UUIDs on each call', () => {
-      const uuid1 = randomUUID()
-      const uuid2 = randomUUID()
-
-      expect(uuid1).not.toBe(uuid2)
-    })
-
-    it('should validate correct UUID v4 format', () => {
-      const validUUID = '550e8400-e29b-41d4-a716-446655440000'
-
-      const result = validateUUID(validUUID)
-
-      expect(result).toBe(true)
-    })
-
-    it('should reject non-string UUID', () => {
-      const result = validateUUID(123)
-
-      expect(result).toBe(false)
-    })
-
-    it('should reject invalid UUID format', () => {
-      const result = validateUUID('not-a-uuid')
-
-      expect(result).toBe(false)
-    })
-
-    it('should reject UUID with wrong version (v3 instead of v4)', () => {
-      const v3UUID = '550e8400-e29b-31d4-a716-446655440000'
-
-      const result = validateUUID(v3UUID)
-
-      expect(result).toBe(false)
-    })
-
-    it('should reject UUID with invalid variant', () => {
-      const invalidVariantUUID = '550e8400-e29b-41d4-c716-446655440000'
-
-      const result = validateUUID(invalidVariantUUID)
-
-      expect(result).toBe(false)
     })
   })
 
