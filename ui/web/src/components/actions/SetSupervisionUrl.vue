@@ -7,7 +7,7 @@
   <input
     id="supervision-url"
     v-model.trim="state.supervisionUrl"
-    class="supervision-url"
+    class="input-url"
     name="supervision-url"
     placeholder="wss://"
     type="url"
@@ -53,11 +53,3 @@ const setSupervisionUrl = (): void => {
   )
 }
 </script>
-
-<style scoped>
-.supervision-url {
-  width: 100%;
-  max-width: 40rem;
-  text-align: left;
-}
-</style>

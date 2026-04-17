@@ -68,7 +68,9 @@ export const createStationCommands = (program: Command): Command => {
     .option('--delete-config', 'delete station configuration files')
     .action(async (hashIds: string[], options: { deleteConfig?: true }) => {
       const payload: RequestPayload = {
-        ...(options.deleteConfig != null && { deleteConfiguration: options.deleteConfig }),
+        ...(pickDefined(options as Record<string, unknown>, {
+          deleteConfig: 'deleteConfiguration',
+        }) as RequestPayload),
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.DELETE_CHARGING_STATIONS, payload)

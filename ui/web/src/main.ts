@@ -70,28 +70,21 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   app.use(router).use(ToastPlugin).mount('#app')
 }
 
-fetch('/config.json')
-  .then(response => {
-    if (!response.ok) {
-      // TODO: add code for UI notifications or other error handling logic
-      console.error('Failed to fetch app configuration')
-      return undefined
-    }
-    response
-      .json()
-      // eslint-disable-next-line promise/no-nesting
-      .then(async config => {
-        await initializeApp(app, config as ConfigurationData)
-        return undefined
-      })
-      // eslint-disable-next-line promise/no-nesting
-      .catch((error: unknown) => {
-        // TODO: add code for UI notifications or other error handling logic
-        console.error('Error at deserializing JSON app configuration:', error)
-      })
-    return undefined
-  })
-  .catch((error: unknown) => {
+try {
+  const response = await fetch('/config.json')
+  if (!response.ok) {
     // TODO: add code for UI notifications or other error handling logic
-    console.error('Error at fetching app configuration:', error)
-  })
+    console.error('Failed to fetch app configuration')
+  } else {
+    try {
+      const config = (await response.json()) as ConfigurationData
+      await initializeApp(app, config)
+    } catch (error: unknown) {
+      // TODO: add code for UI notifications or other error handling logic
+      console.error('Error at deserializing JSON app configuration:', error)
+    }
+  }
+} catch (error: unknown) {
+  // TODO: add code for UI notifications or other error handling logic
+  console.error('Error at fetching app configuration:', error)
+}

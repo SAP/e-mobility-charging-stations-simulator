@@ -112,7 +112,6 @@ import {
   type UUIDv4,
 } from 'ui-common'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useToast } from 'vue-toast-notification'
 
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -127,6 +126,7 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
+  useExecuteAction,
   useFetchData,
   useTemplates,
   useUIClient,
@@ -178,7 +178,7 @@ const clearChargingStations = (): void => {
 
 const $uiClient = useUIClient()
 
-const $toast = useToast()
+const executeAction = useExecuteAction()
 
 const { fetch: getSimulatorState } = useFetchData(
   () => $uiClient.simulatorState(),
@@ -249,33 +249,20 @@ const uiServerConfigurations: {
 )
 
 const startSimulator = (): void => {
-  $uiClient
-    .startSimulator()
-    .then(() => {
-      return $toast.success('Simulator successfully started')
-    })
-    .finally(() => {
-      getSimulatorState()
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at starting simulator')
-      console.error('Error at starting simulator:', error)
-    })
+  executeAction(
+    $uiClient.startSimulator(),
+    'Simulator successfully started',
+    'Error at starting simulator',
+    { onFinally: getSimulatorState }
+  )
 }
 const stopSimulator = (): void => {
-  $uiClient
-    .stopSimulator()
-    .then(() => {
-      clearChargingStations()
-      return $toast.success('Simulator successfully stopped')
-    })
-    .finally(() => {
-      getSimulatorState()
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at stopping simulator')
-      console.error('Error at stopping simulator:', error)
-    })
+  executeAction(
+    $uiClient.stopSimulator(),
+    'Simulator successfully stopped',
+    'Error at stopping simulator',
+    { onFinally: getSimulatorState, onSuccess: clearChargingStations }
+  )
 }
 </script>
 

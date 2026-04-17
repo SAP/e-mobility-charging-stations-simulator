@@ -15,3 +15,9 @@ export const pickDefined = (
   }
   return result
 }
+
+export const pickPresent = (
+  source: Record<string, unknown>,
+  keys: string[]
+): Record<string, unknown> =>
+  Object.fromEntries(keys.filter(k => source[k] != null).map(k => [k, source[k]]))

@@ -51,3 +51,10 @@
   background-color: var(--color-bg-caption);
   padding: var(--spacing-lg);
 }
+
+/* ── Form inputs ───────────────────────────────────────────────────── */
+.input-url {
+  width: 100%;
+  max-width: 40rem;
+  text-align: left;
+}

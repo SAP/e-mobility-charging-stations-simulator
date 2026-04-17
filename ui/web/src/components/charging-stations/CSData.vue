@@ -124,7 +124,6 @@ import {
   WebSocketReadyState,
 } from 'ui-common'
 import { computed } from 'vue'
-import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
@@ -183,8 +182,6 @@ const getSupervisionUrl = (): string => {
 
 const $uiClient = useUIClient()
 
-const $toast = useToast()
-
 const executeAction = useExecuteAction($emit)
 
 const startChargingStation = (): void => {
@@ -216,17 +213,16 @@ const closeConnection = (): void => {
   )
 }
 const deleteChargingStation = (): void => {
-  $uiClient
-    .deleteChargingStation(props.chargingStation.stationInfo.hashId)
-    .then(() => {
-      deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
-      $emit('need-refresh')
-      return $toast.success('Charging station successfully deleted')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at deleting charging station')
-      console.error('Error at deleting charging station:', error)
-    })
+  executeAction(
+    $uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId),
+    'Charging station successfully deleted',
+    'Error at deleting charging station',
+    {
+      onSuccess: () => {
+        deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
+      },
+    }
+  )
 }
 </script>
 

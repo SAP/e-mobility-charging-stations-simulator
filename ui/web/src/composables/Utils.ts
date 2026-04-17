@@ -83,16 +83,30 @@ export const useTemplates = (): Ref<string[]> => {
   throw new Error('templates not provided')
 }
 
+export interface ExecuteActionCallbacks {
+  onFinally?: () => void
+  onSuccess?: () => void
+}
+
 export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
   const $toast = useToast()
   return (
     action: Promise<unknown>,
     successMsg: string,
     errorMsg: string,
-    onFinally?: () => void
+    callbacks?: (() => void) | ExecuteActionCallbacks
   ): void => {
+    const { onFinally, onSuccess } =
+      typeof callbacks === 'function'
+        ? { onFinally: callbacks, onSuccess: undefined }
+        : (callbacks ?? {})
     action
       .then(() => {
+        try {
+          onSuccess?.()
+        } catch (error: unknown) {
+          console.error('Error in onSuccess callback:', error)
+        }
         emit?.('need-refresh')
         return $toast.success(successMsg)
       })

@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { runAction } from './action.js'
-import { buildHashIdsPayload } from './payload.js'
+import { buildHashIdsPayload, pickPresent } from './payload.js'
 
 const parseCommaSeparatedInts = (value: string): number[] => {
   const parsed = value.split(',').map(s => Number.parseInt(s.trim(), 10))
@@ -21,7 +21,7 @@ export const createAtgCommands = (program: Command): Command => {
     .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
-        ...(options.connectorIds != null && { connectorIds: options.connectorIds }),
+        ...(pickPresent(options as Record<string, unknown>, ['connectorIds']) as RequestPayload),
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, payload)
@@ -33,7 +33,7 @@ export const createAtgCommands = (program: Command): Command => {
     .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
-        ...(options.connectorIds != null && { connectorIds: options.connectorIds }),
+        ...(pickPresent(options as Record<string, unknown>, ['connectorIds']) as RequestPayload),
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, payload)

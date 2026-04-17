@@ -38,7 +38,7 @@
       <input
         id="supervision-url"
         v-model.trim="state.supervisionUrl"
-        class="supervision-url"
+        class="input-url"
         name="supervision-url"
         placeholder="wss://"
         type="url"
@@ -158,12 +158,6 @@ const addChargingStations = (): void => {
   width: auto;
   max-width: 6rem;
   text-align: center;
-}
-
-.supervision-url {
-  width: 100%;
-  max-width: 40rem;
-  text-align: left;
 }
 
 .template-options {
