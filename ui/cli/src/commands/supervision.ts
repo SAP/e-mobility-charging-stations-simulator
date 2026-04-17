@@ -10,10 +10,10 @@ export const createSupervisionCommands = (program: Command): Command => {
   cmd
     .command('set-url [hashIds...]')
     .description('Set supervision URL for station(s)')
-    .requiredOption('--url <url>', 'supervision URL')
-    .action(async (hashIds: string[], options: { url: string }) => {
+    .requiredOption('--supervision-url <url>', 'supervision URL')
+    .action(async (hashIds: string[], options: { supervisionUrl: string }) => {
       const payload: RequestPayload = {
-        url: options.url,
+        url: options.supervisionUrl,
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.SET_SUPERVISION_URL, payload)

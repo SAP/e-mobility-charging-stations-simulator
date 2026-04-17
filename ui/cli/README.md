@@ -83,7 +83,7 @@ The install script creates a default config file. To override, edit `~/.config/e
 
 ### Configuration precedence
 
-Defaults < config file < `--config <path>` < `--url <url>` (highest priority).
+Defaults < config file < `--config <path>` < `--server-url <url>` (highest priority).
 
 Use `--config <path>` to load a specific config file instead of the XDG default.
 
@@ -108,7 +108,7 @@ node dist/cli.js [global-options] <command> [subcommand] [options]
 | `-V, --version`       | Print version                                     |
 | `-C, --config <path>` | Path to configuration file                        |
 | `--json`              | Machine-readable JSON output on stdout            |
-| `--url <url>`         | WebSocket URL (overrides config host/port/secure) |
+| `--server-url <url>`  | WebSocket URL (overrides config host/port/secure) |
 | `-h, --help`          | Show help                                         |
 
 ### Commands
@@ -195,7 +195,7 @@ node dist/cli.js performance stats  # Get performance statistics
 #### supervision
 
 ```shell
-node dist/cli.js supervision set-url --url <url> [hashId...]  # Set supervision URL
+node dist/cli.js supervision set-url --supervision-url <url> [hashId...]  # Set supervision URL
 ```
 
 ### JSON Output Mode

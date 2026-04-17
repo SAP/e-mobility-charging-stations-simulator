@@ -23,7 +23,7 @@ program
   .version(__CLI_VERSION__, '-V, --version', 'output the version number')
   .option('-C, --config <path>', 'path to configuration file')
   .option('--json', 'output results as JSON (machine-readable)', false)
-  .option('--url <url>', 'simulator UI server WebSocket URL (overrides config)')
+  .option('--server-url <url>', 'simulator UI server WebSocket URL (overrides config)')
 
 program.addCommand(createSimulatorCommands(program))
 program.addCommand(createStationCommands(program))

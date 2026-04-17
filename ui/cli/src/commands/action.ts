@@ -25,7 +25,7 @@ export const runAction = async (
   const rootOpts = program.opts<GlobalOptions>()
   const formatter = createFormatter(rootOpts.json)
   try {
-    const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.url })
+    const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
     await executeCommand({ config, formatter, payload, procedureName })
     process.exitCode = 0
   } catch (error: unknown) {

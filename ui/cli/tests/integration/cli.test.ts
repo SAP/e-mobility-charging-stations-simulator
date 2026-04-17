@@ -68,13 +68,19 @@ await describe('evse-cli integration tests', async () => {
   })
 
   await it('should exit 1 with connection error when no simulator running', async () => {
-    const result = await runCli(['--url', 'ws://localhost:19999', 'simulator', 'state'])
+    const result = await runCli(['--server-url', 'ws://localhost:19999', 'simulator', 'state'])
     assert.strictEqual(result.code, 1)
     assert.ok(result.stderr.length > 0 || result.stdout.length > 0, 'Expected error output')
   })
 
   await it('should exit 1 and output JSON error in --json mode when no simulator running', async () => {
-    const result = await runCli(['--url', 'ws://localhost:19999', '--json', 'simulator', 'state'])
+    const result = await runCli([
+      '--server-url',
+      'ws://localhost:19999',
+      '--json',
+      'simulator',
+      'state',
+    ])
     assert.strictEqual(result.code, 1)
   })
 
