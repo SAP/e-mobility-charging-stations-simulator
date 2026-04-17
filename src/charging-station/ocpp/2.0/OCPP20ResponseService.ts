@@ -386,11 +386,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
    * @param payload - The TransactionEvent response payload from CSMS
    * @param requestPayload - The original TransactionEvent request payload
    */
-  private handleResponseTransactionEvent (
+  private async handleResponseTransactionEvent (
     chargingStation: ChargingStation,
     payload: OCPP20TransactionEventResponse,
     requestPayload: OCPP20TransactionEventRequest
-  ): void {
+  ): Promise<void> {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent(${requestPayload.eventType}) response received`
     )
@@ -403,7 +403,12 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
-        if (connectorId != null) {
+        if (connectorId != null && connectorStatus != null) {
+          await OCPP20ServiceUtils.cleanupEndedTransaction(
+            chargingStation,
+            connectorId,
+            connectorStatus
+          )
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
           )

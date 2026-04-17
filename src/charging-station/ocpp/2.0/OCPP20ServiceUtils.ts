@@ -192,12 +192,23 @@ export class OCPP20ServiceUtils {
     connectorId: number,
     connectorStatus: ConnectorStatus
   ): Promise<void> {
+    if (
+      connectorStatus.transactionStarted !== true &&
+      connectorStatus.transactionPending !== true
+    ) {
+      return
+    }
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     resetConnectorStatus(connectorStatus)
     connectorStatus.locked = false
+    const targetStatus =
+      chargingStation.isChargingStationAvailable() &&
+      chargingStation.isConnectorAvailable(connectorId)
+        ? ConnectorStatusEnum.Available
+        : ConnectorStatusEnum.Unavailable
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
-      connectorStatus: ConnectorStatusEnum.Available,
+      connectorStatus: targetStatus,
     } as unknown as OCPP20StatusNotificationRequest)
   }
 

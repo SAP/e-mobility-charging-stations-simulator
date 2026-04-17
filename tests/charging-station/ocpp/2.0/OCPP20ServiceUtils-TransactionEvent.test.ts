@@ -1971,6 +1971,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         errorStation.isWebSocketConnectionOpened = () => true
 
+        const connectorStatus = errorStation.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.transactionStarted = true
+        }
+
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
         assert.strictEqual(callCount, 4)
