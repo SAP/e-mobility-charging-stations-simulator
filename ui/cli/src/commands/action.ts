@@ -9,8 +9,7 @@ import {
   type UIServerConfigurationSection,
 } from 'ui-common'
 
-import type { StationListPayload } from '../output/renderers.js'
-import type { GlobalOptions } from '../types.js'
+import type { GlobalOptions, StationListPayload } from '../types.js'
 
 import { executeCommand } from '../client/lifecycle.js'
 import { loadConfig } from '../config/loader.js'
@@ -35,12 +34,18 @@ const resolveShortHashIds = async (
   const allFull = hashIds.every(id => id.length >= MIN_FULL_HASH_LENGTH)
   if (allFull) return hashIds
 
-  const response = await executeCommand({
-    config,
-    payload: {},
-    procedureName: ProcedureName.LIST_CHARGING_STATIONS,
-    silent: true,
-  })
+  let response
+  try {
+    response = await executeCommand({
+      config,
+      payload: {},
+      procedureName: ProcedureName.LIST_CHARGING_STATIONS,
+      silent: true,
+    })
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to resolve hash ID prefixes: ${msg}`)
+  }
 
   if (response.status !== ResponseStatus.SUCCESS || !Array.isArray(response.chargingStations)) {
     throw new Error(

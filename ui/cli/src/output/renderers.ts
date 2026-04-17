@@ -1,7 +1,9 @@
-import type { ChargingStationData, ResponsePayload } from 'ui-common'
+import type { ResponsePayload } from 'ui-common'
 
 import chalk from 'chalk'
 import process from 'node:process'
+
+import type { StationListPayload } from '../types.js'
 
 import {
   borderlessTable,
@@ -11,10 +13,6 @@ import {
   truncateId,
   wsIcon,
 } from './format.js'
-
-export type StationListPayload = ResponsePayload & {
-  chargingStations: ChargingStationData[]
-}
 
 type PerformancePayload = ResponsePayload & {
   performanceStatistics: unknown[]
