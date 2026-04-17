@@ -77,15 +77,43 @@ export const createOcppCommands = (program: Command): Command => {
 
   const simpleOcppCommands: [string, string, ProcedureName][] = [
     ['boot-notification', 'Send OCPP BootNotification', ProcedureName.BOOT_NOTIFICATION],
-    ['diagnostics-status-notification', 'Send OCPP DiagnosticsStatusNotification', ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION],
-    ['firmware-status-notification', 'Send OCPP FirmwareStatusNotification', ProcedureName.FIRMWARE_STATUS_NOTIFICATION],
-    ['get-15118-ev-certificate', 'Send OCPP Get15118EVCertificate', ProcedureName.GET_15118_EV_CERTIFICATE],
-    ['get-certificate-status', 'Send OCPP GetCertificateStatus', ProcedureName.GET_CERTIFICATE_STATUS],
+    [
+      'diagnostics-status-notification',
+      'Send OCPP DiagnosticsStatusNotification',
+      ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
+    ],
+    [
+      'firmware-status-notification',
+      'Send OCPP FirmwareStatusNotification',
+      ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
+    ],
+    [
+      'get-15118-ev-certificate',
+      'Send OCPP Get15118EVCertificate',
+      ProcedureName.GET_15118_EV_CERTIFICATE,
+    ],
+    [
+      'get-certificate-status',
+      'Send OCPP GetCertificateStatus',
+      ProcedureName.GET_CERTIFICATE_STATUS,
+    ],
     ['heartbeat', 'Send OCPP Heartbeat', ProcedureName.HEARTBEAT],
-    ['log-status-notification', 'Send OCPP LogStatusNotification', ProcedureName.LOG_STATUS_NOTIFICATION],
-    ['notify-customer-information', 'Send OCPP NotifyCustomerInformation', ProcedureName.NOTIFY_CUSTOMER_INFORMATION],
+    [
+      'log-status-notification',
+      'Send OCPP LogStatusNotification',
+      ProcedureName.LOG_STATUS_NOTIFICATION,
+    ],
+    [
+      'notify-customer-information',
+      'Send OCPP NotifyCustomerInformation',
+      ProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+    ],
     ['notify-report', 'Send OCPP NotifyReport', ProcedureName.NOTIFY_REPORT],
-    ['security-event-notification', 'Send OCPP SecurityEventNotification', ProcedureName.SECURITY_EVENT_NOTIFICATION],
+    [
+      'security-event-notification',
+      'Send OCPP SecurityEventNotification',
+      ProcedureName.SECURITY_EVENT_NOTIFICATION,
+    ],
     ['sign-certificate', 'Send OCPP SignCertificate', ProcedureName.SIGN_CERTIFICATE],
     ['transaction-event', 'Send OCPP TransactionEvent', ProcedureName.TRANSACTION_EVENT],
   ]
