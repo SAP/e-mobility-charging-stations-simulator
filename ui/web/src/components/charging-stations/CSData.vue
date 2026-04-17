@@ -116,7 +116,12 @@
 </template>
 
 <script setup lang="ts">
-import { type ChargingStationData, type ConnectorEntry, getWebSocketStateName, type Status } from 'ui-common'
+import {
+  type ChargingStationData,
+  type ConnectorEntry,
+  getWebSocketStateName,
+  type Status,
+} from 'ui-common'
 import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 

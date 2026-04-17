@@ -182,7 +182,7 @@ const $toast = useToast()
 
 const { fetch: getSimulatorState } = useFetchData(
   () => $uiClient.simulatorState(),
-  (response) => {
+  response => {
     simulatorState.value = response.state as unknown as SimulatorState
   },
   'Error at fetching simulator state'
@@ -190,7 +190,7 @@ const { fetch: getSimulatorState } = useFetchData(
 
 const { fetch: getTemplates } = useFetchData(
   () => $uiClient.listTemplates(),
-  (response) => {
+  response => {
     $templates.value = response.templates as string[]
   },
   'Error at fetching charging station templates',
@@ -199,7 +199,7 @@ const { fetch: getTemplates } = useFetchData(
 
 const { fetch: getChargingStations } = useFetchData(
   () => $uiClient.listChargingStations(),
-  (response) => {
+  response => {
     $chargingStations.value = response.chargingStations as ChargingStationData[]
   },
   'Error at fetching charging stations',
