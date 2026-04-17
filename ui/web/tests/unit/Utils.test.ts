@@ -3,6 +3,7 @@
  * @description Unit tests for type conversion, localStorage, UUID, and toggle state utilities.
  */
 import { flushPromises } from '@vue/test-utils'
+import { randomUUID, validateUUID } from 'ui-common'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -11,11 +12,9 @@ import {
   deleteFromLocalStorage,
   getFromLocalStorage,
   getLocalStorage,
-  randomUUID,
   resetToggleButtonState,
   setToLocalStorage,
   useExecuteAction,
-  validateUUID,
 } from '@/composables'
 
 import { toastMock } from '../setup'

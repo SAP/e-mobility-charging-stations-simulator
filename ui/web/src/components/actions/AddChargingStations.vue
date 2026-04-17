@@ -91,15 +91,13 @@
 </template>
 
 <script setup lang="ts">
-import type { UUIDv4 } from 'ui-common'
-
+import { randomUUID, type UUIDv4 } from 'ui-common'
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Button from '@/components/buttons/Button.vue'
 import {
   convertToBoolean,
-  randomUUID,
   resetToggleButtonState,
   ROUTE_NAMES,
   useExecuteAction,

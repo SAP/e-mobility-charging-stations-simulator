@@ -104,14 +104,14 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  ChargingStationData,
-  ResponsePayload,
-  SimulatorState,
-  UIServerConfigurationSection,
-  UUIDv4,
+import {
+  type ChargingStationData,
+  randomUUID,
+  type ResponsePayload,
+  type SimulatorState,
+  type UIServerConfigurationSection,
+  type UUIDv4,
 } from 'ui-common'
-
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -122,7 +122,6 @@ import Container from '@/components/Container.vue'
 import {
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
-  randomUUID,
   ROUTE_NAMES,
   setToLocalStorage,
   TOGGLE_BUTTON_KEY_PREFIX,

@@ -16,7 +16,6 @@ export {
   getFromLocalStorage,
   getLocalStorage,
   getWebSocketStateName,
-  randomUUID,
   resetToggleButtonState,
   setToLocalStorage,
   templatesKey,
@@ -26,5 +25,4 @@ export {
   useExecuteAction,
   useTemplates,
   useUIClient,
-  validateUUID,
 } from './Utils'

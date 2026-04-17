@@ -1,7 +1,6 @@
 import type { ChargingStationData, ConfigurationData } from 'ui-common'
 import type { InjectionKey, Ref } from 'vue'
 
-import { randomUUID, validateUUID } from 'ui-common'
 import { inject } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -120,8 +119,6 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
     : `${TOGGLE_BUTTON_KEY_PREFIX}${id}`
   deleteFromLocalStorage(key)
 }
-
-export { randomUUID, validateUUID }
 
 export const useUIClient = (): UIClient => {
   const injected = inject(uiClientKey, undefined)
