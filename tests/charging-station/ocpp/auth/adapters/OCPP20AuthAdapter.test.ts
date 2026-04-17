@@ -209,7 +209,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       // Mock requestHandler to return accepted authorization
       mockStation.ocppRequestService = {
-        requestHandler: mock.fn(() =>
+        requestHandler: mock.fn(async () =>
           Promise.resolve({
             idTokenInfo: {
               status: OCPP20AuthorizationStatusEnumType.Accepted,
