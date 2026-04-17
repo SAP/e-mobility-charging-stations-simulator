@@ -1,21 +1,21 @@
 <template>
-  <tr class="connectors-table__row">
-    <td class="connectors-table__column">
+  <tr>
+    <td>
       {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
-    <td class="connectors-table__column">
+    <td>
       {{ connector.status ?? EMPTY_VALUE_PLACEHOLDER }}
     </td>
-    <td class="connectors-table__column">
+    <td>
       {{ connector.locked === true ? 'Yes' : 'No' }}
     </td>
-    <td class="connectors-table__column">
+    <td>
       {{ connector.transactionStarted === true ? `Yes (${connector.transactionId})` : 'No' }}
     </td>
-    <td class="connectors-table__column">
+    <td>
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
     </td>
-    <td class="connectors-table__column">
+    <td>
       <StateButton
         :active="connector.locked === true"
         :off="() => unlockConnector()"

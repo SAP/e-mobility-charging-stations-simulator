@@ -160,7 +160,13 @@ export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
         emit?.('need-refresh')
         return $toast.success(successMsg)
       })
-      .finally(onFinally)
+      .finally(() => {
+        try {
+          onFinally?.()
+        } catch (error: unknown) {
+          console.error('Error in onFinally callback:', error)
+        }
+      })
       .catch((error: unknown) => {
         $toast.error(errorMsg)
         console.error(`${errorMsg}:`, error)
