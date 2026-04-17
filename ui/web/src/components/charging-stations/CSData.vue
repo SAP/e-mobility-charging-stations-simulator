@@ -121,6 +121,7 @@ import {
   type ConnectorEntry,
   getWebSocketStateName,
   type Status,
+  WebSocketReadyState,
 } from 'ui-common'
 import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
@@ -143,7 +144,7 @@ const props = defineProps<{
 
 const $emit = defineEmits(['need-refresh'])
 
-const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocket.OPEN)
+const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
 const getConnectorEntries = (): ConnectorEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
