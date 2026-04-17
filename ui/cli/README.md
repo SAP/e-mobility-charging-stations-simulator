@@ -214,6 +214,16 @@ evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>]
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
+All OCPP commands accept `-p, --payload <json|@file|->` to pass a custom JSON payload:
+
+```shell
+evse-cli ocpp boot-notification -p '{"reason":"PowerUp"}' [hashId...]        # Inline JSON
+evse-cli ocpp boot-notification -p @collections/boot.json [hashId...]        # From file
+cat boot.json | jq '.reason = "RemoteReset"' | evse-cli ocpp boot-notification -p - [hashId...]  # From stdin
+```
+
+The payload is merged with command-specific options (e.g., `--id-tag`, `--connector-id`). Command options take precedence over payload fields.
+
 #### supervision
 
 ```shell

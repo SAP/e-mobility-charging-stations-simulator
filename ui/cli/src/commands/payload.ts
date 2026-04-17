@@ -1,5 +1,8 @@
 import type { RequestPayload } from 'ui-common'
 
+export const PAYLOAD_OPTION = '-p, --payload <json|@file|->'
+export const PAYLOAD_DESC = 'JSON payload: inline string, @filename, or - for stdin'
+
 export const buildHashIdsPayload = (hashIds: string[]): RequestPayload =>
   hashIds.length > 0 ? { hashIds } : {}
 

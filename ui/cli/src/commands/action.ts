@@ -14,6 +14,8 @@ import type { GlobalOptions, StationListPayload } from '../types.js'
 import { executeCommand } from '../client/lifecycle.js'
 import { loadConfig } from '../config/loader.js'
 import { createFormatter } from '../output/formatter.js'
+import { resolvePayload } from './resolve-payload.js'
+
 export const parseInteger = (value: string): number => {
   const n = Number.parseInt(value, 10)
   if (Number.isNaN(n)) {
@@ -73,18 +75,25 @@ const resolveShortHashIds = async (
 export const runAction = async (
   program: Command,
   procedureName: ProcedureName,
-  payload: RequestPayload
+  payload: RequestPayload,
+  rawPayload?: string
 ): Promise<void> => {
   const rootOpts = program.opts<GlobalOptions>()
   const formatter = createFormatter(rootOpts.json)
   try {
+    let mergedPayload = payload
+    if (rawPayload != null) {
+      const extra = await resolvePayload(rawPayload)
+      mergedPayload = { ...extra, ...payload }
+    }
+
     const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
 
-    let resolvedPayload = payload
-    if (Array.isArray(payload.hashIds) && payload.hashIds.length > 0) {
+    let resolvedPayload = mergedPayload
+    if (Array.isArray(mergedPayload.hashIds) && mergedPayload.hashIds.length > 0) {
       resolvedPayload = {
-        ...payload,
-        hashIds: await resolveShortHashIds(payload.hashIds, config),
+        ...mergedPayload,
+        hashIds: await resolveShortHashIds(mergedPayload.hashIds, config),
       }
     }
 

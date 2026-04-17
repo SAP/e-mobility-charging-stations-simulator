@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import { ProcedureName, type RequestPayload } from 'ui-common'
 
 import { parseInteger, runAction } from './action.js'
-import { buildHashIdsPayload, pickDefined } from './payload.js'
+import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION, pickDefined } from './payload.js'
 
 export const createOcppCommands = (program: Command): Command => {
   const cmd = new Command('ocpp').description('OCPP protocol commands')
@@ -11,12 +11,13 @@ export const createOcppCommands = (program: Command): Command => {
     .command('authorize [hashIds...]')
     .description('Request station(s) to send OCPP Authorize')
     .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
-    .action(async (hashIds: string[], options: { idTag: string }) => {
+    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .action(async (hashIds: string[], options: { idTag: string; payload?: string }) => {
       const payload: RequestPayload = {
         idTag: options.idTag,
         ...buildHashIdsPayload(hashIds),
       }
-      await runAction(program, ProcedureName.AUTHORIZE, payload)
+      await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
     })
 
   cmd
@@ -25,10 +26,11 @@ export const createOcppCommands = (program: Command): Command => {
     .option('--vendor-id <id>', 'vendor identifier')
     .option('--message-id <id>', 'message identifier')
     .option('--data <json>', 'data payload (JSON string)')
+    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(
       async (
         hashIds: string[],
-        options: { data?: string; messageId?: string; vendorId?: string }
+        options: { data?: string; messageId?: string; payload?: string; vendorId?: string }
       ) => {
         const payload: RequestPayload = {
           ...pickDefined(options as Record<string, unknown>, {
@@ -38,7 +40,7 @@ export const createOcppCommands = (program: Command): Command => {
           }),
           ...buildHashIdsPayload(hashIds),
         } as RequestPayload
-        await runAction(program, ProcedureName.DATA_TRANSFER, payload)
+        await runAction(program, ProcedureName.DATA_TRANSFER, payload, options.payload)
       }
     )
 
@@ -46,12 +48,13 @@ export const createOcppCommands = (program: Command): Command => {
     .command('meter-values [hashIds...]')
     .description('Request station(s) to send OCPP MeterValues')
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
-    .action(async (hashIds: string[], options: { connectorId: number }) => {
+    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .action(async (hashIds: string[], options: { connectorId: number; payload?: string }) => {
       const payload: RequestPayload = {
         connectorId: options.connectorId,
         ...buildHashIdsPayload(hashIds),
       }
-      await runAction(program, ProcedureName.METER_VALUES, payload)
+      await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
     })
 
   cmd
@@ -60,10 +63,11 @@ export const createOcppCommands = (program: Command): Command => {
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .requiredOption('--error-code <code>', 'connector error code')
     .requiredOption('--status <status>', 'connector status')
+    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(
       async (
         hashIds: string[],
-        options: { connectorId: number; errorCode: string; status: string }
+        options: { connectorId: number; errorCode: string; payload?: string; status: string }
       ) => {
         const payload: RequestPayload = {
           connectorId: options.connectorId,
@@ -71,7 +75,7 @@ export const createOcppCommands = (program: Command): Command => {
           status: options.status,
           ...buildHashIdsPayload(hashIds),
         }
-        await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload)
+        await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
       }
     )
 
@@ -134,8 +138,9 @@ export const createOcppCommands = (program: Command): Command => {
     cmd
       .command(`${name} [hashIds...]`)
       .description(description)
-      .action(async (hashIds: string[]) => {
-        await runAction(program, procedureName, buildHashIdsPayload(hashIds))
+      .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+      .action(async (hashIds: string[], options: { payload?: string }) => {
+        await runAction(program, procedureName, buildHashIdsPayload(hashIds), options.payload)
       })
   }
 
