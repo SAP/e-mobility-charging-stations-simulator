@@ -32,6 +32,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 - [Initial configuration](#initial-configuration)
 - [Start simulator](#start-simulator)
 - [Start Web UI](#start-web-ui)
+- [Start CLI](#start-cli)
 - [Configuration files syntax](#configuration-files-syntax)
   - [Charging stations simulator configuration](#charging-stations-simulator-configuration)
   - [Charging station template configuration](#charging-station-template-configuration)
@@ -132,6 +133,10 @@ pnpm start
 ## Start Web UI
 
 See Web UI [README.md](./ui/web/README.md) for more information.
+
+## Start CLI
+
+See CLI [README.md](./ui/cli/README.md) for more information.
 
 ## Configuration files syntax
 
