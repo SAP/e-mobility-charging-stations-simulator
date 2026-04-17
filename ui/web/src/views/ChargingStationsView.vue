@@ -129,6 +129,12 @@ watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
 })
 
+watch($route, to => {
+  if (to.name === ROUTE_NAMES.CHARGING_STATIONS) {
+    refresh()
+  }
+})
+
 const clearTemplates = (): void => {
   $templates.value = []
 }
