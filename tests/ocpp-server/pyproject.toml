@@ -36,7 +36,7 @@ select = ["E", "W", "F", "ASYNC", "S", "B", "A", "Q", "RUF", "I"]
 asyncio_mode = "auto"
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
