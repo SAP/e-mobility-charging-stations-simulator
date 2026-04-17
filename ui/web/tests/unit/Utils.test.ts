@@ -3,7 +3,7 @@
  * @description Unit tests for type conversion, localStorage, UUID, and toggle state utilities.
  */
 import { flushPromises } from '@vue/test-utils'
-import { convertToBoolean, convertToInt, randomUUID, validateUUID } from 'ui-common'
+import { convertToBoolean, convertToInt, randomUUID, ResponseStatus, validateUUID } from 'ui-common'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -13,6 +13,7 @@ import {
   resetToggleButtonState,
   setToLocalStorage,
   useExecuteAction,
+  useFetchData,
 } from '@/composables'
 
 import { toastMock } from '../setup'
@@ -327,6 +328,97 @@ describe('Utils', () => {
       expect(emit).not.toHaveBeenCalled()
       expect(toastMock.error).toHaveBeenCalledWith('Error at action')
       expect(consoleSpy).toHaveBeenCalledWith('Error at action:', expect.any(Error))
+    })
+  })
+
+  describe('useFetchData', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('should call onSuccess and reset fetching on successful fetch', async () => {
+      const response = { status: ResponseStatus.SUCCESS }
+      const onSuccess = vi.fn()
+      const { fetch, fetching } = useFetchData(
+        () => Promise.resolve(response),
+        onSuccess,
+        'Error message'
+      )
+
+      fetch()
+      expect(fetching.value).toBe(true)
+      await flushPromises()
+
+      expect(onSuccess).toHaveBeenCalledWith(response)
+      expect(fetching.value).toBe(false)
+    })
+
+    it('should call onError and toast.error on failed fetch', async () => {
+      const consoleSpy = vi.spyOn(console, 'error')
+      const onError = vi.fn()
+      const { fetch } = useFetchData(
+        () => Promise.reject(new Error('network')),
+        vi.fn(),
+        'Fetch failed',
+        onError
+      )
+
+      fetch()
+      await flushPromises()
+
+      expect(onError).toHaveBeenCalled()
+      expect(toastMock.error).toHaveBeenCalledWith('Fetch failed')
+      expect(consoleSpy).toHaveBeenCalledWith('Fetch failed:', expect.any(Error))
+    })
+
+    it('should prevent concurrent fetches via loading guard', async () => {
+      let resolvePromise: ((value: unknown) => void) | undefined
+      const clientFn = vi.fn().mockImplementation(
+        () =>
+          new Promise(resolve => {
+            resolvePromise = resolve
+          })
+      )
+      const { fetch } = useFetchData(clientFn, vi.fn(), 'Error')
+
+      fetch()
+      fetch()
+      fetch()
+
+      expect(clientFn).toHaveBeenCalledTimes(1)
+
+      if (resolvePromise !== undefined) {
+        resolvePromise({ status: ResponseStatus.SUCCESS })
+      }
+      await flushPromises()
+    })
+
+    it('should reset fetching on error', async () => {
+      const { fetch, fetching } = useFetchData(
+        () => Promise.reject(new Error('fail')),
+        vi.fn(),
+        'Error'
+      )
+
+      fetch()
+      await flushPromises()
+
+      expect(fetching.value).toBe(false)
+    })
+
+    it('should work without onError callback', async () => {
+      const consoleSpy = vi.spyOn(console, 'error')
+      const { fetch } = useFetchData(
+        () => Promise.reject(new Error('fail')),
+        vi.fn(),
+        'Fetch error'
+      )
+
+      fetch()
+      await flushPromises()
+
+      expect(toastMock.error).toHaveBeenCalledWith('Fetch error')
+      expect(consoleSpy).toHaveBeenCalled()
     })
   })
 })

@@ -130,7 +130,11 @@ export const useFetchData = (
           fetching.value = false
         })
         .catch((error: unknown) => {
-          onError?.()
+          try {
+            onError?.()
+          } catch (callbackError: unknown) {
+            console.error('Error in onError callback:', callbackError)
+          }
           $toast.error(errorMsg)
           console.error(`${errorMsg}:`, error)
         })
