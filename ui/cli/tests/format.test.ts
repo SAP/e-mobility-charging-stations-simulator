@@ -3,7 +3,13 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { OCPP16AvailabilityType, OCPP16ChargePointStatus } from 'ui-common'
 
-import { countConnectors, fuzzyTime, statusIcon, truncateId, wsIcon } from '../src/output/format.js'
+import {
+  formatConnectors,
+  fuzzyTime,
+  statusIcon,
+  truncateId,
+  wsIcon,
+} from '../src/output/format.js'
 
 await describe('format helpers', async () => {
   await describe('truncateId', async () => {
@@ -90,183 +96,178 @@ await describe('format helpers', async () => {
     })
   })
 
-  await describe('countConnectors', async () => {
-    await it('counts from evses when evses present (evseId > 0, connectorId > 0)', () => {
-      const evses = [
-        {
-          evseId: 1,
-          evseStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            connectors: [
-              {
-                connectorId: 1,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
+  await describe('formatConnectors', async () => {
+    await it('formats connectors from evses', () => {
+      const result = formatConnectors(
+        [
+          {
+            evseId: 1,
+            evseStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              connectors: [
+                {
+                  connectorId: 1,
+                  connectorStatus: {
+                    availability: OCPP16AvailabilityType.OPERATIVE,
+                    status: OCPP16ChargePointStatus.AVAILABLE,
+                  },
                 },
-              },
-              {
-                connectorId: 2,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.CHARGING,
+                {
+                  connectorId: 2,
+                  connectorStatus: {
+                    availability: OCPP16AvailabilityType.OPERATIVE,
+                    status: OCPP16ChargePointStatus.OCCUPIED,
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      ]
-      const result = countConnectors(evses, [])
-      assert.deepStrictEqual(result, { available: 1, total: 2 })
+        ],
+        []
+      )
+      assert.ok(result.includes('1:A'))
+      assert.ok(result.includes('2:O'))
     })
 
     await it('skips evseId 0', () => {
-      const evses = [
-        {
-          evseId: 0,
-          evseStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            connectors: [
-              {
-                connectorId: 1,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
+      const result = formatConnectors(
+        [
+          {
+            evseId: 0,
+            evseStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              connectors: [
+                {
+                  connectorId: 1,
+                  connectorStatus: {
+                    availability: OCPP16AvailabilityType.OPERATIVE,
+                    status: OCPP16ChargePointStatus.AVAILABLE,
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-        {
-          evseId: 1,
-          evseStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            connectors: [
-              {
-                connectorId: 1,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
-                },
-              },
-            ],
-          },
-        },
-      ]
-      const result = countConnectors(evses, [])
-      assert.deepStrictEqual(result, { available: 1, total: 1 })
+        ],
+        []
+      )
+      assert.ok(result.includes('–'))
     })
 
-    await it('skips connectorId 0 within evses', () => {
-      const evses = [
-        {
-          evseId: 1,
-          evseStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            connectors: [
-              {
-                connectorId: 0,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
+    await it('skips connectorId 0', () => {
+      const result = formatConnectors(
+        [
+          {
+            evseId: 1,
+            evseStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              connectors: [
+                {
+                  connectorId: 0,
+                  connectorStatus: {
+                    availability: OCPP16AvailabilityType.OPERATIVE,
+                    status: OCPP16ChargePointStatus.AVAILABLE,
+                  },
                 },
-              },
-              {
-                connectorId: 1,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
+                {
+                  connectorId: 1,
+                  connectorStatus: {
+                    availability: OCPP16AvailabilityType.OPERATIVE,
+                    status: OCPP16ChargePointStatus.AVAILABLE,
+                  },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      ]
-      const result = countConnectors(evses, [])
-      assert.deepStrictEqual(result, { available: 1, total: 1 })
-    })
-
-    await it('counts available connectors (status === AVAILABLE)', () => {
-      const evses = [
-        {
-          evseId: 1,
-          evseStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            connectors: [
-              {
-                connectorId: 1,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.AVAILABLE,
-                },
-              },
-              {
-                connectorId: 2,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.UNAVAILABLE,
-                },
-              },
-              {
-                connectorId: 3,
-                connectorStatus: {
-                  availability: OCPP16AvailabilityType.OPERATIVE,
-                  status: OCPP16ChargePointStatus.FAULTED,
-                },
-              },
-            ],
-          },
-        },
-      ]
-      const result = countConnectors(evses, [])
-      assert.deepStrictEqual(result, { available: 1, total: 3 })
+        ],
+        []
+      )
+      assert.ok(result.includes('1:A'))
+      assert.ok(!result.includes('0:'))
     })
 
     await it('falls back to connectors array when evses empty', () => {
-      const connectors = [
-        {
-          connectorId: 1,
-          connectorStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            status: OCPP16ChargePointStatus.AVAILABLE,
+      const result = formatConnectors(
+        [],
+        [
+          {
+            connectorId: 1,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.AVAILABLE,
+            },
           },
-        },
-        {
-          connectorId: 2,
-          connectorStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            status: OCPP16ChargePointStatus.CHARGING,
+          {
+            connectorId: 2,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.CHARGING,
+            },
           },
-        },
-      ]
-      const result = countConnectors([], connectors)
-      assert.deepStrictEqual(result, { available: 1, total: 2 })
+        ]
+      )
+      assert.ok(result.includes('1:A'))
+      assert.ok(result.includes('2:C'))
     })
 
-    await it('skips connectorId 0 in connectors fallback', () => {
-      const connectors = [
-        {
-          connectorId: 0,
-          connectorStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            status: OCPP16ChargePointStatus.AVAILABLE,
-          },
-        },
-        {
-          connectorId: 1,
-          connectorStatus: {
-            availability: OCPP16AvailabilityType.OPERATIVE,
-            status: OCPP16ChargePointStatus.AVAILABLE,
-          },
-        },
-      ]
-      const result = countConnectors([], connectors)
-      assert.deepStrictEqual(result, { available: 1, total: 1 })
+    await it('returns dash for empty arrays', () => {
+      const result = formatConnectors([], [])
+      assert.ok(result.includes('–'))
     })
 
-    await it('returns {available: 0, total: 0} for empty arrays', () => {
-      const result = countConnectors([], [])
-      assert.deepStrictEqual(result, { available: 0, total: 0 })
+    await it('uses two-letter abbreviations for ambiguous statuses', () => {
+      const result = formatConnectors(
+        [],
+        [
+          {
+            connectorId: 1,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.SUSPENDED_EV,
+            },
+          },
+          {
+            connectorId: 2,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.SUSPENDED_EVSE,
+            },
+          },
+          {
+            connectorId: 3,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.FINISHING,
+            },
+          },
+          {
+            connectorId: 4,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: OCPP16ChargePointStatus.FAULTED,
+            },
+          },
+        ]
+      )
+      assert.ok(result.includes('1:SE'))
+      assert.ok(result.includes('2:SS'))
+      assert.ok(result.includes('3:Fi'))
+      assert.ok(result.includes('4:F'))
+    })
+
+    await it('handles undefined status', () => {
+      const result = formatConnectors(
+        [],
+        [
+          {
+            connectorId: 1,
+            connectorStatus: {
+              availability: OCPP16AvailabilityType.OPERATIVE,
+              status: undefined as unknown as OCPP16ChargePointStatus,
+            },
+          },
+        ]
+      )
+      assert.ok(result.includes('1:?'))
     })
   })
 

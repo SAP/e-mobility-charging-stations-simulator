@@ -7,7 +7,7 @@ import type { StationListPayload } from '../types.js'
 
 import {
   borderlessTable,
-  countConnectors,
+  formatConnectors,
   fuzzyTime,
   statusIcon,
   truncateId,
@@ -127,15 +127,27 @@ const renderStationList = (payload: StationListPayload): void => {
     return
   }
 
-  const table = borderlessTable(['', 'Name', 'Hash ID', 'WS', 'OCPP', 'Template', 'Updated'])
+  const table = borderlessTable([
+    '',
+    'Name',
+    'Hash ID',
+    'Reg',
+    'WS',
+    'Connectors',
+    'OCPP',
+    'Template',
+    'Updated',
+  ])
   for (const cs of stations) {
     const si = cs.stationInfo
-    const { available, total } = countConnectors(cs.evses ?? [], cs.connectors ?? [])
+    const reg = cs.bootNotificationResponse?.status
     table.push([
       statusIcon(cs.started),
       si.chargingStationId,
       chalk.dim(truncateId(si.hashId)),
-      `${wsIcon(cs.wsState)} ${chalk.dim(`${available.toString()}/${total.toString()}`)}`,
+      reg ?? chalk.dim('–'),
+      wsIcon(cs.wsState),
+      formatConnectors(cs.evses ?? [], cs.connectors ?? []),
       chalk.dim(si.ocppVersion ?? '–'),
       chalk.dim(si.templateName.replace('.station-template', '')),
       fuzzyTime(cs.timestamp),

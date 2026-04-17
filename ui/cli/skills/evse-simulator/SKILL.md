@@ -1,6 +1,6 @@
 ---
 name: evse-simulator
-description: Control and monitor an OCPP charging station simulator via CLI. Use when users ask to manage charging stations, send OCPP messages, start/stop the simulator or ATG, list stations or templates, or check simulator state.
+description: Control and monitor an OCPP charging station simulator via CLI. Use when users ask to manage charging stations, trigger OCPP messages from stations to the CSMS, start/stop the simulator or ATG, list stations or templates, or check simulator state.
 license: Apache-2.0
 compatibility: Requires the simulator UI server to be running with WebSocket enabled.
 metadata:
@@ -105,6 +105,8 @@ evse-cli transaction stop --transaction-id <id> [hashId...]
 
 ### OCPP Messages
 
+Request station(s) to send OCPP messages to the CSMS:
+
 ```shell
 evse-cli ocpp heartbeat [hashId...]
 evse-cli ocpp boot-notification [hashId...]
@@ -162,7 +164,7 @@ evse-cli station add -t keba-ocpp2.station-template -n 3 --auto-start
 evse-cli atg start
 ```
 
-### Send OCPP heartbeat to all stations
+### Request all stations to send OCPP Heartbeat
 
 ```shell
 evse-cli ocpp heartbeat

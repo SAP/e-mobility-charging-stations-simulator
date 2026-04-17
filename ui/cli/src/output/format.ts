@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import Table from 'cli-table3'
-import { type ConnectorEntry, type EvseEntry, OCPP16ChargePointStatus } from 'ui-common'
+import { type ConnectorEntry, type EvseEntry } from 'ui-common'
 
 const NO_BORDER = {
   bottom: '',
@@ -49,22 +49,26 @@ export const wsIcon = (wsState: number | undefined): string => {
   }
 }
 
-export const countConnectors = (
-  evses: EvseEntry[],
-  connectors: ConnectorEntry[]
-): { available: number; total: number } => {
-  let total = 0
-  let available = 0
+const STATUS_ABBREVIATIONS: Record<string, string> = {
+  Finishing: 'Fi',
+  SuspendedEV: 'SE',
+  SuspendedEVSE: 'SS',
+}
+
+const statusLetter = (status: string | undefined): string => {
+  if (status == null || status.length === 0) return '?'
+  return STATUS_ABBREVIATIONS[status] ?? status.charAt(0).toUpperCase()
+}
+
+export const formatConnectors = (evses: EvseEntry[], connectors: ConnectorEntry[]): string => {
+  const entries: string[] = []
 
   if (evses.length > 0) {
     for (const evse of evses) {
       if (evse.evseId > 0) {
         for (const c of evse.evseStatus.connectors) {
           if (c.connectorId > 0) {
-            total++
-            if (c.connectorStatus.status === OCPP16ChargePointStatus.AVAILABLE) {
-              available++
-            }
+            entries.push(`${c.connectorId.toString()}:${statusLetter(c.connectorStatus.status)}`)
           }
         }
       }
@@ -72,15 +76,12 @@ export const countConnectors = (
   } else {
     for (const c of connectors) {
       if (c.connectorId > 0) {
-        total++
-        if (c.connectorStatus.status === OCPP16ChargePointStatus.AVAILABLE) {
-          available++
-        }
+        entries.push(`${c.connectorId.toString()}:${statusLetter(c.connectorStatus.status)}`)
       }
     }
   }
 
-  return { available, total }
+  return entries.length > 0 ? chalk.dim(entries.join(' ')) : chalk.dim('–')
 }
 
 export const fuzzyTime = (ts: number | undefined): string => {

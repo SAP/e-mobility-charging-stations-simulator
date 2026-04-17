@@ -201,15 +201,15 @@ evse-cli transaction stop --transaction-id <id> [hashId...]
 
 #### ocpp
 
-Send OCPP commands directly to charging stations:
+Request charging station(s) to send OCPP messages to the CSMS:
 
 ```shell
-evse-cli ocpp heartbeat [hashId...]
-evse-cli ocpp authorize --id-tag <tag> [hashId...]
-evse-cli ocpp boot-notification [hashId...]
-evse-cli ocpp status-notification --connector-id <id> --error-code <code> --status <status> [hashId...]
-evse-cli ocpp meter-values --connector-id <id> [hashId...]
-evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>] [hashId...]
+evse-cli ocpp heartbeat [hashId...]                                                               # Heartbeat
+evse-cli ocpp authorize --id-tag <tag> [hashId...]                                                # Authorize
+evse-cli ocpp boot-notification [hashId...]                                                       # BootNotification
+evse-cli ocpp status-notification --connector-id <id> --error-code <code> --status <status> [hashId...]  # StatusNotification
+evse-cli ocpp meter-values --connector-id <id> [hashId...]                                        # MeterValues
+evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>] [hashId...]      # DataTransfer
 ```
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.

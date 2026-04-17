@@ -9,7 +9,7 @@ export const createConnectorCommands = (program: Command): Command => {
 
   cmd
     .command('lock [hashIds...]')
-    .description('Lock a connector')
+    .description('Lock connector on station(s)')
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
@@ -21,7 +21,7 @@ export const createConnectorCommands = (program: Command): Command => {
 
   cmd
     .command('unlock [hashIds...]')
-    .description('Unlock a connector')
+    .description('Unlock connector on station(s)')
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .action(async (hashIds: string[], options: { connectorId: number }) => {
       const payload: RequestPayload = {
