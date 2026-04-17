@@ -94,12 +94,9 @@ export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
     action: Promise<unknown>,
     successMsg: string,
     errorMsg: string,
-    callbacks?: (() => void) | ExecuteActionCallbacks
+    callbacks?: ExecuteActionCallbacks
   ): void => {
-    const { onFinally, onSuccess } =
-      typeof callbacks === 'function'
-        ? { onFinally: callbacks, onSuccess: undefined }
-        : (callbacks ?? {})
+    const { onFinally, onSuccess } = callbacks ?? {}
     action
       .then(() => {
         try {

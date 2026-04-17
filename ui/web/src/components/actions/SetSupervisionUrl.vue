@@ -46,9 +46,11 @@ const setSupervisionUrl = (): void => {
     $uiClient.setSupervisionUrl(props.hashId, state.value.supervisionUrl),
     'Supervision url successfully set',
     'Error at setting supervision url',
-    () => {
-      resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
-      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    {
+      onFinally: () => {
+        resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
+        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+      },
     }
   )
 }

@@ -28,6 +28,15 @@ vi.mock('@/composables', async importOriginal => {
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })
 
+vi.mock('vue-router', async importOriginal => {
+  const actual: Record<string, unknown> = await importOriginal()
+  return {
+    ...actual,
+    useRoute: vi.fn().mockReturnValue({ name: 'charging-stations' }),
+    useRouter: vi.fn().mockReturnValue({ push: vi.fn() }),
+  }
+})
+
 // ── Configuration fixtures ────────────────────────────────────────────────────
 
 const singleServerConfiguration = {

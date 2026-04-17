@@ -1,3 +1,5 @@
+import type { ResponsePayload } from './types/UIProtocol.js'
+
 export class ConnectionError extends Error {
   public readonly url: string
 
@@ -9,6 +11,20 @@ export class ConnectionError extends Error {
     if (cause != null) {
       this.cause = cause
     }
+  }
+}
+
+export class ServerFailureError extends Error {
+  public readonly payload: ResponsePayload
+
+  public constructor (payload: ResponsePayload) {
+    const details =
+      payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0
+        ? `: ${payload.hashIdsFailed.length.toString()} station(s) failed`
+        : ''
+    super(`Server returned failure status${details}`)
+    this.name = 'ServerFailureError'
+    this.payload = payload
   }
 }
 

@@ -13,13 +13,15 @@ const hashIdTable = (ids: string[]) => {
 
 export const outputTable = (payload: ResponsePayload): void => {
   if (payload.hashIdsSucceeded != null && payload.hashIdsSucceeded.length > 0) {
-    process.stdout.write(chalk.green(`✓ Succeeded (${String(payload.hashIdsSucceeded.length)}):\n`))
+    process.stdout.write(
+      chalk.green(`✓ Succeeded (${payload.hashIdsSucceeded.length.toString()}):\n`)
+    )
     const table = hashIdTable(payload.hashIdsSucceeded)
     process.stdout.write(table.toString() + '\n')
   }
 
   if (payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0) {
-    process.stderr.write(chalk.red(`✗ Failed (${String(payload.hashIdsFailed.length)}):\n`))
+    process.stderr.write(chalk.red(`✗ Failed (${payload.hashIdsFailed.length.toString()}):\n`))
     if (payload.responsesFailed != null && payload.responsesFailed.length > 0) {
       const table = new Table({ head: [chalk.white('Hash ID'), chalk.white('Error')] })
       for (const entry of payload.responsesFailed) {

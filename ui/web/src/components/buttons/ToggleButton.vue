@@ -39,20 +39,21 @@ const state = ref<{ status: boolean }>({
 
 const click = (): void => {
   if (props.shared === true) {
-    for (const key in localStorage) {
+    for (const key of Object.keys(localStorage)) {
       if (key !== id && key.startsWith(SHARED_TOGGLE_BUTTON_KEY_PREFIX)) {
         setToLocalStorage<boolean>(key, false)
-        state.value.status = getFromLocalStorage<boolean>(key, false)
       }
     }
   }
-  setToLocalStorage<boolean>(id, !getFromLocalStorage<boolean>(id, props.status ?? false))
-  state.value.status = getFromLocalStorage<boolean>(id, props.status ?? false)
-  if (getFromLocalStorage<boolean>(id, props.status ?? false)) {
+  const current = getFromLocalStorage<boolean>(id, props.status ?? false)
+  const newStatus = !current
+  setToLocalStorage<boolean>(id, newStatus)
+  state.value.status = newStatus
+  if (newStatus) {
     props.on?.()
   } else {
     props.off?.()
   }
-  $emit('clicked', getFromLocalStorage<boolean>(id, props.status ?? false))
+  $emit('clicked', newStatus)
 }
 </script>

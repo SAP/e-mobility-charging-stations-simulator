@@ -145,9 +145,11 @@ const addChargingStations = (): void => {
     }),
     'Charging stations successfully added',
     'Error at adding charging stations',
-    () => {
-      resetToggleButtonState('add-charging-stations', true)
-      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    {
+      onFinally: () => {
+        resetToggleButtonState('add-charging-stations', true)
+        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+      },
     }
   )
 }

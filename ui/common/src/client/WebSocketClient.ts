@@ -3,23 +3,12 @@ import type { UUIDv4 } from '../types/UUID.js'
 import type { ClientConfig, ResponseHandler, WebSocketFactory, WebSocketLike } from './types.js'
 
 import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from '../constants.js'
+import { ServerFailureError } from '../errors.js'
 import { AuthenticationType, ResponseStatus } from '../types/UIProtocol.js'
 import { randomUUID, validateUUID } from '../utils/UUID.js'
 import { WebSocketReadyState } from './types.js'
 
-export class ServerFailureError extends Error {
-  public readonly payload: ResponsePayload
-
-  public constructor (payload: ResponsePayload) {
-    const details =
-      payload.hashIdsFailed != null && payload.hashIdsFailed.length > 0
-        ? `: ${payload.hashIdsFailed.length.toString()} station(s) failed`
-        : ''
-    super(`Server returned failure status${details}`)
-    this.name = 'ServerFailureError'
-    this.payload = payload
-  }
-}
+export { ServerFailureError } from '../errors.js'
 
 export class WebSocketClient {
   public get url (): string {

@@ -10,49 +10,7 @@
           id="ui-server-selector"
           v-model="state.uiServerIndex"
           class="ui-server-selector"
-          @change="
-            () => {
-              if (
-                getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) !==
-                state.uiServerIndex
-              ) {
-                $uiClient.setConfiguration(
-                  ($configuration.uiServer as UIServerConfigurationSection[])[state.uiServerIndex]
-                )
-                registerWSEventListeners()
-                $uiClient.registerWSEventListener(
-                  'open',
-                  () => {
-                    setToLocalStorage<number>(
-                      UI_SERVER_CONFIGURATION_INDEX_KEY,
-                      state.uiServerIndex
-                    )
-                    clearToggleButtons()
-                    refresh()
-                    $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
-                      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-                  },
-                  { once: true }
-                )
-                $uiClient.registerWSEventListener(
-                  'error',
-                  () => {
-                    state.uiServerIndex = getFromLocalStorage<number>(
-                      UI_SERVER_CONFIGURATION_INDEX_KEY,
-                      0
-                    )
-                    $uiClient.setConfiguration(
-                      ($configuration.uiServer as UIServerConfigurationSection[])[
-                        getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-                      ]
-                    )
-                    registerWSEventListeners()
-                  },
-                  { once: true }
-                )
-              }
-            }
-          "
+          @change="handleUIServerChange"
         >
           <option
             v-for="uiServerConfiguration in uiServerConfigurations"
@@ -112,6 +70,7 @@ import {
   type UUIDv4,
 } from 'ui-common'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -163,6 +122,8 @@ const clearToggleButtons = (): void => {
 const $configuration = useConfiguration()
 const $templates = useTemplates()
 const $chargingStations = useChargingStations()
+const $route = useRoute()
+const $router = useRouter()
 
 watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
@@ -222,6 +183,46 @@ const unregisterWSEventListeners = () => {
   $uiClient.unregisterWSEventListener('open', getData)
   $uiClient.unregisterWSEventListener('error', clearChargingStations)
   $uiClient.unregisterWSEventListener('close', clearChargingStations)
+}
+
+const handleUIServerChange = (): void => {
+  const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
+  if (currentIndex === state.value.uiServerIndex) return
+
+  $uiClient.setConfiguration(
+    ($configuration.value.uiServer as UIServerConfigurationSection[])[state.value.uiServerIndex]
+  )
+  registerWSEventListeners()
+
+  $uiClient.registerWSEventListener(
+    'open',
+    () => {
+      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, state.value.uiServerIndex)
+      clearToggleButtons()
+      refresh()
+      if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
+        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+      }
+    },
+    { once: true }
+  )
+
+  $uiClient.registerWSEventListener(
+    'error',
+    () => {
+      state.value.uiServerIndex = getFromLocalStorage<number>(
+        UI_SERVER_CONFIGURATION_INDEX_KEY,
+        0
+      )
+      $uiClient.setConfiguration(
+        ($configuration.value.uiServer as UIServerConfigurationSection[])[
+          state.value.uiServerIndex
+        ]
+      )
+      registerWSEventListeners()
+    },
+    { once: true }
+  )
 }
 
 let unsubscribeRefresh: (() => void) | undefined
