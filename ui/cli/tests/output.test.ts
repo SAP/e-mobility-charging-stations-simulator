@@ -8,22 +8,7 @@ import { createFormatter } from '../src/output/formatter.js'
 import { printError } from '../src/output/human.js'
 import { outputJson, outputJsonError } from '../src/output/json.js'
 import { outputTable } from '../src/output/table.js'
-
-const captureStream = (stream: 'stderr' | 'stdout', fn: () => void): string => {
-  const target = stream === 'stdout' ? process.stdout : process.stderr
-  const chunks: string[] = []
-  const original = target.write.bind(target)
-  target.write = ((chunk: string): boolean => {
-    chunks.push(chunk)
-    return true
-  }) as typeof target.write
-  try {
-    fn()
-  } finally {
-    target.write = original
-  }
-  return chunks.join('')
-}
+import { captureStream } from './helpers.js'
 
 await describe('output formatters', async () => {
   await it('should create JSON formatter when jsonMode is true', () => {
@@ -172,7 +157,7 @@ await describe('output formatters', async () => {
     })
     assert.ok(output.includes('Station not found'))
     assert.ok(output.includes('cs-001'))
-    assert.ok(output.includes('Error'))
+    assert.ok(output.includes('ERROR'))
   })
 
   await it('should display responsesFailed with missing errorMessage as Unknown error', () => {
@@ -230,6 +215,6 @@ await describe('output formatters', async () => {
     const output = captureStream('stderr', () => {
       outputTable({ status: ResponseStatus.FAILURE })
     })
-    assert.ok(output.includes('failure'))
+    assert.ok(output.includes('Failure'))
   })
 })

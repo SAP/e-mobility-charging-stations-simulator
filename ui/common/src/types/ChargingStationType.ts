@@ -159,6 +159,7 @@ export interface ChargingStationData extends JsonObject {
   started: boolean
   stationInfo: ChargingStationInfo
   supervisionUrl: string
+  timestamp?: number
   wsState?: 0 | 1 | 2 | 3
 }
 

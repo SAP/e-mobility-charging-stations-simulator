@@ -97,6 +97,13 @@ export interface ResponsePayload extends JsonObject {
 }
 
 export interface SimulatorState {
+  configuration?: {
+    supervisionUrls?: string | string[]
+    worker?: {
+      elementsPerWorker?: string
+      processType?: string
+    }
+  }
   started: boolean
   templateStatistics: Record<string, TemplateStatistics>
   version: string
@@ -106,5 +113,6 @@ export interface TemplateStatistics {
   added: number
   configured: number
   indexes: number[]
+  provisioned: number
   started: number
 }
