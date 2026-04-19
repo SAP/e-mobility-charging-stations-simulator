@@ -74,10 +74,11 @@ const valid = validateUUID(id) // boolean
 
 ## Available Scripts
 
-| Script               | Description                      |
-| -------------------- | -------------------------------- |
-| `pnpm typecheck`     | Type-check                       |
-| `pnpm lint`          | Run ESLint                       |
-| `pnpm format`        | Run Prettier and ESLint auto-fix |
-| `pnpm test`          | Run unit tests                   |
-| `pnpm test:coverage` | Run unit tests with coverage     |
+| Script               | Description                               |
+| -------------------- | ----------------------------------------- |
+| `pnpm build`         | Type-check (same as typecheck, no output) |
+| `pnpm typecheck`     | Type-check                                |
+| `pnpm lint`          | Run ESLint                                |
+| `pnpm format`        | Run Prettier and ESLint auto-fix          |
+| `pnpm test`          | Run unit tests                            |
+| `pnpm test:coverage` | Run unit tests with coverage              |

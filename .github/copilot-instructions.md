@@ -31,6 +31,12 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - **When documenting**:
   - Follow documentation conventions below.
 
+## Monorepo structure
+
+4 TypeScript packages (pnpm workspace: `/`, `/ui/common`, `/ui/cli`, `/ui/web`) + 1 Python project (`/tests/ocpp-server`). Each has its own quality gates — see sub-project READMEs.
+
+UI Common (`ui-common`) is the shared library for CLI and Web UI. No re-exports between packages.
+
 ## Core principles
 
 - **Design patterns**: prefer established patterns (e.g., factory, singleton, strategy) for code organization and extensibility.
@@ -101,9 +107,8 @@ Documentation serves as an operational specification, not narrative prose.
 
 ## Quality gates
 
-- Documented build/type checks/lint pass (where applicable).
-- Documented tests pass (where applicable).
-- Documentation updated to reflect changes when necessary.
+Each sub-project has its own quality gates (format, typecheck, lint, build, test). See sub-project READMEs for exact commands. Run gates for every sub-project affected by your changes.
+
 - Logs use appropriate levels (error, warn, info, debug).
 - Pull request title and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
 
