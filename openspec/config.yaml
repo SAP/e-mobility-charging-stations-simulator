@@ -6,13 +6,17 @@ context: |
   charging stations based on the OCPP-J protocol as part of SAP e-Mobility solution.
 
   ## Monorepo Structure
-  Three sub-projects:
+  4 TypeScript packages (pnpm workspace) + 1 Python project (Poetry):
   - Root Simulator (`/`): Node.js/TypeScript OCPP simulator
+  - UI Common (`/ui/common`): Shared TypeScript library (types, WebSocket client, utilities)
+  - CLI (`/ui/cli`): Command-line tool for managing the simulator (Commander.js, esbuild)
   - Web UI (`/ui/web`): Vue 3 + Vite dashboard
   - OCPP Mock Server (`/tests/ocpp-server`): Python OCPP 2.0.1 mock server
 
   ## Tech Stack
   - Simulator: Node.js >=22.0.0, TypeScript (strict), pnpm >=10.9.0, esbuild, Node.js native test runner
+  - UI Common: Node.js >=22.0.0, TypeScript, pnpm, source-only package (no build artifacts)
+  - CLI: Node.js >=22.0.0, TypeScript, pnpm, esbuild, Node.js native test runner
   - Web UI: Vue 3, Vite, Vitest
   - OCPP Server: Python >=3.12, Poetry >=2.0, pytest
 
@@ -33,6 +37,8 @@ context: |
   - src/exception/: Error classes (BaseError, OCPPError)
   - tests/: Test files mirroring source structure
   - ui/web/: Vue 3 dashboard (independent sub-project)
+  - ui/common/: Shared TypeScript library for UI packages
+  - ui/cli/: CLI tool for simulator management
   - tests/ocpp-server/: Python OCPP mock server (independent sub-project)
 
   ## Key Conventions
@@ -50,7 +56,9 @@ context: |
 
   ## Quality Gates
   - Simulator: pnpm format, pnpm typecheck, pnpm build, pnpm test
-  - Web UI (from ui/web/): pnpm format, pnpm build, pnpm test
+  - UI Common (from ui/common/): pnpm format, pnpm typecheck, pnpm test
+  - CLI (from ui/cli/): pnpm format, pnpm typecheck, pnpm build, pnpm test
+  - Web UI (from ui/web/): pnpm format, pnpm typecheck, pnpm build, pnpm test:coverage
   - OCPP Server (from tests/ocpp-server/): poetry run task format/lint/typecheck/test
 
 # Per-artifact rules (optional)
