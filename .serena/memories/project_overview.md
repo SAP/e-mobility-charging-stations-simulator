@@ -4,28 +4,32 @@
 
 Node.js simulator for OCPP-J charging stations, part of SAP e-Mobility solution. Simulates and scales charging stations for load testing and development.
 
-## Monorepo Structure (pnpm workspace)
+## Monorepo Structure
 
-3 sub-projects:
+4 TypeScript packages (pnpm workspace) + 1 Python project (Poetry, independent):
 
 1. **Root Simulator** (`/`) — Node.js/TypeScript OCPP simulator (main project)
-2. **Web UI** (`/ui/web`) — Vue 3 + Vite dashboard for monitoring/control
-3. **OCPP Mock Server** (`/tests/ocpp-server`) — Python OCPP 2.0.1 mock server for testing
+2. **UI Common** (`/ui/common`) — Shared TypeScript library (types, WebSocket client, utilities) for UI packages
+3. **Web UI** (`/ui/web`) — Vue 3 + Vite dashboard for monitoring/control
+4. **CLI** (`/ui/cli`) — Command-line tool for managing the simulator (Commander.js, esbuild bundled)
+5. **OCPP Mock Server** (`/tests/ocpp-server`) — Python OCPP 2.0.1 mock server for testing
 
 ## Tech Stack
 
-| Sub-project | Runtime          | Language                 | Package Manager | Test Framework          | Build Tool |
-| ----------- | ---------------- | ------------------------ | --------------- | ----------------------- | ---------- |
-| Simulator   | Node.js >=22.0.0 | TypeScript 6.0           | pnpm >=10.9.0   | Node.js native `--test` | esbuild    |
-| Web UI      | Node.js >=22.0.0 | TypeScript 6.0 + Vue 3.5 | pnpm >=10.9.0   | Vitest                  | Vite 8     |
-| OCPP Server | Python >=3.12    | Python                   | Poetry >=2.0    | pytest + pytest-asyncio | N/A        |
+| Sub-project | Runtime          | Language                 | Package Manager | Test Framework          | Build Tool        |
+| ----------- | ---------------- | ------------------------ | --------------- | ----------------------- | ----------------- |
+| Simulator   | Node.js >=22.0.0 | TypeScript 6.0           | pnpm >=10.9.0   | Node.js native `--test` | esbuild           |
+| UI Common   | Node.js >=22.0.0 | TypeScript 6.0           | pnpm >=10.9.0   | Node.js native `--test` | N/A (source-only) |
+| Web UI      | Node.js >=22.0.0 | TypeScript 6.0 + Vue 3.5 | pnpm >=10.9.0   | Vitest                  | Vite 8            |
+| CLI         | Node.js >=22.0.0 | TypeScript 6.0           | pnpm >=10.9.0   | Node.js native `--test` | esbuild           |
+| OCPP Server | Python >=3.12    | Python                   | Poetry >=2.0    | pytest + pytest-asyncio | N/A               |
 
 ## Coverage Thresholds
 
-| Sub-project | Branches      | Functions | Lines/Statements |
-| ----------- | ------------- | --------- | ---------------- |
-| Web UI      | 89%           | 83%       | 91%              |
-| OCPP Server | 83% (overall) | —         | —                |
+| Sub-project | Branches | Functions | Lines/Statements              |
+| ----------- | -------- | --------- | ----------------------------- |
+| Web UI      | 89%      | 83%       | 91%                           |
+| OCPP Server | —        | —         | 83% (fail_under, branch=true) |
 
 ## Source Structure
 
@@ -38,7 +42,7 @@ src/
 │   │   ├── auth/              # Authentication subsystem (barrel: index.ts)
 │   │   └── index.ts           # OCPP barrel
 │   ├── broadcast-channel/     # Worker communication
-│   ├── ui-server/             # UI server (HTTP + WebSocket)
+│   ├── ui-server/             # UI server (WebSocket, MCP, HTTP)
 │   └── index.ts               # Charging station barrel
 ├── types/                      # Type definitions (barrel: index.ts)
 │   └── ocpp/                  # OCPP-specific types (1.6/, 2.0/)
@@ -74,13 +78,7 @@ src/
 
 ## Auth Subsystem (`ocpp/auth/`)
 
-- **OCPPAuthServiceImpl**: Strategy priority chain (local → remote → certificate)
-- **3 strategies**: LocalAuthStrategy (cache + local auth list lookup), RemoteAuthStrategy (CSMS network calls), CertificateAuthStrategy (X.509)
-- **InMemoryAuthCache**: LRU with TTL, rate limiting, periodic cleanup
-- **InMemoryLocalAuthListManager**: CSMS-managed authorization list with Full/Differential updates, version tracking, capacity limits
-- **AuthComponentFactory**: Creates adapters, strategies, caches, managers from config
-- **AuthHelpers**: Cross-version utility functions (TTL calculation, result formatting, logging sanitization)
-- **Version adapters**: OCPP16AuthAdapter, OCPP20AuthAdapter
+Strategy pattern with priority chain: local (cache + auth list) → remote (CSMS) → certificate (X.509). Independent subsystem with its own barrel, factory, version adapters (OCPP16/20), LRU cache with TTL, and rate limiting.
 
 ## UI Server (`ui-server/`)
 
@@ -110,7 +108,9 @@ tests/
 | ----------- | ---------------------- | ----------------------- | -------------------- |
 | Simulator   | Ubuntu, macOS, Windows | Node 22.x, 24.x, latest | Ubuntu + Node 24.x   |
 | Web UI      | Ubuntu, macOS, Windows | Node 22.x, 24.x, latest | Ubuntu + Node 24.x   |
-| OCPP Server | Ubuntu, macOS, Windows | Python 3.12, 3.13       | Ubuntu + Python 3.13 |
+| UI Common   | Ubuntu                 | Node 24.x               | Ubuntu + Node 24.x   |
+| CLI         | Ubuntu, macOS, Windows | Node 22.x, 24.x, latest | Ubuntu + Node 24.x   |
+| OCPP Server | Ubuntu, macOS, Windows | Python 3.13, 3.14       | Ubuntu + Python 3.14 |
 
 Gated steps (lint, typecheck, coverage, SonarCloud) run only on the gated platform. Build + test run on all platforms.
 
@@ -134,4 +134,8 @@ docs/
 - **winston** — Logging with daily rotation
 - **@mikro-orm/** — Database ORM (SQLite, MariaDB)
 - **mnemonist** — Data structures (CircularBuffer)
+- **zod** — Schema validation (UI Common config)
+- **commander** — CLI command framework
+- **cli-table3** — CLI table rendering
+- **chalk** — CLI terminal colors
 - **websockets** + **ocpp** — Python OCPP mock server

@@ -76,14 +76,39 @@
 - **Auto-reload**: file watcher on `src/assets/config.json`
 - **Sections**: `log`, `storage`, `uiServer`, `worker`, `stationTemplateUrls`, `supervisionUrls`
 
+## UI Common Conventions
+
+- **Shared library**: Types, WebSocket client, adapters, utilities shared between ui/web and ui/cli
+- **Canonical types**: `ChargingStationData`, `ConnectorEntry`, `EvseEntry`, `SimulatorState`, `ResponsePayload`, `ProcedureName` — all consumers import directly from `ui-common`
+- **Errors**: `ConnectionError`, `ServerFailureError`, `extractErrorMessage` centralized in `errors.ts`
+- **Constants**: `DEFAULT_HOST`, `DEFAULT_PORT`, `DEFAULT_PROTOCOL`, `DEFAULT_PROTOCOL_VERSION`, `DEFAULT_SECURE` in `constants.ts`
+- **Utilities**: `convertToBoolean()`, `convertToInt()`, `getWebSocketStateName()`, `randomUUID()`, `validateUUID()` — shared, not duplicated in consumers
+- **Config validation**: Zod schemas in `src/config/schema.ts` validate UI server configuration. Update schemas alongside type changes
+- **No re-exports**: Consumers import directly from `ui-common`, not through intermediate barrels
+- **Tests**: `node:test` + `node:assert` (not vitest)
+
+## CLI Conventions
+
+- **Command factory pattern**: Each command module exports `createXxxCommands(program): Command` — returns a `Command`, registered via `program.addCommand()`
+- **Declarative registry**: Simple commands with identical structure use a loop over a `[name, description, procedureName][]` array
+- **Payload helpers**: `buildHashIdsPayload()`, `pickDefined()`, `pickPresent()`, `PAYLOAD_OPTION`, `PAYLOAD_DESC` in `payload.ts`
+- **Short hash resolution**: Hash ID prefixes resolved via station list lookup before command execution (transparent to user)
+- **Human output**: Borderless tables via `cli-table3`, status icons, truncated hash IDs, fuzzy timestamps. Renderers dispatch by payload shape via type guards
+- **Output convention**: success → stdout, errors → stderr, `--json` → structured JSON on stdout
+- **Embedded skill**: SKILL.md embedded at build time via esbuild define, served by `skill show`/`skill install`
+- **Tests**: `node:test` + `node:assert`, shared `captureStream` helper in `tests/helpers.ts`
+- **Semantic descriptions**: "Request station(s) to send OCPP X" (not "Send OCPP X") — the CLI instructs the simulator, which instructs the station
+
 ## Vue UI Conventions
 
 - **Route names**: Use `ROUTE_NAMES` constant object from `composables/Constants.ts` — never hardcode route strings
 - **Placeholders**: Use `EMPTY_VALUE_PLACEHOLDER` constant for unknown/missing values — never hardcode `'Ø'`
 - **localStorage keys**: Use `UI_SERVER_CONFIGURATION_INDEX_KEY` and `TOGGLE_BUTTON_KEY_PREFIX` constants
-- **Separate package**: UI Web cannot import from the backend `src/` — shared logic is duplicated in `composables/Utils.ts`
+- **Separate package**: UI Web cannot import from the backend `src/` — shared logic lives in `ui-common`, web-specific composables in `composables/Utils.ts`
 
 ## Testing Conventions
+
+### Root Simulator (`tests/`)
 
 Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 
@@ -101,6 +126,23 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 - **Direct imports**: Test files import from the defining module, not through re-export hubs. `src/` barrels remain (public API)
 - **`__testable__` pattern**: `ocpp/1.6/__testable__/` and `ocpp/2.0/__testable__/` directories expose internal classes (e.g., `OCPP20VariableManagerTestable`, `OCPP20RequestServiceTestable`) for unit testing private internals. Import from `__testable__/index.ts` barrel in tests only
 
+### UI Common & CLI (`ui/common/tests/`, `ui/cli/tests/`)
+
+- **Framework**: `node:test` + `node:assert` (not strict, not vitest)
+- **Structure**: `await describe()` / `await it()` pattern
+- **Naming**: files as `module-name.test.ts`, tests as `'should ...'` or descriptive phrase
+- **Shared helpers**: `captureStream()` in `ui/cli/tests/helpers.ts` for stdout/stderr capture
+- **Data**: Use canonical types from `ui-common` with proper enum values in test fixtures
+
+### Web UI (`ui/web/tests/`)
+
+- **Framework**: Vitest + `@vue/test-utils`
+- **Assertions**: `expect()` (Vitest API)
+- **Mocking**: `vi.mock()` for modules, `vi.fn()` for functions, `vi.mocked()` for typed access
+- **Router**: Mock `vue-router` via `vi.mock('vue-router')` for components using `useRoute`/`useRouter`
+- **Toast**: Global `toastMock` in `tests/setup.ts`
+- **File headers**: Mandatory `@file` + `@description` JSDoc
+
 ## Python Conventions (tests/ocpp-server/)
 
 - **Naming**: SCREAMING_SNAKE_CASE constants with unit suffixes (`_SECONDS`), snake_case functions, PascalCase classes
@@ -114,6 +156,6 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 ## Common Pitfalls
 
 - **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
-- **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
+- **UI sub-projects are independent**: Always run quality gates separately from `ui/common/`, `ui/cli/`, `ui/web/` directories
 - **OCPP server is Python**: Uses Poetry, not pnpm. Linter is ruff (not pylint/flake8). Type checker is mypy
 - **Barrel circular deps**: `src/utils/` must NOT import from `src/exception/index.js`

@@ -1,46 +1,45 @@
 # Task Completion Checklist
 
-## After Completing Any Task
+Run quality gates for each sub-project affected by your changes. See `suggested_commands` for full command reference.
 
-### 1. Root Simulator (always)
+## Quality Gate Order
 
-```bash
-pnpm format                 # prettier + eslint auto-fix
-pnpm typecheck              # tsc --noEmit
-pnpm lint                   # eslint check only
-pnpm build                  # esbuild production bundle
-pnpm test                   # node native test runner
-```
+For each sub-project: `pnpm format` → `pnpm typecheck` → `pnpm lint` → `pnpm build` (if applicable) → `pnpm test`
 
-### 2. Web UI (if `ui/web/` files changed)
+### 1. Root Simulator (if `src/` or `tests/` changed)
 
-```bash
-cd ui/web
-pnpm format                 # prettier + eslint auto-fix
-pnpm typecheck              # vue-tsc --noEmit
-pnpm lint                   # eslint check only
-pnpm build                  # vite production build
-pnpm test                   # vitest
-```
+`pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test`
 
-### 3. OCPP Mock Server (if `tests/ocpp-server/` files changed)
+### 2. UI Common (if `ui/common/` changed)
 
-```bash
-cd tests/ocpp-server
-poetry run task format      # ruff check --fix + ruff format
-poetry run task typecheck   # mypy
-poetry run task lint        # ruff check --diff + ruff format --check
-poetry run task test        # pytest -v
-```
+`cd ui/common && pnpm format && pnpm typecheck && pnpm lint && pnpm test`
 
-### 4. Documentation
+Note: `pnpm build` is identical to `pnpm typecheck` (source-only package, no build artifacts).
 
-- Update docs if public API changed
+### 3. CLI (if `ui/cli/` changed)
+
+`cd ui/cli && pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test`
+
+### 4. Web UI (if `ui/web/` changed)
+
+`cd ui/web && pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test:coverage`
+
+Note: Use `test:coverage` (single-run). `pnpm test` starts Vitest in watch mode locally.
+
+### 5. OCPP Mock Server (if `tests/ocpp-server/` changed)
+
+`cd tests/ocpp-server && poetry run task format && poetry run task typecheck && poetry run task lint && poetry run task test`
+
+### 6. Documentation
+
+- Update relevant README if user-facing behavior changed (root `README.md`, `ui/cli/README.md`, `ui/web/README.md`)
 - Commit messages follow Conventional Commits (enforced by hook)
 
-### 5. OCPP Compliance (if applicable)
+### 7. OCPP Compliance (if applicable)
 
-- Verify OCPP standard compliance for any protocol changes
+- Verify OCPP standard compliance for protocol changes
 - Validate against JSON schemas when `ocppStrictCompliance` is enabled
 
-Refer to `code_style_conventions` memory for coding rules, and `suggested_commands` memory for full command reference.
+### Dependency Order
+
+If changing `ui/common`: run common gates first, then rebuild/test CLI and Web UI (they depend on it).
