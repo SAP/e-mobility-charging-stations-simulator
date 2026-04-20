@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 
 import process from 'node:process'
 import {
+  type OCPPVersion,
   ProcedureName,
   type RequestPayload,
   ResponseStatus,
@@ -27,15 +28,9 @@ export const parseInteger = (value: string): number => {
 // SHA-384 hex hashes are 96 chars. Treat anything >= half-length as a full hash (skip resolution).
 const MIN_FULL_HASH_LENGTH = 48
 
-const resolveShortHashIds = async (
-  hashIds: string[],
+const fetchStationList = async (
   config: UIServerConfigurationSection
-): Promise<string[]> => {
-  if (hashIds.length === 0) return []
-
-  const allFull = hashIds.every(id => id.length >= MIN_FULL_HASH_LENGTH)
-  if (allFull) return hashIds
-
+): Promise<StationListPayload> => {
   let response
   try {
     response = await executeCommand({
@@ -46,16 +41,26 @@ const resolveShortHashIds = async (
     })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to resolve hash ID prefixes: ${msg}`)
+    throw new Error(`Failed to fetch charging station list: ${msg}`)
   }
 
   if (response.status !== ResponseStatus.SUCCESS || !Array.isArray(response.chargingStations)) {
-    throw new Error(
-      `Failed to list charging stations for hash ID resolution (status: ${response.status})`
-    )
+    throw new Error(`Failed to list charging stations (status: ${response.status})`)
   }
 
-  const listResponse = response as StationListPayload
+  return response as StationListPayload
+}
+
+const resolveShortHashIds = async (
+  hashIds: string[],
+  config: UIServerConfigurationSection
+): Promise<string[]> => {
+  if (hashIds.length === 0) return []
+
+  const allFull = hashIds.every(id => id.length >= MIN_FULL_HASH_LENGTH)
+  if (allFull) return hashIds
+
+  const listResponse = await fetchStationList(config)
   const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
 
   return hashIds.map(input => {
@@ -70,6 +75,47 @@ const resolveShortHashIds = async (
       `Ambiguous hash prefix '${input}' matches ${matches.length.toString()} stations`
     )
   })
+}
+
+/**
+ * Pure helper: resolves the common OCPP version from a pre-fetched station list.
+ * Exported for unit testing; callers should use resolveOcppVersion instead.
+ * @param hashIds - station hash IDs (full or prefix) to target; empty means all stations
+ * @param chargingStations - station list to filter and inspect
+ * @returns the common OCPPVersion, or undefined if no match or heterogeneous versions
+ */
+export const resolveOcppVersionFromList = (
+  hashIds: string[],
+  chargingStations: { stationInfo: { hashId: string; ocppVersion?: OCPPVersion } }[]
+): OCPPVersion | undefined => {
+  const targeted =
+    hashIds.length === 0
+      ? chargingStations
+      : chargingStations.filter(cs =>
+        hashIds.some(id => cs.stationInfo.hashId === id || cs.stationInfo.hashId.startsWith(id))
+      )
+
+  if (targeted.length === 0) return undefined
+
+  const versions = new Set(targeted.map(cs => cs.stationInfo.ocppVersion))
+  if (versions.size !== 1) return undefined
+
+  return [...versions][0]
+}
+
+/**
+ * Returns the OCPP version shared by all targeted stations, or undefined when
+ * no stations match or the targeted stations run different versions.
+ * @param hashIds - station hash IDs (full or prefix) to target; empty means all stations
+ * @param config - UI server configuration
+ * @returns the common OCPPVersion, or undefined if unavailable / heterogeneous
+ */
+export const resolveOcppVersion = async (
+  hashIds: string[],
+  config: UIServerConfigurationSection
+): Promise<OCPPVersion | undefined> => {
+  const listResponse = await fetchStationList(config)
+  return resolveOcppVersionFromList(hashIds, listResponse.chargingStations)
 }
 
 export const runAction = async (

@@ -104,6 +104,30 @@ export enum OCPP20TransactionEventEnumType {
   UPDATED = 'Updated',
 }
 
+export enum OCPP20TriggerReasonEnumType {
+  ABNORMAL_CONDITION = 'AbnormalCondition',
+  AUTHORIZED = 'Authorized',
+  CABLE_PLUGGED_IN = 'CablePluggedIn',
+  CHARGING_RATE_CHANGED = 'ChargingRateChanged',
+  CHARGING_STATE_CHANGED = 'ChargingStateChanged',
+  DEAUTHORIZED = 'Deauthorized',
+  ENERGY_LIMIT_REACHED = 'EnergyLimitReached',
+  EV_COMMUNICATION_LOST = 'EVCommunicationLost',
+  EV_CONNECT_TIMEOUT = 'EVConnectTimeout',
+  EV_DEPARTED = 'EVDeparted',
+  EV_DETECTED = 'EVDetected',
+  METER_VALUE_CLOCK = 'MeterValueClock',
+  METER_VALUE_PERIODIC = 'MeterValuePeriodic',
+  REMOTE_START = 'RemoteStart',
+  REMOTE_STOP = 'RemoteStop',
+  RESET_COMMAND = 'ResetCommand',
+  SIGNED_DATA_RECEIVED = 'SignedDataReceived',
+  STOP_AUTHORIZED = 'StopAuthorized',
+  TIME_LIMIT_REACHED = 'TimeLimitReached',
+  TRIGGER = 'Trigger',
+  UNLOCK_COMMAND = 'UnlockCommand',
+}
+
 export enum OCPPProtocol {
   JSON = 'json',
 }

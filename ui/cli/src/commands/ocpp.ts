@@ -1,7 +1,10 @@
 import { Command } from 'commander'
-import { ProcedureName, type RequestPayload } from 'ui-common'
+import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
-import { parseInteger, runAction } from './action.js'
+import type { GlobalOptions } from '../types.js'
+
+import { loadConfig } from '../config/loader.js'
+import { parseInteger, resolveOcppVersion, runAction } from './action.js'
 import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION, pickDefined } from './payload.js'
 
 export const createOcppCommands = (program: Command): Command => {
@@ -10,12 +13,39 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('authorize [hashIds...]')
     .description('Request station(s) to send OCPP Authorize')
-    .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
+    .option('--id-tag <tag>', 'RFID tag for authorization')
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
-    .action(async (hashIds: string[], options: { idTag: string; payload?: string }) => {
-      const payload: RequestPayload = {
-        idTag: options.idTag,
-        ...buildHashIdsPayload(hashIds),
+    .action(async (hashIds: string[], options: { idTag?: string; payload?: string }) => {
+      if (options.payload == null && options.idTag == null) {
+        throw new Error('Either --id-tag or -p/--payload must be provided')
+      }
+      let payload: RequestPayload
+      if (options.payload == null) {
+        const idTag = options.idTag ?? ''
+        // High-level: detect OCPP version and build correct payload
+        const rootOpts = program.opts<GlobalOptions>()
+        const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
+        const ocppVersion = await resolveOcppVersion(hashIds, config)
+        if (ocppVersion == null) {
+          throw new Error(
+            'Cannot determine a common OCPP version for the targeted stations. ' +
+              'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+          )
+        }
+        if (ocppVersion === OCPPVersion.VERSION_20 || ocppVersion === OCPPVersion.VERSION_201) {
+          payload = {
+            idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+            ...buildHashIdsPayload(hashIds),
+          }
+        } else {
+          payload = {
+            idTag,
+            ...buildHashIdsPayload(hashIds),
+          }
+        }
+      } else {
+        // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+        payload = buildHashIdsPayload(hashIds)
       }
       await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
     })
