@@ -14,7 +14,6 @@ import {
   type BroadcastChannelResponsePayload,
   type DataTransferResponse,
   DataTransferStatus,
-  type EmptyObject,
   GenericStatus,
   GetCertificateStatusEnumType,
   type HeartbeatResponse,
@@ -62,7 +61,6 @@ type CommandResponse =
   | AuthorizeResponse
   | BootNotificationResponse
   | DataTransferResponse
-  | EmptyObject
   | HeartbeatResponse
   | OCPP20Get15118EVCertificateResponse
   | OCPP20GetCertificateStatusResponse
