@@ -184,12 +184,22 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           const url = requestPayload?.url
-          if (typeof url !== 'string' || isEmpty(url)) {
+          const supervisionUser = requestPayload?.supervisionUser
+          const supervisionPassword = requestPayload?.supervisionPassword
+          if (
+            (typeof url !== 'string' || isEmpty(url)) &&
+            typeof supervisionUser !== 'string' &&
+            typeof supervisionPassword !== 'string'
+          ) {
             throw new BaseError(
-              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'url' field is required`
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: at least one of 'url', 'supervisionUser' or 'supervisionPassword' is required`
             )
           }
-          this.chargingStation.setSupervisionUrl(url)
+          this.chargingStation.setSupervisionUrl(
+            typeof url === 'string' && !isEmpty(url) ? url : undefined,
+            typeof supervisionUser === 'string' ? supervisionUser : undefined,
+            typeof supervisionPassword === 'string' ? supervisionPassword : undefined
+          )
         },
       ],
       [

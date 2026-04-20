@@ -1061,8 +1061,11 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'setSupervisionUrl'  
   `PDU`: {  
    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `url`: string  
-  }
+   `url?`: string,  
+   `supervisionUser?`: string,  
+   `supervisionPassword?`: string  
+  }  
+  At least one of `url`, `supervisionUser` or `supervisionPassword` must be provided. Changes take effect on the next WebSocket (re)connect.
 
 - Response:  
   `PDU`: {  
