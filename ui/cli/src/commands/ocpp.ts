@@ -80,33 +80,86 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('meter-values [hashIds...]')
     .description('Request station(s) to send OCPP MeterValues')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
+    .requiredOption('--connector-id <id>', 'connector ID (OCPP 1.6)', parseInteger)
+    .option(
+      '--evse-id <id>',
+      'EVSE ID (OCPP 2.0.x); takes precedence over --connector-id for EVSE resolution',
+      parseInteger
+    )
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
-    .action(async (hashIds: string[], options: { connectorId: number; payload?: string }) => {
-      const payload: RequestPayload = {
-        connectorId: options.connectorId,
-        ...buildHashIdsPayload(hashIds),
+    .action(
+      async (
+        hashIds: string[],
+        options: { connectorId: number; evseId?: number; payload?: string }
+      ) => {
+        const payload: RequestPayload = {
+          connectorId: options.connectorId,
+          ...(options.evseId != null && { evseId: options.evseId }),
+          ...buildHashIdsPayload(hashIds),
+        }
+        await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
       }
-      await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
-    })
+    )
 
   cmd
     .command('status-notification [hashIds...]')
     .description('Request station(s) to send OCPP StatusNotification')
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
-    .requiredOption('--error-code <code>', 'connector error code')
+    .option('--error-code <code>', 'connector error code (OCPP 1.6 only; required for 1.6)')
+    .option(
+      '--evse-id <id>',
+      'EVSE ID (OCPP 2.0.x only; resolved automatically if omitted)',
+      parseInteger
+    )
     .requiredOption('--status <status>', 'connector status')
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(
       async (
         hashIds: string[],
-        options: { connectorId: number; errorCode: string; payload?: string; status: string }
+        options: {
+          connectorId: number
+          errorCode?: string
+          evseId?: number
+          payload?: string
+          status: string
+        }
       ) => {
-        const payload: RequestPayload = {
-          connectorId: options.connectorId,
-          errorCode: options.errorCode,
-          status: options.status,
-          ...buildHashIdsPayload(hashIds),
+        let payload: RequestPayload
+        if (options.payload == null) {
+          // High-level: detect OCPP version and build correct payload
+          const rootOpts = program.opts<GlobalOptions>()
+          const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
+          const ocppVersion = await resolveOcppVersion(hashIds, config)
+          switch (ocppVersion) {
+            case OCPPVersion.VERSION_16:
+              if (options.errorCode == null) {
+                throw new Error('--error-code is required for OCPP 1.6 stations')
+              }
+              payload = {
+                connectorId: options.connectorId,
+                errorCode: options.errorCode,
+                status: options.status,
+                ...buildHashIdsPayload(hashIds),
+              }
+              break
+            case OCPPVersion.VERSION_20:
+            case OCPPVersion.VERSION_201:
+              payload = {
+                connectorId: options.connectorId,
+                connectorStatus: options.status,
+                ...(options.evseId != null && { evseId: options.evseId }),
+                ...buildHashIdsPayload(hashIds),
+              }
+              break
+            default:
+              throw new Error(
+                'Cannot determine a common OCPP version for the targeted stations. ' +
+                  'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+              )
+          }
+        } else {
+          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+          payload = buildHashIdsPayload(hashIds)
         }
         await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
       }
