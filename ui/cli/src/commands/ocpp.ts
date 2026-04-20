@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
 import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
 import {
@@ -15,8 +15,8 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('authorize [hashIds...]')
     .description('Request station(s) to send OCPP Authorize')
-    .option('--id-tag <tag>', 'RFID tag for authorization')
-    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .addOption(new Option('--id-tag <tag>', 'RFID tag for authorization').conflicts('payload'))
+    .addOption(new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts('idTag'))
     .action(async (hashIds: string[], options: { idTag?: string; payload?: string }) => {
       if (options.payload == null && options.idTag == null) {
         throw new Error('Either --id-tag or -p/--payload must be provided')
