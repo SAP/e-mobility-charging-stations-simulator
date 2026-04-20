@@ -1016,13 +1016,18 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
    `template`: string,  
    `numberOfStations`: number,  
    `options?`: {  
-   `supervisionUrls?`: string | string[],  
-   `persistentConfiguration?`: boolean,  
-   `autoStart?`: boolean,  
    `autoRegister?`: boolean,  
+   `autoStart?`: boolean,  
+   `baseName?`: string,  
    `enableStatistics?`: boolean,  
+   `fixedName?`: boolean,  
+   `nameSuffix?`: string,  
    `ocppStrictCompliance?`: boolean,  
-   `stopTransactionsOnStopped?`: boolean  
+   `persistentConfiguration?`: boolean,  
+   `stopTransactionsOnStopped?`: boolean,  
+   `supervisionPassword?`: string,  
+   `supervisionUrls?`: string | string[],  
+   `supervisionUser?`: string  
    }  
   }
 
