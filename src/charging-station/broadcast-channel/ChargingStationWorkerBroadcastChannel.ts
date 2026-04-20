@@ -34,6 +34,7 @@ import {
   type RequestParams,
   ResponseStatus,
   StandardParametersKey,
+  type StartTransactionRequest,
   type StartTransactionResponse,
   type StopTransactionRequest,
   type StopTransactionResponse,
@@ -47,7 +48,12 @@ import {
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
-import { buildMeterValue, OCPP20ServiceUtils } from '../ocpp/index.js'
+import {
+  buildMeterValue,
+  OCPP20ServiceUtils,
+  startTransactionOnConnector,
+  stopTransactionOnConnector,
+} from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -208,10 +214,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.start()
         },
       ],
-      [
-        BroadcastChannelProcedureName.START_TRANSACTION,
-        this.passthrough(RequestCommand.START_TRANSACTION),
-      ],
+      [BroadcastChannelProcedureName.START_TRANSACTION, this.handleStartTransaction.bind(this)],
       [
         BroadcastChannelProcedureName.STATUS_NOTIFICATION,
         this.passthrough(RequestCommand.STATUS_NOTIFICATION),
@@ -342,6 +345,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         }
       case BroadcastChannelProcedureName.START_TRANSACTION:
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
+        // OCPP 2.0.1 path returns a result with accepted boolean field
+        if ('accepted' in commandResponse) {
+          return (commandResponse as { accepted: boolean }).accepted
+            ? ResponseStatus.SUCCESS
+            : ResponseStatus.FAILURE
+        }
+        // OCPP 1.6 path returns StartTransactionResponse/StopTransactionResponse with idTagInfo
         if (
           (
             commandResponse as
@@ -438,24 +448,86 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     )
   }
 
+  private async handleStartTransaction (
+    requestPayload?: BroadcastChannelRequestPayload
+  ): Promise<CommandResponse> {
+    const connectorId = requestPayload?.connectorId
+    if (connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: 'connectorId' field is required`
+      )
+    }
+    const idTag = (requestPayload as undefined | { idTag?: string })?.idTag
+    switch (this.chargingStation.stationInfo?.ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        return await this.chargingStation.ocppRequestService.requestHandler<
+          Partial<StartTransactionRequest>,
+          StartTransactionResponse
+        >(
+          this.chargingStation,
+          RequestCommand.START_TRANSACTION,
+          {
+            connectorId,
+            ...(idTag != null && { idTag }),
+          },
+          this.requestParams
+        )
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        return (await startTransactionOnConnector(
+          this.chargingStation,
+          connectorId,
+          idTag
+        )) as unknown as CommandResponse
+      default:
+        throw new BaseError(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleStartTransaction: unsupported OCPP version ${this.chargingStation.stationInfo?.ocppVersion}`
+        )
+    }
+  }
+
   private async handleStopTransaction (
     requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<StopTransactionResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      StopTransactionRequest,
-      StopTransactionResponse
-    >(
-      this.chargingStation,
-      RequestCommand.STOP_TRANSACTION,
-      {
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          requestPayload?.transactionId,
-          true
-        ),
-        ...requestPayload,
-      } as StopTransactionRequest,
-      this.requestParams
-    )
+  ): Promise<CommandResponse> {
+    switch (this.chargingStation.stationInfo?.ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        return await this.chargingStation.ocppRequestService.requestHandler<
+          StopTransactionRequest,
+          StopTransactionResponse
+        >(
+          this.chargingStation,
+          RequestCommand.STOP_TRANSACTION,
+          {
+            meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+              requestPayload?.transactionId,
+              true
+            ),
+            ...requestPayload,
+          } as StopTransactionRequest,
+          this.requestParams
+        )
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201: {
+        const connectorId = this.chargingStation.getConnectorIdByTransactionId(
+          requestPayload?.transactionId
+        )
+        if (connectorId == null) {
+          throw new BaseError(
+            `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: cannot resolve connector ID for transaction ${String(requestPayload?.transactionId)}`
+          )
+        }
+        return (await stopTransactionOnConnector(
+          this.chargingStation,
+          connectorId
+        )) as unknown as CommandResponse
+      }
+      default:
+        throw new BaseError(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleStopTransaction: unsupported OCPP version ${this.chargingStation.stationInfo?.ocppVersion}`
+        )
+    }
   }
 
   private messageErrorHandler (messageEvent: MessageEvent): void {
