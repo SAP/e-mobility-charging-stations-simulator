@@ -26,22 +26,25 @@ export const createOcppCommands = (program: Command): Command => {
         const rootOpts = program.opts<GlobalOptions>()
         const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
         const ocppVersion = await resolveOcppVersion(hashIds, config)
-        if (ocppVersion == null) {
-          throw new Error(
-            'Cannot determine a common OCPP version for the targeted stations. ' +
-              'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-          )
-        }
-        if (ocppVersion === OCPPVersion.VERSION_20 || ocppVersion === OCPPVersion.VERSION_201) {
-          payload = {
-            idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-            ...buildHashIdsPayload(hashIds),
-          }
-        } else {
-          payload = {
-            idTag,
-            ...buildHashIdsPayload(hashIds),
-          }
+        switch (ocppVersion) {
+          case OCPPVersion.VERSION_16:
+            payload = {
+              idTag,
+              ...buildHashIdsPayload(hashIds),
+            }
+            break
+          case OCPPVersion.VERSION_20:
+          case OCPPVersion.VERSION_201:
+            payload = {
+              idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+              ...buildHashIdsPayload(hashIds),
+            }
+            break
+          default:
+            throw new Error(
+              'Cannot determine a common OCPP version for the targeted stations. ' +
+                'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+            )
         }
       } else {
         // Low-level passthrough: -p provided, use only routing fields; raw payload has full control

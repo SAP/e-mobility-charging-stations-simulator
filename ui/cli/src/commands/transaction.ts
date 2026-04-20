@@ -36,31 +36,34 @@ export const createTransactionCommands = (program: Command): Command => {
           const rootOpts = program.opts<GlobalOptions>()
           const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
           const ocppVersion = await resolveOcppVersion(hashIds, config)
-          if (ocppVersion == null) {
-            throw new Error(
-              'Cannot determine a common OCPP version for the targeted stations. ' +
-                'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-            )
-          }
-          if (ocppVersion === OCPPVersion.VERSION_20 || ocppVersion === OCPPVersion.VERSION_201) {
-            procedureName = ProcedureName.TRANSACTION_EVENT
-            payload = {
-              eventType: OCPP20TransactionEventEnumType.STARTED,
-              evse: { connectorId: options.connectorId, id: options.connectorId },
-              idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-              seqNo: 0,
-              timestamp: new Date().toISOString(),
-              transactionInfo: { transactionId: randomUUID() },
-              triggerReason: OCPP20TriggerReasonEnumType.AUTHORIZED,
-              ...buildHashIdsPayload(hashIds),
-            }
-          } else {
-            procedureName = ProcedureName.START_TRANSACTION
-            payload = {
-              connectorId: options.connectorId,
-              idTag: options.idTag,
-              ...buildHashIdsPayload(hashIds),
-            }
+          switch (ocppVersion) {
+            case OCPPVersion.VERSION_16:
+              procedureName = ProcedureName.START_TRANSACTION
+              payload = {
+                connectorId: options.connectorId,
+                idTag: options.idTag,
+                ...buildHashIdsPayload(hashIds),
+              }
+              break
+            case OCPPVersion.VERSION_20:
+            case OCPPVersion.VERSION_201:
+              procedureName = ProcedureName.TRANSACTION_EVENT
+              payload = {
+                eventType: OCPP20TransactionEventEnumType.STARTED,
+                evse: { connectorId: options.connectorId, id: options.connectorId },
+                idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+                seqNo: 0,
+                timestamp: new Date().toISOString(),
+                transactionInfo: { transactionId: randomUUID() },
+                triggerReason: OCPP20TriggerReasonEnumType.AUTHORIZED,
+                ...buildHashIdsPayload(hashIds),
+              }
+              break
+            default:
+              throw new Error(
+                'Cannot determine a common OCPP version for the targeted stations. ' +
+                  'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+              )
           }
         } else {
           // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
@@ -74,10 +77,7 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('stop [hashIds...]')
     .description('Stop a transaction on station(s)')
-    .requiredOption(
-      '--transaction-id <id>',
-      'transaction ID (integer for OCPP 1.6, UUID for OCPP 2.0.x)'
-    )
+    .requiredOption('--transaction-id <id>', 'transaction ID')
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(async (hashIds: string[], options: { payload?: string; transactionId: string }) => {
       let procedureName: ProcedureName
@@ -87,28 +87,31 @@ export const createTransactionCommands = (program: Command): Command => {
         const rootOpts = program.opts<GlobalOptions>()
         const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
         const ocppVersion = await resolveOcppVersion(hashIds, config)
-        if (ocppVersion == null) {
-          throw new Error(
-            'Cannot determine a common OCPP version for the targeted stations. ' +
-              'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-          )
-        }
-        if (ocppVersion === OCPPVersion.VERSION_20 || ocppVersion === OCPPVersion.VERSION_201) {
-          procedureName = ProcedureName.TRANSACTION_EVENT
-          payload = {
-            eventType: OCPP20TransactionEventEnumType.ENDED,
-            seqNo: 0,
-            timestamp: new Date().toISOString(),
-            transactionInfo: { transactionId: options.transactionId },
-            triggerReason: OCPP20TriggerReasonEnumType.REMOTE_STOP,
-            ...buildHashIdsPayload(hashIds),
-          }
-        } else {
-          procedureName = ProcedureName.STOP_TRANSACTION
-          payload = {
-            transactionId: parseInteger(options.transactionId),
-            ...buildHashIdsPayload(hashIds),
-          }
+        switch (ocppVersion) {
+          case OCPPVersion.VERSION_16:
+            procedureName = ProcedureName.STOP_TRANSACTION
+            payload = {
+              transactionId: parseInteger(options.transactionId),
+              ...buildHashIdsPayload(hashIds),
+            }
+            break
+          case OCPPVersion.VERSION_20:
+          case OCPPVersion.VERSION_201:
+            procedureName = ProcedureName.TRANSACTION_EVENT
+            payload = {
+              eventType: OCPP20TransactionEventEnumType.ENDED,
+              seqNo: 0,
+              timestamp: new Date().toISOString(),
+              transactionInfo: { transactionId: options.transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.REMOTE_STOP,
+              ...buildHashIdsPayload(hashIds),
+            }
+            break
+          default:
+            throw new Error(
+              'Cannot determine a common OCPP version for the targeted stations. ' +
+                'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+            )
         }
       } else {
         // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
