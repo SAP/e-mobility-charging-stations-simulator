@@ -56,25 +56,52 @@ describe('SetSupervisionUrl', () => {
     expect(wrapper.text()).toContain(TEST_STATION_ID)
   })
 
-  it('should render supervision URL input', () => {
+  it('should render supervision URL and credential inputs', () => {
     const wrapper = mountComponent()
     expect(wrapper.find('#supervision-url').exists()).toBe(true)
+    expect(wrapper.find('#supervision-user').exists()).toBe(true)
+    expect(wrapper.find('#supervision-password').exists()).toBe(true)
   })
 
-  it('should call setSupervisionUrl on button click', async () => {
+  it('should call setSupervisionUrl with only url when only url is set', async () => {
     const wrapper = mountComponent()
-    const input = wrapper.find('#supervision-url')
-    await input.setValue('wss://new-server.com:9000')
+    await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
       TEST_HASH_ID,
-      'wss://new-server.com:9000'
+      'wss://new-server.com:9000',
+      undefined,
+      undefined
     )
+  })
+
+  it('should call setSupervisionUrl with credentials when all fields are set', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
+    await wrapper.find('#supervision-user').setValue('alice')
+    await wrapper.find('#supervision-password').setValue('s3cret')
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
+      TEST_HASH_ID,
+      'wss://new-server.com:9000',
+      'alice',
+      's3cret'
+    )
+  })
+
+  it('should not call setSupervisionUrl when all fields are empty', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.setSupervisionUrl).not.toHaveBeenCalled()
+    expect(toastMock.error).toHaveBeenCalled()
   })
 
   it('should navigate to charging-stations after submission', async () => {
     const wrapper = mountComponent()
+    await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'charging-stations' })
@@ -83,6 +110,7 @@ describe('SetSupervisionUrl', () => {
   it('should show error toast on failure', async () => {
     const wrapper = mountComponent()
     mockClient.setSupervisionUrl = vi.fn().mockRejectedValue(new Error('Network error'))
+    await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(toastMock.error).toHaveBeenCalled()

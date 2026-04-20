@@ -349,6 +349,26 @@ describe('UIClient', () => {
       })
     })
 
+    it('should send SET_SUPERVISION_URL with credentials when provided', async () => {
+      const url = 'ws://new-supervision:9001'
+      await client.setSupervisionUrl(TEST_HASH_ID, url, 'alice', 's3cret')
+      expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        supervisionPassword: 's3cret',
+        supervisionUser: 'alice',
+        url,
+      })
+    })
+
+    it('should send SET_SUPERVISION_URL with only credentials when url is omitted', async () => {
+      await client.setSupervisionUrl(TEST_HASH_ID, undefined, 'alice', 's3cret')
+      expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.SET_SUPERVISION_URL, {
+        hashIds: [TEST_HASH_ID],
+        supervisionPassword: 's3cret',
+        supervisionUser: 'alice',
+      })
+    })
+
     it('should send AUTHORIZE with hashIds and idTag', async () => {
       await client.authorize(TEST_HASH_ID, TEST_ID_TAG)
       expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.AUTHORIZE, {
