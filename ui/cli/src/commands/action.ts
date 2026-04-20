@@ -55,6 +55,28 @@ const fetchStationList = async (
   return response as StationListPayload
 }
 
+/**
+ * Pure helper: resolves short hash-ID prefixes to full hashes against a
+ * pre-fetched list of all station hash IDs.
+ * @param hashIds - station hash IDs or unique hash-ID prefixes to resolve
+ * @param allHashIds - full hash IDs of all known stations
+ * @returns fully-resolved hash IDs in the same order as the input
+ * @throws if any prefix matches zero stations or more than one station
+ */
+const resolveShortHashIdsFromList = (hashIds: string[], allHashIds: string[]): string[] =>
+  hashIds.map(input => {
+    if (input.length >= MIN_FULL_HASH_LENGTH) return input
+
+    const matches = allHashIds.filter(full => full.startsWith(input))
+    if (matches.length === 1) return matches[0]
+    if (matches.length === 0) {
+      throw new Error(`No station found matching hash prefix '${input}'`)
+    }
+    throw new Error(
+      `Ambiguous hash prefix '${input}' matches ${matches.length.toString()} stations`
+    )
+  })
+
 const resolveShortHashIds = async (
   hashIds: string[],
   config: UIServerConfigurationSection
@@ -67,25 +89,14 @@ const resolveShortHashIds = async (
   const listResponse = await fetchStationList(config)
   const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
 
-  return hashIds.map(input => {
-    if (input.length >= MIN_FULL_HASH_LENGTH) return input
-
-    const matches = allHashIds.filter(full => full.startsWith(input))
-    if (matches.length === 1) return matches[0]
-    if (matches.length === 0) {
-      throw new Error(`No station found matching hash prefix '${input}'`)
-    }
-    throw new Error(
-      `Ambiguous hash prefix '${input}' matches ${matches.length.toString()} stations`
-    )
-  })
+  return resolveShortHashIdsFromList(hashIds, allHashIds)
 }
 
 /**
  * Pure helper: resolves the common OCPP version from a pre-fetched station list.
- * Exported for unit testing; callers should use resolveOcppVersion instead.
+ * Exported for unit testing; callers should use resolveOcppVersionFromProgram.
  *
- * Unlike resolveShortHashIds, this function never throws on ambiguous or
+ * Unlike resolveShortHashIdsFromList, this function never throws on ambiguous or
  * non-matching prefixes — it returns undefined instead.
  * @param hashIds - station hash IDs or unique hash-ID prefixes to target;
  *   each entry is matched if the station's hashId equals it or starts with it.
@@ -114,67 +125,40 @@ export const resolveOcppVersionFromList = (
 }
 
 /**
- * Returns the OCPP version shared by all targeted stations, or undefined when
- * no stations match or the targeted stations run different versions.
- * @param hashIds - station hash IDs or unique hash-ID prefixes to target;
- *   each entry is matched if the station's hashId equals it or starts with it.
- *   Ambiguous or non-matching prefixes do not throw — they cause undefined to
- *   be returned (contrast with resolveShortHashIds, which throws in those cases).
- *   Pass an empty array to target all stations.
- * @param config - UI server configuration
- * @returns the common OCPPVersion, or undefined if no station matches, a prefix
- *   is ambiguous, or the targeted stations run heterogeneous versions
- */
-export const resolveOcppVersion = async (
-  hashIds: string[],
-  config: UIServerConfigurationSection
-): Promise<OCPPVersion | undefined> => {
-  const listResponse = await fetchStationList(config)
-  return resolveOcppVersionFromList(hashIds, listResponse.chargingStations)
-}
-
-/**
  * Loads config from program options, resolves short hash-ID prefixes to full
  * hashes in a single station-list fetch, and returns the common OCPP version
- * together with the resolved hash IDs. Passing the returned resolvedHashIds
- * into the payload before calling runAction prevents a second station-list fetch.
+ * together with the resolved hash IDs and the loaded config. Pass the returned
+ * resolvedHashIds into the payload and config into runAction to avoid a second
+ * station-list fetch and config load.
  * @param program - Commander root program (provides config and server URL options)
  * @param hashIds - station hash IDs or unique hash-ID prefixes to target
- * @returns the common OCPPVersion (or undefined) and the fully-resolved hash IDs
+ * @returns the common OCPPVersion (or undefined), the fully-resolved hash IDs,
+ *   and the loaded UI server config
  */
 export const resolveOcppVersionFromProgram = async (
   program: Command,
   hashIds: string[]
-): Promise<{ ocppVersion: OCPPVersion | undefined; resolvedHashIds: string[] }> => {
+): Promise<{
+  config: UIServerConfigurationSection
+  ocppVersion: OCPPVersion | undefined
+  resolvedHashIds: string[]
+}> => {
   const rootOpts = program.opts<GlobalOptions>()
   const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
   const listResponse = await fetchStationList(config)
+  const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
   const resolvedHashIds =
-    hashIds.length === 0
-      ? hashIds
-      : (() => {
-          const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
-          return hashIds.map(input => {
-            if (input.length >= MIN_FULL_HASH_LENGTH) return input
-            const matches = allHashIds.filter(full => full.startsWith(input))
-            if (matches.length === 1) return matches[0]
-            if (matches.length === 0) {
-              throw new Error(`No station found matching hash prefix '${input}'`)
-            }
-            throw new Error(
-              `Ambiguous hash prefix '${input}' matches ${matches.length.toString()} stations`
-            )
-          })
-        })()
-  const ocppVersion = resolveOcppVersionFromList(hashIds, listResponse.chargingStations)
-  return { ocppVersion, resolvedHashIds }
+    hashIds.length === 0 ? hashIds : resolveShortHashIdsFromList(hashIds, allHashIds)
+  const ocppVersion = resolveOcppVersionFromList(resolvedHashIds, listResponse.chargingStations)
+  return { config, ocppVersion, resolvedHashIds }
 }
 
 export const runAction = async (
   program: Command,
   procedureName: ProcedureName,
   payload: RequestPayload,
-  rawPayload?: string
+  rawPayload?: string,
+  preloadedConfig?: UIServerConfigurationSection
 ): Promise<void> => {
   const rootOpts = program.opts<GlobalOptions>()
   const formatter = createFormatter(rootOpts.json)
@@ -185,7 +169,9 @@ export const runAction = async (
       mergedPayload = { ...extra, ...payload }
     }
 
-    const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
+    const config =
+      preloadedConfig ??
+      (await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl }))
 
     let resolvedPayload = mergedPayload
     if (Array.isArray(mergedPayload.hashIds) && mergedPayload.hashIds.length > 0) {

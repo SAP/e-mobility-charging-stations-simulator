@@ -39,7 +39,7 @@ export const createTransactionCommands = (program: Command): Command => {
         let payload: RequestPayload
         if (options.payload == null) {
           // High-level: detect OCPP version and build correct payload
-          const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
             program,
             hashIds
           )
@@ -69,12 +69,13 @@ export const createTransactionCommands = (program: Command): Command => {
             default:
               throw new Error(MIXED_OCPP_VERSION_ERROR)
           }
+          await runAction(program, procedureName, payload, undefined, config)
         } else {
           // Low-level passthrough: -p provided, uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event
           procedureName = ProcedureName.START_TRANSACTION
           payload = buildHashIdsPayload(hashIds)
+          await runAction(program, procedureName, payload, options.payload)
         }
-        await runAction(program, procedureName, payload, options.payload)
       }
     )
 
@@ -91,7 +92,7 @@ export const createTransactionCommands = (program: Command): Command => {
       let payload: RequestPayload
       if (options.payload == null) {
         // High-level: detect OCPP version and build correct payload
-        const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+        const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
           program,
           hashIds
         )
@@ -108,7 +109,8 @@ export const createTransactionCommands = (program: Command): Command => {
             procedureName = ProcedureName.TRANSACTION_EVENT
             payload = {
               eventType: OCPP20TransactionEventEnumType.ENDED,
-              seqNo: 0,
+              // seqNo 1: start uses 0; stop is the next event in sequence (simplified)
+              seqNo: 1,
               timestamp: new Date().toISOString(),
               transactionInfo: { transactionId: options.transactionId },
               triggerReason: OCPP20TriggerReasonEnumType.REMOTE_STOP,
@@ -118,12 +120,13 @@ export const createTransactionCommands = (program: Command): Command => {
           default:
             throw new Error(MIXED_OCPP_VERSION_ERROR)
         }
+        await runAction(program, procedureName, payload, undefined, config)
       } else {
         // Low-level passthrough: -p provided, uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event
         procedureName = ProcedureName.STOP_TRANSACTION
         payload = buildHashIdsPayload(hashIds)
+        await runAction(program, procedureName, payload, options.payload)
       }
-      await runAction(program, procedureName, payload, options.payload)
     })
 
   return cmd

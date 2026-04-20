@@ -27,7 +27,7 @@ export const createOcppCommands = (program: Command): Command => {
           throw new Error('--id-tag is required when -p/--payload is not provided')
         }
         // High-level: detect OCPP version and build correct payload
-        const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+        const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
           program,
           hashIds
         )
@@ -48,11 +48,12 @@ export const createOcppCommands = (program: Command): Command => {
           default:
             throw new Error(MIXED_OCPP_VERSION_ERROR)
         }
+        await runAction(program, ProcedureName.AUTHORIZE, payload, undefined, config)
       } else {
         // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
         payload = buildHashIdsPayload(hashIds)
+        await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
       }
-      await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
     })
 
   cmd
@@ -129,7 +130,7 @@ export const createOcppCommands = (program: Command): Command => {
         let payload: RequestPayload
         if (options.payload == null) {
           // High-level: detect OCPP version and build correct payload
-          const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
             program,
             hashIds
           )
@@ -157,11 +158,12 @@ export const createOcppCommands = (program: Command): Command => {
             default:
               throw new Error(MIXED_OCPP_VERSION_ERROR)
           }
+          await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
         } else {
           // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
           payload = buildHashIdsPayload(hashIds)
+          await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
         }
-        await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
       }
     )
 
