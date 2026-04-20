@@ -80,9 +80,17 @@ const resolveShortHashIds = async (
 /**
  * Pure helper: resolves the common OCPP version from a pre-fetched station list.
  * Exported for unit testing; callers should use resolveOcppVersion instead.
- * @param hashIds - station hash IDs (full or prefix) to target; empty means all stations
+ *
+ * Unlike resolveShortHashIds, this function never throws on ambiguous or
+ * non-matching prefixes — it returns undefined instead.
+ * @param hashIds - station hash IDs or unique hash-ID prefixes to target;
+ *   each entry is matched if the station's hashId equals it or starts with it.
+ *   An ambiguous prefix (matching multiple stations) or a non-matching prefix
+ *   does not throw — both cases cause undefined to be returned.
+ *   Pass an empty array to target all stations.
  * @param chargingStations - station list to filter and inspect
- * @returns the common OCPPVersion, or undefined if no match or heterogeneous versions
+ * @returns the common OCPPVersion, or undefined if no station matches, the
+ *   prefix is ambiguous, or the targeted stations run heterogeneous versions
  */
 export const resolveOcppVersionFromList = (
   hashIds: string[],
@@ -106,9 +114,14 @@ export const resolveOcppVersionFromList = (
 /**
  * Returns the OCPP version shared by all targeted stations, or undefined when
  * no stations match or the targeted stations run different versions.
- * @param hashIds - station hash IDs (full or prefix) to target; empty means all stations
+ * @param hashIds - station hash IDs or unique hash-ID prefixes to target;
+ *   each entry is matched if the station's hashId equals it or starts with it.
+ *   Ambiguous or non-matching prefixes do not throw — they cause undefined to
+ *   be returned (contrast with resolveShortHashIds, which throws in those cases).
+ *   Pass an empty array to target all stations.
  * @param config - UI server configuration
- * @returns the common OCPPVersion, or undefined if unavailable / heterogeneous
+ * @returns the common OCPPVersion, or undefined if no station matches, a prefix
+ *   is ambiguous, or the targeted stations run heterogeneous versions
  */
 export const resolveOcppVersion = async (
   hashIds: string[],
