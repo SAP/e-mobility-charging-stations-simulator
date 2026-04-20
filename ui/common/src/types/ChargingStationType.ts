@@ -104,8 +104,6 @@ export enum OCPP20TransactionEventEnumType {
   UPDATED = 'Updated',
 }
 
-// NOTE: OCPP20TriggerReasonEnumType also exists in src/types/ocpp/2.0/Transaction.ts with PascalCase
-// member names. ui-common cannot import from src/, so this copy is kept in sync manually.
 export enum OCPP20TriggerReasonEnumType {
   ABNORMAL_CONDITION = 'AbnormalCondition',
   AUTHORIZED = 'Authorized',
