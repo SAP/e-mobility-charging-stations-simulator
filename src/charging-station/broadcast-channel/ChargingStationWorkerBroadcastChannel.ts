@@ -441,7 +441,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleStopTransaction (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<StopTransactionResponse> {
-    // OCPP 1.6 only: the CLI routes OCPP 2.0.x stop requests through TRANSACTION_EVENT / passthrough.
+    // OCPP 1.6 only. For OCPP 2.0.x, the CLI dispatches via ProcedureName.TRANSACTION_EVENT.
     return await this.chargingStation.ocppRequestService.requestHandler<
       StopTransactionRequest,
       StopTransactionResponse

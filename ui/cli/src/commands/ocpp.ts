@@ -1,10 +1,12 @@
 import { Command } from 'commander'
 import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
-import type { GlobalOptions } from '../types.js'
-
-import { loadConfig } from '../config/loader.js'
-import { parseInteger, resolveOcppVersion, runAction } from './action.js'
+import {
+  MIXED_OCPP_VERSION_ERROR,
+  parseInteger,
+  resolveOcppVersionFromProgram,
+  runAction,
+} from './action.js'
 import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION, pickDefined } from './payload.js'
 
 export const createOcppCommands = (program: Command): Command => {
@@ -21,30 +23,30 @@ export const createOcppCommands = (program: Command): Command => {
       }
       let payload: RequestPayload
       if (options.payload == null) {
-        const idTag = options.idTag ?? ''
+        if (options.idTag == null) {
+          throw new Error('--id-tag is required when -p/--payload is not provided')
+        }
         // High-level: detect OCPP version and build correct payload
-        const rootOpts = program.opts<GlobalOptions>()
-        const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
-        const ocppVersion = await resolveOcppVersion(hashIds, config)
+        const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+          program,
+          hashIds
+        )
         switch (ocppVersion) {
           case OCPPVersion.VERSION_16:
             payload = {
-              idTag,
-              ...buildHashIdsPayload(hashIds),
+              idTag: options.idTag,
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             break
           case OCPPVersion.VERSION_20:
           case OCPPVersion.VERSION_201:
             payload = {
-              idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-              ...buildHashIdsPayload(hashIds),
+              idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             break
           default:
-            throw new Error(
-              'Cannot determine a common OCPP version for the targeted stations. ' +
-                'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-            )
+            throw new Error(MIXED_OCPP_VERSION_ERROR)
         }
       } else {
         // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
@@ -127,9 +129,10 @@ export const createOcppCommands = (program: Command): Command => {
         let payload: RequestPayload
         if (options.payload == null) {
           // High-level: detect OCPP version and build correct payload
-          const rootOpts = program.opts<GlobalOptions>()
-          const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
-          const ocppVersion = await resolveOcppVersion(hashIds, config)
+          const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+            program,
+            hashIds
+          )
           switch (ocppVersion) {
             case OCPPVersion.VERSION_16:
               if (options.errorCode == null) {
@@ -139,7 +142,7 @@ export const createOcppCommands = (program: Command): Command => {
                 connectorId: options.connectorId,
                 errorCode: options.errorCode,
                 status: options.status,
-                ...buildHashIdsPayload(hashIds),
+                ...buildHashIdsPayload(resolvedHashIds),
               }
               break
             case OCPPVersion.VERSION_20:
@@ -148,14 +151,11 @@ export const createOcppCommands = (program: Command): Command => {
                 connectorId: options.connectorId,
                 connectorStatus: options.status,
                 ...(options.evseId != null && { evseId: options.evseId }),
-                ...buildHashIdsPayload(hashIds),
+                ...buildHashIdsPayload(resolvedHashIds),
               }
               break
             default:
-              throw new Error(
-                'Cannot determine a common OCPP version for the targeted stations. ' +
-                  'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-              )
+              throw new Error(MIXED_OCPP_VERSION_ERROR)
           }
         } else {
           // Low-level passthrough: -p provided, use only routing fields; raw payload has full control

@@ -17,6 +17,10 @@ import { loadConfig } from '../config/loader.js'
 import { createFormatter } from '../output/formatter.js'
 import { resolvePayload } from './resolve-payload.js'
 
+export const MIXED_OCPP_VERSION_ERROR =
+  'Cannot determine a common OCPP version for the targeted stations. ' +
+  'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
+
 export const parseInteger = (value: string): number => {
   const n = Number.parseInt(value, 10)
   if (Number.isNaN(n)) {
@@ -99,9 +103,7 @@ export const resolveOcppVersionFromList = (
   const targeted =
     hashIds.length === 0
       ? chargingStations
-      : chargingStations.filter(cs =>
-        hashIds.some(id => cs.stationInfo.hashId === id || cs.stationInfo.hashId.startsWith(id))
-      )
+      : chargingStations.filter(cs => hashIds.some(id => cs.stationInfo.hashId.startsWith(id)))
 
   if (targeted.length === 0) return undefined
 
@@ -129,6 +131,43 @@ export const resolveOcppVersion = async (
 ): Promise<OCPPVersion | undefined> => {
   const listResponse = await fetchStationList(config)
   return resolveOcppVersionFromList(hashIds, listResponse.chargingStations)
+}
+
+/**
+ * Loads config from program options, resolves short hash-ID prefixes to full
+ * hashes in a single station-list fetch, and returns the common OCPP version
+ * together with the resolved hash IDs. Passing the returned resolvedHashIds
+ * into the payload before calling runAction prevents a second station-list fetch.
+ * @param program - Commander root program (provides config and server URL options)
+ * @param hashIds - station hash IDs or unique hash-ID prefixes to target
+ * @returns the common OCPPVersion (or undefined) and the fully-resolved hash IDs
+ */
+export const resolveOcppVersionFromProgram = async (
+  program: Command,
+  hashIds: string[]
+): Promise<{ ocppVersion: OCPPVersion | undefined; resolvedHashIds: string[] }> => {
+  const rootOpts = program.opts<GlobalOptions>()
+  const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
+  const listResponse = await fetchStationList(config)
+  const resolvedHashIds =
+    hashIds.length === 0
+      ? hashIds
+      : (() => {
+          const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
+          return hashIds.map(input => {
+            if (input.length >= MIN_FULL_HASH_LENGTH) return input
+            const matches = allHashIds.filter(full => full.startsWith(input))
+            if (matches.length === 1) return matches[0]
+            if (matches.length === 0) {
+              throw new Error(`No station found matching hash prefix '${input}'`)
+            }
+            throw new Error(
+              `Ambiguous hash prefix '${input}' matches ${matches.length.toString()} stations`
+            )
+          })
+        })()
+  const ocppVersion = resolveOcppVersionFromList(hashIds, listResponse.chargingStations)
+  return { ocppVersion, resolvedHashIds }
 }
 
 export const runAction = async (

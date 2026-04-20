@@ -9,10 +9,12 @@ import {
   type RequestPayload,
 } from 'ui-common'
 
-import type { GlobalOptions } from '../types.js'
-
-import { loadConfig } from '../config/loader.js'
-import { parseInteger, resolveOcppVersion, runAction } from './action.js'
+import {
+  MIXED_OCPP_VERSION_ERROR,
+  parseInteger,
+  resolveOcppVersionFromProgram,
+  runAction,
+} from './action.js'
 import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION } from './payload.js'
 
 export const createTransactionCommands = (program: Command): Command => {
@@ -23,26 +25,31 @@ export const createTransactionCommands = (program: Command): Command => {
     .description('Start a transaction on station(s)')
     .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
     .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
-    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; defaults to 1)', parseInteger)
+    .option(
+      PAYLOAD_OPTION,
+      PAYLOAD_DESC + ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+    )
     .action(
       async (
         hashIds: string[],
-        options: { connectorId: number; idTag: string; payload?: string }
+        options: { connectorId: number; evseId?: number; idTag: string; payload?: string }
       ) => {
         let procedureName: ProcedureName
         let payload: RequestPayload
         if (options.payload == null) {
           // High-level: detect OCPP version and build correct payload
-          const rootOpts = program.opts<GlobalOptions>()
-          const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
-          const ocppVersion = await resolveOcppVersion(hashIds, config)
+          const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+            program,
+            hashIds
+          )
           switch (ocppVersion) {
             case OCPPVersion.VERSION_16:
               procedureName = ProcedureName.START_TRANSACTION
               payload = {
                 connectorId: options.connectorId,
                 idTag: options.idTag,
-                ...buildHashIdsPayload(hashIds),
+                ...buildHashIdsPayload(resolvedHashIds),
               }
               break
             case OCPPVersion.VERSION_20:
@@ -50,23 +57,20 @@ export const createTransactionCommands = (program: Command): Command => {
               procedureName = ProcedureName.TRANSACTION_EVENT
               payload = {
                 eventType: OCPP20TransactionEventEnumType.STARTED,
-                evse: { connectorId: options.connectorId, id: options.connectorId },
+                evse: { connectorId: options.connectorId, id: options.evseId ?? 1 },
                 idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
                 seqNo: 0,
                 timestamp: new Date().toISOString(),
                 transactionInfo: { transactionId: randomUUID() },
                 triggerReason: OCPP20TriggerReasonEnumType.AUTHORIZED,
-                ...buildHashIdsPayload(hashIds),
+                ...buildHashIdsPayload(resolvedHashIds),
               }
               break
             default:
-              throw new Error(
-                'Cannot determine a common OCPP version for the targeted stations. ' +
-                  'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-              )
+              throw new Error(MIXED_OCPP_VERSION_ERROR)
           }
         } else {
-          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+          // Low-level passthrough: -p provided, uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event
           procedureName = ProcedureName.START_TRANSACTION
           payload = buildHashIdsPayload(hashIds)
         }
@@ -78,21 +82,25 @@ export const createTransactionCommands = (program: Command): Command => {
     .command('stop [hashIds...]')
     .description('Stop a transaction on station(s)')
     .requiredOption('--transaction-id <id>', 'transaction ID')
-    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .option(
+      PAYLOAD_OPTION,
+      PAYLOAD_DESC + ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+    )
     .action(async (hashIds: string[], options: { payload?: string; transactionId: string }) => {
       let procedureName: ProcedureName
       let payload: RequestPayload
       if (options.payload == null) {
         // High-level: detect OCPP version and build correct payload
-        const rootOpts = program.opts<GlobalOptions>()
-        const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
-        const ocppVersion = await resolveOcppVersion(hashIds, config)
+        const { ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+          program,
+          hashIds
+        )
         switch (ocppVersion) {
           case OCPPVersion.VERSION_16:
             procedureName = ProcedureName.STOP_TRANSACTION
             payload = {
               transactionId: parseInteger(options.transactionId),
-              ...buildHashIdsPayload(hashIds),
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             break
           case OCPPVersion.VERSION_20:
@@ -104,17 +112,14 @@ export const createTransactionCommands = (program: Command): Command => {
               timestamp: new Date().toISOString(),
               transactionInfo: { transactionId: options.transactionId },
               triggerReason: OCPP20TriggerReasonEnumType.REMOTE_STOP,
-              ...buildHashIdsPayload(hashIds),
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             break
           default:
-            throw new Error(
-              'Cannot determine a common OCPP version for the targeted stations. ' +
-                'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
-            )
+            throw new Error(MIXED_OCPP_VERSION_ERROR)
         }
       } else {
-        // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+        // Low-level passthrough: -p provided, uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event
         procedureName = ProcedureName.STOP_TRANSACTION
         payload = buildHashIdsPayload(hashIds)
       }

@@ -70,6 +70,15 @@ await describe('resolveOcppVersionFromList', async () => {
       assert.strictEqual(resolveOcppVersionFromList(['aaa'], stations), OCPPVersion.VERSION_201)
     })
 
+    await it('returns the common version when an ambiguous prefix matches multiple stations with homogeneous versions', () => {
+      const stations = [
+        station('aaa111', OCPPVersion.VERSION_201),
+        station('aaa222', OCPPVersion.VERSION_201),
+        station('bbb333', OCPPVersion.VERSION_16),
+      ]
+      assert.strictEqual(resolveOcppVersionFromList(['aaa'], stations), OCPPVersion.VERSION_201)
+    })
+
     await it('returns undefined when prefix matches no station', () => {
       const stations = [station('aaa111', OCPPVersion.VERSION_16)]
       assert.strictEqual(resolveOcppVersionFromList(['zzz'], stations), undefined)
