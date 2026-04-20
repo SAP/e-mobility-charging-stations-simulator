@@ -1490,7 +1490,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
-    const stationInfoFromTemplate = this.getStationInfoFromTemplate()
+    const { stationInfo: stationInfoFromTemplate, stationTemplate } =
+      this.getStationInfoFromTemplate()
     options?.persistentConfiguration != null &&
       (stationInfoFromTemplate.stationInfoPersistentConfiguration = options.persistentConfiguration)
     const stationInfoFromFile = this.getStationInfoFromFile(
@@ -1508,12 +1509,15 @@ export class ChargingStation extends EventEmitter {
     } else {
       stationInfo = stationInfoFromTemplate
       stationInfoFromFile != null &&
-        propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
+        propagateSerialNumber(stationTemplate, stationInfoFromFile, stationInfo)
     }
-    return setChargingStationOptions(
+    stationInfo = setChargingStationOptions(
       mergeDeepRight(Constants.DEFAULT_STATION_INFO as ChargingStationInfo, stationInfo),
       options
     )
+    stationInfo.chargingStationId = getChargingStationId(this.index, stationInfo)
+    stationInfo.hashId = getHashId(this.index, stationTemplate, stationInfo.chargingStationId)
+    return stationInfo
   }
 
   private getStationInfoFromFile (
@@ -1536,7 +1540,10 @@ export class ChargingStation extends EventEmitter {
     return stationInfo
   }
 
-  private getStationInfoFromTemplate (): ChargingStationInfo {
+  private getStationInfoFromTemplate (): {
+    stationInfo: ChargingStationInfo
+    stationTemplate: ChargingStationTemplate
+  } {
     const stationTemplate = this.getTemplateFromFile()
     if (stationTemplate == null) {
       const errorMsg = `Failed to read charging station template file ${this.templateFile}`
@@ -1553,10 +1560,11 @@ export class ChargingStation extends EventEmitter {
       checkEvsesConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
-    stationInfo.hashId = getHashId(this.index, stationTemplate)
+    // hashId and chargingStationId are intentionally not set here. They are derived
+    // at the end of getStationInfo() so that any identity overrides coming from
+    // ChargingStationOptions (baseName, fixedName, nameSuffix) are honoured.
     stationInfo.templateIndex = this.index
     stationInfo.templateName = buildTemplateName(this.templateFile)
-    stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
     if (isNotEmptyArray<number>(stationTemplate.power)) {
@@ -1586,7 +1594,7 @@ export class ChargingStation extends EventEmitter {
     if (stationTemplate.resetTime != null) {
       stationInfo.resetTime = secondsToMilliseconds(stationTemplate.resetTime)
     }
-    return stationInfo
+    return { stationInfo, stationTemplate }
   }
 
   private getTemplateFromFile (): ChargingStationTemplate | undefined {
