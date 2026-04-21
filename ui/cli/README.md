@@ -152,12 +152,14 @@ evse-cli station delete [hashId...]            # Delete station(s)
 
 **`station add` options:**
 
-| Option                    | Required | Description               |
-| ------------------------- | -------- | ------------------------- |
-| `-t, --template <name>`   | Yes      | Station template name     |
-| `-n, --count <n>`         | Yes      | Number of stations to add |
-| `--supervision-url <url>` | No       | Override supervision URL  |
-| `--auto-start`            | No       | Auto-start added stations |
+| Option                    | Required | Description                          |
+| ------------------------- | -------- | ------------------------------------ |
+| `-t, --template <name>`   | Yes      | Station template name                |
+| `-n, --count <n>`         | Yes      | Number of stations to add            |
+| `--supervision-url <url>` | No       | Override supervision URL             |
+| `--auto-start`            | No       | Auto-start added stations            |
+| `--persistent-config`     | No       | Enable persistent OCPP configuration |
+| `--ocpp-strict`           | No       | Enable OCPP strict compliance        |
 
 **`station delete` options:**
 
@@ -188,8 +190,8 @@ evse-cli connector unlock --connector-id <id> [hashId...]  # Unlock connector
 #### atg
 
 ```shell
-evse-cli atg start [hashId...] [--connector-ids <ids...>]  # Start ATG
-evse-cli atg stop [hashId...]  [--connector-ids <ids...>]  # Stop ATG
+evse-cli atg start [hashId...] [--connector-ids <id,...>]  # Start ATG
+evse-cli atg stop [hashId...]  [--connector-ids <id,...>]  # Stop ATG
 ```
 
 #### transaction
@@ -210,7 +212,7 @@ evse-cli ocpp heartbeat [hashId...]                                             
 evse-cli ocpp authorize --id-tag <tag> [hashId...]                                                               # Authorize
 evse-cli ocpp boot-notification [hashId...]                                                                      # BootNotification
 evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]  # StatusNotification
-evse-cli ocpp meter-values --connector-id <id> [--evse-id <id>] [hashId...]                                      # MeterValues
+evse-cli ocpp meter-values [--connector-id <id>] [--evse-id <id>] [hashId...]                                     # MeterValues
 evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]                   # DataTransfer
 ```
 

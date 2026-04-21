@@ -66,6 +66,7 @@ evse-cli station add -t <template> -n <count>             # Add stations
 evse-cli station add -t <template> -n 2 --auto-start      # Add and auto-start
 evse-cli station add -t <template> -n 1 --supervision-url ws://csms:8180/path
 evse-cli station delete [hashId...]                       # Delete station(s)
+evse-cli station delete --delete-config [hashId...]       # Delete with config files
 ```
 
 ### Templates
@@ -93,7 +94,8 @@ evse-cli connector unlock --connector-id <id> [hashId...]  # Unlock connector
 ```shell
 evse-cli atg start [hashId...]                         # Start ATG on all connectors
 evse-cli atg start --connector-ids 1,2 [hashId...]     # Start on specific connectors
-evse-cli atg stop [hashId...]                          # Stop ATG
+evse-cli atg stop [hashId...]                          # Stop ATG on all connectors
+evse-cli atg stop --connector-ids 1,2 [hashId...]      # Stop on specific connectors
 ```
 
 ### Transactions
@@ -114,7 +116,7 @@ evse-cli ocpp heartbeat [hashId...]
 evse-cli ocpp boot-notification [hashId...]
 evse-cli ocpp authorize --id-tag <tag> [hashId...]
 evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]
-evse-cli ocpp meter-values --connector-id <id> [--evse-id <id>] [hashId...]
+evse-cli ocpp meter-values [--connector-id <id>] [--evse-id <id>] [hashId...]
 evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]
 ```
 
@@ -167,7 +169,7 @@ evse-cli performance stats   # Get performance statistics
 
 ## hashId Convention
 
-Omitting `[hashId...]` applies the command to ALL stations. Pass one or more hash IDs to target specific stations. Get hash IDs from `evse-cli station list` or `evse-cli --json station list`.
+Omitting `[hashId...]` applies the command to ALL stations. Pass one or more hash IDs to target specific stations. Hash IDs support prefix matching — a short unambiguous prefix works in place of the full ID. Get hash IDs from `evse-cli station list` or `evse-cli --json station list`.
 
 ## Common Workflows
 
