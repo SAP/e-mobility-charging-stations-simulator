@@ -3,8 +3,16 @@
     Add Charging Stations
   </h1>
   <p>Template:</p>
-  <select :key="state.renderTemplates" v-model="state.template">
-    <option disabled value="">Please select a template</option>
+  <select
+    :key="state.renderTemplates"
+    v-model="state.template"
+  >
+    <option
+      disabled
+      value=""
+    >
+      Please select a template
+    </option>
     <option
       v-for="template in $templates"
       v-show="Array.isArray($templates) && $templates.length > 0"
@@ -22,7 +30,7 @@
     name="number-of-stations"
     placeholder="number of stations"
     type="number"
-  />
+  >
   <p>Template options overrides:</p>
   <ul class="template-options">
     <li>
@@ -34,9 +42,14 @@
         name="base-name"
         placeholder="<template value>"
         type="text"
-      />
+      >
       Append counter to name:
-      <input v-model="state.appendCounter" false-value="false" true-value="true" type="checkbox" />
+      <input
+        v-model="state.appendCounter"
+        false-value="false"
+        true-value="true"
+        type="checkbox"
+      >
     </li>
     <li>
       Supervision url:
@@ -47,7 +60,7 @@
         name="supervision-url"
         placeholder="wss://"
         type="url"
-      />
+      >
     </li>
     <li>
       Supervision credentials:
@@ -59,7 +72,7 @@
         name="supervision-user"
         placeholder="<username>"
         type="text"
-      />
+      >
       <input
         id="supervision-password"
         v-model="state.supervisionPassword"
@@ -68,11 +81,16 @@
         name="supervision-password"
         placeholder="<password>"
         type="text"
-      />
+      >
     </li>
     <li>
       Auto start:
-      <input v-model="state.autoStart" false-value="false" true-value="true" type="checkbox" />
+      <input
+        v-model="state.autoStart"
+        false-value="false"
+        true-value="true"
+        type="checkbox"
+      >
     </li>
     <li>
       Persistent configuration:
@@ -81,7 +99,7 @@
         false-value="false"
         true-value="true"
         type="checkbox"
-      />
+      >
     </li>
     <li>
       OCPP strict compliance:
@@ -90,7 +108,7 @@
         false-value="false"
         true-value="true"
         type="checkbox"
-      />
+      >
     </li>
     <li>
       Performance statistics:
@@ -99,10 +117,10 @@
         false-value="false"
         true-value="true"
         type="checkbox"
-      />
+      >
     </li>
   </ul>
-  <br />
+  <br>
   <Button
     id="action-button"
     @click="addChargingStations()"
