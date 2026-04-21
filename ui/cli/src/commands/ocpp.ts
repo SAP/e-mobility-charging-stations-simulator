@@ -87,7 +87,7 @@ export const createOcppCommands = (program: Command): Command => {
       new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
     )
     .addOption(
-      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x)')
+      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; derived from connector ID if omitted)')
         .argParser(parseInteger)
         .conflicts('payload')
     )
@@ -148,16 +148,10 @@ export const createOcppCommands = (program: Command): Command => {
       new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
     )
     .addOption(
-      new Option(
-        '--error-code <code>',
-        'connector error code (OCPP 1.6 only; required for 1.6)'
-      ).conflicts('payload')
+      new Option('--error-code <code>', 'connector error code (OCPP 1.6)').conflicts('payload')
     )
     .addOption(
-      new Option(
-        '--evse-id <id>',
-        'EVSE ID (OCPP 2.0.x only; derived from connector ID if omitted)'
-      )
+      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; derived from connector ID if omitted)')
         .argParser(parseInteger)
         .conflicts('payload')
     )

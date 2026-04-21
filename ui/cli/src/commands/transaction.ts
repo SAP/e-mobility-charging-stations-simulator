@@ -27,7 +27,7 @@ export const createTransactionCommands = (program: Command): Command => {
     )
     .addOption(new Option('--id-tag <tag>', 'RFID tag for authorization').conflicts('payload'))
     .addOption(
-      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; resolved from connector ID when omitted)')
+      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; derived from connector ID if omitted)')
         .argParser(parseInteger)
         .conflicts('payload')
     )
