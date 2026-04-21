@@ -17,6 +17,9 @@ import { loadConfig } from '../config/loader.js'
 import { createFormatter } from '../output/formatter.js'
 import { resolvePayload } from './resolve-payload.js'
 
+export const NO_STATIONS_ERROR =
+  'No charging stations available. Start stations before running this command.'
+
 export const MIXED_OCPP_VERSION_ERROR =
   'Cannot determine a common OCPP version for the targeted stations. ' +
   'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
@@ -61,7 +64,7 @@ const fetchStationList = async (
  * @param hashIds - station hash IDs or unique hash-ID prefixes to resolve
  * @param allHashIds - full hash IDs of all known stations
  * @returns fully-resolved hash IDs in the same order as the input
- * @throws if any prefix matches zero stations or more than one station
+ * @throws {Error} if any prefix matches zero stations or more than one station
  */
 const resolveShortHashIdsFromList = (hashIds: string[], allHashIds: string[]): string[] =>
   hashIds.map(input => {
@@ -146,6 +149,11 @@ export const resolveOcppVersionFromProgram = async (
   const rootOpts = program.opts<GlobalOptions>()
   const config = await loadConfig({ configPath: rootOpts.config, url: rootOpts.serverUrl })
   const listResponse = await fetchStationList(config)
+
+  if (listResponse.chargingStations.length === 0) {
+    throw new Error(NO_STATIONS_ERROR)
+  }
+
   const allHashIds = listResponse.chargingStations.map(cs => cs.stationInfo.hashId)
   const resolvedHashIds =
     hashIds.length === 0 ? hashIds : resolveShortHashIdsFromList(hashIds, allHashIds)

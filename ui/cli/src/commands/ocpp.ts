@@ -83,48 +83,101 @@ export const createOcppCommands = (program: Command): Command => {
   cmd
     .command('meter-values [hashIds...]')
     .description('Request station(s) to send OCPP MeterValues')
-    .requiredOption('--connector-id <id>', 'connector ID (OCPP 1.6)', parseInteger)
-    .option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x)', parseInteger)
-    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .addOption(
+      new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
+    )
+    .addOption(
+      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x)')
+        .argParser(parseInteger)
+        .conflicts('payload')
+    )
+    .addOption(new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts(['connectorId', 'evseId']))
     .action(
       async (
         hashIds: string[],
-        options: { connectorId: number; evseId?: number; payload?: string }
+        options: { connectorId?: number; evseId?: number; payload?: string }
       ) => {
-        const payload: RequestPayload = {
-          connectorId: options.connectorId,
-          ...(options.evseId != null && { evseId: options.evseId }),
-          ...buildHashIdsPayload(hashIds),
+        let payload: RequestPayload
+        if (options.payload == null) {
+          if (options.connectorId == null && options.evseId == null) {
+            throw new Error(
+              '--connector-id or --evse-id is required when -p/--payload is not provided'
+            )
+          }
+          // High-level: detect OCPP version and build correct payload
+          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+            program,
+            hashIds
+          )
+          switch (ocppVersion) {
+            case OCPPVersion.VERSION_16:
+              if (options.connectorId == null) {
+                throw new Error('--connector-id is required for OCPP 1.6 stations')
+              }
+              payload = {
+                connectorId: options.connectorId,
+                ...buildHashIdsPayload(resolvedHashIds),
+              }
+              break
+            case OCPPVersion.VERSION_20:
+            case OCPPVersion.VERSION_201:
+              payload = {
+                evseId: options.evseId ?? options.connectorId,
+                ...buildHashIdsPayload(resolvedHashIds),
+              }
+              break
+            default:
+              throw new Error(MIXED_OCPP_VERSION_ERROR)
+          }
+          await runAction(program, ProcedureName.METER_VALUES, payload, undefined, config)
+        } else {
+          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+          payload = buildHashIdsPayload(hashIds)
+          await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
         }
-        await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
       }
     )
 
   cmd
     .command('status-notification [hashIds...]')
     .description('Request station(s) to send OCPP StatusNotification')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
-    .option('--error-code <code>', 'connector error code (OCPP 1.6 only; required for 1.6)')
+    .addOption(
+      new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
+    )
+    .addOption(
+      new Option(
+        '--error-code <code>',
+        'connector error code (OCPP 1.6 only; required for 1.6)'
+      ).conflicts('payload')
+    )
     .option(
       '--evse-id <id>',
       'EVSE ID (OCPP 2.0.x only; resolved automatically if omitted)',
       parseInteger
     )
-    .requiredOption('--status <status>', 'connector status')
-    .option(PAYLOAD_OPTION, PAYLOAD_DESC)
+    .addOption(new Option('--status <status>', 'connector status').conflicts('payload'))
+    .addOption(
+      new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts(['connectorId', 'errorCode', 'status'])
+    )
     .action(
       async (
         hashIds: string[],
         options: {
-          connectorId: number
+          connectorId?: number
           errorCode?: string
           evseId?: number
           payload?: string
-          status: string
+          status?: string
         }
       ) => {
         let payload: RequestPayload
         if (options.payload == null) {
+          if (options.connectorId == null) {
+            throw new Error('--connector-id is required when -p/--payload is not provided')
+          }
+          if (options.status == null) {
+            throw new Error('--status is required when -p/--payload is not provided')
+          }
           // High-level: detect OCPP version and build correct payload
           const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
             program,

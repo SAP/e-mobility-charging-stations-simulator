@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
 import {
   OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
@@ -21,21 +21,36 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('start [hashIds...]')
     .description('Start a transaction on station(s)')
-    .requiredOption('--connector-id <id>', 'connector ID', parseInteger)
-    .requiredOption('--id-tag <tag>', 'RFID tag for authorization')
-    .option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; defaults to 1)', parseInteger)
+    .addOption(
+      new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
+    )
+    .addOption(new Option('--id-tag <tag>', 'RFID tag for authorization').conflicts('payload'))
     .option(
-      PAYLOAD_OPTION,
-      PAYLOAD_DESC + ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+      '--evse-id <id>',
+      'EVSE ID (OCPP 2.0.x; resolved from connector ID when omitted)',
+      parseInteger
+    )
+    .addOption(
+      new Option(
+        PAYLOAD_OPTION,
+        PAYLOAD_DESC +
+          ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+      ).conflicts(['connectorId', 'idTag'])
     )
     .action(
       async (
         hashIds: string[],
-        options: { connectorId: number; evseId?: number; idTag: string; payload?: string }
+        options: { connectorId?: number; evseId?: number; idTag?: string; payload?: string }
       ) => {
         let procedureName: ProcedureName
         let payload: RequestPayload
         if (options.payload == null) {
+          if (options.connectorId == null) {
+            throw new Error('--connector-id is required when -p/--payload is not provided')
+          }
+          if (options.idTag == null) {
+            throw new Error('--id-tag is required when -p/--payload is not provided')
+          }
           // High-level: detect OCPP version and build correct payload
           const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
             program,
@@ -77,15 +92,21 @@ export const createTransactionCommands = (program: Command): Command => {
   cmd
     .command('stop [hashIds...]')
     .description('Stop a transaction on station(s)')
-    .requiredOption('--transaction-id <id>', 'transaction ID')
-    .option(
-      PAYLOAD_OPTION,
-      PAYLOAD_DESC + ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+    .addOption(new Option('--transaction-id <id>', 'transaction ID').conflicts('payload'))
+    .addOption(
+      new Option(
+        PAYLOAD_OPTION,
+        PAYLOAD_DESC +
+          ' (uses OCPP 1.6 procedure; for 2.0.x raw payloads use ocpp transaction-event)'
+      ).conflicts('transactionId')
     )
-    .action(async (hashIds: string[], options: { payload?: string; transactionId: string }) => {
+    .action(async (hashIds: string[], options: { payload?: string; transactionId?: string }) => {
       let procedureName: ProcedureName
       let payload: RequestPayload
       if (options.payload == null) {
+        if (options.transactionId == null) {
+          throw new Error('--transaction-id is required when -p/--payload is not provided')
+        }
         // High-level: detect OCPP version and build correct payload
         const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
           program,
