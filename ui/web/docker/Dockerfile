@@ -13,6 +13,7 @@ RUN set -ex \
 FROM node:lts-alpine
 
 WORKDIR /usr/app
+COPY --from=builder /usr/builder/node_modules /node_modules
 COPY --from=builder /usr/builder/ui/web/package.json ./
 COPY --from=builder /usr/builder/ui/web/node_modules ./node_modules
 COPY --from=builder /usr/builder/ui/web/dist ./dist
