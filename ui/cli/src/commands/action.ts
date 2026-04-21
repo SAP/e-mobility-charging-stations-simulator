@@ -44,7 +44,8 @@ export const parseInteger = (value: string, nameOrPrevious?: number | string): n
   return n
 }
 
-// SHA-384 hex hashes are 96 chars. Treat anything >= half-length as a full hash (skip resolution).
+// SHA-384 hex hashes are 96 chars. Inputs >= half-length skip prefix resolution
+// but are still validated against the station list (unknown IDs are rejected).
 const MIN_FULL_HASH_LENGTH = 48
 
 const fetchStationList = async (
@@ -148,8 +149,10 @@ export const resolveOcppVersionFromList = (
  * station-list fetch and config load.
  * @param program - Commander root program (provides config and server URL options)
  * @param hashIds - station hash IDs or unique hash-ID prefixes to target
- * @returns the common OCPPVersion (or undefined), the fully-resolved hash IDs,
+ * @returns the common OCPPVersion, the fully-resolved hash IDs,
  *   and the loaded UI server config
+ * @throws {Error} if no stations are available, hash IDs don't match, or the
+ *   targeted stations do not share a single known OCPP version
  */
 export const resolveOcppVersionFromProgram = async (
   program: Command,
