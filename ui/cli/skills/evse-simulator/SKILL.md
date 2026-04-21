@@ -116,11 +116,12 @@ evse-cli ocpp heartbeat [hashId...]
 evse-cli ocpp boot-notification [hashId...]
 evse-cli ocpp authorize --id-tag <tag> [hashId...]
 evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]
-evse-cli ocpp meter-values [--connector-id <id>] [--evse-id <id>] [hashId...]
+evse-cli ocpp meter-values --connector-id <id> [hashId...]                    # OCPP 1.6
+evse-cli ocpp meter-values --evse-id <id> [hashId...]                        # OCPP 2.0.x
 evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <data>] [hashId...]
 ```
 
-`meter-values` requires at least one of `--connector-id` or `--evse-id` when `-p` is not provided.
+`meter-values` requires `--connector-id` for OCPP 1.6 and `--evse-id` for OCPP 2.0.x.
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
@@ -138,8 +139,8 @@ Commands with typed options (`authorize`, `meter-values`, `status-notification`,
 
 - `--id-tag`: sent as `idTag` (1.6) or wrapped as `idToken` (2.0.x)
 - `--error-code`: required for `status-notification` on 1.6 only
-- `--evse-id`: OCPP 2.0.x only; derived from connector ID if omitted
-- `--connector-id` on `transaction stop`: required for OCPP 2.0.x
+- `--evse-id`: OCPP 2.0.x only; required for `meter-values`
+- `--connector-id`: OCPP 1.6 for `meter-values`; required for `transaction stop` on 2.0.x
 - `--transaction-id`: integer (1.6) or UUID string (2.0.x)
 
 When `-p` is provided, version detection is skipped and the raw payload is passed through.
