@@ -169,6 +169,7 @@ evse-cli performance stats   # Get performance statistics
 | `0`   | Success                          |
 | `1`   | Error (connection, server, auth) |
 | `130` | Interrupted (Ctrl+C)             |
+| `143` | Terminated (SIGTERM)             |
 
 ## hashId Convention
 

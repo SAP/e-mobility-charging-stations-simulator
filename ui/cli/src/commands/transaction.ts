@@ -17,7 +17,7 @@ import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION } from './payload.js'
 
 export const createTransactionCommands = (program: Command): Command => {
   const cmd = new Command('transaction').description('Transaction management')
-  const unsupportedVersionError =
+  const UNSUPPORTED_VERSION_ERROR =
     'Unsupported OCPP version for this command. ' +
     'Use ocpp transaction-event -p to pass the payload directly.'
 
@@ -81,7 +81,7 @@ export const createTransactionCommands = (program: Command): Command => {
                 }
                 break
               default:
-                throw new Error(unsupportedVersionError)
+                throw new Error(UNSUPPORTED_VERSION_ERROR)
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {
@@ -152,7 +152,7 @@ export const createTransactionCommands = (program: Command): Command => {
                 }
                 break
               default:
-                throw new Error(unsupportedVersionError)
+                throw new Error(UNSUPPORTED_VERSION_ERROR)
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {
