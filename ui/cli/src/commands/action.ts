@@ -119,8 +119,8 @@ const resolveShortHashIds = async (
  *   Non-matching prefixes are silently excluded from targeting (no throw).
  *   Pass an empty array to target all stations.
  * @param chargingStations - station list to filter and inspect
- * @returns the common OCPPVersion, or undefined if the targeted set is empty
- *   or the targeted stations run heterogeneous versions
+ * @returns the common OCPPVersion, or undefined if the targeted set is empty,
+ *   the targeted stations run heterogeneous versions, or all versions are unknown
  */
 export const resolveOcppVersionFromList = (
   hashIds: string[],
