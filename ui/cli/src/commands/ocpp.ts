@@ -2,6 +2,7 @@ import { Command, Option } from 'commander'
 import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
 import {
+  handleActionErrors,
   parseInteger,
   resolveOcppVersionFromProgram,
   runAction,
@@ -18,39 +19,41 @@ export const createOcppCommands = (program: Command): Command => {
     .addOption(new Option('--id-tag <tag>', 'RFID tag for authorization').conflicts('payload'))
     .addOption(new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts('idTag'))
     .action(async (hashIds: string[], options: { idTag?: string; payload?: string }) => {
-      let payload: RequestPayload
-      if (options.payload == null) {
-        if (options.idTag == null) {
-          throw new Error('Either --id-tag or -p/--payload must be provided')
+      await handleActionErrors(program, async () => {
+        let payload: RequestPayload
+        if (options.payload == null) {
+          if (options.idTag == null) {
+            throw new Error('Either --id-tag or -p/--payload must be provided')
+          }
+          // High-level: detect OCPP version and build correct payload
+          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+            program,
+            hashIds
+          )
+          switch (ocppVersion) {
+            case OCPPVersion.VERSION_16:
+              payload = {
+                idTag: options.idTag,
+                ...buildHashIdsPayload(resolvedHashIds),
+              }
+              break
+            case OCPPVersion.VERSION_20:
+            case OCPPVersion.VERSION_201:
+              payload = {
+                idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+                ...buildHashIdsPayload(resolvedHashIds),
+              }
+              break
+            default:
+              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+          }
+          await runAction(program, ProcedureName.AUTHORIZE, payload, undefined, config)
+        } else {
+          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+          payload = buildHashIdsPayload(hashIds)
+          await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
         }
-        // High-level: detect OCPP version and build correct payload
-        const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
-          program,
-          hashIds
-        )
-        switch (ocppVersion) {
-          case OCPPVersion.VERSION_16:
-            payload = {
-              idTag: options.idTag,
-              ...buildHashIdsPayload(resolvedHashIds),
-            }
-            break
-          case OCPPVersion.VERSION_20:
-          case OCPPVersion.VERSION_201:
-            payload = {
-              idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-              ...buildHashIdsPayload(resolvedHashIds),
-            }
-            break
-          default:
-            throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
-        }
-        await runAction(program, ProcedureName.AUTHORIZE, payload, undefined, config)
-      } else {
-        // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
-        payload = buildHashIdsPayload(hashIds)
-        await runAction(program, ProcedureName.AUTHORIZE, payload, options.payload)
-      }
+      })
     })
 
   cmd
@@ -94,45 +97,47 @@ export const createOcppCommands = (program: Command): Command => {
         hashIds: string[],
         options: { connectorId?: number; evseId?: number; payload?: string }
       ) => {
-        let payload: RequestPayload
-        if (options.payload == null) {
-          if (options.connectorId == null && options.evseId == null) {
-            throw new Error(
-              '--connector-id or --evse-id is required when -p/--payload is not provided'
+        await handleActionErrors(program, async () => {
+          let payload: RequestPayload
+          if (options.payload == null) {
+            if (options.connectorId == null && options.evseId == null) {
+              throw new Error(
+                '--connector-id or --evse-id is required when -p/--payload is not provided'
+              )
+            }
+            // High-level: detect OCPP version and build correct payload
+            const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+              program,
+              hashIds
             )
+            switch (ocppVersion) {
+              case OCPPVersion.VERSION_16:
+                if (options.connectorId == null) {
+                  throw new Error('--connector-id is required for OCPP 1.6 stations')
+                }
+                payload = {
+                  connectorId: options.connectorId,
+                  ...buildHashIdsPayload(resolvedHashIds),
+                }
+                break
+              case OCPPVersion.VERSION_20:
+              case OCPPVersion.VERSION_201:
+                payload = {
+                  ...(options.connectorId != null && { connectorId: options.connectorId }),
+                  ...(options.evseId != null && { evseId: options.evseId }),
+                  ...buildHashIdsPayload(resolvedHashIds),
+                }
+                break
+              default:
+                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+            }
+            await runAction(program, ProcedureName.METER_VALUES, payload, undefined, config)
+          } else {
+            // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+            payload = buildHashIdsPayload(hashIds)
+            await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
           }
-          // High-level: detect OCPP version and build correct payload
-          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
-            program,
-            hashIds
-          )
-          switch (ocppVersion) {
-            case OCPPVersion.VERSION_16:
-              if (options.connectorId == null) {
-                throw new Error('--connector-id is required for OCPP 1.6 stations')
-              }
-              payload = {
-                connectorId: options.connectorId,
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            case OCPPVersion.VERSION_20:
-            case OCPPVersion.VERSION_201:
-              payload = {
-                ...(options.connectorId != null && { connectorId: options.connectorId }),
-                ...(options.evseId != null && { evseId: options.evseId }),
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            default:
-              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
-          }
-          await runAction(program, ProcedureName.METER_VALUES, payload, undefined, config)
-        } else {
-          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
-          payload = buildHashIdsPayload(hashIds)
-          await runAction(program, ProcedureName.METER_VALUES, payload, options.payload)
-        }
+        })
       }
     )
 
@@ -176,49 +181,51 @@ export const createOcppCommands = (program: Command): Command => {
           status?: string
         }
       ) => {
-        let payload: RequestPayload
-        if (options.payload == null) {
-          if (options.connectorId == null) {
-            throw new Error('--connector-id is required when -p/--payload is not provided')
+        await handleActionErrors(program, async () => {
+          let payload: RequestPayload
+          if (options.payload == null) {
+            if (options.connectorId == null) {
+              throw new Error('--connector-id is required when -p/--payload is not provided')
+            }
+            if (options.status == null) {
+              throw new Error('--status is required when -p/--payload is not provided')
+            }
+            // High-level: detect OCPP version and build correct payload
+            const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
+              program,
+              hashIds
+            )
+            switch (ocppVersion) {
+              case OCPPVersion.VERSION_16:
+                if (options.errorCode == null) {
+                  throw new Error('--error-code is required for OCPP 1.6 stations')
+                }
+                payload = {
+                  connectorId: options.connectorId,
+                  errorCode: options.errorCode,
+                  status: options.status,
+                  ...buildHashIdsPayload(resolvedHashIds),
+                }
+                break
+              case OCPPVersion.VERSION_20:
+              case OCPPVersion.VERSION_201:
+                payload = {
+                  connectorId: options.connectorId,
+                  connectorStatus: options.status,
+                  ...(options.evseId != null && { evseId: options.evseId }),
+                  ...buildHashIdsPayload(resolvedHashIds),
+                }
+                break
+              default:
+                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+            }
+            await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
+          } else {
+            // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
+            payload = buildHashIdsPayload(hashIds)
+            await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
           }
-          if (options.status == null) {
-            throw new Error('--status is required when -p/--payload is not provided')
-          }
-          // High-level: detect OCPP version and build correct payload
-          const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
-            program,
-            hashIds
-          )
-          switch (ocppVersion) {
-            case OCPPVersion.VERSION_16:
-              if (options.errorCode == null) {
-                throw new Error('--error-code is required for OCPP 1.6 stations')
-              }
-              payload = {
-                connectorId: options.connectorId,
-                errorCode: options.errorCode,
-                status: options.status,
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            case OCPPVersion.VERSION_20:
-            case OCPPVersion.VERSION_201:
-              payload = {
-                connectorId: options.connectorId,
-                connectorStatus: options.status,
-                ...(options.evseId != null && { evseId: options.evseId }),
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            default:
-              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
-          }
-          await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
-        } else {
-          // Low-level passthrough: -p provided, use only routing fields; raw payload has full control
-          payload = buildHashIdsPayload(hashIds)
-          await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, options.payload)
-        }
+        })
       }
     )
 

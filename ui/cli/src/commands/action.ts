@@ -44,8 +44,7 @@ export const parseInteger = (value: string, nameOrPrevious?: number | string): n
   return n
 }
 
-// SHA-384 hex hashes are 96 chars. Inputs >= half-length skip prefix resolution
-// but are still validated against the station list (unknown IDs are rejected).
+// SHA-384 hex hashes are 96 chars; >= half-length is treated as a full or near-full hash.
 const MIN_FULL_HASH_LENGTH = 48
 
 const fetchStationList = async (
@@ -185,6 +184,24 @@ export const resolveOcppVersionFromProgram = async (
     throw new Error(hasUnknown ? UNKNOWN_OCPP_VERSION_ERROR : MIXED_OCPP_VERSION_ERROR)
   }
   return { config, ocppVersion, resolvedHashIds }
+}
+
+export const handleActionErrors = async (
+  program: Command,
+  fn: () => Promise<void>
+): Promise<void> => {
+  try {
+    await fn()
+  } catch (error: unknown) {
+    const rootOpts = program.opts<GlobalOptions>()
+    const formatter = createFormatter(rootOpts.json)
+    if (error instanceof ServerFailureError) {
+      formatter.output(error.payload)
+    } else {
+      formatter.error(error)
+    }
+    process.exitCode = 1
+  }
 }
 
 export const runAction = async (
