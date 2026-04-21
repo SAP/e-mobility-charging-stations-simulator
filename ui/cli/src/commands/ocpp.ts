@@ -23,7 +23,7 @@ export const createOcppCommands = (program: Command): Command => {
         let payload: RequestPayload
         if (options.payload == null) {
           if (options.idTag == null) {
-            throw new Error('Either --id-tag or -p/--payload must be provided')
+            throw new Error('--id-tag is required when -p/--payload is not provided')
           }
           // High-level: detect OCPP version and build correct payload
           const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(

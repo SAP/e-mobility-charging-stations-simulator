@@ -17,14 +17,14 @@ import { loadConfig } from '../config/loader.js'
 import { createFormatter } from '../output/formatter.js'
 import { resolvePayload } from './resolve-payload.js'
 
-export const NO_STATIONS_ERROR =
+const NO_STATIONS_ERROR =
   'No charging stations available. Start stations before running this command.'
 
-export const MIXED_OCPP_VERSION_ERROR =
+const MIXED_OCPP_VERSION_ERROR =
   'Cannot determine a common OCPP version for the targeted stations. ' +
   'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
 
-export const UNKNOWN_OCPP_VERSION_ERROR =
+const UNKNOWN_OCPP_VERSION_ERROR =
   'The targeted station(s) have not reported their OCPP version yet. ' +
   'Ensure stations are connected and registered, or use -p to pass the payload directly.'
 
@@ -186,6 +186,17 @@ export const resolveOcppVersionFromProgram = async (
   return { config, ocppVersion, resolvedHashIds }
 }
 
+const formatError = (program: Command, error: unknown): void => {
+  const rootOpts = program.opts<GlobalOptions>()
+  const formatter = createFormatter(rootOpts.json)
+  if (error instanceof ServerFailureError) {
+    formatter.output(error.payload)
+  } else {
+    formatter.error(error)
+  }
+  process.exitCode = 1
+}
+
 export const handleActionErrors = async (
   program: Command,
   fn: () => Promise<void>
@@ -193,14 +204,7 @@ export const handleActionErrors = async (
   try {
     await fn()
   } catch (error: unknown) {
-    const rootOpts = program.opts<GlobalOptions>()
-    const formatter = createFormatter(rootOpts.json)
-    if (error instanceof ServerFailureError) {
-      formatter.output(error.payload)
-    } else {
-      formatter.error(error)
-    }
-    process.exitCode = 1
+    formatError(program, error)
   }
 }
 
@@ -235,11 +239,6 @@ export const runAction = async (
     await executeCommand({ config, formatter, payload: resolvedPayload, procedureName })
     process.exitCode = 0
   } catch (error: unknown) {
-    if (error instanceof ServerFailureError) {
-      formatter.output(error.payload)
-    } else {
-      formatter.error(error)
-    }
-    process.exitCode = 1
+    formatError(program, error)
   }
 }
