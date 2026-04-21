@@ -1,0 +1,121 @@
+<template>
+  <Modal
+    :title="`Authorize — ${chargingStationId}`"
+    @close="close"
+  >
+    <form
+      class="v2-form"
+      @submit.prevent="submit"
+    >
+      <div class="v2-form__row">
+        <label
+          class="v2-form__label"
+          for="v2-auth-tag"
+        >RFID / ID Tag</label>
+        <input
+          id="v2-auth-tag"
+          v-model.trim="form.idTag"
+          class="v2-form__input"
+          type="text"
+          autocomplete="off"
+          placeholder="e.g. RFID-1234"
+        >
+        <span class="v2-form__hint">
+          Sends a standalone Authorize request for this tag. Does not start a transaction.
+        </span>
+      </div>
+      <div
+        v-if="lastFailure != null"
+        class="v2-form__error"
+      >
+        <div class="v2-form__error-summary">
+          <strong>Status</strong>
+          <span>{{ lastFailure.summary }}</span>
+        </div>
+        <details
+          v-if="lastFailure.payload != null"
+          class="v2-form__error-details"
+        >
+          <summary>Response JSON</summary>
+          <pre class="v2-form__error-json">{{ formattedPayload }}</pre>
+        </details>
+      </div>
+    </form>
+    <template #footer>
+      <ActionButton
+        variant="ghost"
+        @click="close"
+      >
+        Cancel
+      </ActionButton>
+      <ActionButton
+        variant="primary"
+        :pending="pending"
+        @click="submit"
+      >
+        Authorize
+      </ActionButton>
+    </template>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { computed, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toast-notification'
+
+import { useUIClient } from '@/composables'
+
+import { V2_ROUTE_NAMES } from '../../composables/v2Constants'
+import { type FailureInfo, getFailureInfo } from '../../composables/v2Errors'
+import ActionButton from '../ActionButton.vue'
+import Modal from '../Modal.vue'
+
+const props = defineProps<{
+  chargingStationId: string
+  hashId: string
+}>()
+
+const $uiClient = useUIClient()
+const $router = useRouter()
+const $toast = useToast()
+
+const pending = ref(false)
+const lastFailure = ref<FailureInfo | null>(null)
+
+const form = reactive({
+  idTag: '',
+})
+
+const formattedPayload = computed(() =>
+  lastFailure.value?.payload != null ? JSON.stringify(lastFailure.value.payload, null, 2) : ''
+)
+
+const close = (): void => {
+  $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
+    console.error('Navigation failed:', error)
+  })
+}
+
+const submit = async (): Promise<void> => {
+  if (pending.value) return
+  if (form.idTag.length === 0) {
+    $toast.error('Provide an RFID tag')
+    return
+  }
+  pending.value = true
+  lastFailure.value = null
+  try {
+    await $uiClient.authorize(props.hashId, form.idTag)
+    $toast.success(`Authorized ${form.idTag}`)
+    close()
+  } catch (error) {
+    console.error('Error authorizing:', error)
+    const info = getFailureInfo(error)
+    lastFailure.value = info
+    $toast.error(`Authorize failed: ${info.summary}`)
+  } finally {
+    pending.value = false
+  }
+}
+</script>
