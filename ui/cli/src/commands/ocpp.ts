@@ -84,11 +84,7 @@ export const createOcppCommands = (program: Command): Command => {
     .command('meter-values [hashIds...]')
     .description('Request station(s) to send OCPP MeterValues')
     .requiredOption('--connector-id <id>', 'connector ID (OCPP 1.6)', parseInteger)
-    .option(
-      '--evse-id <id>',
-      'EVSE ID (OCPP 2.0.x); takes precedence over --connector-id for EVSE resolution',
-      parseInteger
-    )
+    .option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x)', parseInteger)
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(
       async (

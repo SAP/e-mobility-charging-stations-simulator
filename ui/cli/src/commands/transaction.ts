@@ -2,10 +2,8 @@ import { Command } from 'commander'
 import {
   OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   ProcedureName,
-  randomUUID,
   type RequestPayload,
 } from 'ui-common'
 
@@ -56,13 +54,10 @@ export const createTransactionCommands = (program: Command): Command => {
             case OCPPVersion.VERSION_201:
               procedureName = ProcedureName.TRANSACTION_EVENT
               payload = {
+                connectorId: options.connectorId,
                 eventType: OCPP20TransactionEventEnumType.STARTED,
-                evse: { connectorId: options.connectorId, id: options.evseId ?? 1 },
+                ...(options.evseId != null && { evseId: options.evseId }),
                 idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-                seqNo: 0,
-                timestamp: new Date().toISOString(),
-                transactionInfo: { transactionId: randomUUID() },
-                triggerReason: OCPP20TriggerReasonEnumType.AUTHORIZED,
                 ...buildHashIdsPayload(resolvedHashIds),
               }
               break
@@ -109,11 +104,7 @@ export const createTransactionCommands = (program: Command): Command => {
             procedureName = ProcedureName.TRANSACTION_EVENT
             payload = {
               eventType: OCPP20TransactionEventEnumType.ENDED,
-              // seqNo 1: start uses 0; stop is the next event in sequence (simplified)
-              seqNo: 1,
-              timestamp: new Date().toISOString(),
-              transactionInfo: { transactionId: options.transactionId },
-              triggerReason: OCPP20TriggerReasonEnumType.REMOTE_STOP,
+              transactionId: options.transactionId,
               ...buildHashIdsPayload(resolvedHashIds),
             }
             break

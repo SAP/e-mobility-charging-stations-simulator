@@ -92,6 +92,18 @@ await describe('resolveOcppVersionFromList', async () => {
       assert.strictEqual(resolveOcppVersionFromList(['aaa'], stations), undefined)
     })
 
+    await it("returns version when some hashIds match and others don't", () => {
+      const stations = [
+        station('aaa111', OCPPVersion.VERSION_201),
+        station('bbb222', OCPPVersion.VERSION_16),
+      ]
+      // 'aaa' matches aaa111, 'zzz' matches nothing — only aaa111 targeted
+      assert.strictEqual(
+        resolveOcppVersionFromList(['aaa', 'zzz'], stations),
+        OCPPVersion.VERSION_201
+      )
+    })
+
     await it('returns common version when multiple hashIds all resolve to same version', () => {
       const stations = [
         station('aaa111', OCPPVersion.VERSION_201),
