@@ -17,8 +17,7 @@ import { loadConfig } from '../config/loader.js'
 import { createFormatter } from '../output/formatter.js'
 import { resolvePayload } from './resolve-payload.js'
 
-const NO_STATIONS_ERROR =
-  'No charging stations available. Start stations before running this command.'
+const NO_STATIONS_ERROR = 'No stations available. Start stations before running this command.'
 
 const MIXED_OCPP_VERSION_ERROR =
   'Cannot determine a common OCPP version for the targeted stations. ' +

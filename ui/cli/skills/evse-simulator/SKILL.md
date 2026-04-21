@@ -117,8 +117,10 @@ evse-cli ocpp boot-notification [hashId...]
 evse-cli ocpp authorize --id-tag <tag> [hashId...]
 evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]
 evse-cli ocpp meter-values [--connector-id <id>] [--evse-id <id>] [hashId...]
-evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]
+evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <data>] [hashId...]
 ```
+
+`meter-values` requires at least one of `--connector-id` or `--evse-id` when `-p` is not provided.
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 

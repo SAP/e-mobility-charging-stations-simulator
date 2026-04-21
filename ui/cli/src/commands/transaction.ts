@@ -12,7 +12,6 @@ import {
   parseInteger,
   resolveOcppVersionFromProgram,
   runAction,
-  UNSUPPORTED_OCPP_VERSION_ERROR,
 } from './action.js'
 import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION } from './payload.js'
 
@@ -79,7 +78,9 @@ export const createTransactionCommands = (program: Command): Command => {
                 }
                 break
               default:
-                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+                throw new Error(
+                  'Unsupported OCPP version for this command. Use ocpp transaction-event -p to pass the payload directly.'
+                )
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {
@@ -150,7 +151,9 @@ export const createTransactionCommands = (program: Command): Command => {
                 }
                 break
               default:
-                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+                throw new Error(
+                  'Unsupported OCPP version for this command. Use ocpp transaction-event -p to pass the payload directly.'
+                )
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {

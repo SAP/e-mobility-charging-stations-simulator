@@ -213,8 +213,10 @@ evse-cli ocpp authorize --id-tag <tag> [hashId...]                              
 evse-cli ocpp boot-notification [hashId...]                                                                      # BootNotification
 evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]  # StatusNotification
 evse-cli ocpp meter-values [--connector-id <id>] [--evse-id <id>] [hashId...]                                     # MeterValues
-evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]                   # DataTransfer
+evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <data>] [hashId...]                    # DataTransfer
 ```
+
+`meter-values` requires at least one of `--connector-id` or `--evse-id` when `-p` is not provided.
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
@@ -226,19 +228,19 @@ evse-cli ocpp boot-notification -p @collections/boot.json [hashId...]        # F
 cat boot.json | jq '.reason = "RemoteReset"' | evse-cli ocpp boot-notification -p - [hashId...]  # From stdin
 ```
 
-The payload is merged with command-specific options (e.g., `--id-tag`, `--connector-id`). Command options take precedence over payload fields.
+For `data-transfer`, command options merge with `-p` payload (options take precedence). For all other typed-option commands, `-p` conflicts with typed options and they cannot be combined.
 
 #### Version-aware commands
 
 Commands with typed options (`authorize`, `meter-values`, `status-notification`, `transaction start`, `transaction stop`) auto-detect the target station's OCPP version and build the appropriate payload:
 
-| Option             | OCPP 1.6                           | OCPP 2.0.x                                  |
-| ------------------ | ---------------------------------- | ------------------------------------------- |
-| `--id-tag`         | Sent as `idTag`                    | Wrapped as `idToken` (type: ISO14443)       |
-| `--connector-id`   | Sent as `connectorId`              | Sent as `connectorId` (server derives EVSE) |
-| `--evse-id`        | N/A                                | Sent as `evseId`                            |
-| `--error-code`     | Required for `status-notification` | N/A                                         |
-| `--transaction-id` | Integer                            | UUID string                                 |
+| Option             | OCPP 1.6                           | OCPP 2.0.x                                             |
+| ------------------ | ---------------------------------- | ------------------------------------------------------ |
+| `--id-tag`         | Sent as `idTag`                    | Wrapped as `idToken` (type: ISO14443)                  |
+| `--connector-id`   | Sent as `connectorId`              | Sent as `connectorId`; required for `transaction stop` |
+| `--evse-id`        | N/A                                | Sent as `evseId`                                       |
+| `--error-code`     | Required for `status-notification` | N/A                                                    |
+| `--transaction-id` | Integer                            | UUID string                                            |
 
 When `-p` is provided, version detection is skipped and the raw payload is passed through as-is.
 

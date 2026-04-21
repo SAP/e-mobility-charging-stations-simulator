@@ -61,7 +61,7 @@ export const createOcppCommands = (program: Command): Command => {
     .description('Request station(s) to send OCPP DataTransfer')
     .option('--vendor-id <id>', 'vendor identifier')
     .option('--message-id <id>', 'message identifier')
-    .option('--data <json>', 'data payload (JSON string)')
+    .option('--data <data>', 'data payload (free-form string)')
     .option(PAYLOAD_OPTION, PAYLOAD_DESC)
     .action(
       async (

@@ -9,14 +9,14 @@ export const createStationCommands = (program: Command): Command => {
 
   cmd
     .command('list')
-    .description('List all charging stations')
+    .description('List all stations')
     .action(async () => {
       await runAction(program, ProcedureName.LIST_CHARGING_STATIONS, {})
     })
 
   cmd
     .command('start [hashIds...]')
-    .description('Start charging station(s)')
+    .description('Start station(s)')
     .action(async (hashIds: string[]) => {
       const payload: RequestPayload = buildHashIdsPayload(hashIds)
       await runAction(program, ProcedureName.START_CHARGING_STATION, payload)
@@ -24,7 +24,7 @@ export const createStationCommands = (program: Command): Command => {
 
   cmd
     .command('stop [hashIds...]')
-    .description('Stop charging station(s)')
+    .description('Stop station(s)')
     .action(async (hashIds: string[]) => {
       const payload: RequestPayload = buildHashIdsPayload(hashIds)
       await runAction(program, ProcedureName.STOP_CHARGING_STATION, payload)
@@ -32,7 +32,7 @@ export const createStationCommands = (program: Command): Command => {
 
   cmd
     .command('add')
-    .description('Add charging stations from template')
+    .description('Add stations from template')
     .requiredOption('-t, --template <name>', 'station template name')
     .requiredOption('-n, --count <n>', 'number of stations to add', parseInteger)
     .option('--supervision-url <url>', 'supervision URL for new stations')
@@ -64,7 +64,7 @@ export const createStationCommands = (program: Command): Command => {
 
   cmd
     .command('delete [hashIds...]')
-    .description('Delete charging station(s)')
+    .description('Delete station(s)')
     .option('--delete-config', 'delete station configuration files')
     .action(async (hashIds: string[], options: { deleteConfig?: true }) => {
       const payload: RequestPayload = {
