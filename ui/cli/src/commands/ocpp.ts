@@ -2,10 +2,10 @@ import { Command, Option } from 'commander'
 import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
 import {
-  MIXED_OCPP_VERSION_ERROR,
   parseInteger,
   resolveOcppVersionFromProgram,
   runAction,
+  UNSUPPORTED_OCPP_VERSION_ERROR,
 } from './action.js'
 import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION, pickDefined } from './payload.js'
 
@@ -18,13 +18,10 @@ export const createOcppCommands = (program: Command): Command => {
     .addOption(new Option('--id-tag <tag>', 'RFID tag for authorization').conflicts('payload'))
     .addOption(new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts('idTag'))
     .action(async (hashIds: string[], options: { idTag?: string; payload?: string }) => {
-      if (options.payload == null && options.idTag == null) {
-        throw new Error('Either --id-tag or -p/--payload must be provided')
-      }
       let payload: RequestPayload
       if (options.payload == null) {
         if (options.idTag == null) {
-          throw new Error('--id-tag is required when -p/--payload is not provided')
+          throw new Error('Either --id-tag or -p/--payload must be provided')
         }
         // High-level: detect OCPP version and build correct payload
         const { config, ocppVersion, resolvedHashIds } = await resolveOcppVersionFromProgram(
@@ -46,7 +43,7 @@ export const createOcppCommands = (program: Command): Command => {
             }
             break
           default:
-            throw new Error(MIXED_OCPP_VERSION_ERROR)
+            throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
         }
         await runAction(program, ProcedureName.AUTHORIZE, payload, undefined, config)
       } else {
@@ -122,12 +119,13 @@ export const createOcppCommands = (program: Command): Command => {
             case OCPPVersion.VERSION_20:
             case OCPPVersion.VERSION_201:
               payload = {
-                evseId: options.evseId ?? options.connectorId,
+                ...(options.connectorId != null && { connectorId: options.connectorId }),
+                ...(options.evseId != null && { evseId: options.evseId }),
                 ...buildHashIdsPayload(resolvedHashIds),
               }
               break
             default:
-              throw new Error(MIXED_OCPP_VERSION_ERROR)
+              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
           }
           await runAction(program, ProcedureName.METER_VALUES, payload, undefined, config)
         } else {
@@ -150,14 +148,22 @@ export const createOcppCommands = (program: Command): Command => {
         'connector error code (OCPP 1.6 only; required for 1.6)'
       ).conflicts('payload')
     )
-    .option(
-      '--evse-id <id>',
-      'EVSE ID (OCPP 2.0.x only; resolved automatically if omitted)',
-      parseInteger
+    .addOption(
+      new Option(
+        '--evse-id <id>',
+        'EVSE ID (OCPP 2.0.x only; derived from connector ID if omitted)'
+      )
+        .argParser(parseInteger)
+        .conflicts('payload')
     )
     .addOption(new Option('--status <status>', 'connector status').conflicts('payload'))
     .addOption(
-      new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts(['connectorId', 'errorCode', 'status'])
+      new Option(PAYLOAD_OPTION, PAYLOAD_DESC).conflicts([
+        'connectorId',
+        'errorCode',
+        'evseId',
+        'status',
+      ])
     )
     .action(
       async (
@@ -205,7 +211,7 @@ export const createOcppCommands = (program: Command): Command => {
               }
               break
             default:
-              throw new Error(MIXED_OCPP_VERSION_ERROR)
+              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
           }
           await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
         } else {

@@ -24,10 +24,22 @@ export const MIXED_OCPP_VERSION_ERROR =
   'Cannot determine a common OCPP version for the targeted stations. ' +
   'Target homogeneous stations (same OCPP version) or use -p to pass the payload directly.'
 
-export const parseInteger = (value: string): number => {
+export const UNKNOWN_OCPP_VERSION_ERROR =
+  'The targeted station(s) have not reported their OCPP version yet. ' +
+  'Ensure stations are connected and registered, or use -p to pass the payload directly.'
+
+export const UNSUPPORTED_OCPP_VERSION_ERROR =
+  'Unsupported OCPP version for this command. Use -p to pass the payload directly.'
+
+export const parseInteger = (value: string, nameOrPrevious?: number | string): number => {
   const n = Number.parseInt(value, 10)
   if (Number.isNaN(n)) {
-    throw new Error(`Expected integer, got '${value}'`)
+    const label = typeof nameOrPrevious === 'string' ? nameOrPrevious : undefined
+    throw new Error(
+      label != null
+        ? `${label}: expected integer, got '${value}'`
+        : `Expected integer, got '${value}'`
+    )
   }
   return n
 }
@@ -68,7 +80,10 @@ const fetchStationList = async (
  */
 const resolveShortHashIdsFromList = (hashIds: string[], allHashIds: string[]): string[] =>
   hashIds.map(input => {
-    if (input.length >= MIN_FULL_HASH_LENGTH) return input
+    if (input.length >= MIN_FULL_HASH_LENGTH) {
+      if (allHashIds.includes(input)) return input
+      throw new Error(`No station found matching hash ID '${input}'`)
+    }
 
     const matches = allHashIds.filter(full => full.startsWith(input))
     if (matches.length === 1) return matches[0]
@@ -99,16 +114,14 @@ const resolveShortHashIds = async (
  * Pure helper: resolves the common OCPP version from a pre-fetched station list.
  * Exported for unit testing; callers should use resolveOcppVersionFromProgram.
  *
- * Unlike resolveShortHashIdsFromList, this function never throws on ambiguous or
- * non-matching prefixes — it returns undefined instead.
+ * Unlike resolveShortHashIdsFromList, this function never throws.
  * @param hashIds - station hash IDs or unique hash-ID prefixes to target;
- *   each entry is matched if the station's hashId equals it or starts with it.
- *   An ambiguous prefix (matching multiple stations) or a non-matching prefix
- *   does not throw — both cases cause undefined to be returned.
+ *   each entry is matched via startsWith against station hashIds.
+ *   Non-matching prefixes are silently excluded from targeting (no throw).
  *   Pass an empty array to target all stations.
  * @param chargingStations - station list to filter and inspect
- * @returns the common OCPPVersion, or undefined if no station matches, the
- *   prefix is ambiguous, or the targeted stations run heterogeneous versions
+ * @returns the common OCPPVersion, or undefined if the targeted set is empty
+ *   or the targeted stations run heterogeneous versions
  */
 export const resolveOcppVersionFromList = (
   hashIds: string[],
@@ -143,7 +156,7 @@ export const resolveOcppVersionFromProgram = async (
   hashIds: string[]
 ): Promise<{
   config: UIServerConfigurationSection
-  ocppVersion: OCPPVersion | undefined
+  ocppVersion: OCPPVersion
   resolvedHashIds: string[]
 }> => {
   const rootOpts = program.opts<GlobalOptions>()
@@ -158,6 +171,16 @@ export const resolveOcppVersionFromProgram = async (
   const resolvedHashIds =
     hashIds.length === 0 ? hashIds : resolveShortHashIdsFromList(hashIds, allHashIds)
   const ocppVersion = resolveOcppVersionFromList(resolvedHashIds, listResponse.chargingStations)
+  if (ocppVersion == null) {
+    const targeted =
+      resolvedHashIds.length === 0
+        ? listResponse.chargingStations
+        : listResponse.chargingStations.filter(cs =>
+          resolvedHashIds.some(id => cs.stationInfo.hashId.startsWith(id))
+        )
+    const hasUnknown = targeted.some(cs => cs.stationInfo.ocppVersion == null)
+    throw new Error(hasUnknown ? UNKNOWN_OCPP_VERSION_ERROR : MIXED_OCPP_VERSION_ERROR)
+  }
   return { config, ocppVersion, resolvedHashIds }
 }
 
