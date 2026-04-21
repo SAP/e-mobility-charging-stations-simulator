@@ -84,10 +84,12 @@ export const createOcppCommands = (program: Command): Command => {
     .command('meter-values [hashIds...]')
     .description('Request station(s) to send OCPP MeterValues')
     .addOption(
-      new Option('--connector-id <id>', 'connector ID').argParser(parseInteger).conflicts('payload')
+      new Option('--connector-id <id>', 'connector ID (OCPP 1.6 only)')
+        .argParser(parseInteger)
+        .conflicts('payload')
     )
     .addOption(
-      new Option('--evse-id <id>', 'EVSE ID (OCPP 2.0.x; derived from connector ID if omitted)')
+      new Option('--evse-id <id>', 'EVSE ID (required for OCPP 2.0.x)')
         .argParser(parseInteger)
         .conflicts('payload')
     )
@@ -122,9 +124,13 @@ export const createOcppCommands = (program: Command): Command => {
                 break
               case OCPPVersion.VERSION_20:
               case OCPPVersion.VERSION_201:
+                if (options.evseId == null) {
+                  throw new Error(
+                    '--evse-id is required for OCPP 2.0.x stations (connectorId is not a valid MeterValues field in OCPP 2.0.x)'
+                  )
+                }
                 payload = {
-                  ...(options.connectorId != null && { connectorId: options.connectorId }),
-                  ...(options.evseId != null && { evseId: options.evseId }),
+                  evseId: options.evseId,
                   ...buildHashIdsPayload(resolvedHashIds),
                 }
                 break
