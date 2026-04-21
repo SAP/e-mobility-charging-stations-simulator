@@ -195,26 +195,28 @@ evse-cli atg stop [hashId...]  [--connector-ids <ids...>]  # Stop ATG
 #### transaction
 
 ```shell
-evse-cli transaction start --connector-id <id> --id-tag <tag> [hashId...]
-evse-cli transaction stop --transaction-id <id> [hashId...]
+evse-cli transaction start --connector-id <id> --id-tag <tag> [--evse-id <id>] [hashId...]
+evse-cli transaction stop --transaction-id <id> [--connector-id <id>] [hashId...]
 ```
+
+Both commands auto-detect the station's OCPP version and adapt the procedure and payload (see [Version-aware commands](#version-aware-commands)). The `-p, --payload` option uses the OCPP 1.6 procedure; for 2.0.x raw payloads use `ocpp transaction-event -p`.
 
 #### ocpp
 
 Request charging station(s) to send OCPP messages to the CSMS:
 
 ```shell
-evse-cli ocpp heartbeat [hashId...]                                                               # Heartbeat
-evse-cli ocpp authorize --id-tag <tag> [hashId...]                                                # Authorize
-evse-cli ocpp boot-notification [hashId...]                                                       # BootNotification
-evse-cli ocpp status-notification --connector-id <id> --error-code <code> --status <status> [hashId...]  # StatusNotification
-evse-cli ocpp meter-values --connector-id <id> [hashId...]                                        # MeterValues
-evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>] [hashId...]      # DataTransfer
+evse-cli ocpp heartbeat [hashId...]                                                                              # Heartbeat
+evse-cli ocpp authorize --id-tag <tag> [hashId...]                                                               # Authorize
+evse-cli ocpp boot-notification [hashId...]                                                                      # BootNotification
+evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]  # StatusNotification
+evse-cli ocpp meter-values --connector-id <id> [--evse-id <id>] [hashId...]                                      # MeterValues
+evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]                   # DataTransfer
 ```
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
-All OCPP commands accept `-p, --payload <json|@file|->` to pass a custom JSON payload:
+All OCPP and transaction commands accept `-p, --payload <json|@file|->` to pass a custom JSON payload:
 
 ```shell
 evse-cli ocpp boot-notification -p '{"reason":"PowerUp"}' [hashId...]        # Inline JSON
@@ -223,6 +225,20 @@ cat boot.json | jq '.reason = "RemoteReset"' | evse-cli ocpp boot-notification -
 ```
 
 The payload is merged with command-specific options (e.g., `--id-tag`, `--connector-id`). Command options take precedence over payload fields.
+
+#### Version-aware commands
+
+Commands with typed options (`authorize`, `meter-values`, `status-notification`, `transaction start`, `transaction stop`) auto-detect the target station's OCPP version and build the appropriate payload:
+
+| Option             | OCPP 1.6                           | OCPP 2.0.x                                  |
+| ------------------ | ---------------------------------- | ------------------------------------------- |
+| `--id-tag`         | Sent as `idTag`                    | Wrapped as `idToken` (type: ISO14443)       |
+| `--connector-id`   | Sent as `connectorId`              | Sent as `connectorId` (server derives EVSE) |
+| `--evse-id`        | N/A                                | Sent as `evseId`                            |
+| `--error-code`     | Required for `status-notification` | N/A                                         |
+| `--transaction-id` | Integer                            | UUID string                                 |
+
+When `-p` is provided, version detection is skipped and the raw payload is passed through as-is.
 
 #### supervision
 

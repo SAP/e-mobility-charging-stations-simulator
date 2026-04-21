@@ -99,9 +99,11 @@ evse-cli atg stop [hashId...]                          # Stop ATG
 ### Transactions
 
 ```shell
-evse-cli transaction start --connector-id <id> --id-tag <tag> [hashId...]
-evse-cli transaction stop --transaction-id <id> [hashId...]
+evse-cli transaction start --connector-id <id> --id-tag <tag> [--evse-id <id>] [hashId...]
+evse-cli transaction stop --transaction-id <id> [--connector-id <id>] [hashId...]
 ```
+
+Both commands auto-detect the station's OCPP version and adapt the procedure and payload. The `-p` option uses the OCPP 1.6 procedure; for 2.0.x raw payloads use `ocpp transaction-event -p`.
 
 ### OCPP Messages
 
@@ -111,20 +113,32 @@ Request station(s) to send OCPP messages to the CSMS:
 evse-cli ocpp heartbeat [hashId...]
 evse-cli ocpp boot-notification [hashId...]
 evse-cli ocpp authorize --id-tag <tag> [hashId...]
-evse-cli ocpp status-notification --connector-id <id> --error-code <code> --status <status> [hashId...]
-evse-cli ocpp meter-values --connector-id <id> [hashId...]
-evse-cli ocpp data-transfer --vendor-id <id> [--message-id <id>] [--data <json>] [hashId...]
+evse-cli ocpp status-notification --connector-id <id> [--error-code <code>] --status <status> [--evse-id <id>] [hashId...]
+evse-cli ocpp meter-values --connector-id <id> [--evse-id <id>] [hashId...]
+evse-cli ocpp data-transfer [--vendor-id <id>] [--message-id <id>] [--data <json>] [hashId...]
 ```
 
 Other OCPP commands (no extra options): `diagnostics-status-notification`, `firmware-status-notification`, `get-15118-ev-certificate`, `get-certificate-status`, `log-status-notification`, `notify-customer-information`, `notify-report`, `security-event-notification`, `sign-certificate`, `transaction-event`.
 
-All OCPP commands accept `-p, --payload <json|@file|->` for custom JSON payloads:
+All OCPP and transaction commands accept `-p, --payload <json|@file|->` for custom JSON payloads:
 
 ```shell
 evse-cli ocpp boot-notification -p '{"reason":"PowerUp"}' [hashId...]  # Inline
 evse-cli ocpp boot-notification -p @payload.json [hashId...]           # From file
 cat payload.json | evse-cli ocpp boot-notification -p - [hashId...]    # From stdin
 ```
+
+### Version-aware commands
+
+Commands with typed options (`authorize`, `meter-values`, `status-notification`, `transaction start`, `transaction stop`) auto-detect the target station's OCPP version and build the appropriate payload. Key differences:
+
+- `--id-tag`: sent as `idTag` (1.6) or wrapped as `idToken` (2.0.x)
+- `--error-code`: required for `status-notification` on 1.6 only
+- `--evse-id`: OCPP 2.0.x only; derived from connector ID if omitted
+- `--connector-id` on `transaction stop`: required for OCPP 2.0.x
+- `--transaction-id`: integer (1.6) or UUID string (2.0.x)
+
+When `-p` is provided, version detection is skipped and the raw payload is passed through.
 
 ### Supervision
 
