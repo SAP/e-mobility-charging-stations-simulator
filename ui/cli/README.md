@@ -143,7 +143,7 @@ evse-cli simulator stop    # Stop the simulator
 #### station
 
 ```shell
-evse-cli station list                          # List all charging stations
+evse-cli station list                          # List all stations
 evse-cli station start [hashId...]             # Start station(s)
 evse-cli station stop [hashId...]              # Stop station(s)
 evse-cli station add -t <template> -n <count>  # Add stations from template
