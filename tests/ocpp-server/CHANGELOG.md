@@ -2,16 +2,14 @@
 
 ## [4.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.4.0...ocpp-server@v4.5.0) (2026-04-22)
 
-
 ### 🚀 Features
 
-* **ocpp:** implement Local Auth List Management Profile (GetLocalListVersion, SendLocalList) ([#1782](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1782)) ([34bbf33](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/34bbf3346d01f73e6de921bda734f05a029466dd))
-
+- **ocpp:** implement Local Auth List Management Profile (GetLocalListVersion, SendLocalList) ([#1782](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1782)) ([34bbf33](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/34bbf3346d01f73e6de921bda734f05a029466dd))
 
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1785](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1785)) ([776ac75](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/776ac75627d8f2355956447b0dcae3021b5cf300))
-* **deps:** update all non-major dependencies ([#1807](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1807)) ([87099e8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/87099e81af13f3ec514e8d69ecfd1aa09b42c224))
+- **deps:** update all non-major dependencies ([#1785](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1785)) ([776ac75](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/776ac75627d8f2355956447b0dcae3021b5cf300))
+- **deps:** update all non-major dependencies ([#1807](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1807)) ([87099e8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/87099e81af13f3ec514e8d69ecfd1aa09b42c224))
 
 ## [4.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.3.1...ocpp-server@v4.4.0) (2026-04-07)
 
