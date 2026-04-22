@@ -43,7 +43,7 @@
         placeholder="<template value>"
         type="text"
       >
-      Fixed name (base name is full station name):
+      Fixed name:
       <input
         v-model="state.fixedName"
         false-value="false"

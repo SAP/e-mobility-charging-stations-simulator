@@ -993,10 +993,10 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Updates the supervision server URL and optionally the CSMS basic auth credentials in configuration or station info.
-   * @param url - The new supervision server URL
-   * @param supervisionUser - The new CSMS basic auth user (optional; "" clears, undefined preserves)
-   * @param supervisionPassword - The new CSMS basic auth password (optional; "" clears, undefined preserves)
+   * Updates the supervision server URL and optionally the CSMS basic auth credentials.
+   * @param url
+   * @param supervisionUser
+   * @param supervisionPassword
    */
   public setSupervisionUrl (
     url: string,
@@ -1011,9 +1011,8 @@ export class ChargingStation extends EventEmitter {
     } else if (this.stationInfo != null) {
       this.stationInfo.supervisionUrls = url
       this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
-      this.saveStationInfo()
     }
-    if (this.stationInfo != null && (supervisionUser != null || supervisionPassword != null)) {
+    if (this.stationInfo != null) {
       if (supervisionUser != null) {
         this.stationInfo.supervisionUser = supervisionUser
       }
@@ -1576,9 +1575,6 @@ export class ChargingStation extends EventEmitter {
       checkEvsesConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
-    // hashId and chargingStationId are intentionally not set here. They are derived
-    // at the end of getStationInfo() so that any identity overrides coming from
-    // ChargingStationOptions (baseName, fixedName, nameSuffix) are honoured.
     stationInfo.templateIndex = this.index
     stationInfo.templateName = buildTemplateName(this.templateFile)
     createSerialNumber(stationTemplate, stationInfo)
