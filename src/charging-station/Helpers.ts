@@ -81,7 +81,10 @@ export const buildTemplateName = (templateFile: string): string => {
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 
-export type ChargingStationNameTemplate = Pick<ChargingStationTemplate, 'baseName' | 'fixedName' | 'nameSuffix'>
+export type ChargingStationNameTemplate = Pick<
+  ChargingStationTemplate,
+  'baseName' | 'fixedName' | 'nameSuffix'
+>
 
 export const getChargingStationId = (
   index: number,
