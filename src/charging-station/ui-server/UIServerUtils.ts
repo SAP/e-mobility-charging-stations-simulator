@@ -29,6 +29,10 @@ export const getUsernameAndPasswordFromAuthorizationToken = (
       next(new BaseError('Invalid basic authentication token format: empty username'))
       return undefined
     }
+    if (isEmpty(password)) {
+      next(new BaseError('Invalid basic authentication token format: empty password'))
+      return undefined
+    }
     return [username, password]
   } catch (error) {
     next(new BaseError(`Invalid basic authentication token format: ${getErrorMessage(error)}`))
