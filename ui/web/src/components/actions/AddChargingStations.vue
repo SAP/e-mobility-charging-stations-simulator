@@ -76,11 +76,10 @@
       <input
         id="supervision-password"
         v-model="state.supervisionPassword"
-        autocomplete="off"
         class="supervision-password"
         name="supervision-password"
         placeholder="<password>"
-        type="text"
+        type="password"
       >
     </li>
     <li>

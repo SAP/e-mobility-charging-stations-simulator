@@ -1024,11 +1024,11 @@ export class ChargingStation extends EventEmitter {
         this.stationInfo.supervisionPassword = supervisionPassword
       }
       this.saveStationInfo()
+      // Notify the UI server cache so `listChargingStations` reflects the
+      // new URL/credentials immediately (without having to stop/start or
+      // reconnect first).
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
     }
-    // Notify the UI server cache so `listChargingStations` reflects the
-    // new URL/credentials immediately (without having to stop/start or
-    // reconnect first).
-    this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   /** Starts the charging station, initializes connectors, and connects to the central server. */
