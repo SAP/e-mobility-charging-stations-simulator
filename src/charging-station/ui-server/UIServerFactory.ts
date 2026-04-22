@@ -43,6 +43,14 @@ export class UIServerFactory {
       )
     }
     if (
+      uiServerConfiguration.authentication?.enabled === true &&
+      uiServerConfiguration.authentication.username?.includes(':') === true
+    ) {
+      throw new BaseError(
+        `Authentication username in '${ConfigurationSection.uiServer}' configuration section must not contain ':' (RFC 7617)`
+      )
+    }
+    if (
       uiServerConfiguration.authentication?.enabled !== true &&
       !isLoopback(uiServerConfiguration.options?.host ?? '')
     ) {
