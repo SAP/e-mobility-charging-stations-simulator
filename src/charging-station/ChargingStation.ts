@@ -863,7 +863,13 @@ export class ChargingStation extends EventEmitter {
       return
     }
     if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
-      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
+      if (this.stationInfo.supervisionUser.includes(':')) {
+        logger.warn(
+          `${this.logPrefix()} Supervision user contains ':' which is invalid in HTTP Basic Auth (RFC 7617) — skipping auth`
+        )
+      } else {
+        options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
+      }
     }
     if (params.closeOpened) {
       this.closeWSConnection()
