@@ -152,14 +152,19 @@ evse-cli station delete [hashId...]            # Delete station(s)
 
 **`station add` options:**
 
-| Option                    | Required | Description                          |
-| ------------------------- | -------- | ------------------------------------ |
-| `-t, --template <name>`   | Yes      | Station template name                |
-| `-n, --count <n>`         | Yes      | Number of stations to add            |
-| `--supervision-url <url>` | No       | Override supervision URL             |
-| `--auto-start`            | No       | Auto-start added stations            |
-| `--persistent-config`     | No       | Enable persistent OCPP configuration |
-| `--ocpp-strict`           | No       | Enable OCPP strict compliance        |
+| Option                              | Required | Description                                |
+| ----------------------------------- | -------- | ------------------------------------------ |
+| `-t, --template <name>`             | Yes      | Station template name                      |
+| `-n, --count <n>`                   | Yes      | Number of stations to add                  |
+| `--auto-start`                      | No       | Auto-start added stations                  |
+| `--base-name <name>`                | No       | Override template base name for station id |
+| `--fixed-name`                      | No       | Use base name verbatim as station id       |
+| `--name-suffix <suffix>`            | No       | Suffix appended to derived station id      |
+| `--ocpp-strict`                     | No       | Enable OCPP strict compliance              |
+| `--persistent-config`               | No       | Enable persistent OCPP configuration       |
+| `--supervision-password <password>` | No       | CSMS basic auth password                   |
+| `--supervision-url <url>`           | No       | Override supervision URL                   |
+| `--supervision-user <user>`         | No       | CSMS basic auth user                       |
 
 **`station delete` options:**
 
@@ -248,7 +253,7 @@ When `-p` is provided, version detection is skipped and the raw payload is passe
 #### supervision
 
 ```shell
-evse-cli supervision set-url --supervision-url <url> [hashId...]  # Set supervision URL
+evse-cli supervision set-url --supervision-url <url> [--supervision-user <user>] [--supervision-password <password>] [hashId...]  # Set supervision URL
 ```
 
 #### performance

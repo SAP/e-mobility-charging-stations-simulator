@@ -88,4 +88,27 @@ await describe('evse-cli integration tests', async () => {
     const result = await runCli(['station', 'add'])
     assert.strictEqual(result.code, 1)
   })
+
+  await it('should show identity and credential options in station add help', async () => {
+    const result = await runCli(['station', 'add', '--help'])
+    assert.strictEqual(result.code, 0)
+    assert.ok(result.stdout.includes('--base-name'), 'Expected --base-name option')
+    assert.ok(result.stdout.includes('--fixed-name'), 'Expected --fixed-name option')
+    assert.ok(result.stdout.includes('--name-suffix'), 'Expected --name-suffix option')
+    assert.ok(result.stdout.includes('--supervision-user'), 'Expected --supervision-user option')
+    assert.ok(
+      result.stdout.includes('--supervision-password'),
+      'Expected --supervision-password option'
+    )
+  })
+
+  await it('should show credential options in supervision set-url help', async () => {
+    const result = await runCli(['supervision', 'set-url', '--help'])
+    assert.strictEqual(result.code, 0)
+    assert.ok(result.stdout.includes('--supervision-user'), 'Expected --supervision-user option')
+    assert.ok(
+      result.stdout.includes('--supervision-password'),
+      'Expected --supervision-password option'
+    )
+  })
 })
