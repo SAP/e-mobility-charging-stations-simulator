@@ -189,7 +189,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'url' field is required`
             )
           }
-          this.chargingStation.setSupervisionUrl(url)
+          const supervisionUser = requestPayload?.supervisionUser
+          const supervisionPassword = requestPayload?.supervisionPassword
+          this.chargingStation.setSupervisionUrl(
+            url,
+            typeof supervisionUser === 'string' ? supervisionUser : undefined,
+            typeof supervisionPassword === 'string' ? supervisionPassword : undefined
+          )
         },
       ],
       [

@@ -32,7 +32,19 @@ const emptyInputSchema = z.object({})
 const chargingStationOptionsSchema = z.object({
   autoRegister: z.boolean().optional().describe('Set stations as registered at boot notification'),
   autoStart: z.boolean().optional().describe('Enable automatic start of added charging station'),
+  baseName: z
+    .string()
+    .optional()
+    .describe('Override the template base name used to derive the chargingStationId'),
   enableStatistics: z.boolean().optional().describe('Enable charging station statistics'),
+  fixedName: z
+    .boolean()
+    .optional()
+    .describe('Use baseName verbatim as chargingStationId instead of appending index/suffix'),
+  nameSuffix: z
+    .string()
+    .optional()
+    .describe('Suffix appended to the derived chargingStationId (ignored when fixedName is true)'),
   ocppStrictCompliance: z
     .boolean()
     .optional()
@@ -45,10 +57,18 @@ const chargingStationOptionsSchema = z.object({
     .boolean()
     .optional()
     .describe('Enable stop transactions on station stop'),
+  supervisionPassword: z
+    .string()
+    .optional()
+    .describe('CSMS basic auth password used on the supervision WebSocket'),
   supervisionUrls: z
     .union([z.url(), z.array(z.url())])
     .optional()
     .describe('OCPP server supervision URL(s)'),
+  supervisionUser: z
+    .string()
+    .optional()
+    .describe('CSMS basic auth user used on the supervision WebSocket'),
 })
 
 /** Maps ProcedureName to OCPP JSON Schema file base names per version */
@@ -317,9 +337,18 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.SET_SUPERVISION_URL,
     {
-      description: 'Set the OCPP server supervision URL for one or more charging stations',
+      description:
+        'Set the OCPP server supervision URL for one or more charging stations. Optionally updates the CSMS basic auth credentials (empty string clears a credential, undefined preserves it).',
       inputSchema: z.object({
         hashIds,
+        supervisionPassword: z
+          .string()
+          .optional()
+          .describe('CSMS basic auth password (empty string clears)'),
+        supervisionUser: z
+          .string()
+          .optional()
+          .describe('CSMS basic auth user (empty string clears)'),
         url: z.url().describe('The OCPP server supervision URL to set'),
       }),
     },

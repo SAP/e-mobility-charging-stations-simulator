@@ -257,11 +257,16 @@ export interface ChargingStationOcppConfiguration extends JsonObject {
 export interface ChargingStationOptions extends JsonObject {
   autoRegister?: boolean
   autoStart?: boolean
+  baseName?: string
   enableStatistics?: boolean
+  fixedName?: boolean
+  nameSuffix?: string
   ocppStrictCompliance?: boolean
   persistentConfiguration?: boolean
   stopTransactionsOnStopped?: boolean
+  supervisionPassword?: string
   supervisionUrls?: string | string[]
+  supervisionUser?: string
 }
 
 export interface ConfigurationKey extends OCPPConfigurationKey {

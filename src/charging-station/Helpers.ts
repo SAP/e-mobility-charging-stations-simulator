@@ -81,20 +81,25 @@ export const buildTemplateName = (templateFile: string): string => {
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 
+export type ChargingStationNameTemplate = Pick<
+  ChargingStationTemplate,
+  'baseName' | 'fixedName' | 'nameSuffix'
+>
+
 export const getChargingStationId = (
   index: number,
-  stationTemplate: ChargingStationTemplate | undefined
+  nameTemplate: ChargingStationNameTemplate | undefined
 ): string => {
-  if (stationTemplate == null) {
+  if (nameTemplate == null) {
     return "Unknown 'chargingStationId'"
   }
   // In case of multiple instances: add instance index to charging station id
   const instanceIndex = env.CF_INSTANCE_INDEX ?? 0
-  const idSuffix = stationTemplate.nameSuffix ?? ''
+  const idSuffix = nameTemplate.nameSuffix ?? ''
   const idStr = `000000000${index.toString()}`
-  return stationTemplate.fixedName === true
-    ? stationTemplate.baseName
-    : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
+  return nameTemplate.fixedName === true
+    ? nameTemplate.baseName
+    : `${nameTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
         idStr.length - 4
       )}${idSuffix}`
 }
@@ -156,7 +161,11 @@ export const removeExpiredReservations = async (
   }
 }
 
-export const getHashId = (index: number, stationTemplate: ChargingStationTemplate): string => {
+export const getHashId = (
+  index: number,
+  stationTemplate: ChargingStationTemplate,
+  chargingStationIdOverride?: string
+): string => {
   const chargingStationInfo = {
     chargePointModel: stationTemplate.chargePointModel,
     chargePointVendor: stationTemplate.chargePointVendor,
@@ -175,7 +184,9 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
   }
   return hash(
     Constants.DEFAULT_HASH_ALGORITHM,
-    `${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`,
+    `${JSON.stringify(chargingStationInfo)}${
+      chargingStationIdOverride ?? getChargingStationId(index, stationTemplate)
+    }`,
     'hex'
   )
 }
@@ -428,6 +439,12 @@ export const setChargingStationOptions = (
   if (options?.supervisionUrls != null) {
     stationInfo.supervisionUrls = options.supervisionUrls
   }
+  if (options?.supervisionUser != null) {
+    stationInfo.supervisionUser = options.supervisionUser
+  }
+  if (options?.supervisionPassword != null) {
+    stationInfo.supervisionPassword = options.supervisionPassword
+  }
   if (options?.persistentConfiguration != null) {
     stationInfo.stationInfoPersistentConfiguration = options.persistentConfiguration
     stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
@@ -448,6 +465,15 @@ export const setChargingStationOptions = (
   }
   if (options?.stopTransactionsOnStopped != null) {
     stationInfo.stopTransactionsOnStopped = options.stopTransactionsOnStopped
+  }
+  if (options?.baseName != null) {
+    stationInfo.baseName = options.baseName
+  }
+  if (options?.fixedName != null) {
+    stationInfo.fixedName = options.fixedName
+  }
+  if (options?.nameSuffix != null) {
+    stationInfo.nameSuffix = options.nameSuffix
   }
   return stationInfo
 }

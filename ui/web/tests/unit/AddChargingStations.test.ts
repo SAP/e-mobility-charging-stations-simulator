@@ -91,7 +91,7 @@ describe('AddChargingStations', () => {
   it('should render option checkboxes', () => {
     const wrapper = mountComponent()
     const checkboxes = wrapper.findAll('input[type="checkbox"]')
-    expect(checkboxes.length).toBe(4)
+    expect(checkboxes.length).toBe(5)
   })
 
   it('should pass supervision URL option when provided', async () => {
@@ -114,6 +114,38 @@ describe('AddChargingStations', () => {
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ supervisionUrls: undefined })
+    )
+  })
+
+  it('should pass baseName and credentials when provided', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('#base-name').setValue('DEV-STATION')
+    await wrapper.find('#supervision-user').setValue('alice')
+    await wrapper.find('#supervision-password').setValue('s3cret')
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.addChargingStations).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        baseName: 'DEV-STATION',
+        supervisionPassword: 's3cret',
+        supervisionUser: 'alice',
+      })
+    )
+  })
+
+  it('should pass fixedName: true when baseName is set and fixedName checkbox is checked', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('#base-name').setValue('DEV-STATION')
+    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+    await checkboxes[0].setValue(true)
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.addChargingStations).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ baseName: 'DEV-STATION', fixedName: true })
     )
   })
 })

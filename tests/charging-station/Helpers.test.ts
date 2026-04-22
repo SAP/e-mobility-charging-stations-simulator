@@ -20,6 +20,7 @@ import {
   hasPendingReservations,
   hasReservationExpired,
   resetConnectorStatus,
+  setChargingStationOptions,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
 import {
@@ -28,6 +29,7 @@ import {
   ChargingProfilePurposeType,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
+  type ChargingStationOptions,
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -76,6 +78,117 @@ await describe('Helpers', async () => {
       getHashId(1, chargingStationTemplate),
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
+  })
+
+  await it('should return baseName verbatim when fixedName is true', () => {
+    const template = {
+      baseName: 'DYNAMIC-STATION',
+      fixedName: true,
+    } satisfies Partial<ChargingStationTemplate>
+    assert.strictEqual(
+      getChargingStationId(1, template as ChargingStationTemplate),
+      'DYNAMIC-STATION'
+    )
+  })
+
+  await it('should append nameSuffix to the indexed id when fixedName is false', () => {
+    const template = {
+      baseName: 'CS',
+      fixedName: false,
+      nameSuffix: '-X',
+    } satisfies Partial<ChargingStationTemplate>
+    assert.strictEqual(getChargingStationId(7, template as ChargingStationTemplate), 'CS-00007-X')
+  })
+
+  await it('should derive charging station id from stationInfo identity fields', () => {
+    // stationInfo satisfies the ChargingStationNameTemplate shape since it inherits baseName / fixedName / nameSuffix from the template type.
+    const stationInfo = {
+      baseName: 'INFO-STATION',
+      fixedName: true,
+    } satisfies Partial<ChargingStationInfo>
+    assert.strictEqual(getChargingStationId(1, stationInfo as ChargingStationInfo), 'INFO-STATION')
+  })
+
+  await it('should honour chargingStationId override in getHashId', () => {
+    const hashWithoutOverride = getHashId(1, chargingStationTemplate)
+    const hashWithOverride = getHashId(1, chargingStationTemplate, 'OVERRIDDEN-ID')
+    assert.notStrictEqual(hashWithoutOverride, hashWithOverride)
+    // Passing the default-derived id explicitly must reproduce the default hash.
+    assert.strictEqual(
+      getHashId(1, chargingStationTemplate, getChargingStationId(1, chargingStationTemplate)),
+      hashWithoutOverride
+    )
+  })
+
+  await it('should produce distinct hash ids when identity options differ', () => {
+    const baseId = getChargingStationId(1, chargingStationTemplate)
+    const overriddenId = getChargingStationId(1, {
+      ...chargingStationTemplate,
+      baseName: 'OTHER',
+    })
+    assert.notStrictEqual(
+      getHashId(1, chargingStationTemplate, baseId),
+      getHashId(1, chargingStationTemplate, overriddenId)
+    )
+  })
+
+  await describe('setChargingStationOptions', async () => {
+    const buildStationInfo = (): ChargingStationInfo =>
+      ({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        hashId: 'placeholder',
+        templateIndex: 0,
+        templateName: 'test-template',
+      }) as ChargingStationInfo
+
+    await it('should return stationInfo unchanged when options are undefined', () => {
+      const stationInfo = buildStationInfo()
+      const before = { ...stationInfo }
+      const result = setChargingStationOptions(stationInfo)
+      assert.deepStrictEqual(result, before)
+    })
+
+    await it('should apply baseName override', () => {
+      const options: ChargingStationOptions = { baseName: 'DYNAMIC' }
+      const result = setChargingStationOptions(buildStationInfo(), options)
+      assert.strictEqual(result.baseName, 'DYNAMIC')
+    })
+
+    await it('should apply fixedName override', () => {
+      const options: ChargingStationOptions = { fixedName: true }
+      const result = setChargingStationOptions(buildStationInfo(), options)
+      assert.strictEqual(result.fixedName, true)
+    })
+
+    await it('should apply nameSuffix override', () => {
+      const options: ChargingStationOptions = { nameSuffix: '-SUFFIX' }
+      const result = setChargingStationOptions(buildStationInfo(), options)
+      assert.strictEqual(result.nameSuffix, '-SUFFIX')
+    })
+
+    await it('should apply supervisionUser override', () => {
+      const options: ChargingStationOptions = { supervisionUser: 'alice' }
+      const result = setChargingStationOptions(buildStationInfo(), options)
+      assert.strictEqual(result.supervisionUser, 'alice')
+    })
+
+    await it('should apply supervisionPassword override', () => {
+      const options: ChargingStationOptions = { supervisionPassword: 'secret' }
+      const result = setChargingStationOptions(buildStationInfo(), options)
+      assert.strictEqual(result.supervisionPassword, 'secret')
+    })
+
+    await it('should not overwrite stationInfo fields when option value is undefined', () => {
+      const stationInfo = buildStationInfo()
+      stationInfo.baseName = 'KEEP-ME'
+      stationInfo.supervisionUser = 'original'
+      const result = setChargingStationOptions(stationInfo, {
+        autoStart: true,
+      })
+      assert.strictEqual(result.baseName, 'KEEP-ME')
+      assert.strictEqual(result.supervisionUser, 'original')
+      assert.strictEqual(result.autoStart, true)
+    })
   })
 
   await it('should throw when stationInfo is missing', () => {

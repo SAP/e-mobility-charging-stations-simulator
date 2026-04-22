@@ -34,6 +34,24 @@
   <p>Template options overrides:</p>
   <ul class="template-options">
     <li>
+      Base name:
+      <input
+        id="base-name"
+        v-model.trim="state.baseName"
+        class="base-name"
+        name="base-name"
+        placeholder="<template value>"
+        type="text"
+      >
+      Fixed name (base name is full station name):
+      <input
+        v-model="state.fixedName"
+        false-value="false"
+        true-value="true"
+        type="checkbox"
+      >
+    </li>
+    <li>
       Supervision url:
       <input
         id="supervision-url"
@@ -42,6 +60,26 @@
         name="supervision-url"
         placeholder="wss://"
         type="url"
+      >
+    </li>
+    <li>
+      Supervision credentials:
+      <input
+        id="supervision-user"
+        v-model.trim="state.supervisionUser"
+        autocomplete="off"
+        class="supervision-user"
+        name="supervision-user"
+        placeholder="<username>"
+        type="text"
+      >
+      <input
+        id="supervision-password"
+        v-model="state.supervisionPassword"
+        class="supervision-password"
+        name="supervision-password"
+        placeholder="<password>"
+        type="password"
       >
     </li>
     <li>
@@ -106,21 +144,29 @@ import {
 
 const state = ref<{
   autoStart: boolean
+  baseName: string
   enableStatistics: boolean
+  fixedName: boolean
   numberOfStations: number
   ocppStrictCompliance: boolean
   persistentConfiguration: boolean
   renderTemplates: UUIDv4
+  supervisionPassword: string
   supervisionUrl: string
+  supervisionUser: string
   template: string
 }>({
   autoStart: false,
+  baseName: '',
   enableStatistics: false,
+  fixedName: false,
   numberOfStations: 1,
   ocppStrictCompliance: true,
   persistentConfiguration: true,
   renderTemplates: randomUUID(),
+  supervisionPassword: '',
   supervisionUrl: '',
+  supervisionUser: '',
   template: '',
 })
 
@@ -137,11 +183,18 @@ const addChargingStations = (): void => {
   executeAction(
     $uiClient.addChargingStations(state.value.template, state.value.numberOfStations, {
       autoStart: convertToBoolean(state.value.autoStart),
+      baseName: state.value.baseName.length > 0 ? state.value.baseName : undefined,
       enableStatistics: convertToBoolean(state.value.enableStatistics),
+      fixedName:
+        state.value.baseName.length > 0 ? convertToBoolean(state.value.fixedName) : undefined,
       ocppStrictCompliance: convertToBoolean(state.value.ocppStrictCompliance),
       persistentConfiguration: convertToBoolean(state.value.persistentConfiguration),
+      supervisionPassword:
+        state.value.supervisionPassword.length > 0 ? state.value.supervisionPassword : undefined,
       supervisionUrls:
         state.value.supervisionUrl.length > 0 ? state.value.supervisionUrl : undefined,
+      supervisionUser:
+        state.value.supervisionUser.length > 0 ? state.value.supervisionUser : undefined,
     }),
     'Charging stations successfully added',
     'Error at adding charging stations',
@@ -162,8 +215,17 @@ const addChargingStations = (): void => {
   text-align: center;
 }
 
+.supervision-url,
+.base-name,
+.supervision-user,
+.supervision-password {
+  width: 100%;
+  max-width: 40rem;
+  text-align: left;
+}
+
 .template-options {
-  list-style: circle inside;
+  list-style: circle;
   text-align: left;
 }
 </style>
