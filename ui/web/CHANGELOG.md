@@ -1,5 +1,52 @@
 # Changelog
 
+## [4.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.4.0...webui@v4.5.0) (2026-04-22)
+
+### 🚀 Features
+
+- **ui-server:** allow override of station identity and CSMS credentials in addChargingStations ([#1802](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1802)) ([f23ba15](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f23ba158a146ac3a0aedd85195c16e4d4595acd9))
+- **ui:** add CLI client and shared UI common library ([#1789](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1789)) ([94b898b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/94b898b618410975a64b9e39b076a3909391dbf6))
+
+### 🐞 Bug Fixes
+
+- **common:** include Date in JsonPrimitive, restore Date fields ([758cbfa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/758cbfa38651951565a0c152a0e9b8f82a2239d2))
+- **deps:** update all non-major dependencies ([#1785](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1785)) ([776ac75](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/776ac75627d8f2355956447b0dcae3021b5cf300))
+- **deps:** update all non-major dependencies ([#1792](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1792)) ([eeeb437](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/eeeb43740e3f30fd341a687019ba6606398467f7))
+- **deps:** update all non-major dependencies ([#1803](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1803)) ([dbb9717](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbb97172a39a56c1f4370984dce1d70c02b206cc))
+- **deps:** update all non-major dependencies ([#1807](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1807)) ([87099e8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/87099e81af13f3ec514e8d69ecfd1aa09b42c224))
+- **ui-server:** harden CSMS credential handling in supervision URL flow ([c7572fb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c7572fb49c029ab9458898e08939b2845687b609))
+- **ui-server:** harmonize setSupervisionUrl semantics and text descriptions ([ab9d929](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ab9d9299b910864d795696e160181a9983dd0309))
+- **ui-web:** fix remaining for...in on localStorage and remove dead test config ([14eeb8a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/14eeb8a121c39f965742c0e54effd2dae5f29f60))
+- **ui-web:** force toggle button re-mount on navigation back to main view ([92711d4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/92711d429e51c4e4bb2eaafb86c6f47d62f99c63))
+- **ui-web:** remove orphaned CSS classes and guard onFinally in useExecuteAction ([b01978f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b01978f7e4eeb6c11136109a8b98871c72f4ce17))
+- **ui-web:** use portable WebSocketReadyState in CSData isWebSocketOpen ([51aa070](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/51aa070b3044074a394a9b7123a64dc22c2489b4))
+- **ui:** use portable crypto API and async bootstrap pattern ([3c6f6f1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c6f6f11211b476fe050cd54d5bb6829c7bdbfc1))
+- **web:** copy workspace node_modules, harmonize browser adapter, add frozen-lockfile ([bbb04f4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bbb04f4d31c309e46ed02be961ee086bc1d921d1))
+- **web:** prevent ghost events after server switch, fix CloseEvent type, improve error extraction ([12c1e9a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/12c1e9a4cd5cfa456576d672d7d4a681afe1b57a))
+- **webui-docker:** include workspace root node_modules so pnpm symlinks resolve ([#1806](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1806)) ([6834764](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/683476435546765d521f363f4ddb7451af268527))
+- **web:** widen Docker context to monorepo root for ui-common workspace dep ([86842b7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/86842b720901f071e3b9bd6af57b940a7b4e4a67))
+
+### ✨ Polish
+
+- **common:** portable btoa, eliminate UIClient duplication, fix Docker deps ([d63dd09](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d63dd0933f9c3a96ca2ba613e904980dbca3f8bd))
+- consolidate all types into ui-common — single import source ([9739ffe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9739ffe201bf3d5b0060ff038af83f515b7d6921))
+- fix phantom errorMessage, merge imports, harmonize Docker configs ([18dc121](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/18dc1211f776e966b36417f47aa191c248dea183))
+- **tests:** replace re-export hub with direct imports ([8c7ce13](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8c7ce130606b38a3e5fd9c060f59bac40d24186d))
+- **ui-web:** import randomUUID/validateUUID directly from ui-common ([647c808](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/647c8080f940c6a0d0b71f186ad04aeef3961933))
+- **ui-web:** remove duplicated tests for functions now in ui-common ([db5f0a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/db5f0a30e13a93ef5a52d5b4d57f89256a6a073e))
+- **ui:** consolidate constants — remove timeout duplicate, centralize defaults ([42f6757](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/42f675715f5cb0c64601d90a49c2c06979671c60))
+- **ui:** factorize shared code across ui packages ([c91d737](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c91d737117e050b08d68f25ae9b3217a574e6188))
+- **ui:** global code quality pass ([01b9a6a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/01b9a6aed766a8421c17c8a23ca37646810414de))
+- **ui:** move generic utilities to ui-common and add useFetchData composable ([93cacfb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/93cacfb376c7856e85eb8607db8cd3edb8e160f2))
+- **ui:** second-pass factorization audit implementation ([5f58e56](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5f58e5604c968bad180ba01dd110521cdb9c6c86))
+- **web:** eliminate type barrel — direct imports from ui-common and source modules ([dbf5731](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbf573181510a19edda0bf76aee6e8553a06c60e))
+- **web:** migrate types to ui-common + UIClient internals to WebSocketClient ([2f44afe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2f44afef5abc491c3bfe600efe9b6a87be0522d2))
+
+### 🧪 Tests
+
+- **ui:** add tests for converters, websocket utils, and useFetchData ([df99c2e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/df99c2e939c3584a1045d9751262fd289896948c))
+- **web:** cover abort branches in UIClient to meet coverage threshold ([39e5ae4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/39e5ae4f68f5b626aac36e2bf662e002e90109d5))
+
 ## [4.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.3.1...webui@v4.4.0) (2026-04-07)
 
 ### 🧹 Chores
