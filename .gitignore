@@ -126,3 +126,4 @@ temp/
 performanceRecords.json
 performanceRecords.json.lock
 *.db
+.hermes/

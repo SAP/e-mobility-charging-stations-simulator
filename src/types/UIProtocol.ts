@@ -41,12 +41,15 @@ export enum ProcedureName {
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   START_CHARGING_STATION = 'startChargingStation',
   START_SIMULATOR = 'startSimulator',
+  /** OCPP 1.6 only. Use TRANSACTION_EVENT for OCPP 2.0.x. */
   START_TRANSACTION = 'startTransaction',
   STATUS_NOTIFICATION = 'statusNotification',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',
+  /** OCPP 1.6 only. Use TRANSACTION_EVENT for OCPP 2.0.x. */
   STOP_TRANSACTION = 'stopTransaction',
+  /** OCPP 2.0.x only. Use START_TRANSACTION / STOP_TRANSACTION for OCPP 1.6. */
   TRANSACTION_EVENT = 'transactionEvent',
   UNLOCK_CONNECTOR = 'unlockConnector',
 }
