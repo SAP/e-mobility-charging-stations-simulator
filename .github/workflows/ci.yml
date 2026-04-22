@@ -22,6 +22,31 @@ jobs:
             echo "defined=false" >> $GITHUB_OUTPUT;
           fi
 
+  # TODO: remove this job after first successful run
+  fix-sonarcloud-main-branch:
+    needs: [check-secrets]
+    if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rename SonarCloud main branch from master to main
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          for project in \
+            e-mobility-charging-stations-simulator \
+            e-mobility-charging-stations-simulator-ui-common \
+            e-mobility-charging-stations-simulator-cli \
+            e-mobility-charging-stations-simulator-webui
+          do
+            http_code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --request POST \
+              'https://sonarcloud.io/api/project_branches/rename' \
+              -H "Authorization: Bearer ${SONAR_TOKEN}" \
+              -H 'Content-Type: application/x-www-form-urlencoded' \
+              -d "project=${project}&name=main")
+            echo "${project}: HTTP ${http_code}"
+          done
+
   build-ocpp-server:
     strategy:
       matrix:
