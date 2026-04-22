@@ -1,5 +1,54 @@
 # Changelog
 
+## [4.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.4.0...simulator@v4.5.0) (2026-04-22)
+
+
+### 🚀 Features
+
+* **ocpp:** implement Local Auth List Management Profile (GetLocalListVersion, SendLocalList) ([#1782](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1782)) ([34bbf33](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/34bbf3346d01f73e6de921bda734f05a029466dd))
+* **ui-server:** allow override of station identity and CSMS credentials in addChargingStations ([#1802](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1802)) ([f23ba15](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f23ba158a146ac3a0aedd85195c16e4d4595acd9))
+* **ui:** add CLI client and shared UI common library ([#1789](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1789)) ([94b898b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/94b898b618410975a64b9e39b076a3909391dbf6))
+
+
+### 🐞 Bug Fixes
+
+* **cli:** make high-level OCPP commands version-aware ([#1801](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1801)) ([804dce7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/804dce720fd281de52499510cba6d8cbb01fdf0d))
+* **deps:** update all non-major dependencies ([#1785](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1785)) ([776ac75](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/776ac75627d8f2355956447b0dcae3021b5cf300))
+* **deps:** update all non-major dependencies ([#1792](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1792)) ([eeeb437](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/eeeb43740e3f30fd341a687019ba6606398467f7))
+* **deps:** update all non-major dependencies ([#1803](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1803)) ([dbb9717](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbb97172a39a56c1f4370984dce1d70c02b206cc))
+* **deps:** update all non-major dependencies ([#1807](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1807)) ([87099e8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/87099e81af13f3ec514e8d69ecfd1aa09b42c224))
+* **deps:** update all non-major dependencies to ^6.6.13 ([#1787](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1787)) ([6249ecd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6249ecdaefbe5a33fe75e7a47f2affcb45d1b31f))
+* **deps:** update dependency basic-ftp to ^5.3.0 ([#1795](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1795)) ([fb10843](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb108431e28355def575296ff65c5b3ab14cb99c))
+* **deps:** update dependency ora to v9 ([#1793](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1793)) ([d4ad3f5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d4ad3f5e9da0f6c5befd25250e81b6f446d4da06))
+* enforce RFC 7617 colon-free username across all Basic Auth paths ([5c1f885](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5c1f8850d9983d941187269741aee535841412c3))
+* **ocpp2:** restore connector cleanup in TransactionEvent(Ended) response handler ([80a3a80](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/80a3a80f7f6927d3355520a88d003d516c04711b))
+* **tests:** sync mock signatures with real async implementations ([02ff5f5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/02ff5f5788a9205d56e049ac5c6303c81b78c021))
+* **tests:** use async mock callbacks for all async method mocks ([422c08e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/422c08e73486e84c7ba182b6cc2b622eac3586c5))
+* **ui-server:** harden CSMS credential handling in supervision URL flow ([c7572fb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c7572fb49c029ab9458898e08939b2845687b609))
+* **ui-server:** harmonize setSupervisionUrl semantics and text descriptions ([ab9d929](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ab9d9299b910864d795696e160181a9983dd0309))
+* **ui-server:** reject colon in configured authentication username (RFC 7617) ([697f7af](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/697f7af1b98ad9c93194bf77361d613469126da4))
+* **ui-server:** reject empty password in basic auth token validation (RFC 7613 §4.1) ([45624f2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/45624f2acecdaf37a67963a45f8ffa7816fbcfdd))
+
+
+### ✨ Polish
+
+* fix phantom errorMessage, merge imports, harmonize Docker configs ([18dc121](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/18dc1211f776e966b36417f47aa191c248dea183))
+* remove redundant EmptyObject from CommandResponse union ([2a14332](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2a14332c95db3d4b81d4f9fb453a876f59a4ff33))
+* **tests:** replace re-export hub with direct imports ([8c7ce13](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8c7ce130606b38a3e5fd9c060f59bac40d24186d))
+* use charging-station barrel for buildConfigKey in OCPPServiceUtils ([583e9c0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/583e9c06358450077cb1eec28caa9ecb3166d06b))
+* **web:** migrate types to ui-common + UIClient internals to WebSocketClient ([2f44afe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2f44afef5abc491c3bfe600efe9b6a87be0522d2))
+
+
+### 📚 Documentation
+
+* add CLI section to root README alongside Web UI ([a269f3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a269f3b56c0c58e91eb37dfcb7cffbdc18de9d4e))
+* add monorepo structure to copilot instructions, clarify command scopes ([d7ef329](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d7ef32996398570fd53ecd8850d25d4ad43995ff))
+* clean up agent memories — declarative facts only, no narrative justifications ([dbd8645](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbd8645ba34915dc24754e165e632066e65191c2))
+* harmonize project memories with current codebase state ([28dcc16](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/28dcc164724f899e63df25b7b76f657426e99e13))
+* update agent memories with local auth list, QMD integration, and convention fixes ([9b06751](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9b06751c87a878d476ed39fb297d0e5ff6e6369f))
+* update AuthHelpers description in project overview memory ([ba4033d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ba4033d39f98416c6fc270004de21eef8e5e7bc9))
+* update openspec config with UI Common and CLI sub-projects ([8a15c3c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a15c3c5d6591b7e40fea04352126e30d7407e55))
+
 ## [4.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.3.1...simulator@v4.4.0) (2026-04-07)
 
 ### 🚀 Features
