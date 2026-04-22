@@ -527,6 +527,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
           error
         )
+        delete requestPayload.supervisionPassword
+        delete requestPayload.supervisionUser
         responsePayload = {
           command,
           errorDetails: error instanceof OCPPError ? error.details : undefined,

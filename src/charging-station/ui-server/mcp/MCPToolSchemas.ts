@@ -69,6 +69,7 @@ const chargingStationOptionsSchema = z.object({
     .describe('OCPP server supervision URL(s)'),
   supervisionUser: z
     .string()
+    .regex(/^[^:]*$/, 'must not contain ":"')
     .optional()
     .describe('CSMS basic auth user used on the supervision WebSocket'),
 })
@@ -349,6 +350,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
           .describe('CSMS basic auth password used on the supervision WebSocket'),
         supervisionUser: z
           .string()
+          .regex(/^[^:]*$/, 'must not contain ":"')
           .optional()
           .describe('CSMS basic auth user used on the supervision WebSocket'),
         url: z.url().describe('The OCPP server supervision URL to set'),

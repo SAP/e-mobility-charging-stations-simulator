@@ -994,9 +994,9 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Updates the supervision server URL and optionally the CSMS basic auth credentials.
-   * @param url
-   * @param supervisionUser
-   * @param supervisionPassword
+   * @param url - The new supervision server URL
+   * @param supervisionUser - CSMS basic auth user (undefined preserves existing)
+   * @param supervisionPassword - CSMS basic auth password (undefined preserves existing)
    */
   public setSupervisionUrl (
     url: string,
