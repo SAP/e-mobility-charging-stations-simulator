@@ -993,30 +993,27 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Updates the supervision server URL and/or credentials in configuration or station info.
-   * Any argument left undefined is preserved; pass an empty string to clear a credential.
-   * Changes take effect on the next WebSocket (re)connect.
-   * @param url - The new supervision server URL (optional)
-   * @param supervisionUser - The new CSMS basic auth user (optional)
-   * @param supervisionPassword - The new CSMS basic auth password (optional)
+   * Updates the supervision server URL and optionally the CSMS basic auth credentials in configuration or station info.
+   * @param url - The new supervision server URL
+   * @param supervisionUser - The new CSMS basic auth user (optional; "" clears, undefined preserves)
+   * @param supervisionPassword - The new CSMS basic auth password (optional; "" clears, undefined preserves)
    */
   public setSupervisionUrl (
-    url?: string,
+    url: string,
     supervisionUser?: string,
     supervisionPassword?: string
   ): void {
-    if (url != null) {
-      if (
-        this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-        isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
-      ) {
-        setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
-      } else if (this.stationInfo != null) {
-        this.stationInfo.supervisionUrls = url
-        this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
-      }
+    if (
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
+      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
+    ) {
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
+    } else if (this.stationInfo != null) {
+      this.stationInfo.supervisionUrls = url
+      this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
+      this.saveStationInfo()
     }
-    if (this.stationInfo != null) {
+    if (this.stationInfo != null && (supervisionUser != null || supervisionPassword != null)) {
       if (supervisionUser != null) {
         this.stationInfo.supervisionUser = supervisionUser
       }
@@ -1024,9 +1021,6 @@ export class ChargingStation extends EventEmitter {
         this.stationInfo.supervisionPassword = supervisionPassword
       }
       this.saveStationInfo()
-      // Notify the UI server cache so `listChargingStations` reflects the
-      // new URL/credentials immediately (without having to stop/start or
-      // reconnect first).
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     }
   }

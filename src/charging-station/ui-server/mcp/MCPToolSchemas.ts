@@ -338,18 +338,18 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     ProcedureName.SET_SUPERVISION_URL,
     {
       description:
-        'Set the OCPP server supervision URL and/or basic auth credentials for one or more charging stations. At least one of url, supervisionUser or supervisionPassword must be provided.',
+        'Set the OCPP server supervision URL for one or more charging stations. Optionally updates the CSMS basic auth credentials (empty string clears a credential, undefined preserves it).',
       inputSchema: z.object({
         hashIds,
         supervisionPassword: z
           .string()
           .optional()
-          .describe('CSMS basic auth password used on the supervision WebSocket'),
+          .describe('CSMS basic auth password (empty string clears)'),
         supervisionUser: z
           .string()
           .optional()
-          .describe('CSMS basic auth user used on the supervision WebSocket'),
-        url: z.url().optional().describe('The OCPP server supervision URL to set'),
+          .describe('CSMS basic auth user (empty string clears)'),
+        url: z.url().describe('The OCPP server supervision URL to set'),
       }),
     },
   ],

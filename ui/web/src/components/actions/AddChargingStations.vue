@@ -43,9 +43,9 @@
         placeholder="<template value>"
         type="text"
       >
-      Append counter to name:
+      Fixed name (base name is full station name):
       <input
-        v-model="state.appendCounter"
+        v-model="state.fixedName"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -143,10 +143,10 @@ import {
 } from '@/composables'
 
 const state = ref<{
-  appendCounter: boolean
   autoStart: boolean
   baseName: string
   enableStatistics: boolean
+  fixedName: boolean
   numberOfStations: number
   ocppStrictCompliance: boolean
   persistentConfiguration: boolean
@@ -156,10 +156,10 @@ const state = ref<{
   supervisionUser: string
   template: string
 }>({
-  appendCounter: true,
   autoStart: false,
   baseName: '',
   enableStatistics: false,
+  fixedName: false,
   numberOfStations: 1,
   ocppStrictCompliance: true,
   persistentConfiguration: true,
@@ -186,9 +186,7 @@ const addChargingStations = (): void => {
       baseName: state.value.baseName.length > 0 ? state.value.baseName : undefined,
       enableStatistics: convertToBoolean(state.value.enableStatistics),
       fixedName:
-        state.value.baseName.length > 0 && !convertToBoolean(state.value.appendCounter)
-          ? true
-          : undefined,
+        state.value.baseName.length > 0 ? convertToBoolean(state.value.fixedName) : undefined,
       ocppStrictCompliance: convertToBoolean(state.value.ocppStrictCompliance),
       persistentConfiguration: convertToBoolean(state.value.persistentConfiguration),
       supervisionPassword:

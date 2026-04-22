@@ -68,20 +68,16 @@ const $toast = useToast()
 const executeAction = useExecuteAction()
 
 const setSupervisionUrl = (): void => {
-  if (
-    state.value.supervisionUrl.length === 0 &&
-    state.value.supervisionUser.length === 0 &&
-    state.value.supervisionPassword.length === 0
-  ) {
-    $toast.error('At least one of url, user or password must be set')
+  if (state.value.supervisionUrl.length === 0) {
+    $toast.error('Supervision url is required')
     return
   }
   executeAction(
     $uiClient.setSupervisionUrl(
       props.hashId,
-      state.value.supervisionUrl.length > 0 ? state.value.supervisionUrl : undefined,
-      state.value.supervisionUser.length > 0 ? state.value.supervisionUser : undefined,
-      state.value.supervisionPassword.length > 0 ? state.value.supervisionPassword : undefined
+      state.value.supervisionUrl,
+      state.value.supervisionUser,
+      state.value.supervisionPassword
     ),
     'Supervision url successfully set',
     'Error at setting supervision url',

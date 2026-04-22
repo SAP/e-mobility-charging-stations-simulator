@@ -131,13 +131,13 @@ export class UIClient {
 
   public async setSupervisionUrl (
     hashId: string,
-    supervisionUrl?: string,
+    supervisionUrl: string,
     supervisionUser?: string,
     supervisionPassword?: string
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.SET_SUPERVISION_URL, {
       hashIds: [hashId],
-      ...(supervisionUrl != null && supervisionUrl.length > 0 && { url: supervisionUrl }),
+      url: supervisionUrl,
       ...(supervisionUser != null && { supervisionUser }),
       ...(supervisionPassword != null && { supervisionPassword }),
     })

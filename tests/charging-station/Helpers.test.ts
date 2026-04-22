@@ -81,27 +81,27 @@ await describe('Helpers', async () => {
   })
 
   await it('should return baseName verbatim when fixedName is true', () => {
-    const identity = {
+    const template = {
       baseName: 'DYNAMIC-STATION',
       fixedName: true,
     } satisfies Partial<ChargingStationTemplate>
     assert.strictEqual(
-      getChargingStationId(1, identity as ChargingStationTemplate),
+      getChargingStationId(1, template as ChargingStationTemplate),
       'DYNAMIC-STATION'
     )
   })
 
   await it('should append nameSuffix to the indexed id when fixedName is false', () => {
-    const identity = {
+    const template = {
       baseName: 'CS',
       fixedName: false,
       nameSuffix: '-X',
     } satisfies Partial<ChargingStationTemplate>
-    assert.strictEqual(getChargingStationId(7, identity as ChargingStationTemplate), 'CS-00007-X')
+    assert.strictEqual(getChargingStationId(7, template as ChargingStationTemplate), 'CS-00007-X')
   })
 
   await it('should derive charging station id from stationInfo identity fields', () => {
-    // stationInfo satisfies the StationIdentity shape since it inherits baseName / fixedName / nameSuffix from the template type.
+    // stationInfo satisfies the ChargingStationNameTemplate shape since it inherits baseName / fixedName / nameSuffix from the template type.
     const stationInfo = {
       baseName: 'INFO-STATION',
       fixedName: true,

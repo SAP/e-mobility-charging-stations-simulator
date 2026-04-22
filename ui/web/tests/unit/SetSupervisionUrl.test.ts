@@ -63,7 +63,7 @@ describe('SetSupervisionUrl', () => {
     expect(wrapper.find('#supervision-password').exists()).toBe(true)
   })
 
-  it('should call setSupervisionUrl with only url when only url is set', async () => {
+  it('should send empty credential strings when only url is set', async () => {
     const wrapper = mountComponent()
     await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('button').trigger('click')
@@ -71,8 +71,8 @@ describe('SetSupervisionUrl', () => {
     expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
       TEST_HASH_ID,
       'wss://new-server.com:9000',
-      undefined,
-      undefined
+      '',
+      ''
     )
   })
 
@@ -91,8 +91,24 @@ describe('SetSupervisionUrl', () => {
     )
   })
 
-  it('should not call setSupervisionUrl when all fields are empty', async () => {
+  it('should send empty password when only user is typed', async () => {
     const wrapper = mountComponent()
+    await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
+    await wrapper.find('#supervision-user').setValue('alice')
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
+      TEST_HASH_ID,
+      'wss://new-server.com:9000',
+      'alice',
+      ''
+    )
+  })
+
+  it('should not call setSupervisionUrl when url is empty', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('#supervision-user').setValue('alice')
+    await wrapper.find('#supervision-password').setValue('s3cret')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.setSupervisionUrl).not.toHaveBeenCalled()

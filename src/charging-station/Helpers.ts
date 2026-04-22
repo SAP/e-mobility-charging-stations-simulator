@@ -81,22 +81,22 @@ export const buildTemplateName = (templateFile: string): string => {
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 
-export type StationIdentity = Pick<ChargingStationTemplate, 'baseName' | 'fixedName' | 'nameSuffix'>
+export type ChargingStationNameTemplate = Pick<ChargingStationTemplate, 'baseName' | 'fixedName' | 'nameSuffix'>
 
 export const getChargingStationId = (
   index: number,
-  identity: StationIdentity | undefined
+  nameTemplate: ChargingStationNameTemplate | undefined
 ): string => {
-  if (identity == null) {
+  if (nameTemplate == null) {
     return "Unknown 'chargingStationId'"
   }
   // In case of multiple instances: add instance index to charging station id
   const instanceIndex = env.CF_INSTANCE_INDEX ?? 0
-  const idSuffix = identity.nameSuffix ?? ''
+  const idSuffix = nameTemplate.nameSuffix ?? ''
   const idStr = `000000000${index.toString()}`
-  return identity.fixedName === true
-    ? identity.baseName
-    : `${identity.baseName}-${instanceIndex.toString()}${idStr.substring(
+  return nameTemplate.fixedName === true
+    ? nameTemplate.baseName
+    : `${nameTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
         idStr.length - 4
       )}${idSuffix}`
 }

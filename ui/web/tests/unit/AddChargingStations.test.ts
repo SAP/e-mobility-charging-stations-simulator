@@ -135,11 +135,11 @@ describe('AddChargingStations', () => {
     )
   })
 
-  it('should pass fixedName only when baseName is set and appendCounter is unchecked', async () => {
+  it('should pass fixedName: true when baseName is set and fixedName checkbox is checked', async () => {
     const wrapper = mountComponent()
     await wrapper.find('#base-name').setValue('DEV-STATION')
     const checkboxes = wrapper.findAll('input[type="checkbox"]')
-    await checkboxes[0].setValue(false)
+    await checkboxes[0].setValue(true)
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.addChargingStations).toHaveBeenCalledWith(
