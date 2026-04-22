@@ -22,36 +22,6 @@ jobs:
             echo "defined=false" >> $GITHUB_OUTPUT;
           fi
 
-  # TODO: remove this job after first successful run
-  fix-sonarcloud-main-branch:
-    needs: [check-secrets]
-    if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Rename SonarCloud main branch from master to main
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          failed=0
-          for project in \
-            e-mobility-charging-stations-simulator-ui-common \
-            e-mobility-charging-stations-simulator-cli
-          do
-            http_code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
-              --request POST \
-              'https://sonarcloud.io/api/project_branches/rename' \
-              -H "Authorization: Bearer ${SONAR_TOKEN}" \
-              -H 'Content-Type: application/x-www-form-urlencoded' \
-              -d "project=${project}&name=main")
-            echo "${project}: HTTP ${http_code}"
-            if [ "$http_code" != "204" ] && [ "$http_code" != "200" ]; then
-              failed=1
-            fi
-          done
-          if [ "$failed" = "1" ]; then
-            echo "::warning::Some SonarCloud branch renames failed. The SONAR_TOKEN may lack 'Administer project' permission."
-          fi
-
   build-ocpp-server:
     strategy:
       matrix:
