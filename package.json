@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.15.0",
-    "pnpm": "10.33.0"
+    "pnpm": "10.33.2"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.33.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
