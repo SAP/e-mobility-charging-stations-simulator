@@ -1,13 +1,13 @@
-# Copilot Instructions (repository-wide, language-agnostic)
+# Coding Agent Instructions (repository-wide, language-agnostic)
 
-These instructions guide GitHub Copilot to generate changes consistent with this repository's conventions, regardless of programming language.
+These instructions guide coding agents to generate changes consistent with this repository's conventions, regardless of programming language.
 
 ## Glossary
 
 - **Tunables**: user-adjustable parameters that shape behavior, exposed via options or configuration files.
 - **Canonical defaults**: the single, authoritative definition of all tunables and their defaults.
 
-## Implementation guidance for Copilot
+## Implementation guidance
 
 - **Before coding**:
   - Perform a comprehensive inventory of the codebase. Search for and read:
@@ -95,6 +95,16 @@ Documentation serves as an operational specification, not narrative prose.
 - **Promise patterns**: Return Promises from async operations; store resolvers/rejectors in Maps for request/response flows.
 - **Immutability**: Avoid mutating shared state; clone objects before modification when needed.
 
+## Python conventions
+
+- **Naming**: Use snake_case for variables/functions/methods/modules, PascalCase for classes, SCREAMING_SNAKE_CASE for constants.
+- **Type hints**: Annotate all function signatures; use `mypy` with the strict-like configuration defined in `pyproject.toml`.
+- **Enumerations**: Prefer `StrEnum` for string-valued enumerations.
+- **Async operations**: Prefer async/await with `asyncio`; handle `CancelledError` and cleanup explicitly.
+- **Error handling**: Use specific exception types; avoid bare `except`.
+- **Formatting and linting**: Use `ruff` for formatting and linting; follow rules configured in `pyproject.toml`.
+- **Testing**: Use `pytest` with `pytest-asyncio`; use `async def test_*` naming, plain `assert`, and `pytest.raises` for error cases.
+
 ## OCPP-specific conventions
 
 - **Command naming**: Follow OCPP standard naming exactly (e.g., RemoteStartTransaction, BootNotification, StatusNotification).
@@ -173,4 +183,4 @@ protected handleProtocolRequest(
 
 ---
 
-By following these instructions, Copilot should propose changes that are consistent and maintainable across languages.
+By following these instructions, coding agents should propose changes that are consistent and maintainable across languages.
