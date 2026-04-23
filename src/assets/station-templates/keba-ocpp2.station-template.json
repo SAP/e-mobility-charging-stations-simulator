@@ -77,6 +77,16 @@
         "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
       },
       {
+        "key": "SampledDataCtrlr.TxStartedMeasurands",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      },
+      {
+        "key": "SampledDataCtrlr.TxEndedMeasurands",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      },
+      {
         "key": "TxCtrlr.EVConnectionTimeOut",
         "readonly": false,
         "value": "180"
