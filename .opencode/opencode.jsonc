@@ -15,9 +15,9 @@
         "serena",
         "start-mcp-server",
         "--context",
-        "ide-assistant"
+        "ide-assistant",
       ],
-      "enabled": true
+      "enabled": true,
     },
   },
 }
