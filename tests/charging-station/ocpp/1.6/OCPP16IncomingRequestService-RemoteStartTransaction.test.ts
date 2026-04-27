@@ -14,6 +14,7 @@ import type { RemoteStartTransactionRequest } from '../../../../src/types/index.
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import {
   AvailabilityType,
+  ConnectorStatusEnum,
   GenericStatus,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
@@ -216,6 +217,27 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     }
 
     const request: RemoteStartTransactionRequest = {
+      idTag: TEST_ID_TAG,
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert
+    assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  // --- Finishing state guard ---
+
+  await it('should reject remote start transaction when connector is in Finishing state', async () => {
+    // Arrange
+    const { station, testableService } = testContext
+    const connectorStatus = station.getConnectorStatus(1)
+    if (connectorStatus != null) {
+      connectorStatus.status = ConnectorStatusEnum.Finishing
+    }
+    const request: RemoteStartTransactionRequest = {
+      connectorId: 1,
       idTag: TEST_ID_TAG,
     }
 
