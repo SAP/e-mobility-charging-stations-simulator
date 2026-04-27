@@ -64,7 +64,6 @@ export class Constants {
     currentOutType: CurrentType.AC,
     customValueLimitationMeterValues: true,
     enableStatistics: false,
-    finishingStatusDelay: 0,
     firmwareUpgrade: {
       reset: true,
       versionUpgrade: {
@@ -81,6 +80,7 @@ export class Constants {
     ocppVersion: OCPPVersion.VERSION_16,
     outOfOrderEndMeterValues: false,
     phaseLineToLineVoltageMeterValues: false,
+    postTransactionDelay: 0,
     reconnectExponentialDelay: false,
     registrationMaxRetries: -1,
     remoteAuthorization: true,

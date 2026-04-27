@@ -1303,7 +1303,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     // Reject during finishing delay — connector is still physically occupied
     if (
-      (chargingStation.stationInfo?.finishingStatusDelay ?? 0) > 0 &&
+      (chargingStation.stationInfo?.postTransactionDelay ?? 0) > 0 &&
       chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
         OCPP16ChargePointStatus.Finishing
     ) {

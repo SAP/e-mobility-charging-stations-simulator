@@ -69,8 +69,6 @@ export interface ChargingStationTemplate {
   customValueLimitationMeterValues?: boolean
   enableStatistics?: boolean
   Evses?: Record<string, EvseTemplate>
-  /** Seconds to wait in Finishing (OCPP 1.6) / Occupied (OCPP 2.0.x) state after transaction stop before transitioning to Available. 0 = immediate Available (default behavior). */
-  finishingStatusDelay?: number
   firmwareUpgrade?: FirmwareUpgrade
   firmwareVersion?: string
   firmwareVersionPattern?: string
@@ -96,6 +94,8 @@ export interface ChargingStationTemplate {
   /** @deprecated Replaced by ocppStrictCompliance. */
   payloadSchemaValidation?: boolean
   phaseLineToLineVoltageMeterValues?: boolean
+  /** Seconds to wait after transaction stop before transitioning connector to Available. Simulates cable-unplug delay. In OCPP 1.6 the connector stays in Finishing state; in OCPP 2.0.x it stays Occupied. 0 = immediate Available (default behavior). */
+  postTransactionDelay?: number
   power?: number | number[]
   powerSharedByConnectors?: boolean
   powerUnit?: PowerUnits

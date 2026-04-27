@@ -54,6 +54,23 @@ export const sendAndSetConnectorStatus = async (
  * @param connectorId - Connector ID to restore
  * @param connectorStatus - Current connector status to evaluate
  */
+
+export const sendPostTransactionStatus = async (
+  chargingStation: ChargingStation,
+  connectorId: number
+): Promise<void> => {
+  const status =
+    chargingStation.isChargingStationAvailable() &&
+    chargingStation.isConnectorAvailable(connectorId)
+      ? ConnectorStatusEnum.Available
+      : ConnectorStatusEnum.Unavailable
+  await sendAndSetConnectorStatus(chargingStation, {
+    connectorId,
+    connectorStatus: status,
+    status,
+  } as unknown as StatusNotificationRequest)
+}
+
 export const restoreConnectorStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,

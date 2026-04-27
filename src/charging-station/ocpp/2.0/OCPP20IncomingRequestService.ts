@@ -2506,36 +2506,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // Reject during finishing delay — connector is still physically occupied
-    if (
-      (chargingStation.stationInfo?.finishingStatusDelay ?? 0) > 0 &&
-      connectorStatus.status === OCPP20ConnectorStatusEnumType.Occupied &&
-      connectorStatus.transactionStarted === true
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} is in finishing state during delay`
-      )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: `Connector ${connectorId.toString()} is in finishing state during delay`,
-          reasonCode: ReasonCodeEnumType.TxInProgress,
-        },
-        transactionId: generateUUID(),
-      }
-    }
-
     if (
       connectorStatus.transactionStarted === true ||
       connectorStatus.transactionPending === true
     ) {
+      const logMessage =
+        (chargingStation.stationInfo?.postTransactionDelay ?? 0) > 0 &&
+        connectorStatus.status === OCPP20ConnectorStatusEnumType.Occupied
+          ? `Connector ${connectorId.toString()} is in finishing state during delay`
+          : `Connector ${connectorId.toString()} already has an active or pending transaction`
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${logMessage}`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: `Connector ${connectorId.toString()} already has an active or pending transaction`,
+          additionalInfo: logMessage,
           reasonCode: ReasonCodeEnumType.TxInProgress,
         },
         transactionId: generateUUID(),

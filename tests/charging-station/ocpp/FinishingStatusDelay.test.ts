@@ -1,6 +1,6 @@
 /**
  * @file Tests for FinishingStatusDelay
- * @description Verifies the finishingStatusDelay feature for both OCPP 1.6 and 2.0.x,
+ * @description Verifies the postTransactionDelay feature for both OCPP 1.6 and 2.0.x,
  * covering delayed Finishing→Available transitions, zero-delay immediate transitions,
  * RemoteStartTransaction guards during finishing, and availability re-evaluation.
  */
@@ -56,10 +56,11 @@ await describe('FinishingStatusDelay', async () => {
 
     beforeEach(() => {
       const ctx = createOCPP16ResponseTestContext({
-        stationInfo: { finishingStatusDelay: 5 },
+        stationInfo: { postTransactionDelay: 5 },
       })
       station = ctx.station
       responseService = ctx.responseService
+      station.started = true
 
       // Track all requestHandler calls to verify StatusNotification sequence
       requestCalls = []
@@ -123,10 +124,10 @@ await describe('FinishingStatusDelay', async () => {
       assert.strictEqual(secondPayload.status, OCPP16ChargePointStatus.Available)
     })
 
-    await it('should send Available immediately when finishingStatusDelay is 0 for OCPP 1.6', async () => {
-      // Arrange — override finishingStatusDelay to 0
+    await it('should send Available immediately when postTransactionDelay is 0 for OCPP 1.6', async () => {
+      // Arrange — override postTransactionDelay to 0
       assert.ok(station.stationInfo != null, 'stationInfo should be defined')
-      station.stationInfo.finishingStatusDelay = 0
+      station.stationInfo.postTransactionDelay = 0
       setupConnectorWithTransaction(station, 1, { transactionId: 200 })
       const requestPayload: OCPP16StopTransactionRequest = {
         meterStop: 2000,
@@ -226,9 +227,10 @@ await describe('FinishingStatusDelay', async () => {
         connectorsCount: 1,
         ocppRequestService: { requestHandler },
         ocppVersion: OCPPVersion.VERSION_20,
+        started: true,
         stationInfo: {
-          finishingStatusDelay: 3,
           ocppVersion: OCPPVersion.VERSION_20,
+          postTransactionDelay: 3,
         },
       })
       const connectorStatus = station.getConnectorStatus(1)
@@ -253,7 +255,7 @@ await describe('FinishingStatusDelay', async () => {
       assert.ok(requestHandler.mock.calls.length >= 1, 'Should send StatusNotification')
     })
 
-    await it('should send Available immediately when finishingStatusDelay is 0 for OCPP 2.0.x', async () => {
+    await it('should send Available immediately when postTransactionDelay is 0 for OCPP 2.0.x', async () => {
       // Arrange
       const requestHandler = mock.fn(async (..._args: unknown[]) => Promise.resolve({}))
       const { station } = createMockChargingStation({
@@ -261,8 +263,8 @@ await describe('FinishingStatusDelay', async () => {
         ocppRequestService: { requestHandler },
         ocppVersion: OCPPVersion.VERSION_20,
         stationInfo: {
-          finishingStatusDelay: 0,
           ocppVersion: OCPPVersion.VERSION_20,
+          postTransactionDelay: 0,
         },
       })
       const connectorStatus = station.getConnectorStatus(1)
@@ -291,7 +293,7 @@ await describe('FinishingStatusDelay', async () => {
 
     beforeEach(() => {
       testContext = createOCPP16IncomingRequestTestContext({
-        stationInfo: { finishingStatusDelay: 5 },
+        stationInfo: { postTransactionDelay: 5 },
       })
     })
 

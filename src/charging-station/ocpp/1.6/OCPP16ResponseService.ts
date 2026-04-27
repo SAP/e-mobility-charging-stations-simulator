@@ -38,6 +38,7 @@ import { Constants, convertToInt, logger, sleep, truncateId } from '../../../uti
 import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
+  sendPostTransactionStatus,
 } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
@@ -507,8 +508,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ],
         transactionId: requestPayload.transactionId,
       }))
-    const finishingDelay = chargingStation.stationInfo?.finishingStatusDelay ?? 0
-    if (finishingDelay > 0) {
+    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    if (postTransactionDelay > 0) {
       // Decrement powerDivider BEFORE delay — transaction has ended, power is freed immediately
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
         if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
@@ -522,41 +523,20 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }
       }
       // Send Finishing status (for non-remote stops; remote stops already sent it)
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.Finishing,
-      } as OCPP16StatusNotificationRequest)
-      await sleep(secondsToMilliseconds(finishingDelay))
-      // Re-evaluate availability after delay
-      if (
-        !chargingStation.isChargingStationAvailable() ||
-        !chargingStation.isConnectorAvailable(transactionConnectorId)
-      ) {
+      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
+      if (transactionConnectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
         await sendAndSetConnectorStatus(chargingStation, {
           connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.Unavailable,
-        } as OCPP16StatusNotificationRequest)
-      } else {
-        await sendAndSetConnectorStatus(chargingStation, {
-          connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.Available,
+          status: OCPP16ChargePointStatus.Finishing,
         } as OCPP16StatusNotificationRequest)
       }
+      await sleep(secondsToMilliseconds(postTransactionDelay))
+      if (!chargingStation.started) {
+        return
+      }
+      await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
-      if (
-        !chargingStation.isChargingStationAvailable() ||
-        !chargingStation.isConnectorAvailable(transactionConnectorId)
-      ) {
-        await sendAndSetConnectorStatus(chargingStation, {
-          connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.Unavailable,
-        } as OCPP16StatusNotificationRequest)
-      } else {
-        await sendAndSetConnectorStatus(chargingStation, {
-          connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.Available,
-        } as OCPP16StatusNotificationRequest)
-      }
+      await sendPostTransactionStatus(chargingStation, transactionConnectorId)
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
         if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
           --chargingStation.powerDivider

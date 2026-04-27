@@ -4,7 +4,7 @@ import { type ChargingStation, resetConnectorStatus } from '../../../charging-st
 import { OCPPError } from '../../../exception/index.js'
 import {
   type ConnectorStatus,
-  ConnectorStatusEnum,
+  type ConnectorStatusEnum,
   ErrorType,
   type MeterValue,
   OCPP20AuthorizationStatusEnumType,
@@ -58,7 +58,7 @@ import {
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
 } from '../auth/index.js'
-import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
+import { sendPostTransactionStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
@@ -200,32 +200,19 @@ export class OCPP20ServiceUtils {
       return
     }
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
-    const finishingDelay = chargingStation.stationInfo?.finishingStatusDelay ?? 0
-    if (finishingDelay > 0) {
-      await sleep(secondsToMilliseconds(finishingDelay))
-      const targetStatus =
-        chargingStation.isChargingStationAvailable() &&
-        chargingStation.isConnectorAvailable(connectorId)
-          ? ConnectorStatusEnum.Available
-          : ConnectorStatusEnum.Unavailable
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId,
-        connectorStatus: targetStatus,
-      } as unknown as OCPP20StatusNotificationRequest)
+    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    if (postTransactionDelay > 0) {
+      await sleep(secondsToMilliseconds(postTransactionDelay))
+      if (!chargingStation.started) {
+        return
+      }
+      await sendPostTransactionStatus(chargingStation, connectorId)
       resetConnectorStatus(connectorStatus)
       connectorStatus.locked = false
     } else {
       resetConnectorStatus(connectorStatus)
       connectorStatus.locked = false
-      const targetStatus =
-        chargingStation.isChargingStationAvailable() &&
-        chargingStation.isConnectorAvailable(connectorId)
-          ? ConnectorStatusEnum.Available
-          : ConnectorStatusEnum.Unavailable
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId,
-        connectorStatus: targetStatus,
-      } as unknown as OCPP20StatusNotificationRequest)
+      await sendPostTransactionStatus(chargingStation, connectorId)
     }
   }
 
