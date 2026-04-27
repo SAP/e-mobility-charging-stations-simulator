@@ -2510,18 +2510,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus.transactionStarted === true ||
       connectorStatus.transactionPending === true
     ) {
-      const logMessage =
-        (chargingStation.stationInfo?.postTransactionDelay ?? 0) > 0 &&
-        connectorStatus.status === OCPP20ConnectorStatusEnumType.Occupied
-          ? `Connector ${connectorId.toString()} is in Occupied state (post-transaction delay)`
-          : `Connector ${connectorId.toString()} already has an active or pending transaction`
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${logMessage}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: logMessage,
+          additionalInfo: `Connector ${connectorId.toString()} already has an active or pending transaction`,
           reasonCode: ReasonCodeEnumType.TxInProgress,
         },
         transactionId: generateUUID(),
