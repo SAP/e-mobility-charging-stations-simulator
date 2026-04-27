@@ -160,6 +160,8 @@ import {
 } from './ocpp/index.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
+const moduleName = 'ChargingStation'
+
 export class ChargingStation extends EventEmitter {
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
   public bootNotificationRequest?: BootNotificationRequest
@@ -261,7 +263,10 @@ export class ChargingStation extends EventEmitter {
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
       ).catch((error: unknown) => {
-        logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.constructor: Error while starting the message sequence:`,
+          error
+        )
       })
       this.wsConnectionRetryCount = 0
     })
@@ -278,7 +283,10 @@ export class ChargingStation extends EventEmitter {
         this.internalStopMessageSequence()
       } catch (error) {
         const e = ensureError(error)
-        logger.error(`${this.logPrefix()} Error while stopping the internal message sequence:`, e)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.constructor: Error while stopping the internal message sequence:`,
+          e
+        )
       }
     })
 
@@ -303,7 +311,7 @@ export class ChargingStation extends EventEmitter {
     const connectorStatus = this.getConnectorStatus(reservation.connectorId)
     if (connectorStatus == null) {
       logger.error(
-        `${this.logPrefix()} No connector ${reservation.connectorId.toString()} found during reservation ${reservation.reservationId.toString()} addition`
+        `${this.logPrefix()} ${moduleName}.addReservation: No connector ${reservation.connectorId.toString()} found during reservation ${reservation.reservationId.toString()} addition`
       )
       return
     }
@@ -347,7 +355,10 @@ export class ChargingStation extends EventEmitter {
         await this.stop()
       } catch (error) {
         const e = ensureError(error)
-        logger.error(`${this.logPrefix()} Error stopping station during delete:`, e)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.delete: Error stopping station during delete:`,
+          e
+        )
       }
     }
     AutomaticTransactionGenerator.deleteInstance(this)
@@ -358,10 +369,14 @@ export class ChargingStation extends EventEmitter {
       if (idTagsFile != null) {
         this.idTagsCache.deleteIdTags(idTagsFile)
       } else {
-        logger.warn(`${this.logPrefix()} No ID tags file found during deletion`)
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.delete: No ID tags file found during deletion`
+        )
       }
     } else {
-      logger.warn(`${this.logPrefix()} No station info available during deletion`)
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.delete: No station info available during deletion`
+      )
     }
     this.requests.clear()
     this.connectors.clear()
@@ -374,7 +389,7 @@ export class ChargingStation extends EventEmitter {
       } catch (error) {
         const e = ensureError(error)
         logger.error(
-          `${this.logPrefix()} Failed to delete configuration file ${this.configurationFile}:`,
+          `${this.logPrefix()} ${moduleName}.delete: Failed to delete configuration file ${this.configurationFile}:`,
           e
         )
       }
@@ -506,7 +521,7 @@ export class ChargingStation extends EventEmitter {
     const maximumPower = this.stationInfo?.maximumPower
     if (maximumPower == null || maximumPower <= 0) {
       logger.error(
-        `${this.logPrefix()} getConnectorMaximumAvailablePower: maximumPower is ${
+        `${this.logPrefix()} ${moduleName}.getConnectorMaximumAvailablePower: maximumPower is ${
           maximumPower?.toString() ?? 'undefined'
         }, cannot compute connector maximum power`
       )
@@ -606,7 +621,7 @@ export class ChargingStation extends EventEmitter {
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL_MS.toString()}`
+        `${this.logPrefix()} ${moduleName}.getHeartbeatInterval: Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL_MS.toString()}`
       )
     return Constants.DEFAULT_HEARTBEAT_INTERVAL_MS
   }
@@ -798,19 +813,21 @@ export class ChargingStation extends EventEmitter {
 
   public lockConnector (connectorId: number): void {
     if (connectorId === 0) {
-      logger.warn(`${this.logPrefix()} lockConnector: connector id 0 is not a physical connector`)
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.lockConnector: connector id 0 is not a physical connector`
+      )
       return
     }
     if (!this.hasConnector(connectorId)) {
       logger.warn(
-        `${this.logPrefix()} lockConnector: connector id ${connectorId.toString()} does not exist`
+        `${this.logPrefix()} ${moduleName}.lockConnector: connector id ${connectorId.toString()} does not exist`
       )
       return
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       logger.warn(
-        `${this.logPrefix()} lockConnector: connector id ${connectorId.toString()} status is null`
+        `${this.logPrefix()} ${moduleName}.lockConnector: connector id ${connectorId.toString()} status is null`
       )
       return
     }
@@ -865,7 +882,7 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
       if (this.stationInfo.supervisionUser.includes(':')) {
         logger.warn(
-          `${this.logPrefix()} Supervision user contains ':' which is invalid in HTTP Basic Auth (RFC 7617) — skipping auth`
+          `${this.logPrefix()} ${moduleName}.openWSConnection: Supervision user contains ':' which is invalid in HTTP Basic Auth (RFC 7617) — skipping auth`
         )
       } else {
         options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
@@ -880,12 +897,14 @@ export class ChargingStation extends EventEmitter {
 
     if (this.isWebSocketConnectionOpened()) {
       logger.warn(
-        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.href} is already opened`
+        `${this.logPrefix()} ${moduleName}.openWSConnection: OCPP connection to URL ${this.wsConnectionUrl.href} is already opened`
       )
       return
     }
 
-    logger.info(`${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.href}`)
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.openWSConnection: Open OCPP connection to URL ${this.wsConnectionUrl.href}`
+    )
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
@@ -897,7 +916,10 @@ export class ChargingStation extends EventEmitter {
     // Handle WebSocket message
     this.wsConnection.on('message', data => {
       this.onMessage(data).catch((error: unknown) =>
-        logger.error(`${this.logPrefix()} Error while processing WebSocket message:`, error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.openWSConnection: Error while processing WebSocket message:`,
+          error
+        )
       )
     })
     // Handle WebSocket error
@@ -907,7 +929,10 @@ export class ChargingStation extends EventEmitter {
     // Handle WebSocket open
     this.wsConnection.on('open', () => {
       this.onOpen().catch((error: unknown) =>
-        logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.openWSConnection: Error while opening WebSocket connection:`,
+          error
+        )
       )
     })
     // Handle WebSocket ping
@@ -928,7 +953,7 @@ export class ChargingStation extends EventEmitter {
     const connectorStatus = this.getConnectorStatus(reservation.connectorId)
     if (connectorStatus == null) {
       logger.error(
-        `${this.logPrefix()} Trying to remove reservation on non-existent connector id ${reservation.connectorId.toString()}`
+        `${this.logPrefix()} ${moduleName}.removeReservation: Trying to remove reservation on non-existent connector id ${reservation.connectorId.toString()}`
       )
       return
     }
@@ -966,7 +991,7 @@ export class ChargingStation extends EventEmitter {
       await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
     } catch (error) {
       const e = ensureError(error)
-      logger.error(`${this.logPrefix()} Error during reset stop phase:`, e)
+      logger.error(`${this.logPrefix()} ${moduleName}.reset: Error during reset stop phase:`, e)
       return
     }
     await sleep(this.stationInfo?.resetTime ?? 0)
@@ -1049,7 +1074,7 @@ export class ChargingStation extends EventEmitter {
               if (isNotEmptyString(filename) && event === 'change') {
                 try {
                   logger.debug(
-                    `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+                    `${this.logPrefix()} ${moduleName}.start: ${FileType.ChargingStationTemplate} ${
                       this.templateFile
                     } file have changed, reload`
                   )
@@ -1084,7 +1109,7 @@ export class ChargingStation extends EventEmitter {
                 } catch (error) {
                   const e = ensureError(error)
                   logger.error(
-                    `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
+                    `${this.logPrefix()} ${moduleName}.start: ${FileType.ChargingStationTemplate} file monitoring error:`,
                     e
                   )
                 }
@@ -1097,10 +1122,12 @@ export class ChargingStation extends EventEmitter {
           this.starting = false
         }
       } else {
-        logger.warn(`${this.logPrefix()} Charging station is already starting...`)
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.start: Charging station is already starting...`
+        )
       }
     } else {
-      logger.warn(`${this.logPrefix()} Charging station is already started...`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.start: Charging station is already started...`)
     }
   }
 
@@ -1134,25 +1161,25 @@ export class ChargingStation extends EventEmitter {
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
           .catch((error: unknown) => {
             logger.error(
-              `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
+              `${this.logPrefix()} ${moduleName}.startHeartbeat: Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
             )
           })
       }, clampToSafeTimerValue(heartbeatInterval))
       logger.info(
-        `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
+        `${this.logPrefix()} ${moduleName}.startHeartbeat: Heartbeat started every ${formatDurationMilliSeconds(
           heartbeatInterval
         )}`
       )
     } else if (this.heartbeatSetInterval != null) {
       logger.info(
-        `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
+        `${this.logPrefix()} ${moduleName}.startHeartbeat: Heartbeat already started every ${formatDurationMilliSeconds(
           heartbeatInterval
         )}`
       )
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval.toString()}, not starting the heartbeat`
+        `${this.logPrefix()} ${moduleName}.startHeartbeat: Heartbeat interval set to ${heartbeatInterval.toString()}, not starting the heartbeat`
       )
     }
   }
@@ -1177,7 +1204,10 @@ export class ChargingStation extends EventEmitter {
               `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)} reached at stopping message sequence`
             )
           } catch (error: unknown) {
-            logger.error(`${this.logPrefix()} Error while stopping message sequence:`, error)
+            logger.error(
+              `${this.logPrefix()} ${moduleName}.stop: Error while stopping message sequence:`,
+              error
+            )
           }
           this.ocppIncomingRequestService.stop(this)
           this.closeWSConnection()
@@ -1194,10 +1224,12 @@ export class ChargingStation extends EventEmitter {
           this.stopping = false
         }
       } else {
-        logger.warn(`${this.logPrefix()} Charging station is already stopping...`)
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.stop: Charging station is already stopping...`
+        )
       }
     } else {
-      logger.warn(`${this.logPrefix()} Charging station is already stopped...`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Charging station is already stopped...`)
     }
   }
 
@@ -1219,19 +1251,21 @@ export class ChargingStation extends EventEmitter {
 
   public unlockConnector (connectorId: number): void {
     if (connectorId === 0) {
-      logger.warn(`${this.logPrefix()} unlockConnector: connector id 0 is not a physical connector`)
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.unlockConnector: connector id 0 is not a physical connector`
+      )
       return
     }
     if (!this.hasConnector(connectorId)) {
       logger.warn(
-        `${this.logPrefix()} unlockConnector: connector id ${connectorId.toString()} does not exist`
+        `${this.logPrefix()} ${moduleName}.unlockConnector: connector id ${connectorId.toString()} does not exist`
       )
       return
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       logger.warn(
-        `${this.logPrefix()} unlockConnector: connector id ${connectorId.toString()} status is null`
+        `${this.logPrefix()} ${moduleName}.unlockConnector: connector id ${connectorId.toString()} status is null`
       )
       return
     }
@@ -1315,7 +1349,7 @@ export class ChargingStation extends EventEmitter {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (configuration == null || isEmpty(configuration)) {
             logger.error(
-              `${this.logPrefix()} Invalid charging station configuration file ${
+              `${this.logPrefix()} ${moduleName}.getConfigurationFromFile: Invalid charging station configuration file ${
                 this.configurationFile
               }`
             )
@@ -1323,7 +1357,7 @@ export class ChargingStation extends EventEmitter {
           }
           if (!isNotEmptyString(configuration.configurationHash)) {
             logger.error(
-              `${this.logPrefix()} Missing charging station configuration hash in file ${
+              `${this.logPrefix()} ${moduleName}.getConfigurationFromFile: Missing charging station configuration hash in file ${
                 this.configurationFile
               }`
             )
@@ -1344,7 +1378,7 @@ export class ChargingStation extends EventEmitter {
           this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)
         ) {
           logger.warn(
-            `${this.logPrefix()} Using cached charging station configuration due to file read error`
+            `${this.logPrefix()} ${moduleName}.getConfigurationFromFile: Using cached charging station configuration due to file read error`
           )
           return this.sharedLRUCache.getChargingStationConfiguration(this.configurationFileHash)
         }
@@ -1372,7 +1406,7 @@ export class ChargingStation extends EventEmitter {
           ) {
             logger.warn(
               // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              `${this.logPrefix()} Unknown supervision url distribution '${supervisionUrlDistribution}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
+              `${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: Unknown supervision url distribution '${supervisionUrlDistribution}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }'`
             )
@@ -1389,7 +1423,7 @@ export class ChargingStation extends EventEmitter {
       return new URL(configuredSupervisionUrl)
     }
     const errorMsg = 'No supervision url(s) configured'
-    logger.error(`${this.logPrefix()} ${errorMsg}`)
+    logger.error(`${this.logPrefix()} ${moduleName}.getConfiguredSupervisionUrl: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
 
@@ -1428,7 +1462,7 @@ export class ChargingStation extends EventEmitter {
     const maximumPower = localStationInfo?.maximumPower
     if (maximumPower == null || maximumPower <= 0) {
       logger.error(
-        `${this.logPrefix()} getMaximumAmperage: maximumPower is ${
+        `${this.logPrefix()} ${moduleName}.getMaximumAmperage: maximumPower is ${
           maximumPower?.toString() ?? 'undefined'
         }, cannot compute maximum amperage`
       )
@@ -1568,7 +1602,7 @@ export class ChargingStation extends EventEmitter {
     const stationTemplate = this.getTemplateFromFile()
     if (stationTemplate == null) {
       const errorMsg = `Failed to read charging station template file ${this.templateFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(`${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
@@ -1604,7 +1638,7 @@ export class ChargingStation extends EventEmitter {
       !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion)
     ) {
       logger.warn(
-        `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
+        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: Firmware version '${stationInfo.firmwareVersion}' in template file ${
           this.templateFile
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       )
@@ -1672,7 +1706,7 @@ export class ChargingStation extends EventEmitter {
     }
     const [, errorCallback, requestCommandName] = cachedRequest
     logger.debug(
-      `${this.logPrefix()} << Command '${requestCommandName}' received error response payload: ${JSON.stringify(
+      `${this.logPrefix()} ${moduleName}.handleErrorMessage: << Command '${requestCommandName}' received error response payload: ${JSON.stringify(
         errorResponse
       )}`
     )
@@ -1693,7 +1727,7 @@ export class ChargingStation extends EventEmitter {
       this.performanceStatistics?.addRequestStatistic(commandName, messageType)
     }
     logger.debug(
-      `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
+      `${this.logPrefix()} ${moduleName}.handleIncomingMessage: << Command '${commandName}' received request payload: ${JSON.stringify(
         request
       )}`
     )
@@ -1730,7 +1764,7 @@ export class ChargingStation extends EventEmitter {
     }
     const [responseCallback, , requestCommandName, requestPayload] = cachedRequest
     logger.debug(
-      `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
+      `${this.logPrefix()} ${moduleName}.handleResponseMessage: << Command '${requestCommandName}' received response payload: ${JSON.stringify(
         response
       )}`
     )
@@ -1740,7 +1774,7 @@ export class ChargingStation extends EventEmitter {
   private handleUnsupportedVersion (version: OCPPVersion | undefined): void {
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`
-    logger.error(`${this.logPrefix()} ${errorMsg}`)
+    logger.error(`${this.logPrefix()} ${moduleName}.handleUnsupportedVersion: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
 
@@ -1748,7 +1782,7 @@ export class ChargingStation extends EventEmitter {
     const stationTemplate = this.getTemplateFromFile()
     if (stationTemplate == null) {
       const errorMsg = `Failed to read charging station template file ${this.templateFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(`${this.logPrefix()} ${moduleName}.initialize: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
@@ -1800,7 +1834,7 @@ export class ChargingStation extends EventEmitter {
     const bootNotificationRequest = buildBootNotificationRequest(this.stationInfo)
     if (bootNotificationRequest == null) {
       const errorMsg = 'Error while creating boot notification request'
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(`${this.logPrefix()} ${moduleName}.initialize: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     this.bootNotificationRequest = bootNotificationRequest
@@ -1822,12 +1856,14 @@ export class ChargingStation extends EventEmitter {
   private initializeConnectorsFromTemplate (stationTemplate: ChargingStationTemplate): void {
     if (stationTemplate.Connectors == null && isEmpty(this.connectors)) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsFromTemplate: ${errorMsg}`
+      )
       throw new BaseError(errorMsg)
     }
     if (stationTemplate.Connectors?.[0] == null) {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsFromTemplate: Charging station information from template ${
           this.templateFile
         } with no connector id 0 configuration`
       )
@@ -1872,7 +1908,7 @@ export class ChargingStation extends EventEmitter {
           this.saveConnectorsStatus()
         } else {
           logger.warn(
-            `${this.logPrefix()} Charging station information from template ${
+            `${this.logPrefix()} ${moduleName}.initializeConnectorsFromTemplate: Charging station information from template ${
               this.templateFile
             } with no connectors configuration defined, cannot create connectors`
           )
@@ -1880,7 +1916,7 @@ export class ChargingStation extends EventEmitter {
       }
     } else {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsFromTemplate: Charging station information from template ${
           this.templateFile
         } with no connectors configuration defined, using already defined connectors`
       )
@@ -1934,11 +1970,15 @@ export class ChargingStation extends EventEmitter {
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus != null) {
       const errorMsg = `Connectors and evses defined at the same time in configuration file ${this.configurationFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsOrEvsesFromFile: ${errorMsg}`
+      )
       throw new BaseError(errorMsg)
     } else {
       const errorMsg = `No connectors or evses defined in configuration file ${this.configurationFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsOrEvsesFromFile: ${errorMsg}`
+      )
       throw new BaseError(errorMsg)
     }
   }
@@ -1950,11 +1990,15 @@ export class ChargingStation extends EventEmitter {
       this.initializeEvsesFromTemplate(stationTemplate)
     } else if (stationTemplate.Evses != null && stationTemplate.Connectors != null) {
       const errorMsg = `Connectors and evses defined at the same time in template file ${this.templateFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsOrEvsesFromTemplate: ${errorMsg}`
+      )
       throw new BaseError(errorMsg)
     } else {
       const errorMsg = `No connectors or evses defined in template file ${this.templateFile}`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.initializeConnectorsOrEvsesFromTemplate: ${errorMsg}`
+      )
       throw new BaseError(errorMsg)
     }
   }
@@ -1962,26 +2006,26 @@ export class ChargingStation extends EventEmitter {
   private initializeEvsesFromTemplate (stationTemplate: ChargingStationTemplate): void {
     if (stationTemplate.Evses == null && isEmpty(this.evses)) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`
-      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      logger.error(`${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     if (stationTemplate.Evses?.[0] == null) {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: Charging station information from template ${
           this.templateFile
         } with no evse id 0 configuration`
       )
     }
     if (stationTemplate.Evses?.[0]?.Connectors[0] == null) {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: Charging station information from template ${
           this.templateFile
         } with evse id 0 with no connector id 0 configuration`
       )
     }
     if (Object.keys(stationTemplate.Evses?.[0]?.Connectors as object).length > 1) {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: Charging station information from template ${
           this.templateFile
         } with evse id 0 with more than one connector configuration, only connector id 0 configuration will be used`
       )
@@ -2015,7 +2059,7 @@ export class ChargingStation extends EventEmitter {
           this.saveEvsesStatus()
         } else {
           logger.warn(
-            `${this.logPrefix()} Charging station information from template ${
+            `${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: Charging station information from template ${
               this.templateFile
             } with no evses configuration defined, cannot create evses`
           )
@@ -2023,7 +2067,7 @@ export class ChargingStation extends EventEmitter {
       }
     } else {
       logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
+        `${this.logPrefix()} ${moduleName}.initializeEvsesFromTemplate: Charging station information from template ${
           this.templateFile
         } with no evses configuration defined, using already defined evses`
       )
@@ -2113,7 +2157,7 @@ export class ChargingStation extends EventEmitter {
         )
       } else {
         logger.error(
-          `${this.logPrefix()} initializeOcppConfiguration: maximumAmperage is ${
+          `${this.logPrefix()} ${moduleName}.initializeOcppConfiguration: maximumAmperage is ${
             maximumAmperage?.toString() ?? 'undefined'
           }, cannot set amperage limitation configuration key`
         )
@@ -2210,7 +2254,7 @@ export class ChargingStation extends EventEmitter {
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
         logger.info(
-          `${this.logPrefix()} WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} ${moduleName}.onClose: WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason.toString()}'`
         )
@@ -2219,7 +2263,7 @@ export class ChargingStation extends EventEmitter {
       // Abnormal close
       default:
         logger.error(
-          `${this.logPrefix()} WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} ${moduleName}.onClose: WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason.toString()}'`
         )
@@ -2230,7 +2274,10 @@ export class ChargingStation extends EventEmitter {
               return undefined
             })
             .catch((error: unknown) =>
-              logger.error(`${this.logPrefix()} Error while reconnecting:`, error)
+              logger.error(
+                `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
+                error
+              )
             )
         break
     }
@@ -2238,7 +2285,7 @@ export class ChargingStation extends EventEmitter {
 
   private onError (error: WSError): void {
     this.closeWSConnection()
-    logger.error(`${this.logPrefix()} WebSocket error:`, error)
+    logger.error(`${this.logPrefix()} ${moduleName}.onError: WebSocket error:`, error)
   }
 
   private async onMessage (data: RawData): Promise<void> {
@@ -2268,7 +2315,7 @@ export class ChargingStation extends EventEmitter {
           default:
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             errorMsg = `Wrong message type ${messageType}`
-            logger.error(`${this.logPrefix()} ${errorMsg}`)
+            logger.error(`${this.logPrefix()} ${moduleName}.onMessage: ${errorMsg}`)
             throw new OCPPError(
               this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16
                 ? ErrorType.MESSAGE_TYPE_NOT_SUPPORTED
@@ -2289,8 +2336,11 @@ export class ChargingStation extends EventEmitter {
     } catch (error) {
       if (!Array.isArray(request)) {
         const e = ensureError(error)
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, e)
+        logger.error(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `${this.logPrefix()} ${moduleName}.onMessage: Incoming message '${request}' parsing error:`,
+          e
+        )
         // OCPP 2.0.1 §4.2.3: respond with CALLERROR using messageId "-1"
         if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16) {
           await this.ocppRequestService
@@ -2308,7 +2358,7 @@ export class ChargingStation extends EventEmitter {
             )
             .catch((sendError: unknown) => {
               logger.error(
-                `${this.logPrefix()} Error sending RpcFrameworkError CALLERROR:`,
+                `${this.logPrefix()} ${moduleName}.onMessage: Error sending RpcFrameworkError CALLERROR:`,
                 sendError
               )
             })
@@ -2346,7 +2396,7 @@ export class ChargingStation extends EventEmitter {
       }
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          `${this.logPrefix()} Error thrown at incoming OCPP command ${
+          `${this.logPrefix()} ${moduleName}.onMessage: Error thrown at incoming OCPP command ${
             commandName ?? requestCommandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
             // eslint-disable-next-line @typescript-eslint/no-base-to-string
           } message '${data.toString()}' handling is not an OCPPError:`,
@@ -2354,7 +2404,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
       logger.error(
-        `${this.logPrefix()} Incoming OCPP command '${
+        `${this.logPrefix()} ${moduleName}.onMessage: Incoming OCPP command '${
           commandName ?? requestCommandName ?? OCPPConstants.UNKNOWN_OCPP_COMMAND
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
@@ -2374,7 +2424,7 @@ export class ChargingStation extends EventEmitter {
       this.emitChargingStationEvent(ChargingStationEvents.connected)
       this.emitChargingStationEvent(ChargingStationEvents.updated)
       logger.info(
-        `${this.logPrefix()} Connection to OCPP server through ${
+        `${this.logPrefix()} ${moduleName}.onOpen: Connection to OCPP server through ${
           this.wsConnectionUrl.href
         } succeeded`
       )
@@ -2414,7 +2464,7 @@ export class ChargingStation extends EventEmitter {
       if (!this.inAcceptedState()) {
         logger.error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
+          `${this.logPrefix()} ${moduleName}.onOpen: Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
       } else {
         await flushQueuedTransactionMessages(this)
@@ -2422,17 +2472,21 @@ export class ChargingStation extends EventEmitter {
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {
       logger.warn(
-        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.href} failed`
+        `${this.logPrefix()} ${moduleName}.onOpen: Connection to OCPP server through ${this.wsConnectionUrl.href} failed`
       )
     }
   }
 
   private onPing (): void {
-    logger.debug(`${this.logPrefix()} Received a WS ping (rfc6455) from the server`)
+    logger.debug(
+      `${this.logPrefix()} ${moduleName}.onPing: Received a WS ping (rfc6455) from the server`
+    )
   }
 
   private onPong (): void {
-    logger.debug(`${this.logPrefix()} Received a WS pong (rfc6455) from the server`)
+    logger.debug(
+      `${this.logPrefix()} ${moduleName}.onPong: Received a WS pong (rfc6455) from the server`
+    )
   }
 
   private async reconnect (): Promise<void> {
@@ -2447,11 +2501,11 @@ export class ChargingStation extends EventEmitter {
           ? reconnectDelay - Constants.DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS
           : 0
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
+        `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
       )
       await sleep(reconnectDelay)
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry #${this.wsConnectionRetryCount.toString()}`
+        `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retry #${this.wsConnectionRetryCount.toString()}`
       )
       this.openWSConnection(
         {
@@ -2462,7 +2516,7 @@ export class ChargingStation extends EventEmitter {
     } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${this.wsConnectionRetryCount.toString()}) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries?.toString()})`
+        `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retries failure: maximum retries reached (${this.wsConnectionRetryCount.toString()}) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries?.toString()})`
       )
     }
   }
@@ -2554,7 +2608,7 @@ export class ChargingStation extends EventEmitter {
           })
         } else {
           logger.debug(
-            `${this.logPrefix()} Not saving unchanged charging station configuration file ${
+            `${this.logPrefix()} ${moduleName}.saveConfiguration: Not saving unchanged charging station configuration file ${
               this.configurationFile
             }`
           )
@@ -2569,7 +2623,7 @@ export class ChargingStation extends EventEmitter {
       }
     } else {
       logger.error(
-        `${this.logPrefix()} Trying to save charging station configuration to undefined configuration file`
+        `${this.logPrefix()} ${moduleName}.saveConfiguration: Trying to save charging station configuration to undefined configuration file`
       )
     }
   }
@@ -2602,7 +2656,7 @@ export class ChargingStation extends EventEmitter {
         parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
       } catch (error) {
         logger.error(
-          `${this.logPrefix()} Error while parsing buffered OCPP message '${message}' to JSON:`,
+          `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while parsing buffered OCPP message '${message}' to JSON:`,
           error
         )
         this.messageQueue.shift()
@@ -2621,12 +2675,12 @@ export class ChargingStation extends EventEmitter {
         }
         if (error == null) {
           logger.debug(
-            `${this.logPrefix()} >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
+            `${this.logPrefix()} ${moduleName}.sendMessageBuffer: >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
           )
           this.messageQueue.shift()
         } else {
           logger.error(
-            `${this.logPrefix()} Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
+            `${this.logPrefix()} ${moduleName}.sendMessageBuffer: Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
             error
           )
         }
@@ -2719,19 +2773,19 @@ export class ChargingStation extends EventEmitter {
         clampToSafeTimerValue(secondsToMilliseconds(webSocketPingInterval))
       )
       logger.info(
-        `${this.logPrefix()} WebSocket ping started every ${formatDurationSeconds(
+        `${this.logPrefix()} ${moduleName}.startWebSocketPing: WebSocket ping started every ${formatDurationSeconds(
           webSocketPingInterval
         )}`
       )
     } else if (this.wsPingSetInterval != null) {
       logger.info(
-        `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
+        `${this.logPrefix()} ${moduleName}.startWebSocketPing: WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval
         )}`
       )
     } else {
       logger.error(
-        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval.toString()}, not starting the WebSocket ping`
+        `${this.logPrefix()} ${moduleName}.startWebSocketPing: WebSocket ping interval set to ${webSocketPingInterval.toString()}, not starting the WebSocket ping`
       )
     }
   }
