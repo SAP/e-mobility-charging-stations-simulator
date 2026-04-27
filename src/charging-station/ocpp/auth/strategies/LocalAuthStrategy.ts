@@ -190,7 +190,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Cleanup strategy resources
    */
   public cleanup (): void {
-    logger.info(`${moduleName}: Cleaning up...`)
+    logger.info(`${moduleName}: Cleaning up`)
 
     // Reset internal state
     this.isInitialized = false
@@ -245,7 +245,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    */
   public initialize (config: AuthConfiguration): void {
     try {
-      logger.info(`${moduleName}: Initializing...`)
+      logger.info(`${moduleName}: Initializing`)
 
       if (config.localAuthListEnabled && !this.localAuthListManager) {
         logger.warn(`${moduleName}: Local auth list enabled but no manager provided`)

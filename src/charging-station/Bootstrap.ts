@@ -646,7 +646,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           performanceStatistics: Statistics
         ) => Promise<void>
       )(data).catch((error: unknown) => {
-        logger.error(`${this.logPrefix()} Error while storing performance statistics:`, error)
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.workerEventPerformanceStatistics: Error while storing performance statistics:`,
+          error
+        )
       })
     } else {
       ;(this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(

@@ -297,7 +297,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const { connectorId } = requestPayload
     if (connectorId === 0 || !chargingStation.hasConnector(connectorId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on a non-existent connector id ${connectorId.toString()}`
       )
       return
     }
@@ -519,7 +519,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     )
     if (transactionConnectorId == null) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non-existent transaction with id ${requestPayload.transactionId.toString()}`
       )
       return
     }

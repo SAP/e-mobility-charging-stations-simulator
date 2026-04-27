@@ -39,6 +39,8 @@ import {
   std,
 } from '../utils/index.js'
 
+const moduleName = 'PerformanceStatistics'
+
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<
     string,
@@ -73,7 +75,7 @@ export class PerformanceStatistics {
   public static deleteInstance (objId: string | undefined): boolean {
     if (objId == null) {
       const errorMsg = 'Cannot delete performance statistics instance without specifying object id'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${moduleName}.deleteInstance: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     return PerformanceStatistics.instances.delete(objId)
@@ -100,17 +102,17 @@ export class PerformanceStatistics {
   ): PerformanceStatistics | undefined {
     if (objId == null) {
       const errorMsg = 'Cannot get performance statistics instance without specifying object id'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${moduleName}.getInstance: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     if (objName == null) {
       const errorMsg = 'Cannot get performance statistics instance without specifying object name'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${moduleName}.getInstance: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     if (uri == null) {
       const errorMsg = 'Cannot get performance statistics instance without specifying object uri'
-      logger.error(`${PerformanceStatistics.logPrefix()} ${errorMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${moduleName}.getInstance: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
     if (!PerformanceStatistics.instances.has(objId)) {
@@ -165,8 +167,10 @@ export class PerformanceStatistics {
         break
       }
       default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        logger.error(`${this.logPrefix()} wrong message type ${messageType}`)
+        logger.error(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `${this.logPrefix()} ${moduleName}.addRequestStatistic: Wrong message type ${messageType}`
+        )
         break
     }
   }
@@ -184,7 +188,7 @@ export class PerformanceStatistics {
       )
     if (performanceStorageConfiguration.enabled === true) {
       logger.info(
-        `${this.logPrefix()} storage enabled: type ${
+        `${this.logPrefix()} ${moduleName}.start: Storage enabled: type ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           performanceStorageConfiguration.type
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -272,7 +276,7 @@ export class PerformanceStatistics {
   }
 
   private logStatistics (): void {
-    logger.info(this.logPrefix(), {
+    logger.info(`${this.logPrefix()} ${moduleName}.logStatistics:`, {
       ...this.statistics,
       statisticsData: JSON.parse(
         JSONStringify(this.statistics.statisticsData, undefined, MapStringifyFormat.object)
@@ -291,15 +295,15 @@ export class PerformanceStatistics {
         this.logStatistics()
       }, secondsToMilliseconds(logStatisticsInterval))
       logger.info(
-        `${this.logPrefix()} logged every ${formatDurationSeconds(logStatisticsInterval)}`
+        `${this.logPrefix()} ${moduleName}.startLogStatisticsInterval: Logged every ${formatDurationSeconds(logStatisticsInterval)}`
       )
     } else if (this.displayInterval != null) {
       logger.info(
-        `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`
+        `${this.logPrefix()} ${moduleName}.startLogStatisticsInterval: Already logged every ${formatDurationSeconds(logStatisticsInterval)}`
       )
     } else if (logConfiguration.enabled === true) {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${logStatisticsInterval.toString()}. Not logging statistics`
+        `${this.logPrefix()} ${moduleName}.startLogStatisticsInterval: Log interval is set to ${logStatisticsInterval.toString()}. Not logging statistics`
       )
     }
   }
