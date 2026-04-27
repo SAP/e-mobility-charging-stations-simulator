@@ -6,6 +6,8 @@ import { ensureError, handleFileException } from './ErrorUtils.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
 
+const moduleName = 'FileUtils'
+
 export const watchJsonFile = (
   file: string,
   fileType: FileType,
@@ -21,6 +23,8 @@ export const watchJsonFile = (
       })
     }
   } else {
-    logger.info(`${logPrefix} No ${fileType} file to watch given. Not monitoring its changes`)
+    logger.info(
+      `${logPrefix} ${moduleName}.watchJsonFile: No ${fileType} file to watch given. Not monitoring its changes`
+    )
   }
 }
