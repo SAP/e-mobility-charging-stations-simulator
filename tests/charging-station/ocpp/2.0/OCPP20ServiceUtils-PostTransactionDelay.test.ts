@@ -48,6 +48,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     connectorStatus = cs
     connectorStatus.transactionStarted = true
     connectorStatus.transactionId = 'tx-1'
+    connectorStatus.locked = true
   })
 
   afterEach(() => {
@@ -105,9 +106,10 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
       await promise
     })
 
-    // Assert
-    assert.strictEqual(connectorStatus.transactionStarted, true)
+    // Assert — transaction state reset before sleep, but locked and status notification deferred
+    assert.strictEqual(connectorStatus.transactionStarted, false)
     assert.strictEqual(connectorStatus.transactionId, undefined)
+    assert.strictEqual(connectorStatus.locked, true)
     assert.strictEqual(
       requestHandlerMock.mock.calls.length,
       0,

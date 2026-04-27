@@ -200,16 +200,14 @@ export class OCPP20ServiceUtils {
       return
     }
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+    resetConnectorStatus(connectorStatus)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
-      delete connectorStatus.transactionId
       await sleep(secondsToMilliseconds(postTransactionDelay))
-      // Station stopped during delay — shutdown process handles connector cleanup
       if (!chargingStation.started) {
         return
       }
     }
-    resetConnectorStatus(connectorStatus)
     connectorStatus.locked = false
     await sendPostTransactionStatus(chargingStation, connectorId)
   }
