@@ -106,8 +106,8 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
       await promise
     })
 
-    // Assert — transaction state reset before sleep, but locked and status notification deferred
-    assert.strictEqual(connectorStatus.transactionStarted, false)
+    // Assert — transactionStarted stays true (blocks ATG), transactionId cleared (blocks stopAll)
+    assert.strictEqual(connectorStatus.transactionStarted, true)
     assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(connectorStatus.locked, true)
     assert.strictEqual(
