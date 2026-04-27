@@ -514,7 +514,6 @@ export const initializeConnectorsMapStatus = (
         )
       } else {
         logger.warn(
-
           `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId.toString()}`
         )
       }
