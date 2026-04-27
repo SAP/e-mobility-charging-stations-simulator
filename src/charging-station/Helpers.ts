@@ -506,10 +506,18 @@ export const initializeConnectorsMapStatus = (
 ): void => {
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId > 0 && connectorStatus.transactionStarted === true) {
-      logger.warn(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId?.toString()}`
-      )
+      if (connectorStatus.transactionId == null) {
+        resetConnectorStatus(connectorStatus)
+        connectorStatus.locked = false
+        logger.warn(
+          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} had stale transaction state without transactionId, reset`
+        )
+      } else {
+        logger.warn(
+
+          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId.toString()}`
+        )
+      }
     }
     if (connectorId === 0) {
       connectorStatus.availability = AvailabilityType.Operative
