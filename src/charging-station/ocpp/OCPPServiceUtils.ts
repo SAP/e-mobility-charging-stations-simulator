@@ -1306,7 +1306,7 @@ const checkMeasurandPowerDivider = (
   } else if (chargingStation.powerDivider <= 0) {
     const errorMsg = `MeterValues measurand ${
       measurandType ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    }: powerDivider have zero or below value ${chargingStation.powerDivider.toString()}`
+    }: powerDivider has a value of zero or less ${chargingStation.powerDivider.toString()}`
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.checkMeasurandPowerDivider: ${errorMsg}`
     )

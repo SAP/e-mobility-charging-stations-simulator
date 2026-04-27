@@ -1076,7 +1076,7 @@ export class ChargingStation extends EventEmitter {
                   logger.debug(
                     `${this.logPrefix()} ${moduleName}.start: ${FileType.ChargingStationTemplate} ${
                       this.templateFile
-                    } file have changed, reload`
+                    } file has changed, reloading`
                   )
                   this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
                   const idTagsFile =
