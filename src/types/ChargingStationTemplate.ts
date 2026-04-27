@@ -69,6 +69,8 @@ export interface ChargingStationTemplate {
   customValueLimitationMeterValues?: boolean
   enableStatistics?: boolean
   Evses?: Record<string, EvseTemplate>
+  /** Seconds to wait in Finishing (OCPP 1.6) / Occupied (OCPP 2.0.x) state after transaction stop before transitioning to Available. 0 = immediate Available (default behavior). */
+  finishingStatusDelay?: number
   firmwareUpgrade?: FirmwareUpgrade
   firmwareVersion?: string
   firmwareVersionPattern?: string

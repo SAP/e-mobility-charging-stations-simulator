@@ -64,6 +64,7 @@ export class Constants {
     currentOutType: CurrentType.AC,
     customValueLimitationMeterValues: true,
     enableStatistics: false,
+    finishingStatusDelay: 0,
     firmwareUpgrade: {
       reset: true,
       versionUpgrade: {
