@@ -13,6 +13,7 @@ import {
 } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
+  type ConnectorStatus,
   type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
@@ -45,6 +46,37 @@ import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPSer
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'
+
+const decrementPowerDivider = (chargingStation: ChargingStation): void => {
+  if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
+    if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
+      --chargingStation.powerDivider
+    } else {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
+          chargingStation.powerDivider?.toString() ?? 'undefined'
+        }, cannot decrement`
+      )
+    }
+  }
+}
+
+const finalizeTransactionConnectorStatus = (
+  connectorStatus: ConnectorStatus | undefined,
+  requestPayload: OCPP16StopTransactionRequest,
+  responsePayload: OCPP16StopTransactionResponse
+): string | undefined => {
+  const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
+  resetConnectorStatus(connectorStatus)
+  if (
+    connectorStatus != null &&
+    (responsePayload.idTagInfo == null ||
+      responsePayload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
+  ) {
+    connectorStatus.locked = false
+  }
+  return transactionIdTag
+}
 
 /**
  * OCPP 1.6 Response Service - handles and processes all outgoing request responses
@@ -511,19 +543,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     let transactionIdTag: string | undefined
     if (postTransactionDelay > 0) {
-      // Decrement powerDivider BEFORE delay — transaction has ended, power is freed immediately
-      if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
-        if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
-          --chargingStation.powerDivider
-        } else {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
-              chargingStation.powerDivider?.toString() ?? 'undefined'
-            }, cannot decrement`
-          )
-        }
-      }
-      // Send Finishing status (for non-remote stops; remote stops already sent it)
+      decrementPowerDivider(chargingStation)
+      // Send Finishing status if not already set (idempotency guard)
       const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       if (transactionConnectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
         await sendAndSetConnectorStatus(chargingStation, {
@@ -533,44 +554,24 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
-      // Station stopped during delay — shutdown process handles connector cleanup
       if (!chargingStation.started) {
         return
       }
-      transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
-      resetConnectorStatus(transactionConnectorStatus)
-      if (
-        transactionConnectorStatus != null &&
-        (payload.idTagInfo == null ||
-          payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
-      ) {
-        transactionConnectorStatus.locked = false
-      }
+      transactionIdTag = finalizeTransactionConnectorStatus(
+        transactionConnectorStatus,
+        requestPayload,
+        payload
+      )
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
-      // Original order preserved for backward compatibility
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
-      if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
-        if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
-          --chargingStation.powerDivider
-        } else {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
-              chargingStation.powerDivider?.toString() ?? 'undefined'
-            }, cannot decrement`
-          )
-        }
-      }
+      decrementPowerDivider(chargingStation)
       const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
-      transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
-      resetConnectorStatus(transactionConnectorStatus)
-      if (
-        transactionConnectorStatus != null &&
-        (payload.idTagInfo == null ||
-          payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
-      ) {
-        transactionConnectorStatus.locked = false
-      }
+      transactionIdTag = finalizeTransactionConnectorStatus(
+        transactionConnectorStatus,
+        requestPayload,
+        payload
+      )
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
     }
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
