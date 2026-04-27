@@ -107,7 +107,7 @@ export class AutomaticTransactionGenerator {
     }
     if (!this.connectorsStatus.has(connectorId)) {
       logger.error(
-        `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Starting on non existing connector`
+        `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Starting on non-existent connector`
       )
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
     }
@@ -143,7 +143,7 @@ export class AutomaticTransactionGenerator {
   public stopConnector (connectorId: number): void {
     if (!this.connectorsStatus.has(connectorId)) {
       logger.error(
-        `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Stopping on non existing connector`
+        `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Stopping on non-existent connector`
       )
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
     }
