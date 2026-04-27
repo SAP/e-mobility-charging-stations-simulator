@@ -23,13 +23,16 @@ import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
   let station: ChargingStation
   let connectorStatus: ConnectorStatus
-  let requestHandler: ReturnType<typeof mock.fn>
+  let requestHandlerMock: ReturnType<typeof mock.fn>
 
   beforeEach(() => {
-    requestHandler = mock.fn(async (..._args: unknown[]) => Promise.resolve({}))
+    const requestHandler = mock.fn(async () => Promise.resolve({}))
+    requestHandlerMock = requestHandler
     const result = createMockChargingStation({
       connectorsCount: 1,
-      ocppRequestService: { requestHandler },
+      ocppRequestService: {
+        requestHandler: requestHandler as (...args: unknown[]) => Promise<unknown>,
+      },
       ocppVersion: OCPPVersion.VERSION_20,
       started: true,
       stationInfo: {
@@ -69,7 +72,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     assert.strictEqual(connectorStatus.transactionStarted, false)
     assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(connectorStatus.locked, false)
-    assert.ok(requestHandler.mock.calls.length >= 1, 'Should send StatusNotification')
+    assert.ok(requestHandlerMock.mock.calls.length >= 1, 'Should send StatusNotification')
   })
 
   await it('should send Available immediately when postTransactionDelay is 0', async () => {
@@ -84,7 +87,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     assert.strictEqual(connectorStatus.transactionStarted, false)
     assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(connectorStatus.locked, false)
-    assert.ok(requestHandler.mock.calls.length >= 1, 'Should send StatusNotification')
+    assert.ok(requestHandlerMock.mock.calls.length >= 1, 'Should send StatusNotification')
   })
 
   await it('should skip cleanup when station stops during delay', async t => {
@@ -105,6 +108,10 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     // Assert
     assert.strictEqual(connectorStatus.transactionStarted, true)
     assert.strictEqual(connectorStatus.transactionId, 'tx-1')
-    assert.strictEqual(requestHandler.mock.calls.length, 0, 'No StatusNotification should be sent')
+    assert.strictEqual(
+      requestHandlerMock.mock.calls.length,
+      0,
+      'No StatusNotification should be sent'
+    )
   })
 })
