@@ -49,6 +49,7 @@ import {
   generateUUID,
   isNotEmptyArray,
   logger,
+  sleep,
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { buildConfigKey, getConfigurationKey } from '../../index.js'
@@ -199,17 +200,33 @@ export class OCPP20ServiceUtils {
       return
     }
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
-    resetConnectorStatus(connectorStatus)
-    connectorStatus.locked = false
-    const targetStatus =
-      chargingStation.isChargingStationAvailable() &&
-      chargingStation.isConnectorAvailable(connectorId)
-        ? ConnectorStatusEnum.Available
-        : ConnectorStatusEnum.Unavailable
-    await sendAndSetConnectorStatus(chargingStation, {
-      connectorId,
-      connectorStatus: targetStatus,
-    } as unknown as OCPP20StatusNotificationRequest)
+    const finishingDelay = chargingStation.stationInfo?.finishingStatusDelay ?? 0
+    if (finishingDelay > 0) {
+      await sleep(secondsToMilliseconds(finishingDelay))
+      const targetStatus =
+        chargingStation.isChargingStationAvailable() &&
+        chargingStation.isConnectorAvailable(connectorId)
+          ? ConnectorStatusEnum.Available
+          : ConnectorStatusEnum.Unavailable
+      await sendAndSetConnectorStatus(chargingStation, {
+        connectorId,
+        connectorStatus: targetStatus,
+      } as unknown as OCPP20StatusNotificationRequest)
+      resetConnectorStatus(connectorStatus)
+      connectorStatus.locked = false
+    } else {
+      resetConnectorStatus(connectorStatus)
+      connectorStatus.locked = false
+      const targetStatus =
+        chargingStation.isChargingStationAvailable() &&
+        chargingStation.isConnectorAvailable(connectorId)
+          ? ConnectorStatusEnum.Available
+          : ConnectorStatusEnum.Unavailable
+      await sendAndSetConnectorStatus(chargingStation, {
+        connectorId,
+        connectorStatus: targetStatus,
+      } as unknown as OCPP20StatusNotificationRequest)
+    }
   }
 
   /**

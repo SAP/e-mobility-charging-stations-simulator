@@ -34,7 +34,7 @@ import {
   ReservationTerminationReason,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { Constants, convertToInt, logger, truncateId } from '../../../utils/index.js'
+import { Constants, convertToInt, logger, sleep, truncateId } from '../../../utils/index.js'
 import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
@@ -507,29 +507,66 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ],
         transactionId: requestPayload.transactionId,
       }))
-    if (
-      !chargingStation.isChargingStationAvailable() ||
-      !chargingStation.isConnectorAvailable(transactionConnectorId)
-    ) {
+    const finishingDelay = chargingStation.stationInfo?.finishingStatusDelay ?? 0
+    if (finishingDelay > 0) {
+      // Decrement powerDivider BEFORE delay — transaction has ended, power is freed immediately
+      if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
+        if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
+          --chargingStation.powerDivider
+        } else {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
+              chargingStation.powerDivider?.toString() ?? 'undefined'
+            }, cannot decrement`
+          )
+        }
+      }
+      // Send Finishing status (for non-remote stops; remote stops already sent it)
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.Unavailable,
+        status: OCPP16ChargePointStatus.Finishing,
       } as OCPP16StatusNotificationRequest)
-    } else {
-      await sendAndSetConnectorStatus(chargingStation, {
-        connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.Available,
-      } as OCPP16StatusNotificationRequest)
-    }
-    if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
-      if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
-        --chargingStation.powerDivider
+      await sleep(secondsToMilliseconds(finishingDelay))
+      // Re-evaluate availability after delay
+      if (
+        !chargingStation.isChargingStationAvailable() ||
+        !chargingStation.isConnectorAvailable(transactionConnectorId)
+      ) {
+        await sendAndSetConnectorStatus(chargingStation, {
+          connectorId: transactionConnectorId,
+          status: OCPP16ChargePointStatus.Unavailable,
+        } as OCPP16StatusNotificationRequest)
       } else {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
-            chargingStation.powerDivider?.toString() ?? 'undefined'
-          }, cannot decrement`
-        )
+        await sendAndSetConnectorStatus(chargingStation, {
+          connectorId: transactionConnectorId,
+          status: OCPP16ChargePointStatus.Available,
+        } as OCPP16StatusNotificationRequest)
+      }
+    } else {
+      if (
+        !chargingStation.isChargingStationAvailable() ||
+        !chargingStation.isConnectorAvailable(transactionConnectorId)
+      ) {
+        await sendAndSetConnectorStatus(chargingStation, {
+          connectorId: transactionConnectorId,
+          status: OCPP16ChargePointStatus.Unavailable,
+        } as OCPP16StatusNotificationRequest)
+      } else {
+        await sendAndSetConnectorStatus(chargingStation, {
+          connectorId: transactionConnectorId,
+          status: OCPP16ChargePointStatus.Available,
+        } as OCPP16StatusNotificationRequest)
+      }
+      if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
+        if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
+          --chargingStation.powerDivider
+        } else {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: powerDivider is ${
+              chargingStation.powerDivider?.toString() ?? 'undefined'
+            }, cannot decrement`
+          )
+        }
       }
     }
     const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
