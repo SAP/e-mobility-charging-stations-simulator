@@ -203,6 +203,7 @@ export class OCPP20ServiceUtils {
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
       await sleep(secondsToMilliseconds(postTransactionDelay))
+      // Station stopped during delay — shutdown process handles connector cleanup
       if (!chargingStation.started) {
         return
       }

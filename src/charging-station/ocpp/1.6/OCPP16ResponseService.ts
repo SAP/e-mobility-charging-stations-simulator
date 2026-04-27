@@ -531,6 +531,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         } as OCPP16StatusNotificationRequest)
       }
       await sleep(secondsToMilliseconds(postTransactionDelay))
+      // Station stopped during delay — shutdown process handles connector cleanup
       if (!chargingStation.started) {
         return
       }

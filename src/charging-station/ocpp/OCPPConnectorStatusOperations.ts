@@ -49,12 +49,11 @@ export const sendAndSetConnectorStatus = async (
 }
 
 /**
- * Restores a connector status to Reserved or Available based on its current state.
+ * Sends Available or Unavailable connector status after a transaction ends.
+ * Re-evaluates station and connector availability to determine the target status.
  * @param chargingStation - Target charging station
- * @param connectorId - Connector ID to restore
- * @param connectorStatus - Current connector status to evaluate
+ * @param connectorId - Connector ID to transition
  */
-
 export const sendPostTransactionStatus = async (
   chargingStation: ChargingStation,
   connectorId: number
@@ -71,6 +70,12 @@ export const sendPostTransactionStatus = async (
   } as unknown as StatusNotificationRequest)
 }
 
+/**
+ * Restores a connector status to Reserved or Available based on its current state.
+ * @param chargingStation - Target charging station
+ * @param connectorId - Connector ID to restore
+ * @param connectorStatus - Current connector status to evaluate
+ */
 export const restoreConnectorStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,
