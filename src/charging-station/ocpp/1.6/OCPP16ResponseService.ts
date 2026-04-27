@@ -548,17 +548,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
-      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
-      transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
-      resetConnectorStatus(transactionConnectorStatus)
-      if (
-        transactionConnectorStatus != null &&
-        (payload.idTagInfo == null ||
-          payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
-      ) {
-        transactionConnectorStatus.locked = false
-      }
-      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+      // Original order preserved for backward compatibility
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
         if (chargingStation.powerDivider != null && chargingStation.powerDivider > 0) {
@@ -571,6 +561,17 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         }
       }
+      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
+      transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
+      resetConnectorStatus(transactionConnectorStatus)
+      if (
+        transactionConnectorStatus != null &&
+        (payload.idTagInfo == null ||
+          payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
+      ) {
+        transactionConnectorStatus.locked = false
+      }
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
     }
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

@@ -207,14 +207,10 @@ export class OCPP20ServiceUtils {
       if (!chargingStation.started) {
         return
       }
-      resetConnectorStatus(connectorStatus)
-      connectorStatus.locked = false
-      await sendPostTransactionStatus(chargingStation, connectorId)
-    } else {
-      resetConnectorStatus(connectorStatus)
-      connectorStatus.locked = false
-      await sendPostTransactionStatus(chargingStation, connectorId)
     }
+    resetConnectorStatus(connectorStatus)
+    connectorStatus.locked = false
+    await sendPostTransactionStatus(chargingStation, connectorId)
   }
 
   /**
