@@ -1122,12 +1122,10 @@ export class ChargingStation extends EventEmitter {
           this.starting = false
         }
       } else {
-        logger.warn(
-          `${this.logPrefix()} ${moduleName}.start: Charging station is already starting...`
-        )
+        logger.warn(`${this.logPrefix()} ${moduleName}.start: Already starting`)
       }
     } else {
-      logger.warn(`${this.logPrefix()} ${moduleName}.start: Charging station is already started...`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.start: Already started`)
     }
   }
 
@@ -1224,12 +1222,10 @@ export class ChargingStation extends EventEmitter {
           this.stopping = false
         }
       } else {
-        logger.warn(
-          `${this.logPrefix()} ${moduleName}.stop: Charging station is already stopping...`
-        )
+        logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopping`)
       }
     } else {
-      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Charging station is already stopped...`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
     }
   }
 

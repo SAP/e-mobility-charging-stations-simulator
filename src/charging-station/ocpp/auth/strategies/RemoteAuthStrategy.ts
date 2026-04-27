@@ -200,7 +200,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Cleanup strategy resources
    */
   public cleanup (): void {
-    logger.info(`${moduleName}: Cleaning up...`)
+    logger.info(`${moduleName}: Cleaning up`)
 
     // Reset internal state
     this.isInitialized = false
@@ -270,7 +270,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    */
   public initialize (config: AuthConfiguration): void {
     try {
-      logger.info(`${moduleName}: Initializing...`)
+      logger.info(`${moduleName}: Initializing`)
 
       // Validate that we have an adapter
       if (this.adapter == null) {

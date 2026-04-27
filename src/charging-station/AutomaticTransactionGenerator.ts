@@ -88,11 +88,11 @@ export class AutomaticTransactionGenerator {
       return
     }
     if (this.started) {
-      logger.warn(`${this.logPrefix()} ${moduleName}.start: Is already started`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.start: Already started`)
       return
     }
     if (this.starting) {
-      logger.warn(`${this.logPrefix()} ${moduleName}.start: Is already starting`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.start: Already starting`)
       return
     }
     this.starting = true
@@ -120,18 +120,18 @@ export class AutomaticTransactionGenerator {
       )
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(
-        `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Is already started on connector`
+        `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Already started on connector`
       )
     }
   }
 
   public stop (): void {
     if (!this.started) {
-      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Is already stopped`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
       return
     }
     if (this.stopping) {
-      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Is already stopping`)
+      logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopping`)
       return
     }
     this.stopping = true
@@ -152,7 +152,7 @@ export class AutomaticTransactionGenerator {
       connectorStatus.start = false
     } else if (connectorStatus?.start === false) {
       logger.warn(
-        `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Is already stopped on connector`
+        `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Already stopped on connector`
       )
     }
   }
