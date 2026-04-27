@@ -257,7 +257,9 @@ export const checkChargingStationState = (
   logPrefix: string
 ): boolean => {
   if (!chargingStation.started && !chargingStation.starting) {
-    logger.warn(`${logPrefix} charging station is stopped, cannot proceed`)
+    logger.warn(
+      `${logPrefix} ${moduleName}.checkChargingStationState: Charging station is stopped, cannot proceed`
+    )
     return false
   }
   return true
@@ -324,17 +326,17 @@ export const checkTemplate = (
 ): void => {
   if (stationTemplate == null) {
     const errorMsg = `Failed to read charging station template file ${templateFile}`
-    logger.error(`${logPrefix} ${errorMsg}`)
+    logger.error(`${logPrefix} ${moduleName}.checkTemplate: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
   if (isEmpty(stationTemplate)) {
     const errorMsg = `Empty charging station information from template file ${templateFile}`
-    logger.error(`${logPrefix} ${errorMsg}`)
+    logger.error(`${logPrefix} ${moduleName}.checkTemplate: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
   if (stationTemplate.idTagsFile == null || isEmpty(stationTemplate.idTagsFile)) {
     logger.warn(
-      `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
+      `${logPrefix} ${moduleName}.checkTemplate: Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
     )
   }
 }
@@ -346,12 +348,12 @@ export const checkConfiguration = (
 ): void => {
   if (stationConfiguration == null) {
     const errorMsg = `Failed to read charging station configuration file ${configurationFile}`
-    logger.error(`${logPrefix} ${errorMsg}`)
+    logger.error(`${logPrefix} ${moduleName}.checkConfiguration: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
   if (isEmpty(stationConfiguration)) {
     const errorMsg = `Empty charging station configuration from file ${configurationFile}`
-    logger.error(`${logPrefix} ${errorMsg}`)
+    logger.error(`${logPrefix} ${moduleName}.checkConfiguration: ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
 }
@@ -376,7 +378,7 @@ export const checkConnectorsConfiguration = (
     stationTemplate.randomConnectors !== true
   ) {
     logger.warn(
-      `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
+      `${logPrefix} ${moduleName}.checkConnectorsConfiguration: Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
     )
     stationTemplate.randomConnectors = true
   }
@@ -426,7 +428,7 @@ export const checkStationInfoConnectorStatus = (
 ): void => {
   if (connectorStatus.status != null) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId.toString()} status configuration defined, undefine it`
+      `${logPrefix} ${moduleName}.checkStationInfoConnectorStatus: Charging station information from template ${templateFile} with connector id ${connectorId.toString()} status configuration defined, undefine it`
     )
     delete connectorStatus.status
   }
@@ -492,7 +494,7 @@ export const buildConnectorsMap = (
     }
   } else {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+      `${logPrefix} ${moduleName}.buildConnectorsMap: Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
     )
   }
   return connectorsMap
@@ -506,7 +508,7 @@ export const initializeConnectorsMapStatus = (
     if (connectorId > 0 && connectorStatus.transactionStarted === true) {
       logger.warn(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId?.toString()}`
+        `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId?.toString()}`
       )
     }
     if (connectorId === 0) {
@@ -860,7 +862,7 @@ export const getDefaultVoltageOut = (
       defaultVoltageOut = Voltage.VOLTAGE_400
       break
     default:
-      logger.error(`${logPrefix} ${errorMsg}`)
+      logger.error(`${logPrefix} ${moduleName}.getDefaultVoltageOut: ${errorMsg}`)
       throw new BaseError(errorMsg)
   }
   return defaultVoltageOut
@@ -924,7 +926,7 @@ const checkConfiguredMaxConnectors = (
 ): void => {
   if (configuredMaxConnectors <= 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors.toString()} connectors`
+      `${logPrefix} ${moduleName}.checkConfiguredMaxConnectors: Charging station information from template ${templateFile} with ${configuredMaxConnectors.toString()} connectors`
     )
   }
 }
@@ -936,11 +938,11 @@ const checkTemplateMaxConnectors = (
 ): void => {
   if (templateMaxConnectors === 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
+      `${logPrefix} ${moduleName}.checkTemplateMaxConnectors: Charging station information from template ${templateFile} with empty connectors configuration`
     )
   } else if (templateMaxConnectors < 0) {
     logger.error(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
+      `${logPrefix} ${moduleName}.checkTemplateMaxConnectors: Charging station information from template ${templateFile} with no connectors configuration defined`
     )
   }
 }
@@ -967,7 +969,7 @@ const warnDeprecatedTemplateKey = (
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`
-    logger.warn(`${logPrefix} ${logMsg}`)
+    logger.warn(`${logPrefix} ${moduleName}.warnDeprecatedTemplateKey: ${logMsg}`)
   }
 }
 
