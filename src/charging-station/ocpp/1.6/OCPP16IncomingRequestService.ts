@@ -1301,6 +1301,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
+    // Reject during finishing delay — connector is still physically occupied
+    if (
+      (chargingStation.stationInfo?.finishingStatusDelay ?? 0) > 0 &&
+      chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
+        OCPP16ChargePointStatus.Finishing
+    ) {
+      return this.notifyRemoteStartTransactionRejected(
+        chargingStation,
+        transactionConnectorId,
+        idTag
+      )
+    }
     if (
       !chargingStation.isChargingStationAvailable() ||
       !chargingStation.isConnectorAvailable(transactionConnectorId)
