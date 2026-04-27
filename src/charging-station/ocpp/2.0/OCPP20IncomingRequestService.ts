@@ -2513,7 +2513,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const logMessage =
         (chargingStation.stationInfo?.postTransactionDelay ?? 0) > 0 &&
         connectorStatus.status === OCPP20ConnectorStatusEnumType.Occupied
-          ? `Connector ${connectorId.toString()} is occupied during postTransactionDelay`
+          ? `Connector ${connectorId.toString()} is in Occupied state (post-transaction delay)`
           : `Connector ${connectorId.toString()} already has an active or pending transaction`
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${logMessage}`
