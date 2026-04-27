@@ -1673,7 +1673,7 @@ export function isIncomingRequestCommandSupported (
   ) {
     return chargingStation.stationInfo.commandsSupport.incomingCommands[command]
   }
-  logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`)
+  logger.warn(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`)
   return false
 }
 
