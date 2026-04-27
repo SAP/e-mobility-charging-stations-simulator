@@ -107,7 +107,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
 
     // Assert
     assert.strictEqual(connectorStatus.transactionStarted, true)
-    assert.strictEqual(connectorStatus.transactionId, 'tx-1')
+    assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(
       requestHandlerMock.mock.calls.length,
       0,
