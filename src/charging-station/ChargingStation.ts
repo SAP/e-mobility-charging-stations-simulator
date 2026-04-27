@@ -264,7 +264,7 @@ export class ChargingStation extends EventEmitter {
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
       ).catch((error: unknown) => {
         logger.error(
-          `${this.logPrefix()} ${moduleName}.constructor: Error while starting the message sequence:`,
+          `${this.logPrefix()} ${moduleName}.onAccepted: Error while starting the message sequence:`,
           error
         )
       })
@@ -284,7 +284,7 @@ export class ChargingStation extends EventEmitter {
       } catch (error) {
         const e = ensureError(error)
         logger.error(
-          `${this.logPrefix()} ${moduleName}.constructor: Error while stopping the internal message sequence:`,
+          `${this.logPrefix()} ${moduleName}.onDisconnected: Error while stopping the internal message sequence:`,
           e
         )
       }
