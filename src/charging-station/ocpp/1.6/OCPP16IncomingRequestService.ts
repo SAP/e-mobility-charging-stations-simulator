@@ -1301,14 +1301,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
-    // Reject during finishing delay — connector is still physically occupied
     if (
-      (chargingStation.stationInfo?.postTransactionDelay ?? 0) > 0 &&
       chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
-        OCPP16ChargePointStatus.Finishing
+      OCPP16ChargePointStatus.Finishing
     ) {
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStartTransaction: Remote start transaction REJECTED on connector ${transactionConnectorId.toString()} in Finishing state (post-transaction delay)`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStartTransaction: Remote start transaction REJECTED on connector ${transactionConnectorId.toString()} in Finishing state`
       )
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
