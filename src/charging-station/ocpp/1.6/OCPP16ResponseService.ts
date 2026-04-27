@@ -530,6 +530,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           status: OCPP16ChargePointStatus.Finishing,
         } as OCPP16StatusNotificationRequest)
       }
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       // Station stopped during delay — shutdown process handles connector cleanup
       if (!chargingStation.started) {
@@ -559,7 +560,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ) {
       transactionConnectorStatus.locked = false
     }
-    OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+    if (postTransactionDelay <= 0) {
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+    }
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId

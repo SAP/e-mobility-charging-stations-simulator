@@ -112,7 +112,9 @@ await describe('FinishingStatusDelay', async () => {
 
       // Assert — StatusNotification sequence: Finishing then Available
       const statusCalls = requestCalls.filter(
-        call => call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION
+        call =>
+          call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION &&
+          (call[2] as Record<string, unknown>).connectorId === 1
       )
       assert.ok(
         statusCalls.length >= 2,
@@ -148,7 +150,9 @@ await describe('FinishingStatusDelay', async () => {
 
       // Assert — no Finishing status should have been sent
       const statusCalls = requestCalls.filter(
-        call => call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION
+        call =>
+          call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION &&
+          (call[2] as Record<string, unknown>).connectorId === 1
       )
       const finishingCalls = statusCalls.filter(
         call => (call[2] as Record<string, unknown>).status === OCPP16ChargePointStatus.Finishing
@@ -204,7 +208,9 @@ await describe('FinishingStatusDelay', async () => {
 
       // Assert — after delay, re-evaluates and sends Unavailable
       const statusCalls = requestCalls.filter(
-        call => call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION
+        call =>
+          call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION &&
+          (call[2] as Record<string, unknown>).connectorId === 1
       )
       assert.ok(
         statusCalls.length >= 2,
@@ -243,7 +249,13 @@ await describe('FinishingStatusDelay', async () => {
       // Act
       await withMockTimers(t, ['setTimeout'], async () => {
         const promise = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+        for (let i = 0; i < 10; i++) {
+          await flushMicrotasks()
+        }
         t.mock.timers.tick(3000)
+        for (let i = 0; i < 10; i++) {
+          await flushMicrotasks()
+        }
         await promise
       })
 
