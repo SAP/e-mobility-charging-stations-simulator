@@ -122,6 +122,7 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 | Field                     | Type                    | Required | Description                               |
 | ------------------------- | ----------------------- | -------- | ----------------------------------------- |
+| `skin`                    | `string`                | No       | Skin name (default: `classic`)            |
 | `theme`                   | `string`                | No       | Theme name (default: `tokyo-night-storm`) |
 | `host`                    | `string`                | Yes      | Simulator UI server hostname              |
 | `port`                    | `number`                | Yes      | Simulator UI server port                  |
@@ -145,6 +146,17 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | `sap-horizon`       | Light | [SAP Horizon](https://github.com/SAP/theming-base-content)       |
 
 Default: `tokyo-night-storm`. To add a theme, create a CSS file defining the same semantic tokens.
+
+## Skins
+
+Set `skin` in `config.json` to select the default UI layout. Users can switch skins at runtime using the selector in the top bar.
+
+| Skin      | Layout                                            |
+| --------- | ------------------------------------------------- |
+| `classic` | Table-based rows with a sticky sidebar for forms. |
+| `modern`  | Responsive card grid with modal dialogs.          |
+
+Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, register it in `src/skins/registry.ts`, and add it to the `skinLayoutMap` in `src/App.vue`.
 
 ## Getting started
 
@@ -204,17 +216,3 @@ This builds the image and runs the container, exposing the Web UI on port 3030. 
 | `pnpm format`        | Run Prettier and ESLint auto-fix                    |
 | `pnpm test`          | Run unit tests with Vitest                          |
 | `pnpm test:coverage` | Run unit tests with V8 coverage report              |
-
-## Trying the v2 UI
-
-A reworked, prettier UI is available in parallel at `/v2`. Both UIs talk to the same UI server, share the same configuration file, and expose the same actions (simulator start/stop, add/delete stations, open/close connection, lock/unlock, transactions, ATG, supervision URL). The legacy table-based UI is still served at `/`; a "Try v2 →" pill in the bottom-right of the legacy view links over.
-
-The v2 UI is a self-contained subtree under `src/v2/` that consumes the same `composables/` (`UIClient`, `useExecuteAction`, injection keys) and the same theme variables — no new runtime dependencies. Visual differences:
-
-- Cards in a responsive grid instead of a fixed-width table.
-- Status pills (started, ws state, connector status, ATG running) instead of plain text cells.
-- Routed dialogs (with focus trap and Escape-to-close) instead of a sticky right sidebar.
-- Confirmation prompts for destructive actions (delete station, stop simulator).
-- Per-action loading state and disabled buttons during in-flight requests.
-
-To make v2 the only UI, remove `src/components/{actions,buttons,charging-stations}/`, `src/views/`, and the v1 routes; move the contents of `src/v2/` up one level and rename the route names accordingly. The two trees do not import each other.
