@@ -88,6 +88,7 @@ import { useToast } from 'vue-toast-notification'
 import {
   getFromLocalStorage,
   setToLocalStorage,
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
   useFetchData,
@@ -103,7 +104,6 @@ import SetSupervisionUrlDialog from './components/dialogs/SetSupervisionUrlDialo
 import StartTransactionDialog from './components/dialogs/StartTransactionDialog.vue'
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
-import { V2_UI_SERVER_INDEX_KEY } from './composables/constants'
 
 const $configuration = useConfiguration()
 const $templates = useTemplates()
@@ -117,7 +117,7 @@ const confirmingStopSim = ref(false)
 const refreshing = ref(false)
 
 const state = ref({
-  uiServerIndex: getFromLocalStorage<number>(V2_UI_SERVER_INDEX_KEY, 0),
+  uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
 })
 
 // Dialog state
@@ -214,7 +214,7 @@ const handleUIServerChange = (nextIndex: number): void => {
   $uiClient.registerWSEventListener(
     'open',
     () => {
-      setToLocalStorage<number>(V2_UI_SERVER_INDEX_KEY, nextIndex)
+      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, nextIndex)
     },
     { once: true }
   )

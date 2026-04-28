@@ -11,10 +11,10 @@ import {
   chargingStationsKey,
   configurationKey,
   templatesKey,
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
   uiClientKey,
   useUIClient,
 } from '@/composables'
-import { V2_UI_SERVER_INDEX_KEY } from '@/skins/modern/composables/constants'
 import ModernLayout from '@/skins/modern/ModernLayout.vue'
 
 import { toastMock } from '../../../setup'
@@ -262,7 +262,7 @@ describe('modern ModernLayout', () => {
   })
 
   it('skips switch when the same server is selected (index persisted from localStorage)', async () => {
-    localStorage.setItem(V2_UI_SERVER_INDEX_KEY, '1')
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, '1')
     const wrapper = mountView({ configuration: multiServer })
     await flushPromises()
     mockClient.setConfiguration.mockClear()
@@ -285,7 +285,7 @@ describe('modern ModernLayout', () => {
     expect(oneShotOpen).toBeDefined()
     const handler = (oneShotOpen as unknown as unknown[])[1] as () => void
     handler()
-    expect(localStorage.getItem(V2_UI_SERVER_INDEX_KEY)).toBe('1')
+    expect(localStorage.getItem(UI_SERVER_CONFIGURATION_INDEX_KEY)).toBe('1')
   })
 
   it('clears the station list when a WS error handler fires', async () => {

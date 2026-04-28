@@ -34,20 +34,7 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
   const $templates = useTemplates()
   const executeAction = useExecuteAction()
 
-  const formState = ref<AddStationsFormState>({
-    autoStart: false,
-    baseName: '',
-    enableStatistics: false,
-    fixedName: false,
-    numberOfStations: 1,
-    ocppStrictCompliance: true,
-    persistentConfiguration: true,
-    renderTemplates: randomUUID(),
-    supervisionPassword: '',
-    supervisionUrl: '',
-    supervisionUser: '',
-    template: '',
-  })
+  const formState = ref<AddStationsFormState>(makeInitialState())
 
   watch($templates, () => {
     formState.value.renderTemplates = randomUUID()
@@ -55,20 +42,7 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
 
   /** Resets form state to initial defaults. */
   function resetForm (): void {
-    formState.value = {
-      autoStart: false,
-      baseName: '',
-      enableStatistics: false,
-      fixedName: false,
-      numberOfStations: 1,
-      ocppStrictCompliance: true,
-      persistentConfiguration: true,
-      renderTemplates: randomUUID(),
-      supervisionPassword: '',
-      supervisionUrl: '',
-      supervisionUser: '',
-      template: '',
-    }
+    formState.value = makeInitialState()
   }
 
   /** Submits the form to add charging stations via the UI client. */
@@ -76,7 +50,7 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
     executeAction(
       $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
         autoStart: convertToBoolean(formState.value.autoStart),
-        baseName: formState.value.baseName.length > 0 ? formState.value.baseName : undefined,
+        baseName: nonEmpty(formState.value.baseName),
         enableStatistics: convertToBoolean(formState.value.enableStatistics),
         fixedName:
           formState.value.baseName.length > 0
@@ -84,14 +58,9 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
             : undefined,
         ocppStrictCompliance: convertToBoolean(formState.value.ocppStrictCompliance),
         persistentConfiguration: convertToBoolean(formState.value.persistentConfiguration),
-        supervisionPassword:
-          formState.value.supervisionPassword.length > 0
-            ? formState.value.supervisionPassword
-            : undefined,
-        supervisionUrls:
-          formState.value.supervisionUrl.length > 0 ? formState.value.supervisionUrl : undefined,
-        supervisionUser:
-          formState.value.supervisionUser.length > 0 ? formState.value.supervisionUser : undefined,
+        supervisionPassword: nonEmpty(formState.value.supervisionPassword),
+        supervisionUrls: nonEmpty(formState.value.supervisionUrl),
+        supervisionUser: nonEmpty(formState.value.supervisionUser),
       }),
       'Charging stations successfully added',
       'Error at adding charging stations',
@@ -110,4 +79,36 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
     submitForm,
     templates: $templates,
   }
+}
+
+/**
+ * Returns a fresh copy of the default form state.
+ * Using a factory avoids sharing mutable state between initialization and reset.
+ * @returns A new {@link AddStationsFormState} with all fields set to their defaults.
+ */
+function makeInitialState (): AddStationsFormState {
+  return {
+    autoStart: false,
+    baseName: '',
+    enableStatistics: false,
+    fixedName: false,
+    numberOfStations: 1,
+    ocppStrictCompliance: true,
+    persistentConfiguration: true,
+    renderTemplates: randomUUID(),
+    supervisionPassword: '',
+    supervisionUrl: '',
+    supervisionUser: '',
+    template: '',
+  }
+}
+
+/**
+ * Returns `value` when it is non-empty, otherwise `undefined`.
+ * Centralizes the "optional string field" pattern used in form submission.
+ * @param value - The string to test.
+ * @returns The original string, or `undefined` if it is empty.
+ */
+function nonEmpty (value: string): string | undefined {
+  return value.length > 0 ? value : undefined
 }
