@@ -24,7 +24,7 @@ export const skins: readonly SkinDefinition[] = [
     id: 'classic',
     label: 'Classic',
     loadStyles: async () => {
-      return import('./classic/classic.css')
+      return import('@/skins/classic/classic.css')
     },
   },
   {
@@ -32,7 +32,7 @@ export const skins: readonly SkinDefinition[] = [
     id: 'modern',
     label: 'Modern',
     loadStyles: async () => {
-      return import('./modern/modern.css')
+      return import('@/skins/modern/modern.css')
     },
   },
 ] as const

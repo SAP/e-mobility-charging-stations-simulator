@@ -5,9 +5,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/skins/registry.js'
+import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 
-vi.mock('@/skins/registry.js', () => ({
+vi.mock('@/shared/skins/registry.js', () => ({
   DEFAULT_SKIN: 'classic',
   skins: [
     {
