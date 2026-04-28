@@ -121,7 +121,7 @@ describe('AddChargingStations', () => {
     const wrapper = mountComponent()
     await wrapper.find('#base-name').setValue('DEV-STATION')
     await wrapper.find('#supervision-user').setValue('alice')
-    await wrapper.find('#supervision-password').setValue('s3cret')
+    await wrapper.find('#supervision-password').setValue('secret')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.addChargingStations).toHaveBeenCalledWith(
@@ -129,7 +129,7 @@ describe('AddChargingStations', () => {
       expect.anything(),
       expect.objectContaining({
         baseName: 'DEV-STATION',
-        supervisionPassword: 's3cret',
+        supervisionPassword: 'secret',
         supervisionUser: 'alice',
       })
     )

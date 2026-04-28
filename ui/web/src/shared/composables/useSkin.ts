@@ -5,7 +5,18 @@ import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/shared/skins/registr
 
 const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
-const activeSkinId: Ref<string> = ref(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
+/**
+ * Returns a registered skin id or falls back to the default skin.
+ * @param skinId - The skin identifier to validate
+ * @returns A valid registered skin identifier
+ */
+function getValidSkinId (skinId: string): string {
+  return skins.some(s => s.id === skinId) ? skinId : DEFAULT_SKIN
+}
+
+const activeSkinId: Ref<string> = ref(
+  getValidSkinId(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
+)
 const loadedSkins = new Set<string>()
 let switching = false
 

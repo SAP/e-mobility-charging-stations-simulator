@@ -25,7 +25,7 @@ export function useStartTxForm (
 ): {
     formState: Ref<StartTxFormState>
     resetForm: () => void
-    submitForm: () => Promise<void>
+    submitForm: () => Promise<boolean>
   } {
   const $uiClient = useUIClient()
   const $toast = useToast()
@@ -45,14 +45,17 @@ export function useStartTxForm (
     }
   }
 
-  /** Submits the start transaction request, optionally authorizing first. */
-  async function submitForm (): Promise<void> {
+  /**
+   * Submits the start transaction request, optionally authorizing first.
+   * @returns `true` on success, `false` on error
+   */
+  async function submitForm (): Promise<boolean> {
     const idTag = formState.value.idTag.length > 0 ? formState.value.idTag : undefined
 
     if (formState.value.authorizeIdTag) {
       if (idTag == null) {
         $toast.error('Please provide an RFID tag to authorize')
-        return
+        return false
       }
       try {
         await $uiClient.authorize(hashId, idTag)
@@ -60,7 +63,7 @@ export function useStartTxForm (
         $toast.error('Error at authorizing RFID tag')
         console.error('Error at authorizing RFID tag:', error)
         resetToggleButtonState(toggleButtonId, true)
-        return
+        return false
       }
     }
 
@@ -72,9 +75,11 @@ export function useStartTxForm (
         ocppVersion,
       })
       $toast.success('Transaction successfully started')
+      return true
     } catch (error) {
       $toast.error('Error at starting transaction')
       console.error('Error at starting transaction:', error)
+      return false
     } finally {
       resetToggleButtonState(toggleButtonId, true)
     }

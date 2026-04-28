@@ -80,14 +80,14 @@ describe('SetSupervisionUrl', () => {
     const wrapper = mountComponent()
     await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('#supervision-user').setValue('alice')
-    await wrapper.find('#supervision-password').setValue('s3cret')
+    await wrapper.find('#supervision-password').setValue('secret')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
       TEST_HASH_ID,
       'wss://new-server.com:9000',
       'alice',
-      's3cret'
+      'secret'
     )
   })
 
@@ -108,7 +108,7 @@ describe('SetSupervisionUrl', () => {
   it('should not call setSupervisionUrl when url is empty', async () => {
     const wrapper = mountComponent()
     await wrapper.find('#supervision-user').setValue('alice')
-    await wrapper.find('#supervision-password').setValue('s3cret')
+    await wrapper.find('#supervision-password').setValue('secret')
     await wrapper.find('button').trigger('click')
     await flushPromises()
     expect(mockClient.setSupervisionUrl).not.toHaveBeenCalled()

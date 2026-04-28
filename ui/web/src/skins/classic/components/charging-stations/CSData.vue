@@ -177,8 +177,18 @@ const getATGStatus = (connectorId: number): Status | undefined => {
   )?.status
 }
 const getSupervisionUrl = (): string => {
-  const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
-  return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
+  const supervisionUrl = props.chargingStation.supervisionUrl?.trim()
+
+  if (!supervisionUrl) {
+    return EMPTY_VALUE_PLACEHOLDER
+  }
+
+  try {
+    const parsedSupervisionUrl = new URL(supervisionUrl)
+    return `${parsedSupervisionUrl.protocol}//${parsedSupervisionUrl.host.split('.').join('.\u200b')}`
+  } catch {
+    return supervisionUrl
+  }
 }
 
 const $uiClient = useUIClient()

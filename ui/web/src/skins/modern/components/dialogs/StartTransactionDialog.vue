@@ -91,8 +91,8 @@ const close = (): void => {
 const submit = async (): Promise<void> => {
   if (pending.value) return
   pending.value = true
-  await submitForm()
+  const success = await submitForm()
   pending.value = false
-  close()
+  if (success) emit('close')
 }
 </script>

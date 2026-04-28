@@ -120,7 +120,7 @@ export default defineConfig([
               'focusables',
               'Focusables',
               // Test credential fragments
-              'cret',
+              'secret',
             ],
           },
         },

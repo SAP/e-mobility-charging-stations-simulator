@@ -145,14 +145,14 @@ describe('v2 AddStationsDialog', () => {
     await wrapper.find('input[type="url"]').setValue('wss://example.com/ocpp')
     const textInputs = wrapper.findAll('input[type="text"]')
     await textInputs[1].setValue('alice')
-    await wrapper.find('input[type="password"]').setValue('s3cret')
+    await wrapper.find('input[type="password"]').setValue('secret')
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
     expect(mockClient.addChargingStations).toHaveBeenCalledWith(
       'template-A.json',
       1,
       expect.objectContaining({
-        supervisionPassword: 's3cret',
+        supervisionPassword: 'secret',
         supervisionUrls: 'wss://example.com/ocpp',
         supervisionUser: 'alice',
       })

@@ -34,7 +34,9 @@ export const router = createRouter({
       props: { action: true },
     },
     {
-      component: { template: '' },
+      components: {
+        action: { template: '<p style="padding: 1rem; text-align: center;">404 — Page not found</p>' },
+      },
       name: ROUTE_NAMES.NOT_FOUND,
       path: '/:pathMatch(.*)*',
     },
