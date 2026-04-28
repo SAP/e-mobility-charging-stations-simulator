@@ -506,11 +506,14 @@ export const initializeConnectorsMapStatus = (
 ): void => {
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId > 0 && connectorStatus.transactionStarted === true) {
-      if (connectorStatus.transactionId == null) {
+      if (
+        connectorStatus.transactionId == null ||
+        connectorStatus.status === ConnectorStatusEnum.Finishing
+      ) {
         resetConnectorStatus(connectorStatus)
         connectorStatus.locked = false
         logger.warn(
-          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} had stale transaction state without transactionId, reset`
+          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} had stale transaction state, reset`
         )
       } else {
         logger.warn(
