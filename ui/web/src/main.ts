@@ -18,30 +18,38 @@ import {
   uiClientKey,
 } from '@/composables'
 import { router } from '@/router'
+import { useSkin } from '@/shared/composables/useSkin.js'
+import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
+// Load all theme CSS files eagerly — they are small (~100 lines each).
+// Switching is instant via [data-theme] attribute selector.
 import './assets/shared.css'
-
-const DEFAULT_THEME = 'tokyo-night-storm'
-
-const loadTheme = async (theme: string): Promise<void> => {
-  try {
-    await import(`./assets/themes/${theme}.css`)
-  } catch {
-    console.error(`Theme '${theme}' not found, falling back to '${DEFAULT_THEME}'`)
-    await import(`./assets/themes/${DEFAULT_THEME}.css`)
-  }
-}
+import './assets/themes/catppuccin-latte.css'
+import './assets/themes/sap-horizon.css'
+import './assets/themes/tokyo-night-storm.css'
 
 const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {
-  await loadTheme(config.theme ?? DEFAULT_THEME)
   app.config.errorHandler = (error, instance, info) => {
     console.error('Error:', error)
     console.info('Vue instance:', instance)
     console.info('Error info:', info)
     // TODO: add code for UI notifications or other error handling logic
   }
+
+  const { setTheme } = useTheme()
+  const storedTheme = getFromLocalStorage<string>('ecs-ui-theme', config.theme ?? 'tokyo-night-storm')
+  setTheme(storedTheme as ThemeName)
+
+  const { switchSkin } = useSkin()
+  const skinStorageKey = 'ecs-ui-skin'
+  if (getFromLocalStorage<string>(skinStorageKey, '') === '' && config.skin != null) {
+    setToLocalStorage<string>(skinStorageKey, config.skin)
+  }
+  const initialSkin = getFromLocalStorage<string>(skinStorageKey, config.skin ?? 'classic')
+  await switchSkin(initialSkin)
+
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]
   }

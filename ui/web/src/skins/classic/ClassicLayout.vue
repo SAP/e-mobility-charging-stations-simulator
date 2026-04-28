@@ -1,5 +1,6 @@
 <template>
-  <Container class="charging-stations-container">
+  <div class="classic-layout">
+    <Container class="charging-stations-container">
     <Container class="buttons-container">
       <Container
         v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
@@ -59,6 +60,17 @@
       "
     />
   </Container>
+  <Container
+    v-show="
+      $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
+        $route.name !== ROUTE_NAMES.NOT_FOUND
+    "
+    id="action-container"
+    class="action-container"
+  >
+    <router-view name="action" />
+  </Container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -272,6 +284,13 @@ const stopSimulator = (): void => {
 </script>
 
 <style scoped>
+.classic-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+}
+
 .charging-stations-container {
   min-width: 0;
   overflow: hidden;
@@ -315,5 +334,21 @@ const stopSimulator = (): void => {
 
 .buttons-container > * {
   flex: 1 1 0;
+}
+
+.action-container {
+  flex: none;
+  min-width: max-content;
+  height: fit-content;
+  display: flex;
+  position: sticky;
+  top: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  margin-inline: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: solid 0.25px var(--color-border);
 }
 </style>
