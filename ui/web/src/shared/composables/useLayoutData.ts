@@ -1,5 +1,5 @@
 import type { ChargingStationData, SimulatorState } from 'ui-common'
-import { computed, onMounted, onUnmounted, type Ref, ref } from 'vue'
+import { type ComputedRef, computed, onMounted, onUnmounted, type Ref, ref } from 'vue'
 
 import { useChargingStations, useFetchData, useTemplates, useUIClient } from '@/composables'
 
@@ -10,6 +10,8 @@ export interface LayoutData {
   getChargingStations: () => void
   /** Fetches only the simulator state. */
   getSimulatorState: () => void
+  /** Whether any data fetch is currently in progress. */
+  loading: ComputedRef<boolean>
   /** Registers WS event listeners for open/error/close. */
   registerWSEventListeners: () => void
   /** Whether the simulator has been started. */
@@ -42,7 +44,7 @@ export function useLayoutData (): LayoutData {
     $chargingStations.value = []
   }
 
-  const { fetch: getSimulatorState } = useFetchData(
+  const { fetch: getSimulatorState, fetching: fetchingSimulatorState } = useFetchData(
     () => $uiClient.simulatorState(),
     response => {
       simulatorState.value = response.state as unknown as SimulatorState
@@ -50,7 +52,7 @@ export function useLayoutData (): LayoutData {
     'Error at fetching simulator state'
   )
 
-  const { fetch: getTemplates } = useFetchData(
+  const { fetch: getTemplates, fetching: fetchingTemplates } = useFetchData(
     () => $uiClient.listTemplates(),
     response => {
       $templates.value = response.templates as string[]
@@ -59,13 +61,17 @@ export function useLayoutData (): LayoutData {
     clearTemplates
   )
 
-  const { fetch: getChargingStations } = useFetchData(
+  const { fetch: getChargingStations, fetching: fetchingChargingStations } = useFetchData(
     () => $uiClient.listChargingStations(),
     response => {
       $chargingStations.value = response.chargingStations as ChargingStationData[]
     },
     'Error at fetching charging stations',
     clearChargingStations
+  )
+
+  const loading = computed(
+    () => fetchingSimulatorState.value || fetchingTemplates.value || fetchingChargingStations.value
   )
 
   const getData = (): void => {
@@ -104,6 +110,7 @@ export function useLayoutData (): LayoutData {
     getData,
     getChargingStations,
     getSimulatorState,
+    loading,
     registerWSEventListeners,
     simulatorStarted,
     simulatorState,

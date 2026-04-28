@@ -1,7 +1,7 @@
 <template>
   <main class="modern-app">
     <SimulatorBar
-      :refresh-pending="refreshing"
+      :refresh-pending="loading"
       :selected-server-index="state.uiServerIndex"
       :simulator-pending="simulatorPending"
       :simulator-state="simulatorState"
@@ -113,13 +113,13 @@ const {
   getData,
   getChargingStations,
   getSimulatorState,
+  loading,
   registerWSEventListeners,
   simulatorState,
 } = useLayoutData()
 
 const simulatorPending = ref(false)
 const confirmingStopSim = ref(false)
-const refreshing = ref(false)
 
 const state = ref({
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
@@ -151,11 +151,7 @@ const uiServerConfigurations = computed(() =>
 )
 
 const refreshData = (): void => {
-  refreshing.value = true
   getData()
-  setTimeout(() => {
-    refreshing.value = false
-  }, 600)
 }
 
 const handleUIServerChange = (nextIndex: number): void => {
