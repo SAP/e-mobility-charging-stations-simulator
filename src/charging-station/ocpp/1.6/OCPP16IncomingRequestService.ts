@@ -1305,9 +1305,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
       OCPP16ChargePointStatus.Finishing
     ) {
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStartTransaction: Remote start transaction REJECTED on connector ${transactionConnectorId.toString()} in Finishing state`
-      )
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
         transactionConnectorId,

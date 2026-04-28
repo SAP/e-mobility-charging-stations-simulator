@@ -513,7 +513,7 @@ export const initializeConnectorsMapStatus = (
         resetConnectorStatus(connectorStatus)
         connectorStatus.locked = false
         logger.warn(
-          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} had stale transaction state, reset`
+          `${logPrefix} ${moduleName}.initializeConnectorsMapStatus: Connector id ${connectorId.toString()} at initialization has stale transaction state, resetting`
         )
       } else {
         logger.warn(
