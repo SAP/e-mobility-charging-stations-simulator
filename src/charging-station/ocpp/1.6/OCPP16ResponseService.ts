@@ -63,16 +63,11 @@ const decrementPowerDivider = (chargingStation: ChargingStation): void => {
 
 const finalizeTransactionConnectorStatus = (
   connectorStatus: ConnectorStatus | undefined,
-  requestPayload: OCPP16StopTransactionRequest,
-  responsePayload: OCPP16StopTransactionResponse
+  requestPayload: OCPP16StopTransactionRequest
 ): string | undefined => {
   const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
   resetConnectorStatus(connectorStatus)
-  if (
-    connectorStatus != null &&
-    (responsePayload.idTagInfo == null ||
-      responsePayload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
-  ) {
+  if (connectorStatus != null) {
     connectorStatus.locked = false
   }
   return transactionIdTag
@@ -562,8 +557,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
       transactionIdTag = finalizeTransactionConnectorStatus(
         transactionConnectorStatus,
-        requestPayload,
-        payload
+        requestPayload
       )
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
@@ -572,8 +566,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       transactionIdTag = finalizeTransactionConnectorStatus(
         transactionConnectorStatus,
-        requestPayload,
-        payload
+        requestPayload
       )
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
     }
