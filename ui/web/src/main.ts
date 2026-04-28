@@ -20,8 +20,8 @@ import {
   uiClientKey,
 } from '@/composables'
 import { router } from '@/router'
-import { useSkin } from '@/shared/composables/useSkin.js'
-import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
+import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
+import { THEME_STORAGE_KEY, type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
@@ -42,17 +42,16 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
 
   const { setTheme } = useTheme()
   const storedTheme = getFromLocalStorage<string>(
-    'ecs-ui-theme',
+    THEME_STORAGE_KEY,
     config.theme ?? 'tokyo-night-storm'
   )
   setTheme(storedTheme as ThemeName)
 
   const { setSkin } = useSkin()
-  const skinStorageKey = 'ecs-ui-skin'
-  if (getFromLocalStorage<string>(skinStorageKey, '') === '' && config.skin != null) {
-    setToLocalStorage<string>(skinStorageKey, config.skin)
+  if (getFromLocalStorage<string>(SKIN_STORAGE_KEY, '') === '' && config.skin != null) {
+    setToLocalStorage<string>(SKIN_STORAGE_KEY, config.skin)
   }
-  const initialSkin = getFromLocalStorage<string>(skinStorageKey, config.skin ?? 'classic')
+  const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? 'classic')
   await setSkin(initialSkin)
 
   if (!Array.isArray(config.uiServer)) {

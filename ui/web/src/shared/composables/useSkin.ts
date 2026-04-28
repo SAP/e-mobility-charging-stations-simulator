@@ -3,7 +3,7 @@ import { readonly, ref, type Ref } from 'vue'
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/shared/skins/registry.js'
 
-const SKIN_STORAGE_KEY = 'ecs-ui-skin'
+export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
 /**
  * Returns a registered skin id or falls back to the default skin.

@@ -4,7 +4,7 @@ import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 
 const AVAILABLE_THEMES = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
 const DEFAULT_THEME = 'tokyo-night-storm'
-const THEME_STORAGE_KEY = 'ecs-ui-theme'
+export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof AVAILABLE_THEMES)[number]
 
