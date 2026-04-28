@@ -1,0 +1,1311 @@
+/* v2 UI styles.
+ *
+ * Flat, modern design with a Material-inspired palette.
+ * - Teal primary (Material 500/400) + Green / Amber / Red state colours
+ * - Onest across the UI; mono only for the supervision URL itself
+ * - Elevation tiers: base < card body < raised (header/modal) + sunken inserts
+ * - Hovers only touch colour / shadow, never layout
+ * - Light theme via `.v2-app[data-v2-theme='light']` override
+ */
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── Material-inspired palette ─────────────────────────────────── */
+  --v2-primary: #00897b;
+  --v2-primary-bright: #26a69a;
+  --v2-primary-dim: #00695c;
+  --v2-primary-soft: color-mix(in srgb, var(--v2-primary-bright) 26%, transparent);
+  --v2-primary-ghost: color-mix(in srgb, var(--v2-primary-bright) 12%, transparent);
+
+  --v2-state-ok: #66bb6a;
+  --v2-state-ok-bg: color-mix(in srgb, var(--v2-state-ok) 14%, transparent);
+  --v2-state-warn: #ffb300;
+  --v2-state-warn-bg: color-mix(in srgb, var(--v2-state-warn) 16%, transparent);
+  --v2-state-err: #ef5350;
+  --v2-state-err-bg: color-mix(in srgb, var(--v2-state-err) 14%, transparent);
+  --v2-state-idle: color-mix(in srgb, var(--color-text-muted, #8089b3) 100%, transparent);
+  --v2-state-idle-bg: color-mix(in srgb, var(--color-text-muted, #8089b3) 14%, transparent);
+
+  /* Spacing */
+  --v2-space-1: 0.25rem;
+  --v2-space-2: 0.5rem;
+  --v2-space-3: 0.75rem;
+  --v2-space-4: 1rem;
+  --v2-space-5: 1.5rem;
+  --v2-space-6: 2rem;
+  --v2-space-7: 3rem;
+
+  /* Radii */
+  --v2-radius-sm: 4px;
+  --v2-radius-md: 6px;
+  --v2-radius-lg: 10px;
+  --v2-radius-pill: 999px;
+
+  /* Elevation shadows */
+  --v2-elev-0: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --v2-elev-1: 0 2px 4px rgba(0, 0, 0, 0.22);
+  --v2-elev-2: 0 6px 16px -4px rgba(0, 0, 0, 0.28);
+  --v2-elev-modal: 0 24px 48px -8px rgba(0, 0, 0, 0.45);
+
+  /* Typography */
+  --v2-font: 'Onest', ui-sans-serif, system-ui, sans-serif;
+  --v2-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ── Elevation tiers — dark mode defaults ─────────────────────────
+   * Built from the theme's bg-surface so themes still work.
+   *
+   * Order of lightness (dark mode):
+   *   base  < card body  < raised (header/modal)
+   *   sunken < card body  (sunken is inside-the-card)
+   *
+   * Each tier moves by ~6-10% so every level has a visible delta. */
+  --v2-base: color-mix(in srgb, var(--color-bg-surface, #1f2335) 100%, #000000 6%);
+  --v2-surface: color-mix(in srgb, var(--color-bg-surface, #1f2335) 86%, #ffffff 10%);
+  --v2-surface-raised: color-mix(in srgb, var(--color-bg-surface, #1f2335) 80%, #ffffff 14%);
+  --v2-surface-sunken: color-mix(in srgb, var(--color-bg-surface, #1f2335) 90%, #000000 4%);
+
+  /* Badge — matches the connector gutter tone so floating legend-style
+   * labels stay visually distinct but consistent with the rest of the
+   * dark-mode chip language. */
+  --v2-badge-bg: color-mix(in srgb, var(--v2-surface) 85%, #000000 8%);
+
+  --v2-border: color-mix(in srgb, var(--color-text-muted, #8089b3) 14%, transparent);
+  --v2-border-strong: color-mix(in srgb, var(--color-text-muted, #8089b3) 32%, transparent);
+
+  --v2-transition: 140ms cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+/* ── Light theme overrides — v2 only ──────────────────────────────
+ * Applied via `data-v2-theme="light"` on both the .v2-app root AND the
+ * documentElement (<html>). The <html> target is what lets teleported
+ * modals (rendered into <body>, outside .v2-app) also see the light
+ * palette — the vars cascade from :root. */
+:root[data-v2-theme='light'],
+.v2-app[data-v2-theme='light'] {
+  /* Override the v1 theme vars the v2 UI consumes */
+  --color-bg: #f4f5f7;
+  --color-bg-surface: #ffffff;
+  --color-text: #3c4257;
+  --color-text-strong: #1a1f36;
+  --color-text-muted: #697386;
+  --color-border-row: #e4e7eb;
+  --color-primary: #00796b;
+  --color-accent: #00796b;
+
+  /* Re-derive v2 tiers for a light palette */
+  --v2-base: #f4f5f7;
+  --v2-surface: #ffffff;
+  --v2-surface-raised: #fafbfc;
+  --v2-surface-sunken: #f1f3f6;
+  --v2-border: #e4e7eb;
+  --v2-border-strong: #cfd4da;
+  --v2-badge-bg: var(--v2-surface);
+
+  /* Primary slightly darker for better contrast on white */
+  --v2-primary: #00796b;
+  --v2-primary-bright: #009688;
+  --v2-primary-dim: #004d40;
+  --v2-primary-soft: color-mix(in srgb, var(--v2-primary) 24%, transparent);
+  --v2-primary-ghost: color-mix(in srgb, var(--v2-primary) 10%, transparent);
+
+  /* Darker state colours for readability on white */
+  --v2-state-ok: #2e7d32;
+  --v2-state-ok-bg: color-mix(in srgb, var(--v2-state-ok) 12%, transparent);
+  --v2-state-warn: #ef6c00;
+  --v2-state-warn-bg: color-mix(in srgb, var(--v2-state-warn) 14%, transparent);
+  --v2-state-err: #c62828;
+  --v2-state-err-bg: color-mix(in srgb, var(--v2-state-err) 12%, transparent);
+  --v2-state-idle: #697386;
+  --v2-state-idle-bg: color-mix(in srgb, var(--v2-state-idle) 12%, transparent);
+
+  /* Wide, feathered shadows on white — cards float visibly off the
+   * page, hover pushes them further. */
+  --v2-elev-0: 0 4px 16px -2px rgba(16, 24, 40, 0.1), 0 2px 4px rgba(16, 24, 40, 0.06);
+  --v2-elev-1: 0 8px 24px -4px rgba(16, 24, 40, 0.12), 0 3px 6px -2px rgba(16, 24, 40, 0.07);
+  --v2-elev-2: 0 24px 48px -8px rgba(16, 24, 40, 0.18), 0 8px 16px -4px rgba(16, 24, 40, 0.1);
+  --v2-elev-modal: 0 32px 64px -12px rgba(16, 24, 40, 0.3);
+}
+
+/* ── App shell — fill the viewport ─────────────────────────────────── */
+html:has(.v2-app),
+body:has(.v2-app) {
+  height: 100%;
+  min-height: 100vh;
+}
+
+body:has(.v2-app) #app {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  height: auto;
+  font-family: var(--v2-font);
+  background-color: var(--v2-base);
+}
+
+.v2-app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-4) clamp(var(--v2-space-4), 3vw, var(--v2-space-6)) var(--v2-space-6);
+  font-family: var(--v2-font);
+  color: var(--color-text);
+  background-color: var(--v2-base);
+  box-sizing: border-box;
+}
+
+.v2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: var(--v2-space-4);
+  align-content: start;
+}
+
+.v2-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-7) var(--v2-space-4);
+  min-height: 40vh;
+  text-align: center;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--v2-border);
+  border-radius: var(--v2-radius-lg);
+  background-color: var(--v2-surface);
+}
+
+.v2-empty__title {
+  color: var(--color-text-strong);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────── */
+.v2-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-3) var(--v2-space-4);
+  background-color: var(--v2-surface-raised);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-elev-1);
+  position: sticky;
+  top: var(--v2-space-3);
+  z-index: 20;
+}
+
+.v2-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+}
+
+.v2-bar__logo {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--v2-radius-md);
+  background-color: var(--v2-primary);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: -0.04em;
+}
+
+.v2-bar__title {
+  margin: 0;
+  font-family: var(--v2-font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--color-text-strong);
+}
+
+.v2-bar__title-sub {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-left: var(--v2-space-1);
+}
+
+.v2-bar__sep {
+  flex: 1;
+}
+
+.v2-bar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-bar__group + .v2-bar__group {
+  border-left: 1px solid var(--v2-border);
+  padding-left: var(--v2-space-3);
+  margin-left: var(--v2-space-1);
+}
+
+.v2-bar__select {
+  background-color: var(--v2-surface-sunken);
+  color: var(--color-text);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  padding: var(--v2-space-1) var(--v2-space-2);
+  font-family: var(--v2-font);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  min-height: 34px;
+  transition: border-color var(--v2-transition);
+}
+
+.v2-bar__select:hover {
+  border-color: var(--v2-primary);
+}
+
+.v2-bar__version-link {
+  font-family: var(--v2-font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  padding: var(--v2-space-1) var(--v2-space-3);
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    color var(--v2-transition),
+    border-color var(--v2-transition),
+    background-color var(--v2-transition);
+}
+
+.v2-bar__version-link:hover {
+  color: var(--v2-primary-bright);
+  border-color: var(--v2-primary);
+  background-color: var(--v2-primary-ghost);
+}
+
+/* Icon buttons inside the bar (theme toggle) size-match the other
+ * 34px-tall buttons in the same row. Use transparent bg + muted icon
+ * so it doesn't read as heavier than the ghost-style bar buttons. */
+.v2-bar .v2-icon-btn {
+  width: 34px;
+  height: 34px;
+  background-color: transparent;
+  border-color: var(--v2-border);
+  color: var(--color-text-muted);
+}
+
+.v2-bar .v2-icon-btn:hover:not(:disabled) {
+  background-color: var(--v2-primary-ghost);
+  border-color: var(--v2-primary);
+  color: var(--v2-primary-bright);
+}
+
+.v2-bar .v2-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────── */
+.v2-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--v2-surface);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--v2-elev-0);
+  transition:
+    border-color var(--v2-transition),
+    box-shadow var(--v2-transition);
+}
+
+.v2-card:hover,
+.v2-card:focus-within {
+  border-color: var(--v2-border-strong);
+  box-shadow: var(--v2-elev-2);
+}
+
+/* Header is a container for two tonally-distinct zones:
+ *   .v2-card__head-row  — title + pills, on the raised teal-washed tier
+ *   .v2-card__subtitle  — spec grid, on a sunken tier below
+ * The tonal step is what carries the visual separation; the 1px border
+ * between them is secondary. */
+.v2-card__head {
+  padding: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--v2-border);
+}
+
+.v2-card__head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-4);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--v2-surface-raised) 88%, var(--v2-primary) 12%) 0%,
+    var(--v2-surface-raised) 100%
+  );
+}
+
+.v2-card__title {
+  margin: 0;
+  font-family: var(--v2-font);
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--color-text-strong);
+  word-break: break-all;
+  letter-spacing: -0.02em;
+}
+
+.v2-card__pills {
+  display: flex;
+  gap: var(--v2-space-1);
+  flex-shrink: 0;
+}
+
+.v2-card__subtitle {
+  position: relative;
+  margin: 0;
+  padding: var(--v2-space-4) var(--v2-space-4) var(--v2-space-3);
+  background-color: var(--v2-surface-sunken);
+  border-top: 1px solid var(--v2-border);
+  display: grid;
+  /* Column widths tuned to typical values: middle carries the longest
+   * strings (Model, Registration), right carries very short ones
+   * (OCPP version like "1.6"), left is medium. */
+  grid-template-columns: 1fr 2fr 0.6fr;
+  gap: var(--v2-space-2) var(--v2-space-3);
+}
+
+.v2-card__subtitle > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-card__subtitle dt {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.v2-card__subtitle dd {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 0.875rem;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Template floats as a small badge on the border between the title
+ * bar and the attribute grid (left-aligned), out of the grid flow.
+ * Selector matches `.v2-card__subtitle > div` specificity so it wins
+ * the `flex-direction: row` over the generic stacked layout. */
+.v2-card__subtitle > .v2-card__template-badge {
+  position: absolute;
+  top: 0;
+  left: var(--v2-space-3);
+  transform: translateY(-50%);
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 90%;
+  padding: 2px 8px;
+  background-color: var(--v2-badge-bg);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
+  font-size: 0.625rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1;
+  min-width: 0;
+}
+
+.v2-card__template-label {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.v2-card__template-value {
+  color: var(--color-text-strong);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.v2-card__body {
+  padding: var(--v2-space-3) var(--v2-space-4) var(--v2-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-3);
+  flex: 1;
+}
+
+/* Section label + the content right under it belong together, so pull
+ * them in tight. The body `gap` still separates distinct sections. */
+.v2-card__section-label + .v2-card__connectors,
+.v2-card__section-label + .v2-card__empty-connectors {
+  margin-top: calc(var(--v2-space-3) * -1 + var(--v2-space-1));
+}
+
+/* CSMS URL — single horizontal row, with a small "CSMS" badge that
+ * floats on the top border of the box (fieldset-legend style). */
+.v2-card__url-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-2) var(--v2-space-2) var(--v2-space-2) var(--v2-space-3);
+  background-color: var(--v2-surface-sunken);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--v2-transition),
+    background-color var(--v2-transition);
+}
+
+.v2-card__url-row:hover {
+  border-color: var(--v2-primary-soft);
+}
+
+/* Solid neutral badge sitting on the url-row's top border
+ * (fieldset-legend pattern). Uses the dedicated badge tone so it stays
+ * distinct from the surrounding surface tiers. */
+.v2-card__url-badge {
+  position: absolute;
+  top: 0;
+  left: var(--v2-space-2);
+  transform: translateY(-50%);
+  padding: 1px 8px;
+  background-color: var(--v2-badge-bg);
+  color: var(--color-text-strong);
+  border: 1px solid var(--v2-border);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--v2-radius-sm);
+  line-height: 1.4;
+  z-index: 1;
+}
+
+.v2-card__url {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--v2-font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-strong);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Pencil — minimal, since the whole row is clickable */
+.v2-card__url-edit {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--v2-transition);
+}
+
+.v2-card__url-edit:hover:not(:disabled) {
+  color: var(--v2-primary-bright);
+}
+
+.v2-card__url-edit:focus-visible {
+  outline: 2px solid var(--v2-primary);
+  outline-offset: 1px;
+}
+
+.v2-card__url-edit svg {
+  width: 13px;
+  height: 13px;
+}
+
+.v2-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background-color: var(--v2-primary-ghost);
+  border: 1px solid var(--v2-primary-soft);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-primary-bright);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color var(--v2-transition),
+    background-color var(--v2-transition),
+    border-color var(--v2-transition);
+}
+
+.v2-icon-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: var(--v2-primary);
+  border-color: var(--v2-primary);
+}
+
+.v2-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v2-icon-btn:focus-visible {
+  outline: 2px solid var(--v2-primary);
+  outline-offset: 2px;
+}
+
+.v2-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Icon-button modifier classes for primary/danger/large variants */
+.v2-icon-btn--lg {
+  width: 30px;
+  height: 30px;
+}
+
+.v2-icon-btn--lg svg {
+  width: 15px;
+  height: 15px;
+}
+
+.v2-icon-btn--primary {
+  background-color: var(--v2-primary);
+  border-color: var(--v2-primary);
+  color: #ffffff;
+}
+
+.v2-icon-btn--primary:hover:not(:disabled) {
+  background-color: var(--v2-primary-bright);
+  border-color: var(--v2-primary-bright);
+  color: #ffffff;
+}
+
+/* Desaturated red fill — mixes 22% neutral gray into the state-err
+ * so it doesn't glare in dark mode and doesn't look blood-dark in
+ * light mode. Works for both themes without a per-theme override. */
+.v2-icon-btn--danger {
+  background-color: color-mix(in srgb, var(--v2-state-err) 78%, #888888 22%);
+  border-color: color-mix(in srgb, var(--v2-state-err) 78%, #888888 22%);
+  color: #ffffff;
+}
+
+.v2-icon-btn--danger:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--v2-state-err) 92%, #888888 8%);
+  border-color: color-mix(in srgb, var(--v2-state-err) 92%, #888888 8%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--v2-state-err) 40%, transparent);
+}
+
+.v2-card__section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.v2-card__connectors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+}
+
+.v2-card__empty-connectors {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  padding: var(--v2-space-3);
+  border: 1px dashed var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  text-align: center;
+}
+
+.v2-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-3) var(--v2-space-4);
+  background-color: var(--v2-surface-sunken);
+  border-top: 1px solid var(--v2-border);
+}
+
+.v2-card__foot-group {
+  display: inline-flex;
+  gap: var(--v2-space-2);
+  align-items: center;
+}
+
+/* Push the danger action to the right. The red outline carries the
+ * "destructive, different category" signal by itself — no extra divider
+ * needed, which would disrupt the button's rounded shape. */
+.v2-card__foot > .v2-btn--danger {
+  margin-left: auto;
+}
+
+/* ── Connector row ─────────────────────────────────────────────────── */
+/* Layout: a slim full-height teal "gutter" holds the connector number
+ * on the left; the main column stacks status pills and action buttons. */
+.v2-connector {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--v2-radius-md);
+  background-color: var(--v2-surface-sunken);
+  border: 1px solid var(--v2-border);
+  overflow: hidden;
+  transition:
+    border-color var(--v2-transition),
+    background-color var(--v2-transition);
+}
+
+.v2-connector:hover {
+  border-color: var(--v2-border-strong);
+}
+
+/* Full-height gutter on the left: connector id + lock icon stacked.
+ * Subtle neutral tint (not brand teal), hairline right border. */
+.v2-connector__gutter {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-1);
+  width: 32px;
+  min-width: 32px;
+  padding: var(--v2-space-2) 0 var(--v2-space-2);
+  background-color: color-mix(in srgb, var(--v2-surface) 85%, #000000 8%);
+  border-right: 1px solid var(--v2-border);
+}
+
+:root[data-v2-theme='light'] .v2-connector__gutter,
+.v2-app[data-v2-theme='light'] .v2-connector__gutter {
+  background-color: color-mix(in srgb, var(--v2-surface-sunken) 85%, #000000 4%);
+}
+
+.v2-connector__id {
+  font-family: var(--v2-font);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-text-strong);
+  line-height: 1;
+}
+
+.v2-connector__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: var(--v2-radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    color var(--v2-transition),
+    background-color var(--v2-transition);
+}
+
+.v2-connector__lock:hover:not(:disabled) {
+  color: var(--v2-primary-bright);
+  background-color: var(--v2-primary-ghost);
+}
+
+.v2-connector__lock:focus-visible {
+  outline: 2px solid var(--v2-primary);
+  outline-offset: 1px;
+}
+
+.v2-connector__lock:disabled {
+  cursor: not-allowed;
+}
+
+/* Effective-locked colour cue: warn tint when the connector is locked
+ * (either explicitly via the API or implicitly during a transaction). */
+.v2-connector__lock--on {
+  color: var(--v2-state-warn);
+}
+
+.v2-connector__lock svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Active transaction — stronger visual treatment ───────────────── */
+.v2-connector--active .v2-connector__gutter {
+  background-color: color-mix(in srgb, var(--v2-state-warn) 16%, var(--v2-surface));
+  border-right-color: color-mix(in srgb, var(--v2-state-warn) 40%, transparent);
+}
+
+.v2-connector--active {
+  border-color: color-mix(in srgb, var(--v2-state-warn) 35%, var(--v2-border));
+}
+
+/* Light-mode tint has to fight against a bright surface, so push the
+ * state-warn contribution higher to match the dark-mode feel. */
+:root[data-v2-theme='light'] .v2-connector--active .v2-connector__gutter,
+.v2-app[data-v2-theme='light'] .v2-connector--active .v2-connector__gutter {
+  background-color: color-mix(in srgb, var(--v2-state-warn) 22%, var(--v2-surface));
+  border-right-color: color-mix(in srgb, var(--v2-state-warn) 55%, transparent);
+}
+
+:root[data-v2-theme='light'] .v2-connector--active,
+.v2-app[data-v2-theme='light'] .v2-connector--active {
+  border-color: color-mix(in srgb, var(--v2-state-warn) 50%, var(--v2-border));
+}
+
+/* Active transaction — two-column table (label | value) with a
+ * pulsing dot in the top-left corner. Tight row heights so it fits
+ * inside the connector row without making it taller. */
+.v2-connector__tx {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: flex-start;
+  padding: var(--v2-space-1) 18px var(--v2-space-1) var(--v2-space-2);
+  background-color: color-mix(in srgb, var(--v2-state-warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v2-state-warn) 30%, transparent);
+  border-radius: var(--v2-radius-sm);
+  color: var(--color-text-strong);
+}
+
+.v2-connector__tx-table {
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.v2-connector__tx-table th {
+  font-weight: 500;
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 0 var(--v2-space-2) 0 0;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.v2-connector__tx-table td {
+  font-weight: 600;
+  color: var(--color-text-strong);
+  padding: 0;
+  vertical-align: baseline;
+  word-break: break-word;
+}
+
+.v2-connector__tx-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--v2-state-warn);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--v2-state-warn) 60%, transparent);
+  animation: v2-tx-pulse 1.6s ease-out infinite;
+}
+
+@keyframes v2-tx-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--v2-state-warn) 60%, transparent);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--v2-state-warn) 0%, transparent);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--v2-state-warn) 0%, transparent);
+    transform: scale(1);
+  }
+}
+
+/* Content area — three zones side by side:
+ *   meta pills (left) | active transaction strip (middle) | actions (right)
+ * Top-aligned so pills stack from the top; actions stay right via
+ * `margin-left: auto`. The middle zone only renders when a tx is active. */
+.v2-connector__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-2);
+}
+
+.v2-connector__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.v2-connector__actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--v2-space-2);
+}
+
+/* ── State pill — readable chip on both themes ─────────────────────── */
+.v2-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border-radius: var(--v2-radius-sm);
+  font-family: var(--v2-font);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+/* Dark-mode defaults — lighten the text so it sits cleanly over the
+ * tinted background. In light mode the overrides below keep the
+ * darker state colour as text (Material 700 on white is readable). */
+.v2-pill--ok {
+  color: color-mix(in srgb, var(--v2-state-ok) 55%, #ffffff 45%);
+  background-color: color-mix(in srgb, var(--v2-state-ok) 26%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-ok) 45%, transparent);
+}
+
+.v2-pill--warn {
+  color: color-mix(in srgb, var(--v2-state-warn) 60%, #ffffff 40%);
+  background-color: color-mix(in srgb, var(--v2-state-warn) 26%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-warn) 50%, transparent);
+}
+
+.v2-pill--err {
+  color: color-mix(in srgb, var(--v2-state-err) 55%, #ffffff 45%);
+  background-color: color-mix(in srgb, var(--v2-state-err) 26%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-err) 45%, transparent);
+}
+
+.v2-pill--idle {
+  color: var(--color-text-strong);
+  background-color: var(--v2-state-idle-bg);
+  border-color: var(--v2-border-strong);
+}
+
+/* Light-mode pill overrides — with white-ish backgrounds, the darker
+ * Material 700 state colour reads best as direct text. */
+:root[data-v2-theme='light'] .v2-pill--ok,
+.v2-app[data-v2-theme='light'] .v2-pill--ok {
+  color: var(--v2-state-ok);
+  background-color: color-mix(in srgb, var(--v2-state-ok) 14%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-ok) 35%, transparent);
+}
+
+:root[data-v2-theme='light'] .v2-pill--warn,
+.v2-app[data-v2-theme='light'] .v2-pill--warn {
+  color: #a23d00;
+  background-color: color-mix(in srgb, var(--v2-state-warn) 18%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-warn) 50%, transparent);
+}
+
+:root[data-v2-theme='light'] .v2-pill--err,
+.v2-app[data-v2-theme='light'] .v2-pill--err {
+  color: var(--v2-state-err);
+  background-color: color-mix(in srgb, var(--v2-state-err) 14%, transparent);
+  border-color: color-mix(in srgb, var(--v2-state-err) 35%, transparent);
+}
+
+/* ── Buttons — flat Material-style ─────────────────────────────────── */
+.v2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--v2-space-2);
+  padding: 0 var(--v2-space-3);
+  font-family: var(--v2-font);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  border-radius: var(--v2-radius-md);
+  border: 1px solid var(--v2-border);
+  background-color: transparent;
+  color: var(--color-text-strong);
+  cursor: pointer;
+  height: 34px;
+  white-space: nowrap;
+  transition:
+    background-color var(--v2-transition),
+    border-color var(--v2-transition),
+    color var(--v2-transition),
+    box-shadow var(--v2-transition);
+}
+
+.v2-btn:hover:not(:disabled) {
+  background-color: var(--v2-primary-ghost);
+  border-color: var(--v2-primary-soft);
+  color: var(--v2-primary-bright);
+}
+
+.v2-btn:active:not(:disabled) {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+.v2-btn:focus-visible {
+  outline: 2px solid var(--v2-primary);
+  outline-offset: 2px;
+}
+
+.v2-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v2-btn--primary {
+  background-color: var(--v2-primary);
+  color: #ffffff;
+  border-color: var(--v2-primary);
+}
+
+.v2-btn--primary:hover:not(:disabled) {
+  background-color: var(--v2-primary-bright);
+  border-color: var(--v2-primary-bright);
+  color: #ffffff;
+  box-shadow: var(--v2-elev-1);
+}
+
+.v2-btn--ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.v2-btn--ghost:hover:not(:disabled) {
+  background-color: var(--v2-primary-ghost);
+  color: var(--v2-primary-bright);
+}
+
+.v2-btn--danger {
+  color: var(--v2-state-err);
+  border-color: color-mix(in srgb, var(--v2-state-err) 35%, transparent);
+  background-color: transparent;
+}
+
+.v2-btn--danger:hover:not(:disabled) {
+  background-color: var(--v2-state-err-bg);
+  border-color: var(--v2-state-err);
+  color: var(--v2-state-err);
+}
+
+/* Chip — small secondary button for toggle-state actions. Normal
+ * button shape (square corners), just shorter than the default .v2-btn. */
+.v2-btn--chip {
+  height: 28px;
+  padding: 0 var(--v2-space-2);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.v2-btn--icon {
+  padding: 0;
+  width: 34px;
+  min-width: 34px;
+}
+
+.v2-btn__spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: v2-spin 700ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes v2-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────── */
+.v2-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--v2-space-4);
+  z-index: 100;
+  animation: v2-fade-in var(--v2-transition);
+}
+
+.v2-modal {
+  background-color: var(--v2-surface-raised);
+  color: var(--color-text);
+  font-family: var(--v2-font);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-elev-modal);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: v2-pop var(--v2-transition);
+}
+
+.v2-modal__head {
+  padding: var(--v2-space-4);
+  border-bottom: 1px solid var(--v2-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+}
+
+.v2-modal__title {
+  margin: 0;
+  font-family: var(--v2-font);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-strong);
+  letter-spacing: -0.015em;
+}
+
+.v2-modal__close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--v2-space-1) var(--v2-space-2);
+  border-radius: var(--v2-radius-sm);
+  transition:
+    background-color var(--v2-transition),
+    color var(--v2-transition);
+}
+
+.v2-modal__close:hover {
+  color: var(--color-text-strong);
+  background-color: var(--v2-primary-ghost);
+}
+
+.v2-modal__body {
+  padding: var(--v2-space-4);
+  overflow: auto;
+}
+
+.v2-modal__foot {
+  padding: var(--v2-space-3) var(--v2-space-4);
+  border-top: 1px solid var(--v2-border);
+  background-color: var(--v2-surface-sunken);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--v2-space-2);
+}
+
+/* ── Form ──────────────────────────────────────────────────────────── */
+.v2-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-3);
+}
+
+.v2-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+}
+
+.v2-form__row--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-form__label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.v2-form__input,
+.v2-form__select {
+  width: 100%;
+  padding: var(--v2-space-2) var(--v2-space-3);
+  background-color: var(--v2-surface-sunken);
+  color: var(--color-text-strong);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  font-family: var(--v2-font);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  transition:
+    border-color var(--v2-transition),
+    box-shadow var(--v2-transition);
+}
+
+.v2-form__input:focus,
+.v2-form__select:focus {
+  outline: none;
+  border-color: var(--v2-primary);
+  box-shadow: 0 0 0 3px var(--v2-primary-ghost);
+}
+
+.v2-form__check {
+  display: inline-flex;
+  gap: var(--v2-space-2);
+  align-items: center;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.v2-form__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* Inline error banner inside a form — shows a status summary plus an
+ * expandable JSON dump of the backend response. */
+.v2-form__error {
+  padding: var(--v2-space-3);
+  background-color: color-mix(in srgb, var(--v2-state-err) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v2-state-err) 35%, transparent);
+  border-radius: var(--v2-radius-md);
+  color: var(--color-text-strong);
+}
+
+.v2-form__error-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--v2-space-2);
+  font-size: 0.875rem;
+  color: var(--v2-state-err);
+  margin-bottom: var(--v2-space-2);
+}
+
+.v2-form__error-summary strong {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.6875rem;
+}
+
+.v2-form__error-details {
+  font-size: 0.75rem;
+}
+
+.v2-form__error-details > summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+  list-style: none;
+  padding: 2px 0;
+}
+
+.v2-form__error-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.v2-form__error-details > summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform var(--v2-transition);
+  color: var(--color-text-muted);
+}
+
+.v2-form__error-details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.v2-form__error-json {
+  margin: var(--v2-space-2) 0 0;
+  padding: var(--v2-space-2) var(--v2-space-3);
+  background-color: var(--v2-surface-sunken);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-sm);
+  font-family: var(--v2-font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  color: var(--color-text);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+@keyframes v2-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes v2-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
