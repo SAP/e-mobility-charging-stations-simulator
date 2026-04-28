@@ -131,6 +131,26 @@ describe('useLayoutData', () => {
     expect(result.loading.value).toBe(false)
   })
 
+  it('should expose loading as true when listTemplates fetch is in progress', async () => {
+    mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
+    mockClient.listChargingStations.mockResolvedValue({ chargingStations: [], status: 'success' })
+    mockClient.listTemplates.mockReturnValue(new Promise(() => {}))
+    const [result] = mountComposable()
+    result.getData()
+    await flushPromises()
+    expect(result.loading.value).toBe(true)
+  })
+
+  it('should expose loading as true when listChargingStations fetch is in progress', async () => {
+    mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
+    mockClient.listTemplates.mockResolvedValue({ templates: [], status: 'success' })
+    mockClient.listChargingStations.mockReturnValue(new Promise(() => {}))
+    const [result] = mountComposable()
+    result.getData()
+    await flushPromises()
+    expect(result.loading.value).toBe(true)
+  })
+
   it('should unsubscribe from refresh events on unmount', () => {
     const unsubscribe = vi.fn()
     mockClient.onRefresh.mockReturnValue(unsubscribe)

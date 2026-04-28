@@ -19,6 +19,8 @@ export default mergeConfig(
           'src/shims-vue.d.ts',
           'src/assets/**',
           'src/router/index.ts',
+          'src/App.vue',
+          'src/shared/components/**',
           'src/skins/classic/components/**',
           'src/skins/classic/ClassicLayout.vue',
           'src/skins/modern/components/**',
