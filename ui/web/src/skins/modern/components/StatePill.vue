@@ -1,5 +1,5 @@
 <template>
-  <span :class="['v2-pill', `v2-pill--${variant}`]">
+  <span :class="['modern-pill', `modern-pill--${variant}`]">
     <slot />
   </span>
 </template>

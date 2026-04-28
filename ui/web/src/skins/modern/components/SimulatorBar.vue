@@ -1,28 +1,27 @@
 <template>
-  <div class="v2-bar">
-    <div class="v2-bar__brand">
+  <div class="modern-bar">
+    <div class="modern-bar__brand">
       <span
-        class="v2-bar__logo"
+        class="modern-bar__logo"
         aria-hidden="true"
       >EM</span>
-      <h1 class="v2-bar__title">
+      <h1 class="modern-bar__title">
         Charging Simulator
       </h1>
-      <span class="v2-bar__title-sub">v2</span>
     </div>
-    <div class="v2-bar__group">
+    <div class="modern-bar__group">
       <StatePill :variant="simulatorVariant">
         {{ simulatorLabel }}
       </StatePill>
     </div>
-    <span class="v2-bar__sep" />
+    <span class="modern-bar__sep" />
     <div
       v-if="uiServerConfigurations.length > 1"
-      class="v2-bar__group"
+      class="modern-bar__group"
     >
       <select
         v-model.number="selectedIndex"
-        class="v2-bar__select"
+        class="modern-bar__select"
         aria-label="UI server"
         @change="$emit('switch-server', selectedIndex)"
       >
@@ -35,7 +34,7 @@
         </option>
       </select>
     </div>
-    <div class="v2-bar__group">
+    <div class="modern-bar__group">
       <ActionButton
         variant="ghost"
         :pending="refreshPending"
@@ -51,7 +50,7 @@
         + Add Stations
       </ActionButton>
     </div>
-    <div class="v2-bar__group">
+    <div class="modern-bar__group">
       <ActionButton
         :variant="simulatorStarted ? 'danger' : 'primary'"
         :pending="simulatorPending"
@@ -61,7 +60,7 @@
       </ActionButton>
       <select
         :value="activeTheme"
-        class="v2-bar__select"
+        class="modern-bar__select"
         aria-label="Theme"
         @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
       >
@@ -75,9 +74,9 @@
       </select>
       <select
         :value="activeSkinId"
-        class="v2-bar__select"
+        class="modern-bar__select"
         aria-label="Skin"
-        @change="e => switchSkin((e.target as HTMLSelectElement).value)"
+        @change="e => setSkin((e.target as HTMLSelectElement).value)"
       >
         <option
           v-for="skin in skinList"
@@ -88,7 +87,7 @@
         </option>
       </select>
       <RouterLink
-        class="v2-bar__version-link"
+        class="modern-bar__version-link"
         :to="{ name: V1_ROUTE_NAME }"
       >
         v1 →
@@ -112,7 +111,7 @@ import StatePill from './StatePill.vue'
 
 const V1_ROUTE_NAME = ROUTE_NAMES.CHARGING_STATIONS
 
-const { activeSkinId, skins: skinList, switchSkin } = useSkin()
+const { activeSkinId, setSkin, skins: skinList } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
 const props = defineProps<{

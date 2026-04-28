@@ -4,26 +4,26 @@
     @close="close"
   >
     <form
-      class="v2-form"
+      class="modern-form"
       @submit.prevent="submit"
     >
       <p style="margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm)">
         {{ targetLabel }}
       </p>
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-tx-idtag"
+          class="modern-form__label"
+          for="modern-tx-idtag"
         >RFID tag</label>
         <input
-          id="v2-tx-idtag"
+          id="modern-tx-idtag"
           v-model.trim="formState.idTag"
-          class="v2-form__input"
+          class="modern-form__input"
           type="text"
           placeholder="optional"
         >
       </div>
-      <label class="v2-form__check">
+      <label class="modern-form__check">
         <input
           v-model="formState.authorizeIdTag"
           type="checkbox"
@@ -32,18 +32,18 @@
       </label>
       <div
         v-if="lastFailure != null"
-        class="v2-form__error"
+        class="modern-form__error"
       >
-        <div class="v2-form__error-summary">
+        <div class="modern-form__error-summary">
           <strong>Status</strong>
           <span>{{ lastFailure.summary }}</span>
         </div>
         <details
           v-if="lastFailure.payload != null"
-          class="v2-form__error-details"
+          class="modern-form__error-details"
         >
           <summary>Response JSON</summary>
-          <pre class="v2-form__error-json">{{ formattedPayload }}</pre>
+          <pre class="modern-form__error-json">{{ formattedPayload }}</pre>
         </details>
       </div>
     </form>

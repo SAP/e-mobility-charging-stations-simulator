@@ -1,12 +1,12 @@
 <template>
-  <div :class="['v2-connector', { 'v2-connector--active': connector.transactionStarted === true }]">
-    <div class="v2-connector__gutter">
-      <span class="v2-connector__id">
+  <div :class="['modern-connector', { 'modern-connector--active': connector.transactionStarted === true }]">
+    <div class="modern-connector__gutter">
+      <span class="modern-connector__id">
         {{ identifier }}
       </span>
       <button
         type="button"
-        :class="['v2-connector__lock', { 'v2-connector__lock--on': effectiveLocked }]"
+        :class="['modern-connector__lock', { 'modern-connector__lock--on': effectiveLocked }]"
         :disabled="pending.lock || connector.transactionStarted === true"
         :title="lockTitle"
         :aria-label="lockTitle"
@@ -53,8 +53,8 @@
         </svg>
       </button>
     </div>
-    <div class="v2-connector__content">
-      <div class="v2-connector__meta">
+    <div class="modern-connector__content">
+      <div class="modern-connector__meta">
         <StatePill :variant="statusVariant">
           {{ connector.status ?? 'unknown' }}
         </StatePill>
@@ -73,13 +73,13 @@
       </div>
       <div
         v-if="connector.transactionStarted === true"
-        class="v2-connector__tx"
+        class="modern-connector__tx"
       >
         <span
-          class="v2-connector__tx-dot"
+          class="modern-connector__tx-dot"
           aria-hidden="true"
         />
-        <table class="v2-connector__tx-table">
+        <table class="modern-connector__tx-table">
           <tbody>
             <tr>
               <th scope="row">
@@ -102,11 +102,11 @@
           </tbody>
         </table>
       </div>
-      <div class="v2-connector__actions">
+      <div class="modern-connector__actions">
         <button
           v-if="connector.transactionStarted !== true"
           type="button"
-          class="v2-icon-btn v2-icon-btn--primary v2-icon-btn--lg"
+          class="modern-icon-btn modern-icon-btn--primary modern-icon-btn--lg"
           title="Start transaction"
           aria-label="Start transaction"
           @click="openStartTransaction"
@@ -122,7 +122,7 @@
         <button
           v-else
           type="button"
-          class="v2-icon-btn v2-icon-btn--danger v2-icon-btn--lg"
+          class="modern-icon-btn modern-icon-btn--danger modern-icon-btn--lg"
           :disabled="pending.stopTx"
           title="Stop transaction"
           aria-label="Stop transaction"

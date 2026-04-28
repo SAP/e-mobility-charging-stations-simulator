@@ -29,15 +29,4 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
   }
 }
 
-/**
- * Maps simulator start state and WebSocket connection state to a display variant.
- * @param started - Whether the charging station is started
- * @param wsConnected - Whether the WebSocket is connected
- * @returns The display variant for the combined state
- */
-export function getWsStatusVariant (started: boolean, wsConnected: boolean): StatusVariant {
-  if (!started) {
-    return 'idle'
-  }
-  return wsConnected ? 'ok' : 'err'
-}
+

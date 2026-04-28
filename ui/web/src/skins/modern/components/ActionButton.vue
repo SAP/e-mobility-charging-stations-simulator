@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    :class="['v2-btn', variantClass, { 'v2-btn--icon': icon }]"
+    :class="['modern-btn', variantClass, { 'modern-btn--icon': icon }]"
     :disabled="disabled || pending"
     :title="title"
     :aria-busy="pending || undefined"
@@ -9,7 +9,7 @@
   >
     <span
       v-if="pending"
-      class="v2-btn__spinner"
+      class="modern-btn__spinner"
       aria-hidden="true"
     />
     <slot />
@@ -44,13 +44,13 @@ defineEmits<{
 const variantClass = computed(() => {
   switch (props.variant) {
     case 'chip':
-      return 'v2-btn--chip'
+      return 'modern-btn--chip'
     case 'danger':
-      return 'v2-btn--danger'
+      return 'modern-btn--danger'
     case 'ghost':
-      return 'v2-btn--ghost'
+      return 'modern-btn--ghost'
     case 'primary':
-      return 'v2-btn--primary'
+      return 'modern-btn--primary'
     default:
       return ''
   }

@@ -51,7 +51,7 @@
         <select
           :value="activeSkinId"
           class="ui-server-selector"
-          @change="e => switchSkin((e.target as HTMLSelectElement).value)"
+          @change="e => setSkin((e.target as HTMLSelectElement).value)"
         >
           <option
             v-for="skin in skins"
@@ -166,7 +166,7 @@ const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
 
-const { activeSkinId, skins, switchSkin } = useSkin()
+const { activeSkinId, setSkin, skins } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
 watch($chargingStations, () => {

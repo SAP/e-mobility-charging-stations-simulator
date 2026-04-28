@@ -4,10 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import {
-  getConnectorStatusVariant,
-  getWsStatusVariant,
-} from '@/shared/composables/useStationStatus.js'
+import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
 
 const validVariants = new Set(['err', 'idle', 'ok', 'warn'])
 
@@ -98,25 +95,6 @@ describe('useStationStatus', () => {
         expect(validVariants.has(result)).toBe(true)
       }
       expect(statuses.length).toBe(11)
-    })
-  })
-
-  describe('getWsStatusVariant', () => {
-    it('should return idle when not started', () => {
-      expect(getWsStatusVariant(false, false)).toBe('idle')
-      expect(getWsStatusVariant(false, true)).toBe('idle')
-    })
-
-    it('should return ok when started and connected', () => {
-      const result = getWsStatusVariant(true, true)
-      expect(result).toBe('ok')
-      expect(validVariants.has(result)).toBe(true)
-    })
-
-    it('should return err when started but not connected', () => {
-      const result = getWsStatusVariant(true, false)
-      expect(result).toBe('err')
-      expect(result).not.toBe('ok')
     })
   })
 })

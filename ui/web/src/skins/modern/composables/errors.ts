@@ -1,4 +1,4 @@
-// Error-extraction helpers for v2 dialogs.
+// Error-extraction helpers for modern skin dialogs.
 //
 // `ServerFailureError.payload.responsesFailed[i]` has `errorMessage` and
 // `commandResponse` (the actual protocol response, e.g. `{ idTagInfo: { status } }`

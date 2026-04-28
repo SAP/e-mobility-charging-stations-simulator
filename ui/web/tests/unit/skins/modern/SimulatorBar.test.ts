@@ -47,7 +47,7 @@ describe('modern SimulatorBar', () => {
 
   it('should hides the server select when only one server configured', () => {
     const wrapper = mountBar()
-    expect(wrapper.find('.v2-bar__select[aria-label="UI server"]').exists()).toBe(false)
+    expect(wrapper.find('.modern-bar__select[aria-label="UI server"]').exists()).toBe(false)
   })
 
   it('should show the server select when multiple servers configured', () => {
@@ -57,7 +57,7 @@ describe('modern SimulatorBar', () => {
         { configuration: altServer, index: 1 },
       ],
     })
-    expect(wrapper.find('.v2-bar__select[aria-label="UI server"]').exists()).toBe(true)
+    expect(wrapper.find('.modern-bar__select[aria-label="UI server"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Alpha')
     expect(wrapper.text()).toContain('Beta')
   })
@@ -69,21 +69,21 @@ describe('modern SimulatorBar', () => {
         { configuration: altServer, index: 1 },
       ],
     })
-    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]')
+    const select = wrapper.find('.modern-bar__select[aria-label="UI server"]')
     await select.setValue(1)
     expect(wrapper.emitted('switch-server')).toEqual([[1]])
   })
 
   it('should emit refresh when refresh button is clicked', async () => {
     const wrapper = mountBar()
-    const [refreshBtn] = wrapper.findAll('.v2-btn')
+    const [refreshBtn] = wrapper.findAll('.modern-btn')
     await refreshBtn.trigger('click')
     expect(wrapper.emitted('refresh')).toHaveLength(1)
   })
 
   it('should emit add when add-stations button is clicked', async () => {
     const wrapper = mountBar()
-    const buttons = wrapper.findAll('.v2-btn')
+    const buttons = wrapper.findAll('.modern-btn')
     const addBtn = buttons.find(btn => btn.text().includes('Add Stations'))
     await addBtn?.trigger('click')
     expect(wrapper.emitted('add')).toHaveLength(1)
@@ -91,7 +91,7 @@ describe('modern SimulatorBar', () => {
 
   it('should emit toggle-simulator when start/stop button is clicked', async () => {
     const wrapper = mountBar({ simulatorState: { started: false, templateStatistics: {} } })
-    const buttons = wrapper.findAll('.v2-btn')
+    const buttons = wrapper.findAll('.modern-btn')
     const toggleBtn = buttons.find(btn => btn.text().includes('Start Simulator'))
     await toggleBtn?.trigger('click')
     expect(wrapper.emitted('toggle-simulator')).toHaveLength(1)
@@ -110,7 +110,7 @@ describe('modern SimulatorBar', () => {
       ],
     })
     await wrapper.setProps({ selectedServerIndex: 1 })
-    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]')
+    const select = wrapper.find('.modern-bar__select[aria-label="UI server"]')
       .element as HTMLSelectElement
     expect(Number(select.value)).toBe(1)
   })

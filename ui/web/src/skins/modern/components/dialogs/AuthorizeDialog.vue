@@ -4,40 +4,40 @@
     @close="close"
   >
     <form
-      class="v2-form"
+      class="modern-form"
       @submit.prevent="submit"
     >
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-auth-tag"
+          class="modern-form__label"
+          for="modern-auth-tag"
         >RFID / ID Tag</label>
         <input
-          id="v2-auth-tag"
+          id="modern-auth-tag"
           v-model.trim="form.idTag"
-          class="v2-form__input"
+          class="modern-form__input"
           type="text"
           autocomplete="off"
           placeholder="e.g. RFID-1234"
         >
-        <span class="v2-form__hint">
+        <span class="modern-form__hint">
           Sends a standalone Authorize request for this tag. Does not start a transaction.
         </span>
       </div>
       <div
         v-if="lastFailure != null"
-        class="v2-form__error"
+        class="modern-form__error"
       >
-        <div class="v2-form__error-summary">
+        <div class="modern-form__error-summary">
           <strong>Status</strong>
           <span>{{ lastFailure.summary }}</span>
         </div>
         <details
           v-if="lastFailure.payload != null"
-          class="v2-form__error-details"
+          class="modern-form__error-details"
         >
           <summary>Response JSON</summary>
-          <pre class="v2-form__error-json">{{ formattedPayload }}</pre>
+          <pre class="modern-form__error-json">{{ formattedPayload }}</pre>
         </details>
       </div>
     </form>

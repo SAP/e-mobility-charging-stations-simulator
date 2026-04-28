@@ -47,13 +47,13 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   )
   setTheme(storedTheme as ThemeName)
 
-  const { switchSkin } = useSkin()
+  const { setSkin } = useSkin()
   const skinStorageKey = 'ecs-ui-skin'
   if (getFromLocalStorage<string>(skinStorageKey, '') === '' && config.skin != null) {
     setToLocalStorage<string>(skinStorageKey, config.skin)
   }
   const initialSkin = getFromLocalStorage<string>(skinStorageKey, config.skin ?? 'classic')
-  await switchSkin(initialSkin)
+  await setSkin(initialSkin)
 
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]

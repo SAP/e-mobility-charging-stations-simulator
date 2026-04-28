@@ -4,18 +4,18 @@
     @close="close"
   >
     <form
-      class="v2-form"
+      class="modern-form"
       @submit.prevent="submit"
     >
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-add-template"
+          class="modern-form__label"
+          for="modern-add-template"
         >Template</label>
         <select
-          id="v2-add-template"
+          id="modern-add-template"
           v-model="formState.template"
-          class="v2-form__select"
+          class="modern-form__select"
           required
         >
           <option
@@ -33,34 +33,34 @@
           </option>
         </select>
       </div>
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-add-count"
+          class="modern-form__label"
+          for="modern-add-count"
         >How many?</label>
         <input
-          id="v2-add-count"
+          id="modern-add-count"
           v-model.number="formState.numberOfStations"
-          class="v2-form__input"
+          class="modern-form__input"
           min="1"
           type="number"
           required
         >
       </div>
       <fieldset
-        class="v2-form__row"
+        class="modern-form__row"
         style="border: none; padding: 0; margin: 0"
       >
-        <legend class="v2-form__label">
+        <legend class="modern-form__label">
           Naming
         </legend>
         <input
           v-model.trim="formState.baseName"
-          class="v2-form__input"
+          class="modern-form__input"
           type="text"
           placeholder="Base name (defaults to template name)"
         >
-        <label class="v2-form__check">
+        <label class="modern-form__check">
           <input
             v-model="formState.fixedName"
             type="checkbox"
@@ -69,57 +69,57 @@
         </label>
       </fieldset>
       <fieldset
-        class="v2-form__row"
+        class="modern-form__row"
         style="border: none; padding: 0; margin: 0"
       >
-        <legend class="v2-form__label">
+        <legend class="modern-form__label">
           Supervision
         </legend>
         <input
           v-model.trim="formState.supervisionUrl"
-          class="v2-form__input"
+          class="modern-form__input"
           type="url"
           placeholder="wss://..."
         >
         <input
           v-model.trim="formState.supervisionUser"
-          class="v2-form__input"
+          class="modern-form__input"
           type="text"
           placeholder="Username"
         >
         <input
           v-model="formState.supervisionPassword"
-          class="v2-form__input"
+          class="modern-form__input"
           type="password"
           placeholder="Password"
         >
-        <span class="v2-form__hint">
+        <span class="modern-form__hint">
           Leave blank to use the template's defaults. Any value entered overrides them.
         </span>
       </fieldset>
-      <div class="v2-form__row">
-        <label class="v2-form__check">
+      <div class="modern-form__row">
+        <label class="modern-form__check">
           <input
             v-model="formState.autoStart"
             type="checkbox"
           >
           Auto-start the new stations
         </label>
-        <label class="v2-form__check">
+        <label class="modern-form__check">
           <input
             v-model="formState.persistentConfiguration"
             type="checkbox"
           >
           Persistent configuration
         </label>
-        <label class="v2-form__check">
+        <label class="modern-form__check">
           <input
             v-model="formState.ocppStrictCompliance"
             type="checkbox"
           >
           OCPP strict compliance
         </label>
-        <label class="v2-form__check">
+        <label class="modern-form__check">
           <input
             v-model="formState.enableStatistics"
             type="checkbox"

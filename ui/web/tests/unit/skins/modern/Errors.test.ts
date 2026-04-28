@@ -1,5 +1,5 @@
 /**
- * @file Tests for v2 error-extraction helper
+ * @file Tests for modern error-extraction helper
  * @description Unit tests for getFailureInfo which unwraps ServerFailureError payloads.
  *   Payloads are cast via `as never` because we're testing defensive handling of
  *   malformed shapes the strongly-typed signature forbids.
@@ -22,7 +22,7 @@ const payloadWith = (responsesFailed: unknown[]): ResponsePayload =>
     status: ResponseStatus.FAILURE,
   }) as never
 
-describe('v2 getFailureInfo', () => {
+describe('modern getFailureInfo', () => {
   it('should return extractErrorMessage for non-ServerFailureError', () => {
     const info = getFailureInfo(new Error('boom'))
     expect(info.payload).toBeUndefined()

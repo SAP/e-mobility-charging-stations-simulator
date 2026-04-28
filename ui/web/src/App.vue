@@ -20,14 +20,19 @@ import { skins } from '@/shared/skins/registry.js'
 
 const { activeSkinId } = useSkin()
 
-const currentSkinLayout = computed(() => {
-  const skin = skins.find(s => s.id === activeSkinId.value) ?? skins[0]
-  return defineAsyncComponent({
+const skinLayoutMap = new Map(
+  skins.map(s => [s.id, defineAsyncComponent({
+    delay: 200,
     errorComponent: SkinLoadError,
     loadingComponent: SkinLoading,
-    loader: skin.loadLayout,
-  })
-})
+    loader: s.loadLayout,
+    timeout: 10000,
+  })])
+)
+
+const currentSkinLayout = computed(
+  () => skinLayoutMap.get(activeSkinId.value) ?? skinLayoutMap.values().next().value
+)
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <main class="v2-app">
+  <main class="modern-app">
     <SimulatorBar
       :refresh-pending="refreshing"
       :selected-server-index="state.uiServerIndex"
@@ -13,9 +13,9 @@
     />
     <div
       v-if="$chargingStations.length === 0"
-      class="v2-empty"
+      class="modern-empty"
     >
-      <div class="v2-empty__title">
+      <div class="modern-empty__title">
         No charging stations
       </div>
       <p>
@@ -25,7 +25,7 @@
     </div>
     <section
       v-else
-      class="v2-grid"
+      class="modern-grid"
       aria-label="Charging stations"
     >
       <StationCard

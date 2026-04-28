@@ -63,31 +63,31 @@ function mountRow (
   })
 }
 
-describe('v2 ConnectorRow', () => {
+describe('modern ConnectorRow', () => {
   describe('identifier display', () => {
     it('should show the bare connector id when no evseId', () => {
       const wrapper = mountRow()
-      expect(wrapper.find('.v2-connector__id').text()).toBe('1')
+      expect(wrapper.find('.modern-connector__id').text()).toBe('1')
     })
 
     it('should show evseId/connectorId format when evseId is set', () => {
       const wrapper = mountRow({ connectorId: 3, evseId: 2 })
-      expect(wrapper.find('.v2-connector__id').text()).toBe('2/3')
+      expect(wrapper.find('.modern-connector__id').text()).toBe('2/3')
     })
   })
 
   describe('status pill variants', () => {
     it.each<[string, string]>([
-      ['Available', 'v2-pill--ok'],
-      ['Charging', 'v2-pill--ok'],
-      ['Occupied', 'v2-pill--ok'],
-      ['Preparing', 'v2-pill--warn'],
-      ['Faulted', 'v2-pill--err'],
-      ['Unavailable', 'v2-pill--err'],
-      ['Reserved', 'v2-pill--idle'],
+      ['Available', 'modern-pill--ok'],
+      ['Charging', 'modern-pill--ok'],
+      ['Occupied', 'modern-pill--ok'],
+      ['Preparing', 'modern-pill--warn'],
+      ['Faulted', 'modern-pill--err'],
+      ['Unavailable', 'modern-pill--err'],
+      ['Reserved', 'modern-pill--idle'],
     ])('maps status "%s" to class %s', (status, cls) => {
       const wrapper = mountRow({ connector: { status } })
-      const pills = wrapper.findAll('.v2-pill')
+      const pills = wrapper.findAll('.modern-pill')
       expect(pills[0].classes()).toContain(cls)
     })
 
@@ -100,23 +100,23 @@ describe('v2 ConnectorRow', () => {
   describe('lock button', () => {
     it('should show closed padlock when effectively locked (locked=true)', () => {
       const wrapper = mountRow({ connector: { locked: true } })
-      expect(wrapper.find('.v2-connector__lock--on').exists()).toBe(true)
+      expect(wrapper.find('.modern-connector__lock--on').exists()).toBe(true)
     })
 
     it('should show closed padlock when transaction started (even without explicit lock)', () => {
       const wrapper = mountRow({ connector: { transactionStarted: true } })
-      expect(wrapper.find('.v2-connector__lock--on').exists()).toBe(true)
+      expect(wrapper.find('.modern-connector__lock--on').exists()).toBe(true)
     })
 
     it('should is disabled during transaction', () => {
       const wrapper = mountRow({ connector: { transactionStarted: true } })
-      const btn = wrapper.find('.v2-connector__lock').element as HTMLButtonElement
+      const btn = wrapper.find('.modern-connector__lock').element as HTMLButtonElement
       expect(btn.disabled).toBe(true)
     })
 
     it('should call lockConnector when unlocked', async () => {
       const wrapper = mountRow()
-      await wrapper.find('.v2-connector__lock').trigger('click')
+      await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
       expect(toastMock.success).toHaveBeenCalled()
@@ -125,7 +125,7 @@ describe('v2 ConnectorRow', () => {
 
     it('should call unlockConnector when locked', async () => {
       const wrapper = mountRow({ connector: { locked: true } })
-      await wrapper.find('.v2-connector__lock').trigger('click')
+      await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(mockClient.unlockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
     })
@@ -133,7 +133,7 @@ describe('v2 ConnectorRow', () => {
     it('should toast error when lock call fails', async () => {
       const wrapper = mountRow()
       mockClient.lockConnector = vi.fn().mockRejectedValue(new Error('fail'))
-      await wrapper.find('.v2-connector__lock').trigger('click')
+      await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalled()
     })
@@ -152,7 +152,7 @@ describe('v2 ConnectorRow', () => {
 
     it('should call startAutomaticTransactionGenerator when starting', async () => {
       const wrapper = mountRow()
-      const chip = wrapper.find('.v2-btn--chip')
+      const chip = wrapper.find('.modern-btn--chip')
       await chip.trigger('click')
       await flushPromises()
       expect(mockClient.startAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 1)
@@ -160,7 +160,7 @@ describe('v2 ConnectorRow', () => {
 
     it('should call stopAutomaticTransactionGenerator when stopping', async () => {
       const wrapper = mountRow({ atgStatus: { start: true } as Status })
-      const chip = wrapper.find('.v2-btn--chip')
+      const chip = wrapper.find('.modern-btn--chip')
       await chip.trigger('click')
       await flushPromises()
       expect(mockClient.stopAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 1)
@@ -170,7 +170,7 @@ describe('v2 ConnectorRow', () => {
   describe('transaction controls', () => {
     it('should show play icon when no transaction and emits open-start-tx on click', async () => {
       const wrapper = mountRow({ connectorId: 2, evseId: 3, ocppVersion: OCPPVersion.VERSION_16 })
-      const startBtn = wrapper.find('.v2-icon-btn--primary')
+      const startBtn = wrapper.find('.modern-icon-btn--primary')
       expect(startBtn.exists()).toBe(true)
       await startBtn.trigger('click')
       expect(wrapper.emitted('open-start-tx')).toEqual([
@@ -188,7 +188,7 @@ describe('v2 ConnectorRow', () => {
 
     it('should omits evseId/ocppVersion from emitted data when not set', async () => {
       const wrapper = mountRow()
-      await wrapper.find('.v2-icon-btn--primary').trigger('click')
+      await wrapper.find('.modern-icon-btn--primary').trigger('click')
       const emitted = wrapper.emitted('open-start-tx')?.[0]?.[0] as Record<string, unknown>
       expect(emitted.evseId).toBeUndefined()
       expect(emitted.ocppVersion).toBeUndefined()
@@ -203,7 +203,7 @@ describe('v2 ConnectorRow', () => {
         },
         ocppVersion: OCPPVersion.VERSION_16,
       })
-      const stopBtn = wrapper.find('.v2-icon-btn--danger')
+      const stopBtn = wrapper.find('.modern-icon-btn--danger')
       expect(stopBtn.exists()).toBe(true)
       await stopBtn.trigger('click')
       await flushPromises()
@@ -217,7 +217,7 @@ describe('v2 ConnectorRow', () => {
       const wrapper = mountRow({
         connector: { status: OCPP16ChargePointStatus.CHARGING, transactionStarted: true },
       })
-      const stopBtn = wrapper.find('.v2-icon-btn--danger')
+      const stopBtn = wrapper.find('.modern-icon-btn--danger')
       await stopBtn.trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalled()
@@ -258,7 +258,7 @@ describe('v2 ConnectorRow', () => {
           transactionStarted: true,
         },
       })
-      expect(wrapper.find('.v2-connector__tx-table').text()).toContain('—')
+      expect(wrapper.find('.modern-connector__tx-table').text()).toContain('—')
     })
 
     it('should render Tag row when transactionIdTag is set', () => {

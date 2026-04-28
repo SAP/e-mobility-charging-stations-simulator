@@ -4,60 +4,60 @@
     @close="close"
   >
     <form
-      class="v2-form"
+      class="modern-form"
       @submit.prevent="submit"
     >
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-sup-url"
+          class="modern-form__label"
+          for="modern-sup-url"
         >Supervision URL</label>
         <input
-          id="v2-sup-url"
+          id="modern-sup-url"
           v-model.trim="formState.supervisionUrl"
-          class="v2-form__input"
+          class="modern-form__input"
           type="url"
           placeholder="wss://..."
           required
         >
       </div>
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-sup-user"
+          class="modern-form__label"
+          for="modern-sup-user"
         >Username</label>
         <input
-          id="v2-sup-user"
+          id="modern-sup-user"
           v-model.trim="formState.supervisionUser"
-          class="v2-form__input"
+          class="modern-form__input"
           type="text"
           placeholder="Username"
         >
       </div>
-      <div class="v2-form__row">
+      <div class="modern-form__row">
         <label
-          class="v2-form__label"
-          for="v2-sup-pass"
+          class="modern-form__label"
+          for="modern-sup-pass"
         >Password</label>
         <input
-          id="v2-sup-pass"
+          id="modern-sup-pass"
           v-model="formState.supervisionPassword"
-          class="v2-form__input"
+          class="modern-form__input"
           type="password"
           placeholder="Password"
         >
-        <span class="v2-form__hint">
+        <span class="modern-form__hint">
           Credentials are sent verbatim; leaving username or password empty clears the stored value.
         </span>
       </div>
-      <label class="v2-form__check">
+      <label class="modern-form__check">
         <input
           v-model="reconnect"
           type="checkbox"
         >
         Reconnect after saving
       </label>
-      <span class="v2-form__hint">
+      <span class="modern-form__hint">
         New credentials only take effect on the next CSMS connection. Leave this checked to drop
         &amp; reopen the existing connection.
       </span>

@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      class="v2-modal__backdrop"
+      class="modern-modal__backdrop"
       role="presentation"
       @mousedown="handleBackdropMouseDown"
       @mouseup="handleBackdropMouseUp"
@@ -9,35 +9,35 @@
       <div
         ref="dialogEl"
         :aria-labelledby="titleId"
-        class="v2-modal"
+        class="modern-modal"
         role="dialog"
         aria-modal="true"
         tabindex="-1"
         @keydown.esc.stop="handleEsc"
         @keydown.tab="handleTab"
       >
-        <header class="v2-modal__head">
+        <header class="modern-modal__head">
           <h2
             :id="titleId"
-            class="v2-modal__title"
+            class="modern-modal__title"
           >
             {{ title }}
           </h2>
           <button
             type="button"
-            class="v2-modal__close"
+            class="modern-modal__close"
             aria-label="Close dialog"
             @click="$emit('close')"
           >
             ×
           </button>
         </header>
-        <div class="v2-modal__body">
+        <div class="modern-modal__body">
           <slot />
         </div>
         <footer
           v-if="$slots.footer"
-          class="v2-modal__foot"
+          class="modern-modal__foot"
         >
           <slot name="footer" />
         </footer>
@@ -67,7 +67,7 @@ const emit = defineEmits<{
 }>()
 
 const dialogEl = ref<HTMLDivElement | null>(null)
-const titleId = `v2-modal-${useId()}`
+const titleId = `modern-modal-${useId()}`
 let previouslyFocused: HTMLElement | null = null
 
 const focusableSelector =
@@ -82,7 +82,7 @@ const focusFirst = (): void => {
   if (dialogEl.value == null) return
   const focusables = collectFocusables()
   // Prefer first non-close button so the user lands on a real input.
-  const target = focusables.find(el => !el.classList.contains('v2-modal__close')) ?? focusables[0]
+  const target = focusables.find(el => !el.classList.contains('modern-modal__close')) ?? focusables[0]
   if (target != null) {
     target.focus()
   } else {

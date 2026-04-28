@@ -42,14 +42,14 @@ async function loadSkinStyles (skinId: string): Promise<void> {
  */
 export function useSkin (): {
   activeSkinId: Readonly<Ref<string>>
+  setSkin: (id: string) => Promise<void>
   skins: readonly SkinDefinition[]
-  switchSkin: (id: string) => Promise<void>
 } {
   /**
    * Switches the active skin and lazy-loads its CSS if needed.
    * @param skinId - The skin identifier to switch to
    */
-  async function switchSkin (skinId: string): Promise<void> {
+  async function setSkin (skinId: string): Promise<void> {
     if (switching) return
     const skin = skins.find(s => s.id === skinId)
     if (skin == null || skinId === activeSkinId.value) {
@@ -67,7 +67,7 @@ export function useSkin (): {
 
   return {
     activeSkinId: readonly(activeSkinId),
+    setSkin,
     skins,
-    switchSkin,
   }
 }

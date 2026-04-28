@@ -1,5 +1,5 @@
 /**
- * @file Tests for v2 presentational primitives
+ * @file Tests for modern presentational primitives
  * @description Unit tests for ActionButton, StatePill, Modal, ConfirmDialog, and V2NotFoundView.
  */
 import { mount } from '@vue/test-utils'
@@ -48,27 +48,27 @@ describe('Modern skin simple components', () => {
 
     it('should apply primary variant class', () => {
       const wrapper = mount(ActionButton, { props: { variant: 'primary' } })
-      expect(wrapper.classes()).toContain('v2-btn--primary')
+      expect(wrapper.classes()).toContain('modern-btn--primary')
     })
 
     it('should apply danger variant class', () => {
       const wrapper = mount(ActionButton, { props: { variant: 'danger' } })
-      expect(wrapper.classes()).toContain('v2-btn--danger')
+      expect(wrapper.classes()).toContain('modern-btn--danger')
     })
 
     it('should apply ghost variant class', () => {
       const wrapper = mount(ActionButton, { props: { variant: 'ghost' } })
-      expect(wrapper.classes()).toContain('v2-btn--ghost')
+      expect(wrapper.classes()).toContain('modern-btn--ghost')
     })
 
     it('should apply chip variant class', () => {
       const wrapper = mount(ActionButton, { props: { variant: 'chip' } })
-      expect(wrapper.classes()).toContain('v2-btn--chip')
+      expect(wrapper.classes()).toContain('modern-btn--chip')
     })
 
     it('should apply icon modifier class when icon prop is true', () => {
       const wrapper = mount(ActionButton, { props: { icon: true } })
-      expect(wrapper.classes()).toContain('v2-btn--icon')
+      expect(wrapper.classes()).toContain('modern-btn--icon')
     })
 
     it('should disable button when pending', () => {
@@ -76,7 +76,7 @@ describe('Modern skin simple components', () => {
       const el = wrapper.element as HTMLButtonElement
       expect(el.disabled).toBe(true)
       expect(el.getAttribute('aria-busy')).toBe('true')
-      expect(wrapper.find('.v2-btn__spinner').exists()).toBe(true)
+      expect(wrapper.find('.modern-btn__spinner').exists()).toBe(true)
     })
 
     it('should disable button when disabled prop is true', () => {
@@ -93,10 +93,10 @@ describe('Modern skin simple components', () => {
 
   describe('StatePill', () => {
     it.each([['ok'], ['warn'], ['err'], ['idle']] as const)(
-      'applies v2-pill--%s variant class',
+      'applies modern-pill--%s variant class',
       variant => {
         const wrapper = mount(StatePill, { props: { variant }, slots: { default: variant } })
-        expect(wrapper.classes()).toContain(`v2-pill--${variant}`)
+        expect(wrapper.classes()).toContain(`modern-pill--${variant}`)
         expect(wrapper.text()).toBe(variant)
       }
     )
@@ -136,14 +136,14 @@ describe('Modern skin simple components', () => {
     it('should render the footer slot when provided', async () => {
       const wrapper = mountModal()
       await nextTick()
-      expect(document.body.querySelector('.v2-modal__foot')).toBeTruthy()
+      expect(document.body.querySelector('.modern-modal__foot')).toBeTruthy()
       wrapper.unmount()
     })
 
     it('should emit close when the close button is clicked', async () => {
       const wrapper = mountModal()
       await nextTick()
-      queryButton('.v2-modal__close').click()
+      queryButton('.modern-modal__close').click()
       expect(wrapper.emitted('close')).toHaveLength(1)
       wrapper.unmount()
     })
@@ -151,7 +151,7 @@ describe('Modern skin simple components', () => {
     it('should emit close when Escape is pressed', async () => {
       const wrapper = mountModal()
       await nextTick()
-      const dialog = queryElement('.v2-modal')
+      const dialog = queryElement('.modern-modal')
       dialog.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
       expect(wrapper.emitted('close')).toHaveLength(1)
       wrapper.unmount()
@@ -160,7 +160,7 @@ describe('Modern skin simple components', () => {
     it('should emit close when backdrop is clicked (mousedown + mouseup on backdrop)', async () => {
       const wrapper = mountModal()
       await nextTick()
-      const backdrop = queryElement('.v2-modal__backdrop')
+      const backdrop = queryElement('.modern-modal__backdrop')
       const down = new MouseEvent('mousedown', { bubbles: true })
       Object.defineProperty(down, 'target', { value: backdrop })
       backdrop.dispatchEvent(down)
@@ -174,7 +174,7 @@ describe('Modern skin simple components', () => {
     it('should not emit close when mouseup target differs from backdrop (drag from input)', async () => {
       const wrapper = mountModal()
       await nextTick()
-      const backdrop = queryElement('.v2-modal__backdrop')
+      const backdrop = queryElement('.modern-modal__backdrop')
       const input = queryElement('[data-testid="first"]')
       // Mousedown on input (inside the modal), mouseup on backdrop — should NOT close.
       const down = new MouseEvent('mousedown', { bubbles: true })
@@ -190,7 +190,7 @@ describe('Modern skin simple components', () => {
     it('should not emit close on backdrop click when closeOnBackdrop is false', async () => {
       const wrapper = mountModal({ closeOnBackdrop: false })
       await nextTick()
-      const backdrop = queryElement('.v2-modal__backdrop')
+      const backdrop = queryElement('.modern-modal__backdrop')
       const down = new MouseEvent('mousedown', { bubbles: true })
       Object.defineProperty(down, 'target', { value: backdrop })
       backdrop.dispatchEvent(down)
@@ -204,8 +204,8 @@ describe('Modern skin simple components', () => {
     it('should trap Tab from last focusable back to first (close button)', async () => {
       const wrapper = mountModal()
       await nextTick()
-      const dialog = queryElement('.v2-modal')
-      const closeBtn = queryButton('.v2-modal__close')
+      const dialog = queryElement('.modern-modal')
+      const closeBtn = queryButton('.modern-modal__close')
       const button = queryButton('[data-testid="second"]')
       button.focus()
       const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Tab' })
@@ -217,8 +217,8 @@ describe('Modern skin simple components', () => {
     it('should trap Shift+Tab from first focusable back to last', async () => {
       const wrapper = mountModal()
       await nextTick()
-      const dialog = queryElement('.v2-modal')
-      const closeBtn = queryButton('.v2-modal__close')
+      const dialog = queryElement('.modern-modal')
+      const closeBtn = queryButton('.modern-modal__close')
       const button = queryButton('[data-testid="second"]')
       closeBtn.focus()
       const event = new KeyboardEvent('keydown', {
@@ -239,8 +239,8 @@ describe('Modern skin simple components', () => {
         slots: { default: '<span>no focusables here</span>' },
       })
       await nextTick()
-      const dialog = queryElement('.v2-modal')
-      const closeBtn = queryButton('.v2-modal__close')
+      const dialog = queryElement('.modern-modal')
+      const closeBtn = queryButton('.modern-modal__close')
       closeBtn.focus()
       dialog.dispatchEvent(
         new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Tab' })
@@ -299,7 +299,7 @@ describe('Modern skin simple components', () => {
         props: { message: 'msg', title: 't' },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.v2-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
       buttons[0].click()
       expect(wrapper.emitted('cancel')).toHaveLength(1)
       wrapper.unmount()
@@ -311,7 +311,7 @@ describe('Modern skin simple components', () => {
         props: { message: 'msg', title: 't' },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.v2-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
       buttons[1].click()
       expect(wrapper.emitted('confirm')).toHaveLength(1)
       wrapper.unmount()
@@ -323,7 +323,7 @@ describe('Modern skin simple components', () => {
         props: { message: 'msg', title: 't' },
       })
       await nextTick()
-      queryButton('.v2-modal__close').click()
+      queryButton('.modern-modal__close').click()
       expect(wrapper.emitted('cancel')).toHaveLength(1)
       wrapper.unmount()
     })
@@ -340,9 +340,9 @@ describe('Modern skin simple components', () => {
         },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.v2-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
       expect(buttons[1].disabled).toBe(true)
-      expect(buttons[1].classList.contains('v2-btn--primary')).toBe(true)
+      expect(buttons[1].classList.contains('modern-btn--primary')).toBe(true)
       wrapper.unmount()
     })
   })

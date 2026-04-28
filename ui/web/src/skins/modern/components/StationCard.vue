@@ -1,14 +1,14 @@
 <template>
   <article
-    class="v2-card"
+    class="modern-card"
     :aria-label="`Charging station ${chargingStation.stationInfo.chargingStationId}`"
   >
-    <header class="v2-card__head">
-      <div class="v2-card__head-row">
-        <h3 class="v2-card__title">
+    <header class="modern-card__head">
+      <div class="modern-card__head-row">
+        <h3 class="modern-card__title">
           {{ chargingStation.stationInfo.chargingStationId }}
         </h3>
-        <div class="v2-card__pills">
+        <div class="modern-card__pills">
           <StatePill :variant="startedVariant">
             {{ chargingStation.started === true ? 'started' : 'stopped' }}
           </StatePill>
@@ -17,12 +17,12 @@
           </StatePill>
         </div>
       </div>
-      <dl class="v2-card__subtitle">
+      <dl class="modern-card__subtitle">
         <div
-          class="v2-card__template-badge"
+          class="modern-card__template-badge"
           :title="chargingStation.stationInfo.templateName"
         >
-          <span class="v2-card__template-value">
+          <span class="modern-card__template-value">
             {{ chargingStation.stationInfo.templateName }}
           </span>
         </div>
@@ -48,9 +48,9 @@
         </div>
       </dl>
     </header>
-    <div class="v2-card__body">
+    <div class="modern-card__body">
       <div
-        class="v2-card__url-row"
+        class="modern-card__url-row"
         role="button"
         tabindex="0"
         :title="chargingStation.supervisionUrl"
@@ -59,13 +59,13 @@
         @keydown.enter.prevent="openSupervisionDialog"
         @keydown.space.prevent="openSupervisionDialog"
       >
-        <span class="v2-card__url-badge">CSMS</span>
-        <p class="v2-card__url">
+        <span class="modern-card__url-badge">CSMS</span>
+        <p class="modern-card__url">
           {{ supervisionUrl }}
         </p>
         <button
           type="button"
-          class="v2-card__url-edit"
+          class="modern-card__url-edit"
           title="Edit supervision URL"
           aria-label="Edit supervision URL"
           @click.stop="openSupervisionDialog"
@@ -84,18 +84,18 @@
           </svg>
         </button>
       </div>
-      <p class="v2-card__section-label">
+      <p class="modern-card__section-label">
         Connectors
       </p>
       <div
         v-if="connectors.length === 0"
-        class="v2-card__empty-connectors"
+        class="modern-card__empty-connectors"
       >
         No connectors
       </div>
       <div
         v-else
-        class="v2-card__connectors"
+        class="modern-card__connectors"
       >
         <ConnectorRow
           v-for="entry in connectors"
@@ -116,8 +116,8 @@
         />
       </div>
     </div>
-    <footer class="v2-card__foot">
-      <div class="v2-card__foot-group">
+    <footer class="modern-card__foot">
+      <div class="modern-card__foot-group">
         <ActionButton
           :variant="chargingStation.started === true ? 'default' : 'primary'"
           :pending="pending.startStop"

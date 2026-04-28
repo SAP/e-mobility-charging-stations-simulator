@@ -68,7 +68,7 @@ describe('Modern skin dialogs', () => {
 
     it('should submit payload on success and emit close', async () => {
       const wrapper = mountDialog()
-      await wrapper.find('#v2-add-template').setValue('template-A.json')
+      await wrapper.find('#modern-add-template').setValue('template-A.json')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.addChargingStations).toHaveBeenCalledWith(
@@ -88,7 +88,7 @@ describe('Modern skin dialogs', () => {
 
     it('should send fixedName=true when baseName set and checkbox checked', async () => {
       const wrapper = mountDialog()
-      await wrapper.find('#v2-add-template').setValue('template-A.json')
+      await wrapper.find('#modern-add-template').setValue('template-A.json')
       const textInputs = wrapper.findAll('input[type="text"]')
       await textInputs[0].setValue('MY-BASE')
       const checkboxes = wrapper.findAll('input[type="checkbox"]')
@@ -104,7 +104,7 @@ describe('Modern skin dialogs', () => {
 
     it('should pass supervision url and credentials when filled', async () => {
       const wrapper = mountDialog()
-      await wrapper.find('#v2-add-template').setValue('template-A.json')
+      await wrapper.find('#modern-add-template').setValue('template-A.json')
       await wrapper.find('input[type="url"]').setValue('wss://example.com/ocpp')
       const textInputs = wrapper.findAll('input[type="text"]')
       await textInputs[1].setValue('alice')
@@ -153,7 +153,7 @@ describe('Modern skin dialogs', () => {
           supervisionUrl: `wss://host:9000/${TEST_STATION_ID}`,
         }),
       ])
-      const input = wrapper.find<HTMLInputElement>('#v2-sup-url').element
+      const input = wrapper.find<HTMLInputElement>('#modern-sup-url').element
       expect(input.value).toBe('wss://host:9000')
     })
 
@@ -174,15 +174,15 @@ describe('Modern skin dialogs', () => {
           supervisionUrl: `wss://host/${TEST_STATION_ID}`,
         }),
       ])
-      const user = wrapper.find<HTMLInputElement>('#v2-sup-user').element
-      const pass = wrapper.find<HTMLInputElement>('#v2-sup-pass').element
+      const user = wrapper.find<HTMLInputElement>('#modern-sup-user').element
+      const pass = wrapper.find<HTMLInputElement>('#modern-sup-pass').element
       expect(user.value).toBe('u')
       expect(pass.value).toBe('pw')
     })
 
     it('should fall back to empty strings when station not found', () => {
       const wrapper = mountDialog([])
-      const input = wrapper.find<HTMLInputElement>('#v2-sup-url').element
+      const input = wrapper.find<HTMLInputElement>('#modern-sup-url').element
       expect(input.value).toBe('')
     })
 
@@ -201,9 +201,9 @@ describe('Modern skin dialogs', () => {
           supervisionUrl: `wss://host/${TEST_STATION_ID}`,
         }),
       ])
-      await wrapper.find('#v2-sup-url').setValue('wss://new.example.com')
-      await wrapper.find('#v2-sup-user').setValue('alice')
-      await wrapper.find('#v2-sup-pass').setValue('pw')
+      await wrapper.find('#modern-sup-url').setValue('wss://new.example.com')
+      await wrapper.find('#modern-sup-user').setValue('alice')
+      await wrapper.find('#modern-sup-pass').setValue('pw')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
@@ -224,7 +224,7 @@ describe('Modern skin dialogs', () => {
           supervisionUrl: `wss://host/${TEST_STATION_ID}`,
         }),
       ])
-      await wrapper.find('#v2-sup-url').setValue('wss://new.example.com')
+      await wrapper.find('#modern-sup-url').setValue('wss://new.example.com')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.setSupervisionUrl).toHaveBeenCalled()
@@ -239,7 +239,7 @@ describe('Modern skin dialogs', () => {
           supervisionUrl: `wss://host/${TEST_STATION_ID}`,
         }),
       ])
-      await wrapper.find('#v2-sup-url').setValue('wss://new.example.com')
+      await wrapper.find('#modern-sup-url').setValue('wss://new.example.com')
       const reconnectBox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
       await reconnectBox.setValue(false)
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
@@ -286,7 +286,7 @@ describe('Modern skin dialogs', () => {
 
     it('should authorize then starts transaction when authorize-first checked', async () => {
       const wrapper = mountDialog()
-      await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
+      await wrapper.find('#modern-tx-idtag').setValue('RFID-01')
       const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
       await checkbox.setValue(true)
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
@@ -303,7 +303,7 @@ describe('Modern skin dialogs', () => {
       const wrapper = mountDialog()
       const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
       await checkbox.setValue(false)
-      await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
+      await wrapper.find('#modern-tx-idtag').setValue('RFID-01')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.authorize).not.toHaveBeenCalled()
@@ -312,7 +312,7 @@ describe('Modern skin dialogs', () => {
 
     it('should include evseId and ocppVersion from props', async () => {
       const wrapper = mountDialog({ evseId: 2, ocppVersion: '1.6' })
-      await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
+      await wrapper.find('#modern-tx-idtag').setValue('RFID-01')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.startTransaction).toHaveBeenCalledWith(
@@ -331,7 +331,7 @@ describe('Modern skin dialogs', () => {
     it('should toast error when authorize fails', async () => {
       const wrapper = mountDialog()
       mockClient.authorize = vi.fn().mockRejectedValue(new Error('auth failed'))
-      await wrapper.find('#v2-tx-idtag').setValue('BAD-TAG')
+      await wrapper.find('#modern-tx-idtag').setValue('BAD-TAG')
       const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
       await checkbox.setValue(true)
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
@@ -343,7 +343,7 @@ describe('Modern skin dialogs', () => {
     it('should toast error when startTransaction fails', async () => {
       const wrapper = mountDialog()
       mockClient.startTransaction = vi.fn().mockRejectedValue(new Error('tx failed'))
-      await wrapper.find('#v2-tx-idtag').setValue('RFID')
+      await wrapper.find('#modern-tx-idtag').setValue('RFID')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalled()
@@ -364,12 +364,12 @@ describe('Modern skin dialogs', () => {
           status: ResponseStatus.FAILURE,
         } as never)
       )
-      await wrapper.find('#v2-tx-idtag').setValue('BAD-TAG')
+      await wrapper.find('#modern-tx-idtag').setValue('BAD-TAG')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
-      expect(wrapper.find('.v2-form__error').exists()).toBe(true)
+      expect(wrapper.find('.modern-form__error').exists()).toBe(true)
       expect(wrapper.text()).toContain('Invalid')
-      expect(wrapper.find('.v2-form__error-details').exists()).toBe(true)
+      expect(wrapper.find('.modern-form__error-details').exists()).toBe(true)
       expect(wrapper.emitted('close')).toBeFalsy()
     })
 
@@ -402,7 +402,7 @@ describe('Modern skin dialogs', () => {
 
     it('should call authorize and emits close on success', async () => {
       const wrapper = mountDialog()
-      await wrapper.find('#v2-auth-tag').setValue('GOOD')
+      await wrapper.find('#modern-auth-tag').setValue('GOOD')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'GOOD')
@@ -425,14 +425,14 @@ describe('Modern skin dialogs', () => {
           status: ResponseStatus.FAILURE,
         } as never)
       )
-      await wrapper.find('#v2-auth-tag').setValue('BAD')
+      await wrapper.find('#modern-auth-tag').setValue('BAD')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalledWith(
         expect.stringContaining('Authorize failed: Blocked')
       )
       expect(wrapper.text()).toContain('Blocked')
-      expect(wrapper.find('.v2-form__error-details').exists()).toBe(true)
+      expect(wrapper.find('.modern-form__error-details').exists()).toBe(true)
     })
 
     it('should emit close when cancel is clicked', async () => {

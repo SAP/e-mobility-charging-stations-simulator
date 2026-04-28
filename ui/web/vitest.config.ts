@@ -23,7 +23,6 @@ export default mergeConfig(
           'src/skins/classic/ClassicLayout.vue',
           'src/skins/modern/components/**',
           'src/skins/modern/ModernLayout.vue',
-          'src/skins/modern/composables/**',
           'src/shared/tokens/**',
         ],
         include: ['src/**/*.{ts,vue}'],
