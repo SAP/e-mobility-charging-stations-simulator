@@ -111,8 +111,8 @@ describe('v2 Modal', () => {
 
   /**
    * @param props modal props
-   * @param props.closeOnBackdrop
-   * @param props.title
+   * @param props.closeOnBackdrop whether clicking the backdrop closes the modal
+   * @param props.title modal title text
    * @returns mounted wrapper
    */
   function mountModal (props: { closeOnBackdrop?: boolean; title?: string } = {}) {

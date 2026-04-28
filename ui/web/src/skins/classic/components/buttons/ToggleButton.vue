@@ -10,13 +10,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import Button from './Button.vue'
 import {
   getFromLocalStorage,
   setToLocalStorage,
   SHARED_TOGGLE_BUTTON_KEY_PREFIX,
   TOGGLE_BUTTON_KEY_PREFIX,
 } from '@/composables'
+
+import Button from './Button.vue'
 
 const props = defineProps<{
   id: string

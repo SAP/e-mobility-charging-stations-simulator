@@ -116,6 +116,11 @@ export default defineConfig([
               'PUBLICKEYWITHSIGNEDMETERVALUE',
               'sampleddatasignreadings',
               'SAMPLEDDATASIGNREADINGS',
+              // UI component terms
+              'focusables',
+              'Focusables',
+              // Test credential fragments
+              'cret',
             ],
           },
         },
@@ -232,6 +237,12 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
       'no-void': 'off',
+    },
+  },
+  {
+    files: ['ui/web/tests/**/*.test.ts'],
+    rules: {
+      'vue/order-in-components': 'off',
     },
   },
 ])

@@ -1,101 +1,101 @@
 <template>
   <div class="classic-layout">
     <Container class="charging-stations-container">
-    <Container class="buttons-container">
-      <Container
-        v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
-        id="ui-server-container"
-        class="ui-server-container"
-      >
+      <Container class="buttons-container">
+        <Container
+          v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+          id="ui-server-container"
+          class="ui-server-container"
+        >
+          <select
+            id="ui-server-selector"
+            v-model="state.uiServerIndex"
+            class="ui-server-selector"
+            @change="handleUIServerChange"
+          >
+            <option
+              v-for="uiServerConfiguration in uiServerConfigurations"
+              :key="uiServerConfiguration.index"
+              :value="uiServerConfiguration.index"
+            >
+              {{
+                uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host
+              }}
+            </option>
+          </select>
+        </Container>
+        <StateButton
+          :active="simulatorStarted === true"
+          :off="() => stopSimulator()"
+          :off-label="simulatorLabel('Stop')"
+          :on="() => startSimulator()"
+          :on-label="simulatorLabel('Start')"
+        />
+        <ToggleButton
+          :id="'add-charging-stations'"
+          :key="state.renderAddChargingStations"
+          :off="
+            () => {
+              $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+            }
+          "
+          :on="
+            () => {
+              $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS })
+            }
+          "
+          :shared="true"
+        >
+          Add Charging Stations
+        </ToggleButton>
         <select
-          id="ui-server-selector"
-          v-model="state.uiServerIndex"
+          :value="activeSkinId"
           class="ui-server-selector"
-          @change="handleUIServerChange"
+          @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
         >
           <option
-            v-for="uiServerConfiguration in uiServerConfigurations"
-            :key="uiServerConfiguration.index"
-            :value="uiServerConfiguration.index"
+            v-for="skin in skins"
+            :key="skin.id"
+            :value="skin.id"
           >
-            {{
-              uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host
-            }}
+            {{ skin.label }}
+          </option>
+        </select>
+        <select
+          :value="activeTheme"
+          class="ui-server-selector"
+          @change="(e) => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
+        >
+          <option
+            v-for="theme in availableThemes"
+            :key="theme"
+            :value="theme"
+          >
+            {{ theme }}
           </option>
         </select>
       </Container>
-      <StateButton
-        :active="simulatorStarted === true"
-        :off="() => stopSimulator()"
-        :off-label="simulatorLabel('Stop')"
-        :on="() => startSimulator()"
-        :on-label="simulatorLabel('Start')"
+      <CSTable
+        v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
+        :key="state.renderChargingStations"
+        :charging-stations="$chargingStations"
+        @need-refresh="
+          () => {
+            state.renderAddChargingStations = randomUUID()
+          }
+        "
       />
-      <ToggleButton
-        :id="'add-charging-stations'"
-        :key="state.renderAddChargingStations"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-          }
-        "
-        :on="
-          () => {
-            $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS })
-          }
-        "
-        :shared="true"
-      >
-        Add Charging Stations
-      </ToggleButton>
-      <select
-        :value="activeSkinId"
-        class="ui-server-selector"
-        @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
-      >
-        <option
-          v-for="skin in skins"
-          :key="skin.id"
-          :value="skin.id"
-        >
-          {{ skin.label }}
-        </option>
-      </select>
-      <select
-        :value="activeTheme"
-        class="ui-server-selector"
-        @change="(e) => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
-      >
-        <option
-          v-for="theme in availableThemes"
-          :key="theme"
-          :value="theme"
-        >
-          {{ theme }}
-        </option>
-      </select>
     </Container>
-    <CSTable
-      v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
-      :key="state.renderChargingStations"
-      :charging-stations="$chargingStations"
-      @need-refresh="
-        () => {
-          state.renderAddChargingStations = randomUUID()
-        }
+    <Container
+      v-show="
+        $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
+          $route.name !== ROUTE_NAMES.NOT_FOUND
       "
-    />
-  </Container>
-  <Container
-    v-show="
-      $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
-        $route.name !== ROUTE_NAMES.NOT_FOUND
-    "
-    id="action-container"
-    class="action-container"
-  >
-    <router-view name="action" />
-  </Container>
+      id="action-container"
+      class="action-container"
+    >
+      <router-view name="action" />
+    </Container>
   </div>
 </template>
 

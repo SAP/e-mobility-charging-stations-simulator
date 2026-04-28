@@ -70,10 +70,11 @@ import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import { useToast } from 'vue-toast-notification'
 
+import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
+
 import Button from '../buttons/Button.vue'
 import StateButton from '../buttons/StateButton.vue'
 import ToggleButton from '../buttons/ToggleButton.vue'
-import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   atgStatus?: Status

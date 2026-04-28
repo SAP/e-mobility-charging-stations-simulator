@@ -19,17 +19,17 @@ const { activeSkinId } = useSkin()
 
 const skinLayoutMap = {
   classic: defineAsyncComponent(
-    async () => import('@/skins/classic/ClassicLayout.vue'),
+    async () => import('@/skins/classic/ClassicLayout.vue')
   ),
   modern: defineAsyncComponent(
-    async () => import('@/skins/modern/ModernLayout.vue'),
+    async () => import('@/skins/modern/ModernLayout.vue')
   ),
 } as const
 
 const currentSkinLayout = computed(
   () =>
     skinLayoutMap[activeSkinId.value as keyof typeof skinLayoutMap] ??
-    skinLayoutMap.classic,
+    skinLayoutMap.classic
 )
 </script>
 
