@@ -2,7 +2,6 @@ import { convertToBoolean, randomUUID, type UUIDv4 } from 'ui-common'
 import { ref, type Ref, watch } from 'vue'
 
 import {
-  resetToggleButtonState,
   useExecuteAction,
   useTemplates,
   useUIClient,
@@ -25,9 +24,11 @@ export interface AddStationsFormState {
 
 /**
  * Returns form state and submission logic for adding charging stations.
+ * @param options - Optional callbacks
+ * @param options.onFinally - Called after the action completes (success or failure), before form reset
  * @returns Form state, templates, submit, and reset functions
  */
-export function useAddStationsForm (): {
+export function useAddStationsForm (options?: { onFinally?: () => void }): {
   formState: Ref<AddStationsFormState>
   resetForm: () => void
   submitForm: () => void
@@ -100,7 +101,7 @@ export function useAddStationsForm (): {
       'Error at adding charging stations',
       {
         onFinally: () => {
-          resetToggleButtonState('add-charging-stations', true)
+          options?.onFinally?.()
           resetForm()
         },
       }

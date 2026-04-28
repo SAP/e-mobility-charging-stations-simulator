@@ -7,6 +7,7 @@ const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
 const activeSkinId: Ref<string> = ref(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
 const loadedSkins = new Set<string>()
+let switching = false
 
 /**
  * Loads the CSS file for a skin if not already loaded.
@@ -41,13 +42,19 @@ export function useSkin (): {
    * @param skinId - The skin identifier to switch to
    */
   async function switchSkin (skinId: string): Promise<void> {
+    if (switching) return
     const skin = skins.find(s => s.id === skinId)
     if (skin == null || skinId === activeSkinId.value) {
       return
     }
-    await loadSkinStyles(skinId)
-    activeSkinId.value = skinId
-    setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
+    switching = true
+    try {
+      await loadSkinStyles(skinId)
+      activeSkinId.value = skinId
+      setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
+    } finally {
+      switching = false
+    }
   }
 
   return {

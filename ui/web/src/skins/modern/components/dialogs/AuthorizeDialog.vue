@@ -61,12 +61,10 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
 
-import { V2_ROUTE_NAMES } from '../../composables/constants'
 import { type FailureInfo, getFailureInfo } from '../../composables/errors'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
@@ -76,8 +74,9 @@ const props = defineProps<{
   hashId: string
 }>()
 
+const emit = defineEmits<{ close: [] }>()
+
 const $uiClient = useUIClient()
-const $router = useRouter()
 const $toast = useToast()
 
 const pending = ref(false)
@@ -92,9 +91,7 @@ const formattedPayload = computed(() =>
 )
 
 const close = (): void => {
-  $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
-    console.error('Navigation failed:', error)
-  })
+  emit('close')
 }
 
 const submit = async (): Promise<void> => {

@@ -59,65 +59,20 @@
       >
         {{ simulatorStarted ? 'Stop' : 'Start' }} Simulator
       </ActionButton>
-      <button
-        type="button"
-        class="v2-icon-btn"
-        :title="`Theme: ${themeMode} (click to cycle)`"
-        :aria-label="`Theme: ${themeMode} — click to cycle`"
-        @click="$emit('cycle-theme')"
+      <select
+        :value="activeTheme"
+        class="v2-bar__select"
+        aria-label="Theme"
+        @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
       >
-        <svg
-          v-if="themeMode === 'dark'"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <option
+          v-for="theme in availableThemes"
+          :key="theme"
+          :value="theme"
         >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-        <svg
-          v-else-if="themeMode === 'light'"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
-          />
-          <path
-            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-          />
-        </svg>
-        <svg
-          v-else
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-          />
-          <path
-            d="M12 3a9 9 0 0 1 0 18z"
-            fill="currentColor"
-          />
-        </svg>
-      </button>
+          {{ theme }}
+        </option>
+      </select>
       <select
         :value="activeSkinId"
         class="v2-bar__select"
@@ -150,8 +105,7 @@ import { RouterLink } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
 import { useSkin } from '@/shared/composables/useSkin.js'
-
-import type { V2ThemeMode } from '../composables/constants'
+import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
@@ -159,19 +113,18 @@ import StatePill from './StatePill.vue'
 const V1_ROUTE_NAME = ROUTE_NAMES.CHARGING_STATIONS
 
 const { activeSkinId, skins: skinList, switchSkin } = useSkin()
+const { activeTheme, availableThemes, setTheme } = useTheme()
 
 const props = defineProps<{
   refreshPending?: boolean
   selectedServerIndex: number
   simulatorPending?: boolean
   simulatorState?: SimulatorState
-  themeMode: V2ThemeMode
   uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[]
 }>()
 
 defineEmits<{
   add: []
-  'cycle-theme': []
   refresh: []
   'switch-server': [index: number]
   'toggle-simulator': []

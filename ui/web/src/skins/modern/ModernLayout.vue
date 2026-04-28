@@ -5,10 +5,8 @@
       :selected-server-index="state.uiServerIndex"
       :simulator-pending="simulatorPending"
       :simulator-state="simulatorState"
-      :theme-mode="themeMode"
       :ui-server-configurations="uiServerConfigurations"
-      @add="openAddDialog"
-      @cycle-theme="cycleTheme"
+      @add="showAddDialog = true"
       @refresh="getData"
       @switch-server="handleUIServerChange"
       @toggle-simulator="toggleSimulator"
@@ -35,6 +33,9 @@
         :key="station.stationInfo.hashId"
         :charging-station="station"
         @need-refresh="getChargingStations"
+        @open-authorize="(data) => (showAuthorizeDialog = data)"
+        @open-set-url="(data) => (showSetUrlDialog = data)"
+        @open-start-tx="(data) => (showStartTxDialog = data)"
       />
     </section>
     <ConfirmDialog
@@ -46,17 +47,42 @@
       @cancel="confirmingStopSim = false"
       @confirm="confirmStopSimulator"
     />
+    <AddStationsDialog
+      v-if="showAddDialog"
+      @close="showAddDialog = false"
+    />
+    <SetSupervisionUrlDialog
+      v-if="showSetUrlDialog"
+      :hash-id="showSetUrlDialog.hashId"
+      :charging-station-id="showSetUrlDialog.chargingStationId"
+      @close="showSetUrlDialog = null"
+    />
+    <StartTransactionDialog
+      v-if="showStartTxDialog"
+      :hash-id="showStartTxDialog.hashId"
+      :charging-station-id="showStartTxDialog.chargingStationId"
+      :connector-id="showStartTxDialog.connectorId"
+      :evse-id="showStartTxDialog.evseId"
+      :ocpp-version="showStartTxDialog.ocppVersion"
+      @close="showStartTxDialog = null"
+    />
+    <AuthorizeDialog
+      v-if="showAuthorizeDialog"
+      :hash-id="showAuthorizeDialog.hashId"
+      :charging-station-id="showAuthorizeDialog.chargingStationId"
+      @close="showAuthorizeDialog = null"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
 import {
   type ChargingStationData,
+  type OCPPVersion,
   type SimulatorState,
   type UIServerConfigurationSection,
 } from 'ui-common'
-import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import {
@@ -71,22 +97,18 @@ import {
 
 import './modern.css'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import AddStationsDialog from './components/dialogs/AddStationsDialog.vue'
+import AuthorizeDialog from './components/dialogs/AuthorizeDialog.vue'
+import SetSupervisionUrlDialog from './components/dialogs/SetSupervisionUrlDialog.vue'
+import StartTransactionDialog from './components/dialogs/StartTransactionDialog.vue'
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
-import {
-  V2_ROUTE_NAMES,
-  V2_THEME_KEY,
-  V2_UI_SERVER_INDEX_KEY,
-  type V2ThemeEffective,
-  type V2ThemeMode,
-} from './composables/constants'
+import { V2_UI_SERVER_INDEX_KEY } from './composables/constants'
 
 const $configuration = useConfiguration()
 const $templates = useTemplates()
 const $chargingStations = useChargingStations()
 const $uiClient = useUIClient()
-const $route = useRoute()
-const $router = useRouter()
 const $toast = useToast()
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
@@ -98,40 +120,23 @@ const state = ref({
   uiServerIndex: getFromLocalStorage<number>(V2_UI_SERVER_INDEX_KEY, 0),
 })
 
-/* global MediaQueryList, MediaQueryListEvent */
-const themeMode = ref<V2ThemeMode>(getFromLocalStorage<V2ThemeMode>(V2_THEME_KEY, 'auto'))
-
-const prefersDark = ref(
-  typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-)
-
-const effectiveTheme = computed<V2ThemeEffective>(() => {
-  if (themeMode.value === 'light') return 'light'
-  if (themeMode.value === 'dark') return 'dark'
-  return prefersDark.value ? 'dark' : 'light'
-})
-
-const cycleTheme = (): void => {
-  const next: V2ThemeMode =
-    themeMode.value === 'dark' ? 'light' : themeMode.value === 'light' ? 'auto' : 'dark'
-  themeMode.value = next
-  setToLocalStorage<V2ThemeMode>(V2_THEME_KEY, next)
-}
-
-let prefersDarkMedia: MediaQueryList | undefined
-const onPrefersDarkChange = (event: MediaQueryListEvent): void => {
-  prefersDark.value = event.matches
-}
-
-// Mirror the effective theme onto <html> so teleported modals
-// (rendered into <body>, outside the .v2-app root) also pick it up.
-watchEffect(() => {
-  if (typeof document !== 'undefined') {
-    document.documentElement.dataset.v2Theme = effectiveTheme.value
-  }
-})
+// Dialog state
+const showAddDialog = ref(false)
+const showSetUrlDialog = ref<null | {
+  chargingStationId: string
+  hashId: string
+}>(null)
+const showStartTxDialog = ref<null | {
+  chargingStationId: string
+  connectorId: string
+  evseId?: number
+  hashId: string
+  ocppVersion?: OCPPVersion
+}>(null)
+const showAuthorizeDialog = ref<null | {
+  chargingStationId: string
+  hashId: string
+}>(null)
 
 const uiServerConfigurations = computed(() =>
   ($configuration.value.uiServer as UIServerConfigurationSection[]).map((configuration, index) => ({
@@ -210,11 +215,6 @@ const handleUIServerChange = (nextIndex: number): void => {
     'open',
     () => {
       setToLocalStorage<number>(V2_UI_SERVER_INDEX_KEY, nextIndex)
-      if ($route.name !== V2_ROUTE_NAMES.V2_CHARGING_STATIONS) {
-        $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
-          console.error('Navigation failed:', error)
-        })
-      }
     },
     { once: true }
   )
@@ -268,12 +268,6 @@ const toggleSimulator = (): void => {
   }
 }
 
-const openAddDialog = (): void => {
-  $router.push({ name: V2_ROUTE_NAMES.V2_ADD_CHARGING_STATIONS }).catch((error: unknown) => {
-    console.error('Navigation failed:', error)
-  })
-}
-
 let unsubscribeRefresh: (() => void) | undefined
 
 onMounted(() => {
@@ -281,20 +275,10 @@ onMounted(() => {
   unsubscribeRefresh = $uiClient.onRefresh(() => {
     getChargingStations()
   })
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    prefersDarkMedia = window.matchMedia('(prefers-color-scheme: dark)')
-    prefersDarkMedia.addEventListener('change', onPrefersDarkChange)
-  }
 })
 
 onUnmounted(() => {
   unregisterWSEventListeners()
   unsubscribeRefresh?.()
-  prefersDarkMedia?.removeEventListener('change', onPrefersDarkChange)
-  // Clean up the theme attribute so other skins aren't affected when the user
-  // navigates away from the modern skin.
-  if (typeof document !== 'undefined') {
-    delete document.documentElement.dataset.v2Theme
-  }
 })
 </script>

@@ -81,12 +81,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import { useChargingStations, useUIClient } from '@/composables'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 
-import { V2_ROUTE_NAMES } from '../../composables/constants'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
@@ -95,10 +93,11 @@ const props = defineProps<{
   hashId: string
 }>()
 
+const emit = defineEmits<{ close: [] }>()
+
 const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
-const $router = useRouter()
 
 const reconnect = ref(true)
 
@@ -126,9 +125,7 @@ formState.value.supervisionUser = currentStation?.stationInfo.supervisionUser ??
 formState.value.supervisionPassword = currentStation?.stationInfo.supervisionPassword ?? ''
 
 const close = (): void => {
-  $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
-    console.error('Navigation failed:', error)
-  })
+  emit('close')
 }
 
 const submit = (): void => {

@@ -158,13 +158,11 @@
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import { computed, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
 import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
 
-import { V2_ROUTE_NAMES } from '../composables/constants'
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
 
@@ -180,10 +178,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'need-refresh': []
+  'open-start-tx': [
+    data: {
+      chargingStationId: string
+      connectorId: string
+      evseId?: number
+      hashId: string
+      ocppVersion?: OCPPVersion
+    }
+  ]
 }>()
 
 const $uiClient = useUIClient()
-const $router = useRouter()
 const $toast = useToast()
 
 const pending = reactive({
@@ -292,21 +298,12 @@ const stopTransaction = (): void => {
 }
 
 const openStartTransaction = (): void => {
-  $router
-    .push({
-      name: V2_ROUTE_NAMES.V2_START_TRANSACTION,
-      params: {
-        chargingStationId: props.chargingStationId,
-        connectorId: String(props.connectorId),
-        hashId: props.hashId,
-      },
-      query: {
-        ...(props.evseId != null ? { evseId: String(props.evseId) } : {}),
-        ...(props.ocppVersion != null ? { ocppVersion: props.ocppVersion } : {}),
-      },
-    })
-    .catch((error: unknown) => {
-      console.error('Navigation failed:', error)
-    })
+  emit('open-start-tx', {
+    chargingStationId: props.chargingStationId,
+    connectorId: String(props.connectorId),
+    evseId: props.evseId,
+    hashId: props.hashId,
+    ocppVersion: props.ocppVersion,
+  })
 }
 </script>

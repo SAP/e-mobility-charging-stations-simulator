@@ -29,6 +29,7 @@ const activeTheme: Ref<ThemeName> = ref(
  * @param themeName - The theme name to apply
  */
 function applyTheme (themeName: ThemeName): void {
+  if (typeof document === 'undefined') return
   const isDark = themeName === 'tokyo-night-storm'
   document.documentElement.setAttribute('data-theme', themeName)
   document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'

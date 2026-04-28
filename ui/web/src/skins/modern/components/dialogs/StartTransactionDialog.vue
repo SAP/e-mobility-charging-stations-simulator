@@ -53,47 +53,39 @@
 import type { OCPPVersion } from 'ui-common'
 
 import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
-import { V2_ROUTE_NAMES } from '../../composables/constants'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
 const props = defineProps<{
   chargingStationId: string
   connectorId: string
+  evseId?: number
   hashId: string
+  ocppVersion?: OCPPVersion
 }>()
 
-const $router = useRouter()
-const $route = useRoute()
+const emit = defineEmits<{ close: [] }>()
 
 const pending = ref(false)
-
-const evseId = computed(() =>
-  $route.query.evseId != null ? Number($route.query.evseId) : undefined
-)
-const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
 
 const { formState, submitForm } = useStartTxForm(
   props.hashId,
   props.connectorId,
-  evseId.value,
-  ocppVersion.value
+  props.evseId,
+  props.ocppVersion
 )
 
 const targetLabel = computed(() =>
-  evseId.value != null
-    ? `EVSE ${String(evseId.value)} / Connector ${props.connectorId}`
+  props.evseId != null
+    ? `EVSE ${String(props.evseId)} / Connector ${props.connectorId}`
     : `Connector ${props.connectorId}`
 )
 
 const close = (): void => {
-  $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
-    console.error('Navigation failed:', error)
-  })
+  emit('close')
 }
 
 const submit = async (): Promise<void> => {

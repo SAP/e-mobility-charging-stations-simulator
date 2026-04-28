@@ -146,21 +146,17 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
-import { V2_ROUTE_NAMES } from '../../composables/constants'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
+const emit = defineEmits<{ close: [] }>()
+
 const { formState, submitForm, templates } = useAddStationsForm()
-const $router = useRouter()
 
 const close = (): void => {
-  $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
-    console.error('Navigation failed:', error)
-  })
+  emit('close')
 }
 
 const submit = (): void => {

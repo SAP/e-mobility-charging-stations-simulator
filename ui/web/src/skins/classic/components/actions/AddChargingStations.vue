@@ -132,17 +132,22 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { ROUTE_NAMES } from '@/composables'
+import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import Button from '../buttons/Button.vue'
 
-const { formState, submitForm, templates } = useAddStationsForm()
 const $router = useRouter()
+
+const { formState, submitForm, templates } = useAddStationsForm({
+  onFinally: () => {
+    resetToggleButtonState('add-charging-stations', true)
+    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+  },
+})
 
 const addChargingStations = (): void => {
   submitForm()
-  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
 }
 </script>
 

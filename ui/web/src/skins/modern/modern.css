@@ -11,20 +11,12 @@
 
 :root {
   /* ── Brand bridge — core colour from theme contract ────────────── */
-  --skin-primary: var(--color-primary);
   --skin-primary-bright: color-mix(in srgb, var(--color-primary) 90%, #ffffff 10%);
-  --skin-primary-dim: color-mix(in srgb, var(--color-primary) 80%, #000000 20%);
   --skin-primary-soft: color-mix(in srgb, var(--skin-primary-bright) 26%, transparent);
   --skin-primary-ghost: color-mix(in srgb, var(--skin-primary-bright) 12%, transparent);
 
   /* ── State bridge — from theme contract ────────────────────────── */
-  --skin-state-ok: var(--color-state-ok);
-  --skin-state-ok-bg: color-mix(in srgb, var(--color-state-ok) 14%, transparent);
-  --skin-state-warn: var(--color-state-warn);
-  --skin-state-warn-bg: color-mix(in srgb, var(--color-state-warn) 16%, transparent);
-  --skin-state-err: var(--color-state-err);
   --skin-state-err-bg: color-mix(in srgb, var(--color-state-err) 14%, transparent);
-  --skin-state-idle: var(--color-state-idle);
   --skin-state-idle-bg: color-mix(in srgb, var(--color-state-idle) 14%, transparent);
 
   /* Spacing */
@@ -32,7 +24,6 @@
   --skin-space-2: 0.5rem;
   --skin-space-3: 0.75rem;
   --skin-space-4: 1rem;
-  --skin-space-5: 1.5rem;
   --skin-space-6: 2rem;
   --skin-space-7: 3rem;
 
@@ -40,7 +31,6 @@
   --skin-radius-sm: 4px;
   --skin-radius-md: 6px;
   --skin-radius-lg: 10px;
-  --skin-radius-pill: 999px;
 
   /* Elevation shadows */
   --skin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
@@ -58,17 +48,17 @@
    *   sunken < card body  (sunken is inside-the-card)
    *
    * Each tier moves by ~6-10% so every level has a visible delta. */
-  --skin-base: color-mix(in srgb, var(--color-bg-surface, #1f2335) 100%, #000000 6%);
-  --skin-surface: color-mix(in srgb, var(--color-bg-surface, #1f2335) 86%, #ffffff 10%);
-  --skin-surface-raised: color-mix(in srgb, var(--color-bg-surface, #1f2335) 80%, #ffffff 14%);
-  --skin-surface-sunken: color-mix(in srgb, var(--color-bg-surface, #1f2335) 90%, #000000 4%);
+  --skin-base: color-mix(in srgb, var(--color-bg-surface) 100%, #000000 6%);
+  --skin-surface: color-mix(in srgb, var(--color-bg-surface) 86%, #ffffff 10%);
+  --skin-surface-raised: color-mix(in srgb, var(--color-bg-surface) 80%, #ffffff 14%);
+  --skin-surface-sunken: color-mix(in srgb, var(--color-bg-surface) 90%, #000000 4%);
 
   /* Badge */
   --skin-badge-bg: color-mix(in srgb, var(--skin-surface) 85%, #000000 8%);
 
   /* Borders */
-  --skin-border: color-mix(in srgb, var(--color-text-muted, #8089b3) 14%, transparent);
-  --skin-border-strong: color-mix(in srgb, var(--color-text-muted, #8089b3) 32%, transparent);
+  --skin-border: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+  --skin-border-strong: color-mix(in srgb, var(--color-text-muted) 32%, transparent);
 
   /* Transition */
   --skin-transition: 140ms cubic-bezier(0.3, 0, 0.2, 1);

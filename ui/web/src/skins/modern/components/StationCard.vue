@@ -112,6 +112,7 @@
           :hash-id="chargingStation.stationInfo.hashId"
           :ocpp-version="chargingStation.stationInfo.ocppVersion"
           @need-refresh="$emit('need-refresh')"
+          @open-start-tx="(data) => $emit('open-start-tx', data)"
         />
       </div>
     </div>
@@ -161,11 +162,11 @@ import {
   type ChargingStationData,
   type ConnectorEntry,
   getWebSocketStateName,
+  type OCPPVersion,
   type Status,
   WebSocketReadyState,
 } from 'ui-common'
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import {
@@ -174,7 +175,6 @@ import {
   useUIClient,
 } from '@/composables'
 
-import { V2_ROUTE_NAMES } from '../composables/constants'
 import ActionButton from './ActionButton.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import ConnectorRow from './ConnectorRow.vue'
@@ -186,10 +186,20 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'need-refresh': []
+  'open-authorize': [data: { chargingStationId: string; hashId: string }]
+  'open-set-url': [data: { chargingStationId: string; hashId: string }]
+  'open-start-tx': [
+    data: {
+      chargingStationId: string
+      connectorId: string
+      evseId?: number
+      hashId: string
+      ocppVersion?: OCPPVersion
+    }
+  ]
 }>()
 
 const $uiClient = useUIClient()
-const $router = useRouter()
 const $toast = useToast()
 
 const confirmingDelete = ref(false)
@@ -330,31 +340,17 @@ const toggleConnection = (): void => {
 }
 
 const openSupervisionDialog = (): void => {
-  $router
-    .push({
-      name: V2_ROUTE_NAMES.V2_SET_SUPERVISION_URL,
-      params: {
-        chargingStationId: props.chargingStation.stationInfo.chargingStationId,
-        hashId: props.chargingStation.stationInfo.hashId,
-      },
-    })
-    .catch((error: unknown) => {
-      console.error('Navigation failed:', error)
-    })
+  emit('open-set-url', {
+    chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+    hashId: props.chargingStation.stationInfo.hashId,
+  })
 }
 
 const openAuthorizeDialog = (): void => {
-  $router
-    .push({
-      name: V2_ROUTE_NAMES.V2_AUTHORIZE,
-      params: {
-        chargingStationId: props.chargingStation.stationInfo.chargingStationId,
-        hashId: props.chargingStation.stationInfo.hashId,
-      },
-    })
-    .catch((error: unknown) => {
-      console.error('Navigation failed:', error)
-    })
+  emit('open-authorize', {
+    chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+    hashId: props.chargingStation.stationInfo.hashId,
+  })
 }
 
 const deleteStation = (): void => {
