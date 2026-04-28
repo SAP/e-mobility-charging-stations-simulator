@@ -65,6 +65,8 @@ evse-cli station stop [hashId...]                         # Stop station(s)
 evse-cli station add -t <template> -n <count>             # Add stations
 evse-cli station add -t <template> -n 2 --auto-start      # Add and auto-start
 evse-cli station add -t <template> -n 1 --supervision-url ws://csms:8180/path
+evse-cli station add -t <template> -n 1 --base-name MY-CS --fixed-name
+evse-cli station add -t <template> -n 1 --supervision-user alice --supervision-password s3cret
 evse-cli station delete [hashId...]                       # Delete station(s)
 evse-cli station delete --delete-config [hashId...]       # Delete with config files
 ```
@@ -148,7 +150,7 @@ When `-p` is provided, version detection is skipped and the raw payload is passe
 ### Supervision
 
 ```shell
-evse-cli supervision set-url --supervision-url <url> [hashId...]
+evse-cli supervision set-url --supervision-url <url> [--supervision-user <user>] [--supervision-password <password>] [hashId...]
 ```
 
 ### Performance

@@ -2508,7 +2508,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (
       connectorStatus.transactionStarted === true ||
-      connectorStatus.transactionPending === true
+      connectorStatus.transactionPending === true ||
+      connectorStatus.locked === true
     ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`

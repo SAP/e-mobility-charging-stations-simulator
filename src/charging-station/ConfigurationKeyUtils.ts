@@ -272,7 +272,7 @@ export const setConfigurationKeyValue = (
     return keyFound
   }
   logger.error(
-    `${chargingStation.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
+    `${chargingStation.logPrefix()} Trying to set a value on a non-existent configuration key: %j`,
     { key, value }
   )
   return undefined

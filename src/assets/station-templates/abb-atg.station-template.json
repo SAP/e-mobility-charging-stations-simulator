@@ -7,6 +7,7 @@
   "firmwareVersion": "4.0.4.22",
   "power": 50000,
   "powerSharedByConnectors": true,
+  "postTransactionDelay": 2,
   "powerUnit": "W",
   "currentOutType": "DC",
   "useConnectorId0": true,

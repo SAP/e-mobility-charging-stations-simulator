@@ -15,6 +15,8 @@ import { UIMCPServer } from './UIMCPServer.js'
 import { isLoopback } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 
+const moduleName = 'UIServerFactory'
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerFactory {
   private constructor () {
@@ -43,11 +45,19 @@ export class UIServerFactory {
       )
     }
     if (
+      uiServerConfiguration.authentication?.enabled === true &&
+      uiServerConfiguration.authentication.username?.includes(':') === true
+    ) {
+      throw new BaseError(
+        `Authentication username in '${ConfigurationSection.uiServer}' configuration section must not contain ':' (RFC 7617)`
+      )
+    }
+    if (
       uiServerConfiguration.authentication?.enabled !== true &&
       !isLoopback(uiServerConfiguration.options?.host ?? '')
     ) {
       const logMsg = `Non loopback address in '${ConfigurationSection.uiServer}' configuration section without authentication enabled. This is not recommended`
-      logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
+      logger.warn(`${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`)
     }
     if (
       (uiServerConfiguration.type === ApplicationProtocol.WS ||
@@ -55,7 +65,7 @@ export class UIServerFactory {
       uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
     ) {
       const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
-      logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
+      logger.warn(`${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`)
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
     }
     if (
@@ -70,7 +80,9 @@ export class UIServerFactory {
     switch (uiServerConfiguration.type) {
       case ApplicationProtocol.HTTP: {
         const logMsg = `Application protocol type '${uiServerConfiguration.type}' is deprecated in '${ConfigurationSection.uiServer}' configuration section. Use '${ApplicationProtocol.MCP}' instead`
-        logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
+        logger.warn(
+          `${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`
+        )
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         return new UIHttpServer(uiServerConfiguration, bootstrap)
       }
@@ -90,7 +102,9 @@ export class UIServerFactory {
           }' configuration section from values '${ApplicationProtocol.toString()}', defaulting to '${
             ApplicationProtocol.WS
           }'`
-          logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
+          logger.warn(
+            `${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`
+          )
         }
         return new UIWebSocketServer(uiServerConfiguration, bootstrap)
     }

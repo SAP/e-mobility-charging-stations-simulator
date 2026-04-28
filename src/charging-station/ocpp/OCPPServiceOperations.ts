@@ -4,6 +4,7 @@ import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
+  ConnectorStatusEnum,
   ErrorType,
   OCPPVersion,
   type StartTransactionResult,
@@ -20,6 +21,8 @@ import {
   IdentifierType,
   OCPPAuthServiceFactory,
 } from './auth/index.js'
+
+const moduleName = 'OCPPServiceOperations'
 
 /**
  * Starts a transaction on a specific connector using the appropriate OCPP version handler.
@@ -99,7 +102,10 @@ export const stopRunningTransactions = async (
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
       for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-        if (connectorStatus.transactionStarted === true) {
+        if (
+          connectorStatus.transactionStarted === true &&
+          connectorStatus.status !== ConnectorStatusEnum.Finishing
+        ) {
           await OCPP16ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
         }
       }
@@ -114,7 +120,7 @@ export const stopRunningTransactions = async (
     default:
       logger.warn(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}, no transactions stopped`
+        `${chargingStation.logPrefix()} ${moduleName}.stopRunningTransactions: Unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}, no transactions stopped`
       )
   }
 }
@@ -141,7 +147,7 @@ export const startUpdatedMeterValues = (
     default:
       logger.error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} startUpdatedMeterValues: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+        `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
       )
   }
 }
@@ -185,7 +191,7 @@ export const flushQueuedTransactionMessages = async (
           await OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId).catch(
             (error: unknown) => {
               logger.error(
-                `${chargingStation.logPrefix()} flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+                `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
                 error
               )
             }
@@ -206,7 +212,7 @@ export const isIdTagAuthorized = async (
 ): Promise<boolean> => {
   try {
     logger.debug(
-      `${chargingStation.logPrefix()} Authorizing idTag '${truncateId(idTag)}' on connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.isIdTagAuthorized: Authorizing idTag '${truncateId(idTag)}' on connector ${connectorId.toString()}`
     )
 
     const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
@@ -223,7 +229,7 @@ export const isIdTagAuthorized = async (
     })
 
     logger.debug(
-      `${chargingStation.logPrefix()} Authorization result for idTag '${truncateId(idTag)}': ${authResult.status} using ${authResult.method} method`
+      `${chargingStation.logPrefix()} ${moduleName}.isIdTagAuthorized: Authorization result for idTag '${truncateId(idTag)}': ${authResult.status} using ${authResult.method} method`
     )
 
     if (authResult.status === AuthStatus.ACCEPTED) {
@@ -247,7 +253,10 @@ export const isIdTagAuthorized = async (
 
     return false
   } catch (error) {
-    logger.error(`${chargingStation.logPrefix()} Authorization failed`, error)
+    logger.error(
+      `${chargingStation.logPrefix()} ${moduleName}.isIdTagAuthorized: Authorization failed`,
+      error
+    )
     return false
   }
 }

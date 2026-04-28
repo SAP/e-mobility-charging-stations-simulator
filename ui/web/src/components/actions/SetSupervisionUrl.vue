@@ -25,6 +25,7 @@
   <input
     id="supervision-password"
     v-model="state.supervisionPassword"
+    autocomplete="off"
     class="supervision-password"
     name="supervision-password"
     placeholder="<password>"
@@ -76,8 +77,8 @@ const setSupervisionUrl = (): void => {
     $uiClient.setSupervisionUrl(
       props.hashId,
       state.value.supervisionUrl,
-      state.value.supervisionUser,
-      state.value.supervisionPassword
+      state.value.supervisionUser.length > 0 ? state.value.supervisionUser : undefined,
+      state.value.supervisionPassword.length > 0 ? state.value.supervisionPassword : undefined
     ),
     'Supervision url successfully set',
     'Error at setting supervision url',

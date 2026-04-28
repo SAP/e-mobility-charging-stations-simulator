@@ -171,7 +171,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     let energyActiveImportRegister: number
     commandParams = commandParams as JsonObject
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${commandName} payload`
+      `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building '${commandName}' payload`
     )
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:

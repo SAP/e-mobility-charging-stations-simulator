@@ -4,7 +4,7 @@ import { type ChargingStation, resetConnectorStatus } from '../../../charging-st
 import { OCPPError } from '../../../exception/index.js'
 import {
   type ConnectorStatus,
-  ConnectorStatusEnum,
+  type ConnectorStatusEnum,
   ErrorType,
   type MeterValue,
   OCPP20AuthorizationStatusEnumType,
@@ -49,6 +49,7 @@ import {
   generateUUID,
   isNotEmptyArray,
   logger,
+  sleep,
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { buildConfigKey, getConfigurationKey } from '../../index.js'
@@ -57,7 +58,7 @@ import {
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
 } from '../auth/index.js'
-import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
+import { sendPostTransactionStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildMeterValue,
   createPayloadConfigs,
@@ -199,17 +200,17 @@ export class OCPP20ServiceUtils {
       return
     }
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    if (postTransactionDelay > 0) {
+      delete connectorStatus.transactionId
+      await sleep(secondsToMilliseconds(postTransactionDelay))
+      if (!chargingStation.started) {
+        return
+      }
+    }
     resetConnectorStatus(connectorStatus)
     connectorStatus.locked = false
-    const targetStatus =
-      chargingStation.isChargingStationAvailable() &&
-      chargingStation.isConnectorAvailable(connectorId)
-        ? ConnectorStatusEnum.Available
-        : ConnectorStatusEnum.Unavailable
-    await sendAndSetConnectorStatus(chargingStation, {
-      connectorId,
-      connectorStatus: targetStatus,
-    } as unknown as OCPP20StatusNotificationRequest)
+    await sendPostTransactionStatus(chargingStation, connectorId)
   }
 
   /**
@@ -1384,7 +1385,7 @@ export function buildTransactionEvent (
   }
 
   logger.debug(
-    `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building TransactionEvent for trigger ${triggerReason}`
+    `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building ${OCPP20RequestCommand.TRANSACTION_EVENT} for trigger '${triggerReason}'`
   )
 
   return transactionEventRequest

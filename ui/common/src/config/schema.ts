@@ -7,7 +7,10 @@ export const authenticationConfigSchema = z
     enabled: z.boolean(),
     password: z.string().optional(),
     type: z.enum(AuthenticationType),
-    username: z.string().optional(),
+    username: z
+      .string()
+      .regex(/^[^:]*$/, 'must not contain ":"')
+      .optional(),
   })
   .refine(
     data =>

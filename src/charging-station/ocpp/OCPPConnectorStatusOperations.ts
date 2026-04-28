@@ -49,6 +49,28 @@ export const sendAndSetConnectorStatus = async (
 }
 
 /**
+ * Sends Available or Unavailable connector status after a transaction ends.
+ * Re-evaluates station and connector availability to determine the target status.
+ * @param chargingStation - Target charging station
+ * @param connectorId - Connector ID to transition
+ */
+export const sendPostTransactionStatus = async (
+  chargingStation: ChargingStation,
+  connectorId: number
+): Promise<void> => {
+  const status =
+    chargingStation.isChargingStationAvailable() &&
+    chargingStation.isConnectorAvailable(connectorId)
+      ? ConnectorStatusEnum.Available
+      : ConnectorStatusEnum.Unavailable
+  await sendAndSetConnectorStatus(chargingStation, {
+    connectorId,
+    connectorStatus: status,
+    status,
+  } as unknown as StatusNotificationRequest)
+}
+
+/**
  * Restores a connector status to Reserved or Available based on its current state.
  * @param chargingStation - Target charging station
  * @param connectorId - Connector ID to restore

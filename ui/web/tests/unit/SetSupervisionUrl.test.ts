@@ -63,7 +63,7 @@ describe('SetSupervisionUrl', () => {
     expect(wrapper.find('#supervision-password').exists()).toBe(true)
   })
 
-  it('should send empty credential strings when only url is set', async () => {
+  it('should preserve existing credentials when only url is set', async () => {
     const wrapper = mountComponent()
     await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('button').trigger('click')
@@ -71,8 +71,8 @@ describe('SetSupervisionUrl', () => {
     expect(mockClient.setSupervisionUrl).toHaveBeenCalledWith(
       TEST_HASH_ID,
       'wss://new-server.com:9000',
-      '',
-      ''
+      undefined,
+      undefined
     )
   })
 
@@ -91,7 +91,7 @@ describe('SetSupervisionUrl', () => {
     )
   })
 
-  it('should send empty password when only user is typed', async () => {
+  it('should preserve password when only user is typed', async () => {
     const wrapper = mountComponent()
     await wrapper.find('#supervision-url').setValue('wss://new-server.com:9000')
     await wrapper.find('#supervision-user').setValue('alice')
@@ -101,7 +101,7 @@ describe('SetSupervisionUrl', () => {
       TEST_HASH_ID,
       'wss://new-server.com:9000',
       'alice',
-      ''
+      undefined
     )
   })
 
