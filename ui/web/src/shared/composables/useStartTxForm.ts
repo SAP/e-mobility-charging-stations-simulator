@@ -2,7 +2,7 @@ import { convertToInt, type OCPPVersion } from 'ui-common'
 import { ref, type Ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { resetToggleButtonState, useUIClient } from '@/composables/Utils.js'
+import { useUIClient } from '@/composables/Utils.js'
 
 export interface StartTxFormState {
   authorizeIdTag: boolean
@@ -15,13 +15,15 @@ export interface StartTxFormState {
  * @param connectorId - The connector identifier string
  * @param evseId - Optional EVSE identifier
  * @param ocppVersion - Optional OCPP version string
+ * @param options - Optional callbacks (e.g. onCleanup for skin-specific reset)
  * @returns Form state and submit/reset functions
  */
 export function useStartTxForm (
   hashId: string,
   connectorId: string,
   evseId?: number,
-  ocppVersion?: OCPPVersion
+  ocppVersion?: OCPPVersion,
+  options?: { onCleanup?: () => void }
 ): {
     formState: Ref<StartTxFormState>
     resetForm: () => void
@@ -29,8 +31,6 @@ export function useStartTxForm (
   } {
   const $uiClient = useUIClient()
   const $toast = useToast()
-
-  const toggleButtonId = `${hashId}-${String(evseId ?? 0)}-${connectorId}-start-transaction`
 
   const formState = ref<StartTxFormState>({
     authorizeIdTag: true,
@@ -62,7 +62,7 @@ export function useStartTxForm (
       } catch (error) {
         $toast.error('Error at authorizing RFID tag')
         console.error('Error at authorizing RFID tag:', error)
-        resetToggleButtonState(toggleButtonId, true)
+        options?.onCleanup?.()
         throw error
       }
     }
@@ -81,7 +81,7 @@ export function useStartTxForm (
       console.error('Error at starting transaction:', error)
       throw error
     } finally {
-      resetToggleButtonState(toggleButtonId, true)
+      options?.onCleanup?.()
     }
   }
 

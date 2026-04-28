@@ -10,7 +10,6 @@ const mockToastError = vi.fn()
 const mockToastSuccess = vi.fn()
 
 vi.mock('@/composables/Utils.js', () => ({
-  resetToggleButtonState: vi.fn(),
   useUIClient: () => ({
     authorize: mockAuthorize,
     startTransaction: mockStartTransaction,
@@ -112,5 +111,45 @@ describe('useStartTxForm', () => {
     formState.value.idTag = 'TAG001'
     await expect(submitForm()).rejects.toThrow('tx failed')
     expect(mockToastError).toHaveBeenCalledWith('Error at starting transaction')
+  })
+
+  it('should call onCleanup on authorize failure', async () => {
+    mockAuthorize.mockRejectedValueOnce(new Error('auth failed'))
+    const onCleanup = vi.fn()
+    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
+      onCleanup,
+    })
+    formState.value.authorizeIdTag = true
+    formState.value.idTag = 'TAG001'
+    await expect(submitForm()).rejects.toThrow('auth failed')
+    expect(onCleanup).toHaveBeenCalledOnce()
+  })
+
+  it('should call onCleanup in finally block on successful transaction', async () => {
+    const onCleanup = vi.fn()
+    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
+      onCleanup,
+    })
+    formState.value.authorizeIdTag = false
+    await submitForm()
+    expect(onCleanup).toHaveBeenCalledOnce()
+  })
+
+  it('should call onCleanup in finally block on transaction failure', async () => {
+    mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
+    const onCleanup = vi.fn()
+    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
+      onCleanup,
+    })
+    formState.value.authorizeIdTag = false
+    await expect(submitForm()).rejects.toThrow('tx failed')
+    expect(onCleanup).toHaveBeenCalledOnce()
+  })
+
+  it('should work without onCleanup option', async () => {
+    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    formState.value.authorizeIdTag = false
+    const result = await submitForm()
+    expect(result).toBe(true)
   })
 })

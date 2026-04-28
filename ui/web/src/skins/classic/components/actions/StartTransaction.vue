@@ -43,6 +43,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
+import { resetToggleButtonState } from '@/composables/Utils.js'
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 import Button from '../buttons/Button.vue'
@@ -61,11 +62,20 @@ const evseId = computed(() =>
 )
 const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
 
+const toggleButtonId = computed(
+  () => `${props.hashId}-${String(evseId.value ?? 0)}-${props.connectorId}-start-transaction`
+)
+
 const { formState, submitForm } = useStartTxForm(
   props.hashId,
   props.connectorId,
   evseId.value,
-  ocppVersion.value
+  ocppVersion.value,
+  {
+    onCleanup: () => {
+      resetToggleButtonState(toggleButtonId.value, true)
+    },
+  }
 )
 
 const handleStartTransaction = async (): Promise<void> => {
