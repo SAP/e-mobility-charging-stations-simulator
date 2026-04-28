@@ -2,7 +2,7 @@
  * @file useTheme.test.ts
  * @description Tests for the useTheme shared composable.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { useTheme } from '@/shared/composables/useTheme.js'
 
@@ -16,6 +16,7 @@ describe('useTheme', () => {
   it('returns activeTheme ref', () => {
     const { activeTheme } = useTheme()
     expect(typeof activeTheme.value).toBe('string')
+    expect(activeTheme.value.length).toBeGreaterThan(0)
   })
 
   it('returns availableThemes with 3 entries', () => {
@@ -29,24 +30,28 @@ describe('useTheme', () => {
   it('returns setTheme function', () => {
     const { setTheme } = useTheme()
     expect(typeof setTheme).toBe('function')
+    expect(setTheme.length).toBe(1)
   })
 
   it('setTheme updates document data-theme attribute', () => {
     const { setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(document.documentElement.getAttribute('data-theme')).toBe('catppuccin-latte')
+    expect(document.documentElement.getAttribute('data-theme')).not.toBe('tokyo-night-storm')
   })
 
   it('setTheme persists to localStorage', () => {
     const { setTheme } = useTheme()
     setTheme('sap-horizon')
     expect(localStorage.getItem('ecs-ui-theme')).toBe('"sap-horizon"')
+    expect(localStorage.getItem('ecs-ui-theme')).not.toBeNull()
   })
 
   it('setTheme updates activeTheme ref', () => {
     const { activeTheme, setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(activeTheme.value).toBe('catppuccin-latte')
+    expect(activeTheme.value).not.toBe('tokyo-night-storm')
   })
 
   it('setTheme sets dark color-scheme for tokyo-night-storm', () => {
@@ -65,5 +70,32 @@ describe('useTheme', () => {
     const { setTheme } = useTheme()
     setTheme('sap-horizon')
     expect(document.documentElement.style.colorScheme).toBe('light')
+  })
+
+  it('setTheme ignores invalid theme name', () => {
+    const { activeTheme, setTheme } = useTheme()
+    const before = activeTheme.value
+    const setThemeUntyped = setTheme as (name: string) => void
+    setThemeUntyped('nonexistent')
+    expect(activeTheme.value).toBe(before)
+    expect(document.documentElement.getAttribute('data-theme')).not.toBe('nonexistent')
+  })
+
+  describe('SSR environment', () => {
+    const originalDocument = globalThis.document
+
+    afterEach(() => {
+      globalThis.document = originalDocument
+    })
+
+    it('applyTheme does not throw when document is undefined', () => {
+      // @ts-expect-error simulating SSR environment
+      globalThis.document = undefined
+      const { setTheme } = useTheme()
+      expect(() => { setTheme('catppuccin-latte') }).not.toThrow()
+      globalThis.document = originalDocument
+      const { activeTheme } = useTheme()
+      expect(activeTheme.value).toBe('catppuccin-latte')
+    })
   })
 })

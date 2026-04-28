@@ -59,6 +59,7 @@ describe('useAddStationsForm', () => {
   it('returns templates from injection', () => {
     const { templates } = useAddStationsForm()
     expect(templates.value).toEqual(['template1.json', 'template2.json'])
+    expect(templates.value.length).toBe(2)
   })
 
   it('resetForm restores default state', () => {
@@ -120,6 +121,7 @@ describe('useAddStationsForm', () => {
     mockTemplates.value = ['new-template.json']
     await nextTick()
     expect(formState.value.renderTemplates).not.toBe(before)
+    expect(typeof formState.value.renderTemplates).toBe('string')
   })
 
   it('submitForm resets form via onFinally callback', () => {
@@ -129,5 +131,36 @@ describe('useAddStationsForm', () => {
     submitForm()
     expect(formState.value.template).toBe('')
     expect(formState.value.numberOfStations).toBe(1)
+  })
+
+  it('submitForm invokes user-provided onFinally callback', () => {
+    const onFinally = vi.fn()
+    const { formState, submitForm } = useAddStationsForm({ onFinally })
+    formState.value.template = 'tpl.json'
+    formState.value.numberOfStations = 2
+    submitForm()
+    expect(onFinally).toHaveBeenCalledTimes(1)
+    expect(mockExecuteAction).toHaveBeenCalled()
+  })
+
+  it('submitForm calls executeAction with numberOfStations = 0', () => {
+    const { formState, submitForm } = useAddStationsForm()
+    formState.value.template = 'boundary.json'
+    formState.value.numberOfStations = 0
+    submitForm()
+    expect(mockAddChargingStations).toHaveBeenCalledWith('boundary.json', 0, expect.any(Object))
+    expect(mockExecuteAction).toHaveBeenCalled()
+  })
+
+  it('formState.renderTemplates updates reactively when templates ref changes', async () => {
+    const { formState } = useAddStationsForm()
+    const initial = formState.value.renderTemplates
+    mockTemplates.value = ['alpha.json', 'beta.json', 'gamma.json']
+    await nextTick()
+    const updated = formState.value.renderTemplates
+    expect(updated).not.toBe(initial)
+    mockTemplates.value = ['delta.json']
+    await nextTick()
+    expect(formState.value.renderTemplates).not.toBe(updated)
   })
 })

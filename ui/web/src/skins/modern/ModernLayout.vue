@@ -33,9 +33,9 @@
         :key="station.stationInfo.hashId"
         :charging-station="station"
         @need-refresh="getChargingStations"
-        @open-authorize="(data) => (showAuthorizeDialog = data)"
-        @open-set-url="(data) => (showSetUrlDialog = data)"
-        @open-start-tx="(data) => (showStartTxDialog = data)"
+        @open-authorize="data => (showAuthorizeDialog = data)"
+        @open-set-url="data => (showSetUrlDialog = data)"
+        @open-start-tx="data => (showStartTxDialog = data)"
       />
     </section>
     <ConfirmDialog

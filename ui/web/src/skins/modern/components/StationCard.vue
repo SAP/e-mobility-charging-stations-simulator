@@ -112,7 +112,7 @@
           :hash-id="chargingStation.stationInfo.hashId"
           :ocpp-version="chargingStation.stationInfo.ocppVersion"
           @need-refresh="$emit('need-refresh')"
-          @open-start-tx="(data) => $emit('open-start-tx', data)"
+          @open-start-tx="data => $emit('open-start-tx', data)"
         />
       </div>
     </div>

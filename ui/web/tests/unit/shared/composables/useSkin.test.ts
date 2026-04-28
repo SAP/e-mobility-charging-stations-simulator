@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
+import { DEFAULT_SKIN, skins } from '@/shared/skins/registry.js'
 
 vi.mock('@/shared/skins/registry.js', () => ({
   DEFAULT_SKIN: 'classic',
@@ -38,11 +38,13 @@ describe('useSkin', () => {
   it('returns activeSkinId defaulting to DEFAULT_SKIN', () => {
     const { activeSkinId } = useSkin()
     expect(activeSkinId.value).toBe(DEFAULT_SKIN)
+    expect(typeof activeSkinId.value).toBe('string')
   })
 
   it('returns skins array with 2 entries', () => {
-    const { skins } = useSkin()
-    expect(skins.length).toBe(2)
+    const { skins: skinsList } = useSkin()
+    expect(skinsList.length).toBe(2)
+    expect(skinsList.map(s => s.id)).toEqual(['classic', 'modern'])
   })
 
   it('returns switchSkin function', () => {
@@ -50,16 +52,63 @@ describe('useSkin', () => {
     expect(typeof switchSkin).toBe('function')
   })
 
+  it('switchSkin does not update activeSkinId when loadStyles rejects', async () => {
+    const modernSkin = skins.find(s => s.id === 'modern')
+    expect(modernSkin).toBeDefined()
+    if (modernSkin == null) return
+    vi.mocked(modernSkin.loadStyles).mockRejectedValueOnce(new Error('CSS not found'))
+    const { activeSkinId, switchSkin } = useSkin()
+    await expect(switchSkin('modern')).rejects.toThrow('CSS not found')
+    expect(activeSkinId.value).toBe('classic')
+    expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
+  })
+
+  it('switchSkin guards against concurrent calls', async () => {
+    const { activeSkinId, switchSkin } = useSkin()
+    const modernSkin = skins.find(s => s.id === 'modern')
+    expect(modernSkin).toBeDefined()
+    if (modernSkin == null) return
+    vi.mocked(modernSkin.loadStyles).mockClear()
+    let resolveLoad!: () => void
+    vi.mocked(modernSkin.loadStyles).mockImplementationOnce(
+      () =>
+        new Promise<void>(resolve => {
+          resolveLoad = resolve
+        })
+    )
+    const first = switchSkin('modern')
+    const second = switchSkin('modern')
+    expect(activeSkinId.value).toBe('classic')
+    resolveLoad()
+    await first
+    await second
+    expect(activeSkinId.value).toBe('modern')
+    expect(modernSkin.loadStyles).toHaveBeenCalledTimes(1)
+  })
+
+  it('switchSkin skips loadStyles when skin is already active', async () => {
+    const classicSkin = skins.find(s => s.id === 'classic')
+    expect(classicSkin).toBeDefined()
+    if (classicSkin == null) return
+    vi.mocked(classicSkin.loadStyles).mockClear()
+    const { activeSkinId, switchSkin } = useSkin()
+    await switchSkin('classic')
+    expect(classicSkin.loadStyles).not.toHaveBeenCalled()
+    expect(activeSkinId.value).toBe('classic')
+  })
+
   it('switchSkin updates activeSkinId', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     await switchSkin('modern')
     expect(activeSkinId.value).toBe('modern')
+    expect(activeSkinId.value).not.toBe('classic')
   })
 
   it('switchSkin persists to localStorage', async () => {
     const { switchSkin } = useSkin()
     await switchSkin('modern')
     expect(localStorage.getItem('ecs-ui-skin')).toBe('"modern"')
+    expect(localStorage.getItem('ecs-ui-skin')).not.toBeNull()
   })
 
   it('switchSkin ignores invalid skin id', async () => {
@@ -67,6 +116,7 @@ describe('useSkin', () => {
     const before = activeSkinId.value
     await switchSkin('nonexistent')
     expect(activeSkinId.value).toBe(before)
+    expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
   it('switchSkin ignores current skin id', async () => {
@@ -74,5 +124,6 @@ describe('useSkin', () => {
     const before = activeSkinId.value
     await switchSkin(before)
     expect(activeSkinId.value).toBe(before)
+    expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 })

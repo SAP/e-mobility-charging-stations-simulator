@@ -39,6 +39,7 @@ describe('useSetUrlForm', () => {
   it('returns chargingStationId', () => {
     const { chargingStationId } = useSetUrlForm('hash1', 'CS-001')
     expect(chargingStationId).toBe('CS-001')
+    expect(typeof chargingStationId).toBe('string')
   })
 
   it('resetForm restores empty state', () => {
@@ -83,6 +84,28 @@ describe('useSetUrlForm', () => {
       'ws://server:8080',
       'admin',
       'secret'
+    )
+  })
+
+  it('submitForm shows error when url is cleared after being set', () => {
+    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
+    formState.value.supervisionUrl = 'ws://server:8080'
+    formState.value.supervisionUrl = ''
+    submitForm()
+    expect(mockToastError).toHaveBeenCalledWith('Supervision url is required')
+    expect(mockSetSupervisionUrl).not.toHaveBeenCalled()
+  })
+
+  it('submitForm does not show toast error when url is valid', () => {
+    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
+    formState.value.supervisionUrl = 'ws://valid-server:9090'
+    submitForm()
+    expect(mockToastError).not.toHaveBeenCalled()
+    expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
+      'hash1',
+      'ws://valid-server:9090',
+      undefined,
+      undefined
     )
   })
 })

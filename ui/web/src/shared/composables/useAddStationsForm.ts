@@ -1,11 +1,7 @@
 import { convertToBoolean, randomUUID, type UUIDv4 } from 'ui-common'
 import { ref, type Ref, watch } from 'vue'
 
-import {
-  useExecuteAction,
-  useTemplates,
-  useUIClient,
-} from '@/composables/Utils.js'
+import { useExecuteAction, useTemplates, useUIClient } from '@/composables/Utils.js'
 
 export interface AddStationsFormState {
   autoStart: boolean
