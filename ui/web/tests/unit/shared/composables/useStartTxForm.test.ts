@@ -41,16 +41,16 @@ describe('useStartTxForm', () => {
   it('should initialize with default state', () => {
     const { formState } = useStartTxForm('hash1', '1')
     expect(formState.value.idTag).toBe('')
-    expect(formState.value.authorizeIdTag).toBe(false)
+    expect(formState.value.authorizeIdTag).toBe(true)
   })
 
   it('should reset form to defaults', () => {
     const { formState, resetForm } = useStartTxForm('hash1', '1')
     formState.value.idTag = 'TAG001'
-    formState.value.authorizeIdTag = true
+    formState.value.authorizeIdTag = false
     resetForm()
     expect(formState.value.idTag).toBe('')
-    expect(formState.value.authorizeIdTag).toBe(false)
+    expect(formState.value.authorizeIdTag).toBe(true)
   })
 
   it('should call startTransaction with correct params on submit', async () => {
@@ -67,7 +67,8 @@ describe('useStartTxForm', () => {
   })
 
   it('should pass undefined idTag when empty on submit', async () => {
-    const { submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    formState.value.authorizeIdTag = false
     await submitForm()
     expect(mockStartTransaction).toHaveBeenCalledWith('hash1', {
       connectorId: 1,

@@ -102,13 +102,11 @@
 import './classic.css'
 
 import {
-  type ChargingStationData,
   randomUUID,
-  type SimulatorState,
   type UIServerConfigurationSection,
   type UUIDv4,
 } from 'ui-common'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -121,10 +119,9 @@ import {
   useChargingStations,
   useConfiguration,
   useExecuteAction,
-  useFetchData,
-  useTemplates,
   useUIClient,
 } from '@/composables'
+import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
@@ -133,9 +130,12 @@ import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/Container.vue'
 
-const simulatorState = ref<SimulatorState | undefined>(undefined)
-
-const simulatorStarted = computed((): boolean | undefined => simulatorState.value?.started)
+const {
+  getSimulatorState,
+  registerWSEventListeners,
+  simulatorStarted,
+  simulatorState,
+} = useLayoutData()
 
 const simulatorLabel = (action: string): string =>
   `${action} Simulator${
@@ -162,7 +162,6 @@ const clearToggleButtons = (): void => {
 }
 
 const $configuration = useConfiguration()
-const $templates = useTemplates()
 const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
@@ -180,61 +179,9 @@ watch($route, to => {
   }
 })
 
-const clearTemplates = (): void => {
-  $templates.value = []
-}
-
-const clearChargingStations = (): void => {
-  $chargingStations.value = []
-}
-
 const $uiClient = useUIClient()
 
 const executeAction = useExecuteAction()
-
-const { fetch: getSimulatorState } = useFetchData(
-  () => $uiClient.simulatorState(),
-  response => {
-    simulatorState.value = response.state as unknown as SimulatorState
-  },
-  'Error at fetching simulator state'
-)
-
-const { fetch: getTemplates } = useFetchData(
-  () => $uiClient.listTemplates(),
-  response => {
-    $templates.value = response.templates as string[]
-  },
-  'Error at fetching charging station templates',
-  clearTemplates
-)
-
-const { fetch: getChargingStations } = useFetchData(
-  () => $uiClient.listChargingStations(),
-  response => {
-    $chargingStations.value = response.chargingStations as ChargingStationData[]
-  },
-  'Error at fetching charging stations',
-  clearChargingStations
-)
-
-const getData = (): void => {
-  getSimulatorState()
-  getTemplates()
-  getChargingStations()
-}
-
-const registerWSEventListeners = () => {
-  $uiClient.registerWSEventListener('open', getData)
-  $uiClient.registerWSEventListener('error', clearChargingStations)
-  $uiClient.registerWSEventListener('close', clearChargingStations)
-}
-
-const unregisterWSEventListeners = () => {
-  $uiClient.unregisterWSEventListener('open', getData)
-  $uiClient.unregisterWSEventListener('error', clearChargingStations)
-  $uiClient.unregisterWSEventListener('close', clearChargingStations)
-}
 
 const handleUIServerChange = (): void => {
   const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
@@ -271,20 +218,6 @@ const handleUIServerChange = (): void => {
   )
 }
 
-let unsubscribeRefresh: (() => void) | undefined
-
-onMounted(() => {
-  registerWSEventListeners()
-  unsubscribeRefresh = $uiClient.onRefresh(() => {
-    getChargingStations()
-  })
-})
-
-onUnmounted(() => {
-  unregisterWSEventListeners()
-  unsubscribeRefresh?.()
-})
-
 const uiServerConfigurations: {
   configuration: UIServerConfigurationSection
   index: number
@@ -308,7 +241,7 @@ const stopSimulator = (): void => {
     $uiClient.stopSimulator(),
     'Simulator successfully stopped',
     'Error at stopping simulator',
-    { onFinally: getSimulatorState, onSuccess: clearChargingStations }
+    { onFinally: getSimulatorState, onSuccess: () => { $chargingStations.value = [] } }
   )
 }
 </script>

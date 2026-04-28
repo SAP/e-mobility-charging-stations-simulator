@@ -13,6 +13,8 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 
+import SkinLoadError from '@/shared/components/SkinLoadError.vue'
+import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { skins } from '@/shared/skins/registry.js'
 
@@ -20,7 +22,11 @@ const { activeSkinId } = useSkin()
 
 const currentSkinLayout = computed(() => {
   const skin = skins.find(s => s.id === activeSkinId.value) ?? skins[0]
-  return defineAsyncComponent(skin.loadLayout)
+  return defineAsyncComponent({
+    errorComponent: SkinLoadError,
+    loadingComponent: SkinLoading,
+    loader: skin.loadLayout,
+  })
 })
 </script>
 

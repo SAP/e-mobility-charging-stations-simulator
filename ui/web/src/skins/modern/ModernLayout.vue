@@ -7,7 +7,7 @@
       :simulator-state="simulatorState"
       :ui-server-configurations="uiServerConfigurations"
       @add="showAddDialog = true"
-      @refresh="getData"
+      @refresh="refreshData"
       @switch-server="handleUIServerChange"
       @toggle-simulator="toggleSimulator"
     />
@@ -77,12 +77,10 @@
 
 <script setup lang="ts">
 import {
-  type ChargingStationData,
   type OCPPVersion,
-  type SimulatorState,
   type UIServerConfigurationSection,
 } from 'ui-common'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import {
@@ -91,10 +89,9 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
-  useFetchData,
-  useTemplates,
   useUIClient,
 } from '@/composables'
+import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 
 import './modern.css'
 import ConfirmDialog from './components/ConfirmDialog.vue'
@@ -106,12 +103,18 @@ import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 
 const $configuration = useConfiguration()
-const $templates = useTemplates()
 const $chargingStations = useChargingStations()
 const $uiClient = useUIClient()
 const $toast = useToast()
 
-const simulatorState = ref<SimulatorState | undefined>(undefined)
+const {
+  getData,
+  getChargingStations,
+  getSimulatorState,
+  registerWSEventListeners,
+  simulatorState,
+} = useLayoutData()
+
 const simulatorPending = ref(false)
 const confirmingStopSim = ref(false)
 const refreshing = ref(false)
@@ -145,63 +148,12 @@ const uiServerConfigurations = computed(() =>
   }))
 )
 
-const clearChargingStations = (): void => {
-  $chargingStations.value = []
-}
-
-const clearTemplates = (): void => {
-  $templates.value = []
-}
-
-const { fetch: getSimulatorState } = useFetchData(
-  () => $uiClient.simulatorState(),
-  response => {
-    simulatorState.value = response.state as unknown as SimulatorState
-  },
-  'Error fetching simulator state'
-)
-
-const { fetch: getTemplates } = useFetchData(
-  () => $uiClient.listTemplates(),
-  response => {
-    $templates.value = response.templates as string[]
-  },
-  'Error fetching templates',
-  clearTemplates
-)
-
-const { fetch: getChargingStations } = useFetchData(
-  () => $uiClient.listChargingStations(),
-  response => {
-    $chargingStations.value = response.chargingStations as ChargingStationData[]
-  },
-  'Error fetching charging stations',
-  clearChargingStations
-)
-
-const getData = (): void => {
+const refreshData = (): void => {
   refreshing.value = true
-  getSimulatorState()
-  getTemplates()
-  getChargingStations()
-  // Crude debounce: drop the spinner shortly after the calls fire — each
-  // useFetchData flips its own internal `fetching` ref, but the bar only
-  // needs a brief signal that something happened.
+  getData()
   setTimeout(() => {
     refreshing.value = false
   }, 600)
-}
-
-const registerWSEventListeners = (): void => {
-  $uiClient.registerWSEventListener('open', getData)
-  $uiClient.registerWSEventListener('error', clearChargingStations)
-  $uiClient.registerWSEventListener('close', clearChargingStations)
-}
-
-const unregisterWSEventListeners = (): void => {
-  $uiClient.unregisterWSEventListener('open', getData)
-  $uiClient.unregisterWSEventListener('error', clearChargingStations)
-  $uiClient.unregisterWSEventListener('close', clearChargingStations)
 }
 
 const handleUIServerChange = (nextIndex: number): void => {
@@ -240,7 +192,7 @@ const stopSimulator = async (): Promise<void> => {
   simulatorPending.value = true
   try {
     await $uiClient.stopSimulator()
-    clearChargingStations()
+    $chargingStations.value = []
     confirmingStopSim.value = false
     $toast.success('Simulator stopped')
   } catch (error) {
@@ -267,18 +219,4 @@ const toggleSimulator = (): void => {
     })
   }
 }
-
-let unsubscribeRefresh: (() => void) | undefined
-
-onMounted(() => {
-  registerWSEventListeners()
-  unsubscribeRefresh = $uiClient.onRefresh(() => {
-    getChargingStations()
-  })
-})
-
-onUnmounted(() => {
-  unregisterWSEventListeners()
-  unsubscribeRefresh?.()
-})
 </script>

@@ -301,6 +301,9 @@ describe('Modern skin dialogs', () => {
 
     it('should skip authorize when checkbox is unchecked', async () => {
       const wrapper = mountDialog()
+      const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
+      await checkbox.setValue(false)
+      await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.authorize).not.toHaveBeenCalled()

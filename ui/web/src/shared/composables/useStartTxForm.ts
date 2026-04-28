@@ -33,14 +33,14 @@ export function useStartTxForm (
   const toggleButtonId = `${hashId}-${String(evseId ?? 0)}-${connectorId}-start-transaction`
 
   const formState = ref<StartTxFormState>({
-    authorizeIdTag: false,
+    authorizeIdTag: true,
     idTag: '',
   })
 
   /** Resets form state to initial defaults. */
   function resetForm (): void {
     formState.value = {
-      authorizeIdTag: false,
+      authorizeIdTag: true,
       idTag: '',
     }
   }

@@ -6,7 +6,7 @@ import type {
 
 import { configurationSchema } from 'ui-common'
 
-import { type App as AppType, type Component, createApp, ref } from 'vue'
+import { type App as AppType, type Component, createApp, shallowRef } from 'vue'
 
 import App from '@/App.vue'
 import {
@@ -58,9 +58,9 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]
   }
-  const configuration = ref(config)
-  const templates = ref<string[]>([])
-  const chargingStations = ref<ChargingStationData[]>([])
+  const configuration = shallowRef(config)
+  const templates = shallowRef<string[]>([])
+  const chargingStations = shallowRef<ChargingStationData[]>([])
   if (
     getFromLocalStorage<number | undefined>(UI_SERVER_CONFIGURATION_INDEX_KEY, undefined) == null ||
     getFromLocalStorage(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) >

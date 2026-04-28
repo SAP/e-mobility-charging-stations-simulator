@@ -67,8 +67,8 @@ describe('useSetUrlForm', () => {
     expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
       'hash1',
       'ws://server:8080',
-      undefined,
-      undefined
+      '',
+      ''
     )
     expect(mockExecuteAction).toHaveBeenCalled()
   })
@@ -104,8 +104,8 @@ describe('useSetUrlForm', () => {
     expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
       'hash1',
       'ws://valid-server:9090',
-      undefined,
-      undefined
+      '',
+      ''
     )
   })
 })

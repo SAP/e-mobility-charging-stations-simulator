@@ -36,9 +36,6 @@ async function loadSkinStyles (skinId: string): Promise<void> {
   loadedSkins.add(skinId)
 }
 
-// Eagerly load initial skin styles at module initialization
-loadSkinStyles(activeSkinId.value).catch(() => undefined)
-
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
  * @returns Skin state and switcher

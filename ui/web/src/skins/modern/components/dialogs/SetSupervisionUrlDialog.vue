@@ -124,13 +124,21 @@ formState.value.supervisionUrl = stripStationId(
 formState.value.supervisionUser = currentStation?.stationInfo.supervisionUser ?? ''
 formState.value.supervisionPassword = currentStation?.stationInfo.supervisionPassword ?? ''
 
+const pending = ref(false)
+
 const close = (): void => {
   emit('close')
 }
 
-const submit = (): void => {
-  submitForm()
-  if (formState.value.supervisionUrl.length > 0) {
+const submit = async (): Promise<void> => {
+  if (pending.value) return
+  if (formState.value.supervisionUrl.length === 0) {
+    submitForm()
+    return
+  }
+  pending.value = true
+  try {
+    submitForm()
     if (reconnect.value && currentStation?.started === true) {
       $uiClient
         .closeConnection(props.hashId)
@@ -140,6 +148,8 @@ const submit = (): void => {
         })
     }
     close()
+  } finally {
+    pending.value = false
   }
 }
 </script>

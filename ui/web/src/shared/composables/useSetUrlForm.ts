@@ -53,10 +53,8 @@ export function useSetUrlForm (
       $uiClient.setSupervisionUrl(
         hashId,
         formState.value.supervisionUrl,
-        formState.value.supervisionUser.length > 0 ? formState.value.supervisionUser : undefined,
-        formState.value.supervisionPassword.length > 0
-          ? formState.value.supervisionPassword
-          : undefined
+        formState.value.supervisionUser,
+        formState.value.supervisionPassword
       ),
       'Supervision url successfully set',
       'Error at setting supervision url'
