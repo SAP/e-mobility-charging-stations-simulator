@@ -1,6 +1,6 @@
 /* Tokyo Night Storm */
 
-:root {
+:root, [data-theme='tokyo-night-storm'] {
   /* Palette */
   --tn-bg-dark: #1f2335;
   --tn-bg-base: #24283b;
@@ -43,6 +43,25 @@
   /* Typography */
   --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   --font-size-sm: 0.875rem;
+
+  /* Surface hierarchy (for modern skin) */
+  --color-bg-raised: var(--tn-bg-hover);
+  --color-bg-sunken: var(--tn-bg-raised);
+
+  /* State colors */
+  --color-state-ok: #66bb6a;
+  --color-state-warn: #ffb300;
+  --color-state-err: #ef5350;
+  --color-state-idle: var(--tn-fg-muted);
+
+  /* Spacing extension */
+  --spacing-xl: 2rem;
+
+  /* Typography extension */
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
+
+  color-scheme: dark;
 }
 
 body {

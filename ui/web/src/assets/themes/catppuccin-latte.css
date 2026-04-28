@@ -1,6 +1,6 @@
 /* Catppuccin Latte */
 
-:root {
+:root, [data-theme='catppuccin-latte'] {
   /* Palette */
   --ctp-base: #eff1f5;
   --ctp-mantle: #e6e9ef;
@@ -42,6 +42,25 @@
   /* Typography */
   --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   --font-size-sm: 0.875rem;
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--ctp-surface0);
+  --color-bg-sunken: var(--ctp-mantle);
+
+  /* State colors (Material 700 for light mode readability) */
+  --color-state-ok: #2e7d32;
+  --color-state-warn: #ef6c00;
+  --color-state-err: #c62828;
+  --color-state-idle: var(--ctp-overlay1);
+
+  /* Spacing extension */
+  --spacing-xl: 2rem;
+
+  /* Typography extension */
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
+
+  color-scheme: light;
 }
 
 body {

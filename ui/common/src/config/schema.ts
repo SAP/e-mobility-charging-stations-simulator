@@ -38,6 +38,8 @@ export const uiServerConfigSchema = z.object({
 })
 
 export const configurationSchema = z.object({
+  skin: z.string().optional(),
+  theme: z.string().optional(),
   uiServer: z.union([uiServerConfigSchema, z.array(uiServerConfigSchema)]),
 })
 

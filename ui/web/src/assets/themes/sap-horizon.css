@@ -1,6 +1,6 @@
 /* SAP Horizon */
 
-:root {
+:root, [data-theme='sap-horizon'] {
   /* Palette */
   --sap-bg: #f5f6f7;
   --sap-bg-base: #fff;
@@ -47,6 +47,25 @@
   /* Typography */
   --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   --font-size-sm: 0.875rem;
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--sap-bg-shell);
+  --color-bg-sunken: var(--sap-hover);
+
+  /* State colors (SAP Horizon palette) */
+  --color-state-ok: #256f3a;
+  --color-state-warn: #e9730c;
+  --color-state-err: #bb0000;
+  --color-state-idle: var(--sap-label);
+
+  /* Spacing extension */
+  --spacing-xl: 2rem;
+
+  /* Typography extension */
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
+
+  color-scheme: light;
 }
 
 body {
