@@ -4,8 +4,8 @@
   </h1>
   <p>Template:</p>
   <select
-    :key="state.renderTemplates"
-    v-model="state.template"
+    :key="formState.renderTemplates"
+    v-model="formState.template"
   >
     <option
       disabled
@@ -14,8 +14,8 @@
       Please select a template
     </option>
     <option
-      v-for="template in $templates"
-      v-show="Array.isArray($templates) && $templates.length > 0"
+      v-for="template in templates"
+      v-show="Array.isArray(templates) && templates.length > 0"
       :key="template"
     >
       {{ template }}
@@ -24,7 +24,7 @@
   <p>Number of stations:</p>
   <input
     id="number-of-stations"
-    v-model="state.numberOfStations"
+    v-model="formState.numberOfStations"
     class="number-of-stations"
     min="1"
     name="number-of-stations"
@@ -37,7 +37,7 @@
       Base name:
       <input
         id="base-name"
-        v-model.trim="state.baseName"
+        v-model.trim="formState.baseName"
         class="base-name"
         name="base-name"
         placeholder="<template value>"
@@ -45,7 +45,7 @@
       >
       Fixed name:
       <input
-        v-model="state.fixedName"
+        v-model="formState.fixedName"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -55,7 +55,7 @@
       Supervision url:
       <input
         id="supervision-url"
-        v-model.trim="state.supervisionUrl"
+        v-model.trim="formState.supervisionUrl"
         class="input-url"
         name="supervision-url"
         placeholder="wss://"
@@ -66,7 +66,7 @@
       Supervision credentials:
       <input
         id="supervision-user"
-        v-model.trim="state.supervisionUser"
+        v-model.trim="formState.supervisionUser"
         autocomplete="off"
         class="supervision-user"
         name="supervision-user"
@@ -75,7 +75,7 @@
       >
       <input
         id="supervision-password"
-        v-model="state.supervisionPassword"
+        v-model="formState.supervisionPassword"
         autocomplete="off"
         class="supervision-password"
         name="supervision-password"
@@ -86,7 +86,7 @@
     <li>
       Auto start:
       <input
-        v-model="state.autoStart"
+        v-model="formState.autoStart"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -95,7 +95,7 @@
     <li>
       Persistent configuration:
       <input
-        v-model="state.persistentConfiguration"
+        v-model="formState.persistentConfiguration"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -104,7 +104,7 @@
     <li>
       OCPP strict compliance:
       <input
-        v-model="state.ocppStrictCompliance"
+        v-model="formState.ocppStrictCompliance"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -113,7 +113,7 @@
     <li>
       Performance statistics:
       <input
-        v-model="state.enableStatistics"
+        v-model="formState.enableStatistics"
         false-value="false"
         true-value="true"
         type="checkbox"
@@ -130,82 +130,19 @@
 </template>
 
 <script setup lang="ts">
-import { convertToBoolean, randomUUID, type UUIDv4 } from 'ui-common'
-import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { ROUTE_NAMES } from '@/composables'
+import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
+
 import Button from '../buttons/Button.vue'
-import {
-  resetToggleButtonState,
-  ROUTE_NAMES,
-  useExecuteAction,
-  useTemplates,
-  useUIClient,
-} from '@/composables'
 
-const state = ref<{
-  autoStart: boolean
-  baseName: string
-  enableStatistics: boolean
-  fixedName: boolean
-  numberOfStations: number
-  ocppStrictCompliance: boolean
-  persistentConfiguration: boolean
-  renderTemplates: UUIDv4
-  supervisionPassword: string
-  supervisionUrl: string
-  supervisionUser: string
-  template: string
-}>({
-  autoStart: false,
-  baseName: '',
-  enableStatistics: false,
-  fixedName: false,
-  numberOfStations: 1,
-  ocppStrictCompliance: true,
-  persistentConfiguration: true,
-  renderTemplates: randomUUID(),
-  supervisionPassword: '',
-  supervisionUrl: '',
-  supervisionUser: '',
-  template: '',
-})
-
-const $uiClient = useUIClient()
+const { formState, submitForm, templates } = useAddStationsForm()
 const $router = useRouter()
-const $templates = useTemplates()
-const executeAction = useExecuteAction()
-
-watch($templates, () => {
-  state.value.renderTemplates = randomUUID()
-})
 
 const addChargingStations = (): void => {
-  executeAction(
-    $uiClient.addChargingStations(state.value.template, state.value.numberOfStations, {
-      autoStart: convertToBoolean(state.value.autoStart),
-      baseName: state.value.baseName.length > 0 ? state.value.baseName : undefined,
-      enableStatistics: convertToBoolean(state.value.enableStatistics),
-      fixedName:
-        state.value.baseName.length > 0 ? convertToBoolean(state.value.fixedName) : undefined,
-      ocppStrictCompliance: convertToBoolean(state.value.ocppStrictCompliance),
-      persistentConfiguration: convertToBoolean(state.value.persistentConfiguration),
-      supervisionPassword:
-        state.value.supervisionPassword.length > 0 ? state.value.supervisionPassword : undefined,
-      supervisionUrls:
-        state.value.supervisionUrl.length > 0 ? state.value.supervisionUrl : undefined,
-      supervisionUser:
-        state.value.supervisionUser.length > 0 ? state.value.supervisionUser : undefined,
-    }),
-    'Charging stations successfully added',
-    'Error at adding charging stations',
-    {
-      onFinally: () => {
-        resetToggleButtonState('add-charging-stations', true)
-        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-      },
-    }
-  )
+  submitForm()
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
 }
 </script>
 

@@ -118,6 +118,20 @@
           />
         </svg>
       </button>
+      <select
+        :value="activeSkinId"
+        class="v2-bar__select"
+        aria-label="Skin"
+        @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
+      >
+        <option
+          v-for="skin in skinList"
+          :key="skin.id"
+          :value="skin.id"
+        >
+          {{ skin.label }}
+        </option>
+      </select>
       <RouterLink
         class="v2-bar__version-link"
         :to="{ name: V1_ROUTE_NAME }"
@@ -135,6 +149,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
+import { useSkin } from '@/shared/composables/useSkin.js'
 
 import type { V2ThemeMode } from '../composables/constants'
 
@@ -142,6 +157,8 @@ import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
 
 const V1_ROUTE_NAME = ROUTE_NAMES.CHARGING_STATIONS
+
+const { activeSkinId, skins: skinList, switchSkin } = useSkin()
 
 const props = defineProps<{
   refreshPending?: boolean

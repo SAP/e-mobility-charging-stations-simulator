@@ -13,7 +13,7 @@
     RFID tag:
     <input
       id="idtag"
-      v-model.trim="state.idTag"
+      v-model.trim="formState.idTag"
       class="idtag"
       name="idtag"
       placeholder="RFID tag"
@@ -23,7 +23,7 @@
   <p>
     Authorize RFID tag:
     <input
-      v-model="state.authorizeIdTag"
+      v-model="formState.authorizeIdTag"
       type="checkbox"
     >
   </p>
@@ -37,12 +37,13 @@
 </template>
 
 <script setup lang="ts">
-import { convertToInt, type OCPPVersion } from 'ui-common'
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useToast } from 'vue-toast-notification'
+import type { OCPPVersion } from 'ui-common'
 
-import { resetToggleButtonState, ROUTE_NAMES, useUIClient } from '@/composables'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+import { ROUTE_NAMES } from '@/composables'
+import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 import Button from '../buttons/Button.vue'
 
@@ -52,7 +53,6 @@ const props = defineProps<{
   hashId: string
 }>()
 
-const $toast = useToast()
 const $router = useRouter()
 const $route = useRoute()
 
@@ -61,51 +61,16 @@ const evseId = computed(() =>
 )
 const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
 
-const state = ref<{ authorizeIdTag: boolean; idTag: string }>({
-  authorizeIdTag: false,
-  idTag: '',
-})
-
-const $uiClient = useUIClient()
-
-const toggleButtonId = computed(
-  () => `${props.hashId}-${evseId.value ?? 0}-${props.connectorId}-start-transaction`
+const { formState, submitForm } = useStartTxForm(
+  props.hashId,
+  props.connectorId,
+  evseId.value,
+  ocppVersion.value
 )
 
 const handleStartTransaction = async (): Promise<void> => {
-  const idTag = state.value.idTag.length > 0 ? state.value.idTag : undefined
-
-  if (state.value.authorizeIdTag) {
-    if (idTag == null) {
-      $toast.error('Please provide an RFID tag to authorize')
-      return
-    }
-    try {
-      await $uiClient.authorize(props.hashId, idTag)
-    } catch (error) {
-      $toast.error('Error at authorizing RFID tag')
-      console.error('Error at authorizing RFID tag:', error)
-      resetToggleButtonState(toggleButtonId.value, true)
-      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-      return
-    }
-  }
-
-  try {
-    await $uiClient.startTransaction(props.hashId, {
-      connectorId: convertToInt(props.connectorId),
-      evseId: evseId.value,
-      idTag,
-      ocppVersion: ocppVersion.value,
-    })
-    $toast.success('Transaction successfully started')
-  } catch (error) {
-    $toast.error('Error at starting transaction')
-    console.error('Error at starting transaction:', error)
-  } finally {
-    resetToggleButtonState(toggleButtonId.value, true)
-    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-  }
+  await submitForm()
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
 }
 </script>
 

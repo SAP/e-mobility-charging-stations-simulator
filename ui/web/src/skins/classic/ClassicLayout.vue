@@ -48,6 +48,32 @@
       >
         Add Charging Stations
       </ToggleButton>
+      <select
+        :value="activeSkinId"
+        class="ui-server-selector"
+        @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
+      >
+        <option
+          v-for="skin in skins"
+          :key="skin.id"
+          :value="skin.id"
+        >
+          {{ skin.label }}
+        </option>
+      </select>
+      <select
+        :value="activeTheme"
+        class="ui-server-selector"
+        @change="(e) => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
+      >
+        <option
+          v-for="theme in availableThemes"
+          :key="theme"
+          :value="theme"
+        >
+          {{ theme }}
+        </option>
+      </select>
     </Container>
     <CSTable
       v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
@@ -100,6 +126,8 @@ import {
   useTemplates,
   useUIClient,
 } from '@/composables'
+import { useSkin } from '@/shared/composables/useSkin.js'
+import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import StateButton from './components/buttons/StateButton.vue'
 import ToggleButton from './components/buttons/ToggleButton.vue'
@@ -139,6 +167,9 @@ const $templates = useTemplates()
 const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
+
+const { activeSkinId, skins, switchSkin } = useSkin()
+const { activeTheme, availableThemes, setTheme } = useTheme()
 
 watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()

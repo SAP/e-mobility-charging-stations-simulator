@@ -6,7 +6,7 @@
   <p>Supervision url:</p>
   <input
     id="supervision-url"
-    v-model.trim="state.supervisionUrl"
+    v-model.trim="formState.supervisionUrl"
     class="input-url"
     name="supervision-url"
     placeholder="wss://"
@@ -15,7 +15,7 @@
   <p>Supervision credentials:</p>
   <input
     id="supervision-user"
-    v-model.trim="state.supervisionUser"
+    v-model.trim="formState.supervisionUser"
     autocomplete="off"
     class="supervision-user"
     name="supervision-user"
@@ -24,7 +24,7 @@
   >
   <input
     id="supervision-password"
-    v-model="state.supervisionPassword"
+    v-model="formState.supervisionPassword"
     autocomplete="off"
     class="supervision-password"
     name="supervision-password"
@@ -41,54 +41,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toast-notification'
+
+import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
+import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 
 import Button from '../buttons/Button.vue'
-import { resetToggleButtonState, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   chargingStationId: string
   hashId: string
 }>()
 
-const state = ref<{
-  supervisionPassword: string
-  supervisionUrl: string
-  supervisionUser: string
-}>({
-  supervisionPassword: '',
-  supervisionUrl: '',
-  supervisionUser: '',
-})
-
-const $uiClient = useUIClient()
+const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $router = useRouter()
-const $toast = useToast()
-const executeAction = useExecuteAction()
 
 const setSupervisionUrl = (): void => {
-  if (state.value.supervisionUrl.length === 0) {
-    $toast.error('Supervision url is required')
-    return
+  submitForm()
+  if (formState.value.supervisionUrl.length > 0) {
+    resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
+    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
   }
-  executeAction(
-    $uiClient.setSupervisionUrl(
-      props.hashId,
-      state.value.supervisionUrl,
-      state.value.supervisionUser.length > 0 ? state.value.supervisionUser : undefined,
-      state.value.supervisionPassword.length > 0 ? state.value.supervisionPassword : undefined
-    ),
-    'Supervision url successfully set',
-    'Error at setting supervision url',
-    {
-      onFinally: () => {
-        resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
-        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-      },
-    }
-  )
 }
 </script>
 
