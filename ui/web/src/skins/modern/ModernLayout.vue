@@ -76,6 +76,8 @@
 </template>
 
 <script setup lang="ts">
+// Modern skin uses component-level dialog state (v-if) instead of router navigation.
+// This avoids URL coupling for modal interactions and enables independent skin operation.
 import {
   type OCPPVersion,
   type UIServerConfigurationSection,

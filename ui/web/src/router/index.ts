@@ -9,6 +9,12 @@ declare module 'vue-router' {
   }
 }
 
+/**
+ * Routes serve the classic skin's action panel (sidebar forms via named `action` view).
+ * The modern skin uses modal dialogs instead of router navigation.
+ * The home route (`/`) renders null because layout components handle content directly.
+ * Routes with `meta.skinOnly` are guarded and redirect to `/` for other skins.
+ */
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
