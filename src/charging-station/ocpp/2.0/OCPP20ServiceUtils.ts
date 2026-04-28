@@ -1385,7 +1385,7 @@ export function buildTransactionEvent (
   }
 
   logger.debug(
-    `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building TransactionEvent for trigger ${triggerReason}`
+    `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building ${OCPP20RequestCommand.TRANSACTION_EVENT} for trigger '${triggerReason}'`
   )
 
   return transactionEventRequest
