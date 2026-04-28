@@ -6,11 +6,10 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 
-import ActionButton from '@/v2/components/ActionButton.vue'
-import ConfirmDialog from '@/v2/components/ConfirmDialog.vue'
-import Modal from '@/v2/components/Modal.vue'
-import StatePill from '@/v2/components/StatePill.vue'
-import V2NotFoundView from '@/v2/views/V2NotFoundView.vue'
+import ActionButton from '@/skins/modern/components/ActionButton.vue'
+import ConfirmDialog from '@/skins/modern/components/ConfirmDialog.vue'
+import Modal from '@/skins/modern/components/Modal.vue'
+import StatePill from '@/skins/modern/components/StatePill.vue'
 
 /**
  * Returns a required button as HTMLButtonElement — throws on no match.
@@ -344,15 +343,5 @@ describe('v2 ConfirmDialog', () => {
     expect(buttons[1].disabled).toBe(true)
     expect(buttons[1].classList.contains('v2-btn--primary')).toBe(true)
     wrapper.unmount()
-  })
-})
-
-describe('v2 V2NotFoundView', () => {
-  it('renders 404 message and back link', () => {
-    const wrapper = mount(V2NotFoundView, {
-      global: { stubs: { RouterLink: { template: '<a><slot /></a>' } } },
-    })
-    expect(wrapper.text()).toContain('Page not found')
-    expect(wrapper.text()).toContain('Back to charging stations')
   })
 })

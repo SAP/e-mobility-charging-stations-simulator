@@ -9,49 +9,94 @@ import {
   getWsStatusVariant,
 } from '@/shared/composables/useStationStatus.js'
 
+const validVariants = new Set(['err', 'idle', 'ok', 'warn'])
+
 describe('getConnectorStatusVariant', () => {
   it('returns ok for Available', () => {
-    expect(getConnectorStatusVariant('Available')).toBe('ok')
+    const result = getConnectorStatusVariant('Available')
+    expect(result).toBe('ok')
+    expect(result).not.toBe('err')
   })
 
   it('returns ok for Charging', () => {
-    expect(getConnectorStatusVariant('Charging')).toBe('ok')
+    const result = getConnectorStatusVariant('Charging')
+    expect(result).toBe('ok')
+    expect(result).not.toBe('err')
   })
 
   it('returns ok for Occupied', () => {
-    expect(getConnectorStatusVariant('Occupied')).toBe('ok')
+    const result = getConnectorStatusVariant('Occupied')
+    expect(result).toBe('ok')
+    expect(result).not.toBe('err')
   })
 
   it('returns warn for Preparing', () => {
-    expect(getConnectorStatusVariant('Preparing')).toBe('warn')
+    const result = getConnectorStatusVariant('Preparing')
+    expect(result).toBe('warn')
+    expect(result).not.toBe('ok')
   })
 
   it('returns warn for SuspendedEV', () => {
-    expect(getConnectorStatusVariant('SuspendedEV')).toBe('warn')
+    const result = getConnectorStatusVariant('SuspendedEV')
+    expect(result).toBe('warn')
+    expect(result).not.toBe('ok')
   })
 
   it('returns warn for SuspendedEVSE', () => {
-    expect(getConnectorStatusVariant('SuspendedEVSE')).toBe('warn')
+    const result = getConnectorStatusVariant('SuspendedEVSE')
+    expect(result).toBe('warn')
+    expect(result).not.toBe('ok')
   })
 
   it('returns warn for Finishing', () => {
-    expect(getConnectorStatusVariant('Finishing')).toBe('warn')
+    const result = getConnectorStatusVariant('Finishing')
+    expect(result).toBe('warn')
+    expect(result).not.toBe('ok')
   })
 
   it('returns err for Faulted', () => {
-    expect(getConnectorStatusVariant('Faulted')).toBe('err')
+    const result = getConnectorStatusVariant('Faulted')
+    expect(result).toBe('err')
+    expect(result).not.toBe('ok')
   })
 
   it('returns err for Unavailable', () => {
-    expect(getConnectorStatusVariant('Unavailable')).toBe('err')
+    const result = getConnectorStatusVariant('Unavailable')
+    expect(result).toBe('err')
+    expect(result).not.toBe('ok')
   })
 
   it('returns idle for undefined', () => {
-    expect(getConnectorStatusVariant(undefined)).toBe('idle')
+    const result = getConnectorStatusVariant(undefined)
+    expect(result).toBe('idle')
+    expect(result).not.toBe('ok')
   })
 
   it('returns idle for unknown status', () => {
-    expect(getConnectorStatusVariant('Unknown')).toBe('idle')
+    const result = getConnectorStatusVariant('Unknown')
+    expect(result).toBe('idle')
+    expect(result).not.toBe('ok')
+  })
+
+  it('returns only valid StatusVariant values for all known statuses', () => {
+    const statuses = [
+      'Available',
+      'Charging',
+      'Occupied',
+      'Preparing',
+      'SuspendedEV',
+      'SuspendedEVSE',
+      'Finishing',
+      'Faulted',
+      'Unavailable',
+      undefined,
+      'Unknown',
+    ]
+    for (const status of statuses) {
+      const result = getConnectorStatusVariant(status)
+      expect(validVariants.has(result)).toBe(true)
+    }
+    expect(statuses.length).toBe(11)
   })
 })
 
@@ -62,10 +107,14 @@ describe('getWsStatusVariant', () => {
   })
 
   it('returns ok when started and connected', () => {
-    expect(getWsStatusVariant(true, true)).toBe('ok')
+    const result = getWsStatusVariant(true, true)
+    expect(result).toBe('ok')
+    expect(validVariants.has(result)).toBe(true)
   })
 
   it('returns err when started but not connected', () => {
-    expect(getWsStatusVariant(true, false)).toBe('err')
+    const result = getWsStatusVariant(true, false)
+    expect(result).toBe('err')
+    expect(result).not.toBe('ok')
   })
 })

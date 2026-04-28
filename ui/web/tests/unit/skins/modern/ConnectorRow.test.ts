@@ -1,6 +1,6 @@
 /**
- * @file Tests for v2 ConnectorRow
- * @description Status/lock/ATG pills, primary/stop actions, router navigation.
+ * @file Tests for modern ConnectorRow
+ * @description Status/lock/ATG pills, primary/stop actions, event emission.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import {
@@ -12,26 +12,16 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { uiClientKey } from '@/composables'
-import ConnectorRow from '@/v2/components/ConnectorRow.vue'
+import ConnectorRow from '@/skins/modern/components/ConnectorRow.vue'
 
-import { toastMock } from '../../setup'
-import { TEST_HASH_ID, TEST_STATION_ID } from '../constants'
-import { createMockUIClient, type MockUIClient } from '../helpers'
-
-vi.mock('vue-router', async importOriginal => {
-  const actual: Record<string, unknown> = await importOriginal()
-  return { ...actual, useRouter: vi.fn() }
-})
-
-import { useRouter } from 'vue-router'
+import { toastMock } from '../../../setup'
+import { TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
+import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
-let mockRouter: { push: ReturnType<typeof vi.fn> }
 
 beforeEach(() => {
   mockClient = createMockUIClient()
-  mockRouter = { push: vi.fn().mockResolvedValue(undefined) }
-  vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
 })
 
 afterEach(() => {
@@ -89,8 +79,8 @@ describe('v2 ConnectorRow', () => {
   describe('status pill variants', () => {
     it.each<[string, string]>([
       ['Available', 'v2-pill--ok'],
-      ['Charging', 'v2-pill--warn'],
-      ['Occupied', 'v2-pill--warn'],
+      ['Charging', 'v2-pill--ok'],
+      ['Occupied', 'v2-pill--ok'],
       ['Preparing', 'v2-pill--warn'],
       ['Faulted', 'v2-pill--err'],
       ['Unavailable', 'v2-pill--err'],
@@ -178,24 +168,30 @@ describe('v2 ConnectorRow', () => {
   })
 
   describe('transaction controls', () => {
-    it('shows play icon when no transaction and navigates on click', async () => {
+    it('shows play icon when no transaction and emits open-start-tx on click', async () => {
       const wrapper = mountRow({ connectorId: 2, evseId: 3, ocppVersion: OCPPVersion.VERSION_16 })
       const startBtn = wrapper.find('.v2-icon-btn--primary')
       expect(startBtn.exists()).toBe(true)
       await startBtn.trigger('click')
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'v2-start-transaction',
-          params: { chargingStationId: TEST_STATION_ID, connectorId: '2', hashId: TEST_HASH_ID },
-          query: { evseId: '3', ocppVersion: OCPPVersion.VERSION_16 },
-        })
-      )
+      expect(wrapper.emitted('open-start-tx')).toEqual([
+        [
+          {
+            chargingStationId: TEST_STATION_ID,
+            connectorId: '2',
+            evseId: 3,
+            hashId: TEST_HASH_ID,
+            ocppVersion: OCPPVersion.VERSION_16,
+          },
+        ],
+      ])
     })
 
-    it('omits evseId/ocppVersion from query when not set', async () => {
+    it('omits evseId/ocppVersion from emitted data when not set', async () => {
       const wrapper = mountRow()
       await wrapper.find('.v2-icon-btn--primary').trigger('click')
-      expect(mockRouter.push).toHaveBeenCalledWith(expect.objectContaining({ query: {} }))
+      const emitted = wrapper.emitted('open-start-tx')?.[0]?.[0] as Record<string, unknown>
+      expect(emitted.evseId).toBeUndefined()
+      expect(emitted.ocppVersion).toBeUndefined()
     })
 
     it('shows stop icon when transaction running and stops it', async () => {

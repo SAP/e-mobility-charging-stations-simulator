@@ -6,7 +6,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      component: { template: '' },
+      component: { render: () => null },
       name: ROUTE_NAMES.CHARGING_STATIONS,
       path: '/',
     },
@@ -36,7 +36,8 @@ export const router = createRouter({
     {
       components: {
         action: {
-          template: '<p style="padding: 1rem; text-align: center;">404 — Page not found</p>',
+          template:
+            '<p style="padding: 1rem; text-align: center;">404 — Page not found</p>',
         },
       },
       name: ROUTE_NAMES.NOT_FOUND,

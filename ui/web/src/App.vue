@@ -14,17 +14,14 @@
 import { computed, defineAsyncComponent } from 'vue'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
+import { skins } from '@/shared/skins/registry.js'
 
 const { activeSkinId } = useSkin()
 
-const skinLayoutMap = {
-  classic: defineAsyncComponent(async () => import('@/skins/classic/ClassicLayout.vue')),
-  modern: defineAsyncComponent(async () => import('@/skins/modern/ModernLayout.vue')),
-} as const
-
-const currentSkinLayout = computed(
-  () => skinLayoutMap[activeSkinId.value as keyof typeof skinLayoutMap] ?? skinLayoutMap.classic
-)
+const currentSkinLayout = computed(() => {
+  const skin = skins.find(s => s.id === activeSkinId.value) ?? skins[0]
+  return defineAsyncComponent(skin.loadLayout)
+})
 </script>
 
 <style scoped>

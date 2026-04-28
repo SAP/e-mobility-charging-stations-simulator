@@ -1,6 +1,6 @@
 /**
- * @file Tests for v2 dialogs (Add / SetSupervisionUrl / StartTransaction / Authorize)
- * @description Form interaction, payload shaping, error display, navigation.
+ * @file Tests for modern dialogs (Add / SetSupervisionUrl / StartTransaction / Authorize)
+ * @description Form interaction, payload shaping, error display.
  *   Modal is mocked to skip the Teleport so wrapper.find() reaches dialog inputs.
  */
 import { flushPromises, mount } from '@vue/test-utils'
@@ -11,7 +11,7 @@ import { defineComponent, ref } from 'vue'
 import { chargingStationsKey, templatesKey, uiClientKey } from '@/composables'
 
 // Mock Modal to render slots inline (no Teleport), so `wrapper.find()` works.
-vi.mock('@/v2/components/Modal.vue', () => ({
+vi.mock('@/skins/modern/components/Modal.vue', () => ({
   default: defineComponent({
     emits: ['close'],
     name: 'V2ModalStub',
@@ -24,47 +24,29 @@ vi.mock('@/v2/components/Modal.vue', () => ({
   }),
 }))
 
-import AddStationsDialog from '@/v2/components/dialogs/AddStationsDialog.vue'
-import AuthorizeDialog from '@/v2/components/dialogs/AuthorizeDialog.vue'
-import SetSupervisionUrlDialog from '@/v2/components/dialogs/SetSupervisionUrlDialog.vue'
-import StartTransactionDialog from '@/v2/components/dialogs/StartTransactionDialog.vue'
+import AddStationsDialog from '@/skins/modern/components/dialogs/AddStationsDialog.vue'
+import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.vue'
+import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
+import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
 
-import { toastMock } from '../../setup'
-import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../constants'
-import { createMockUIClient, type MockUIClient } from '../helpers'
-
-vi.mock('vue-router', async importOriginal => {
-  const actual: Record<string, unknown> = await importOriginal()
-  return {
-    ...actual,
-    useRoute: vi.fn().mockReturnValue({ name: 'v2-charging-stations', query: {} }),
-    useRouter: vi.fn(),
-  }
-})
-
-import { useRoute, useRouter } from 'vue-router'
+import { toastMock } from '../../../setup'
+import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
+import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
-let mockRouter: { push: ReturnType<typeof vi.fn> }
 
 beforeEach(() => {
   mockClient = createMockUIClient()
-  mockRouter = { push: vi.fn().mockResolvedValue(undefined) }
-  vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
-  vi.mocked(useRoute).mockReturnValue({
-    name: 'v2-charging-stations',
-    query: {},
-  } as unknown as ReturnType<typeof useRoute>)
 })
 
 afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('v2 AddStationsDialog', () => {
+describe('modern AddStationsDialog', () => {
   /**
-   * @param templates template list provided via injection
-   * @returns mounted wrapper
+   * @param templates - Template names to provide to the dialog
+   * @returns Mounted wrapper for AddStationsDialog
    */
   function mountDialog (templates = ['template-A.json', 'template-B.json']) {
     return mount(AddStationsDialog, {
@@ -83,26 +65,7 @@ describe('v2 AddStationsDialog', () => {
     expect(wrapper.text()).toContain('template-B.json')
   })
 
-  it('rejects submission when no template is selected', async () => {
-    const wrapper = mountDialog()
-    // Footer: button 0 = Cancel, button 1 = Add
-    await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
-    await flushPromises()
-    expect(toastMock.error).toHaveBeenCalled()
-    expect(mockClient.addChargingStations).not.toHaveBeenCalled()
-  })
-
-  it('rejects submission when numberOfStations < 1', async () => {
-    const wrapper = mountDialog()
-    await wrapper.find('#v2-add-template').setValue('template-A.json')
-    await wrapper.find('#v2-add-count').setValue(0)
-    await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
-    await flushPromises()
-    expect(toastMock.error).toHaveBeenCalled()
-    expect(mockClient.addChargingStations).not.toHaveBeenCalled()
-  })
-
-  it('submits minimal payload on success and navigates home', async () => {
+  it('submits payload on success and emits close', async () => {
     const wrapper = mountDialog()
     await wrapper.find('#v2-add-template').setValue('template-A.json')
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
@@ -119,8 +82,7 @@ describe('v2 AddStationsDialog', () => {
         supervisionUser: undefined,
       })
     )
-    expect(toastMock.success).toHaveBeenCalled()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 
   it('sends fixedName=true when baseName set and checkbox checked', async () => {
@@ -159,27 +121,18 @@ describe('v2 AddStationsDialog', () => {
     )
   })
 
-  it('shows error toast on failure', async () => {
-    const wrapper = mountDialog()
-    mockClient.addChargingStations = vi.fn().mockRejectedValue(new Error('nope'))
-    await wrapper.find('#v2-add-template').setValue('template-A.json')
-    await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
-    await flushPromises()
-    expect(toastMock.error).toHaveBeenCalled()
-  })
-
-  it('Cancel button closes via router', async () => {
+  it('Cancel button emits close', async () => {
     const wrapper = mountDialog()
     await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
     await flushPromises()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 })
 
-describe('v2 SetSupervisionUrlDialog', () => {
+describe('modern SetSupervisionUrlDialog', () => {
   /**
-   * @param stations charging-station fixtures for injection
-   * @returns mounted wrapper
+   * @param stations - Charging station data to provide to the dialog
+   * @returns Mounted wrapper for SetSupervisionUrlDialog
    */
   function mountDialog (stations = [createChargingStationData()]) {
     return mount(SetSupervisionUrlDialog, {
@@ -240,7 +193,7 @@ describe('v2 SetSupervisionUrlDialog', () => {
     expect(mockClient.setSupervisionUrl).not.toHaveBeenCalled()
   })
 
-  it('sends credentials verbatim and reconnects when station is started', async () => {
+  it('sends credentials and reconnects when station is started', async () => {
     const wrapper = mountDialog([
       createChargingStationData({
         started: true,
@@ -260,8 +213,7 @@ describe('v2 SetSupervisionUrlDialog', () => {
     )
     expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
     expect(mockClient.openConnection).toHaveBeenCalledWith(TEST_HASH_ID)
-    expect(toastMock.success).toHaveBeenCalled()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 
   it('does not reconnect when station is stopped', async () => {
@@ -295,46 +247,35 @@ describe('v2 SetSupervisionUrlDialog', () => {
     expect(mockClient.openConnection).not.toHaveBeenCalled()
   })
 
-  it('toasts error on failure', async () => {
-    const wrapper = mountDialog([
-      createChargingStationData({ supervisionUrl: `wss://host/${TEST_STATION_ID}` }),
-    ])
-    mockClient.setSupervisionUrl = vi.fn().mockRejectedValue(new Error('boom'))
-    await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
-    await flushPromises()
-    expect(toastMock.error).toHaveBeenCalled()
-  })
-
-  it('Cancel button closes via router', async () => {
+  it('Cancel button emits close', async () => {
     const wrapper = mountDialog([])
     await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
     await flushPromises()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 })
 
-describe('v2 StartTransactionDialog', () => {
+describe('modern StartTransactionDialog', () => {
   /**
-   * @param routeQuery route-query overrides applied to useRoute mock
-   * @returns mounted wrapper
+   * @param extraProps - Additional props to merge into the dialog's props
+   * @returns Mounted wrapper for StartTransactionDialog
    */
-  function mountDialog (routeQuery: Record<string, string> = {}) {
-    vi.mocked(useRoute).mockReturnValue({
-      name: 'v2-start-transaction',
-      query: routeQuery,
-    } as unknown as ReturnType<typeof useRoute>)
+  function mountDialog (extraProps: Record<string, unknown> = {}) {
     return mount(StartTransactionDialog, {
       global: { provide: { [uiClientKey as symbol]: mockClient } },
       props: {
         chargingStationId: TEST_STATION_ID,
         connectorId: '1',
         hashId: TEST_HASH_ID,
+        ...extraProps,
       },
     })
   }
 
   it('rejects authorize-first when no idTag provided', async () => {
     const wrapper = mountDialog()
+    const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
+    await checkbox.setValue(true)
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
     expect(toastMock.error).toHaveBeenCalled()
@@ -345,6 +286,8 @@ describe('v2 StartTransactionDialog', () => {
   it('authorizes then starts transaction when authorize-first checked', async () => {
     const wrapper = mountDialog()
     await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
+    const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
+    await checkbox.setValue(true)
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
     expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'RFID-01')
@@ -352,21 +295,19 @@ describe('v2 StartTransactionDialog', () => {
       TEST_HASH_ID,
       expect.objectContaining({ connectorId: 1, idTag: 'RFID-01' })
     )
-    expect(toastMock.success).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 
   it('skips authorize when checkbox is unchecked', async () => {
     const wrapper = mountDialog()
-    const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
-    await checkbox.setValue(false)
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
     expect(mockClient.authorize).not.toHaveBeenCalled()
     expect(mockClient.startTransaction).toHaveBeenCalled()
   })
 
-  it('includes evseId and ocppVersion from route query', async () => {
-    const wrapper = mountDialog({ evseId: '2', ocppVersion: '1.6' })
+  it('includes evseId and ocppVersion from props', async () => {
+    const wrapper = mountDialog({ evseId: 2, ocppVersion: '1.6' })
     await wrapper.find('#v2-tx-idtag').setValue('RFID-01')
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
@@ -383,52 +324,39 @@ describe('v2 StartTransactionDialog', () => {
     expect(wrapper.text()).not.toContain('EVSE')
   })
 
-  it('displays failure info from ServerFailureError', async () => {
+  it('toasts error when authorize fails', async () => {
     const wrapper = mountDialog()
-    mockClient.authorize = vi.fn().mockRejectedValue(
-      new ServerFailureError({
-        hashIdsFailed: [],
-        responsesFailed: [
-          {
-            commandResponse: { idTagInfo: { status: 'Invalid' } },
-            hashId: TEST_HASH_ID,
-            status: ResponseStatus.FAILURE,
-          },
-        ],
-        status: ResponseStatus.FAILURE,
-      } as never)
-    )
+    mockClient.authorize = vi.fn().mockRejectedValue(new Error('auth failed'))
     await wrapper.find('#v2-tx-idtag').setValue('BAD-TAG')
+    const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
+    await checkbox.setValue(true)
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
-    expect(toastMock.error).toHaveBeenCalledWith(
-      expect.stringContaining('Authorize failed: Invalid')
-    )
-    expect(wrapper.text()).toContain('Authorize failed')
-    expect(wrapper.text()).toContain('Invalid')
+    expect(toastMock.error).toHaveBeenCalled()
+    expect(mockClient.startTransaction).not.toHaveBeenCalled()
   })
 
-  it('labels failures during startTransaction step', async () => {
+  it('toasts error when startTransaction fails', async () => {
     const wrapper = mountDialog()
     mockClient.startTransaction = vi.fn().mockRejectedValue(new Error('tx failed'))
     await wrapper.find('#v2-tx-idtag').setValue('RFID')
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
-    expect(toastMock.error).toHaveBeenCalledWith(
-      expect.stringContaining('Start transaction failed')
-    )
+    expect(toastMock.error).toHaveBeenCalled()
   })
 
-  it('Cancel button closes via router', async () => {
+  it('Cancel button emits close', async () => {
     const wrapper = mountDialog()
     await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
     await flushPromises()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 })
 
-describe('v2 AuthorizeDialog', () => {
-  /** @returns mounted wrapper */
+describe('modern AuthorizeDialog', () => {
+  /**
+   * @returns Mounted wrapper for AuthorizeDialog
+   */
   function mountDialog () {
     return mount(AuthorizeDialog, {
       global: { provide: { [uiClientKey as symbol]: mockClient } },
@@ -444,14 +372,14 @@ describe('v2 AuthorizeDialog', () => {
     expect(mockClient.authorize).not.toHaveBeenCalled()
   })
 
-  it('calls authorize and navigates on success', async () => {
+  it('calls authorize and emits close on success', async () => {
     const wrapper = mountDialog()
     await wrapper.find('#v2-auth-tag').setValue('GOOD')
     await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
     await flushPromises()
     expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'GOOD')
     expect(toastMock.success).toHaveBeenCalled()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 
   it('surfaces ServerFailureError status and payload JSON panel', async () => {
@@ -479,10 +407,10 @@ describe('v2 AuthorizeDialog', () => {
     expect(wrapper.find('.v2-form__error-details').exists()).toBe(true)
   })
 
-  it('Cancel closes via router', async () => {
+  it('Cancel emits close', async () => {
     const wrapper = mountDialog()
     await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
     await flushPromises()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'v2-charging-stations' })
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 })

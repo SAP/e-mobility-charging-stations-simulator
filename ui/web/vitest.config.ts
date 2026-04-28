@@ -25,7 +25,6 @@ export default mergeConfig(
           'src/skins/modern/ModernLayout.vue',
           'src/skins/modern/composables/**',
           'src/shared/tokens/**',
-          'src/v2/**',
         ],
         include: ['src/**/*.{ts,vue}'],
         provider: 'v8',

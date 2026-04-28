@@ -1,13 +1,13 @@
 /**
- * @file Tests for v2 SimulatorBar
- * @description Server switcher, simulator state display, theme toggle, action buttons.
+ * @file Tests for modern SimulatorBar
+ * @description Server switcher, simulator state display, action buttons.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
-import SimulatorBar from '@/v2/components/SimulatorBar.vue'
+import SimulatorBar from '@/skins/modern/components/SimulatorBar.vue'
 
-import { createUIServerConfig } from '../constants'
+import { createUIServerConfig } from '../../constants'
 
 const baseServer = createUIServerConfig({ name: 'Alpha' })
 const altServer = createUIServerConfig({ host: 'beta', name: 'Beta' })
@@ -21,14 +21,13 @@ function mountBar (props: Record<string, unknown> = {}) {
     global: { stubs: { RouterLink: true } },
     props: {
       selectedServerIndex: 0,
-      themeMode: 'auto',
       uiServerConfigurations: [{ configuration: baseServer, index: 0 }],
       ...props,
     },
   })
 }
 
-describe('v2 SimulatorBar', () => {
+describe('modern SimulatorBar', () => {
   it('shows Disconnected pill when simulatorState is undefined', () => {
     const wrapper = mountBar()
     expect(wrapper.text()).toContain('Disconnected')
@@ -48,7 +47,7 @@ describe('v2 SimulatorBar', () => {
 
   it('hides the server select when only one server configured', () => {
     const wrapper = mountBar()
-    expect(wrapper.find('.v2-bar__select').exists()).toBe(false)
+    expect(wrapper.find('.v2-bar__select[aria-label="UI server"]').exists()).toBe(false)
   })
 
   it('shows the server select when multiple servers configured', () => {
@@ -58,8 +57,7 @@ describe('v2 SimulatorBar', () => {
         { configuration: altServer, index: 1 },
       ],
     })
-    expect(wrapper.find('.v2-bar__select').exists()).toBe(true)
-    // Select uses name fallback to host
+    expect(wrapper.find('.v2-bar__select[aria-label="UI server"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Alpha')
     expect(wrapper.text()).toContain('Beta')
   })
@@ -71,7 +69,7 @@ describe('v2 SimulatorBar', () => {
         { configuration: altServer, index: 1 },
       ],
     })
-    const select = wrapper.find('.v2-bar__select')
+    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]')
     await select.setValue(1)
     expect(wrapper.emitted('switch-server')).toEqual([[1]])
   })
@@ -104,18 +102,6 @@ describe('v2 SimulatorBar', () => {
     expect(wrapper.text()).toContain('Stop Simulator')
   })
 
-  it('emits cycle-theme when the theme icon button is clicked', async () => {
-    const wrapper = mountBar()
-    const themeBtn = wrapper.find('.v2-icon-btn')
-    await themeBtn.trigger('click')
-    expect(wrapper.emitted('cycle-theme')).toHaveLength(1)
-  })
-
-  it.each([['dark'], ['light'], ['auto']] as const)('renders theme %s icon', themeMode => {
-    const wrapper = mountBar({ themeMode })
-    expect(wrapper.find('.v2-icon-btn').attributes('title')).toContain(themeMode)
-  })
-
   it('updates internal select value when selectedServerIndex prop changes', async () => {
     const wrapper = mountBar({
       uiServerConfigurations: [
@@ -124,7 +110,7 @@ describe('v2 SimulatorBar', () => {
       ],
     })
     await wrapper.setProps({ selectedServerIndex: 1 })
-    const select = wrapper.find('.v2-bar__select').element as HTMLSelectElement
+    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]').element as HTMLSelectElement
     expect(Number(select.value)).toBe(1)
   })
 

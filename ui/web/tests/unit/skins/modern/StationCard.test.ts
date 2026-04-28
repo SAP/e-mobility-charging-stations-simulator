@@ -1,37 +1,27 @@
 /**
- * @file Tests for v2 StationCard
- * @description Header pills, connector enumeration, start/connect/delete, supervision/authorize nav.
+ * @file Tests for modern StationCard
+ * @description Header pills, connector enumeration, start/connect/delete, supervision/authorize events.
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { type ChargingStationData, OCPP16AvailabilityType } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { uiClientKey } from '@/composables'
-import StationCard from '@/v2/components/StationCard.vue'
+import StationCard from '@/skins/modern/components/StationCard.vue'
 
-import { toastMock } from '../../setup'
+import { toastMock } from '../../../setup'
 import {
   createChargingStationData,
   createConnectorStatus,
   TEST_HASH_ID,
   TEST_STATION_ID,
-} from '../constants'
-import { createMockUIClient, type MockUIClient } from '../helpers'
-
-vi.mock('vue-router', async importOriginal => {
-  const actual: Record<string, unknown> = await importOriginal()
-  return { ...actual, useRouter: vi.fn() }
-})
-
-import { useRouter } from 'vue-router'
+} from '../../constants'
+import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
-let mockRouter: { push: ReturnType<typeof vi.fn> }
 
 beforeEach(() => {
   mockClient = createMockUIClient()
-  mockRouter = { push: vi.fn().mockResolvedValue(undefined) }
-  vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
 })
 
 afterEach(() => {
@@ -122,21 +112,18 @@ describe('v2 StationCard', () => {
       expect(wrapper.find('.v2-card__url').text()).toBe('not-a-url')
     })
 
-    it('navigates to supervision dialog on URL row click', async () => {
+    it('emits open-set-url on URL row click', async () => {
       const wrapper = mountCard()
       await wrapper.find('.v2-card__url-row').trigger('click')
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'v2-set-supervision-url',
-          params: { chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID },
-        })
-      )
+      expect(wrapper.emitted('open-set-url')).toEqual([
+        [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
+      ])
     })
 
-    it('navigates on Enter key press of URL row', async () => {
+    it('emits open-set-url on Enter key press of URL row', async () => {
       const wrapper = mountCard()
       await wrapper.find('.v2-card__url-row').trigger('keydown.enter')
-      expect(mockRouter.push).toHaveBeenCalled()
+      expect(wrapper.emitted('open-set-url')).toBeTruthy()
     })
   })
 
@@ -234,17 +221,14 @@ describe('v2 StationCard', () => {
       expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
     })
 
-    it('navigates to authorize dialog from footer', async () => {
+    it('emits open-authorize from footer', async () => {
       const wrapper = mountCard()
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const btn = buttons.find(b => b.text() === 'Authorize')
       await btn?.trigger('click')
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'v2-authorize',
-          params: { chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID },
-        })
-      )
+      expect(wrapper.emitted('open-authorize')).toEqual([
+        [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
+      ])
     })
 
     it('opens delete confirm dialog and cancels without API call', async () => {
