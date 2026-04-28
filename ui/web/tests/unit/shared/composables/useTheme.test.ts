@@ -54,22 +54,14 @@ describe('useTheme', () => {
     expect(activeTheme.value).not.toBe('tokyo-night-storm')
   })
 
-  it('should setTheme sets dark color-scheme for tokyo-night-storm', () => {
+  it('should setTheme does not set colorScheme inline style (CSS handles it)', () => {
     const { setTheme } = useTheme()
     setTheme('tokyo-night-storm')
-    expect(document.documentElement.style.colorScheme).toBe('dark')
-  })
-
-  it('should setTheme sets light color-scheme for catppuccin-latte', () => {
-    const { setTheme } = useTheme()
+    expect(document.documentElement.style.colorScheme).toBe('')
     setTheme('catppuccin-latte')
-    expect(document.documentElement.style.colorScheme).toBe('light')
-  })
-
-  it('should setTheme sets light color-scheme for sap-horizon', () => {
-    const { setTheme } = useTheme()
+    expect(document.documentElement.style.colorScheme).toBe('')
     setTheme('sap-horizon')
-    expect(document.documentElement.style.colorScheme).toBe('light')
+    expect(document.documentElement.style.colorScheme).toBe('')
   })
 
   it('should setTheme ignores invalid theme name', () => {

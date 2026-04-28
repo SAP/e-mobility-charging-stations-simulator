@@ -25,14 +25,21 @@ const activeTheme: Ref<ThemeName> = ref(
 )
 
 /**
- * Applies a theme by setting the data-theme attribute and color-scheme on the document root.
+ * Applies a theme by setting the data-theme attribute on the document root.
+ * Disables CSS transitions during the swap to prevent color flash (VueUse pattern).
+ * The color-scheme is handled by CSS [data-theme] declarations.
  * @param themeName - The theme name to apply
  */
 function applyTheme (themeName: ThemeName): void {
   if (typeof document === 'undefined') return
-  const isDark = themeName === 'tokyo-night-storm'
+  // Disable CSS transitions during theme swap to prevent color flash (VueUse pattern).
+  const style = document.createElement('style')
+  style.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }'
+  document.head.appendChild(style)
   document.documentElement.setAttribute('data-theme', themeName)
-  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+  // Force reflow so browsers apply the transition-disable before restoring transitions.
+  void document.documentElement.offsetHeight
+  document.head.removeChild(style)
 }
 
 // Apply initial theme at module initialization
