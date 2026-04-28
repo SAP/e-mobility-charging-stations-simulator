@@ -4,6 +4,8 @@ import type {
   UIServerConfigurationSection,
 } from 'ui-common'
 
+import { configurationSchema } from 'ui-common'
+
 import { type App as AppType, type Component, createApp, ref } from 'vue'
 
 import App from '@/App.vue'
@@ -93,7 +95,16 @@ const bootstrap = async (): Promise<void> => {
   }
   let config: ConfigurationData
   try {
-    config = (await response.json()) as ConfigurationData
+    const rawConfig: unknown = await response.json()
+    const parseResult = configurationSchema.safeParse(rawConfig)
+    if (!parseResult.success) {
+      const msgs = parseResult.error.issues
+        .map(i => `${i.path.join('.')}: ${i.message}`)
+        .join('\n')
+      document.body.innerHTML = `<pre style="padding:2rem;color:#ef5350;font-family:monospace">Configuration error in config.json:\n${msgs}</pre>`
+      return
+    }
+    config = parseResult.data
   } catch (error: unknown) {
     console.error('Error at deserializing JSON app configuration:', error)
     return

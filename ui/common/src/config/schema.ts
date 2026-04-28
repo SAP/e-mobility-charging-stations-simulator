@@ -38,8 +38,8 @@ export const uiServerConfigSchema = z.object({
 })
 
 export const configurationSchema = z.object({
-  skin: z.string().optional(),
-  theme: z.string().optional(),
+  skin: z.enum(['classic', 'modern']).optional(),
+  theme: z.enum(['tokyo-night-storm', 'catppuccin-latte', 'sap-horizon']).optional(),
   uiServer: z.union([uiServerConfigSchema, z.array(uiServerConfigSchema)]),
 })
 

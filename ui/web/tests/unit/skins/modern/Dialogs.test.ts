@@ -346,6 +346,30 @@ describe('Modern skin dialogs', () => {
       expect(toastMock.error).toHaveBeenCalled()
     })
 
+    it('should display error details when startTransaction rejects', async () => {
+      const wrapper = mountDialog()
+      mockClient.startTransaction = vi.fn().mockRejectedValue(
+        new ServerFailureError({
+          hashIdsFailed: [],
+          responsesFailed: [
+            {
+              commandResponse: { idTagInfo: { status: 'Invalid' } },
+              hashId: TEST_HASH_ID,
+              status: ResponseStatus.FAILURE,
+            },
+          ],
+          status: ResponseStatus.FAILURE,
+        } as never)
+      )
+      await wrapper.find('#v2-tx-idtag').setValue('BAD-TAG')
+      await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
+      await flushPromises()
+      expect(wrapper.find('.v2-form__error').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Invalid')
+      expect(wrapper.find('.v2-form__error-details').exists()).toBe(true)
+      expect(wrapper.emitted('close')).toBeFalsy()
+    })
+
     it('should emit close when cancel button is clicked', async () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')

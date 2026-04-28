@@ -63,7 +63,7 @@ export function useStartTxForm (
         $toast.error('Error at authorizing RFID tag')
         console.error('Error at authorizing RFID tag:', error)
         resetToggleButtonState(toggleButtonId, true)
-        return false
+        throw error
       }
     }
 
@@ -79,7 +79,7 @@ export function useStartTxForm (
     } catch (error) {
       $toast.error('Error at starting transaction')
       console.error('Error at starting transaction:', error)
-      return false
+      throw error
     } finally {
       resetToggleButtonState(toggleButtonId, true)
     }

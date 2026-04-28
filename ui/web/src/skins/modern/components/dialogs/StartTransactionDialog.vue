@@ -30,6 +30,22 @@
         >
         Authorize the RFID tag first
       </label>
+      <div
+        v-if="lastFailure != null"
+        class="v2-form__error"
+      >
+        <div class="v2-form__error-summary">
+          <strong>Status</strong>
+          <span>{{ lastFailure.summary }}</span>
+        </div>
+        <details
+          v-if="lastFailure.payload != null"
+          class="v2-form__error-details"
+        >
+          <summary>Response JSON</summary>
+          <pre class="v2-form__error-json">{{ formattedPayload }}</pre>
+        </details>
+      </div>
     </form>
     <template #footer>
       <ActionButton
@@ -52,10 +68,11 @@
 <script setup lang="ts">
 import type { OCPPVersion } from 'ui-common'
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
+import { type FailureInfo, getFailureInfo } from '../../composables/errors'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
@@ -70,6 +87,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const pending = ref(false)
+const lastFailure = ref<FailureInfo | null>(null)
 
 const { formState, submitForm } = useStartTxForm(
   props.hashId,
@@ -84,6 +102,14 @@ const targetLabel = computed(() =>
     : `Connector ${props.connectorId}`
 )
 
+const formattedPayload = computed(() =>
+  lastFailure.value?.payload != null ? JSON.stringify(lastFailure.value.payload, null, 2) : ''
+)
+
+watch(formState, () => {
+  lastFailure.value = null
+}, { deep: true })
+
 const close = (): void => {
   emit('close')
 }
@@ -91,8 +117,14 @@ const close = (): void => {
 const submit = async (): Promise<void> => {
   if (pending.value) return
   pending.value = true
-  const success = await submitForm()
-  pending.value = false
-  if (success) emit('close')
+  lastFailure.value = null
+  try {
+    const success = await submitForm()
+    if (success) emit('close')
+  } catch (error) {
+    lastFailure.value = getFailureInfo(error)
+  } finally {
+    pending.value = false
+  }
 }
 </script>
