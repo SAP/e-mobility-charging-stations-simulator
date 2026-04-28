@@ -110,7 +110,8 @@ describe('modern SimulatorBar', () => {
       ],
     })
     await wrapper.setProps({ selectedServerIndex: 1 })
-    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]').element as HTMLSelectElement
+    const select = wrapper.find('.v2-bar__select[aria-label="UI server"]')
+      .element as HTMLSelectElement
     expect(Number(select.value)).toBe(1)
   })
 
