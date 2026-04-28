@@ -25,6 +25,7 @@ export default defineConfig([
               'MILLI',
               'MILLIWATT',
               'Benoit',
+              'catppuccin',
               'chargingstations',
               'ctrlr',
               'csms',
