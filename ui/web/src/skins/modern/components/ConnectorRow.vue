@@ -162,6 +162,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
+import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
 
 import { V2_ROUTE_NAMES } from '../composables/constants'
 import ActionButton from './ActionButton.vue'
@@ -195,13 +196,7 @@ const identifier = computed(() =>
   props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
 )
 
-const statusVariant = computed<'err' | 'idle' | 'ok' | 'warn'>(() => {
-  const status = props.connector.status?.toLowerCase() ?? ''
-  if (status === 'available') return 'ok'
-  if (status === 'charging' || status === 'occupied' || status === 'preparing') return 'warn'
-  if (status === 'faulted' || status === 'unavailable') return 'err'
-  return 'idle'
-})
+const statusVariant = computed(() => getConnectorStatusVariant(props.connector.status))
 
 // The connector is effectively locked whenever it's explicitly locked
 // OR a transaction is active (physical lock engages during charging).

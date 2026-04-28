@@ -14,7 +14,7 @@
         >Supervision URL</label>
         <input
           id="v2-sup-url"
-          v-model.trim="form.supervisionUrl"
+          v-model.trim="formState.supervisionUrl"
           class="v2-form__input"
           type="url"
           placeholder="wss://..."
@@ -28,7 +28,7 @@
         >Username</label>
         <input
           id="v2-sup-user"
-          v-model.trim="form.supervisionUser"
+          v-model.trim="formState.supervisionUser"
           class="v2-form__input"
           type="text"
           placeholder="Username"
@@ -41,7 +41,7 @@
         >Password</label>
         <input
           id="v2-sup-pass"
-          v-model="form.supervisionPassword"
+          v-model="formState.supervisionPassword"
           class="v2-form__input"
           type="password"
           placeholder="Password"
@@ -52,7 +52,7 @@
       </div>
       <label class="v2-form__check">
         <input
-          v-model="form.reconnect"
+          v-model="reconnect"
           type="checkbox"
         >
         Reconnect after saving
@@ -71,7 +71,6 @@
       </ActionButton>
       <ActionButton
         variant="primary"
-        :pending="pending"
         @click="submit"
       >
         Save
@@ -81,11 +80,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toast-notification'
 
 import { useChargingStations, useUIClient } from '@/composables'
+import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 
 import { V2_ROUTE_NAMES } from '../../composables/constants'
 import ActionButton from '../ActionButton.vue'
@@ -96,12 +95,12 @@ const props = defineProps<{
   hashId: string
 }>()
 
+const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
 const $router = useRouter()
-const $toast = useToast()
 
-const pending = ref(false)
+const reconnect = ref(true)
 
 const currentStation = $chargingStations.value.find(
   station => station.stationInfo.hashId === props.hashId
@@ -118,15 +117,13 @@ const stripStationId = (url: string, stationId: string): string => {
   return url.endsWith(suffix) ? url.slice(0, -suffix.length) : url
 }
 
-const form = reactive({
-  reconnect: true,
-  supervisionPassword: currentStation?.stationInfo.supervisionPassword ?? '',
-  supervisionUrl: stripStationId(
-    currentStation?.supervisionUrl ?? '',
-    currentStation?.stationInfo.chargingStationId ?? ''
-  ),
-  supervisionUser: currentStation?.stationInfo.supervisionUser ?? '',
-})
+// Pre-fill from current station data
+formState.value.supervisionUrl = stripStationId(
+  currentStation?.supervisionUrl ?? '',
+  currentStation?.stationInfo.chargingStationId ?? ''
+)
+formState.value.supervisionUser = currentStation?.stationInfo.supervisionUser ?? ''
+formState.value.supervisionPassword = currentStation?.stationInfo.supervisionPassword ?? ''
 
 const close = (): void => {
   $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
@@ -134,31 +131,18 @@ const close = (): void => {
   })
 }
 
-const submit = async (): Promise<void> => {
-  if (pending.value) return
-  if (form.supervisionUrl.length === 0) {
-    $toast.error('Supervision URL is required')
-    return
-  }
-  pending.value = true
-  try {
-    await $uiClient.setSupervisionUrl(
-      props.hashId,
-      form.supervisionUrl,
-      form.supervisionUser,
-      form.supervisionPassword
-    )
-    if (form.reconnect && currentStation?.started === true) {
-      await $uiClient.closeConnection(props.hashId)
-      await $uiClient.openConnection(props.hashId)
+const submit = (): void => {
+  submitForm()
+  if (formState.value.supervisionUrl.length > 0) {
+    if (reconnect.value && currentStation?.started === true) {
+      $uiClient
+        .closeConnection(props.hashId)
+        .then(() => $uiClient.openConnection(props.hashId))
+        .catch((error: unknown) => {
+          console.error('Error reconnecting:', error)
+        })
     }
-    $toast.success('Supervision URL updated')
     close()
-  } catch (error) {
-    console.error('Error setting supervision URL:', error)
-    $toast.error('Error setting supervision URL')
-  } finally {
-    pending.value = false
   }
 }
 </script>

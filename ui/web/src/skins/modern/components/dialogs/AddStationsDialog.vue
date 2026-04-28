@@ -14,7 +14,7 @@
         >Template</label>
         <select
           id="v2-add-template"
-          v-model="form.template"
+          v-model="formState.template"
           class="v2-form__select"
           required
         >
@@ -25,7 +25,7 @@
             — select a template —
           </option>
           <option
-            v-for="t in $templates"
+            v-for="t in templates"
             :key="t"
             :value="t"
           >
@@ -40,7 +40,7 @@
         >How many?</label>
         <input
           id="v2-add-count"
-          v-model.number="form.numberOfStations"
+          v-model.number="formState.numberOfStations"
           class="v2-form__input"
           min="1"
           type="number"
@@ -55,14 +55,14 @@
           Naming
         </legend>
         <input
-          v-model.trim="form.baseName"
+          v-model.trim="formState.baseName"
           class="v2-form__input"
           type="text"
           placeholder="Base name (defaults to template name)"
         >
         <label class="v2-form__check">
           <input
-            v-model="form.fixedName"
+            v-model="formState.fixedName"
             type="checkbox"
           >
           Fixed name (base name is full station name)
@@ -76,19 +76,19 @@
           Supervision
         </legend>
         <input
-          v-model.trim="form.supervisionUrl"
+          v-model.trim="formState.supervisionUrl"
           class="v2-form__input"
           type="url"
           placeholder="wss://..."
         >
         <input
-          v-model.trim="form.supervisionUser"
+          v-model.trim="formState.supervisionUser"
           class="v2-form__input"
           type="text"
           placeholder="Username"
         >
         <input
-          v-model="form.supervisionPassword"
+          v-model="formState.supervisionPassword"
           class="v2-form__input"
           type="password"
           placeholder="Password"
@@ -100,28 +100,28 @@
       <div class="v2-form__row">
         <label class="v2-form__check">
           <input
-            v-model="form.autoStart"
+            v-model="formState.autoStart"
             type="checkbox"
           >
           Auto-start the new stations
         </label>
         <label class="v2-form__check">
           <input
-            v-model="form.persistentConfiguration"
+            v-model="formState.persistentConfiguration"
             type="checkbox"
           >
           Persistent configuration
         </label>
         <label class="v2-form__check">
           <input
-            v-model="form.ocppStrictCompliance"
+            v-model="formState.ocppStrictCompliance"
             type="checkbox"
           >
           OCPP strict compliance
         </label>
         <label class="v2-form__check">
           <input
-            v-model="form.enableStatistics"
+            v-model="formState.enableStatistics"
             type="checkbox"
           >
           Performance statistics
@@ -137,7 +137,6 @@
       </ActionButton>
       <ActionButton
         variant="primary"
-        :pending="pending"
         @click="submit"
       >
         Add
@@ -147,36 +146,16 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toast-notification'
 
-import { useTemplates, useUIClient } from '@/composables'
+import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import { V2_ROUTE_NAMES } from '../../composables/constants'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
-const $uiClient = useUIClient()
-const $templates = useTemplates()
+const { formState, submitForm, templates } = useAddStationsForm()
 const $router = useRouter()
-const $toast = useToast()
-
-const pending = ref(false)
-
-const form = reactive({
-  autoStart: false,
-  baseName: '',
-  enableStatistics: false,
-  fixedName: false,
-  numberOfStations: 1,
-  ocppStrictCompliance: true,
-  persistentConfiguration: true,
-  supervisionPassword: '',
-  supervisionUrl: '',
-  supervisionUser: '',
-  template: '',
-})
 
 const close = (): void => {
   $router.push({ name: V2_ROUTE_NAMES.V2_CHARGING_STATIONS }).catch((error: unknown) => {
@@ -184,39 +163,8 @@ const close = (): void => {
   })
 }
 
-const submit = async (): Promise<void> => {
-  if (pending.value) return
-  if (form.template.length === 0) {
-    $toast.error('Please choose a template')
-    return
-  }
-  if (!Number.isFinite(form.numberOfStations) || form.numberOfStations < 1) {
-    $toast.error('Number of stations must be at least 1')
-    return
-  }
-  pending.value = true
-  try {
-    await $uiClient.addChargingStations(form.template, form.numberOfStations, {
-      autoStart: form.autoStart,
-      baseName: form.baseName.length > 0 ? form.baseName : undefined,
-      enableStatistics: form.enableStatistics,
-      fixedName: form.baseName.length > 0 ? form.fixedName : undefined,
-      ocppStrictCompliance: form.ocppStrictCompliance,
-      persistentConfiguration: form.persistentConfiguration,
-      supervisionPassword:
-        form.supervisionPassword.length > 0 ? form.supervisionPassword : undefined,
-      supervisionUrls: form.supervisionUrl.length > 0 ? form.supervisionUrl : undefined,
-      supervisionUser: form.supervisionUser.length > 0 ? form.supervisionUser : undefined,
-    })
-    $toast.success(
-      `${String(form.numberOfStations)} charging station${form.numberOfStations === 1 ? '' : 's'} added`
-    )
-    close()
-  } catch (error) {
-    console.error('Error adding charging stations:', error)
-    $toast.error('Error adding charging stations')
-  } finally {
-    pending.value = false
-  }
+const submit = (): void => {
+  submitForm()
+  close()
 }
 </script>
