@@ -33,14 +33,14 @@ export function useStartTxForm (
   const $toast = useToast()
 
   const formState = ref<StartTxFormState>({
-    authorizeIdTag: true,
+    authorizeIdTag: false,
     idTag: '',
   })
 
   /** Resets form state to initial defaults. */
   function resetForm (): void {
     formState.value = {
-      authorizeIdTag: true,
+      authorizeIdTag: false,
       idTag: '',
     }
   }
