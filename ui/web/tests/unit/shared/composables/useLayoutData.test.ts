@@ -41,15 +41,24 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-function mountComposable () {
-  return withSetup(() => useLayoutData())
-}
-
+/**
+ * Finds the WS event listener handler registered for the given event type.
+ * @param eventType - The WebSocket event name ('open', 'error', 'close')
+ * @returns The registered handler function, or undefined if not found
+ */
 function getWSHandler (eventType: string): ((...args: unknown[]) => void) | undefined {
   const call = vi
     .mocked(mockClient.registerWSEventListener)
     .mock.calls.find(([event]) => event === eventType)
   return call?.[1] as ((...args: unknown[]) => void) | undefined
+}
+
+/**
+ * Mounts the useLayoutData composable in a component context.
+ * @returns Tuple of [composable result, app instance]
+ */
+function mountComposable () {
+  return withSetup(() => useLayoutData())
 }
 
 describe('useLayoutData', () => {
@@ -74,18 +83,9 @@ describe('useLayoutData', () => {
   it('should unregister open, error, and close WS event listeners on unmount', () => {
     const [, app] = mountComposable()
     app.unmount()
-    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith(
-      'open',
-      expect.any(Function)
-    )
-    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith(
-      'error',
-      expect.any(Function)
-    )
-    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith(
-      'close',
-      expect.any(Function)
-    )
+    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('open', expect.any(Function))
+    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('error', expect.any(Function))
+    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('close', expect.any(Function))
   })
 
   it('should populate simulatorState when WS open fires and getData succeeds', async () => {
@@ -118,7 +118,7 @@ describe('useLayoutData', () => {
   })
 
   it('should expose loading as true when any fetch is in progress', () => {
-    mockClient.simulatorState.mockReturnValue(new Promise(() => {}))
+    mockClient.simulatorState.mockReturnValue(new Promise(() => undefined))
     const [result] = mountComposable()
     result.getSimulatorState()
     expect(result.loading.value).toBe(true)
@@ -134,7 +134,7 @@ describe('useLayoutData', () => {
   it('should expose loading as true when listTemplates fetch is in progress', async () => {
     mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
     mockClient.listChargingStations.mockResolvedValue({ chargingStations: [], status: 'success' })
-    mockClient.listTemplates.mockReturnValue(new Promise(() => {}))
+    mockClient.listTemplates.mockReturnValue(new Promise(() => undefined))
     const [result] = mountComposable()
     result.getData()
     await flushPromises()
@@ -143,8 +143,8 @@ describe('useLayoutData', () => {
 
   it('should expose loading as true when listChargingStations fetch is in progress', async () => {
     mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
-    mockClient.listTemplates.mockResolvedValue({ templates: [], status: 'success' })
-    mockClient.listChargingStations.mockReturnValue(new Promise(() => {}))
+    mockClient.listTemplates.mockResolvedValue({ status: 'success', templates: [] })
+    mockClient.listChargingStations.mockReturnValue(new Promise(() => undefined))
     const [result] = mountComposable()
     result.getData()
     await flushPromises()

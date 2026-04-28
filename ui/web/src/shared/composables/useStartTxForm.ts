@@ -16,6 +16,7 @@ export interface StartTxFormState {
  * @param evseId - Optional EVSE identifier
  * @param ocppVersion - Optional OCPP version string
  * @param options - Optional callbacks (e.g. onCleanup for skin-specific reset)
+ * @param options.onCleanup - Called after action completes; use for skin-specific cleanup (e.g. toggle button reset)
  * @returns Form state and submit/reset functions
  */
 export function useStartTxForm (
