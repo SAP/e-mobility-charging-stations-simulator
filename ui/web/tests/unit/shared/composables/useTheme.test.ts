@@ -92,7 +92,9 @@ describe('useTheme', () => {
       // @ts-expect-error simulating SSR environment
       globalThis.document = undefined
       const { setTheme } = useTheme()
-      expect(() => { setTheme('catppuccin-latte') }).not.toThrow()
+      expect(() => {
+        setTheme('catppuccin-latte')
+      }).not.toThrow()
       globalThis.document = originalDocument
       const { activeTheme } = useTheme()
       expect(activeTheme.value).toBe('catppuccin-latte')
