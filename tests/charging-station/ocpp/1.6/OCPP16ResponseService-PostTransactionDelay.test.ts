@@ -255,6 +255,6 @@ await describe('OCPP16ResponseService — PostTransactionDelay', async () => {
       assert.fail('Expected connector 1 to exist')
     }
     assert.strictEqual(connectorStatus.transactionStarted, true)
-    assert.strictEqual(connectorStatus.transactionId, 400)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
   })
 })

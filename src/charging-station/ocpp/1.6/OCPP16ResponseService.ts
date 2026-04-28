@@ -553,6 +553,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         } as OCPP16StatusNotificationRequest)
       }
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+      if (transactionConnectorStatus != null) {
+        delete transactionConnectorStatus.transactionId
+      }
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {
         return
