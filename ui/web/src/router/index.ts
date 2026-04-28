@@ -12,16 +12,14 @@ export const router = createRouter({
     },
     {
       components: {
-        action: () =>
-          import('@/skins/classic/components/actions/AddChargingStations.vue'),
+        action: () => import('@/skins/classic/components/actions/AddChargingStations.vue'),
       },
       name: ROUTE_NAMES.ADD_CHARGING_STATIONS,
       path: '/add-charging-stations',
     },
     {
       components: {
-        action: () =>
-          import('@/skins/classic/components/actions/SetSupervisionUrl.vue'),
+        action: () => import('@/skins/classic/components/actions/SetSupervisionUrl.vue'),
       },
       name: ROUTE_NAMES.SET_SUPERVISION_URL,
       path: '/set-supervision-url/:hashId/:chargingStationId',
@@ -29,8 +27,7 @@ export const router = createRouter({
     },
     {
       components: {
-        action: () =>
-          import('@/skins/classic/components/actions/StartTransaction.vue'),
+        action: () => import('@/skins/classic/components/actions/StartTransaction.vue'),
       },
       name: ROUTE_NAMES.START_TRANSACTION,
       path: '/start-transaction/:hashId/:chargingStationId/:connectorId',

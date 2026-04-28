@@ -15,7 +15,10 @@ vi.mock('@/v2/components/Modal.vue', () => ({
   default: defineComponent({
     emits: ['close'],
     name: 'V2ModalStub',
-    props: { closeOnBackdrop: { default: true, type: Boolean }, title: { required: true, type: String } },
+    props: {
+      closeOnBackdrop: { default: true, type: Boolean },
+      title: { required: true, type: String },
+    },
     template:
       '<div class="stub-modal"><h2>{{ title }}</h2><div class="stub-modal__body"><slot /></div><div class="stub-modal__foot"><slot name="footer" /></div></div>',
   }),

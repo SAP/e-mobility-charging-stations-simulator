@@ -195,14 +195,16 @@ describe('v2 ConnectorRow', () => {
     it('omits evseId/ocppVersion from query when not set', async () => {
       const wrapper = mountRow()
       await wrapper.find('.v2-icon-btn--primary').trigger('click')
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        expect.objectContaining({ query: {} })
-      )
+      expect(mockRouter.push).toHaveBeenCalledWith(expect.objectContaining({ query: {} }))
     })
 
     it('shows stop icon when transaction running and stops it', async () => {
       const wrapper = mountRow({
-        connector: { status: OCPP16ChargePointStatus.CHARGING, transactionId: 99, transactionStarted: true },
+        connector: {
+          status: OCPP16ChargePointStatus.CHARGING,
+          transactionId: 99,
+          transactionStarted: true,
+        },
         ocppVersion: OCPPVersion.VERSION_16,
       })
       const stopBtn = wrapper.find('.v2-icon-btn--danger')

@@ -42,10 +42,7 @@ let mockRouter: { push: ReturnType<typeof vi.fn> }
 
 const singleServer = { uiServer: [createUIServerConfig({ name: 'A' })] }
 const multiServer = {
-  uiServer: [
-    createUIServerConfig({ name: 'A' }),
-    createUIServerConfig({ host: 'b', name: 'B' }),
-  ],
+  uiServer: [createUIServerConfig({ name: 'A' }), createUIServerConfig({ host: 'b', name: 'B' })],
 }
 
 /**
@@ -68,11 +65,13 @@ function getWSHandler (eventType: string): ((...args: unknown[]) => void) | unde
  * @param options.templates templates
  * @returns mounted wrapper
  */
-function mountView (options: {
-  chargingStations?: ReturnType<typeof createChargingStationData>[]
-  configuration?: typeof multiServer | typeof singleServer
-  templates?: string[]
-} = {}) {
+function mountView (
+  options: {
+    chargingStations?: ReturnType<typeof createChargingStationData>[]
+    configuration?: typeof multiServer | typeof singleServer
+    templates?: string[]
+  } = {}
+) {
   const { chargingStations = [], configuration = singleServer, templates = [] } = options
   return mount(V2ChargingStationsView, {
     global: {

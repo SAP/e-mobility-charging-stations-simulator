@@ -122,7 +122,7 @@
         :value="activeSkinId"
         class="v2-bar__select"
         aria-label="Skin"
-        @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
+        @change="e => switchSkin((e.target as HTMLSelectElement).value)"
       >
         <option
           v-for="skin in skinList"

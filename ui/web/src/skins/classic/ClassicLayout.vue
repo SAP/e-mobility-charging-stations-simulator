@@ -51,7 +51,7 @@
         <select
           :value="activeSkinId"
           class="ui-server-selector"
-          @change="(e) => switchSkin((e.target as HTMLSelectElement).value)"
+          @change="e => switchSkin((e.target as HTMLSelectElement).value)"
         >
           <option
             v-for="skin in skins"
@@ -64,7 +64,7 @@
         <select
           :value="activeTheme"
           class="ui-server-selector"
-          @change="(e) => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
+          @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
         >
           <option
             v-for="theme in availableThemes"
@@ -88,8 +88,7 @@
     </Container>
     <Container
       v-show="
-        $route.name !== ROUTE_NAMES.CHARGING_STATIONS &&
-          $route.name !== ROUTE_NAMES.NOT_FOUND
+        $route.name !== ROUTE_NAMES.CHARGING_STATIONS && $route.name !== ROUTE_NAMES.NOT_FOUND
       "
       id="action-container"
       class="action-container"

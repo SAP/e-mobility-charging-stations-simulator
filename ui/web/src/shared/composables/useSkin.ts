@@ -5,9 +5,7 @@ import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'
 
 const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
-const activeSkinId: Ref<string> = ref(
-  getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
-)
+const activeSkinId: Ref<string> = ref(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
 const loadedSkins = new Set<string>()
 
 /**

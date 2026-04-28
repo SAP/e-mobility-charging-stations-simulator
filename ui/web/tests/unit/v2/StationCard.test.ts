@@ -10,7 +10,12 @@ import { uiClientKey } from '@/composables'
 import StationCard from '@/v2/components/StationCard.vue'
 
 import { toastMock } from '../../setup'
-import { createChargingStationData, createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from '../constants'
+import {
+  createChargingStationData,
+  createConnectorStatus,
+  TEST_HASH_ID,
+  TEST_STATION_ID,
+} from '../constants'
 import { createMockUIClient, type MockUIClient } from '../helpers'
 
 vi.mock('vue-router', async importOriginal => {
@@ -248,9 +253,8 @@ describe('v2 StationCard', () => {
       await delBtn.trigger('click')
       await flushPromises()
       expect(document.body.textContent).toContain('Delete')
-      const cancelBtn = document.body.querySelectorAll<HTMLButtonElement>(
-        '.v2-modal__foot button'
-      )[0]
+      const cancelBtn =
+        document.body.querySelectorAll<HTMLButtonElement>('.v2-modal__foot button')[0]
       cancelBtn.click()
       await flushPromises()
       expect(mockClient.deleteChargingStation).not.toHaveBeenCalled()
@@ -261,9 +265,8 @@ describe('v2 StationCard', () => {
       const delBtn = wrapper.find('.v2-card__foot .v2-btn--danger')
       await delBtn.trigger('click')
       await flushPromises()
-      const confirmBtn = document.body.querySelectorAll<HTMLButtonElement>(
-        '.v2-modal__foot button'
-      )[1]
+      const confirmBtn =
+        document.body.querySelectorAll<HTMLButtonElement>('.v2-modal__foot button')[1]
       confirmBtn.click()
       await flushPromises()
       expect(mockClient.deleteChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)

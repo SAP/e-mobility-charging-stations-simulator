@@ -92,16 +92,14 @@ describe('v2 ActionButton', () => {
 })
 
 describe('v2 StatePill', () => {
-  it.each([
-    ['ok'],
-    ['warn'],
-    ['err'],
-    ['idle'],
-  ] as const)('applies v2-pill--%s variant class', variant => {
-    const wrapper = mount(StatePill, { props: { variant }, slots: { default: variant } })
-    expect(wrapper.classes()).toContain(`v2-pill--${variant}`)
-    expect(wrapper.text()).toBe(variant)
-  })
+  it.each([['ok'], ['warn'], ['err'], ['idle']] as const)(
+    'applies v2-pill--%s variant class',
+    variant => {
+      const wrapper = mount(StatePill, { props: { variant }, slots: { default: variant } })
+      expect(wrapper.classes()).toContain(`v2-pill--${variant}`)
+      expect(wrapper.text()).toBe(variant)
+    }
+  )
 })
 
 describe('v2 Modal', () => {

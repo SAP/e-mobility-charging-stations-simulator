@@ -35,7 +35,9 @@ describe('v2 SimulatorBar', () => {
   })
 
   it('shows Running label with version when started', () => {
-    const wrapper = mountBar({ simulatorState: { started: true, templateStatistics: {}, version: '2.0.0' } })
+    const wrapper = mountBar({
+      simulatorState: { started: true, templateStatistics: {}, version: '2.0.0' },
+    })
     expect(wrapper.text()).toMatch(/Running.*2\.0\.0/)
   })
 
@@ -109,11 +111,7 @@ describe('v2 SimulatorBar', () => {
     expect(wrapper.emitted('cycle-theme')).toHaveLength(1)
   })
 
-  it.each([
-    ['dark'],
-    ['light'],
-    ['auto'],
-  ] as const)('renders theme %s icon', themeMode => {
+  it.each([['dark'], ['light'], ['auto']] as const)('renders theme %s icon', themeMode => {
     const wrapper = mountBar({ themeMode })
     expect(wrapper.find('.v2-icon-btn').attributes('title')).toContain(themeMode)
   })

@@ -79,8 +79,7 @@ export function useAddStationsForm (): {
     executeAction(
       $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
         autoStart: convertToBoolean(formState.value.autoStart),
-        baseName:
-          formState.value.baseName.length > 0 ? formState.value.baseName : undefined,
+        baseName: formState.value.baseName.length > 0 ? formState.value.baseName : undefined,
         enableStatistics: convertToBoolean(formState.value.enableStatistics),
         fixedName:
           formState.value.baseName.length > 0

@@ -39,7 +39,10 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   }
 
   const { setTheme } = useTheme()
-  const storedTheme = getFromLocalStorage<string>('ecs-ui-theme', config.theme ?? 'tokyo-night-storm')
+  const storedTheme = getFromLocalStorage<string>(
+    'ecs-ui-theme',
+    config.theme ?? 'tokyo-night-storm'
+  )
   setTheme(storedTheme as ThemeName)
 
   const { switchSkin } = useSkin()
