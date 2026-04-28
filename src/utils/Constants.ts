@@ -80,6 +80,7 @@ export class Constants {
     ocppVersion: OCPPVersion.VERSION_16,
     outOfOrderEndMeterValues: false,
     phaseLineToLineVoltageMeterValues: false,
+    postTransactionDelay: 0,
     reconnectExponentialDelay: false,
     registrationMaxRetries: -1,
     remoteAuthorization: true,

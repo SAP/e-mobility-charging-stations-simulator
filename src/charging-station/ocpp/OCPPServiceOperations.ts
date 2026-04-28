@@ -4,6 +4,7 @@ import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
+  ConnectorStatusEnum,
   ErrorType,
   OCPPVersion,
   type StartTransactionResult,
@@ -101,7 +102,10 @@ export const stopRunningTransactions = async (
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
       for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-        if (connectorStatus.transactionStarted === true) {
+        if (
+          connectorStatus.transactionStarted === true &&
+          connectorStatus.status !== ConnectorStatusEnum.Finishing
+        ) {
           await OCPP16ServiceUtils.stopTransactionOnConnector(chargingStation, connectorId, reason)
         }
       }

@@ -1302,6 +1302,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     if (
+      chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
+      OCPP16ChargePointStatus.Finishing
+    ) {
+      return this.notifyRemoteStartTransactionRejected(
+        chargingStation,
+        transactionConnectorId,
+        idTag
+      )
+    }
+    if (
       !chargingStation.isChargingStationAvailable() ||
       !chargingStation.isConnectorAvailable(transactionConnectorId)
     ) {
