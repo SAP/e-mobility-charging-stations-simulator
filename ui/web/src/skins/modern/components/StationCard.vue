@@ -1,0 +1,373 @@
+<template>
+  <article
+    class="v2-card"
+    :aria-label="`Charging station ${chargingStation.stationInfo.chargingStationId}`"
+  >
+    <header class="v2-card__head">
+      <div class="v2-card__head-row">
+        <h3 class="v2-card__title">
+          {{ chargingStation.stationInfo.chargingStationId }}
+        </h3>
+        <div class="v2-card__pills">
+          <StatePill :variant="startedVariant">
+            {{ chargingStation.started === true ? 'started' : 'stopped' }}
+          </StatePill>
+          <StatePill :variant="wsVariant">
+            ws {{ wsLabel }}
+          </StatePill>
+        </div>
+      </div>
+      <dl class="v2-card__subtitle">
+        <div
+          class="v2-card__template-badge"
+          :title="chargingStation.stationInfo.templateName"
+        >
+          <span class="v2-card__template-value">
+            {{ chargingStation.stationInfo.templateName }}
+          </span>
+        </div>
+        <div>
+          <dt>Vendor</dt>
+          <dd>{{ chargingStation.stationInfo.chargePointVendor }}</dd>
+        </div>
+        <div>
+          <dt>Model</dt>
+          <dd>{{ chargingStation.stationInfo.chargePointModel }}</dd>
+        </div>
+        <div>
+          <dt>OCPP</dt>
+          <dd>{{ chargingStation.stationInfo.ocppVersion ?? EMPTY }}</dd>
+        </div>
+        <div>
+          <dt>Firmware</dt>
+          <dd>{{ chargingStation.stationInfo.firmwareVersion ?? EMPTY }}</dd>
+        </div>
+        <div>
+          <dt>Registration</dt>
+          <dd>{{ chargingStation.bootNotificationResponse?.status ?? EMPTY }}</dd>
+        </div>
+      </dl>
+    </header>
+    <div class="v2-card__body">
+      <div
+        class="v2-card__url-row"
+        role="button"
+        tabindex="0"
+        :title="chargingStation.supervisionUrl"
+        aria-label="Edit supervision URL"
+        @click="openSupervisionDialog"
+        @keydown.enter.prevent="openSupervisionDialog"
+        @keydown.space.prevent="openSupervisionDialog"
+      >
+        <span class="v2-card__url-badge">CSMS</span>
+        <p class="v2-card__url">
+          {{ supervisionUrl }}
+        </p>
+        <button
+          type="button"
+          class="v2-card__url-edit"
+          title="Edit supervision URL"
+          aria-label="Edit supervision URL"
+          @click.stop="openSupervisionDialog"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+        </button>
+      </div>
+      <p class="v2-card__section-label">
+        Connectors
+      </p>
+      <div
+        v-if="connectors.length === 0"
+        class="v2-card__empty-connectors"
+      >
+        No connectors
+      </div>
+      <div
+        v-else
+        class="v2-card__connectors"
+      >
+        <ConnectorRow
+          v-for="entry in connectors"
+          :key="
+            entry.evseId != null
+              ? `${entry.evseId}-${entry.connectorId}`
+              : String(entry.connectorId)
+          "
+          :atg-status="getATGStatus(entry.connectorId)"
+          :charging-station-id="chargingStation.stationInfo.chargingStationId"
+          :connector="entry.connectorStatus"
+          :connector-id="entry.connectorId"
+          :evse-id="entry.evseId"
+          :hash-id="chargingStation.stationInfo.hashId"
+          :ocpp-version="chargingStation.stationInfo.ocppVersion"
+          @need-refresh="$emit('need-refresh')"
+        />
+      </div>
+    </div>
+    <footer class="v2-card__foot">
+      <div class="v2-card__foot-group">
+        <ActionButton
+          :variant="chargingStation.started === true ? 'default' : 'primary'"
+          :pending="pending.startStop"
+          @click="toggleStation"
+        >
+          {{ chargingStation.started === true ? 'Stop' : 'Start' }}
+        </ActionButton>
+        <ActionButton
+          :pending="pending.connection"
+          @click="toggleConnection"
+        >
+          {{ wsOpen ? 'Disconnect' : 'Connect' }}
+        </ActionButton>
+        <ActionButton
+          variant="ghost"
+          @click="openAuthorizeDialog"
+        >
+          Authorize
+        </ActionButton>
+      </div>
+      <ActionButton
+        variant="danger"
+        @click="confirmingDelete = true"
+      >
+        Delete
+      </ActionButton>
+    </footer>
+    <ConfirmDialog
+      v-if="confirmingDelete"
+      :title="`Delete ${chargingStation.stationInfo.chargingStationId}?`"
+      :message="`This permanently removes the station from the simulator. Active transactions will be lost.`"
+      confirm-label="Delete"
+      :pending="pending.delete"
+      @cancel="confirmingDelete = false"
+      @confirm="deleteStation"
+    />
+  </article>
+</template>
+
+<script setup lang="ts">
+import {
+  type ChargingStationData,
+  type ConnectorEntry,
+  getWebSocketStateName,
+  type Status,
+  WebSocketReadyState,
+} from 'ui-common'
+import { computed, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toast-notification'
+
+import {
+  deleteLocalStorageByKeyPattern,
+  EMPTY_VALUE_PLACEHOLDER as EMPTY,
+  useUIClient,
+} from '@/composables'
+
+import { V2_ROUTE_NAMES } from '../composables/constants'
+import ActionButton from './ActionButton.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
+import ConnectorRow from './ConnectorRow.vue'
+import StatePill from './StatePill.vue'
+
+const props = defineProps<{
+  chargingStation: ChargingStationData
+}>()
+
+const emit = defineEmits<{
+  'need-refresh': []
+}>()
+
+const $uiClient = useUIClient()
+const $router = useRouter()
+const $toast = useToast()
+
+const confirmingDelete = ref(false)
+const pending = reactive({
+  connection: false,
+  delete: false,
+  startStop: false,
+})
+
+const wsOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
+
+const startedVariant = computed<'err' | 'ok'>(() =>
+  props.chargingStation.started === true ? 'ok' : 'err'
+)
+
+const wsVariant = computed<'err' | 'idle' | 'ok' | 'warn'>(() => {
+  switch (props.chargingStation.wsState) {
+    case WebSocketReadyState.CLOSED:
+      return 'err'
+    case WebSocketReadyState.CLOSING:
+      return 'warn'
+    case WebSocketReadyState.CONNECTING:
+      return 'warn'
+    case WebSocketReadyState.OPEN:
+      return 'ok'
+    default:
+      return 'idle'
+  }
+})
+
+const wsLabel = computed(() => {
+  const name = getWebSocketStateName(props.chargingStation.wsState)
+  return name?.toLowerCase() ?? 'unknown'
+})
+
+const supervisionUrl = computed(() => {
+  try {
+    const url = new URL(props.chargingStation.supervisionUrl)
+    return `${url.protocol}//${url.host}${url.pathname === '/' ? '' : url.pathname}`
+  } catch {
+    return props.chargingStation.supervisionUrl
+  }
+})
+
+const connectors = computed<ConnectorEntry[]>(() => {
+  const station = props.chargingStation
+  if (Array.isArray(station.evses) && station.evses.length > 0) {
+    const entries: ConnectorEntry[] = []
+    for (const evse of station.evses) {
+      if (evse.evseId > 0) {
+        for (const c of evse.evseStatus.connectors) {
+          if (c.connectorId > 0) {
+            entries.push({
+              connectorId: c.connectorId,
+              connectorStatus: c.connectorStatus,
+              evseId: evse.evseId,
+            })
+          }
+        }
+      }
+    }
+    return entries
+  }
+  return (station.connectors ?? [])
+    .filter(c => c.connectorId > 0)
+    .map(c => ({
+      connectorId: c.connectorId,
+      connectorStatus: c.connectorStatus,
+    }))
+})
+
+const getATGStatus = (connectorId: number): Status | undefined =>
+  props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
+    entry => entry.connectorId === connectorId
+  )?.status
+
+const run = (
+  key: keyof typeof pending,
+  action: Promise<unknown>,
+  successMsg: string,
+  errorMsg: string,
+  onSuccess?: () => void
+): void => {
+  if (pending[key]) return
+  pending[key] = true
+  action
+    .then(() => {
+      onSuccess?.()
+      $toast.success(successMsg)
+      emit('need-refresh')
+      return undefined
+    })
+    .finally(() => {
+      pending[key] = false
+    })
+    .catch((error: unknown) => {
+      console.error(`${errorMsg}:`, error)
+      $toast.error(errorMsg)
+    })
+}
+
+const toggleStation = (): void => {
+  const hashId = props.chargingStation.stationInfo.hashId
+  if (props.chargingStation.started === true) {
+    run(
+      'startStop',
+      $uiClient.stopChargingStation(hashId),
+      'Charging station stopped',
+      'Error stopping charging station'
+    )
+  } else {
+    run(
+      'startStop',
+      $uiClient.startChargingStation(hashId),
+      'Charging station started',
+      'Error starting charging station'
+    )
+  }
+}
+
+const toggleConnection = (): void => {
+  const hashId = props.chargingStation.stationInfo.hashId
+  if (wsOpen.value) {
+    run(
+      'connection',
+      $uiClient.closeConnection(hashId),
+      'Connection closed',
+      'Error closing connection'
+    )
+  } else {
+    run(
+      'connection',
+      $uiClient.openConnection(hashId),
+      'Connection opened',
+      'Error opening connection'
+    )
+  }
+}
+
+const openSupervisionDialog = (): void => {
+  $router
+    .push({
+      name: V2_ROUTE_NAMES.V2_SET_SUPERVISION_URL,
+      params: {
+        chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+        hashId: props.chargingStation.stationInfo.hashId,
+      },
+    })
+    .catch((error: unknown) => {
+      console.error('Navigation failed:', error)
+    })
+}
+
+const openAuthorizeDialog = (): void => {
+  $router
+    .push({
+      name: V2_ROUTE_NAMES.V2_AUTHORIZE,
+      params: {
+        chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+        hashId: props.chargingStation.stationInfo.hashId,
+      },
+    })
+    .catch((error: unknown) => {
+      console.error('Navigation failed:', error)
+    })
+}
+
+const deleteStation = (): void => {
+  const hashId = props.chargingStation.stationInfo.hashId
+  run(
+    'delete',
+    $uiClient.deleteChargingStation(hashId),
+    'Charging station deleted',
+    'Error deleting charging station',
+    () => {
+      deleteLocalStorageByKeyPattern(hashId)
+      confirmingDelete.value = false
+    }
+  )
+}
+</script>
