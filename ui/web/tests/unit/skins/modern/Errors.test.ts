@@ -23,19 +23,19 @@ const payloadWith = (responsesFailed: unknown[]): ResponsePayload =>
   }) as never
 
 describe('v2 getFailureInfo', () => {
-  it('returns extractErrorMessage for non-ServerFailureError', () => {
+  it('should return extractErrorMessage for non-ServerFailureError', () => {
     const info = getFailureInfo(new Error('boom'))
     expect(info.payload).toBeUndefined()
     expect(info.summary).toBe('boom')
   })
 
-  it('returns a summary for unknown non-Error values', () => {
+  it('should return a summary for unknown non-Error values', () => {
     const info = getFailureInfo('weird')
     expect(info.payload).toBeUndefined()
     expect(typeof info.summary).toBe('string')
   })
 
-  it('prefers idTagInfo.status when present', () => {
+  it('should prefer idTagInfo.status when present', () => {
     const payload = payloadWith([{ commandResponse: { idTagInfo: { status: 'Invalid' } } }])
     const err = new ServerFailureError(payload)
     const info = getFailureInfo(err)
@@ -43,21 +43,21 @@ describe('v2 getFailureInfo', () => {
     expect(info.payload).toEqual(payload)
   })
 
-  it('falls back to commandResponse.status when idTagInfo absent', () => {
+  it('should fall back to commandResponse.status when idTagInfo absent', () => {
     const payload = payloadWith([{ commandResponse: { status: 'Rejected' } }])
     const err = new ServerFailureError(payload)
     const info = getFailureInfo(err)
     expect(info.summary).toBe('Rejected')
   })
 
-  it('falls back to errorMessage when status fields absent', () => {
+  it('should fall back to errorMessage when status fields absent', () => {
     const payload = payloadWith([{ commandResponse: {}, errorMessage: 'network down' }])
     const err = new ServerFailureError(payload)
     const info = getFailureInfo(err)
     expect(info.summary).toBe('network down')
   })
 
-  it('falls back to extractErrorMessage when payload has no useful string fields', () => {
+  it('should fall back to extractErrorMessage when payload has no useful string fields', () => {
     const payload = payloadWith([{ commandResponse: {} }])
     const err = new ServerFailureError(payload)
     const info = getFailureInfo(err)
@@ -65,7 +65,7 @@ describe('v2 getFailureInfo', () => {
     expect(info.summary.length).toBeGreaterThan(0)
   })
 
-  it('handles responsesFailed being empty', () => {
+  it('should handle responsesFailed being empty', () => {
     const payload = payloadWith([])
     const err = new ServerFailureError(payload)
     const info = getFailureInfo(err)
@@ -73,7 +73,7 @@ describe('v2 getFailureInfo', () => {
     expect(typeof info.summary).toBe('string')
   })
 
-  it('ignores empty-string status fields and falls through', () => {
+  it('should ignore empty-string status fields and falls through', () => {
     const payload = payloadWith([
       { commandResponse: { idTagInfo: { status: '' }, status: '' }, errorMessage: 'fallback' },
     ])
@@ -82,7 +82,7 @@ describe('v2 getFailureInfo', () => {
     expect(info.summary).toBe('fallback')
   })
 
-  it('ignores non-string status fields', () => {
+  it('should ignore non-string status fields', () => {
     const payload = payloadWith([
       { commandResponse: { idTagInfo: { status: 42 }, status: null }, errorMessage: 'fb' },
     ])

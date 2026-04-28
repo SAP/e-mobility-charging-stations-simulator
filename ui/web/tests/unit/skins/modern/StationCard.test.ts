@@ -46,50 +46,50 @@ function mountCard (overrides: Partial<ChargingStationData> = {}) {
 
 describe('v2 StationCard', () => {
   describe('header', () => {
-    it('renders the chargingStationId as title', () => {
+    it('should render the chargingStationId as title', () => {
       const wrapper = mountCard()
       expect(wrapper.find('.v2-card__title').text()).toBe(TEST_STATION_ID)
     })
 
-    it('shows "started" pill variant ok when started', () => {
+    it('should show "started" pill variant ok when started', () => {
       const wrapper = mountCard({ started: true })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[0].classes()).toContain('v2-pill--ok')
       expect(pills[0].text()).toBe('started')
     })
 
-    it('shows "stopped" pill variant err when stopped', () => {
+    it('should show "stopped" pill variant err when stopped', () => {
       const wrapper = mountCard({ started: false })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[0].classes()).toContain('v2-pill--err')
       expect(pills[0].text()).toBe('stopped')
     })
 
-    it('maps wsState OPEN to v2-pill--ok', () => {
+    it('should map wsState OPEN to v2-pill--ok', () => {
       const wrapper = mountCard({ wsState: WebSocket.OPEN })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[1].classes()).toContain('v2-pill--ok')
     })
 
-    it('maps wsState CLOSED to v2-pill--err', () => {
+    it('should map wsState CLOSED to v2-pill--err', () => {
       const wrapper = mountCard({ wsState: WebSocket.CLOSED })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[1].classes()).toContain('v2-pill--err')
     })
 
-    it('maps wsState CLOSING to v2-pill--warn', () => {
+    it('should map wsState CLOSING to v2-pill--warn', () => {
       const wrapper = mountCard({ wsState: WebSocket.CLOSING })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[1].classes()).toContain('v2-pill--warn')
     })
 
-    it('maps wsState CONNECTING to v2-pill--warn', () => {
+    it('should map wsState CONNECTING to v2-pill--warn', () => {
       const wrapper = mountCard({ wsState: WebSocket.CONNECTING })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[1].classes()).toContain('v2-pill--warn')
     })
 
-    it('maps unknown wsState (undefined) to v2-pill--idle', () => {
+    it('should map unknown wsState (undefined) to v2-pill--idle', () => {
       const wrapper = mountCard({ wsState: undefined })
       const pills = wrapper.findAll('.v2-card__pills .v2-pill')
       expect(pills[1].classes()).toContain('v2-pill--idle')
@@ -97,22 +97,22 @@ describe('v2 StationCard', () => {
   })
 
   describe('supervisionUrl display', () => {
-    it('renders protocol://host without trailing "/"', () => {
+    it('should render protocol://host without trailing "/"', () => {
       const wrapper = mountCard({ supervisionUrl: 'wss://example.com:9000/' })
       expect(wrapper.find('.v2-card__url').text()).toBe('wss://example.com:9000')
     })
 
-    it('keeps path segments other than "/"', () => {
+    it('should keeps path segments other than "/"', () => {
       const wrapper = mountCard({ supervisionUrl: 'wss://example.com/ocpp16' })
       expect(wrapper.find('.v2-card__url').text()).toBe('wss://example.com/ocpp16')
     })
 
-    it('falls back to the raw URL string on invalid URL', () => {
+    it('should fall back to the raw URL string on invalid URL', () => {
       const wrapper = mountCard({ supervisionUrl: 'not-a-url' })
       expect(wrapper.find('.v2-card__url').text()).toBe('not-a-url')
     })
 
-    it('emits open-set-url on URL row click', async () => {
+    it('should emit open-set-url on URL row click', async () => {
       const wrapper = mountCard()
       await wrapper.find('.v2-card__url-row').trigger('click')
       expect(wrapper.emitted('open-set-url')).toEqual([
@@ -120,7 +120,7 @@ describe('v2 StationCard', () => {
       ])
     })
 
-    it('emits open-set-url on Enter key press of URL row', async () => {
+    it('should emit open-set-url on Enter key press of URL row', async () => {
       const wrapper = mountCard()
       await wrapper.find('.v2-card__url-row').trigger('keydown.enter')
       expect(wrapper.emitted('open-set-url')).toBeTruthy()
@@ -128,7 +128,7 @@ describe('v2 StationCard', () => {
   })
 
   describe('connectors', () => {
-    it('renders connectors from flat array', () => {
+    it('should render connectors from flat array', () => {
       const wrapper = mountCard({
         connectors: [
           { connectorId: 1, connectorStatus: createConnectorStatus() },
@@ -138,7 +138,7 @@ describe('v2 StationCard', () => {
       expect(wrapper.findAll('.v2-connector')).toHaveLength(2)
     })
 
-    it('filters out connectorId=0 (server-wide placeholder)', () => {
+    it('should filter out connectorId=0 (server-wide placeholder)', () => {
       const wrapper = mountCard({
         connectors: [
           { connectorId: 0, connectorStatus: createConnectorStatus() },
@@ -148,7 +148,7 @@ describe('v2 StationCard', () => {
       expect(wrapper.findAll('.v2-connector')).toHaveLength(1)
     })
 
-    it('flattens evses array when present', () => {
+    it('should flatten evses array when present', () => {
       const wrapper = mountCard({
         connectors: undefined,
         evses: [
@@ -176,14 +176,14 @@ describe('v2 StationCard', () => {
       expect(wrapper.findAll('.v2-connector')).toHaveLength(2)
     })
 
-    it('shows empty-connectors message when no connectors', () => {
+    it('should show empty-connectors message when no connectors', () => {
       const wrapper = mountCard({ connectors: [] })
       expect(wrapper.text()).toContain('No connectors')
     })
   })
 
   describe('footer actions', () => {
-    it('labels Start when stopped, calls startChargingStation', async () => {
+    it('should label Start when stopped, calls startChargingStation', async () => {
       const wrapper = mountCard({ started: false })
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const startBtn = buttons.find(b => b.text() === 'Start')
@@ -194,7 +194,7 @@ describe('v2 StationCard', () => {
       expect(wrapper.emitted('need-refresh')).toBeTruthy()
     })
 
-    it('labels Stop when started, calls stopChargingStation', async () => {
+    it('should label Stop when started, calls stopChargingStation', async () => {
       const wrapper = mountCard({ started: true })
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const stopBtn = buttons.find(b => b.text() === 'Stop')
@@ -203,7 +203,7 @@ describe('v2 StationCard', () => {
       expect(mockClient.stopChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
     })
 
-    it('labels Connect when WS closed, opens connection', async () => {
+    it('should label Connect when WS closed, opens connection', async () => {
       const wrapper = mountCard({ wsState: WebSocket.CLOSED })
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const btn = buttons.find(b => b.text() === 'Connect')
@@ -212,7 +212,7 @@ describe('v2 StationCard', () => {
       expect(mockClient.openConnection).toHaveBeenCalledWith(TEST_HASH_ID)
     })
 
-    it('labels Disconnect when WS open, closes connection', async () => {
+    it('should label Disconnect when WS open, closes connection', async () => {
       const wrapper = mountCard({ wsState: WebSocket.OPEN })
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const btn = buttons.find(b => b.text() === 'Disconnect')
@@ -221,7 +221,7 @@ describe('v2 StationCard', () => {
       expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
     })
 
-    it('emits open-authorize from footer', async () => {
+    it('should emit open-authorize from footer', async () => {
       const wrapper = mountCard()
       const buttons = wrapper.findAll('.v2-card__foot-group .v2-btn')
       const btn = buttons.find(b => b.text() === 'Authorize')
@@ -231,7 +231,7 @@ describe('v2 StationCard', () => {
       ])
     })
 
-    it('opens delete confirm dialog and cancels without API call', async () => {
+    it('should open delete confirm dialog and cancels without API call', async () => {
       const wrapper = mountCard()
       const delBtn = wrapper.find('.v2-card__foot .v2-btn--danger')
       await delBtn.trigger('click')
@@ -244,7 +244,7 @@ describe('v2 StationCard', () => {
       expect(mockClient.deleteChargingStation).not.toHaveBeenCalled()
     })
 
-    it('deletes when delete confirm dialog is confirmed', async () => {
+    it('should deletes when delete confirm dialog is confirmed', async () => {
       const wrapper = mountCard()
       const delBtn = wrapper.find('.v2-card__foot .v2-btn--danger')
       await delBtn.trigger('click')
@@ -257,7 +257,7 @@ describe('v2 StationCard', () => {
       expect(toastMock.success).toHaveBeenCalled()
     })
 
-    it('toasts error when startChargingStation fails', async () => {
+    it('should toast error when startChargingStation fails', async () => {
       mockClient.startChargingStation = vi.fn().mockRejectedValue(new Error('x'))
       const wrapper = mountCard({ started: false })
       const btn = wrapper.findAll('.v2-card__foot-group .v2-btn').find(b => b.text() === 'Start')

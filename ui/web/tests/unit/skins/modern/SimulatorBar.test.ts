@@ -28,29 +28,29 @@ function mountBar (props: Record<string, unknown> = {}) {
 }
 
 describe('modern SimulatorBar', () => {
-  it('shows Disconnected pill when simulatorState is undefined', () => {
+  it('should show Disconnected pill when simulatorState is undefined', () => {
     const wrapper = mountBar()
     expect(wrapper.text()).toContain('Disconnected')
   })
 
-  it('shows Running label with version when started', () => {
+  it('should show Running label with version when started', () => {
     const wrapper = mountBar({
       simulatorState: { started: true, templateStatistics: {}, version: '2.0.0' },
     })
     expect(wrapper.text()).toMatch(/Running.*2\.0\.0/)
   })
 
-  it('shows Stopped label when simulator state reports not started', () => {
+  it('should show Stopped label when simulator state reports not started', () => {
     const wrapper = mountBar({ simulatorState: { started: false, templateStatistics: {} } })
     expect(wrapper.text()).toContain('Stopped')
   })
 
-  it('hides the server select when only one server configured', () => {
+  it('should hides the server select when only one server configured', () => {
     const wrapper = mountBar()
     expect(wrapper.find('.v2-bar__select[aria-label="UI server"]').exists()).toBe(false)
   })
 
-  it('shows the server select when multiple servers configured', () => {
+  it('should show the server select when multiple servers configured', () => {
     const wrapper = mountBar({
       uiServerConfigurations: [
         { configuration: baseServer, index: 0 },
@@ -62,7 +62,7 @@ describe('modern SimulatorBar', () => {
     expect(wrapper.text()).toContain('Beta')
   })
 
-  it('emits switch-server when server selection changes', async () => {
+  it('should emit switch-server when server selection changes', async () => {
     const wrapper = mountBar({
       uiServerConfigurations: [
         { configuration: baseServer, index: 0 },
@@ -74,14 +74,14 @@ describe('modern SimulatorBar', () => {
     expect(wrapper.emitted('switch-server')).toEqual([[1]])
   })
 
-  it('emits refresh when refresh button is clicked', async () => {
+  it('should emit refresh when refresh button is clicked', async () => {
     const wrapper = mountBar()
     const [refreshBtn] = wrapper.findAll('.v2-btn')
     await refreshBtn.trigger('click')
     expect(wrapper.emitted('refresh')).toHaveLength(1)
   })
 
-  it('emits add when add-stations button is clicked', async () => {
+  it('should emit add when add-stations button is clicked', async () => {
     const wrapper = mountBar()
     const buttons = wrapper.findAll('.v2-btn')
     const addBtn = buttons.find(btn => btn.text().includes('Add Stations'))
@@ -89,7 +89,7 @@ describe('modern SimulatorBar', () => {
     expect(wrapper.emitted('add')).toHaveLength(1)
   })
 
-  it('emits toggle-simulator when start/stop button is clicked', async () => {
+  it('should emit toggle-simulator when start/stop button is clicked', async () => {
     const wrapper = mountBar({ simulatorState: { started: false, templateStatistics: {} } })
     const buttons = wrapper.findAll('.v2-btn')
     const toggleBtn = buttons.find(btn => btn.text().includes('Start Simulator'))
@@ -97,12 +97,12 @@ describe('modern SimulatorBar', () => {
     expect(wrapper.emitted('toggle-simulator')).toHaveLength(1)
   })
 
-  it('labels the toggle button Stop when simulator is running', () => {
+  it('should label the toggle button Stop when simulator is running', () => {
     const wrapper = mountBar({ simulatorState: { started: true, templateStatistics: {} } })
     expect(wrapper.text()).toContain('Stop Simulator')
   })
 
-  it('updates internal select value when selectedServerIndex prop changes', async () => {
+  it('should update internal select value when selectedServerIndex prop changes', async () => {
     const wrapper = mountBar({
       uiServerConfigurations: [
         { configuration: baseServer, index: 0 },
@@ -115,7 +115,7 @@ describe('modern SimulatorBar', () => {
     expect(Number(select.value)).toBe(1)
   })
 
-  it('uses host as option label when name is missing', () => {
+  it('should use host as option label when name is missing', () => {
     const wrapper = mountBar({
       uiServerConfigurations: [
         { configuration: createUIServerConfig({ host: 'nohost' }), index: 0 },

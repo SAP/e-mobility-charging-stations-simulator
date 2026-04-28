@@ -116,13 +116,13 @@ afterEach(() => {
 })
 
 describe('modern ModernLayout', () => {
-  it('renders the empty state when no stations', async () => {
+  it('should render the empty state when no stations', async () => {
     const wrapper = mountView()
     await flushPromises()
     expect(wrapper.text()).toContain('No charging stations')
   })
 
-  it('renders a StationCard per charging station', async () => {
+  it('should render a StationCard per charging station', async () => {
     const wrapper = mountView({
       chargingStations: [
         createChargingStationData({
@@ -153,7 +153,7 @@ describe('modern ModernLayout', () => {
     expect(wrapper.findAll('.stub-station-card')).toHaveLength(2)
   })
 
-  it('registers WS event listeners on mount and unregisters on unmount', async () => {
+  it('should register WS event listeners on mount and unregisters on unmount', async () => {
     const wrapper = mountView()
     await flushPromises()
     expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function))
@@ -163,7 +163,7 @@ describe('modern ModernLayout', () => {
     expect(mockClient.unregisterWSEventListener).toHaveBeenCalled()
   })
 
-  it('fetches data when the WS open handler fires', async () => {
+  it('should fetch data when the WS open handler fires', async () => {
     mountView()
     await flushPromises()
     mockClient.listChargingStations.mockClear()
@@ -177,7 +177,7 @@ describe('modern ModernLayout', () => {
     expect(mockClient.listTemplates).toHaveBeenCalled()
   })
 
-  it('opens the confirm dialog when toggling a running simulator', async () => {
+  it('should open the confirm dialog when toggling a running simulator', async () => {
     mockClient.simulatorState = vi.fn().mockResolvedValue({
       state: { started: true, templateStatistics: {} },
       status: 'success',
@@ -191,7 +191,7 @@ describe('modern ModernLayout', () => {
     expect(wrapper.find('.stub-confirm-dialog').exists()).toBe(true)
   })
 
-  it('stops the simulator when confirm dialog fires confirm', async () => {
+  it('should stop the simulator when confirm dialog fires confirm', async () => {
     mockClient.simulatorState = vi.fn().mockResolvedValue({
       state: { started: true, templateStatistics: {} },
       status: 'success',
@@ -208,7 +208,7 @@ describe('modern ModernLayout', () => {
     expect(toastMock.success).toHaveBeenCalled()
   })
 
-  it('cancels the confirm dialog', async () => {
+  it('should cancel the confirm dialog', async () => {
     mockClient.simulatorState = vi.fn().mockResolvedValue({
       state: { started: true, templateStatistics: {} },
       status: 'success',
@@ -225,7 +225,7 @@ describe('modern ModernLayout', () => {
     expect(mockClient.stopSimulator).not.toHaveBeenCalled()
   })
 
-  it('starts the simulator when toggled while stopped', async () => {
+  it('should start the simulator when toggled while stopped', async () => {
     mockClient.simulatorState = vi.fn().mockResolvedValue({
       state: { started: false, templateStatistics: {} },
       status: 'success',
@@ -239,7 +239,7 @@ describe('modern ModernLayout', () => {
     expect(mockClient.startSimulator).toHaveBeenCalled()
   })
 
-  it('toasts an error when startSimulator fails', async () => {
+  it('should toast an error when startSimulator fails', async () => {
     mockClient.simulatorState = vi.fn().mockResolvedValue({
       state: { started: false, templateStatistics: {} },
       status: 'success',
@@ -254,14 +254,14 @@ describe('modern ModernLayout', () => {
     expect(toastMock.error).toHaveBeenCalled()
   })
 
-  it('switches UI server on switch-server event', async () => {
+  it('should switch UI server on switch-server event', async () => {
     const wrapper = mountView({ configuration: multiServer })
     await flushPromises()
     await wrapper.find('.stub-switch').trigger('click')
     expect(mockClient.setConfiguration).toHaveBeenCalledWith(multiServer.uiServer[1])
   })
 
-  it('skips switch when the same server is selected (index persisted from localStorage)', async () => {
+  it('should skip switch when the same server is selected (index persisted from localStorage)', async () => {
     localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, '1')
     const wrapper = mountView({ configuration: multiServer })
     await flushPromises()
@@ -271,7 +271,7 @@ describe('modern ModernLayout', () => {
     expect(mockClient.setConfiguration).not.toHaveBeenCalled()
   })
 
-  it('persists uiServerIndex to localStorage via the WS open listener (once)', async () => {
+  it('should persist uiServerIndex to localStorage via the WS open listener (once)', async () => {
     const wrapper = mountView({ configuration: multiServer })
     await flushPromises()
     await wrapper.find('.stub-switch').trigger('click')
@@ -288,7 +288,7 @@ describe('modern ModernLayout', () => {
     expect(localStorage.getItem(UI_SERVER_CONFIGURATION_INDEX_KEY)).toBe('1')
   })
 
-  it('clears the station list when a WS error handler fires', async () => {
+  it('should clear the station list when a WS error handler fires', async () => {
     const stations = ref([createChargingStationData()])
     const wrapper = mount(ModernLayout, {
       global: {

@@ -2,7 +2,7 @@
  * @file useAddStationsForm.test.ts
  * @description Tests for the useAddStationsForm shared composable.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 
 const mockAddChargingStations = vi.fn().mockResolvedValue({ status: 'success' })
@@ -37,11 +37,11 @@ vi.mock('ui-common', () => ({
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 describe('useAddStationsForm', () => {
-  beforeEach(() => {
+  afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('initializes with default state', () => {
+  it('should initialize with default state', () => {
     const { formState } = useAddStationsForm()
     expect(formState.value.template).toBe('')
     expect(formState.value.numberOfStations).toBe(1)
@@ -56,13 +56,13 @@ describe('useAddStationsForm', () => {
     expect(formState.value.supervisionPassword).toBe('')
   })
 
-  it('returns templates from injection', () => {
+  it('should return templates from injection', () => {
     const { templates } = useAddStationsForm()
     expect(templates.value).toEqual(['template1.json', 'template2.json'])
     expect(templates.value.length).toBe(2)
   })
 
-  it('resetForm restores default state', () => {
+  it('should reset form to default state', () => {
     const { formState, resetForm } = useAddStationsForm()
     formState.value.template = 'test.json'
     formState.value.numberOfStations = 5
@@ -73,7 +73,7 @@ describe('useAddStationsForm', () => {
     expect(formState.value.autoStart).toBe(false)
   })
 
-  it('submitForm calls executeAction with addChargingStations', () => {
+  it('should call executeAction with addChargingStations on submit', () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station-template.json'
     formState.value.numberOfStations = 3
@@ -92,7 +92,7 @@ describe('useAddStationsForm', () => {
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('submitForm passes optional fields when set', () => {
+  it('should pass optional fields when set on submit', () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'tpl.json'
     formState.value.numberOfStations = 1
@@ -115,7 +115,7 @@ describe('useAddStationsForm', () => {
     })
   })
 
-  it('updates renderTemplates when templates change', async () => {
+  it('should update renderTemplates when templates change', async () => {
     const { formState } = useAddStationsForm()
     const before = formState.value.renderTemplates
     mockTemplates.value = ['new-template.json']
@@ -124,7 +124,7 @@ describe('useAddStationsForm', () => {
     expect(typeof formState.value.renderTemplates).toBe('string')
   })
 
-  it('submitForm resets form via onFinally callback', () => {
+  it('should reset form via onFinally callback on submit', () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station.json'
     formState.value.numberOfStations = 5
@@ -133,7 +133,7 @@ describe('useAddStationsForm', () => {
     expect(formState.value.numberOfStations).toBe(1)
   })
 
-  it('submitForm invokes user-provided onFinally callback', () => {
+  it('should invoke user-provided onFinally callback on submit', () => {
     const onFinally = vi.fn()
     const { formState, submitForm } = useAddStationsForm({ onFinally })
     formState.value.template = 'tpl.json'
@@ -143,7 +143,7 @@ describe('useAddStationsForm', () => {
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('submitForm calls executeAction with numberOfStations = 0', () => {
+  it('should call executeAction with numberOfStations = 0', () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'boundary.json'
     formState.value.numberOfStations = 0
@@ -152,7 +152,7 @@ describe('useAddStationsForm', () => {
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('formState.renderTemplates updates reactively when templates ref changes', async () => {
+  it('should update renderTemplates reactively when templates ref changes', async () => {
     const { formState } = useAddStationsForm()
     const initial = formState.value.renderTemplates
     mockTemplates.value = ['alpha.json', 'beta.json', 'gamma.json']

@@ -35,24 +35,24 @@ describe('useSkin', () => {
     localStorage.clear()
   })
 
-  it('returns activeSkinId defaulting to DEFAULT_SKIN', () => {
+  it('should return activeSkinId defaulting to DEFAULT_SKIN', () => {
     const { activeSkinId } = useSkin()
     expect(activeSkinId.value).toBe(DEFAULT_SKIN)
     expect(typeof activeSkinId.value).toBe('string')
   })
 
-  it('returns skins array with 2 entries', () => {
+  it('should return skins array with 2 entries', () => {
     const { skins: skinsList } = useSkin()
     expect(skinsList.length).toBe(2)
     expect(skinsList.map(s => s.id)).toEqual(['classic', 'modern'])
   })
 
-  it('returns switchSkin function', () => {
+  it('should return switchSkin function', () => {
     const { switchSkin } = useSkin()
     expect(typeof switchSkin).toBe('function')
   })
 
-  it('switchSkin does not update activeSkinId when loadStyles rejects', async () => {
+  it('should switchSkin does not update activeSkinId when loadStyles rejects', async () => {
     const modernSkin = skins.find(s => s.id === 'modern')
     expect(modernSkin).toBeDefined()
     if (modernSkin == null) return
@@ -63,7 +63,7 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('switchSkin guards against concurrent calls', async () => {
+  it('should switchSkin guards against concurrent calls', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const modernSkin = skins.find(s => s.id === 'modern')
     expect(modernSkin).toBeDefined()
@@ -86,7 +86,7 @@ describe('useSkin', () => {
     expect(modernSkin.loadStyles).toHaveBeenCalledTimes(1)
   })
 
-  it('switchSkin skips loadStyles when skin is already active', async () => {
+  it('should switchSkin skips loadStyles when skin is already active', async () => {
     const classicSkin = skins.find(s => s.id === 'classic')
     expect(classicSkin).toBeDefined()
     if (classicSkin == null) return
@@ -97,21 +97,21 @@ describe('useSkin', () => {
     expect(activeSkinId.value).toBe('classic')
   })
 
-  it('switchSkin updates activeSkinId', async () => {
+  it('should switchSkin updates activeSkinId', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     await switchSkin('modern')
     expect(activeSkinId.value).toBe('modern')
     expect(activeSkinId.value).not.toBe('classic')
   })
 
-  it('switchSkin persists to localStorage', async () => {
+  it('should switchSkin persists to localStorage', async () => {
     const { switchSkin } = useSkin()
     await switchSkin('modern')
     expect(localStorage.getItem('ecs-ui-skin')).toBe('"modern"')
     expect(localStorage.getItem('ecs-ui-skin')).not.toBeNull()
   })
 
-  it('switchSkin ignores invalid skin id', async () => {
+  it('should switchSkin ignores invalid skin id', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const before = activeSkinId.value
     await switchSkin('nonexistent')
@@ -119,7 +119,7 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('switchSkin ignores current skin id', async () => {
+  it('should switchSkin ignores current skin id', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const before = activeSkinId.value
     await switchSkin(before)

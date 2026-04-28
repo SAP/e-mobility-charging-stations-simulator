@@ -2,7 +2,7 @@
  * @file useStartTxForm.test.ts
  * @description Tests for the useStartTxForm shared composable.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mockAuthorize = vi.fn().mockResolvedValue({ status: 'success' })
 const mockStartTransaction = vi.fn().mockResolvedValue({ status: 'success' })
@@ -34,17 +34,17 @@ import { OCPPVersion } from 'ui-common'
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 describe('useStartTxForm', () => {
-  beforeEach(() => {
+  afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('initializes with default state', () => {
+  it('should initialize with default state', () => {
     const { formState } = useStartTxForm('hash1', '1')
     expect(formState.value.idTag).toBe('')
     expect(formState.value.authorizeIdTag).toBe(false)
   })
 
-  it('resetForm restores defaults', () => {
+  it('should reset form to defaults', () => {
     const { formState, resetForm } = useStartTxForm('hash1', '1')
     formState.value.idTag = 'TAG001'
     formState.value.authorizeIdTag = true
@@ -53,7 +53,7 @@ describe('useStartTxForm', () => {
     expect(formState.value.authorizeIdTag).toBe(false)
   })
 
-  it('submitForm calls startTransaction with correct params', async () => {
+  it('should call startTransaction with correct params on submit', async () => {
     const { formState, submitForm } = useStartTxForm('hash1', '2', 1, OCPPVersion.VERSION_16)
     formState.value.idTag = 'TAG001'
     await submitForm()
@@ -66,7 +66,7 @@ describe('useStartTxForm', () => {
     expect(mockToastSuccess).toHaveBeenCalledWith('Transaction successfully started')
   })
 
-  it('submitForm passes undefined idTag when empty', async () => {
+  it('should pass undefined idTag when empty on submit', async () => {
     const { submitForm } = useStartTxForm('hash1', '1')
     await submitForm()
     expect(mockStartTransaction).toHaveBeenCalledWith('hash1', {
@@ -77,7 +77,7 @@ describe('useStartTxForm', () => {
     })
   })
 
-  it('submitForm authorizes first when authorizeIdTag is true', async () => {
+  it('should authorize first when authorizeIdTag is true', async () => {
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
@@ -86,7 +86,7 @@ describe('useStartTxForm', () => {
     expect(mockStartTransaction).toHaveBeenCalled()
   })
 
-  it('submitForm shows error when authorizeIdTag is true but idTag is empty', async () => {
+  it('should show error when authorizeIdTag is true but idTag is empty', async () => {
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.authorizeIdTag = true
     formState.value.idTag = ''
@@ -95,7 +95,7 @@ describe('useStartTxForm', () => {
     expect(mockStartTransaction).not.toHaveBeenCalled()
   })
 
-  it('submitForm handles authorize failure', async () => {
+  it('should handle authorize failure', async () => {
     mockAuthorize.mockRejectedValueOnce(new Error('auth failed'))
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.authorizeIdTag = true
@@ -105,7 +105,7 @@ describe('useStartTxForm', () => {
     expect(mockStartTransaction).not.toHaveBeenCalled()
   })
 
-  it('submitForm handles startTransaction failure', async () => {
+  it('should handle startTransaction failure', async () => {
     mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.idTag = 'TAG001'
