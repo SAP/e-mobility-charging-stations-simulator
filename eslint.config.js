@@ -217,7 +217,12 @@ export default defineConfig([
     },
   },
   {
-    files: ['ui/web/src/components/Container.vue', 'ui/web/src/components/buttons/Button.vue'],
+    files: [
+      'ui/web/src/components/Container.vue',
+      'ui/web/src/components/buttons/Button.vue',
+      'ui/web/src/skins/classic/components/Container.vue',
+      'ui/web/src/skins/classic/components/buttons/Button.vue',
+    ],
     rules: {
       'vue/multi-word-component-names': 'off',
     },
