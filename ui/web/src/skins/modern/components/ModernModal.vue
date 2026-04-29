@@ -102,10 +102,7 @@ const handleEsc = (): void => {
   emit('close')
 }
 
-// Track whether the mouse was pressed down ON THE BACKDROP itself (not
-// inside the modal). Closing only fires when both mousedown and mouseup
-// happen on the backdrop — otherwise dragging a text selection from an
-// input out past the modal edge would close the dialog.
+// Close only when both mousedown+mouseup occur on backdrop (prevents accidental close during text drag).
 let pressedOnBackdrop = false
 
 const handleBackdropMouseDown = (event: MouseEvent): void => {

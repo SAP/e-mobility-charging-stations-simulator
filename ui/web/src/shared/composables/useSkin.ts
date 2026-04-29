@@ -3,9 +3,7 @@ import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
-// NOTE: Intentional dependency on skins/registry (pure metadata, no component logic).
-// This creates a shared → skins coupling, but registry.ts contains only static
-// skin metadata (ids, labels, lazy loaders) — no circular or behavioral dependency.
+// Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'
 
 export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
@@ -27,9 +25,7 @@ const activeSkinId: Ref<SkinName> = ref(
     return isValidSkin(stored) ? stored : DEFAULT_SKIN
   })()
 )
-// Set data-skin attribute on module load for programmatic skin identification.
-// NOTE: No CSS currently uses [data-skin] selectors — skin isolation relies on component-level
-// class scoping (.modern-app, .classic-layout). This attribute serves as a JS/testing hook.
+// JS/testing hook — no CSS uses [data-skin]; skin isolation is via component class scoping.
 if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-skin', activeSkinId.value)
 }

@@ -137,9 +137,7 @@ export function useLayoutData (): LayoutData {
     getData,
     getSimulatorState,
     loading,
-    // NOTE: registerWSEventListeners/unregisterWSEventListeners are called automatically
-    // via onMounted/onUnmounted. They are exposed for edge cases where manual control
-    // is needed (e.g., re-registering after a hot-reload in development).
+    // Exposed for edge cases (e.g. hot-reload); normally called via onMounted/onUnmounted.
     registerWSEventListeners,
     simulatorStarted,
     simulatorState: readonly(simulatorState) as Readonly<Ref<SimulatorState | undefined>>,

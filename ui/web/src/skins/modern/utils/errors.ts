@@ -1,9 +1,4 @@
-// Error-extraction helpers for modern skin dialogs.
-//
-// `ServerFailureError.payload.responsesFailed[i]` has `errorMessage` and
-// `commandResponse` (the actual protocol response, e.g. `{ idTagInfo: { status } }`
-// for authorize). We dig into `commandResponse` to surface the real protocol
-// status and return the full payload for a debug-panel JSON dump.
+// Extract protocol status from ServerFailureError commandResponse (e.g. "Invalid", "Blocked").
 
 import { extractErrorMessage, type ResponsePayload, ServerFailureError } from 'ui-common'
 
@@ -26,8 +21,7 @@ export const getFailureInfo = (error: unknown): FailureInfo => {
     const cmdResponse = asRecord(first?.commandResponse)
     const idTagInfo = asRecord(cmdResponse?.idTagInfo)
 
-    // Preferred: the protocol status inside commandResponse (e.g. "Invalid",
-    // "Blocked", "Expired" for authorize; "Accepted"/"Rejected" for others).
+    // Preferred: protocol status from commandResponse (e.g. "Invalid", "Blocked", "Expired").
     const summary =
       stringField(idTagInfo, 'status') ??
       stringField(cmdResponse, 'status') ??

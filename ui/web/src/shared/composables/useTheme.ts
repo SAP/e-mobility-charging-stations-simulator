@@ -43,7 +43,6 @@ function applyTheme (themeName: ThemeName): void {
   document.documentElement.classList.remove('theme-switching')
 }
 
-// Apply initial theme at module initialization
 applyTheme(activeThemeId.value)
 
 /**

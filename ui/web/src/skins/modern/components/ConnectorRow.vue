@@ -200,8 +200,7 @@ const identifier = computed(() =>
 
 const statusVariant = computed(() => getConnectorStatusVariant(props.connector.status))
 
-// The connector is effectively locked whenever it's explicitly locked
-// OR a transaction is active (physical lock engages during charging).
+// Effectively locked when explicitly locked OR transaction active (physical lock engages).
 const effectiveLocked = computed(
   () => props.connector.locked === true || props.connector.transactionStarted === true
 )

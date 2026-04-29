@@ -11,7 +11,6 @@ export const ROUTE_NAMES = {
 } as const
 
 export const SHARED_TOGGLE_BUTTON_KEY_PREFIX = 'shared-toggle-button-'
-// Toggle button keys use a descriptive prefix without the `ecs-ui-` namespace
-// because they are per-station (dynamic), unlike the global skin/theme keys.
+// Per-station keys (dynamic) — no `ecs-ui-` namespace unlike global skin/theme keys.
 export const TOGGLE_BUTTON_KEY_PREFIX = 'toggle-button-'
 export const UI_SERVER_CONFIGURATION_INDEX_KEY = 'uiServerConfigurationIndex'

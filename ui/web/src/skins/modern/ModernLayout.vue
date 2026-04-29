@@ -77,8 +77,7 @@
 </template>
 
 <script setup lang="ts">
-// Modern skin uses component-level dialog state (v-if) instead of router navigation.
-// This avoids URL coupling for modal interactions and enables independent skin operation.
+// Dialog state via v-if (no URL coupling), enabling skin-independent modal interactions.
 import { type OCPPVersion } from 'ui-common'
 import { defineAsyncComponent, ref } from 'vue'
 
@@ -144,7 +143,6 @@ const handleUIServerChange = (nextIndex: number): void => {
 
 const confirmingStopSim = ref(false)
 
-// Dialog state
 const showAddDialog = ref(false)
 const showSetUrlDialog = ref<null | {
   chargingStationId: string

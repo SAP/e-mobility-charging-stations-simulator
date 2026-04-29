@@ -36,8 +36,7 @@ function skinGuard (to: RouteLocationNormalized) {
   if (to.meta.skinOnly != null) {
     const { activeSkinId } = useSkin()
     if (to.meta.skinOnly !== activeSkinId.value) {
-      // NOTE: useToast() from vue-toast-notification is a stateless factory (no Vue injection context
-      // required), so it is safe to call outside component setup.
+      // Safe outside setup: useToast() is a stateless factory, no injection context required.
       const $toast = useToast()
       $toast.info('This page is not available in the current skin.')
       return { name: ROUTE_NAMES.CHARGING_STATIONS }
