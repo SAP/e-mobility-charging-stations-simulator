@@ -74,20 +74,30 @@ describe('useSimulatorControl', () => {
   })
 
   it('should start the simulator and refresh state on success', async () => {
+    // Arrange
     mockClient.startSimulator.mockResolvedValue({ status: 'success' })
     const [result] = mountComposable()
+
+    // Act
     result.startSimulator()
     await flushPromises()
+
+    // Assert
     expect(mockClient.startSimulator).toHaveBeenCalledTimes(1)
     expect(mockGetSimulatorState).toHaveBeenCalled()
   })
 
   it('should stop the simulator and clear charging stations on success', async () => {
+    // Arrange
     mockClient.stopSimulator.mockResolvedValue({ status: 'success' })
     chargingStations.value = [{ id: 'cs-1' }, { id: 'cs-2' }]
     const [result] = mountComposable()
+
+    // Act
     result.stopSimulator()
     await flushPromises()
+
+    // Assert
     expect(mockClient.stopSimulator).toHaveBeenCalledTimes(1)
     expect(chargingStations.value).toHaveLength(0)
     expect(mockGetSimulatorState).toHaveBeenCalled()
@@ -110,9 +120,14 @@ describe('useSimulatorControl', () => {
   })
 
   it('should handle server switch with new index', () => {
+    // Arrange
     localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result] = mountComposable()
+
+    // Act
     result.handleUIServerChange(1)
+
+    // Assert
     expect(mockClient.setConfiguration).toHaveBeenCalledWith(createUIServerConfig({ port: 9090 }))
     expect(mockRegisterWSEventListeners).toHaveBeenCalled()
     expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function), {
@@ -173,11 +188,16 @@ describe('useSimulatorControl', () => {
   })
 
   it('should call onSimulatorStopped callback on successful stop', async () => {
+    // Arrange
     mockClient.stopSimulator.mockResolvedValue({ status: 'success' })
     const onSimulatorStopped = vi.fn()
     const [result] = mountComposable({ onSimulatorStopped })
+
+    // Act
     result.stopSimulator()
     await flushPromises()
+
+    // Assert
     expect(onSimulatorStopped).toHaveBeenCalledTimes(1)
   })
 
@@ -224,9 +244,11 @@ describe('useSimulatorControl', () => {
   })
 
   it('should clean up pending WS handlers on scope dispose mid-switch', () => {
+    // Arrange
     localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result, app] = mountComposable()
 
+    // Act
     result.handleUIServerChange(1)
 
     expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function), {
@@ -238,11 +260,13 @@ describe('useSimulatorControl', () => {
 
     app.unmount()
 
+    // Assert
     expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('open', expect.any(Function))
     expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('error', expect.any(Function))
   })
 
   it('should ignore error handler when open already settled the switch', () => {
+    // Arrange
     localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result] = mountComposable()
     result.handleUIServerChange(1)
@@ -251,14 +275,18 @@ describe('useSimulatorControl', () => {
     const openHandler = calls.find(([event]) => event === 'open')?.[1] as () => void
     const errorHandler = calls.find(([event]) => event === 'error')?.[1] as () => void
 
+    // Act
     openHandler()
     expect(result.serverSwitchPending.value).toBe(false)
 
     errorHandler()
+
+    // Assert
     expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
   })
 
   it('should ignore open handler when error already settled the switch', () => {
+    // Arrange
     localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result] = mountComposable()
     result.handleUIServerChange(1)
@@ -267,10 +295,13 @@ describe('useSimulatorControl', () => {
     const openHandler = calls.find(([event]) => event === 'open')?.[1] as () => void
     const errorHandler = calls.find(([event]) => event === 'error')?.[1] as () => void
 
+    // Act
     errorHandler()
     expect(result.serverSwitchPending.value).toBe(false)
 
     openHandler()
+
+    // Assert
     expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
   })
 

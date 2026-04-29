@@ -367,7 +367,7 @@ describe('Dialogs', () => {
       await wrapper.find('#modern-tx-idtag').setValue('BAD-TAG')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
-      expect(wrapper.emitted('close')).toBeFalsy()
+      expect(wrapper.emitted('close')).toBeUndefined()
     })
 
     it('should emit close when cancel button is clicked', async () => {

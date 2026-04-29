@@ -4,15 +4,15 @@
  */
 import type { OCPPVersion } from 'ui-common'
 
-import { computed, readonly, type Ref } from 'vue'
+import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables/Utils.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 interface ConnectorActionsDeps {
-  connectorId: number | Ref<number>
-  hashId: Ref<string> | string
+  connectorId: MaybeRefOrGetter<number>
+  hashId: MaybeRefOrGetter<string>
   onRefresh?: () => void
 }
 
@@ -39,10 +39,8 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
     deps.onRefresh
   )
 
-  const hashId = computed(() => (typeof deps.hashId === 'string' ? deps.hashId : deps.hashId.value))
-  const connectorId = computed(() =>
-    typeof deps.connectorId === 'number' ? deps.connectorId : deps.connectorId.value
-  )
+  const hashId = computed(() => toValue(deps.hashId))
+  const connectorId = computed(() => toValue(deps.connectorId))
 
   const stopTransaction = (
     transactionId: null | number | string | undefined,

@@ -30,6 +30,10 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     ) => void
   } {
   const $toast = useToast()
+  /**
+   * Reactive pending-state map. Access properties directly (e.g. `pending.connection`)
+   * — do NOT destructure individual keys, as `reactive()` proxies lose reactivity on destructure.
+   */
   const pending = reactive({ ...initialPending }) as T
 
   let disposed = false

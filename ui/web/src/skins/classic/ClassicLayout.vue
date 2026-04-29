@@ -27,9 +27,9 @@
         <StateButton
           :active="simulatorStarted === true"
           :off="() => stopSimulator()"
-          :off-label="simulatorLabel('Stop')"
+          :off-label="stopSimulatorLabel"
           :on="() => startSimulator()"
-          :on-label="simulatorLabel('Start')"
+          :on-label="startSimulatorLabel"
         />
         <ToggleButton
           :id="'add-charging-stations'"
@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 import { randomUUID, type UUIDv4 } from 'ui-common'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -115,29 +115,24 @@ import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
+import { getSelectValue } from '@/shared/utils/dom.js'
 
 import StateButton from './components/buttons/StateButton.vue'
 import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/ClassicContainer.vue'
 
-/**
- * Extracts the value from a select element change event.
- * @param e - The DOM change event
- * @returns The selected option's value
- */
-function getSelectValue (e: Event): string {
-  // eslint-disable-next-line no-undef
-  return (e.target as HTMLSelectElement).value
-}
-
 const layoutData = useLayoutData()
 const { simulatorStarted, simulatorState, uiServerConfigurations } = layoutData
 
-const simulatorLabel = (action: string): string =>
-  `${action} Simulator${
-    simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''
-  }`
+const startSimulatorLabel = computed(
+  () =>
+    `Start Simulator${simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''}`
+)
+const stopSimulatorLabel = computed(
+  () =>
+    `Stop Simulator${simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''}`
+)
 
 const state = ref<{
   renderAddChargingStations: UUIDv4

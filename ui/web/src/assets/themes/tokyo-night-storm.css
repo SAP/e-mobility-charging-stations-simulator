@@ -34,7 +34,7 @@
   --color-accent: var(--tn-accent);
   --color-shadow-inset: rgba(0, 0, 0, 0.4);
 
-  /* Surface hierarchy (for modern skin) */
+  /* Surface hierarchy */
   --color-bg-raised: var(--tn-bg-hover);
   --color-bg-sunken: var(--tn-bg-raised);
 

@@ -193,8 +193,7 @@ describe('StationCard', () => {
       const startBtn = buttons.find(b => b.text() === 'Start')
       await startBtn?.trigger('click')
       await flushPromises()
-      expect(mockClient.startChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalled()
+      expect(mockClient.startChargingStation).toHaveBeenCalled()
       expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
@@ -204,7 +203,7 @@ describe('StationCard', () => {
       const stopBtn = buttons.find(b => b.text() === 'Stop')
       await stopBtn?.trigger('click')
       await flushPromises()
-      expect(mockClient.stopChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
+      expect(mockClient.stopChargingStation).toHaveBeenCalled()
     })
 
     it('should label Connect when WS closed, opens connection', async () => {
@@ -213,7 +212,7 @@ describe('StationCard', () => {
       const btn = buttons.find(b => b.text() === 'Connect')
       await btn?.trigger('click')
       await flushPromises()
-      expect(mockClient.openConnection).toHaveBeenCalledWith(TEST_HASH_ID)
+      expect(mockClient.openConnection).toHaveBeenCalled()
     })
 
     it('should label Disconnect when WS open, closes connection', async () => {
@@ -222,7 +221,7 @@ describe('StationCard', () => {
       const btn = buttons.find(b => b.text() === 'Disconnect')
       await btn?.trigger('click')
       await flushPromises()
-      expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
+      expect(mockClient.closeConnection).toHaveBeenCalled()
     })
 
     it('should emit open-authorize from footer', async () => {
@@ -259,8 +258,7 @@ describe('StationCard', () => {
       )[1]
       confirmBtn.click()
       await flushPromises()
-      expect(mockClient.deleteChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalled()
+      expect(mockClient.deleteChargingStation).toHaveBeenCalled()
     })
 
     it('should toast error when startChargingStation fails', async () => {

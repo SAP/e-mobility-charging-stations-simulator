@@ -128,15 +128,15 @@ describe('SimpleComponents', () => {
       const wrapper = mountModal()
       await nextTick()
       expect(document.body.textContent).toContain('Hello')
-      expect(document.body.querySelector('[data-testid="first"]')).toBeTruthy()
-      expect(document.body.querySelector('[data-testid="second"]')).toBeTruthy()
+      expect(document.body.querySelector('[data-testid="first"]')).not.toBeNull()
+      expect(document.body.querySelector('[data-testid="second"]')).not.toBeNull()
       wrapper.unmount()
     })
 
     it('should render the footer slot when provided', async () => {
       const wrapper = mountModal()
       await nextTick()
-      expect(document.body.querySelector('.modern-modal__foot')).toBeTruthy()
+      expect(document.body.querySelector('.modern-modal__foot')).not.toBeNull()
       wrapper.unmount()
     })
 

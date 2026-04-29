@@ -19,6 +19,11 @@ function isValidSkin (skinId: string): skinId is SkinName {
   return skins.some(s => s.id === skinId)
 }
 
+/**
+ * Singleton state — shared across all useSkin() consumers (global skin config).
+ * Uses `isSwitching` (not `pending`) because this tracks a UI-visible CSS transition,
+ * not merely a pending network request.
+ */
 const activeSkinId: Ref<SkinName> = ref(
   (() => {
     const stored = getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
@@ -33,7 +38,7 @@ const loadedSkins = new Set<string>()
 let switchPromise: null | Promise<boolean> = null
 const lastError: Ref<null | string> = ref(null)
 
-/** Whether a skin switch is currently in progress. */
+/** Whether a skin switch is currently in progress (CSS transition-dependent). */
 const isSwitching: Ref<boolean> = ref(false)
 
 /**

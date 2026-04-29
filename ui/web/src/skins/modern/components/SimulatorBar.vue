@@ -98,6 +98,7 @@ import { computed } from 'vue'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
+import { getSelectValue } from '@/shared/utils/dom.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
@@ -110,16 +111,6 @@ import StatePill from './StatePill.vue'
 function getSelectIndex (e: Event): number {
   // eslint-disable-next-line no-undef
   return (e.target as HTMLSelectElement).selectedIndex
-}
-
-/**
- * Extracts the value from a select element change event.
- * @param e - The DOM change event
- * @returns The selected option's value
- */
-function getSelectValue (e: Event): string {
-  // eslint-disable-next-line no-undef
-  return (e.target as HTMLSelectElement).value
 }
 
 const props = defineProps<{

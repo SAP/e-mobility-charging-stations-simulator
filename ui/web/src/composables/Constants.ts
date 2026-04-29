@@ -13,4 +13,6 @@ export const ROUTE_NAMES = {
 export const SHARED_TOGGLE_BUTTON_KEY_PREFIX = 'shared-toggle-button-'
 // Per-station keys (dynamic) — no `ecs-ui-` namespace unlike global skin/theme keys.
 export const TOGGLE_BUTTON_KEY_PREFIX = 'toggle-button-'
-export const UI_SERVER_CONFIGURATION_INDEX_KEY = 'uiServerConfigurationIndex'
+export const UI_SERVER_CONFIGURATION_INDEX_KEY = 'ecs-ui-server-index'
+// Legacy key — used only for one-time migration read at boot.
+export const LEGACY_UI_SERVER_CONFIG_KEY = 'uiServerConfigurationIndex'

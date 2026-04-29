@@ -12,6 +12,7 @@ import {
   chargingStationsKey,
   configurationKey,
   getFromLocalStorage,
+  LEGACY_UI_SERVER_CONFIG_KEY,
   setToLocalStorage,
   templatesKey,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
@@ -60,6 +61,15 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   const configuration = shallowRef(config)
   const templates = shallowRef<string[]>([])
   const chargingStations = shallowRef<ChargingStationData[]>([])
+  try {
+    const legacyIndex = localStorage.getItem(LEGACY_UI_SERVER_CONFIG_KEY)
+    if (legacyIndex != null && localStorage.getItem(UI_SERVER_CONFIGURATION_INDEX_KEY) == null) {
+      localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, legacyIndex)
+      localStorage.removeItem(LEGACY_UI_SERVER_CONFIG_KEY)
+    }
+  } catch {
+    // localStorage access can throw in restricted environments
+  }
   if (
     getFromLocalStorage<number | undefined>(UI_SERVER_CONFIGURATION_INDEX_KEY, undefined) == null ||
     getFromLocalStorage(UI_SERVER_CONFIGURATION_INDEX_KEY, 0) >

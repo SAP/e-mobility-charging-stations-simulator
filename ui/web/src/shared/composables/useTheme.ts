@@ -26,6 +26,8 @@ const activeThemeId: Ref<ThemeName> = ref(
   })()
 )
 
+const lastError: Ref<null | string> = ref(null)
+
 /**
  * Applies a theme by setting the data-theme attribute on the document root.
  * Disables CSS transitions during the swap to prevent color flash (VueUse pattern).
@@ -52,6 +54,7 @@ applyTheme(activeThemeId.value)
 export function useTheme (): {
   activeThemeId: Readonly<Ref<ThemeName>>
   availableThemes: typeof AVAILABLE_THEMES
+  lastError: Readonly<Ref<null | string>>
   switchTheme: (name: string) => void
 } {
   /**
@@ -60,8 +63,10 @@ export function useTheme (): {
    */
   function switchTheme (name: string): void {
     if (!isValidTheme(name)) {
+      lastError.value = `Invalid theme: '${name}'`
       return
     }
+    lastError.value = null
     applyTheme(name)
     activeThemeId.value = name
     setToLocalStorage<string>(THEME_STORAGE_KEY, name)
@@ -71,6 +76,7 @@ export function useTheme (): {
   return {
     activeThemeId: readonly(activeThemeId),
     availableThemes: AVAILABLE_THEMES,
+    lastError: readonly(lastError),
     switchTheme,
   }
 }
