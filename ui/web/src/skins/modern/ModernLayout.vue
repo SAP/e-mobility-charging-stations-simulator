@@ -94,34 +94,31 @@ import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js
 
 import ConfirmDialog from './components/ConfirmDialog.vue'
 
-const AddStationsDialog = defineAsyncComponent({
-  delay: 200,
-  errorComponent: SkinLoadError,
-  loader: () => import('./components/dialogs/AddStationsDialog.vue'),
-  loadingComponent: SkinLoading,
-  timeout: 10000,
-})
-const AuthorizeDialog = defineAsyncComponent({
-  delay: 200,
-  errorComponent: SkinLoadError,
-  loader: () => import('./components/dialogs/AuthorizeDialog.vue'),
-  loadingComponent: SkinLoading,
-  timeout: 10000,
-})
-const SetSupervisionUrlDialog = defineAsyncComponent({
-  delay: 200,
-  errorComponent: SkinLoadError,
-  loader: () => import('./components/dialogs/SetSupervisionUrlDialog.vue'),
-  loadingComponent: SkinLoading,
-  timeout: 10000,
-})
-const StartTransactionDialog = defineAsyncComponent({
-  delay: 200,
-  errorComponent: SkinLoadError,
-  loader: () => import('./components/dialogs/StartTransactionDialog.vue'),
-  loadingComponent: SkinLoading,
-  timeout: 10000,
-})
+/**
+ * Creates a lazy-loaded dialog component with shared loading/error boundaries.
+ * @param loader - Dynamic import function for the dialog component
+ * @returns An async component definition with standardized loading and error states
+ */
+function defineAsyncDialog (loader: () => Promise<{ default: unknown }>) {
+  return defineAsyncComponent({
+    delay: 200,
+    errorComponent: SkinLoadError,
+    loader: loader as () => Promise<{ default: import('vue').Component }>,
+    loadingComponent: SkinLoading,
+    timeout: 10000,
+  })
+}
+
+const AddStationsDialog = defineAsyncDialog(
+  () => import('./components/dialogs/AddStationsDialog.vue')
+)
+const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/AuthorizeDialog.vue'))
+const SetSupervisionUrlDialog = defineAsyncDialog(
+  () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
+)
+const StartTransactionDialog = defineAsyncDialog(
+  () => import('./components/dialogs/StartTransactionDialog.vue')
+)
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 

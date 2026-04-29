@@ -1,7 +1,8 @@
+import { type SKIN_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
-import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
+import { validateTokenContract } from '@/shared/tokens/contract.js'
 // NOTE: Intentional dependency on skins/registry (pure metadata, no component logic).
 // This creates a shared → skins coupling, but registry.ts contains only static
 // skin metadata (ids, labels, lazy loaders) — no circular or behavioral dependency.
@@ -9,17 +10,22 @@ import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'
 
 export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
+export type SkinName = (typeof SKIN_IDS)[number]
+
 /**
- * Returns a registered skin id or falls back to the default skin.
+ * Checks whether a string is a valid registered skin id.
  * @param skinId - The skin identifier to validate
- * @returns A valid registered skin identifier
+ * @returns Whether the id is a registered skin identifier
  */
-function getValidSkinId (skinId: string): string {
-  return skins.some(s => s.id === skinId) ? skinId : DEFAULT_SKIN
+function isValidSkin (skinId: string): skinId is SkinName {
+  return skins.some(s => s.id === skinId)
 }
 
-const activeSkinId: Ref<string> = ref(
-  getValidSkinId(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
+const activeSkinId: Ref<SkinName> = ref(
+  (() => {
+    const stored = getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
+    return isValidSkin(stored) ? stored : DEFAULT_SKIN
+  })()
 )
 // Set data-skin attribute on module load for programmatic skin identification.
 // NOTE: No CSS currently uses [data-skin] selectors — skin isolation relies on component-level
@@ -39,10 +45,10 @@ const isSwitching: Ref<boolean> = ref(false)
  * @returns Skin state and switcher
  */
 export function useSkin (): {
-  activeSkinId: Readonly<Ref<string>>
+  activeSkinId: Readonly<Ref<SkinName>>
+  availableSkins: readonly SkinDefinition[]
   isSwitching: Readonly<Ref<boolean>>
   lastError: Readonly<Ref<null | string>>
-  skins: readonly SkinDefinition[]
   switchSkin: (id: string) => Promise<boolean>
 } {
   /**
@@ -64,9 +70,9 @@ export function useSkin (): {
 
   return {
     activeSkinId: readonly(activeSkinId),
+    availableSkins: skins,
     isSwitching: readonly(isSwitching),
     lastError: readonly(lastError),
-    skins,
     switchSkin,
   }
 }
@@ -85,7 +91,7 @@ async function loadSkinStyles (skinId: string): Promise<void> {
   }
   await skin.loadStyles()
   loadedSkins.add(skinId)
-  validateTokenContract(skinId)
+  validateTokenContract('useSkin', skinId)
 }
 
 /**
@@ -115,7 +121,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
   try {
     await loadSkinStyles(skinId)
     lastError.value = null
-    activeSkinId.value = skinId
+    activeSkinId.value = skinId as SkinName
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-skin', skinId)
     }
@@ -133,20 +139,5 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     return false
   } finally {
     isSwitching.value = false
-  }
-}
-
-/**
- * Dev-mode runtime check that all required CSS custom properties are defined.
- * @param skinId - The skin identifier that was just loaded
- */
-function validateTokenContract (skinId: string): void {
-  if (!import.meta.env.DEV || typeof document === 'undefined') return
-  const style = getComputedStyle(document.documentElement)
-  for (const token of TOKEN_CONTRACT) {
-    const prop = `--${token}`
-    if (!style.getPropertyValue(prop).trim()) {
-      console.warn(`[useSkin] Missing CSS token '${prop}' after loading skin '${skinId}'`)
-    }
   }
 }

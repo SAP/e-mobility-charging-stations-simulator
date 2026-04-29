@@ -45,8 +45,8 @@ describe('useSkin', () => {
     expect(activeSkinId.value).toBe(DEFAULT_SKIN)
   })
 
-  it('should return skins array with 2 entries', () => {
-    const { skins: skinsList } = useSkin()
+  it('should return availableSkins array with 2 entries', () => {
+    const { availableSkins: skinsList } = useSkin()
     expect(skinsList.length).toBe(2)
     expect(skinsList.map(s => s.id)).toEqual(['classic', 'modern'])
   })

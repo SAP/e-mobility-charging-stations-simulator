@@ -159,7 +159,7 @@ const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
 
-const { activeSkinId, skins, switchSkin } = useSkin()
+const { activeSkinId, availableSkins: skins, switchSkin } = useSkin()
 const { activeThemeId, availableThemes, switchTheme } = useTheme()
 
 const {

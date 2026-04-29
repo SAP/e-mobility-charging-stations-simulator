@@ -45,3 +45,22 @@ export const TOKEN_CONTRACT = [
 
 export type CssCustomProperty = `--${TokenName}`
 export type TokenName = (typeof TOKEN_CONTRACT)[number]
+
+/**
+ * Dev-mode runtime check that all required CSS custom properties are defined.
+ * Uses requestAnimationFrame to ensure styles are applied before checking.
+ * @param source - The composable/module name for the warning prefix (e.g. 'useSkin', 'useTheme')
+ * @param contextId - The skin/theme id that was just applied
+ */
+export function validateTokenContract (source: string, contextId: string): void {
+  if (!import.meta.env.DEV || typeof document === 'undefined') return
+  requestAnimationFrame(() => {
+    const style = getComputedStyle(document.documentElement)
+    for (const token of TOKEN_CONTRACT) {
+      const prop: CssCustomProperty = `--${token}`
+      if (!style.getPropertyValue(prop).trim()) {
+        console.warn(`[${source}] Missing CSS token '${prop}' after applying '${contextId}'`)
+      }
+    }
+  })
+}

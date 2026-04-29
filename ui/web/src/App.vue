@@ -38,17 +38,10 @@ const skinLayoutMap = new Map(
   skins.map(s => [
     s.id,
     markRaw(
-      // NOTE: Each skin's CSS is loaded here (via s.loadStyles()) to ensure styles are available
-      // before the component renders. This is in addition to useSkin.switchSkin() which loads
-      // CSS during runtime skin switches. Both paths are necessary — this one gates the initial
-      // async component load, while switchSkin gates user-initiated switches.
       defineAsyncComponent({
         delay: 200,
         errorComponent: SkinLoadError,
-        loader: async () => {
-          await s.loadStyles()
-          return s.loadLayout()
-        },
+        loader: () => s.loadLayout(),
         loadingComponent: SkinLoading,
         timeout: 10000,
       })

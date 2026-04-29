@@ -7,11 +7,11 @@
 
 import type { Component } from 'vue'
 
-import { SKIN_IDS } from 'ui-common'
+import { type SKIN_IDS } from 'ui-common'
 
 export interface SkinDefinition {
   /** Unique identifier used in localStorage and config.json. */
-  readonly id: string
+  readonly id: (typeof SKIN_IDS)[number]
   /** Display label shown in the UI switcher. */
   readonly label: string
   /** Lazy-loads the skin's root layout component. */
@@ -20,7 +20,7 @@ export interface SkinDefinition {
   readonly loadStyles: () => Promise<unknown>
 }
 
-export const DEFAULT_SKIN = SKIN_IDS[0]
+export const DEFAULT_SKIN: (typeof SKIN_IDS)[number] = 'classic'
 
 export const skins: readonly SkinDefinition[] = [
   {

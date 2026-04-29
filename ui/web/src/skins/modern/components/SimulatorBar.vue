@@ -138,7 +138,7 @@ defineEmits<{
   'toggle-simulator': []
 }>()
 
-const { activeSkinId, skins: skinList, switchSkin } = useSkin()
+const { activeSkinId, availableSkins: skinList, switchSkin } = useSkin()
 const { activeThemeId, availableThemes, switchTheme } = useTheme()
 
 const simulatorStarted = computed(() => props.simulatorState?.started === true)

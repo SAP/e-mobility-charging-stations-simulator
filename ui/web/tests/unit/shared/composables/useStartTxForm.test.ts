@@ -160,4 +160,32 @@ describe('useStartTxForm', () => {
     const result = await submitForm()
     expect(result).toBe(true)
   })
+
+  it('should call onError with step "authorize" on authorize failure', async () => {
+    mockAuthorize.mockRejectedValueOnce(new Error('auth failed'))
+    const onError = vi.fn()
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '1',
+      hashId: 'hash1',
+      options: { onError },
+    })
+    formState.value.authorizeIdTag = true
+    formState.value.idTag = 'TAG001'
+    await submitForm()
+    expect(onError).toHaveBeenCalledWith(expect.any(Error), 'authorize')
+  })
+
+  it('should call onError with step "startTransaction" on startTransaction failure', async () => {
+    mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
+    const onError = vi.fn()
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '1',
+      hashId: 'hash1',
+      options: { onError },
+    })
+    formState.value.authorizeIdTag = false
+    formState.value.idTag = 'TAG001'
+    await submitForm()
+    expect(onError).toHaveBeenCalledWith(expect.any(Error), 'startTransaction')
+  })
 })

@@ -22,7 +22,7 @@ const payloadWith = (responsesFailed: unknown[]): ResponsePayload =>
     status: ResponseStatus.FAILURE,
   }) as never
 
-describe('modern getFailureInfo', () => {
+describe('getFailureInfo', () => {
   it('should return extractErrorMessage for non-ServerFailureError', () => {
     const info = getFailureInfo(new Error('boom'))
     expect(info.payload).toBeUndefined()

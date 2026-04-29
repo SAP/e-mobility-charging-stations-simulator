@@ -2,10 +2,10 @@ import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
-import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
+import { validateTokenContract } from '@/shared/tokens/contract.js'
 
-export const AVAILABLE_THEMES: readonly string[] = THEME_IDS
-export const DEFAULT_THEME: (typeof THEME_IDS)[number] = 'tokyo-night-storm'
+export const AVAILABLE_THEMES = THEME_IDS
+export const DEFAULT_THEME: ThemeName = 'tokyo-night-storm'
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof THEME_IDS)[number]
@@ -16,7 +16,7 @@ export type ThemeName = (typeof THEME_IDS)[number]
  * @returns Whether the name is a valid theme name
  */
 function isValidTheme (name: string): name is ThemeName {
-  return AVAILABLE_THEMES.includes(name)
+  return (AVAILABLE_THEMES as readonly string[]).includes(name)
 }
 
 const activeThemeId: Ref<ThemeName> = ref(
@@ -66,19 +66,7 @@ export function useTheme (): {
     applyTheme(name)
     activeThemeId.value = name
     setToLocalStorage<string>(THEME_STORAGE_KEY, name)
-    if (import.meta.env.DEV && typeof document !== 'undefined') {
-      requestAnimationFrame(() => {
-        const style = getComputedStyle(document.documentElement)
-        for (const token of TOKEN_CONTRACT) {
-          const prop = `--${token}`
-          if (!style.getPropertyValue(prop).trim()) {
-            console.warn(
-              `[useTheme] Missing CSS token '${prop}' after switching to theme '${name}'`
-            )
-          }
-        }
-      })
-    }
+    validateTokenContract('useTheme', name)
   }
 
   return {
