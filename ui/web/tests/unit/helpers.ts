@@ -2,12 +2,9 @@
  * @file Shared test utilities for Vue.js web UI unit tests
  * @description MockWebSocket, withSetup composable helper, mock factories.
  */
-import { flushPromises } from '@vue/test-utils'
 import { ResponseStatus } from 'ui-common'
 import { vi } from 'vitest'
 import { type App, createApp } from 'vue'
-
-export { flushPromises as flushAllPromises }
 
 // ── MockUIClient ──────────────────────────────────────────────────────────────
 

@@ -122,6 +122,7 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 | Field                     | Type                    | Required | Description                               |
 | ------------------------- | ----------------------- | -------- | ----------------------------------------- |
+| `skin`                    | `string`                | No       | Skin name (default: `classic`)            |
 | `theme`                   | `string`                | No       | Theme name (default: `tokyo-night-storm`) |
 | `host`                    | `string`                | Yes      | Simulator UI server hostname              |
 | `port`                    | `number`                | Yes      | Simulator UI server port                  |
@@ -145,6 +146,17 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | `sap-horizon`       | Light | [SAP Horizon](https://github.com/SAP/theming-base-content)       |
 
 Default: `tokyo-night-storm`. To add a theme, create a CSS file defining the same semantic tokens.
+
+## Skins
+
+Set `skin` in `config.json` to select the default UI layout. Users can switch skins at runtime using the selector in the top bar.
+
+| Skin      | Layout                                            |
+| --------- | ------------------------------------------------- |
+| `classic` | Table-based rows with a sticky sidebar for forms. |
+| `modern`  | Responsive card grid with modal dialogs.          |
+
+Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/skins/registry.ts`.
 
 ## Getting started
 

@@ -351,10 +351,10 @@ describe('UIClient', () => {
 
     it('should send SET_SUPERVISION_URL with credentials when provided', async () => {
       const url = 'ws://new-supervision:9001'
-      await client.setSupervisionUrl(TEST_HASH_ID, url, 'alice', 's3cret')
+      await client.setSupervisionUrl(TEST_HASH_ID, url, 'alice', 'secret')
       expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.SET_SUPERVISION_URL, {
         hashIds: [TEST_HASH_ID],
-        supervisionPassword: 's3cret',
+        supervisionPassword: 'secret',
         supervisionUser: 'alice',
         url,
       })

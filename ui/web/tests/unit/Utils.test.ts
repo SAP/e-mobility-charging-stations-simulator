@@ -1,6 +1,6 @@
 /**
  * @file Tests for Utils composable
- * @description Unit tests for localStorage, toggle state, useExecuteAction, and useFetchData utilities.
+ * @description Unit tests for localStorage, toggle state, and useFetchData utilities.
  */
 import { flushPromises } from '@vue/test-utils'
 import { ResponseStatus } from 'ui-common'
@@ -12,8 +12,10 @@ import {
   getLocalStorage,
   resetToggleButtonState,
   setToLocalStorage,
-  useExecuteAction,
+  useChargingStations,
+  useConfiguration,
   useFetchData,
+  useTemplates,
 } from '@/composables'
 
 import { toastMock } from '../setup'
@@ -124,36 +126,6 @@ describe('Utils', () => {
     })
   })
 
-  describe('useExecuteAction', () => {
-    afterEach(() => {
-      vi.restoreAllMocks()
-    })
-
-    it('should call emit and toast.success on action success', async () => {
-      const emit = vi.fn()
-      const executeAction = useExecuteAction(emit)
-
-      executeAction(Promise.resolve(), 'Success message', 'Error message')
-      await flushPromises()
-
-      expect(emit).toHaveBeenCalledWith('need-refresh')
-      expect(toastMock.success).toHaveBeenCalledWith('Success message')
-    })
-
-    it('should call toast.error and console.error on action failure', async () => {
-      const consoleSpy = vi.spyOn(console, 'error')
-      const emit = vi.fn()
-      const executeAction = useExecuteAction(emit)
-
-      executeAction(Promise.reject(new Error('fail')), 'Success', 'Error at action')
-      await flushPromises()
-
-      expect(emit).not.toHaveBeenCalled()
-      expect(toastMock.error).toHaveBeenCalledWith('Error at action')
-      expect(consoleSpy).toHaveBeenCalledWith('Error at action:', expect.any(Error))
-    })
-  })
-
   describe('useFetchData', () => {
     afterEach(() => {
       vi.restoreAllMocks()
@@ -242,6 +214,38 @@ describe('Utils', () => {
 
       expect(toastMock.error).toHaveBeenCalledWith('Fetch error')
       expect(consoleSpy).toHaveBeenCalled()
+    })
+
+    it('should log error when onError callback throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error')
+      const throwingOnError = vi.fn().mockImplementation(() => {
+        throw new Error('callback error')
+      })
+      const { fetch } = useFetchData(
+        () => Promise.reject(new Error('fail')),
+        vi.fn(),
+        'Fetch error',
+        throwingOnError
+      )
+
+      fetch()
+      await flushPromises()
+
+      expect(consoleSpy).toHaveBeenCalledWith('Error in onError callback:', expect.any(Error))
+    })
+  })
+
+  describe('inject utilities outside provide scope', () => {
+    it('useConfiguration should throw when not provided', () => {
+      expect(() => useConfiguration()).toThrow('configuration not provided')
+    })
+
+    it('useChargingStations should throw when not provided', () => {
+      expect(() => useChargingStations()).toThrow('chargingStations not provided')
+    })
+
+    it('useTemplates should throw when not provided', () => {
+      expect(() => useTemplates()).toThrow('templates not provided')
     })
   })
 })

@@ -4,8 +4,8 @@ import type { InjectionKey, Ref } from 'vue'
 import { inject, ref as vueRef } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants'
-import { UIClient } from './UIClient'
+import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants.js'
+import { UIClient } from './UIClient.js'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
 export const chargingStationsKey: InjectionKey<Ref<ChargingStationData[]>> =
@@ -14,21 +14,48 @@ export const templatesKey: InjectionKey<Ref<string[]>> = Symbol('templates')
 export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
 
 export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
-  const item = localStorage.getItem(key)
-  return item != null ? (JSON.parse(item) as T) : defaultValue
+  try {
+    const item = localStorage.getItem(key)
+    return item != null ? (JSON.parse(item) as T) : defaultValue
+  } catch {
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to read key '${key}', using default`)
+    }
+    return defaultValue
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const setToLocalStorage = <T>(key: string, value: T): void => {
-  localStorage.setItem(key, JSON.stringify(value))
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // localStorage.setItem() can throw:
+    // - QuotaExceededError when the origin's storage quota is genuinely exceeded
+    // - SecurityError when storage is blocked by user settings or browser policies
+    //   (e.g., "Block All Cookies" in Safari, third-party iframe in Chrome, file: URLs)
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to write key '${key}'`)
+    }
+  }
 }
 
 export const deleteFromLocalStorage = (key: string): void => {
-  localStorage.removeItem(key)
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to delete key '${key}'`)
+    }
+  }
 }
 
 export const getLocalStorage = (): Storage => {
-  return localStorage
+  try {
+    return localStorage
+  } catch {
+    throw new Error('localStorage is not available')
+  }
 }
 
 /**
@@ -36,9 +63,15 @@ export const getLocalStorage = (): Storage => {
  * @param pattern - Substring to match against localStorage keys
  */
 export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
-  const keysToDelete = Object.keys(localStorage).filter(key => key.includes(pattern))
-  for (const key of keysToDelete) {
-    deleteFromLocalStorage(key)
+  try {
+    const keysToDelete = Object.keys(localStorage).filter(key => key.includes(pattern))
+    for (const key of keysToDelete) {
+      deleteFromLocalStorage(key)
+    }
+  } catch {
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to delete keys matching '${pattern}'`)
+    }
   }
 }
 
@@ -57,6 +90,9 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
 export const useUIClient = (): UIClient => {
   const injected = inject(uiClientKey, undefined)
   if (injected != null) return injected
+  if (import.meta.env.DEV) {
+    console.debug('[useUIClient] Accessed outside provide scope — using singleton fallback')
+  }
   return UIClient.getInstance()
 }
 
@@ -76,44 +112,6 @@ export const useTemplates = (): Ref<string[]> => {
   const injected = inject(templatesKey, undefined)
   if (injected != null) return injected
   throw new Error('templates not provided')
-}
-
-export interface ExecuteActionCallbacks {
-  onFinally?: () => void
-  onSuccess?: () => void
-}
-
-export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
-  const $toast = useToast()
-  return (
-    action: Promise<unknown>,
-    successMsg: string,
-    errorMsg: string,
-    callbacks?: ExecuteActionCallbacks
-  ): void => {
-    const { onFinally, onSuccess } = callbacks ?? {}
-    action
-      .then(() => {
-        try {
-          onSuccess?.()
-        } catch (error: unknown) {
-          console.error('Error in onSuccess callback:', error)
-        }
-        emit?.('need-refresh')
-        return $toast.success(successMsg)
-      })
-      .finally(() => {
-        try {
-          onFinally?.()
-        } catch (error: unknown) {
-          console.error('Error in onFinally callback:', error)
-        }
-      })
-      .catch((error: unknown) => {
-        $toast.error(errorMsg)
-        console.error(`${errorMsg}:`, error)
-      })
-  }
 }
 
 export const useFetchData = (

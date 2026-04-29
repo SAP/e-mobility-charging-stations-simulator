@@ -1,6 +1,6 @@
 /* Catppuccin Latte */
 
-:root {
+:root[data-theme='catppuccin-latte'] {
   /* Palette */
   --ctp-base: #eff1f5;
   --ctp-mantle: #e6e9ef;
@@ -33,53 +33,15 @@
   --color-accent: var(--ctp-lavender);
   --color-shadow-inset: rgba(0, 0, 0, 0.1);
 
-  /* Spacing */
-  --spacing-xs: 0.125rem;
-  --spacing-sm: 0.25rem;
-  --spacing-md: 0.5rem;
-  --spacing-lg: 1rem;
+  /* Surface hierarchy */
+  --color-bg-raised: var(--ctp-surface0);
+  --color-bg-sunken: var(--ctp-mantle);
 
-  /* Typography */
-  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
-  --font-size-sm: 0.875rem;
-}
+  /* State colors (Material 700 for light mode readability) */
+  --color-state-ok: #2e7d32;
+  --color-state-warn: #ef6c00;
+  --color-state-err: #c62828;
+  --color-state-idle: var(--ctp-overlay1);
 
-body {
-  color: var(--color-text);
-  background-color: var(--color-bg);
-}
-
-button,
-.button {
-  color: var(--color-text-on-button);
-  background-color: var(--color-bg-button);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-
-button:hover,
-.button:hover {
-  background-color: var(--color-bg-button-hover);
-}
-
-input,
-select,
-textarea {
-  color: var(--color-text);
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--color-border-row);
-}
-
-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 1px solid var(--color-primary);
-}
-
-a {
-  color: var(--color-primary);
+  color-scheme: light;
 }

@@ -1,0 +1,182 @@
+<template>
+  <Modal
+    title="Add charging stations"
+    @close="close"
+  >
+    <form
+      class="modern-form"
+      @submit.prevent="submit"
+    >
+      <div class="modern-form__row">
+        <label
+          class="modern-form__label"
+          for="modern-add-template"
+        >Template</label>
+        <select
+          id="modern-add-template"
+          v-model="formState.template"
+          class="modern-form__select"
+          required
+        >
+          <option
+            disabled
+            value=""
+          >
+            — select a template —
+          </option>
+          <option
+            v-for="t in templates"
+            :key="t"
+            :value="t"
+          >
+            {{ t }}
+          </option>
+        </select>
+      </div>
+      <div class="modern-form__row">
+        <label
+          class="modern-form__label"
+          for="modern-add-count"
+        >Number of stations</label>
+        <input
+          id="modern-add-count"
+          v-model.number="formState.numberOfStations"
+          class="modern-form__input"
+          max="100"
+          min="1"
+          type="number"
+          required
+        >
+      </div>
+      <fieldset class="modern-form__row modern-form__fieldset">
+        <legend class="modern-form__label">
+          Naming
+        </legend>
+        <label
+          class="modern-form__label"
+          for="modern-add-basename"
+        >Base name</label>
+        <input
+          id="modern-add-basename"
+          v-model.trim="formState.baseName"
+          class="modern-form__input"
+          type="text"
+          placeholder="Base name (defaults to template name)"
+        >
+        <label class="modern-form__check">
+          <input
+            v-model="formState.fixedName"
+            type="checkbox"
+          >
+          Fixed name (base name is full station name)
+        </label>
+      </fieldset>
+      <fieldset class="modern-form__row modern-form__fieldset">
+        <legend class="modern-form__label">
+          Supervision
+        </legend>
+        <label
+          class="modern-form__label"
+          for="modern-add-url"
+        >URL</label>
+        <input
+          id="modern-add-url"
+          v-model.trim="formState.supervisionUrl"
+          class="modern-form__input"
+          type="url"
+          placeholder="wss://..."
+        >
+        <label
+          class="modern-form__label"
+          for="modern-add-user"
+        >Username</label>
+        <input
+          id="modern-add-user"
+          v-model.trim="formState.supervisionUser"
+          class="modern-form__input"
+          type="text"
+          placeholder="Username"
+        >
+        <label
+          class="modern-form__label"
+          for="modern-add-pass"
+        >Password</label>
+        <input
+          id="modern-add-pass"
+          v-model="formState.supervisionPassword"
+          class="modern-form__input"
+          type="password"
+          placeholder="Password"
+        >
+        <span class="modern-form__hint">
+          Leave blank to use the template's defaults. Any value entered overrides them.
+        </span>
+      </fieldset>
+      <div class="modern-form__row">
+        <label class="modern-form__check">
+          <input
+            v-model="formState.autoStart"
+            type="checkbox"
+          >
+          Auto-start the new stations
+        </label>
+        <label class="modern-form__check">
+          <input
+            v-model="formState.persistentConfiguration"
+            type="checkbox"
+          >
+          Persistent configuration
+        </label>
+        <label class="modern-form__check">
+          <input
+            v-model="formState.ocppStrictCompliance"
+            type="checkbox"
+          >
+          OCPP strict compliance
+        </label>
+        <label class="modern-form__check">
+          <input
+            v-model="formState.enableStatistics"
+            type="checkbox"
+          >
+          Performance statistics
+        </label>
+      </div>
+    </form>
+    <template #footer>
+      <ActionButton
+        variant="ghost"
+        @click="close"
+      >
+        Cancel
+      </ActionButton>
+      <ActionButton
+        variant="primary"
+        :pending="pending"
+        @click="submit"
+      >
+        Add
+      </ActionButton>
+    </template>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
+
+import ActionButton from '../ActionButton.vue'
+import Modal from '../ModernModal.vue'
+
+const emit = defineEmits<{ close: [] }>()
+
+const { formState, pending, submitForm, templates } = useAddStationsForm()
+
+const close = (): void => {
+  emit('close')
+}
+
+const submit = async (): Promise<void> => {
+  const success = await submitForm()
+  if (success) close()
+}
+</script>

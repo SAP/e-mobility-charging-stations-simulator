@@ -1,11 +1,12 @@
 export {
   EMPTY_VALUE_PLACEHOLDER,
+  LEGACY_UI_SERVER_CONFIG_KEY,
   ROUTE_NAMES,
   SHARED_TOGGLE_BUTTON_KEY_PREFIX,
   TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
-} from './Constants'
-export { UIClient } from './UIClient'
+} from './Constants.js'
+export { UIClient } from './UIClient.js'
 export {
   chargingStationsKey,
   configurationKey,
@@ -19,8 +20,7 @@ export {
   uiClientKey,
   useChargingStations,
   useConfiguration,
-  useExecuteAction,
   useFetchData,
   useTemplates,
   useUIClient,
-} from './Utils'
+} from './Utils.js'

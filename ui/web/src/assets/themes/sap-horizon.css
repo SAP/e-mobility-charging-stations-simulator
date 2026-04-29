@@ -1,6 +1,6 @@
 /* SAP Horizon */
 
-:root {
+:root[data-theme='sap-horizon'] {
   /* Palette */
   --sap-bg: #f5f6f7;
   --sap-bg-base: #fff;
@@ -17,6 +17,7 @@
   --sap-button-border: #bcc3ca;
   --sap-button-text: #0064d9;
   --sap-button-emphasized-bg: #0070f2;
+  --sap-white: #fff;
 
   /* Semantic */
   --color-bg: var(--sap-bg);
@@ -31,60 +32,22 @@
   --color-text: var(--sap-text);
   --color-text-strong: var(--sap-text);
   --color-text-muted: var(--sap-label);
-  --color-text-on-button: #fff;
+  --color-text-on-button: var(--sap-white);
   --color-primary: var(--sap-highlight);
   --color-border: var(--sap-border);
   --color-border-row: var(--sap-border);
   --color-accent: var(--sap-brand);
   --color-shadow-inset: rgba(34, 53, 72, 0.15);
 
-  /* Spacing */
-  --spacing-xs: 0.125rem;
-  --spacing-sm: 0.25rem;
-  --spacing-md: 0.5rem;
-  --spacing-lg: 1rem;
+  /* Surface hierarchy */
+  --color-bg-raised: var(--sap-bg-shell);
+  --color-bg-sunken: var(--sap-hover);
 
-  /* Typography */
-  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
-  --font-size-sm: 0.875rem;
-}
+  /* State colors (SAP Horizon palette) */
+  --color-state-ok: #256f3a;
+  --color-state-warn: #e9730c;
+  --color-state-err: #bb0000;
+  --color-state-idle: var(--sap-label);
 
-body {
-  color: var(--color-text);
-  background-color: var(--color-bg);
-}
-
-button,
-.button {
-  color: var(--color-text-on-button);
-  background-color: var(--color-bg-button);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-
-button:hover,
-.button:hover {
-  background-color: var(--color-bg-button-hover);
-}
-
-input,
-select,
-textarea {
-  color: var(--color-text);
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--color-border-row);
-}
-
-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 1px solid var(--color-primary);
-}
-
-a {
-  color: var(--color-primary);
+  color-scheme: light;
 }

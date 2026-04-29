@@ -25,6 +25,7 @@ export default defineConfig([
               'MILLI',
               'MILLIWATT',
               'Benoit',
+              'catppuccin',
               'chargingstations',
               'ctrlr',
               'csms',
@@ -115,6 +116,11 @@ export default defineConfig([
               'PUBLICKEYWITHSIGNEDMETERVALUE',
               'sampleddatasignreadings',
               'SAMPLEDDATASIGNREADINGS',
+              // UI component terms
+              'focusables',
+              'Focusables',
+              // Test credential fragments
+              'secret',
             ],
           },
         },
@@ -216,16 +222,16 @@ export default defineConfig([
     },
   },
   {
-    files: ['ui/web/src/components/Container.vue', 'ui/web/src/components/buttons/Button.vue'],
-    rules: {
-      'vue/multi-word-component-names': 'off',
-    },
-  },
-  {
     files: ['tests/**/*.test.ts', 'tests/**/*.test.mts', 'tests/**/*.test.cts'],
     rules: {
       '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
       'no-void': 'off',
+    },
+  },
+  {
+    files: ['ui/web/tests/**/*.test.ts'],
+    rules: {
+      'vue/order-in-components': 'off',
     },
   },
 ])
