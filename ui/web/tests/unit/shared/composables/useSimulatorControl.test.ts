@@ -16,11 +16,6 @@ import { toastMock } from '../../../setup'
 import { createUIServerConfig } from '../../constants'
 import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers'
 
-const { mockGetSimulatorState, mockRegisterWSEventListeners } = vi.hoisted(() => ({
-  mockGetSimulatorState: vi.fn(),
-  mockRegisterWSEventListeners: vi.fn(),
-}))
-
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
   return {
@@ -31,26 +26,21 @@ vi.mock('@/composables', async importOriginal => {
   }
 })
 
-vi.mock('@/shared/composables/useLayoutData.js', () => ({
-  useLayoutData: vi.fn().mockReturnValue({
-    getSimulatorState: mockGetSimulatorState,
-    registerWSEventListeners: mockRegisterWSEventListeners,
-  } satisfies Partial<LayoutData>),
-}))
-
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
 let mockClient: MockUIClient
 let chargingStations: Ref<unknown[]>
 let configuration: Ref<ConfigurationData>
 
-/**
- * Mounts the useSimulatorControl composable in a component context.
- * @param options - Optional callbacks for SimulatorControlOptions
- * @returns Tuple of [composable result, app instance]
- */
-function mountComposable (options?: Parameters<typeof useSimulatorControl>[0]) {
-  return withSetup(() => useSimulatorControl(options))
+const mockGetSimulatorState = vi.fn()
+const mockRegisterWSEventListeners = vi.fn()
+const mockLayoutData: Pick<LayoutData, 'getSimulatorState' | 'registerWSEventListeners'> = {
+  getSimulatorState: mockGetSimulatorState,
+  registerWSEventListeners: mockRegisterWSEventListeners,
+}
+
+function mountComposable (options?: Parameters<typeof useSimulatorControl>[1]) {
+  return withSetup(() => useSimulatorControl(mockLayoutData, options))
 }
 
 describe('useSimulatorControl', () => {

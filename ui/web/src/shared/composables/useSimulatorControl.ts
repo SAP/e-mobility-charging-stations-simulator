@@ -12,7 +12,7 @@ import {
   useExecuteAction,
   useUIClient,
 } from '@/composables'
-import { useLayoutData } from '@/shared/composables/useLayoutData.js'
+import { type LayoutData } from '@/shared/composables/useLayoutData.js'
 
 export interface SimulatorControlActions {
   /** Switches the active UI server, with error rollback on connection failure. */
@@ -38,15 +38,19 @@ export interface SimulatorControlOptions {
  * Shared composable encapsulating simulator start/stop and UI server switching logic.
  *
  * Provides consistent error handling and rollback behavior across layout skins.
+ * @param layoutData - Layout data providing getSimulatorState and registerWSEventListeners
  * @param options - Optional callbacks for skin-specific side effects
  * @returns Simulator control actions and pending state refs
  */
-export function useSimulatorControl (options?: SimulatorControlOptions): SimulatorControlActions {
+export function useSimulatorControl (
+  layoutData: Pick<LayoutData, 'getSimulatorState' | 'registerWSEventListeners'>,
+  options?: SimulatorControlOptions
+): SimulatorControlActions {
   const $uiClient = useUIClient()
   const $configuration = useConfiguration()
   const $chargingStations = useChargingStations()
 
-  const { getSimulatorState, registerWSEventListeners } = useLayoutData()
+  const { getSimulatorState, registerWSEventListeners } = layoutData
   const executeAction = useExecuteAction()
 
   const simulatorPending = ref(false)

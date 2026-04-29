@@ -101,8 +101,8 @@
 <script setup lang="ts">
 import './classic.css'
 
-import { randomUUID, type UIServerConfigurationSection, type UUIDv4 } from 'ui-common'
-import { computed, ref, watch } from 'vue'
+import { randomUUID, type UUIDv4 } from 'ui-common'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -113,7 +113,6 @@ import {
   TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
-  useConfiguration,
 } from '@/composables'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
@@ -125,7 +124,8 @@ import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/Container.vue'
 
-const { simulatorStarted, simulatorState } = useLayoutData()
+const layoutData = useLayoutData()
+const { simulatorStarted, simulatorState, uiServerConfigurations } = layoutData
 
 const simulatorLabel = (action: string): string =>
   `${action} Simulator${
@@ -151,7 +151,6 @@ const clearToggleButtons = (): void => {
   deleteLocalStorageByKeyPattern(TOGGLE_BUTTON_KEY_PREFIX)
 }
 
-const $configuration = useConfiguration()
 const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
@@ -159,18 +158,21 @@ const $router = useRouter()
 const { activeSkinId, skins, switchSkin } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
-const { handleUIServerChange: switchServer, startSimulator, stopSimulator } = useSimulatorControl({
-  onServerSwitched: () => {
-    clearToggleButtons()
-    refresh()
-    if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
-      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-    }
-  },
-  onSimulatorStopped: () => {
-    resetToggleButtonState('add-charging-stations', true)
-  },
-})
+const { handleUIServerChange: switchServer, startSimulator, stopSimulator } = useSimulatorControl(
+  layoutData,
+  {
+    onServerSwitched: () => {
+      clearToggleButtons()
+      refresh()
+      if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
+        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+      }
+    },
+    onSimulatorStopped: () => {
+      resetToggleButtonState('add-charging-stations', true)
+    },
+  }
+)
 
 const handleUIServerChange = (): void => {
   switchServer(state.value.uiServerIndex)
@@ -185,12 +187,6 @@ watch(() => $route.name, name => {
     refresh()
   }
 })
-
-const uiServerConfigurations = computed(() =>
-  ($configuration.value.uiServer as UIServerConfigurationSection[]).map(
-    (configuration: UIServerConfigurationSection, index: number) => ({ configuration, index })
-  )
-)
 </script>
 
 <style scoped>

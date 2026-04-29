@@ -78,14 +78,13 @@
 <script setup lang="ts">
 // Modern skin uses component-level dialog state (v-if) instead of router navigation.
 // This avoids URL coupling for modal interactions and enables independent skin operation.
-import { type OCPPVersion, type UIServerConfigurationSection } from 'ui-common'
-import { computed, ref } from 'vue'
+import { type OCPPVersion } from 'ui-common'
+import { ref } from 'vue'
 
 import {
   getFromLocalStorage,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
-  useConfiguration,
 } from '@/composables'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
@@ -99,15 +98,16 @@ import StartTransactionDialog from './components/dialogs/StartTransactionDialog.
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 
-const $configuration = useConfiguration()
 const $chargingStations = useChargingStations()
 
+const layoutData = useLayoutData()
 const {
   getChargingStations,
   getData,
   loading,
   simulatorState,
-} = useLayoutData()
+  uiServerConfigurations,
+} = layoutData
 
 const state = ref({
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
@@ -118,7 +118,7 @@ const {
   simulatorPending,
   startSimulator,
   stopSimulator,
-} = useSimulatorControl()
+} = useSimulatorControl(layoutData)
 
 const handleUIServerChange = (nextIndex: number): void => {
   state.value.uiServerIndex = nextIndex
@@ -144,13 +144,6 @@ const showAuthorizeDialog = ref<null | {
   chargingStationId: string
   hashId: string
 }>(null)
-
-const uiServerConfigurations = computed(() =>
-  ($configuration.value.uiServer as UIServerConfigurationSection[]).map((configuration, index) => ({
-    configuration,
-    index,
-  }))
-)
 
 const refreshData = (): void => {
   getData()

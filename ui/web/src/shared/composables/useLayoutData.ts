@@ -1,8 +1,8 @@
-import type { ChargingStationData, SimulatorState } from 'ui-common'
+import type { ChargingStationData, SimulatorState, UIServerConfigurationSection } from 'ui-common'
 
 import { computed, type ComputedRef, onMounted, onUnmounted, readonly, type Ref, ref } from 'vue'
 
-import { useChargingStations, useFetchData, useTemplates, useUIClient } from '@/composables'
+import { useChargingStations, useConfiguration, useFetchData, useTemplates, useUIClient } from '@/composables'
 
 export interface LayoutData {
   /** Fetches only the charging stations list. */
@@ -19,6 +19,8 @@ export interface LayoutData {
   simulatorStarted: ComputedRef<boolean | undefined>
   /** The current simulator state object. */
   simulatorState: Readonly<Ref<SimulatorState | undefined>>
+  /** Mapped array of UI server configurations with their indices. */
+  uiServerConfigurations: ComputedRef<Array<{ configuration: UIServerConfigurationSection; index: number }>>
   /** Unregisters WS event listeners previously registered. */
   unregisterWSEventListeners: () => void
 }
@@ -31,6 +33,7 @@ export interface LayoutData {
  */
 export function useLayoutData (): LayoutData {
   const $uiClient = useUIClient()
+  const $configuration = useConfiguration()
   const $templates = useTemplates()
   const $chargingStations = useChargingStations()
 
@@ -75,6 +78,12 @@ export function useLayoutData (): LayoutData {
     () => fetchingSimulatorState.value || fetchingTemplates.value || fetchingChargingStations.value
   )
 
+  const uiServerConfigurations = computed(() =>
+    ($configuration.value.uiServer as UIServerConfigurationSection[]).map(
+      (configuration, index) => ({ configuration, index })
+    )
+  )
+
   const getData = (): void => {
     getSimulatorState()
     getTemplates()
@@ -115,6 +124,7 @@ export function useLayoutData (): LayoutData {
     registerWSEventListeners,
     simulatorStarted,
     simulatorState: readonly(simulatorState) as Readonly<Ref<SimulatorState | undefined>>,
+    uiServerConfigurations,
     unregisterWSEventListeners,
   }
 }
