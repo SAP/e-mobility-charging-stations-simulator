@@ -86,12 +86,6 @@
           {{ skin.label }}
         </option>
       </select>
-      <RouterLink
-        class="modern-bar__version-link"
-        :to="{ name: V1_ROUTE_NAME }"
-      >
-        v1 →
-      </RouterLink>
     </div>
   </div>
 </template>
@@ -100,16 +94,12 @@
 import type { SimulatorState, UIServerConfigurationSection } from 'ui-common'
 
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
 
-import { ROUTE_NAMES } from '@/composables'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
-
-const V1_ROUTE_NAME = ROUTE_NAMES.CHARGING_STATIONS
 
 const { activeSkinId, switchSkin, skins: skinList } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()

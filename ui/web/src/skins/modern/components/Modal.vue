@@ -50,7 +50,7 @@
 /* global HTMLElement, HTMLDivElement, KeyboardEvent, MouseEvent */
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 
-defineOptions({ name: 'V2Modal' })
+defineOptions({ name: 'ModernModal' })
 
 const props = withDefaults(
   defineProps<{
