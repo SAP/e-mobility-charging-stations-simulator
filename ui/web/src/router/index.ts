@@ -11,6 +11,9 @@ declare module 'vue-router' {
   }
 }
 
+/** Placeholder component for routes where the skin layout handles all rendering. */
+const PassthroughRoute = { render: () => null } as const
+
 /**
  * Routes serve the classic skin's action panel (sidebar forms via named `action` view).
  * The modern skin uses modal dialogs instead of router navigation.
@@ -21,7 +24,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      component: { render: () => null },
+      component: PassthroughRoute,
       name: ROUTE_NAMES.CHARGING_STATIONS,
       path: '/',
     },

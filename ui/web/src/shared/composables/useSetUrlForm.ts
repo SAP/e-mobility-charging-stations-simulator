@@ -41,11 +41,11 @@ export function useSetUrlForm (
    * @returns Whether the submission was successful
    */
   async function submitForm (): Promise<boolean> {
+    if (pending.value) return false
     if (formState.value.supervisionUrl.length === 0) {
       $toast.error('Supervision url is required')
       return false
     }
-    if (pending.value) return false
     pending.value = true
     try {
       await $uiClient.setSupervisionUrl(

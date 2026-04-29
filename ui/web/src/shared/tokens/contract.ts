@@ -1,9 +1,9 @@
 /**
  * CSS token contract.
  *
- * Color tokens are mandatory for all skins. Typography and spacing tokens are
- * theme defaults that skins MAY override with their own structural tokens
- * (e.g., --skin-space-*, --skin-font).
+ * Typography and spacing tokens are provided by `base.css` (shared across all themes).
+ * Color tokens (`color-*`) and `color-scheme` must be defined per theme file.
+ * When adding a new theme, ensure all `color-*` tokens below are defined in your theme CSS.
  *
  * Every theme file MUST define a value for each token (as `--{token-name}`).
  */

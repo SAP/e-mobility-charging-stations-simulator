@@ -2,6 +2,9 @@ import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
+// NOTE: Intentional dependency on skins/registry (pure metadata, no component logic).
+// This creates a shared → skins coupling, but registry.ts contains only static
+// skin metadata (ids, labels, lazy loaders) — no circular or behavioral dependency.
 import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'
 
 export const SKIN_STORAGE_KEY = 'ecs-ui-skin'

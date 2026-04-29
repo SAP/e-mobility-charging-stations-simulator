@@ -152,10 +152,11 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('should ignore current skin id and return false', async () => {
+  it('should return true without reload when switching to already-active skin', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const before = activeSkinId.value
-    await switchSkin(before)
+    const result = await switchSkin(before)
+    expect(result).toBe(true)
     expect(activeSkinId.value).toBe(before)
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })

@@ -7,7 +7,7 @@
       :simulator-state="simulatorState"
       :ui-server-configurations="uiServerConfigurations"
       @add="showAddDialog = true"
-      @refresh="refreshData"
+      @refresh="getData"
       @switch-server="handleUIServerChange"
       @toggle-simulator="toggleSimulator"
     />
@@ -137,10 +137,6 @@ const showAuthorizeDialog = ref<null | {
   chargingStationId: string
   hashId: string
 }>(null)
-
-const refreshData = (): void => {
-  getData()
-}
 
 const confirmStopSimulator = (): void => {
   stopSimulator()

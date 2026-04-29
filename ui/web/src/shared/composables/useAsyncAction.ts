@@ -48,11 +48,10 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   ): void {
     if (pending[key]) return
     pending[key] = true as T[keyof T]
-    // The promise chain has .catch() and .finally() attached but the linter cannot
-    // see through the intermediate .then(), hence the suppression.
-    // eslint-disable-next-line promise/catch-or-return
-    action()
-      .then(() => {
+    // eslint-disable-next-line no-void
+    void (async () => {
+      try {
+        await action()
         try {
           onSuccess?.()
         } catch (error: unknown) {
@@ -64,15 +63,13 @@ export function useAsyncAction<T extends Record<string, boolean>> (
         } catch (error: unknown) {
           console.error('Error in onRefresh callback:', error)
         }
-        return undefined
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         console.error(`${errorMsg}:`, error)
         $toast.error(errorMsg)
-      })
-      .finally(() => {
+      } finally {
         pending[key] = false as T[keyof T]
-      })
+      }
+    })()
   }
 
   return { pending: readonly(pending) as Readonly<T>, run }

@@ -11,6 +11,8 @@ describe('useTheme', () => {
     localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.style.colorScheme = ''
+    const { setTheme } = useTheme()
+    setTheme('tokyo-night-storm')
   })
 
   it('should return activeThemeId ref', () => {

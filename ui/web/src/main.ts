@@ -88,6 +88,10 @@ const bootstrap = async (): Promise<void> => {
     response = await fetch('/config.json')
   } catch (error: unknown) {
     console.error('Error at fetching app configuration:', error)
+    const errorPre = document.createElement('pre')
+    errorPre.className = 'config-error'
+    errorPre.textContent = 'Failed to load configuration. Check that config.json is accessible.'
+    document.body.replaceChildren(errorPre)
     return
   }
   if (!response.ok) {

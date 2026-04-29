@@ -71,7 +71,7 @@
       </ActionButton>
       <ActionButton
         variant="primary"
-        :pending="pending"
+        :pending="pending || reconnectPending"
         @click="submit"
       >
         Save
@@ -96,7 +96,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
+const { formState, pending, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
 
@@ -120,15 +120,15 @@ formState.value.supervisionUrl = stripStationId(
 formState.value.supervisionUser = currentStation.value?.stationInfo.supervisionUser ?? ''
 formState.value.supervisionPassword = currentStation.value?.stationInfo.supervisionPassword ?? ''
 
-const pending = ref(false)
+const reconnectPending = ref(false)
 
 const close = (): void => {
   emit('close')
 }
 
 const submit = async (): Promise<void> => {
-  if (pending.value) return
-  pending.value = true
+  if (reconnectPending.value) return
+  reconnectPending.value = true
   try {
     const success = await submitForm()
     if (!success) return
@@ -138,7 +138,7 @@ const submit = async (): Promise<void> => {
     }
     close()
   } finally {
-    pending.value = false
+    reconnectPending.value = false
   }
 }
 </script>

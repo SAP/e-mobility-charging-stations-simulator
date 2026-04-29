@@ -30,6 +30,8 @@ import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 describe('useAddStationsForm', () => {
   afterEach(() => {
     vi.clearAllMocks()
+    mockTemplates.value = ['template1.json', 'template2.json']
+    uuidCounter = 0
   })
 
   it('should initialize with default state', () => {
