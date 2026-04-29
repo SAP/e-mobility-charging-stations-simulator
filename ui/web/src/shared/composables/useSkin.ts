@@ -2,6 +2,7 @@ import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/shared/skins/registry.js'
+import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
 
 export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
@@ -17,6 +18,9 @@ function getValidSkinId (skinId: string): string {
 const activeSkinId: Ref<string> = ref(
   getValidSkinId(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
 )
+if (typeof document !== 'undefined') {
+  document.documentElement.setAttribute('data-skin', activeSkinId.value)
+}
 const loadedSkins = new Set<string>()
 const switching = ref(false)
 const lastError: Ref<null | string> = ref(null)
@@ -52,6 +56,9 @@ export function useSkin (): {
     try {
       await loadSkinStyles(skinId)
       activeSkinId.value = skinId
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-skin', skinId)
+      }
       setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
       return true
     } catch (error) {
@@ -87,4 +94,19 @@ async function loadSkinStyles (skinId: string): Promise<void> {
   }
   await skin.loadStyles()
   loadedSkins.add(skinId)
+  validateTokenContract(skinId)
+}
+
+/**
+ * Dev-mode runtime check that all required CSS custom properties are defined.
+ * @param skinId - The skin identifier that was just loaded
+ */
+function validateTokenContract (skinId: string): void {
+  if (!import.meta.env.DEV || typeof document === 'undefined') return
+  const style = getComputedStyle(document.documentElement)
+  for (const prop of Object.values(TOKEN_CONTRACT)) {
+    if (!style.getPropertyValue(prop).trim()) {
+      console.warn(`[useSkin] Missing CSS token '${prop}' after loading skin '${skinId}'`)
+    }
+  }
 }

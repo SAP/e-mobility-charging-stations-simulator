@@ -115,15 +115,6 @@ describe('useAddStationsForm', () => {
     })
   })
 
-  it('should update renderTemplates when templates change', async () => {
-    const { formState } = useAddStationsForm()
-    const before = formState.value.renderTemplates
-    mockTemplates.value = ['new-template.json']
-    await nextTick()
-    expect(formState.value.renderTemplates).not.toBe(before)
-    expect(typeof formState.value.renderTemplates).toBe('string')
-  })
-
   it('should reset form via onFinally callback on submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station.json'

@@ -93,7 +93,7 @@ describe('Modern skin simple components', () => {
 
   describe('StatePill', () => {
     it.each([['ok'], ['warn'], ['err'], ['idle']] as const)(
-      'applies modern-pill--%s variant class',
+      'should apply modern-pill--%s variant class',
       variant => {
         const wrapper = mount(StatePill, { props: { variant }, slots: { default: variant } })
         expect(wrapper.classes()).toContain(`modern-pill--${variant}`)

@@ -85,7 +85,7 @@ describe('modern ConnectorRow', () => {
       ['Faulted', 'modern-pill--err'],
       ['Unavailable', 'modern-pill--err'],
       ['Reserved', 'modern-pill--idle'],
-    ])('maps status "%s" to class %s', (status, cls) => {
+    ])('should map status "%s" to class %s', (status, cls) => {
       const wrapper = mountRow({ connector: { status } })
       const pills = wrapper.findAll('.modern-pill')
       expect(pills[0].classes()).toContain(cls)

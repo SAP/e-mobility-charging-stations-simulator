@@ -45,7 +45,7 @@ describe('modern SimulatorBar', () => {
     expect(wrapper.text()).toContain('Stopped')
   })
 
-  it('should hides the server select when only one server configured', () => {
+  it('should hide the server select when only one server configured', () => {
     const wrapper = mountBar()
     expect(wrapper.find('.modern-bar__select[aria-label="UI server"]').exists()).toBe(false)
   })

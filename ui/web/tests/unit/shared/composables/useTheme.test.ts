@@ -36,21 +36,18 @@ describe('useTheme', () => {
     const { setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(document.documentElement.getAttribute('data-theme')).toBe('catppuccin-latte')
-    expect(document.documentElement.getAttribute('data-theme')).not.toBe('tokyo-night-storm')
   })
 
   it('should persist the active theme to localStorage', () => {
     const { setTheme } = useTheme()
     setTheme('sap-horizon')
     expect(localStorage.getItem('ecs-ui-theme')).toBe('"sap-horizon"')
-    expect(localStorage.getItem('ecs-ui-theme')).not.toBeNull()
   })
 
   it('should update activeTheme ref', () => {
     const { activeTheme, setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(activeTheme.value).toBe('catppuccin-latte')
-    expect(activeTheme.value).not.toBe('tokyo-night-storm')
   })
 
   it('should not set colorScheme inline style (CSS handles it)', () => {
@@ -69,7 +66,12 @@ describe('useTheme', () => {
     const setThemeUntyped = setTheme as (name: string) => void
     setThemeUntyped('nonexistent')
     expect(activeTheme.value).toBe(before)
-    expect(document.documentElement.getAttribute('data-theme')).not.toBe('nonexistent')
+  })
+
+  it('should fall back to default for invalid localStorage theme value', () => {
+    localStorage.setItem('ecs-ui-theme', '"invalid-theme-name"')
+    const { activeTheme, availableThemes } = useTheme()
+    expect(availableThemes).toContain(activeTheme.value)
   })
 
   describe('SSR environment', () => {

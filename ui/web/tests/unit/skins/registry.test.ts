@@ -42,7 +42,7 @@ describe('skin registry', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('should loadStyles returns a promise for each skin', async () => {
+  it('should return a promise from loadStyles for each skin', async () => {
     for (const skin of skins) {
       await expect(skin.loadStyles()).resolves.toBeDefined()
     }

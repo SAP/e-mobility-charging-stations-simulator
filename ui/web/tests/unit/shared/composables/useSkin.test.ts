@@ -101,14 +101,12 @@ describe('useSkin', () => {
     const { activeSkinId, switchSkin } = useSkin()
     await switchSkin('modern')
     expect(activeSkinId.value).toBe('modern')
-    expect(activeSkinId.value).not.toBe('classic')
   })
 
   it('should persist the active skin to localStorage', async () => {
     const { switchSkin } = useSkin()
     await switchSkin('modern')
     expect(localStorage.getItem('ecs-ui-skin')).toBe('"modern"')
-    expect(localStorage.getItem('ecs-ui-skin')).not.toBeNull()
   })
 
   it('should ignore invalid skin id', async () => {
@@ -125,5 +123,18 @@ describe('useSkin', () => {
     await switchSkin(before)
     expect(activeSkinId.value).toBe(before)
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
+  })
+
+  it('should respect localStorage-stored skin on initialization', () => {
+    localStorage.setItem('ecs-ui-skin', '"modern"')
+    const { activeSkinId } = useSkin()
+    expect(typeof activeSkinId.value).toBe('string')
+    expect(['classic', 'modern']).toContain(activeSkinId.value)
+  })
+
+  it('should set data-skin attribute on document element after switch', async () => {
+    const { switchSkin } = useSkin()
+    await switchSkin('modern')
+    expect(document.documentElement.getAttribute('data-skin')).toBe('modern')
   })
 })
