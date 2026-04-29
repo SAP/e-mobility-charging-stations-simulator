@@ -125,11 +125,10 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('should respect localStorage-stored skin on initialization', () => {
+  it('should return the singleton activeSkinId regardless of later localStorage writes', () => {
     localStorage.setItem('ecs-ui-skin', '"modern"')
     const { activeSkinId } = useSkin()
-    expect(typeof activeSkinId.value).toBe('string')
-    expect(['classic', 'modern']).toContain(activeSkinId.value)
+    expect(activeSkinId.value).toBe('classic')
   })
 
   it('should set data-skin attribute on document element after switch', async () => {

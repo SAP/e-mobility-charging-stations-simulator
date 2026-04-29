@@ -17,6 +17,7 @@ export interface StartTxFormState {
  * @param ocppVersion - Optional OCPP version string
  * @param options - Optional callbacks (e.g. onCleanup for skin-specific reset)
  * @param options.onCleanup - Called after action completes; use for skin-specific cleanup (e.g. toggle button reset)
+ * @param options.onError - Called with the raw error when authorize or startTransaction fails; use for rich error display
  * @returns Form state and submit/reset functions
  */
 export function useStartTxForm (
@@ -24,7 +25,7 @@ export function useStartTxForm (
   connectorId: string,
   evseId?: number,
   ocppVersion?: OCPPVersion,
-  options?: { onCleanup?: () => void }
+  options?: { onCleanup?: () => void; onError?: (error: unknown) => void }
 ): {
     formState: Ref<StartTxFormState>
     resetForm: () => void
@@ -63,6 +64,7 @@ export function useStartTxForm (
       } catch (error) {
         $toast.error('Error at authorizing RFID tag')
         console.error('Error at authorizing RFID tag:', error)
+        options?.onError?.(error)
         options?.onCleanup?.()
         return false
       }
@@ -80,6 +82,7 @@ export function useStartTxForm (
     } catch (error) {
       $toast.error('Error at starting transaction')
       console.error('Error at starting transaction:', error)
+      options?.onError?.(error)
       return false
     } finally {
       options?.onCleanup?.()

@@ -71,6 +71,7 @@
       </ActionButton>
       <ActionButton
         variant="primary"
+        :pending="pending"
         @click="submit"
       >
         Save

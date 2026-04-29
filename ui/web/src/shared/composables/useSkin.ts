@@ -55,11 +55,15 @@ export function useSkin (): {
     switching.value = true
     try {
       await loadSkinStyles(skinId)
+      lastError.value = null
       activeSkinId.value = skinId
       if (typeof document !== 'undefined') {
         document.documentElement.setAttribute('data-skin', skinId)
       }
       setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('skin-error-reload-count')
+      }
       return true
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)

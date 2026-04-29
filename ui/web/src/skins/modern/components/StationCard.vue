@@ -104,7 +104,7 @@
               ? `${entry.evseId}-${entry.connectorId}`
               : String(entry.connectorId)
           "
-          :atg-status="getATGStatus(entry.connectorId)"
+          :atg-status="getATGStatusForConnector(entry.connectorId)"
           :charging-station-id="chargingStation.stationInfo.chargingStationId"
           :connector="entry.connectorStatus"
           :connector-id="entry.connectorId"
@@ -173,6 +173,7 @@ import {
   EMPTY_VALUE_PLACEHOLDER as EMPTY,
   useUIClient,
 } from '@/composables'
+import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 import ActionButton from './ActionButton.vue'
@@ -242,37 +243,10 @@ const supervisionUrl = computed(() => {
   }
 })
 
-const connectors = computed<ConnectorEntry[]>(() => {
-  const station = props.chargingStation
-  if (Array.isArray(station.evses) && station.evses.length > 0) {
-    const entries: ConnectorEntry[] = []
-    for (const evse of station.evses) {
-      if (evse.evseId > 0) {
-        for (const c of evse.evseStatus.connectors) {
-          if (c.connectorId > 0) {
-            entries.push({
-              connectorId: c.connectorId,
-              connectorStatus: c.connectorStatus,
-              evseId: evse.evseId,
-            })
-          }
-        }
-      }
-    }
-    return entries
-  }
-  return (station.connectors ?? [])
-    .filter(c => c.connectorId > 0)
-    .map(c => ({
-      connectorId: c.connectorId,
-      connectorStatus: c.connectorStatus,
-    }))
-})
+const connectors = computed<ConnectorEntry[]>(() => getConnectorEntries(props.chargingStation))
 
-const getATGStatus = (connectorId: number): Status | undefined =>
-  props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
-    entry => entry.connectorId === connectorId
-  )?.status
+const getATGStatusForConnector = (connectorId: number): Status | undefined =>
+  getATGStatus(props.chargingStation, connectorId)
 
 const toggleStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId

@@ -98,8 +98,6 @@
 </template>
 
 <script setup lang="ts">
-import './classic.css'
-
 import { randomUUID, type UUIDv4 } from 'ui-common'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

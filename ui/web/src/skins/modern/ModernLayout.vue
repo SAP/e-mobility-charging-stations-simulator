@@ -89,7 +89,6 @@ import {
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
-import './modern.css'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import AddStationsDialog from './components/dialogs/AddStationsDialog.vue'
 import AuthorizeDialog from './components/dialogs/AuthorizeDialog.vue'

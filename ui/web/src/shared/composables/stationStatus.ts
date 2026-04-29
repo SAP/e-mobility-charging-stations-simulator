@@ -1,8 +1,57 @@
+import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
+
 /**
  * Status variant type for UI display.
  * Maps semantic OCPP states to visual indicator categories.
  */
 export type StatusVariant = 'err' | 'idle' | 'ok' | 'warn'
+
+/**
+ * Gets the ATG status for a specific connector from the station's ATG statuses array.
+ * @param station - The charging station data
+ * @param connectorId - The connector identifier
+ * @returns The ATG status, or undefined if not found
+ */
+export function getATGStatus (
+  station: ChargingStationData,
+  connectorId: number
+): Status | undefined {
+  return station.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
+    entry => entry.connectorId === connectorId
+  )?.status
+}
+
+/**
+ * Extracts a flat array of connector entries from a charging station, filtering out placeholder
+ * connectors (connectorId === 0) and placeholder EVSEs (evseId === 0).
+ * @param station - The charging station data
+ * @returns Flat array of connector entries with optional evseId
+ */
+export function getConnectorEntries (station: ChargingStationData): ConnectorEntry[] {
+  if (Array.isArray(station.evses) && station.evses.length > 0) {
+    const entries: ConnectorEntry[] = []
+    for (const evse of station.evses) {
+      if (evse.evseId > 0) {
+        for (const c of evse.evseStatus.connectors) {
+          if (c.connectorId > 0) {
+            entries.push({
+              connectorId: c.connectorId,
+              connectorStatus: c.connectorStatus,
+              evseId: evse.evseId,
+            })
+          }
+        }
+      }
+    }
+    return entries
+  }
+  return (station.connectors ?? [])
+    .filter(c => c.connectorId > 0)
+    .map(c => ({
+      connectorId: c.connectorId,
+      connectorStatus: c.connectorStatus,
+    }))
+}
 
 /**
  * Maps an OCPP connector status string to a display variant.

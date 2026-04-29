@@ -100,7 +100,7 @@
           <CSConnector
             v-for="entry in connectorEntries"
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
-            :atg-status="getATGStatus(entry.connectorId)"
+            :atg-status="getATGStatusForConnector(entry.connectorId)"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
             :connector="entry.connectorStatus"
             :connector-id="entry.connectorId"
@@ -132,6 +132,7 @@ import {
   useExecuteAction,
   useUIClient,
 } from '@/composables'
+import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
 
 import Button from '../buttons/Button.vue'
 import StateButton from '../buttons/StateButton.vue'
@@ -146,36 +147,11 @@ const $emit = defineEmits<{ 'need-refresh': [] }>()
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
-const connectorEntries = computed((): ConnectorEntry[] => {
-  if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const entries: ConnectorEntry[] = []
-    for (const evse of props.chargingStation.evses) {
-      if (evse.evseId > 0) {
-        for (const entry of evse.evseStatus.connectors) {
-          if (entry.connectorId > 0) {
-            entries.push({
-              connectorId: entry.connectorId,
-              connectorStatus: entry.connectorStatus,
-              evseId: evse.evseId,
-            })
-          }
-        }
-      }
-    }
-    return entries
-  }
-  return (props.chargingStation.connectors ?? [])
-    .filter(c => c.connectorId > 0)
-    .map(entry => ({
-      connectorId: entry.connectorId,
-      connectorStatus: entry.connectorStatus,
-    }))
-})
-const getATGStatus = (connectorId: number): Status | undefined => {
-  return props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
-    entry => entry.connectorId === connectorId
-  )?.status
-}
+const connectorEntries = computed((): ConnectorEntry[] =>
+  getConnectorEntries(props.chargingStation)
+)
+const getATGStatusForConnector = (connectorId: number): Status | undefined =>
+  getATGStatus(props.chargingStation, connectorId)
 const supervisionUrl = computed((): string => {
   const url = props.chargingStation.supervisionUrl?.trim()
 

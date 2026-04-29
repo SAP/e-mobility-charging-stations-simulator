@@ -98,7 +98,12 @@ const { formState, submitForm } = useStartTxForm(
   props.hashId,
   props.connectorId,
   props.evseId,
-  props.ocppVersion
+  props.ocppVersion,
+  {
+    onError: (error: unknown) => {
+      lastFailure.value = getFailureInfo(error)
+    },
+  }
 )
 
 const targetLabel = computed(() =>
@@ -131,9 +136,6 @@ const submit = async (): Promise<void> => {
     const success = await submitForm()
     if (cancelled) return
     if (success) emit('close')
-  } catch (error) {
-    if (cancelled) return
-    lastFailure.value = getFailureInfo(error)
   } finally {
     pending.value = false
   }

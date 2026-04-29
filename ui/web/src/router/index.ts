@@ -1,3 +1,4 @@
+import { h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
@@ -52,8 +53,15 @@ export const router = createRouter({
     },
     {
       component: {
-        template:
-          '<p style="padding: var(--spacing-md, 1rem); text-align: center; color: var(--color-text, inherit)">404 — Page not found</p>',
+        render: () =>
+          h(
+            'p',
+            {
+              style:
+                'padding: var(--spacing-md, 1rem); text-align: center; color: var(--color-text, inherit)',
+            },
+            '404 — Page not found'
+          ),
       },
       name: ROUTE_NAMES.NOT_FOUND,
       path: '/:pathMatch(.*)*',
