@@ -14,13 +14,6 @@ import {
 } from '@/composables'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 
-export interface SimulatorControlOptions {
-  /** Called after a successful server switch (e.g. to clear UI state). */
-  onServerSwitched?: () => void
-  /** Called after the simulator stops successfully (e.g. to reset toggle buttons). */
-  onSimulatorStopped?: () => void
-}
-
 export interface SimulatorControlActions {
   /** Switches the active UI server, with error rollback on connection failure. */
   handleUIServerChange: (newIndex: number) => void
@@ -32,6 +25,13 @@ export interface SimulatorControlActions {
   startSimulator: () => void
   /** Stops the simulator and clears charging stations on success. */
   stopSimulator: () => void
+}
+
+export interface SimulatorControlOptions {
+  /** Called after a successful server switch (e.g. to clear UI state). */
+  onServerSwitched?: () => void
+  /** Called after the simulator stops successfully (e.g. to reset toggle buttons). */
+  onSimulatorStopped?: () => void
 }
 
 /**

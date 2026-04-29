@@ -101,7 +101,7 @@ import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
 
-const { activeSkinId, switchSkin, skins: skinList } = useSkin()
+const { activeSkinId, skins: skinList, switchSkin } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
 const props = defineProps<{

@@ -20,8 +20,8 @@ import {
 } from '@/composables'
 import { router } from '@/router'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 import { THEME_STORAGE_KEY, type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
+import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 

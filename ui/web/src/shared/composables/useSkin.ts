@@ -19,7 +19,7 @@ const activeSkinId: Ref<string> = ref(
 )
 const loadedSkins = new Set<string>()
 const switching = ref(false)
-const lastError: Ref<string | null> = ref(null)
+const lastError: Ref<null | string> = ref(null)
 
 // Eagerly load the initial skin styles.
 loadSkinStyles(activeSkinId.value).catch(() => undefined)
@@ -30,10 +30,10 @@ loadSkinStyles(activeSkinId.value).catch(() => undefined)
  */
 export function useSkin (): {
   activeSkinId: Readonly<Ref<string>>
-  lastError: Readonly<Ref<string | null>>
+  lastError: Readonly<Ref<null | string>>
   skins: readonly SkinDefinition[]
-  switchSkin: (id: string) => Promise<boolean>
   switching: Readonly<Ref<boolean>>
+  switchSkin: (id: string) => Promise<boolean>
 } {
   /**
    * Switches the active skin and lazy-loads its CSS if needed.
@@ -66,8 +66,8 @@ export function useSkin (): {
     activeSkinId: readonly(activeSkinId),
     lastError: readonly(lastError),
     skins,
-    switchSkin,
     switching: readonly(switching),
+    switchSkin,
   }
 }
 

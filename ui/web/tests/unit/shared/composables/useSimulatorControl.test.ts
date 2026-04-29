@@ -1,14 +1,16 @@
+import type { ConfigurationData } from 'ui-common'
+
 /**
  * @file Tests for useSimulatorControl
  * @description Simulator start/stop and server switch orchestration.
  */
 import { flushPromises } from '@vue/test-utils'
-import type { ConfigurationData } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Ref, ref } from 'vue'
 
-import { useChargingStations, useConfiguration, useUIClient } from '@/composables'
 import type { LayoutData } from '@/shared/composables/useLayoutData.js'
+
+import { useChargingStations, useConfiguration, useUIClient } from '@/composables'
 
 import { toastMock } from '../../../setup'
 import { createUIServerConfig } from '../../constants'
@@ -132,7 +134,7 @@ describe('useSimulatorControl', () => {
     expect(result.serverSwitchPending.value).toBe(false)
   })
 
-  it('should not start simulator when already pending', async () => {
+  it('should not start simulator when already pending', () => {
     mockClient.startSimulator.mockReturnValue(new Promise(() => undefined))
     const [result] = mountComposable()
     result.startSimulator()
@@ -140,7 +142,7 @@ describe('useSimulatorControl', () => {
     expect(mockClient.startSimulator).toHaveBeenCalledTimes(1)
   })
 
-  it('should not stop simulator when already pending', async () => {
+  it('should not stop simulator when already pending', () => {
     mockClient.stopSimulator.mockReturnValue(new Promise(() => undefined))
     const [result] = mountComposable()
     result.stopSimulator()
