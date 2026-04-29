@@ -6,13 +6,16 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Ref, ref } from 'vue'
 
-import { useChargingStations, useTemplates, useUIClient } from '@/composables'
+import type { ConfigurationData } from 'ui-common'
+
+import { useChargingStations, useConfiguration, useTemplates, useUIClient } from '@/composables'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
   return {
     ...(actual as Record<string, unknown>),
     useChargingStations: vi.fn(),
+    useConfiguration: vi.fn(),
     useTemplates: vi.fn(),
     useUIClient: vi.fn(),
   }
@@ -25,6 +28,7 @@ import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers'
 let mockClient: MockUIClient
 let chargingStations: Ref<unknown[]>
 let templates: Ref<string[]>
+let configuration: Ref<ConfigurationData>
 
 /**
  * Finds the WS event listener handler registered for the given event type.
@@ -51,11 +55,17 @@ describe('useLayoutData', () => {
     mockClient = createMockUIClient()
     chargingStations = ref([])
     templates = ref([])
+    configuration = ref({
+      uiServer: [{ host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' }],
+    } as unknown as ConfigurationData)
     vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
     vi.mocked(useChargingStations).mockReturnValue(
       chargingStations as ReturnType<typeof useChargingStations>
     )
     vi.mocked(useTemplates).mockReturnValue(templates)
+    vi.mocked(useConfiguration).mockReturnValue(
+      configuration as ReturnType<typeof useConfiguration>
+    )
   })
 
   afterEach(() => {
