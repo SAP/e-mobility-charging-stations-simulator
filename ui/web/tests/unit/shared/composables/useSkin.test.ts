@@ -52,7 +52,7 @@ describe('useSkin', () => {
     expect(typeof switchSkin).toBe('function')
   })
 
-  it('should switchSkin does not update activeSkinId when loadStyles rejects', async () => {
+  it('should not update activeSkinId when loadStyles rejects', async () => {
     const modernSkin = skins.find(s => s.id === 'modern')
     expect(modernSkin).toBeDefined()
     if (modernSkin == null) return
@@ -64,7 +64,7 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('should switchSkin guards against concurrent calls', async () => {
+  it('should guard against concurrent switchSkin calls', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const modernSkin = skins.find(s => s.id === 'modern')
     expect(modernSkin).toBeDefined()
@@ -87,7 +87,7 @@ describe('useSkin', () => {
     expect(modernSkin.loadStyles).toHaveBeenCalledTimes(1)
   })
 
-  it('should switchSkin skips loadStyles when skin is already active', async () => {
+  it('should skip loadStyles when the skin is already active', async () => {
     const classicSkin = skins.find(s => s.id === 'classic')
     expect(classicSkin).toBeDefined()
     if (classicSkin == null) return
@@ -98,21 +98,21 @@ describe('useSkin', () => {
     expect(activeSkinId.value).toBe('classic')
   })
 
-  it('should switchSkin updates activeSkinId', async () => {
+  it('should update activeSkinId on successful skin switch', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     await switchSkin('modern')
     expect(activeSkinId.value).toBe('modern')
     expect(activeSkinId.value).not.toBe('classic')
   })
 
-  it('should switchSkin persists to localStorage', async () => {
+  it('should persist the active skin to localStorage', async () => {
     const { switchSkin } = useSkin()
     await switchSkin('modern')
     expect(localStorage.getItem('ecs-ui-skin')).toBe('"modern"')
     expect(localStorage.getItem('ecs-ui-skin')).not.toBeNull()
   })
 
-  it('should switchSkin ignores invalid skin id', async () => {
+  it('should ignore invalid skin id', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const before = activeSkinId.value
     await switchSkin('nonexistent')
@@ -120,7 +120,7 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
-  it('should switchSkin ignores current skin id', async () => {
+  it('should ignore current skin id and return false', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const before = activeSkinId.value
     await switchSkin(before)

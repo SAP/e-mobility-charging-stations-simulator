@@ -102,7 +102,7 @@ describe('modern StationCard', () => {
       expect(wrapper.find('.modern-card__url').text()).toBe('wss://example.com:9000')
     })
 
-    it('should keeps path segments other than "/"', () => {
+    it('should keep path segments other than "/"', () => {
       const wrapper = mountCard({ supervisionUrl: 'wss://example.com/ocpp16' })
       expect(wrapper.find('.modern-card__url').text()).toBe('wss://example.com/ocpp16')
     })
@@ -231,7 +231,7 @@ describe('modern StationCard', () => {
       ])
     })
 
-    it('should open delete confirm dialog and cancels without API call', async () => {
+    it('should open delete confirm dialog and cancel without an API call', async () => {
       const wrapper = mountCard()
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
       await delBtn.trigger('click')
@@ -245,7 +245,7 @@ describe('modern StationCard', () => {
       expect(mockClient.deleteChargingStation).not.toHaveBeenCalled()
     })
 
-    it('should deletes when delete confirm dialog is confirmed', async () => {
+    it('should delete the station when delete confirm dialog is confirmed', async () => {
       const wrapper = mountCard()
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
       await delBtn.trigger('click')

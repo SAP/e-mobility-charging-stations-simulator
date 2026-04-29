@@ -33,28 +33,28 @@ describe('useTheme', () => {
     expect(setTheme.length).toBe(1)
   })
 
-  it('should setTheme updates document data-theme attribute', () => {
+  it('should update document data-theme attribute', () => {
     const { setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(document.documentElement.getAttribute('data-theme')).toBe('catppuccin-latte')
     expect(document.documentElement.getAttribute('data-theme')).not.toBe('tokyo-night-storm')
   })
 
-  it('should setTheme persists to localStorage', () => {
+  it('should persist the active theme to localStorage', () => {
     const { setTheme } = useTheme()
     setTheme('sap-horizon')
     expect(localStorage.getItem('ecs-ui-theme')).toBe('"sap-horizon"')
     expect(localStorage.getItem('ecs-ui-theme')).not.toBeNull()
   })
 
-  it('should setTheme updates activeTheme ref', () => {
+  it('should update activeTheme ref', () => {
     const { activeTheme, setTheme } = useTheme()
     setTheme('catppuccin-latte')
     expect(activeTheme.value).toBe('catppuccin-latte')
     expect(activeTheme.value).not.toBe('tokyo-night-storm')
   })
 
-  it('should setTheme does not set colorScheme inline style (CSS handles it)', () => {
+  it('should not set colorScheme inline style (CSS handles it)', () => {
     const { setTheme } = useTheme()
     setTheme('tokyo-night-storm')
     expect(document.documentElement.style.colorScheme).toBe('')
@@ -64,7 +64,7 @@ describe('useTheme', () => {
     expect(document.documentElement.style.colorScheme).toBe('')
   })
 
-  it('should setTheme ignores invalid theme name', () => {
+  it('should ignore invalid theme name', () => {
     const { activeTheme, setTheme } = useTheme()
     const before = activeTheme.value
     const setThemeUntyped = setTheme as (name: string) => void
@@ -80,7 +80,7 @@ describe('useTheme', () => {
       globalThis.document = originalDocument
     })
 
-    it('should applyTheme does not throw when document is undefined', () => {
+    it('should not throw when document is undefined', () => {
       // @ts-expect-error simulating SSR environment
       globalThis.document = undefined
       const { setTheme } = useTheme()
