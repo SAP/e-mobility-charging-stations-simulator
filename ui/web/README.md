@@ -158,6 +158,8 @@ Set `skin` in `config.json` to select the default UI layout. Users can switch sk
 
 Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/skins/registry.ts`.
 
+> **Browser requirement**: The `modern` skin uses CSS `color-mix()` extensively. This requires Chrome 111+, Safari 16.2+, or Firefox 113+ (all released by May 2023). Users on older browsers should use the `classic` skin.
+
 ## Getting started
 
 ### Install dependencies

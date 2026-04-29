@@ -153,9 +153,12 @@ describe('useSimulatorControl', () => {
   })
 
   it('should call onServerSwitched callback when server open event fires', () => {
+    // Arrange
     localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
     const onServerSwitched = vi.fn()
     const [result] = mountComposable({ onServerSwitched })
+
+    // Act
     result.handleUIServerChange(1)
 
     const openCall = vi
@@ -164,13 +167,17 @@ describe('useSimulatorControl', () => {
     const openHandler = openCall?.[1] as () => void
     openHandler()
 
+    // Assert
     expect(onServerSwitched).toHaveBeenCalledTimes(1)
     expect(result.serverSwitchPending.value).toBe(false)
   })
 
   it('should rollback configuration on server switch error', () => {
+    // Arrange
     localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
     const [result] = mountComposable()
+
+    // Act
     result.handleUIServerChange(1)
 
     const errorCall = vi
@@ -179,6 +186,7 @@ describe('useSimulatorControl', () => {
     const errorHandler = errorCall?.[1] as () => void
     errorHandler()
 
+    // Assert
     expect(result.serverSwitchPending.value).toBe(false)
     expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
     expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
@@ -187,15 +195,17 @@ describe('useSimulatorControl', () => {
   })
 
   it('should rollback via timeout when neither open nor error fires', () => {
+    // Arrange
     vi.useFakeTimers()
     const [result] = mountComposable()
 
+    // Act
     result.handleUIServerChange(1)
     expect(result.serverSwitchPending.value).toBe(true)
 
-    // Neither open nor error handler is called — timeout triggers rollback
     vi.advanceTimersByTime(15_000)
 
+    // Assert
     expect(result.serverSwitchPending.value).toBe(false)
     expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
     expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
@@ -205,9 +215,11 @@ describe('useSimulatorControl', () => {
   })
 
   it('should not rollback via timeout when open fires before timeout', () => {
+    // Arrange
     vi.useFakeTimers()
     const [result] = mountComposable()
 
+    // Act
     result.handleUIServerChange(1)
 
     const openCall = vi
@@ -218,8 +230,9 @@ describe('useSimulatorControl', () => {
 
     expect(result.serverSwitchPending.value).toBe(false)
 
-    // Timeout fires but settled=true so it's a no-op
     vi.advanceTimersByTime(15_000)
+
+    // Assert
     expect(result.serverSwitchPending.value).toBe(false)
     expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
     vi.useRealTimers()

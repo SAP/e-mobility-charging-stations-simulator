@@ -1,12 +1,13 @@
+import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 
-export const AVAILABLE_THEMES = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
-export const DEFAULT_THEME = 'tokyo-night-storm'
+export const AVAILABLE_THEMES: readonly string[] = THEME_IDS
+export const DEFAULT_THEME = THEME_IDS[2]
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
-export type ThemeName = (typeof AVAILABLE_THEMES)[number]
+export type ThemeName = (typeof THEME_IDS)[number]
 
 /**
  * Checks whether a string is a valid theme name.
@@ -14,7 +15,7 @@ export type ThemeName = (typeof AVAILABLE_THEMES)[number]
  * @returns Whether the name is a valid theme name
  */
 function isValidTheme (name: string): name is ThemeName {
-  return (AVAILABLE_THEMES as readonly string[]).includes(name)
+  return AVAILABLE_THEMES.includes(name)
 }
 
 const activeThemeId: Ref<ThemeName> = ref(

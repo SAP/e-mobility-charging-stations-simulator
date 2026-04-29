@@ -1,5 +1,10 @@
 export type { StatusVariant } from './stationStatus.js'
-export { getATGStatus, getConnectorEntries, getConnectorStatusVariant } from './stationStatus.js'
+export {
+  getATGStatus,
+  getConnectorEntries,
+  getConnectorStatusVariant,
+  getWebSocketStateVariant,
+} from './stationStatus.js'
 export { useAddStationsForm } from './useAddStationsForm.js'
 export { useAsyncAction } from './useAsyncAction.js'
 export { useLayoutData } from './useLayoutData.js'

@@ -173,7 +173,11 @@ import {
   EMPTY_VALUE_PLACEHOLDER as EMPTY,
   useUIClient,
 } from '@/composables'
-import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
+import {
+  getATGStatus,
+  getConnectorEntries,
+  getWebSocketStateVariant,
+} from '@/shared/composables/stationStatus.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 
@@ -215,20 +219,7 @@ const startedVariant = computed<'err' | 'ok'>(() =>
   props.chargingStation.started === true ? 'ok' : 'err'
 )
 
-const wsVariant = computed<'err' | 'idle' | 'ok' | 'warn'>(() => {
-  switch (props.chargingStation.wsState) {
-    case WebSocketReadyState.CLOSED:
-      return 'err'
-    case WebSocketReadyState.CLOSING:
-      return 'warn'
-    case WebSocketReadyState.CONNECTING:
-      return 'warn'
-    case WebSocketReadyState.OPEN:
-      return 'ok'
-    default:
-      return 'idle'
-  }
-})
+const wsVariant = computed(() => getWebSocketStateVariant(props.chargingStation.wsState))
 
 const wsLabel = computed(() => {
   const name = getWebSocketStateName(props.chargingStation.wsState)

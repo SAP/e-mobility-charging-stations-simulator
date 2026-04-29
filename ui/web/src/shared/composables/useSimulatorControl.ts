@@ -1,7 +1,7 @@
 import type { UIServerConfigurationSection } from 'ui-common'
 import type { Ref } from 'vue'
 
-import { readonly, ref } from 'vue'
+import { onScopeDispose, readonly, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import {
@@ -60,6 +60,7 @@ export function useSimulatorControl (
 
   const simulatorPending = ref(false)
   const serverSwitchPending = ref(false)
+  let activeTimeoutId: ReturnType<typeof setTimeout> | undefined
   const $toast = useToast()
 
   const startSimulator = (): void => {
@@ -123,7 +124,7 @@ export function useSimulatorControl (
     const openHandler = (): void => {
       if (settled) return
       settled = true
-      clearTimeout(timeoutId)
+      clearTimeout(activeTimeoutId)
       $uiClient.unregisterWSEventListener('error', errorHandler)
       setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
       serverSwitchPending.value = false
@@ -133,7 +134,7 @@ export function useSimulatorControl (
     const errorHandler = (): void => {
       if (settled) return
       settled = true
-      clearTimeout(timeoutId)
+      clearTimeout(activeTimeoutId)
       $uiClient.unregisterWSEventListener('open', openHandler)
       serverSwitchPending.value = false
       const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
@@ -147,12 +148,19 @@ export function useSimulatorControl (
     $uiClient.registerWSEventListener('open', openHandler, { once: true })
     $uiClient.registerWSEventListener('error', errorHandler, { once: true })
 
-    const timeoutId = setTimeout(() => {
+    activeTimeoutId = setTimeout(() => {
       if (!settled) {
         errorHandler()
       }
     }, SERVER_SWITCH_TIMEOUT_MS)
   }
+
+  onScopeDispose(() => {
+    if (activeTimeoutId != null) {
+      clearTimeout(activeTimeoutId)
+      activeTimeoutId = undefined
+    }
+  })
 
   return {
     handleUIServerChange,

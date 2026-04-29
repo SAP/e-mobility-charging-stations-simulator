@@ -68,12 +68,12 @@ describe('modern ConnectorRow', () => {
 
   describe('identifier display', () => {
     it('should show the bare connector id when no evseId', () => {
-      const wrapper = mountRow()
+      wrapper = mountRow()
       expect(wrapper.find('.modern-connector__id').text()).toBe('1')
     })
 
     it('should show evseId/connectorId format when evseId is set', () => {
-      const wrapper = mountRow({ connectorId: 3, evseId: 2 })
+      wrapper = mountRow({ connectorId: 3, evseId: 2 })
       expect(wrapper.find('.modern-connector__id').text()).toBe('2/3')
     })
   })
@@ -88,36 +88,36 @@ describe('modern ConnectorRow', () => {
       ['Unavailable', 'modern-pill--err'],
       ['Reserved', 'modern-pill--idle'],
     ])('should map status "%s" to class %s', (status, cls) => {
-      const wrapper = mountRow({ connector: { status } })
+      wrapper = mountRow({ connector: { status } })
       const pills = wrapper.findAll('.modern-pill')
       expect(pills[0].classes()).toContain(cls)
     })
 
     it('should render "unknown" label when status is undefined', () => {
-      const wrapper = mountRow({ connector: { status: undefined } })
+      wrapper = mountRow({ connector: { status: undefined } })
       expect(wrapper.text()).toContain('unknown')
     })
   })
 
   describe('lock button', () => {
     it('should show closed padlock when effectively locked (locked=true)', () => {
-      const wrapper = mountRow({ connector: { locked: true } })
+      wrapper = mountRow({ connector: { locked: true } })
       expect(wrapper.find('.modern-connector__lock--on').exists()).toBe(true)
     })
 
     it('should show closed padlock when transaction started (even without explicit lock)', () => {
-      const wrapper = mountRow({ connector: { transactionStarted: true } })
+      wrapper = mountRow({ connector: { transactionStarted: true } })
       expect(wrapper.find('.modern-connector__lock--on').exists()).toBe(true)
     })
 
     it('should be disabled during transaction', () => {
-      const wrapper = mountRow({ connector: { transactionStarted: true } })
+      wrapper = mountRow({ connector: { transactionStarted: true } })
       const btn = wrapper.find('.modern-connector__lock').element as HTMLButtonElement
       expect(btn.disabled).toBe(true)
     })
 
     it('should call lockConnector when unlocked', async () => {
-      const wrapper = mountRow()
+      wrapper = mountRow()
       await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
@@ -126,14 +126,14 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should call unlockConnector when locked', async () => {
-      const wrapper = mountRow({ connector: { locked: true } })
+      wrapper = mountRow({ connector: { locked: true } })
       await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(mockClient.unlockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
     })
 
     it('should toast error when lock call fails', async () => {
-      const wrapper = mountRow()
+      wrapper = mountRow()
       mockClient.lockConnector = vi.fn().mockRejectedValue(new Error('fail'))
       await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
@@ -143,17 +143,17 @@ describe('modern ConnectorRow', () => {
 
   describe('ATG chip', () => {
     it('should label "Start ATG" when not running', () => {
-      const wrapper = mountRow({ atgStatus: undefined })
+      wrapper = mountRow({ atgStatus: undefined })
       expect(wrapper.text()).toContain('Start ATG')
     })
 
     it('should label "Stop ATG" when running', () => {
-      const wrapper = mountRow({ atgStatus: { start: true } as Status })
+      wrapper = mountRow({ atgStatus: { start: true } as Status })
       expect(wrapper.text()).toContain('Stop ATG')
     })
 
     it('should call startAutomaticTransactionGenerator when starting', async () => {
-      const wrapper = mountRow()
+      wrapper = mountRow()
       const chip = wrapper.find('.modern-btn--chip')
       await chip.trigger('click')
       await flushPromises()
@@ -161,7 +161,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should call stopAutomaticTransactionGenerator when stopping', async () => {
-      const wrapper = mountRow({ atgStatus: { start: true } as Status })
+      wrapper = mountRow({ atgStatus: { start: true } as Status })
       const chip = wrapper.find('.modern-btn--chip')
       await chip.trigger('click')
       await flushPromises()
@@ -171,7 +171,7 @@ describe('modern ConnectorRow', () => {
 
   describe('transaction controls', () => {
     it('should show play icon when no transaction and emits open-start-tx on click', async () => {
-      const wrapper = mountRow({ connectorId: 2, evseId: 3, ocppVersion: OCPPVersion.VERSION_16 })
+      wrapper = mountRow({ connectorId: 2, evseId: 3, ocppVersion: OCPPVersion.VERSION_16 })
       const startBtn = wrapper.find('.modern-icon-btn--primary')
       expect(startBtn.exists()).toBe(true)
       await startBtn.trigger('click')
@@ -189,7 +189,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should omit evseId/ocppVersion from emitted data when not set', async () => {
-      const wrapper = mountRow()
+      wrapper = mountRow()
       await wrapper.find('.modern-icon-btn--primary').trigger('click')
       const emitted = wrapper.emitted('open-start-tx')?.[0]?.[0] as Record<string, unknown>
       expect(emitted.evseId).toBeUndefined()
@@ -197,7 +197,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should show stop icon when transaction running and stops it', async () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: {
           status: OCPP16ChargePointStatus.CHARGING,
           transactionId: 99,
@@ -216,7 +216,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should toast error when stop is clicked without a transactionId', async () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: { status: OCPP16ChargePointStatus.CHARGING, transactionStarted: true },
       })
       const stopBtn = wrapper.find('.modern-icon-btn--danger')
@@ -229,7 +229,7 @@ describe('modern ConnectorRow', () => {
 
   describe('transaction details rendering', () => {
     it('should render energy in kWh when ≥ 1000 Wh', () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: {
           status: OCPP16ChargePointStatus.CHARGING,
           transactionEnergyActiveImportRegisterValue: 1500,
@@ -241,7 +241,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should render energy in Wh when < 1000', () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: {
           status: OCPP16ChargePointStatus.CHARGING,
           transactionEnergyActiveImportRegisterValue: 120,
@@ -253,7 +253,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should render "—" when energy value is missing', () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: {
           status: OCPP16ChargePointStatus.CHARGING,
           transactionId: 7,
@@ -264,7 +264,7 @@ describe('modern ConnectorRow', () => {
     })
 
     it('should render Tag row when transactionIdTag is set', () => {
-      const wrapper = mountRow({
+      wrapper = mountRow({
         connector: {
           status: OCPP16ChargePointStatus.CHARGING,
           transactionId: 7,

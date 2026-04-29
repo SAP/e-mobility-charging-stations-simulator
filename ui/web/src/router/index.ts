@@ -19,6 +19,10 @@ const PassthroughRoute = { render: () => null } as const
  * The modern skin uses modal dialogs instead of router navigation.
  * The home route (`/`) renders null because layout components handle content directly.
  * Routes with `meta.skinOnly` are guarded and redirect to `/` for other skins.
+ *
+ * NOTE: Classic action routes directly import from `@/skins/classic/components/actions/`.
+ * This coupling is intentional — only the classic skin uses router-based navigation panels.
+ * If a third skin needs router-based panels, consider a dynamic route registration pattern.
  */
 export const router = createRouter({
   history: createWebHistory(),

@@ -134,6 +134,7 @@ const handleTab = (event: KeyboardEvent): void => {
 }
 
 onMounted(() => {
+  document.body.style.overflow = 'hidden'
   previouslyFocused = document.activeElement as HTMLElement | null
   nextTick(focusFirst).catch((error: unknown) => {
     console.error('Modal focus failed:', error)
@@ -141,6 +142,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  document.body.style.overflow = ''
   previouslyFocused?.focus?.()
 })
 </script>

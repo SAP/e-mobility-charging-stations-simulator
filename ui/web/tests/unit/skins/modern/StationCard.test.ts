@@ -49,50 +49,50 @@ describe('modern StationCard', () => {
 
   describe('header', () => {
     it('should render the chargingStationId as title', () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       expect(wrapper.find('.modern-card__title').text()).toBe(TEST_STATION_ID)
     })
 
     it('should show "started" pill variant ok when started', () => {
-      const wrapper = mountCard({ started: true })
+      wrapper = mountCard({ started: true })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[0].classes()).toContain('modern-pill--ok')
       expect(pills[0].text()).toBe('started')
     })
 
     it('should show "stopped" pill variant err when stopped', () => {
-      const wrapper = mountCard({ started: false })
+      wrapper = mountCard({ started: false })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[0].classes()).toContain('modern-pill--err')
       expect(pills[0].text()).toBe('stopped')
     })
 
     it('should map wsState OPEN to modern-pill--ok', () => {
-      const wrapper = mountCard({ wsState: WebSocket.OPEN })
+      wrapper = mountCard({ wsState: WebSocket.OPEN })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[1].classes()).toContain('modern-pill--ok')
     })
 
     it('should map wsState CLOSED to modern-pill--err', () => {
-      const wrapper = mountCard({ wsState: WebSocket.CLOSED })
+      wrapper = mountCard({ wsState: WebSocket.CLOSED })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[1].classes()).toContain('modern-pill--err')
     })
 
     it('should map wsState CLOSING to modern-pill--warn', () => {
-      const wrapper = mountCard({ wsState: WebSocket.CLOSING })
+      wrapper = mountCard({ wsState: WebSocket.CLOSING })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[1].classes()).toContain('modern-pill--warn')
     })
 
     it('should map wsState CONNECTING to modern-pill--warn', () => {
-      const wrapper = mountCard({ wsState: WebSocket.CONNECTING })
+      wrapper = mountCard({ wsState: WebSocket.CONNECTING })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[1].classes()).toContain('modern-pill--warn')
     })
 
     it('should map unknown wsState (undefined) to modern-pill--idle', () => {
-      const wrapper = mountCard({ wsState: undefined })
+      wrapper = mountCard({ wsState: undefined })
       const pills = wrapper.findAll('.modern-card__pills .modern-pill')
       expect(pills[1].classes()).toContain('modern-pill--idle')
     })
@@ -100,22 +100,22 @@ describe('modern StationCard', () => {
 
   describe('supervisionUrl display', () => {
     it('should render protocol://host without trailing "/"', () => {
-      const wrapper = mountCard({ supervisionUrl: 'wss://example.com:9000/' })
+      wrapper = mountCard({ supervisionUrl: 'wss://example.com:9000/' })
       expect(wrapper.find('.modern-card__url').text()).toBe('wss://example.com:9000')
     })
 
     it('should keep path segments other than "/"', () => {
-      const wrapper = mountCard({ supervisionUrl: 'wss://example.com/ocpp16' })
+      wrapper = mountCard({ supervisionUrl: 'wss://example.com/ocpp16' })
       expect(wrapper.find('.modern-card__url').text()).toBe('wss://example.com/ocpp16')
     })
 
     it('should fall back to the raw URL string on invalid URL', () => {
-      const wrapper = mountCard({ supervisionUrl: 'not-a-url' })
+      wrapper = mountCard({ supervisionUrl: 'not-a-url' })
       expect(wrapper.find('.modern-card__url').text()).toBe('not-a-url')
     })
 
     it('should emit open-set-url on URL row click', async () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       await wrapper.find('.modern-card__url-row').trigger('click')
       expect(wrapper.emitted('open-set-url')).toEqual([
         [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
@@ -123,7 +123,7 @@ describe('modern StationCard', () => {
     })
 
     it('should emit open-set-url on Enter key press of URL row', async () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       await wrapper.find('.modern-card__url-row').trigger('keydown.enter')
       expect(wrapper.emitted('open-set-url')).toBeTruthy()
     })
@@ -131,7 +131,7 @@ describe('modern StationCard', () => {
 
   describe('connectors', () => {
     it('should render connectors from flat array', () => {
-      const wrapper = mountCard({
+      wrapper = mountCard({
         connectors: [
           { connectorId: 1, connectorStatus: createConnectorStatus() },
           { connectorId: 2, connectorStatus: createConnectorStatus() },
@@ -141,7 +141,7 @@ describe('modern StationCard', () => {
     })
 
     it('should filter out connectorId=0 (server-wide placeholder)', () => {
-      const wrapper = mountCard({
+      wrapper = mountCard({
         connectors: [
           { connectorId: 0, connectorStatus: createConnectorStatus() },
           { connectorId: 1, connectorStatus: createConnectorStatus() },
@@ -151,7 +151,7 @@ describe('modern StationCard', () => {
     })
 
     it('should flatten evses array when present', () => {
-      const wrapper = mountCard({
+      wrapper = mountCard({
         connectors: undefined,
         evses: [
           {
@@ -179,14 +179,14 @@ describe('modern StationCard', () => {
     })
 
     it('should show empty-connectors message when no connectors', () => {
-      const wrapper = mountCard({ connectors: [] })
+      wrapper = mountCard({ connectors: [] })
       expect(wrapper.text()).toContain('No connectors')
     })
   })
 
   describe('footer actions', () => {
     it('should label Start when stopped, calls startChargingStation', async () => {
-      const wrapper = mountCard({ started: false })
+      wrapper = mountCard({ started: false })
       const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
       const startBtn = buttons.find(b => b.text() === 'Start')
       await startBtn?.trigger('click')
@@ -197,7 +197,7 @@ describe('modern StationCard', () => {
     })
 
     it('should label Stop when started, calls stopChargingStation', async () => {
-      const wrapper = mountCard({ started: true })
+      wrapper = mountCard({ started: true })
       const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
       const stopBtn = buttons.find(b => b.text() === 'Stop')
       await stopBtn?.trigger('click')
@@ -206,7 +206,7 @@ describe('modern StationCard', () => {
     })
 
     it('should label Connect when WS closed, opens connection', async () => {
-      const wrapper = mountCard({ wsState: WebSocket.CLOSED })
+      wrapper = mountCard({ wsState: WebSocket.CLOSED })
       const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
       const btn = buttons.find(b => b.text() === 'Connect')
       await btn?.trigger('click')
@@ -215,7 +215,7 @@ describe('modern StationCard', () => {
     })
 
     it('should label Disconnect when WS open, closes connection', async () => {
-      const wrapper = mountCard({ wsState: WebSocket.OPEN })
+      wrapper = mountCard({ wsState: WebSocket.OPEN })
       const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
       const btn = buttons.find(b => b.text() === 'Disconnect')
       await btn?.trigger('click')
@@ -224,7 +224,7 @@ describe('modern StationCard', () => {
     })
 
     it('should emit open-authorize from footer', async () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
       const btn = buttons.find(b => b.text() === 'Authorize')
       await btn?.trigger('click')
@@ -234,7 +234,7 @@ describe('modern StationCard', () => {
     })
 
     it('should open delete confirm dialog and cancel without an API call', async () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
       await delBtn.trigger('click')
       await flushPromises()
@@ -248,7 +248,7 @@ describe('modern StationCard', () => {
     })
 
     it('should delete the station when delete confirm dialog is confirmed', async () => {
-      const wrapper = mountCard()
+      wrapper = mountCard()
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
       await delBtn.trigger('click')
       await flushPromises()
@@ -263,7 +263,7 @@ describe('modern StationCard', () => {
 
     it('should toast error when startChargingStation fails', async () => {
       mockClient.startChargingStation = vi.fn().mockRejectedValue(new Error('x'))
-      const wrapper = mountCard({ started: false })
+      wrapper = mountCard({ started: false })
       const btn = wrapper
         .findAll('.modern-card__foot-group .modern-btn')
         .find(b => b.text() === 'Start')

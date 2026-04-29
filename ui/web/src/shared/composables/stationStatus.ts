@@ -84,3 +84,23 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
       return 'idle'
   }
 }
+
+/**
+ * Maps a WebSocket ready state to a display variant.
+ * @param wsState - The WebSocket readyState value
+ * @returns The display variant for the WebSocket state
+ */
+export function getWebSocketStateVariant (wsState?: number): StatusVariant {
+  switch (wsState) {
+    case 0: // WebSocket.CONNECTING
+      return 'warn'
+    case 1: // WebSocket.OPEN
+      return 'ok'
+    case 2: // WebSocket.CLOSING
+      return 'warn'
+    case 3: // WebSocket.CLOSED
+      return 'err'
+    default:
+      return 'idle'
+  }
+}
