@@ -80,17 +80,15 @@
 // This avoids URL coupling for modal interactions and enables independent skin operation.
 import { type OCPPVersion, type UIServerConfigurationSection } from 'ui-common'
 import { computed, ref } from 'vue'
-import { useToast } from 'vue-toast-notification'
 
 import {
   getFromLocalStorage,
-  setToLocalStorage,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
-  useUIClient,
 } from '@/composables'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
+import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
 import './modern.css'
 import ConfirmDialog from './components/ConfirmDialog.vue'
@@ -103,24 +101,31 @@ import StationCard from './components/StationCard.vue'
 
 const $configuration = useConfiguration()
 const $chargingStations = useChargingStations()
-const $uiClient = useUIClient()
-const $toast = useToast()
 
 const {
   getChargingStations,
   getData,
-  getSimulatorState,
   loading,
-  registerWSEventListeners,
   simulatorState,
 } = useLayoutData()
-
-const simulatorPending = ref(false)
-const confirmingStopSim = ref(false)
 
 const state = ref({
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
 })
+
+const {
+  handleUIServerChange: switchServer,
+  simulatorPending,
+  startSimulator,
+  stopSimulator,
+} = useSimulatorControl()
+
+const handleUIServerChange = (nextIndex: number): void => {
+  state.value.uiServerIndex = nextIndex
+  switchServer(nextIndex)
+}
+
+const confirmingStopSim = ref(false)
 
 // Dialog state
 const showAddDialog = ref(false)
@@ -151,67 +156,16 @@ const refreshData = (): void => {
   getData()
 }
 
-const handleUIServerChange = (nextIndex: number): void => {
-  if (nextIndex === state.value.uiServerIndex) return
-  state.value.uiServerIndex = nextIndex
-  $uiClient.setConfiguration(
-    ($configuration.value.uiServer as UIServerConfigurationSection[])[nextIndex]
-  )
-  registerWSEventListeners()
-  $uiClient.registerWSEventListener(
-    'open',
-    () => {
-      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, nextIndex)
-    },
-    { once: true }
-  )
-}
-
-const startSimulator = async (): Promise<void> => {
-  if (simulatorPending.value) return
-  simulatorPending.value = true
-  try {
-    await $uiClient.startSimulator()
-    $toast.success('Simulator started')
-  } catch (error) {
-    console.error('Error starting simulator:', error)
-    $toast.error('Error starting simulator')
-  } finally {
-    simulatorPending.value = false
-    getSimulatorState()
-  }
-}
-
-const stopSimulator = async (): Promise<void> => {
-  if (simulatorPending.value) return
-  simulatorPending.value = true
-  try {
-    await $uiClient.stopSimulator()
-    $chargingStations.value = []
-    confirmingStopSim.value = false
-    $toast.success('Simulator stopped')
-  } catch (error) {
-    console.error('Error stopping simulator:', error)
-    $toast.error('Error stopping simulator')
-  } finally {
-    simulatorPending.value = false
-    getSimulatorState()
-  }
-}
-
 const confirmStopSimulator = (): void => {
-  stopSimulator().catch((error: unknown) => {
-    console.error('stopSimulator failed:', error)
-  })
+  stopSimulator()
+  confirmingStopSim.value = false
 }
 
 const toggleSimulator = (): void => {
   if (simulatorState.value?.started === true) {
     confirmingStopSim.value = true
   } else {
-    startSimulator().catch((error: unknown) => {
-      console.error('startSimulator failed:', error)
-    })
+    startSimulator()
   }
 }
 </script>
