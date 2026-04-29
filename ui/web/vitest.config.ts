@@ -32,6 +32,7 @@ export default mergeConfig(
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/*'],
       execArgv: nodeMajor >= 25 ? ['--no-webstorage'] : [],
+      pool: 'forks',
       restoreMocks: true,
       root: fileURLToPath(new URL('./', import.meta.url)),
       setupFiles: ['./tests/setup.ts'],
