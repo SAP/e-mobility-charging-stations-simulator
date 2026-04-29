@@ -1,7 +1,8 @@
 import { randomUUID, type UUIDv4 } from 'ui-common'
-import { ref, type Ref, watch } from 'vue'
+import { type DeepReadonly, readonly, ref, type Ref, watch } from 'vue'
+import { useToast } from 'vue-toast-notification'
 
-import { useExecuteAction, useTemplates, useUIClient } from '@/composables/Utils.js'
+import { useTemplates, useUIClient } from '@/composables/Utils.js'
 
 export interface AddStationsFormState {
   autoStart: boolean
@@ -26,15 +27,17 @@ export interface AddStationsFormState {
  */
 export function useAddStationsForm (options?: { onFinally?: () => void }): {
   formState: Ref<AddStationsFormState>
+  pending: Readonly<Ref<boolean>>
   resetForm: () => void
   submitForm: () => Promise<boolean>
-  templates: Ref<string[]>
+  templates: DeepReadonly<Ref<string[]>>
 } {
   const $uiClient = useUIClient()
   const $templates = useTemplates()
-  const executeAction = useExecuteAction()
+  const $toast = useToast()
 
   const formState = ref<AddStationsFormState>(makeInitialState())
+  const pending = ref(false)
 
   watch($templates, () => {
     formState.value.renderTemplates = randomUUID()
@@ -50,10 +53,13 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
    * @returns Whether the submission was successful
    */
   async function submitForm (): Promise<boolean> {
-    return new Promise<boolean>(resolve => {
-      let succeeded = false
-      executeAction(
-        $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
+    if (pending.value) return false
+    pending.value = true
+    try {
+      await $uiClient.addChargingStations(
+        formState.value.template,
+        formState.value.numberOfStations,
+        {
           autoStart: formState.value.autoStart,
           baseName: nonEmpty(formState.value.baseName),
           enableStatistics: formState.value.enableStatistics,
@@ -63,28 +69,27 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
           supervisionPassword: nonEmpty(formState.value.supervisionPassword),
           supervisionUrls: nonEmpty(formState.value.supervisionUrl),
           supervisionUser: nonEmpty(formState.value.supervisionUser),
-        }),
-        'Charging stations successfully added',
-        'Error at adding charging stations',
-        {
-          onFinally: () => {
-            options?.onFinally?.()
-            resetForm()
-            resolve(succeeded)
-          },
-          onSuccess: () => {
-            succeeded = true
-          },
         }
       )
-    })
+      $toast.success('Charging stations successfully added')
+      return true
+    } catch (error: unknown) {
+      $toast.error('Error at adding charging stations')
+      console.error('Error at adding charging stations:', error)
+      return false
+    } finally {
+      pending.value = false
+      options?.onFinally?.()
+      resetForm()
+    }
   }
 
   return {
     formState,
+    pending: readonly(pending),
     resetForm,
     submitForm,
-    templates: $templates,
+    templates: readonly($templates),
   }
 }
 
@@ -112,7 +117,6 @@ function makeInitialState (): AddStationsFormState {
 
 /**
  * Returns `value` when it is non-empty, otherwise `undefined`.
- * Centralizes the "optional string field" pattern used in form submission.
  * @param value - The string to test.
  * @returns The original string, or `undefined` if it is empty.
  */

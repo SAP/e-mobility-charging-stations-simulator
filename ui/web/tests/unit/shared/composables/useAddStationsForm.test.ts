@@ -5,22 +5,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 
+import { toastMock } from '../../../setup.js'
+
 const mockAddChargingStations = vi.fn().mockResolvedValue({ status: 'success' })
-const mockExecuteAction = vi.fn(
-  (
-    _action: Promise<unknown>,
-    _successMsg: string,
-    _errorMsg: string,
-    callbacks?: { onFinally?: () => void }
-  ) => {
-    callbacks?.onFinally?.()
-  }
-)
 const mockTemplates = ref(['template1.json', 'template2.json'])
 
 vi.mock('@/composables/Utils.js', () => ({
   resetToggleButtonState: vi.fn(),
-  useExecuteAction: () => mockExecuteAction,
   useTemplates: () => mockTemplates,
   useUIClient: () => ({
     addChargingStations: mockAddChargingStations,
@@ -73,7 +64,7 @@ describe('useAddStationsForm', () => {
     expect(formState.value.autoStart).toBe(false)
   })
 
-  it('should call executeAction with addChargingStations on submit', async () => {
+  it('should call addChargingStations on submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station-template.json'
     formState.value.numberOfStations = 3
@@ -89,7 +80,7 @@ describe('useAddStationsForm', () => {
       supervisionUrls: undefined,
       supervisionUser: undefined,
     })
-    expect(mockExecuteAction).toHaveBeenCalled()
+    expect(toastMock.success).toHaveBeenCalledWith('Charging stations successfully added')
   })
 
   it('should pass optional fields when set on submit', async () => {
@@ -115,7 +106,7 @@ describe('useAddStationsForm', () => {
     })
   })
 
-  it('should reset form via onFinally callback on submit', async () => {
+  it('should reset form after submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station.json'
     formState.value.numberOfStations = 5
@@ -131,16 +122,14 @@ describe('useAddStationsForm', () => {
     formState.value.numberOfStations = 2
     await submitForm()
     expect(onFinally).toHaveBeenCalledTimes(1)
-    expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('should call executeAction with numberOfStations = 0', async () => {
+  it('should call addChargingStations with numberOfStations = 0', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'boundary.json'
     formState.value.numberOfStations = 0
     await submitForm()
     expect(mockAddChargingStations).toHaveBeenCalledWith('boundary.json', 0, expect.any(Object))
-    expect(mockExecuteAction).toHaveBeenCalled()
   })
 
   it('should update renderTemplates reactively when templates ref changes', async () => {
@@ -153,5 +142,19 @@ describe('useAddStationsForm', () => {
     mockTemplates.value = ['delta.json']
     await nextTick()
     expect(formState.value.renderTemplates).not.toBe(updated)
+  })
+
+  it('should show error toast on failure', async () => {
+    mockAddChargingStations.mockRejectedValueOnce(new Error('network error'))
+    const { formState, submitForm } = useAddStationsForm()
+    formState.value.template = 'tpl.json'
+    const result = await submitForm()
+    expect(result).toBe(false)
+    expect(toastMock.error).toHaveBeenCalledWith('Error at adding charging stations')
+  })
+
+  it('should expose pending state', () => {
+    const { pending } = useAddStationsForm()
+    expect(pending.value).toBe(false)
   })
 })

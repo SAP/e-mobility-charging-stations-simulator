@@ -60,6 +60,7 @@
   --skin-shadow-color: rgba(0, 0, 0, 0.08);
   --skin-shadow-color-md: rgba(0, 0, 0, 0.12);
   --skin-backdrop-color: rgba(0, 0, 0, 0.55);
+  /* Intentional: raw rgba opacity for broad browser support (color-mix requires Chrome 111+) */
   --skin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
   --skin-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.22);
   --skin-shadow-lg: 0 6px 16px -4px rgba(0, 0, 0, 0.28);
@@ -1115,4 +1116,14 @@ body:has(.modern-app) #app {
   color: var(--color-text);
   max-height: 280px;
   overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modern-connector__tx-dot,
+  .modern-btn__spinner,
+  .modern-modal,
+  .modern-modal__backdrop {
+    animation: none;
+    transition: none;
+  }
 }

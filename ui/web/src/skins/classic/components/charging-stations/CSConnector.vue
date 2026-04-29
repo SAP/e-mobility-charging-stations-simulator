@@ -70,7 +70,8 @@ import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import { useToast } from 'vue-toast-notification'
 
-import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useExecuteAction, useUIClient } from '@/composables'
+import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES, useUIClient } from '@/composables'
+import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 import Button from '../buttons/Button.vue'
 import StateButton from '../buttons/StateButton.vue'
@@ -92,46 +93,54 @@ const $uiClient = useUIClient()
 
 const $toast = useToast()
 
-const executeAction = useExecuteAction($emit)
+const { run } = useAsyncAction({ atg: false, lock: false, transaction: false }, () =>
+  $emit('need-refresh')
+)
 
 const stopTransaction = (): void => {
   if (props.connector.transactionId == null) {
     $toast.error('No transaction to stop')
     return
   }
-  executeAction(
-    $uiClient.stopTransaction(props.hashId, {
-      ocppVersion: props.ocppVersion,
-      transactionId: props.connector.transactionId,
-    }),
+  run(
+    'transaction',
+    () =>
+      $uiClient.stopTransaction(props.hashId, {
+        ocppVersion: props.ocppVersion,
+        transactionId: props.connector.transactionId!,
+      }),
     'Transaction successfully stopped',
     'Error at stopping transaction'
   )
 }
 const lockConnector = (): void => {
-  executeAction(
-    $uiClient.lockConnector(props.hashId, props.connectorId),
+  run(
+    'lock',
+    () => $uiClient.lockConnector(props.hashId, props.connectorId),
     'Connector successfully locked',
     'Error at locking connector'
   )
 }
 const unlockConnector = (): void => {
-  executeAction(
-    $uiClient.unlockConnector(props.hashId, props.connectorId),
+  run(
+    'lock',
+    () => $uiClient.unlockConnector(props.hashId, props.connectorId),
     'Connector successfully unlocked',
     'Error at unlocking connector'
   )
 }
 const startAutomaticTransactionGenerator = (): void => {
-  executeAction(
-    $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
+  run(
+    'atg',
+    () => $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
     'Automatic transaction generator successfully started',
     'Error at starting automatic transaction generator'
   )
 }
 const stopAutomaticTransactionGenerator = (): void => {
-  executeAction(
-    $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
+  run(
+    'atg',
+    () => $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
     'Automatic transaction generator successfully stopped',
     'Error at stopping automatic transaction generator'
   )

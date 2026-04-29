@@ -1,7 +1,7 @@
-import { ref, type Ref } from 'vue'
+import { readonly, ref, type Ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useExecuteAction, useUIClient } from '@/composables/Utils.js'
+import { useUIClient } from '@/composables/Utils.js'
 
 export interface SetUrlFormState {
   supervisionPassword: string
@@ -21,26 +21,19 @@ export function useSetUrlForm (
 ): {
     chargingStationId: string
     formState: Ref<SetUrlFormState>
+    pending: Readonly<Ref<boolean>>
     resetForm: () => void
     submitForm: () => Promise<boolean>
   } {
   const $uiClient = useUIClient()
   const $toast = useToast()
-  const executeAction = useExecuteAction()
 
-  const formState = ref<SetUrlFormState>({
-    supervisionPassword: '',
-    supervisionUrl: '',
-    supervisionUser: '',
-  })
+  const formState = ref<SetUrlFormState>(makeInitialState())
+  const pending = ref(false)
 
   /** Resets form state to initial defaults. */
   function resetForm (): void {
-    formState.value = {
-      supervisionPassword: '',
-      supervisionUrl: '',
-      supervisionUser: '',
-    }
+    formState.value = makeInitialState()
   }
 
   /**
@@ -52,33 +45,44 @@ export function useSetUrlForm (
       $toast.error('Supervision url is required')
       return false
     }
-    return new Promise<boolean>(resolve => {
-      let succeeded = false
-      executeAction(
-        $uiClient.setSupervisionUrl(
-          hashId,
-          formState.value.supervisionUrl,
-          formState.value.supervisionUser,
-          formState.value.supervisionPassword
-        ),
-        'Supervision url successfully set',
-        'Error at setting supervision url',
-        {
-          onFinally: () => {
-            resolve(succeeded)
-          },
-          onSuccess: () => {
-            succeeded = true
-          },
-        }
+    if (pending.value) return false
+    pending.value = true
+    try {
+      await $uiClient.setSupervisionUrl(
+        hashId,
+        formState.value.supervisionUrl,
+        formState.value.supervisionUser,
+        formState.value.supervisionPassword
       )
-    })
+      $toast.success('Supervision url successfully set')
+      return true
+    } catch (error: unknown) {
+      $toast.error('Error at setting supervision url')
+      console.error('Error at setting supervision url:', error)
+      return false
+    } finally {
+      pending.value = false
+    }
   }
 
   return {
     chargingStationId,
     formState,
+    pending: readonly(pending),
     resetForm,
     submitForm,
+  }
+}
+
+/**
+ * Returns a fresh copy of the default form state.
+ * Using a factory avoids sharing mutable state between initialization and reset.
+ * @returns A new {@link SetUrlFormState} with all fields set to their defaults.
+ */
+function makeInitialState (): SetUrlFormState {
+  return {
+    supervisionPassword: '',
+    supervisionUrl: '',
+    supervisionUser: '',
   }
 }

@@ -18,6 +18,8 @@ function getValidSkinId (skinId: string): string {
 const activeSkinId: Ref<string> = ref(
   getValidSkinId(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
 )
+// Set data-skin immediately on module load to prevent Flash of Unstyled Content.
+// This runs before the app initializes, ensuring the correct skin CSS selectors are active from first paint.
 if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-skin', activeSkinId.value)
 }

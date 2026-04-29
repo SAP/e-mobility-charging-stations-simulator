@@ -1,8 +1,11 @@
 /**
  * CSS token contract.
  *
+ * Color tokens are mandatory for all skins. Typography and spacing tokens are
+ * theme defaults that skins MAY override with their own structural tokens
+ * (e.g., --skin-space-*, --skin-font).
+ *
  * Every theme file MUST define a value for each token (as `--{token-name}`).
- * Every skin MUST consume only these tokens for colors, typography, and spacing.
  */
 export const TOKEN_CONTRACT = [
   'color-accent',

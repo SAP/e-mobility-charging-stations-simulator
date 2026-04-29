@@ -113,6 +113,11 @@ export interface ExecuteActionCallbacks {
   onSuccess?: () => void
 }
 
+/**
+ * @deprecated Use `useAsyncAction` from `@/shared/composables/useAsyncAction.js` for new code.
+ * @param emit - Optional emit function to call on success
+ * @returns An action executor function
+ */
 export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
   const $toast = useToast()
   return (

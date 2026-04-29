@@ -1,6 +1,14 @@
 import type { ChargingStationData, SimulatorState, UIServerConfigurationSection } from 'ui-common'
 
-import { computed, type ComputedRef, onMounted, onUnmounted, readonly, type Ref, ref } from 'vue'
+import {
+  computed,
+  type ComputedRef,
+  onMounted,
+  onUnmounted,
+  readonly,
+  type Ref,
+  shallowRef,
+} from 'vue'
 
 import {
   useChargingStations,
@@ -45,7 +53,7 @@ export function useLayoutData (): LayoutData {
   const $templates = useTemplates()
   const $chargingStations = useChargingStations()
 
-  const simulatorState = ref<SimulatorState | undefined>(undefined)
+  const simulatorState = shallowRef<SimulatorState | undefined>(undefined)
   const simulatorStarted = computed((): boolean | undefined => simulatorState.value?.started)
 
   const clearTemplates = (): void => {

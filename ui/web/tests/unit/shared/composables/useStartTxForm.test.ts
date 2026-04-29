@@ -4,22 +4,15 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { toastMock } from '../../../setup.js'
+
 const mockAuthorize = vi.fn().mockResolvedValue({ status: 'success' })
 const mockStartTransaction = vi.fn().mockResolvedValue({ status: 'success' })
-const mockToastError = vi.fn()
-const mockToastSuccess = vi.fn()
 
 vi.mock('@/composables/Utils.js', () => ({
   useUIClient: () => ({
     authorize: mockAuthorize,
     startTransaction: mockStartTransaction,
-  }),
-}))
-
-vi.mock('vue-toast-notification', () => ({
-  useToast: () => ({
-    error: mockToastError,
-    success: mockToastSuccess,
   }),
 }))
 
@@ -67,7 +60,7 @@ describe('useStartTxForm', () => {
       idTag: 'TAG001',
       ocppVersion: OCPPVersion.VERSION_16,
     })
-    expect(mockToastSuccess).toHaveBeenCalledWith('Transaction successfully started')
+    expect(toastMock.success).toHaveBeenCalledWith('Transaction successfully started')
   })
 
   it('should pass undefined idTag when empty on submit', async () => {
@@ -96,7 +89,7 @@ describe('useStartTxForm', () => {
     formState.value.authorizeIdTag = true
     formState.value.idTag = ''
     await submitForm()
-    expect(mockToastError).toHaveBeenCalledWith('Please provide an RFID tag to authorize')
+    expect(toastMock.error).toHaveBeenCalledWith('Please provide an RFID tag to authorize')
     expect(mockStartTransaction).not.toHaveBeenCalled()
   })
 
@@ -107,7 +100,7 @@ describe('useStartTxForm', () => {
     formState.value.idTag = 'TAG001'
     const result = await submitForm()
     expect(result).toBe(false)
-    expect(mockToastError).toHaveBeenCalledWith('Error at authorizing RFID tag')
+    expect(toastMock.error).toHaveBeenCalledWith('Error at authorizing RFID tag')
     expect(mockStartTransaction).not.toHaveBeenCalled()
   })
 
@@ -117,7 +110,7 @@ describe('useStartTxForm', () => {
     formState.value.idTag = 'TAG001'
     const result = await submitForm()
     expect(result).toBe(false)
-    expect(mockToastError).toHaveBeenCalledWith('Error at starting transaction')
+    expect(toastMock.error).toHaveBeenCalledWith('Error at starting transaction')
   })
 
   it('should call onCleanup on authorize failure', async () => {

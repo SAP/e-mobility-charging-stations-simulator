@@ -129,10 +129,11 @@ import {
   deleteLocalStorageByKeyPattern,
   EMPTY_VALUE_PLACEHOLDER,
   ROUTE_NAMES,
-  useExecuteAction,
   useUIClient,
 } from '@/composables'
 import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
+import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
+import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 
 import Button from '../buttons/Button.vue'
 import StateButton from '../buttons/StateButton.vue'
@@ -152,62 +153,56 @@ const connectorEntries = computed((): ConnectorEntry[] =>
 )
 const getATGStatusForConnector = (connectorId: number): Status | undefined =>
   getATGStatus(props.chargingStation, connectorId)
-const supervisionUrl = computed((): string => {
-  const url = props.chargingStation.supervisionUrl?.trim()
-
-  if (!url) {
-    return EMPTY_VALUE_PLACEHOLDER
-  }
-
-  try {
-    const parsedSupervisionUrl = new URL(url)
-    return `${parsedSupervisionUrl.protocol}//${parsedSupervisionUrl.host.split('.').join('.\u200b')}`
-  } catch {
-    return url
-  }
-})
+const supervisionUrl = computed((): string =>
+  formatSupervisionUrl(props.chargingStation.supervisionUrl, { wordBreak: true })
+)
 
 const $uiClient = useUIClient()
 
-const executeAction = useExecuteAction($emit)
+const { run } = useAsyncAction({ connection: false, delete: false, startStop: false }, () =>
+  $emit('need-refresh')
+)
 
 const startChargingStation = (): void => {
-  executeAction(
-    $uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
+  run(
+    'startStop',
+    () => $uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully started',
     'Error at starting charging station'
   )
 }
 const stopChargingStation = (): void => {
-  executeAction(
-    $uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
+  run(
+    'startStop',
+    () => $uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully stopped',
     'Error at stopping charging station'
   )
 }
 const openConnection = (): void => {
-  executeAction(
-    $uiClient.openConnection(props.chargingStation.stationInfo.hashId),
+  run(
+    'connection',
+    () => $uiClient.openConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully opened',
     'Error at opening connection'
   )
 }
 const closeConnection = (): void => {
-  executeAction(
-    $uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
+  run(
+    'connection',
+    () => $uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
     'Connection successfully closed',
     'Error at closing connection'
   )
 }
 const deleteChargingStation = (): void => {
-  executeAction(
-    $uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId),
+  run(
+    'delete',
+    () => $uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId),
     'Charging station successfully deleted',
     'Error at deleting charging station',
-    {
-      onSuccess: () => {
-        deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
-      },
+    () => {
+      deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
     }
   )
 }

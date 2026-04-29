@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
 
-describe('skin registry', () => {
+describe('registry', () => {
   it('should export DEFAULT_SKIN as classic', () => {
     expect(DEFAULT_SKIN).toBe('classic')
   })

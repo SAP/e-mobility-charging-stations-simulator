@@ -8,6 +8,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'ClassicButton' })
+
 withDefaults(
   defineProps<{
     active?: boolean

@@ -26,12 +26,21 @@ const defaultSkinLabel = skins.find(s => s.id === DEFAULT_SKIN)?.label ?? 'Defau
  */
 function resetToDefault (): void {
   const RELOAD_KEY = 'skin-error-reload-count'
-  const count = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
+  let count = 0
+  try {
+    count = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
+  } catch {
+    // sessionStorage unavailable (e.g. Safari private browsing)
+  }
   if (count >= 2) {
     // Stop infinite reload loop — show message instead
     return
   }
-  sessionStorage.setItem(RELOAD_KEY, String(count + 1))
+  try {
+    sessionStorage.setItem(RELOAD_KEY, String(count + 1))
+  } catch {
+    // sessionStorage unavailable — proceed with reset anyway
+  }
   setToLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
   window.location.reload()
 }

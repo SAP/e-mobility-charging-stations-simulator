@@ -4,31 +4,13 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { toastMock } from '../../../setup.js'
+
 const mockSetSupervisionUrl = vi.fn().mockResolvedValue({ status: 'success' })
-const mockExecuteAction = vi.fn(
-  (
-    _action: unknown,
-    _successMsg: unknown,
-    _errorMsg: unknown,
-    callbacks?: { onFinally?: () => void; onSuccess?: () => void }
-  ) => {
-    callbacks?.onSuccess?.()
-    callbacks?.onFinally?.()
-  }
-)
-const mockToastError = vi.fn()
 
 vi.mock('@/composables/Utils.js', () => ({
-  useExecuteAction: () => mockExecuteAction,
   useUIClient: () => ({
     setSupervisionUrl: mockSetSupervisionUrl,
-  }),
-}))
-
-vi.mock('vue-toast-notification', () => ({
-  useToast: () => ({
-    error: mockToastError,
-    success: vi.fn(),
   }),
 }))
 
@@ -66,16 +48,16 @@ describe('useSetUrlForm', () => {
   it('should show error when supervisionUrl is empty on submit', async () => {
     const { submitForm } = useSetUrlForm('hash1', 'CS-001')
     await submitForm()
-    expect(mockToastError).toHaveBeenCalledWith('Supervision url is required')
-    expect(mockExecuteAction).not.toHaveBeenCalled()
+    expect(toastMock.error).toHaveBeenCalledWith('Supervision url is required')
+    expect(mockSetSupervisionUrl).not.toHaveBeenCalled()
   })
 
-  it('should call executeAction with setSupervisionUrl when url is set', async () => {
+  it('should call setSupervisionUrl when url is set', async () => {
     const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
     formState.value.supervisionUrl = 'ws://server:8080'
     await submitForm()
     expect(mockSetSupervisionUrl).toHaveBeenCalledWith('hash1', 'ws://server:8080', '', '')
-    expect(mockExecuteAction).toHaveBeenCalled()
+    expect(toastMock.success).toHaveBeenCalledWith('Supervision url successfully set')
   })
 
   it('should pass optional user and password when set on submit', async () => {
@@ -97,7 +79,7 @@ describe('useSetUrlForm', () => {
     formState.value.supervisionUrl = 'ws://server:8080'
     formState.value.supervisionUrl = ''
     await submitForm()
-    expect(mockToastError).toHaveBeenCalledWith('Supervision url is required')
+    expect(toastMock.error).toHaveBeenCalledWith('Supervision url is required')
     expect(mockSetSupervisionUrl).not.toHaveBeenCalled()
   })
 
@@ -105,7 +87,7 @@ describe('useSetUrlForm', () => {
     const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
     formState.value.supervisionUrl = 'ws://valid-server:9090'
     await submitForm()
-    expect(mockToastError).not.toHaveBeenCalled()
+    expect(toastMock.error).not.toHaveBeenCalled()
     expect(mockSetSupervisionUrl).toHaveBeenCalledWith('hash1', 'ws://valid-server:9090', '', '')
   })
 })

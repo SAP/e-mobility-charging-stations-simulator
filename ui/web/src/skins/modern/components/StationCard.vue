@@ -175,6 +175,7 @@ import {
 } from '@/composables'
 import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
+import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 
 import ActionButton from './ActionButton.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -234,14 +235,7 @@ const wsLabel = computed(() => {
   return name?.toLowerCase() ?? 'unknown'
 })
 
-const supervisionUrl = computed(() => {
-  try {
-    const url = new URL(props.chargingStation.supervisionUrl)
-    return `${url.protocol}//${url.host}${url.pathname === '/' ? '' : url.pathname}`
-  } catch {
-    return props.chargingStation.supervisionUrl
-  }
-})
+const supervisionUrl = computed(() => formatSupervisionUrl(props.chargingStation.supervisionUrl))
 
 const connectors = computed<ConnectorEntry[]>(() => getConnectorEntries(props.chargingStation))
 
