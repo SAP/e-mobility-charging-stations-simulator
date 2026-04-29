@@ -174,7 +174,7 @@ describe('CSConnector', () => {
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 2)
       expect(toastMock.success).toHaveBeenCalledWith('Connector successfully locked')
-      expect(wrapper.emitted('need-refresh')).toBeTruthy()
+      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call unlockConnector', async () => {

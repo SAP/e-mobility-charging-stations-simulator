@@ -17,7 +17,7 @@
     id="supervision-user"
     v-model.trim="formState.supervisionUser"
     autocomplete="off"
-    class="supervision-user"
+    class="classic-supervision-user"
     name="supervision-user"
     placeholder="<username>"
     type="text"
@@ -26,7 +26,7 @@
     id="supervision-password"
     v-model="formState.supervisionPassword"
     autocomplete="off"
-    class="supervision-password"
+    class="classic-supervision-password"
     name="supervision-password"
     placeholder="<password>"
     type="password"
@@ -67,8 +67,8 @@ const setSupervisionUrl = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.supervision-user,
-.supervision-password {
+.classic-supervision-user,
+.classic-supervision-password {
   width: 100%;
   max-width: 40rem;
   text-align: left;

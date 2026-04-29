@@ -1115,7 +1115,7 @@ body:has(.modern-app) #app {
   }
 }
 
-.modern-confirm__message {
+.modern-dialog__message {
   margin: 0;
   line-height: 1.5;
 }

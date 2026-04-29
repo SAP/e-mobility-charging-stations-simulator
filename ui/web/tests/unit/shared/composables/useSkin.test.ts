@@ -181,4 +181,18 @@ describe('useSkin', () => {
     const { activeSkinId } = useSkin()
     expect(activeSkinId.value).toBe('classic')
   })
+
+  it('should remove skin-error-reload-count from sessionStorage on successful switch', async () => {
+    sessionStorage.setItem('skin-error-reload-count', '2')
+    const { switchSkin } = useSkin()
+    await switchSkin('modern')
+    expect(sessionStorage.getItem('skin-error-reload-count')).toBeNull()
+  })
+
+  it('should remove skin-error-reload-count from sessionStorage when switching to already-active skin', async () => {
+    sessionStorage.setItem('skin-error-reload-count', '1')
+    const { activeSkinId, switchSkin } = useSkin()
+    await switchSkin(activeSkinId.value)
+    expect(sessionStorage.getItem('skin-error-reload-count')).toBeNull()
+  })
 })

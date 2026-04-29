@@ -106,7 +106,6 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
       return true
     } finally {
       switching.value = false
-      switchPromise = null
     }
   }
   try {
@@ -128,7 +127,6 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     return false
   } finally {
     switching.value = false
-    switchPromise = null
   }
 }
 

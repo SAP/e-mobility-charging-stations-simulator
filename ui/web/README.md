@@ -160,6 +160,8 @@ Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root 
 
 > **Browser requirement**: The `modern` skin uses CSS `color-mix()` extensively. This requires Chrome 111+, Safari 16.2+, or Firefox 113+ (all released by May 2023). Users on older browsers should use the `classic` skin.
 
+> **CSP note**: The skin system uses Vite's CSS code-splitting which injects `<style>` tags at runtime. If your deployment uses a strict Content-Security-Policy, ensure `style-src 'self' 'unsafe-inline'` is allowed, or configure Vite's `build.cssCodeSplit: false` to inline all CSS.
+
 ## Getting started
 
 ### Install dependencies

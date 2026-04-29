@@ -3,7 +3,7 @@
     :title="title"
     @close="$emit('cancel')"
   >
-    <p class="modern-confirm__message">
+    <p class="modern-dialog__message">
       {{ message }}
     </p>
     <template #footer>

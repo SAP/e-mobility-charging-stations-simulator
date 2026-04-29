@@ -87,14 +87,14 @@ const props = defineProps<{
   ocppVersion?: OCPPVersion
 }>()
 
-const $emit = defineEmits<{ 'need-refresh': [] }>()
+const emit = defineEmits<{ 'need-refresh': [] }>()
 
 const $uiClient = useUIClient()
 
 const $toast = useToast()
 
 const { run } = useAsyncAction({ atg: false, lock: false, transaction: false }, () =>
-  $emit('need-refresh')
+  emit('need-refresh')
 )
 
 const stopTransaction = (): void => {

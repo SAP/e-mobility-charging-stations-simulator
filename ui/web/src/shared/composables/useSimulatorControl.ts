@@ -61,6 +61,8 @@ export function useSimulatorControl (
   const simulatorPending = ref(false)
   const serverSwitchPending = ref(false)
   let activeTimeoutId: ReturnType<typeof setTimeout> | undefined
+  let pendingOpenHandler: (() => void) | undefined
+  let pendingErrorHandler: (() => void) | undefined
   const $toast = useToast()
 
   const startSimulator = (): void => {
@@ -122,6 +124,8 @@ export function useSimulatorControl (
       settled = true
       clearTimeout(activeTimeoutId)
       $uiClient.unregisterWSEventListener('error', errorHandler)
+      pendingOpenHandler = undefined
+      pendingErrorHandler = undefined
       setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
       serverSwitchPending.value = false
       options?.onServerSwitched?.()
@@ -132,6 +136,8 @@ export function useSimulatorControl (
       settled = true
       clearTimeout(activeTimeoutId)
       $uiClient.unregisterWSEventListener('open', openHandler)
+      pendingOpenHandler = undefined
+      pendingErrorHandler = undefined
       serverSwitchPending.value = false
       const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
       $uiClient.setConfiguration(
@@ -143,6 +149,8 @@ export function useSimulatorControl (
 
     $uiClient.registerWSEventListener('open', openHandler, { once: true })
     $uiClient.registerWSEventListener('error', errorHandler, { once: true })
+    pendingOpenHandler = openHandler
+    pendingErrorHandler = errorHandler
 
     activeTimeoutId = setTimeout(() => {
       if (!settled) {
@@ -155,6 +163,14 @@ export function useSimulatorControl (
     if (activeTimeoutId != null) {
       clearTimeout(activeTimeoutId)
       activeTimeoutId = undefined
+    }
+    if (pendingOpenHandler != null) {
+      $uiClient.unregisterWSEventListener('open', pendingOpenHandler)
+      pendingOpenHandler = undefined
+    }
+    if (pendingErrorHandler != null) {
+      $uiClient.unregisterWSEventListener('error', pendingErrorHandler)
+      pendingErrorHandler = undefined
     }
   })
 

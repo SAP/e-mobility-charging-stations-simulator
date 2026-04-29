@@ -1,3 +1,4 @@
+import { type SKIN_IDS } from 'ui-common'
 import { h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
@@ -8,7 +9,7 @@ import { DEFAULT_SKIN } from '@/skins/registry.js'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    skinOnly?: string
+    skinOnly?: (typeof SKIN_IDS)[number]
   }
 }
 

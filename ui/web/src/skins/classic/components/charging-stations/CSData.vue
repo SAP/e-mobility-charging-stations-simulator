@@ -144,7 +144,7 @@ const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
 
-const $emit = defineEmits<{ 'need-refresh': [] }>()
+const emit = defineEmits<{ 'need-refresh': [] }>()
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
@@ -160,7 +160,7 @@ const supervisionUrl = computed((): string =>
 const $uiClient = useUIClient()
 
 const { run } = useAsyncAction({ connection: false, delete: false, startStop: false }, () =>
-  $emit('need-refresh')
+  emit('need-refresh')
 )
 
 const startChargingStation = (): void => {

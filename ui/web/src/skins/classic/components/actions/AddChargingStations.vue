@@ -24,7 +24,7 @@
   <input
     id="number-of-stations"
     v-model="formState.numberOfStations"
-    class="number-of-stations"
+    class="classic-number-of-stations"
     max="100"
     min="1"
     name="number-of-stations"
@@ -66,7 +66,7 @@
         id="supervision-user"
         v-model.trim="formState.supervisionUser"
         autocomplete="off"
-        class="supervision-user"
+        class="classic-supervision-user"
         name="supervision-user"
         placeholder="<username>"
         type="text"
@@ -75,7 +75,7 @@
         id="supervision-password"
         v-model="formState.supervisionPassword"
         autocomplete="off"
-        class="supervision-password"
+        class="classic-supervision-password"
         name="supervision-password"
         placeholder="<password>"
         type="password"
@@ -143,21 +143,21 @@ const addChargingStations = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.number-of-stations {
+.classic-number-of-stations {
   width: auto;
   max-width: 6rem;
   text-align: center;
 }
 
-.base-name,
-.supervision-user,
-.supervision-password {
+.classic-base-name,
+.classic-supervision-user,
+.classic-supervision-password {
   width: 100%;
   max-width: 40rem;
   text-align: left;
 }
 
-.template-options {
+.classic-template-options {
   list-style: circle;
   text-align: left;
 }

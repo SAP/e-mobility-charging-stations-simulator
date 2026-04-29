@@ -127,7 +127,7 @@ describe('StationCard', () => {
       // Native <button> elements fire click on Enter/Space in real browsers;
       // test-utils does not simulate this, so we trigger click directly
       await wrapper.find('.modern-card__url-edit').trigger('click')
-      expect(wrapper.emitted('open-set-url')).toBeTruthy()
+      expect(wrapper.emitted('open-set-url')).toHaveLength(1)
     })
   })
 
@@ -195,7 +195,7 @@ describe('StationCard', () => {
       await flushPromises()
       expect(mockClient.startChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
       expect(toastMock.success).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toBeTruthy()
+      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should label Stop when started, calls stopChargingStation', async () => {

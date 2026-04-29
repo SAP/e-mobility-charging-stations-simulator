@@ -51,7 +51,7 @@
         <select
           :value="activeSkinId"
           class="ui-server-selector"
-          @change="e => switchSkin((e.target as HTMLSelectElement).value)"
+          @change="e => switchSkin(getSelectValue(e))"
         >
           <option
             v-for="skin in skins"
@@ -64,7 +64,7 @@
         <select
           :value="activeThemeId"
           class="ui-server-selector"
-          @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
+          @change="e => setTheme(getSelectValue(e) as ThemeName)"
         >
           <option
             v-for="theme in availableThemes"
@@ -76,7 +76,7 @@
         </select>
       </Container>
       <CSTable
-        v-show="$chargingStations.length > 0"
+        v-if="$chargingStations.length > 0"
         :charging-stations="$chargingStations"
         @need-refresh="
           () => {
@@ -120,6 +120,16 @@ import StateButton from './components/buttons/StateButton.vue'
 import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/Container.vue'
+
+/**
+ * Extracts the value from a select element change event.
+ * @param e - The DOM change event
+ * @returns The selected option's value
+ */
+function getSelectValue (e: Event): string {
+  // eslint-disable-next-line no-undef
+  return (e.target as HTMLSelectElement).value
+}
 
 const layoutData = useLayoutData()
 const { simulatorStarted, simulatorState, uiServerConfigurations } = layoutData

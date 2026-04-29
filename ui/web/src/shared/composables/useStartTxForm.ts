@@ -11,7 +11,7 @@ export interface StartTxFormConfig {
   ocppVersion?: OCPPVersion
   options?: {
     onCleanup?: () => void
-    onError?: (error: unknown) => void
+    onError?: (error: unknown, step?: 'authorize' | 'startTransaction') => void
   }
 }
 
@@ -70,7 +70,7 @@ export function useStartTxForm (config: StartTxFormConfig): {
         } catch (error) {
           $toast.error('Error at authorizing RFID tag')
           console.error('Error at authorizing RFID tag:', error)
-          options?.onError?.(error)
+          options?.onError?.(error, 'authorize')
           options?.onCleanup?.()
           return false
         }
@@ -88,7 +88,7 @@ export function useStartTxForm (config: StartTxFormConfig): {
       } catch (error) {
         $toast.error('Error at starting transaction')
         console.error('Error at starting transaction:', error)
-        options?.onError?.(error)
+        options?.onError?.(error, 'startTransaction')
         return false
       } finally {
         options?.onCleanup?.()

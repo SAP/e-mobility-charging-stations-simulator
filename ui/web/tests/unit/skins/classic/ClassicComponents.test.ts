@@ -213,7 +213,7 @@ describe('ToggleButton and CSTable', () => {
       const csDataStub = wrapper.findComponent(CSDataStub)
       csDataStub.vm.$emit('need-refresh')
       await flushPromises()
-      expect(wrapper.emitted('need-refresh')).toBeTruthy()
+      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
   })
 })

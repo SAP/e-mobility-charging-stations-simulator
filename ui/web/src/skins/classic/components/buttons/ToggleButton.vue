@@ -28,7 +28,7 @@ const props = defineProps<{
   status?: boolean
 }>()
 
-const $emit = defineEmits<{ clicked: [status: boolean] }>()
+const emit = defineEmits<{ clicked: [status: boolean] }>()
 
 const id =
   props.shared === true
@@ -63,6 +63,6 @@ const click = (): void => {
   } else {
     props.off?.()
   }
-  $emit('clicked', newStatus)
+  emit('clicked', newStatus)
 }
 </script>

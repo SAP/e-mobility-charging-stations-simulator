@@ -71,7 +71,7 @@
       </ActionButton>
       <ActionButton
         variant="primary"
-        :pending="submitting"
+        :pending="pending"
         @click="submit"
       >
         Save
@@ -97,7 +97,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
+const { formState, pending, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
 
@@ -122,15 +122,12 @@ watch(
   { immediate: true }
 )
 
-const submitting = ref(false)
-
 const close = (): void => {
   emit('close')
 }
 
 const submit = async (): Promise<void> => {
-  if (submitting.value) return
-  submitting.value = true
+  if (pending.value) return
   try {
     const success = await submitForm()
     if (!success) return
@@ -139,8 +136,8 @@ const submit = async (): Promise<void> => {
       await $uiClient.openConnection(props.hashId)
     }
     close()
-  } finally {
-    submitting.value = false
+  } catch {
+    // submitForm handles its own errors via toast
   }
 }
 </script>

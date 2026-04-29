@@ -83,7 +83,7 @@ describe('modern dialogs', () => {
           supervisionUser: undefined,
         })
       )
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
 
     it('should send fixedName=true when baseName set and checkbox checked', async () => {
@@ -126,7 +126,7 @@ describe('modern dialogs', () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       await flushPromises()
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
   })
 
@@ -214,7 +214,7 @@ describe('modern dialogs', () => {
       )
       expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
       expect(mockClient.openConnection).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
 
     it('should not reconnect when station is stopped', async () => {
@@ -252,7 +252,7 @@ describe('modern dialogs', () => {
       const wrapper = mountDialog([])
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       await flushPromises()
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
   })
 
@@ -296,7 +296,7 @@ describe('modern dialogs', () => {
         TEST_HASH_ID,
         expect.objectContaining({ connectorId: 1, idTag: 'RFID-01' })
       )
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
 
     it('should skip authorize when checkbox is unchecked', async () => {
@@ -374,7 +374,7 @@ describe('modern dialogs', () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       await flushPromises()
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
   })
 
@@ -404,7 +404,7 @@ describe('modern dialogs', () => {
       await flushPromises()
       expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'GOOD')
       expect(toastMock.success).toHaveBeenCalled()
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
 
     it('should surface ServerFailureError status and payload JSON panel', async () => {
@@ -436,7 +436,7 @@ describe('modern dialogs', () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       await flushPromises()
-      expect(wrapper.emitted('close')).toBeTruthy()
+      expect(wrapper.emitted('close')).toHaveLength(1)
     })
   })
 })

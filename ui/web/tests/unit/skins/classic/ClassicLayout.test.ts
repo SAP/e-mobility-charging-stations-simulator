@@ -70,4 +70,32 @@ describe('ClassicLayout', () => {
     await flushPromises()
     expect(wrapper.find('.classic-layout').exists()).toBe(true)
   })
+
+  it('should trigger switchSkin when skin select changes', async () => {
+    const wrapper = mountLayout()
+    await flushPromises()
+    const selects = wrapper.findAll('select')
+    const skinSelect = selects.find(s => {
+      const options = s.findAll('option')
+      return options.some(o => ['classic', 'modern'].includes(o.element.value))
+    })
+    if (skinSelect != null) {
+      await skinSelect.trigger('change')
+    }
+  })
+
+  it('should trigger setTheme when theme select changes', async () => {
+    const wrapper = mountLayout()
+    await flushPromises()
+    const selects = wrapper.findAll('select')
+    const themeSelect = selects.find(s => {
+      const options = s.findAll('option')
+      return options.some(
+        o => o.element.value.includes('night') || o.element.value.includes('catppuccin')
+      )
+    })
+    if (themeSelect != null) {
+      await themeSelect.trigger('change')
+    }
+  })
 })

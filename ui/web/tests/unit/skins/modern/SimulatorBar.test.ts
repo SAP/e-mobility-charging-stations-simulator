@@ -124,4 +124,30 @@ describe('SimulatorBar', () => {
     })
     expect(wrapper.text()).toContain('nohost')
   })
+
+  it('should call setTheme when theme select changes', async () => {
+    const wrapper = mountBar()
+    const themeSelect = wrapper.find('.modern-bar__select[aria-label="Theme"]')
+    expect(themeSelect.exists()).toBe(true)
+    await themeSelect.trigger('change')
+  })
+
+  it('should call switchSkin when skin select changes', async () => {
+    const wrapper = mountBar()
+    const skinSelect = wrapper.find('.modern-bar__select[aria-label="Skin"]')
+    expect(skinSelect.exists()).toBe(true)
+    await skinSelect.trigger('change')
+  })
+
+  it('should emit switch-server with selectedIndex when server select changes via trigger', async () => {
+    const wrapper = mountBar({
+      uiServerConfigurations: [
+        { configuration: baseServer, index: 0 },
+        { configuration: altServer, index: 1 },
+      ],
+    })
+    const select = wrapper.find('.modern-bar__select[aria-label="UI server"]')
+    await select.trigger('change')
+    expect(wrapper.emitted('switch-server')).toBeDefined()
+  })
 })

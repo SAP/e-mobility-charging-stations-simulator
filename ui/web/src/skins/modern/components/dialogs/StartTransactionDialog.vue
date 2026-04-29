@@ -35,7 +35,13 @@
         class="modern-form__error"
       >
         <div class="modern-form__error-summary">
-          <strong>Status</strong>
+          <strong>{{
+            errorStep === 'authorize'
+              ? 'Authorize failed'
+              : errorStep === 'startTransaction'
+                ? 'Start transaction failed'
+                : 'Status'
+          }}</strong>
           <span>{{ lastFailure.summary }}</span>
         </div>
         <details
@@ -88,6 +94,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const pending = ref(false)
 const lastFailure = ref<FailureInfo | null>(null)
+const errorStep = ref<'authorize' | 'startTransaction' | null>(null)
 
 const isMounted = ref(true)
 onBeforeUnmount(() => {
@@ -100,7 +107,8 @@ const { formState, submitForm } = useStartTxForm({
   hashId: props.hashId,
   ocppVersion: props.ocppVersion,
   options: {
-    onError: (error: unknown) => {
+    onError: (error: unknown, step?: 'authorize' | 'startTransaction') => {
+      errorStep.value = step ?? null
       lastFailure.value = getFailureInfo(error)
     },
   },
@@ -120,6 +128,7 @@ watch(
   formState,
   () => {
     lastFailure.value = null
+    errorStep.value = null
   },
   { deep: true }
 )

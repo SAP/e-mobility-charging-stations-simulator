@@ -24,7 +24,7 @@
         class="modern-bar__select"
         aria-label="UI server"
         :disabled="serverSwitchPending"
-        @change="e => $emit('switch-server', (e.target as HTMLSelectElement).selectedIndex)"
+        @change="e => $emit('switch-server', getSelectIndex(e))"
       >
         <option
           v-for="entry in uiServerConfigurations"
@@ -63,7 +63,7 @@
         :value="activeThemeId"
         class="modern-bar__select"
         aria-label="Theme"
-        @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
+        @change="e => setTheme(getSelectValue(e) as ThemeName)"
       >
         <option
           v-for="theme in availableThemes"
@@ -77,7 +77,7 @@
         :value="activeSkinId"
         class="modern-bar__select"
         aria-label="Skin"
-        @change="e => switchSkin((e.target as HTMLSelectElement).value)"
+        @change="e => switchSkin(getSelectValue(e))"
       >
         <option
           v-for="skin in skinList"
@@ -101,6 +101,26 @@ import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
+
+/**
+ * Extracts the selectedIndex from a select element change event.
+ * @param e - The DOM change event
+ * @returns The selected option's index
+ */
+function getSelectIndex (e: Event): number {
+  // eslint-disable-next-line no-undef
+  return (e.target as HTMLSelectElement).selectedIndex
+}
+
+/**
+ * Extracts the value from a select element change event.
+ * @param e - The DOM change event
+ * @returns The selected option's value
+ */
+function getSelectValue (e: Event): string {
+  // eslint-disable-next-line no-undef
+  return (e.target as HTMLSelectElement).value
+}
 
 const props = defineProps<{
   refreshPending?: boolean

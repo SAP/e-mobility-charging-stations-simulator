@@ -14,7 +14,7 @@
     <input
       id="idtag"
       v-model.trim="formState.idTag"
-      class="idtag"
+      class="classic-idtag"
       name="idtag"
       placeholder="RFID tag"
       type="text"
@@ -84,7 +84,7 @@ const handleStartTransaction = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.idtag {
+.classic-idtag {
   text-align: center;
 }
 </style>

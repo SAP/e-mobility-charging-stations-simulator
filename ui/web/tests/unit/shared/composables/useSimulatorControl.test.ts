@@ -207,6 +207,57 @@ describe('useSimulatorControl', () => {
     )
   })
 
+  it('should clean up pending WS handlers on scope dispose mid-switch', () => {
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
+    const [result, app] = mountComposable()
+
+    result.handleUIServerChange(1)
+
+    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function), {
+      once: true,
+    })
+    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('error', expect.any(Function), {
+      once: true,
+    })
+
+    app.unmount()
+
+    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('open', expect.any(Function))
+    expect(mockClient.unregisterWSEventListener).toHaveBeenCalledWith('error', expect.any(Function))
+  })
+
+  it('should ignore error handler when open already settled the switch', () => {
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
+    const [result] = mountComposable()
+    result.handleUIServerChange(1)
+
+    const calls = vi.mocked(mockClient.registerWSEventListener).mock.calls
+    const openHandler = calls.find(([event]) => event === 'open')?.[1] as () => void
+    const errorHandler = calls.find(([event]) => event === 'error')?.[1] as () => void
+
+    openHandler()
+    expect(result.serverSwitchPending.value).toBe(false)
+
+    errorHandler()
+    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
+  })
+
+  it('should ignore open handler when error already settled the switch', () => {
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
+    const [result] = mountComposable()
+    result.handleUIServerChange(1)
+
+    const calls = vi.mocked(mockClient.registerWSEventListener).mock.calls
+    const openHandler = calls.find(([event]) => event === 'open')?.[1] as () => void
+    const errorHandler = calls.find(([event]) => event === 'error')?.[1] as () => void
+
+    errorHandler()
+    expect(result.serverSwitchPending.value).toBe(false)
+
+    openHandler()
+    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
+  })
+
   describe('server switch timeout', () => {
     beforeEach(() => {
       vi.useFakeTimers()

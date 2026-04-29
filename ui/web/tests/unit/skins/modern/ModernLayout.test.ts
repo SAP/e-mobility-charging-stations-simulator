@@ -315,4 +315,50 @@ describe('ModernLayout', () => {
     expect(stations.value).toHaveLength(0)
     wrapper.unmount()
   })
+
+  it('should open authorize dialog when station card emits open-authorize', async () => {
+    const station = createChargingStationData({
+      stationInfo: {
+        baseName: 'CS-1',
+        chargePointModel: 'm',
+        chargePointVendor: 'v',
+        chargingStationId: 'CS-1',
+        hashId: 'h1',
+        templateIndex: 0,
+        templateName: 't',
+      },
+    })
+    const wrapper = mount(ModernLayout, {
+      global: {
+        provide: {
+          [chargingStationsKey as symbol]: ref([station]),
+          [configurationKey as symbol]: ref(singleServer),
+          [templatesKey as symbol]: ref([]),
+          [uiClientKey as symbol]: mockClient,
+        },
+        stubs: {
+          AddStationsDialog: true,
+          AuthorizeDialog: true,
+          ConfirmDialog: true,
+          SetSupervisionUrlDialog: true,
+          SimulatorBar: true,
+          StartTransactionDialog: true,
+          StationCard: {
+            emits: ['need-refresh', 'open-authorize', 'open-set-url', 'open-start-tx'],
+            props: ['chargingStation'],
+            template: `<article class="stub-station-card">
+              <button class="stub-authorize" @click="$emit('open-authorize', { chargingStationId: 'CS-1', hashId: 'h1' })">auth</button>
+              <button class="stub-set-url" @click="$emit('open-set-url', { chargingStationId: 'CS-1', hashId: 'h1' })">url</button>
+              <button class="stub-start-tx" @click="$emit('open-start-tx', { chargingStationId: 'CS-1', connectorId: '1', hashId: 'h1' })">tx</button>
+            </article>`,
+          },
+        },
+      },
+    })
+    await flushPromises()
+    await wrapper.find('.stub-authorize').trigger('click')
+    await wrapper.find('.stub-set-url').trigger('click')
+    await wrapper.find('.stub-start-tx').trigger('click')
+    await flushPromises()
+  })
 })

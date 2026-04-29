@@ -225,7 +225,7 @@ describe('CSData', () => {
       await flushPromises()
       expect(mockClient.startChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
       expect(toastMock.success).toHaveBeenCalledWith('Charging station successfully started')
-      expect(wrapper.emitted('need-refresh')).toBeTruthy()
+      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call stopChargingStation', async () => {

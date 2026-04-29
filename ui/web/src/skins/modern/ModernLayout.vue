@@ -80,7 +80,7 @@
 // Modern skin uses component-level dialog state (v-if) instead of router navigation.
 // This avoids URL coupling for modal interactions and enables independent skin operation.
 import { type OCPPVersion } from 'ui-common'
-import { ref } from 'vue'
+import { defineAsyncComponent, ref } from 'vue'
 
 import {
   getFromLocalStorage,
@@ -91,10 +91,18 @@ import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
 import ConfirmDialog from './components/ConfirmDialog.vue'
-import AddStationsDialog from './components/dialogs/AddStationsDialog.vue'
-import AuthorizeDialog from './components/dialogs/AuthorizeDialog.vue'
-import SetSupervisionUrlDialog from './components/dialogs/SetSupervisionUrlDialog.vue'
-import StartTransactionDialog from './components/dialogs/StartTransactionDialog.vue'
+const AddStationsDialog = defineAsyncComponent(
+  () => import('./components/dialogs/AddStationsDialog.vue')
+)
+const AuthorizeDialog = defineAsyncComponent(
+  () => import('./components/dialogs/AuthorizeDialog.vue')
+)
+const SetSupervisionUrlDialog = defineAsyncComponent(
+  () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
+)
+const StartTransactionDialog = defineAsyncComponent(
+  () => import('./components/dialogs/StartTransactionDialog.vue')
+)
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 

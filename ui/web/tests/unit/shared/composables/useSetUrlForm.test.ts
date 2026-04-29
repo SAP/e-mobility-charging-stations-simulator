@@ -80,4 +80,13 @@ describe('useSetUrlForm', () => {
     expect(toastMock.error).not.toHaveBeenCalled()
     expect(mockSetSupervisionUrl).toHaveBeenCalledWith('hash1', 'ws://valid-server:9090', '', '')
   })
+
+  it('should return false and show error toast when setSupervisionUrl rejects', async () => {
+    mockSetSupervisionUrl.mockRejectedValueOnce(new Error('Network error'))
+    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
+    formState.value.supervisionUrl = 'wss://example.com'
+    const result = await submitForm()
+    expect(result).toBe(false)
+    expect(toastMock.error).toHaveBeenCalledWith('Error at setting supervision url')
+  })
 })

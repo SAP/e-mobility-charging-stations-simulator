@@ -122,7 +122,7 @@ describe('ConnectorRow', () => {
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
       expect(toastMock.success).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toBeTruthy()
+      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call unlockConnector when locked', async () => {

@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, markRaw } from 'vue'
+import { computed, defineAsyncComponent, markRaw, watch } from 'vue'
 
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
@@ -29,6 +29,10 @@ import { useSkin } from '@/shared/composables/useSkin.js'
 import { skins } from '@/skins/registry.js'
 
 const { activeSkinId } = useSkin()
+
+watch(activeSkinId, () => {
+  document.body.style.overflow = ''
+})
 
 const skinLayoutMap = new Map(
   skins.map(s => [
@@ -88,5 +92,12 @@ function reloadPage (): void {
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skin-fade-enter-active,
+  .skin-fade-leave-active {
+    transition: none;
+  }
 }
 </style>
