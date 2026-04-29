@@ -1,7 +1,6 @@
 /**
  * @file useAsyncAction.ts
  * @description Shared async action executor with pending-key guard and toast notifications.
- * This is the forward pattern for fire-and-forget actions — prefer over useExecuteAction for new code.
  */
 import { reactive, readonly } from 'vue'
 import { useToast } from 'vue-toast-notification'

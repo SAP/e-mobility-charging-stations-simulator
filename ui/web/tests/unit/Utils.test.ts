@@ -1,6 +1,6 @@
 /**
  * @file Tests for Utils composable
- * @description Unit tests for localStorage, toggle state, useExecuteAction, and useFetchData utilities.
+ * @description Unit tests for localStorage, toggle state, and useFetchData utilities.
  */
 import { flushPromises } from '@vue/test-utils'
 import { ResponseStatus } from 'ui-common'
@@ -12,7 +12,6 @@ import {
   getLocalStorage,
   resetToggleButtonState,
   setToLocalStorage,
-  useExecuteAction,
   useFetchData,
 } from '@/composables'
 
@@ -121,36 +120,6 @@ describe('Utils', () => {
       expect(() => {
         resetToggleButtonState(id)
       }).not.toThrow()
-    })
-  })
-
-  describe('useExecuteAction', () => {
-    afterEach(() => {
-      vi.restoreAllMocks()
-    })
-
-    it('should call emit and toast.success on action success', async () => {
-      const emit = vi.fn()
-      const executeAction = useExecuteAction(emit)
-
-      executeAction(Promise.resolve(), 'Success message', 'Error message')
-      await flushPromises()
-
-      expect(emit).toHaveBeenCalledWith('need-refresh')
-      expect(toastMock.success).toHaveBeenCalledWith('Success message')
-    })
-
-    it('should call toast.error and console.error on action failure', async () => {
-      const consoleSpy = vi.spyOn(console, 'error')
-      const emit = vi.fn()
-      const executeAction = useExecuteAction(emit)
-
-      executeAction(Promise.reject(new Error('fail')), 'Success', 'Error at action')
-      await flushPromises()
-
-      expect(emit).not.toHaveBeenCalled()
-      expect(toastMock.error).toHaveBeenCalledWith('Error at action')
-      expect(consoleSpy).toHaveBeenCalledWith('Error at action:', expect.any(Error))
     })
   })
 

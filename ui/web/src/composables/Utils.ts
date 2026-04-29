@@ -108,49 +108,6 @@ export const useTemplates = (): Ref<string[]> => {
   throw new Error('templates not provided')
 }
 
-export interface ExecuteActionCallbacks {
-  onFinally?: () => void
-  onSuccess?: () => void
-}
-
-/**
- * @deprecated Use `useAsyncAction` from `@/shared/composables/useAsyncAction.js` for new code.
- * @param emit - Optional emit function to call on success
- * @returns An action executor function
- */
-export const useExecuteAction = (emit?: (event: 'need-refresh') => void) => {
-  const $toast = useToast()
-  return (
-    action: Promise<unknown>,
-    successMsg: string,
-    errorMsg: string,
-    callbacks?: ExecuteActionCallbacks
-  ): void => {
-    const { onFinally, onSuccess } = callbacks ?? {}
-    action
-      .then(() => {
-        try {
-          onSuccess?.()
-        } catch (error: unknown) {
-          console.error('Error in onSuccess callback:', error)
-        }
-        emit?.('need-refresh')
-        return $toast.success(successMsg)
-      })
-      .finally(() => {
-        try {
-          onFinally?.()
-        } catch (error: unknown) {
-          console.error('Error in onFinally callback:', error)
-        }
-      })
-      .catch((error: unknown) => {
-        $toast.error(errorMsg)
-        console.error(`${errorMsg}:`, error)
-      })
-  }
-}
-
 export const useFetchData = (
   clientFn: () => Promise<ResponsePayload>,
   onSuccess: (response: ResponsePayload) => void,

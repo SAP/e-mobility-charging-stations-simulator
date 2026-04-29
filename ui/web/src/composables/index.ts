@@ -19,7 +19,6 @@ export {
   uiClientKey,
   useChargingStations,
   useConfiguration,
-  useExecuteAction,
   useFetchData,
   useTemplates,
   useUIClient,
