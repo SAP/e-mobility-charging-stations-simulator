@@ -1,5 +1,20 @@
 /* Shared element reset — consumed by all themes via CSS variable values */
 
+:root {
+  /* Spacing — shared defaults, overridable per-theme */
+  --spacing-xs: 0.125rem;
+  --spacing-sm: 0.25rem;
+  --spacing-md: 0.5rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 2rem;
+
+  /* Typography — shared defaults, overridable per-theme */
+  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
+}
+
 body {
   color: var(--color-text);
   background-color: var(--color-bg);
@@ -38,4 +53,18 @@ textarea:focus {
 
 a {
   color: var(--color-primary);
+}
+
+.config-error {
+  padding: 2rem;
+  color: var(--color-state-err, #ef5350);
+  font-family: monospace;
+}
+
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+  animation: none !important;
 }

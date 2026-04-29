@@ -33,15 +33,12 @@ const activeThemeId: Ref<ThemeName> = ref(
 function applyTheme (themeName: ThemeName): void {
   if (typeof document === 'undefined') return
   // Disable CSS transitions during theme swap to prevent color flash (VueUse pattern).
-  const style = document.createElement('style')
-  style.textContent =
-    '*, *::before, *::after { transition: none !important; animation: none !important; }'
-  document.head.appendChild(style)
+  document.documentElement.classList.add('theme-switching')
   document.documentElement.setAttribute('data-theme', themeName)
   // Force reflow so browsers apply the transition-disable before restoring transitions.
   // eslint-disable-next-line no-void
   void document.documentElement.offsetHeight
-  document.head.removeChild(style)
+  document.documentElement.classList.remove('theme-switching')
 }
 
 // Apply initial theme at module initialization

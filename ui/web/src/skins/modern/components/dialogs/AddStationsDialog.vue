@@ -142,8 +142,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import ActionButton from '../ActionButton.vue'
@@ -151,22 +149,14 @@ import Modal from '../Modal.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
-const pending = ref(false)
-
-const { formState, submitForm, templates } = useAddStationsForm()
+const { formState, pending, submitForm, templates } = useAddStationsForm()
 
 const close = (): void => {
   emit('close')
 }
 
 const submit = async (): Promise<void> => {
-  if (pending.value) return
-  pending.value = true
-  try {
-    const success = await submitForm()
-    if (success) close()
-  } finally {
-    pending.value = false
-  }
+  const success = await submitForm()
+  if (success) close()
 }
 </script>

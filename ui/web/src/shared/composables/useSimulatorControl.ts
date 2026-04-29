@@ -2,6 +2,7 @@ import type { UIServerConfigurationSection } from 'ui-common'
 import type { Ref } from 'vue'
 
 import { readonly, ref } from 'vue'
+import { useToast } from 'vue-toast-notification'
 
 import {
   getFromLocalStorage,
@@ -9,7 +10,6 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
-  useExecuteAction,
   useUIClient,
 } from '@/composables'
 import { type LayoutData } from '@/shared/composables/useLayoutData.js'
@@ -57,46 +57,51 @@ export function useSimulatorControl (
     ((): void => {
       /* no-op */
     })
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  const executeAction = useExecuteAction()
 
   const simulatorPending = ref(false)
   const serverSwitchPending = ref(false)
+  const $toast = useToast()
 
   const startSimulator = (): void => {
     if (simulatorPending.value) return
     simulatorPending.value = true
-    executeAction(
-      $uiClient.startSimulator(),
-      'Simulator successfully started',
-      'Error at starting simulator',
-      {
-        onFinally: () => {
-          simulatorPending.value = false
-          getSimulatorState()
-        },
-      }
-    )
+    // eslint-disable-next-line promise/catch-or-return
+    $uiClient
+      .startSimulator()
+      .then(() => {
+        $toast.success('Simulator successfully started')
+        return undefined
+      })
+      .catch((error: unknown) => {
+        $toast.error('Error at starting simulator')
+        console.error('Error at starting simulator:', error)
+      })
+      .finally(() => {
+        simulatorPending.value = false
+        getSimulatorState()
+      })
   }
 
   const stopSimulator = (): void => {
     if (simulatorPending.value) return
     simulatorPending.value = true
-    executeAction(
-      $uiClient.stopSimulator(),
-      'Simulator successfully stopped',
-      'Error at stopping simulator',
-      {
-        onFinally: () => {
-          simulatorPending.value = false
-          getSimulatorState()
-        },
-        onSuccess: () => {
-          $chargingStations.value = []
-          options?.onSimulatorStopped?.()
-        },
-      }
-    )
+    // eslint-disable-next-line promise/catch-or-return
+    $uiClient
+      .stopSimulator()
+      .then(() => {
+        $chargingStations.value = []
+        options?.onSimulatorStopped?.()
+        $toast.success('Simulator successfully stopped')
+        return undefined
+      })
+      .catch((error: unknown) => {
+        $toast.error('Error at stopping simulator')
+        console.error('Error at stopping simulator:', error)
+      })
+      .finally(() => {
+        simulatorPending.value = false
+        getSimulatorState()
+      })
   }
 
   const SERVER_SWITCH_TIMEOUT_MS = 15_000

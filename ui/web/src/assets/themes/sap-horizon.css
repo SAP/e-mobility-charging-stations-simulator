@@ -40,19 +40,6 @@
   --color-accent: var(--sap-brand);
   --color-shadow-inset: rgba(34, 53, 72, 0.15);
 
-  /* Spacing */
-  --spacing-xs: 0.125rem;
-  --spacing-sm: 0.25rem;
-  --spacing-md: 0.5rem;
-  --spacing-lg: 1rem;
-  --spacing-xl: 2rem;
-
-  /* Typography */
-  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-xs: 0.75rem;
-
   /* Surface hierarchy */
   --color-bg-raised: var(--sap-bg-shell);
   --color-bg-sunken: var(--sap-hover);

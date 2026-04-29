@@ -101,8 +101,7 @@ const bootstrap = async (): Promise<void> => {
     if (!parseResult.success) {
       const msgs = parseResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n')
       const errorPre = document.createElement('pre')
-      errorPre.style.cssText =
-        'padding:2rem;color:var(--color-state-err,#ef5350);font-family:monospace'
+      errorPre.className = 'config-error'
       errorPre.textContent = `Configuration error in config.json:\n${msgs}`
       document.body.replaceChildren(errorPre)
       return

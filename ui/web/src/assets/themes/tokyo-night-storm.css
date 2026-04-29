@@ -35,19 +35,6 @@
   --color-accent: var(--tn-accent);
   --color-shadow-inset: rgba(0, 0, 0, 0.4);
 
-  /* Spacing */
-  --spacing-xs: 0.125rem;
-  --spacing-sm: 0.25rem;
-  --spacing-md: 0.5rem;
-  --spacing-lg: 1rem;
-  --spacing-xl: 2rem;
-
-  /* Typography */
-  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-xs: 0.75rem;
-
   /* Surface hierarchy (for modern skin) */
   --color-bg-raised: var(--tn-bg-hover);
   --color-bg-sunken: var(--tn-bg-raised);
