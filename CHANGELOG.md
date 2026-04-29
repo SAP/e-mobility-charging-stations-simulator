@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.0...simulator@v4.5.1) (2026-04-28)
+
+### 🐞 Bug Fixes
+
+- align Keba OCPP2 templates with OCPP 2.0.1 SampledDataCtrlr specs ([bb476f6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bb476f6d88b227e48fabbabfae43f3d4a690e6b3))
+- **deps:** update all non-major dependencies ([#1809](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1809)) ([e0e14c1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e0e14c14774c700617f52a0717097edf7bf2b940))
+- **deps:** update all non-major dependencies ([#1811](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1811)) ([e2085ec](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e2085ec9095e519356b966f66afb91abd3e22953))
+- **deps:** update all non-major dependencies ([#1814](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1814)) ([e9e6bed](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e9e6bed9f8dfb202f4ae2d6e0b083e753123e3b5))
+- **simulator:** add connector Finishing state lifecycle simulation ([#1227](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1227)) ([#1812](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1812)) ([3578a8b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3578a8b8f0893208b9d6d2229a49c9721aa67144))
+- **simulator:** quote command names in log messages for readability ([b745ee6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b745ee606cdc0c4da28c9df12e937ad07aaf4e10))
+- **simulator:** set postTransactionDelay to 2s on ABB station templates ([e943acb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e943acbad3eccefad199be2b7a9b7afe8d5b4baf))
+
+### 📚 Documentation
+
+- harmonize agent instructions across tools ([1be466e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1be466efbeec3d88be46d547fd23c3fa84603337))
+
 ## [4.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.4.0...simulator@v4.5.0) (2026-04-22)
 
 ### 🚀 Features
