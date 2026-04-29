@@ -36,14 +36,14 @@
       </select>
     </div>
     <div class="modern-bar__group">
-      <ActionButton
+      <!-- <ActionButton
         variant="ghost"
         :pending="refreshPending"
         title="Refresh charging stations"
         @click="$emit('refresh')"
       >
         Refresh
-      </ActionButton>
+      </ActionButton> -->
       <ActionButton
         variant="primary"
         @click="$emit('add')"
