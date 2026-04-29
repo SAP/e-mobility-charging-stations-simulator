@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
 import { useSkin } from '@/shared/composables/useSkin.js'
+import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -27,7 +28,7 @@ export const router = createRouter({
       components: {
         action: () => import('@/skins/classic/components/actions/AddChargingStations.vue'),
       },
-      meta: { skinOnly: 'classic' },
+      meta: { skinOnly: DEFAULT_SKIN },
       name: ROUTE_NAMES.ADD_CHARGING_STATIONS,
       path: '/add-charging-stations',
     },
@@ -35,7 +36,7 @@ export const router = createRouter({
       components: {
         action: () => import('@/skins/classic/components/actions/SetSupervisionUrl.vue'),
       },
-      meta: { skinOnly: 'classic' },
+      meta: { skinOnly: DEFAULT_SKIN },
       name: ROUTE_NAMES.SET_SUPERVISION_URL,
       path: '/set-supervision-url/:hashId/:chargingStationId',
       props: { action: true },
@@ -44,7 +45,7 @@ export const router = createRouter({
       components: {
         action: () => import('@/skins/classic/components/actions/StartTransaction.vue'),
       },
-      meta: { skinOnly: 'classic' },
+      meta: { skinOnly: DEFAULT_SKIN },
       name: ROUTE_NAMES.START_TRANSACTION,
       path: '/start-transaction/:hashId/:chargingStationId/:connectorId',
       props: { action: true },
