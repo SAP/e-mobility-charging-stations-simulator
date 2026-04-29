@@ -30,8 +30,10 @@ import { skins } from '@/skins/registry.js'
 
 const { activeSkinId } = useSkin()
 
-watch(activeSkinId, () => {
-  document.body.style.overflow = ''
+watch(activeSkinId, id => {
+  if (!skinLayoutMap.has(id)) {
+    console.warn(`[App] Skin '${id}' not found in layout map, falling back to default`)
+  }
 })
 
 const skinLayoutMap = new Map(

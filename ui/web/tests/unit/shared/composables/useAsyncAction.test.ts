@@ -28,7 +28,7 @@ describe('useAsyncAction', () => {
         resolveAction = resolve
       })
     const [{ pending, run }] = withSetup(() => useAsyncAction({ a: false }))
-    run('a', action, 'ok', 'err')
+    run('a', { action, errorMsg: 'err', successMsg: 'ok' })
     expect(pending.a).toBe(true)
     resolveAction(undefined)
     await flushPromises()
@@ -37,7 +37,7 @@ describe('useAsyncAction', () => {
 
   it('should show success toast on success', async () => {
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }))
-    run('a', () => Promise.resolve(), 'Success!', 'Error!')
+    run('a', { action: () => Promise.resolve(), errorMsg: 'Error!', successMsg: 'Success!' })
     await flushPromises()
     expect(toastMock.success).toHaveBeenCalledWith('Success!')
   })
@@ -45,7 +45,7 @@ describe('useAsyncAction', () => {
   it('should call onRefresh after success', async () => {
     const onRefresh = vi.fn()
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }, onRefresh))
-    run('a', () => Promise.resolve(), 'ok', 'err')
+    run('a', { action: () => Promise.resolve(), errorMsg: 'err', successMsg: 'ok' })
     await flushPromises()
     expect(onRefresh).toHaveBeenCalledOnce()
   })
@@ -55,14 +55,18 @@ describe('useAsyncAction', () => {
     const onRefresh = vi.fn(() => calls.push('refresh'))
     const onSuccess = vi.fn(() => calls.push('success'))
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }, onRefresh))
-    run('a', () => Promise.resolve(), 'ok', 'err', onSuccess)
+    run('a', { action: () => Promise.resolve(), errorMsg: 'err', onSuccess, successMsg: 'ok' })
     await flushPromises()
     expect(calls).toEqual(['success', 'refresh'])
   })
 
   it('should show error toast on failure', async () => {
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }))
-    run('a', () => Promise.reject(new Error('fail')), 'ok', 'Error!')
+    run('a', {
+      action: () => Promise.reject(new Error('fail')),
+      errorMsg: 'Error!',
+      successMsg: 'ok',
+    })
     await flushPromises()
     expect(toastMock.error).toHaveBeenCalledWith('Error!')
   })
@@ -74,9 +78,9 @@ describe('useAsyncAction', () => {
         resolveAction = resolve
       })
     const [{ pending, run }] = withSetup(() => useAsyncAction({ a: false }))
-    run('a', action, 'first', 'err')
+    run('a', { action, errorMsg: 'err', successMsg: 'first' })
     expect(pending.a).toBe(true)
-    run('a', () => Promise.resolve(), 'second', 'err')
+    run('a', { action: () => Promise.resolve(), errorMsg: 'err', successMsg: 'second' })
     resolveAction(undefined)
     await flushPromises()
     expect(toastMock.success).toHaveBeenCalledTimes(1)
@@ -86,7 +90,7 @@ describe('useAsyncAction', () => {
   it('should not call onRefresh on failure', async () => {
     const onRefresh = vi.fn()
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }, onRefresh))
-    run('a', () => Promise.reject(new Error('fail')), 'ok', 'err')
+    run('a', { action: () => Promise.reject(new Error('fail')), errorMsg: 'err', successMsg: 'ok' })
     await flushPromises()
     expect(onRefresh).not.toHaveBeenCalled()
   })
@@ -94,15 +98,14 @@ describe('useAsyncAction', () => {
   it('should still call onRefresh when onSuccess callback throws', async () => {
     const refreshMock = vi.fn()
     const [{ run }] = withSetup(() => useAsyncAction({ a: false }, refreshMock))
-    run(
-      'a',
-      () => Promise.resolve(),
-      'ok',
-      'err',
-      () => {
+    run('a', {
+      action: () => Promise.resolve(),
+      errorMsg: 'err',
+      onSuccess: () => {
         throw new Error('onSuccess exploded')
-      }
-    )
+      },
+      successMsg: 'ok',
+    })
     await flushPromises()
     expect(refreshMock).toHaveBeenCalled()
   })
@@ -113,9 +116,40 @@ describe('useAsyncAction', () => {
         throw new Error('refresh exploded')
       })
     )
-    run('a', () => Promise.resolve(), 'ok', 'err')
+    run('a', { action: () => Promise.resolve(), errorMsg: 'err', successMsg: 'ok' })
     await flushPromises()
-    // No crash = pass; pending should still be reset
     expect(pending.a).toBe(false)
+  })
+
+  it('should not fire callbacks or reset pending after scope disposal', async () => {
+    let resolveAction!: (value: unknown) => void
+    const action = () =>
+      new Promise(resolve => {
+        resolveAction = resolve
+      })
+    const onRefresh = vi.fn()
+    const [{ pending, run }, app] = withSetup(() => useAsyncAction({ a: false }, onRefresh))
+    run('a', { action, errorMsg: 'err', successMsg: 'ok' })
+    expect(pending.a).toBe(true)
+    app.unmount()
+    resolveAction(undefined)
+    await flushPromises()
+    expect(toastMock.success).not.toHaveBeenCalled()
+    expect(onRefresh).not.toHaveBeenCalled()
+    expect(pending.a).toBe(true)
+  })
+
+  it('should not show error toast after scope disposal on failure', async () => {
+    let rejectAction!: (reason: unknown) => void
+    const action = () =>
+      new Promise((_resolve, reject) => {
+        rejectAction = reject
+      })
+    const [{ run }, app] = withSetup(() => useAsyncAction({ a: false }))
+    run('a', { action, errorMsg: 'Error!', successMsg: 'ok' })
+    app.unmount()
+    rejectAction(new Error('fail'))
+    await flushPromises()
+    expect(toastMock.error).not.toHaveBeenCalled()
   })
 })

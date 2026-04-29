@@ -2,7 +2,7 @@
  * @file useAsyncAction.ts
  * @description Shared async action executor with pending-key guard and toast notifications.
  */
-import { reactive, readonly } from 'vue'
+import { getCurrentScope, onScopeDispose, reactive, readonly } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 /**
@@ -21,36 +21,50 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     pending: Readonly<T>
     run: (
       key: keyof T,
-      action: () => Promise<unknown>,
-      successMsg: string,
-      errorMsg: string,
-      onSuccess?: () => void
+      options: {
+        action: () => Promise<unknown>
+        errorMsg: string
+        onSuccess?: () => void
+        successMsg: string
+      }
     ) => void
   } {
   const $toast = useToast()
   const pending = reactive({ ...initialPending }) as T
 
+  let disposed = false
+  if (getCurrentScope() != null) {
+    onScopeDispose(() => {
+      disposed = true
+    })
+  }
+
   /**
    * Executes an async action with pending-key guard, toast feedback, and error logging.
    * @param key - The pending key to guard and track
-   * @param action - The async operation to execute
-   * @param successMsg - Toast message on success
-   * @param errorMsg - Toast message and console prefix on failure
-   * @param onSuccess - Optional callback invoked after success (before onRefresh)
+   * @param options - Action configuration with action, messages, and optional success callback
+   * @param options.action - The async operation to execute
+   * @param options.errorMsg - Toast message and console prefix on failure
+   * @param options.onSuccess - Optional callback invoked after success (before onRefresh)
+   * @param options.successMsg - Toast message on success
    */
   function run (
     key: keyof T,
-    action: () => Promise<unknown>,
-    successMsg: string,
-    errorMsg: string,
-    onSuccess?: () => void
+    options: {
+      action: () => Promise<unknown>
+      errorMsg: string
+      onSuccess?: () => void
+      successMsg: string
+    }
   ): void {
+    const { action, errorMsg, onSuccess, successMsg } = options
     if (pending[key]) return
     pending[key] = true as T[keyof T]
     // eslint-disable-next-line no-void
     void (async () => {
       try {
         await action()
+        if (disposed) return
         try {
           onSuccess?.()
         } catch (error: unknown) {
@@ -63,10 +77,13 @@ export function useAsyncAction<T extends Record<string, boolean>> (
           console.error('Error in onRefresh callback:', error)
         }
       } catch (error: unknown) {
+        if (disposed) return
         console.error(`${errorMsg}:`, error)
         $toast.error(errorMsg)
       } finally {
-        pending[key] = false as T[keyof T]
+        if (!disposed) {
+          pending[key] = false as T[keyof T]
+        }
       }
     })()
   }

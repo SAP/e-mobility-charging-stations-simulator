@@ -28,49 +28,44 @@ export function useStationActions (options?: { onRefresh?: () => void }): {
   )
 
   const startStation = (hashId: string): void => {
-    run(
-      'startStop',
-      () => $uiClient.startChargingStation(hashId),
-      'Charging station started',
-      'Error starting charging station'
-    )
+    run('startStop', {
+      action: () => $uiClient.startChargingStation(hashId),
+      errorMsg: 'Error starting charging station',
+      successMsg: 'Charging station started',
+    })
   }
 
   const stopStation = (hashId: string): void => {
-    run(
-      'startStop',
-      () => $uiClient.stopChargingStation(hashId),
-      'Charging station stopped',
-      'Error stopping charging station'
-    )
+    run('startStop', {
+      action: () => $uiClient.stopChargingStation(hashId),
+      errorMsg: 'Error stopping charging station',
+      successMsg: 'Charging station stopped',
+    })
   }
 
   const openConnection = (hashId: string): void => {
-    run(
-      'connection',
-      () => $uiClient.openConnection(hashId),
-      'Connection opened',
-      'Error opening connection'
-    )
+    run('connection', {
+      action: () => $uiClient.openConnection(hashId),
+      errorMsg: 'Error opening connection',
+      successMsg: 'Connection opened',
+    })
   }
 
   const closeConnection = (hashId: string): void => {
-    run(
-      'connection',
-      () => $uiClient.closeConnection(hashId),
-      'Connection closed',
-      'Error closing connection'
-    )
+    run('connection', {
+      action: () => $uiClient.closeConnection(hashId),
+      errorMsg: 'Error closing connection',
+      successMsg: 'Connection closed',
+    })
   }
 
   const deleteStation = (hashId: string, onSuccess?: () => void): void => {
-    run(
-      'delete',
-      () => $uiClient.deleteChargingStation(hashId),
-      'Charging station deleted',
-      'Error deleting charging station',
-      onSuccess
-    )
+    run('delete', {
+      action: () => $uiClient.deleteChargingStation(hashId),
+      errorMsg: 'Error deleting charging station',
+      onSuccess,
+      successMsg: 'Charging station deleted',
+    })
   }
 
   return {

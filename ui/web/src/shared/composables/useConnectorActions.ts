@@ -52,52 +52,47 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
       $toast.error('No transaction to stop')
       return
     }
-    run(
-      'stopTx',
-      () =>
+    run('stopTx', {
+      action: () =>
         $uiClient.stopTransaction(hashId.value, {
           ocppVersion,
           transactionId,
         }),
-      'Transaction stopped',
-      'Error stopping transaction'
-    )
+      errorMsg: 'Error stopping transaction',
+      successMsg: 'Transaction stopped',
+    })
   }
 
   const lockConnector = (): void => {
-    run(
-      'lock',
-      () => $uiClient.lockConnector(hashId.value, connectorId.value),
-      'Connector locked',
-      'Error locking connector'
-    )
+    run('lock', {
+      action: () => $uiClient.lockConnector(hashId.value, connectorId.value),
+      errorMsg: 'Error locking connector',
+      successMsg: 'Connector locked',
+    })
   }
 
   const unlockConnector = (): void => {
-    run(
-      'lock',
-      () => $uiClient.unlockConnector(hashId.value, connectorId.value),
-      'Connector unlocked',
-      'Error unlocking connector'
-    )
+    run('lock', {
+      action: () => $uiClient.unlockConnector(hashId.value, connectorId.value),
+      errorMsg: 'Error unlocking connector',
+      successMsg: 'Connector unlocked',
+    })
   }
 
   const startATG = (): void => {
-    run(
-      'atg',
-      () => $uiClient.startAutomaticTransactionGenerator(hashId.value, connectorId.value),
-      'ATG started',
-      'Error starting ATG'
-    )
+    run('atg', {
+      action: () => $uiClient.startAutomaticTransactionGenerator(hashId.value, connectorId.value),
+      errorMsg: 'Error starting ATG',
+      successMsg: 'ATG started',
+    })
   }
 
   const stopATG = (): void => {
-    run(
-      'atg',
-      () => $uiClient.stopAutomaticTransactionGenerator(hashId.value, connectorId.value),
-      'ATG stopped',
-      'Error stopping ATG'
-    )
+    run('atg', {
+      action: () => $uiClient.stopAutomaticTransactionGenerator(hashId.value, connectorId.value),
+      errorMsg: 'Error stopping ATG',
+      successMsg: 'ATG stopped',
+    })
   }
 
   return {

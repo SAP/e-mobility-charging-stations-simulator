@@ -124,6 +124,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     activeSkinId.value = skinId as SkinName
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-skin', skinId)
+      document.body.style.overflow = ''
     }
     setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
     try {

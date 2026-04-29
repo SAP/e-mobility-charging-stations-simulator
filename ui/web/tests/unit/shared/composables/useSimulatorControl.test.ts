@@ -156,6 +156,22 @@ describe('useSimulatorControl', () => {
     expect(mockClient.setConfiguration).not.toHaveBeenCalled()
   })
 
+  it('should not switch server when newIndex is out of bounds (negative)', () => {
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
+    const [result] = mountComposable()
+    result.handleUIServerChange(-1)
+    expect(mockClient.setConfiguration).not.toHaveBeenCalled()
+    expect(result.serverSwitchPending.value).toBe(false)
+  })
+
+  it('should not switch server when newIndex is out of bounds (too large)', () => {
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
+    const [result] = mountComposable()
+    result.handleUIServerChange(5)
+    expect(mockClient.setConfiguration).not.toHaveBeenCalled()
+    expect(result.serverSwitchPending.value).toBe(false)
+  })
+
   it('should call onSimulatorStopped callback on successful stop', async () => {
     mockClient.stopSimulator.mockResolvedValue({ status: 'success' })
     const onSimulatorStopped = vi.fn()

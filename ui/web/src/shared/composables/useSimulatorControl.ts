@@ -68,25 +68,23 @@ export function useSimulatorControl (
   let pendingErrorHandler: (() => void) | undefined
 
   const startSimulator = (): void => {
-    runSimulatorAction(
-      'simulator',
-      () => $uiClient.startSimulator(),
-      'Simulator successfully started',
-      'Error at starting simulator'
-    )
+    runSimulatorAction('simulator', {
+      action: () => $uiClient.startSimulator(),
+      errorMsg: 'Error at starting simulator',
+      successMsg: 'Simulator successfully started',
+    })
   }
 
   const stopSimulator = (): void => {
-    runSimulatorAction(
-      'simulator',
-      async () => {
+    runSimulatorAction('simulator', {
+      action: async () => {
         await $uiClient.stopSimulator()
         $chargingStations.value = []
         options?.onSimulatorStopped?.()
       },
-      'Simulator successfully stopped',
-      'Error at stopping simulator'
-    )
+      errorMsg: 'Error at stopping simulator',
+      successMsg: 'Simulator successfully stopped',
+    })
   }
 
   const SERVER_SWITCH_TIMEOUT_MS = 15_000
@@ -95,11 +93,12 @@ export function useSimulatorControl (
     const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
     if (newIndex === currentIndex || serverSwitchPending.value) return
 
+    const servers = $configuration.value.uiServer as UIServerConfigurationSection[]
+    if (newIndex < 0 || newIndex >= servers.length) return
+
     serverSwitchPending.value = true
 
-    $uiClient.setConfiguration(
-      ($configuration.value.uiServer as UIServerConfigurationSection[])[newIndex]
-    )
+    $uiClient.setConfiguration(servers[newIndex])
     unregisterWSEventListeners()
     registerWSEventListeners()
 
@@ -126,9 +125,10 @@ export function useSimulatorControl (
       pendingErrorHandler = undefined
       serverSwitchPending.value = false
       const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-      $uiClient.setConfiguration(
-        ($configuration.value.uiServer as UIServerConfigurationSection[])[previousIndex]
-      )
+      const rollbackServers = $configuration.value.uiServer as UIServerConfigurationSection[]
+      if (previousIndex >= 0 && previousIndex < rollbackServers.length) {
+        $uiClient.setConfiguration(rollbackServers[previousIndex])
+      }
       unregisterWSEventListeners()
       registerWSEventListeners()
     }
