@@ -45,8 +45,8 @@
 
   /* State colors (SAP Horizon palette) */
   --color-state-ok: #256f3a;
-  --color-state-warn: #e9730c;
-  --color-state-err: #bb0000;
+  --color-state-warn: #e76500;
+  --color-state-err: #aa0808;
   --color-state-idle: var(--sap-label);
 
   color-scheme: light;

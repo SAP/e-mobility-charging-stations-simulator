@@ -1,0 +1,48 @@
+/* Teal Dark */
+
+:root[data-theme='teal-dark'] {
+  /* Palette */
+  --td-bg-dark: #1a2027;
+  --td-bg-base: #1f2935;
+  --td-bg-raised: #263240;
+  --td-bg-hover: #2d3b4a;
+  --td-bg-active: #354454;
+  --td-fg-base: #b0bec5;
+  --td-fg-bright: #eceff1;
+  --td-fg-muted: #78909c;
+  --td-teal: #26a69a;
+  --td-teal-dim: #00897b;
+  --td-white: #ffffff;
+
+  /* Semantic */
+  --color-bg: var(--td-bg-base);
+  --color-bg-surface: var(--td-bg-dark);
+  --color-bg-input: var(--td-bg-dark);
+  --color-bg-hover: var(--td-bg-hover);
+  --color-bg-active: var(--td-bg-active);
+  --color-bg-header: var(--td-bg-dark);
+  --color-bg-caption: var(--td-bg-raised);
+  --color-bg-button: var(--td-teal-dim);
+  --color-bg-button-hover: color-mix(in srgb, var(--td-teal-dim) 67%, transparent);
+  --color-text: var(--td-fg-base);
+  --color-text-strong: var(--td-fg-bright);
+  --color-text-muted: var(--td-fg-muted);
+  --color-text-on-button: var(--td-white);
+  --color-primary: var(--td-teal);
+  --color-border: var(--td-bg-raised);
+  --color-border-row: var(--td-bg-hover);
+  --color-accent: var(--td-teal-dim);
+  --color-shadow-inset: rgba(0, 0, 0, 0.4);
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--td-bg-raised);
+  --color-bg-sunken: var(--td-bg-dark);
+
+  /* State colors */
+  --color-state-ok: #66bb6a;
+  --color-state-warn: #ffb300;
+  --color-state-err: #ef5350;
+  --color-state-idle: var(--td-fg-muted);
+
+  color-scheme: dark;
+}

@@ -3,7 +3,13 @@ import { z } from 'zod'
 import { AuthenticationType, Protocol, ProtocolVersion } from '../types/UIProtocol.js'
 
 export const SKIN_IDS = ['classic', 'modern'] as const
-export const THEME_IDS = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
+export const THEME_IDS = [
+  'catppuccin-latte',
+  'sap-horizon',
+  'teal-dark',
+  'teal-light',
+  'tokyo-night-storm',
+] as const
 
 export const authenticationConfigSchema = z
   .object({

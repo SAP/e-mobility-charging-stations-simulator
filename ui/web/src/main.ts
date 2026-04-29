@@ -30,6 +30,8 @@ import './assets/shared.css'
 import './assets/themes/base.css'
 import './assets/themes/catppuccin-latte.css'
 import './assets/themes/sap-horizon.css'
+import './assets/themes/teal-dark.css'
+import './assets/themes/teal-light.css'
 import './assets/themes/tokyo-night-storm.css'
 
 const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {

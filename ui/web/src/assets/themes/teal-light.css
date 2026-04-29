@@ -1,0 +1,48 @@
+/* Teal Light */
+
+:root[data-theme='teal-light'] {
+  /* Palette */
+  --tl-bg: #f4f5f7;
+  --tl-bg-base: #ffffff;
+  --tl-bg-raised: #fafbfc;
+  --tl-bg-hover: #eef0f3;
+  --tl-bg-active: #e4e7eb;
+  --tl-fg-base: #3c4257;
+  --tl-fg-bright: #1a1f36;
+  --tl-fg-muted: #697386;
+  --tl-teal: #009688;
+  --tl-teal-dim: #00796b;
+  --tl-white: #ffffff;
+
+  /* Semantic */
+  --color-bg: var(--tl-bg);
+  --color-bg-surface: var(--tl-bg-base);
+  --color-bg-input: var(--tl-bg-base);
+  --color-bg-hover: var(--tl-bg-hover);
+  --color-bg-active: var(--tl-bg-active);
+  --color-bg-header: var(--tl-bg-raised);
+  --color-bg-caption: var(--tl-bg-raised);
+  --color-bg-button: var(--tl-teal-dim);
+  --color-bg-button-hover: color-mix(in srgb, var(--tl-teal-dim) 67%, transparent);
+  --color-text: var(--tl-fg-base);
+  --color-text-strong: var(--tl-fg-bright);
+  --color-text-muted: var(--tl-fg-muted);
+  --color-text-on-button: var(--tl-white);
+  --color-primary: var(--tl-teal);
+  --color-border: #e4e7eb;
+  --color-border-row: #eef0f3;
+  --color-accent: var(--tl-teal-dim);
+  --color-shadow-inset: rgba(16, 24, 40, 0.1);
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--tl-bg-hover);
+  --color-bg-sunken: var(--tl-bg-raised);
+
+  /* State colors */
+  --color-state-ok: #2e7d32;
+  --color-state-warn: #ef6c00;
+  --color-state-err: #c62828;
+  --color-state-idle: var(--tl-fg-muted);
+
+  color-scheme: light;
+}

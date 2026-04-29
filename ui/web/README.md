@@ -142,6 +142,8 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | Theme               | Style | Source                                                           |
 | ------------------- | ----- | ---------------------------------------------------------------- |
 | `tokyo-night-storm` | Dark  | [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) |
+| `teal-dark`         | Dark  | Material Teal                                                    |
+| `teal-light`        | Light | Material Teal                                                    |
 | `catppuccin-latte`  | Light | [Catppuccin](https://github.com/catppuccin/catppuccin)           |
 | `sap-horizon`       | Light | [SAP Horizon](https://github.com/SAP/theming-base-content)       |
 
