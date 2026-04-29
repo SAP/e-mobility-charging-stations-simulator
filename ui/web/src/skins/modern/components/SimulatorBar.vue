@@ -23,6 +23,7 @@
         :value="selectedServerIndex"
         class="modern-bar__select"
         aria-label="UI server"
+        :disabled="serverSwitchPending"
         @change="e => $emit('switch-server', (e.target as HTMLSelectElement).selectedIndex)"
       >
         <option
@@ -101,12 +102,10 @@ import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
 
-const { activeSkinId, skins: skinList, switchSkin } = useSkin()
-const { activeThemeId, availableThemes, setTheme } = useTheme()
-
 const props = defineProps<{
   refreshPending?: boolean
   selectedServerIndex: number
+  serverSwitchPending?: boolean
   simulatorPending?: boolean
   simulatorState?: SimulatorState
   uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[]
@@ -118,6 +117,9 @@ defineEmits<{
   'switch-server': [index: number]
   'toggle-simulator': []
 }>()
+
+const { activeSkinId, skins: skinList, switchSkin } = useSkin()
+const { activeThemeId, availableThemes, setTheme } = useTheme()
 
 const simulatorStarted = computed(() => props.simulatorState?.started === true)
 

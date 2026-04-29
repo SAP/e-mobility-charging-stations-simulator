@@ -1,5 +1,5 @@
 /**
- * @file ClassicComponents.test.ts
+ * @file Tests for classic ToggleButton and CSTable components
  * @description Unit tests for classic skin ToggleButton and CSTable components.
  */
 import type { ChargingStationData } from 'ui-common'
@@ -30,7 +30,7 @@ vi.mock('vue-router', () => ({
 
 let mockClient: MockUIClient
 
-describe('classic components', () => {
+describe('ToggleButton and CSTable', () => {
   describe('ToggleButton', () => {
     beforeEach(() => {
       mockClient = createMockUIClient()

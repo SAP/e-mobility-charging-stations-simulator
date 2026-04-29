@@ -27,9 +27,19 @@
             type="button"
             class="modern-modal__close"
             aria-label="Close dialog"
+            data-modal-close
             @click="$emit('close')"
           >
-            ×
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </button>
         </header>
         <div class="modern-modal__body">
@@ -82,8 +92,7 @@ const focusFirst = (): void => {
   if (dialogEl.value == null) return
   const focusables = collectFocusables()
   // Prefer first non-close button so the user lands on a real input.
-  const target =
-    focusables.find(el => !el.classList.contains('modern-modal__close')) ?? focusables[0]
+  const target = focusables.find(el => !el.hasAttribute('data-modal-close')) ?? focusables[0]
   if (target != null) {
     target.focus()
   } else {
@@ -198,14 +207,21 @@ onBeforeUnmount(() => {
   background: transparent;
   border: none;
   color: var(--color-text-muted);
-  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
   padding: var(--skin-space-1) var(--skin-space-2);
   border-radius: var(--skin-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition:
     background-color var(--skin-transition),
     color var(--skin-transition);
+}
+
+.modern-modal__close svg {
+  width: 18px;
+  height: 18px;
 }
 
 .modern-modal__close:hover {

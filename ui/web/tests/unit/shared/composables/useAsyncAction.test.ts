@@ -7,8 +7,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
-import { toastMock } from '../../../setup'
-import { withSetup } from '../../helpers'
+import { toastMock } from '../../../setup.js'
+import { withSetup } from '../../helpers.js'
 
 describe('useAsyncAction', () => {
   afterEach(() => {
@@ -108,7 +108,7 @@ describe('useAsyncAction', () => {
   })
 
   it('should not crash when onRefresh callback throws', async () => {
-    const [{ run }] = withSetup(() =>
+    const [{ pending, run }] = withSetup(() =>
       useAsyncAction({ a: false }, () => {
         throw new Error('refresh exploded')
       })
@@ -116,5 +116,6 @@ describe('useAsyncAction', () => {
     run('a', () => Promise.resolve(), 'ok', 'err')
     await flushPromises()
     // No crash = pass; pending should still be reset
+    expect(pending.a).toBe(false)
   })
 })

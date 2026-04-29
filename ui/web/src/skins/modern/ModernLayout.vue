@@ -2,7 +2,8 @@
   <main class="modern-app">
     <SimulatorBar
       :refresh-pending="loading"
-      :selected-server-index="state.uiServerIndex"
+      :selected-server-index="uiServerIndex"
+      :server-switch-pending="serverSwitchPending"
       :simulator-pending="simulatorPending"
       :simulator-state="simulatorState"
       :ui-server-configurations="uiServerConfigurations"
@@ -33,9 +34,9 @@
         :key="station.stationInfo.hashId"
         :charging-station="station"
         @need-refresh="getChargingStations"
-        @open-authorize="data => (showAuthorizeDialog = data)"
-        @open-set-url="data => (showSetUrlDialog = data)"
-        @open-start-tx="data => (showStartTxDialog = data)"
+        @open-authorize="openAuthorizeDialog"
+        @open-set-url="openSetUrlDialog"
+        @open-start-tx="openStartTxDialog"
       />
     </section>
     <ConfirmDialog
@@ -102,19 +103,18 @@ const $chargingStations = useChargingStations()
 const layoutData = useLayoutData()
 const { getChargingStations, getData, loading, simulatorState, uiServerConfigurations } = layoutData
 
-const state = ref({
-  uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
-})
+const uiServerIndex = ref(getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0))
 
 const {
   handleUIServerChange: switchServer,
+  serverSwitchPending,
   simulatorPending,
   startSimulator,
   stopSimulator,
 } = useSimulatorControl(layoutData)
 
 const handleUIServerChange = (nextIndex: number): void => {
-  state.value.uiServerIndex = nextIndex
+  uiServerIndex.value = nextIndex
   switchServer(nextIndex)
 }
 
@@ -149,5 +149,15 @@ const toggleSimulator = (): void => {
   } else {
     startSimulator()
   }
+}
+
+const openAuthorizeDialog = (data: typeof showAuthorizeDialog.value): void => {
+  showAuthorizeDialog.value = data
+}
+const openSetUrlDialog = (data: typeof showSetUrlDialog.value): void => {
+  showSetUrlDialog.value = data
+}
+const openStartTxDialog = (data: typeof showStartTxDialog.value): void => {
+  showStartTxDialog.value = data
 }
 </script>

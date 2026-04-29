@@ -29,13 +29,13 @@ import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.v
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
 import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
 
-import { toastMock } from '../../../setup'
+import { toastMock } from '../../../setup.js'
 import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
-import { createMockUIClient, type MockUIClient } from '../../helpers'
+import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
 
-describe('Modern skin dialogs', () => {
+describe('modern dialogs', () => {
   beforeEach(() => {
     mockClient = createMockUIClient()
   })

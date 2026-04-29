@@ -44,6 +44,7 @@
   --skin-state-idle-bg: color-mix(in srgb, var(--color-state-idle) 14%, transparent);
 
   /* Spacing */
+  /* --skin-space-5 intentionally skipped: scale jumps from 1rem to 2rem for visual rhythm */
   --skin-space-1: 0.25rem;
   --skin-space-2: 0.5rem;
   --skin-space-3: 0.75rem;
@@ -195,13 +196,6 @@ body:has(.modern-app) #app {
   color: var(--color-text-strong);
 }
 
-.modern-bar__title-sub {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  margin-left: var(--skin-space-1);
-}
-
 .modern-bar__sep {
   flex: 1;
 }
@@ -305,7 +299,7 @@ body:has(.modern-app) #app {
   margin: 0;
   font-family: var(--skin-font);
   font-size: 1.15rem;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--color-text-strong);
   word-break: break-all;
   letter-spacing: -0.02em;
@@ -379,14 +373,6 @@ body:has(.modern-app) #app {
   white-space: nowrap;
   z-index: 1;
   min-width: 0;
-}
-
-.modern-card__template-label {
-  flex-shrink: 0;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.08em;
 }
 
 .modern-card__template-value {
@@ -733,6 +719,7 @@ body:has(.modern-app) #app {
   flex: 1;
   min-width: 0;
   align-self: flex-start;
+  /* 18px = dot right offset (8px) + dot width (7px) + 3px breathing room */
   padding: var(--skin-space-1) 18px var(--skin-space-1) var(--skin-space-2);
   background-color: color-mix(in srgb, var(--color-state-warn) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-state-warn) 30%, transparent);
@@ -1126,4 +1113,15 @@ body:has(.modern-app) #app {
     animation: none;
     transition: none;
   }
+}
+
+.modern-confirm__message {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modern-dialog__target-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }

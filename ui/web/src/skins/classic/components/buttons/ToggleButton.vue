@@ -12,6 +12,7 @@ import { ref } from 'vue'
 
 import {
   getFromLocalStorage,
+  getLocalStorage,
   setToLocalStorage,
   SHARED_TOGGLE_BUTTON_KEY_PREFIX,
   TOGGLE_BUTTON_KEY_PREFIX,
@@ -40,9 +41,16 @@ const state = ref<{ status: boolean }>({
 
 const click = (): void => {
   if (props.shared === true) {
-    for (const key of Object.keys(localStorage)) {
-      if (key !== id && key.startsWith(SHARED_TOGGLE_BUTTON_KEY_PREFIX)) {
+    try {
+      const keys = Object.keys(getLocalStorage()).filter(
+        key => key !== id && key.startsWith(SHARED_TOGGLE_BUTTON_KEY_PREFIX)
+      )
+      for (const key of keys) {
         setToLocalStorage<boolean>(key, false)
+      }
+    } catch {
+      if (import.meta.env.DEV) {
+        console.debug('[ToggleButton] Failed to clear shared toggle buttons')
       }
     }
   }

@@ -66,43 +66,39 @@ export function useSimulatorControl (
   const startSimulator = (): void => {
     if (simulatorPending.value) return
     simulatorPending.value = true
-    // eslint-disable-next-line promise/catch-or-return
-    $uiClient
-      .startSimulator()
-      .then(() => {
+    // eslint-disable-next-line no-void
+    void (async () => {
+      try {
+        await $uiClient.startSimulator()
         $toast.success('Simulator successfully started')
-        return undefined
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         $toast.error('Error at starting simulator')
         console.error('Error at starting simulator:', error)
-      })
-      .finally(() => {
+      } finally {
         simulatorPending.value = false
         getSimulatorState()
-      })
+      }
+    })()
   }
 
   const stopSimulator = (): void => {
     if (simulatorPending.value) return
     simulatorPending.value = true
-    // eslint-disable-next-line promise/catch-or-return
-    $uiClient
-      .stopSimulator()
-      .then(() => {
+    // eslint-disable-next-line no-void
+    void (async () => {
+      try {
+        await $uiClient.stopSimulator()
         $chargingStations.value = []
         options?.onSimulatorStopped?.()
         $toast.success('Simulator successfully stopped')
-        return undefined
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         $toast.error('Error at stopping simulator')
         console.error('Error at stopping simulator:', error)
-      })
-      .finally(() => {
+      } finally {
         simulatorPending.value = false
         getSimulatorState()
-      })
+      }
+    })()
   }
 
   const SERVER_SWITCH_TIMEOUT_MS = 15_000

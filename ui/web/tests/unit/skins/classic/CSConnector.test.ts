@@ -1,5 +1,5 @@
 /**
- * @file CSConnector.test.ts
+ * @file Tests for classic CSConnector component
  * @description Unit tests for classic skin CSConnector component — connector row rendering and actions.
  */
 import { flushPromises, mount } from '@vue/test-utils'

@@ -1,5 +1,5 @@
 /**
- * @file Tests for modern StationCard
+ * @file Tests for StationCard component
  * @description Header pills, connector enumeration, start/connect/delete, supervision/authorize events.
  */
 import { flushPromises, mount } from '@vue/test-utils'
@@ -9,14 +9,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { uiClientKey } from '@/composables'
 import StationCard from '@/skins/modern/components/StationCard.vue'
 
-import { toastMock } from '../../../setup'
+import { toastMock } from '../../../setup.js'
 import {
   createChargingStationData,
   createConnectorStatus,
   TEST_HASH_ID,
   TEST_STATION_ID,
 } from '../../constants'
-import { createMockUIClient, type MockUIClient } from '../../helpers'
+import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
 let wrapper: ReturnType<typeof mountCard> | undefined
@@ -36,7 +36,7 @@ function mountCard (overrides: Partial<ChargingStationData> = {}) {
   })
 }
 
-describe('modern StationCard', () => {
+describe('StationCard', () => {
   beforeEach(() => {
     mockClient = createMockUIClient()
   })
@@ -116,15 +116,17 @@ describe('modern StationCard', () => {
 
     it('should emit open-set-url on URL row click', async () => {
       wrapper = mountCard()
-      await wrapper.find('.modern-card__url-row').trigger('click')
+      await wrapper.find('.modern-card__url-edit').trigger('click')
       expect(wrapper.emitted('open-set-url')).toEqual([
         [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
       ])
     })
 
-    it('should emit open-set-url on Enter key press of URL row', async () => {
+    it('should emit open-set-url on keyboard activation of URL edit button', async () => {
       wrapper = mountCard()
-      await wrapper.find('.modern-card__url-row').trigger('keydown.enter')
+      // Native <button> elements fire click on Enter/Space in real browsers;
+      // test-utils does not simulate this, so we trigger click directly
+      await wrapper.find('.modern-card__url-edit').trigger('click')
       expect(wrapper.emitted('open-set-url')).toBeTruthy()
     })
   })

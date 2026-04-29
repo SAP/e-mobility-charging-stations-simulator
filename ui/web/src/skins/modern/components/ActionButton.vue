@@ -5,7 +5,6 @@
     :disabled="disabled || pending"
     :title="title"
     :aria-busy="pending || undefined"
-    @click="$emit('click', $event)"
   >
     <span
       v-if="pending"
@@ -17,7 +16,6 @@
 </template>
 
 <script setup lang="ts">
-/* global MouseEvent */
 import { computed } from 'vue'
 
 const props = withDefaults(
@@ -36,10 +34,6 @@ const props = withDefaults(
     variant: 'default',
   }
 )
-
-defineEmits<{
-  click: [event: MouseEvent]
-}>()
 
 const variantClass = computed(() => {
   switch (props.variant) {

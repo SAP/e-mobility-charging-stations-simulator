@@ -37,7 +37,7 @@
         <label
           class="modern-form__label"
           for="modern-add-count"
-        >How many?</label>
+        >Number of stations</label>
         <input
           id="modern-add-count"
           v-model.number="formState.numberOfStations"
@@ -52,7 +52,12 @@
         <legend class="modern-form__label">
           Naming
         </legend>
+        <label
+          class="modern-form__label"
+          for="modern-add-basename"
+        >Base name</label>
         <input
+          id="modern-add-basename"
           v-model.trim="formState.baseName"
           class="modern-form__input"
           type="text"
@@ -70,19 +75,34 @@
         <legend class="modern-form__label">
           Supervision
         </legend>
+        <label
+          class="modern-form__label"
+          for="modern-add-url"
+        >URL</label>
         <input
+          id="modern-add-url"
           v-model.trim="formState.supervisionUrl"
           class="modern-form__input"
           type="url"
           placeholder="wss://..."
         >
+        <label
+          class="modern-form__label"
+          for="modern-add-user"
+        >Username</label>
         <input
+          id="modern-add-user"
           v-model.trim="formState.supervisionUser"
           class="modern-form__input"
           type="text"
           placeholder="Username"
         >
+        <label
+          class="modern-form__label"
+          for="modern-add-pass"
+        >Password</label>
         <input
+          id="modern-add-pass"
           v-model="formState.supervisionPassword"
           class="modern-form__input"
           type="password"

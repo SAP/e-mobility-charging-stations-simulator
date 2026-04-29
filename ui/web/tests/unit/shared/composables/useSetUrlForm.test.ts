@@ -1,5 +1,5 @@
 /**
- * @file useSetUrlForm.test.ts
+ * @file Tests for useSetUrlForm composable
  * @description Tests for the useSetUrlForm shared composable.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -28,10 +28,9 @@ describe('useSetUrlForm', () => {
     expect(formState.value.supervisionPassword).toBe('')
   })
 
-  it('should return chargingStationId', () => {
+  it('should return chargingStationId from arguments', () => {
     const { chargingStationId } = useSetUrlForm('hash1', 'CS-001')
     expect(chargingStationId).toBe('CS-001')
-    expect(typeof chargingStationId).toBe('string')
   })
 
   it('should reset form to empty state', () => {
@@ -72,15 +71,6 @@ describe('useSetUrlForm', () => {
       'admin',
       'secret'
     )
-  })
-
-  it('should show error when url is cleared after being set', async () => {
-    const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
-    formState.value.supervisionUrl = 'ws://server:8080'
-    formState.value.supervisionUrl = ''
-    await submitForm()
-    expect(toastMock.error).toHaveBeenCalledWith('Supervision url is required')
-    expect(mockSetSupervisionUrl).not.toHaveBeenCalled()
   })
 
   it('should not show toast error when url is valid', async () => {

@@ -1,5 +1,5 @@
 /**
- * @file Actions.test.ts
+ * @file Tests for classic action components
  * @description Unit tests for classic skin action components: AddChargingStations, SetSupervisionUrl, StartTransaction.
  */
 import { flushPromises, mount } from '@vue/test-utils'
@@ -45,7 +45,7 @@ function createProvide () {
   }
 }
 
-describe('classic action components', () => {
+describe('classic actions', () => {
   describe('AddChargingStations', () => {
     beforeEach(() => {
       mockClient = createMockUIClient()

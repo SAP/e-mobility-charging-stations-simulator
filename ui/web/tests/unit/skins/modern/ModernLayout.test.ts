@@ -1,5 +1,5 @@
 /**
- * @file Tests for modern ModernLayout
+ * @file Tests for ModernLayout component
  * @description Main layout: WS listeners, data fetching, simulator start/stop,
  *   UI server switching, empty-state rendering.
  */
@@ -17,9 +17,9 @@ import {
 } from '@/composables'
 import ModernLayout from '@/skins/modern/ModernLayout.vue'
 
-import { toastMock } from '../../../setup'
+import { toastMock } from '../../../setup.js'
 import { createChargingStationData, createUIServerConfig } from '../../constants'
-import { createMockUIClient, type MockUIClient } from '../../helpers'
+import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
@@ -105,7 +105,7 @@ function mountView (
   })
 }
 
-describe('modern ModernLayout', () => {
+describe('ModernLayout', () => {
   beforeEach(() => {
     mockClient = createMockUIClient()
     vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)

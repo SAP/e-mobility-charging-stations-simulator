@@ -28,8 +28,11 @@ if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-skin', activeSkinId.value)
 }
 const loadedSkins = new Set<string>()
-const switching = ref(false)
+let switchPromise: null | Promise<boolean> = null
 const lastError: Ref<null | string> = ref(null)
+
+/** Whether a skin switch is currently in progress. */
+const switching: Ref<boolean> = ref(false)
 
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
@@ -44,51 +47,23 @@ export function useSkin (): {
 } {
   /**
    * Switches the active skin and lazy-loads its CSS if needed.
+   * Uses Promise coalescing to prevent concurrent skin switches.
    * @param skinId - The skin identifier to switch to
    * @returns `true` if the skin was successfully switched, `false` otherwise
    */
   async function switchSkin (skinId: string): Promise<boolean> {
-    if (switching.value) return false
-    const skin = skins.find(s => s.id === skinId)
-    if (skin == null) {
-      return false
-    }
-    if (skinId === activeSkinId.value) {
-      // Ensure styles are loaded even if skin is already active (idempotent success)
-      await loadSkinStyles(skinId)
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('skin-error-reload-count')
-      }
-      return true
-    }
-    switching.value = true
-    try {
-      await loadSkinStyles(skinId)
-      lastError.value = null
-      activeSkinId.value = skinId
-      if (typeof document !== 'undefined') {
-        document.documentElement.setAttribute('data-skin', skinId)
-      }
-      setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('skin-error-reload-count')
-      }
-      return true
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.warn(`[useSkin] Failed to load CSS for skin '${skinId}':`, message)
-      lastError.value = message
-      return false
-    } finally {
-      switching.value = false
-    }
+    if (switchPromise != null) return switchPromise
+    switchPromise = performSkinSwitch(skinId).finally(() => {
+      switchPromise = null
+    })
+    return switchPromise
   }
 
   return {
     activeSkinId: readonly(activeSkinId),
     lastError: readonly(lastError),
     skins,
-    switching: readonly(switching),
+    switching,
     switchSkin,
   }
 }
@@ -108,6 +83,53 @@ async function loadSkinStyles (skinId: string): Promise<void> {
   await skin.loadStyles()
   loadedSkins.add(skinId)
   validateTokenContract(skinId)
+}
+
+/**
+ * Performs the actual skin switch logic.
+ * @param skinId - The skin identifier to switch to
+ * @returns `true` if the skin was successfully switched, `false` otherwise
+ */
+async function performSkinSwitch (skinId: string): Promise<boolean> {
+  const skin = skins.find(s => s.id === skinId)
+  if (skin == null) {
+    return false
+  }
+  switching.value = true
+  if (skinId === activeSkinId.value) {
+    // Ensure styles are loaded even if skin is already active (idempotent success)
+    try {
+      await loadSkinStyles(skinId)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('skin-error-reload-count')
+      }
+      return true
+    } finally {
+      switching.value = false
+      switchPromise = null
+    }
+  }
+  try {
+    await loadSkinStyles(skinId)
+    lastError.value = null
+    activeSkinId.value = skinId
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-skin', skinId)
+    }
+    setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('skin-error-reload-count')
+    }
+    return true
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.warn(`[useSkin] Failed to load CSS for skin '${skinId}':`, message)
+    lastError.value = message
+    return false
+  } finally {
+    switching.value = false
+    switchPromise = null
+  }
 }
 
 /**

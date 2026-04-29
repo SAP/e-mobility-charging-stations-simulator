@@ -27,7 +27,7 @@ function mountBar (props: Record<string, unknown> = {}) {
   })
 }
 
-describe('modern SimulatorBar', () => {
+describe('SimulatorBar', () => {
   it('should show Disconnected pill when simulatorState is undefined', () => {
     const wrapper = mountBar()
     expect(wrapper.text()).toContain('Disconnected')

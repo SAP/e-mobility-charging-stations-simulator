@@ -1,5 +1,5 @@
 /**
- * @file ClassicLayout.test.ts
+ * @file Tests for ClassicLayout component
  * @description Smoke tests for the classic skin layout component.
  */
 import { flushPromises, mount } from '@vue/test-utils'

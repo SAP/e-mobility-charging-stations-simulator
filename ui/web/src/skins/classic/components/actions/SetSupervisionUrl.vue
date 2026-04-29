@@ -34,6 +34,7 @@
   <br>
   <Button
     id="action-button"
+    :disabled="pending"
     @click="setSupervisionUrl()"
   >
     Set Supervision Url
@@ -53,7 +54,7 @@ const props = defineProps<{
   hashId: string
 }>()
 
-const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
+const { formState, pending, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $router = useRouter()
 
 const setSupervisionUrl = async (): Promise<void> => {
@@ -66,7 +67,6 @@ const setSupervisionUrl = async (): Promise<void> => {
 </script>
 
 <style scoped>
-.supervision-url,
 .supervision-user,
 .supervision-password {
   width: 100%;

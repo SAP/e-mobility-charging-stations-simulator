@@ -15,7 +15,6 @@
     </option>
     <option
       v-for="template in templates"
-      v-show="Array.isArray(templates) && templates.length > 0"
       :key="template"
     >
       {{ template }}
@@ -114,6 +113,7 @@
   <br>
   <Button
     id="action-button"
+    :disabled="pending"
     @click="addChargingStations()"
   >
     Add Charging Stations
@@ -130,15 +130,15 @@ import Button from '../buttons/Button.vue'
 
 const $router = useRouter()
 
-const { formState, submitForm, templates } = useAddStationsForm({
+const { formState, pending, submitForm, templates } = useAddStationsForm({
   onFinally: () => {
     resetToggleButtonState('add-charging-stations', true)
     $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
   },
 })
 
-const addChargingStations = (): void => {
-  submitForm()
+const addChargingStations = async (): Promise<void> => {
+  await submitForm()
 }
 </script>
 
@@ -149,7 +149,6 @@ const addChargingStations = (): void => {
   text-align: center;
 }
 
-.supervision-url,
 .base-name,
 .supervision-user,
 .supervision-password {

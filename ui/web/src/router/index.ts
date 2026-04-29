@@ -1,5 +1,6 @@
 import { h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { useToast } from 'vue-toast-notification'
 
 import { ROUTE_NAMES } from '@/composables'
 import { useSkin } from '@/shared/composables/useSkin.js'
@@ -80,6 +81,8 @@ router.beforeEach(to => {
   if (to.meta.skinOnly != null) {
     const { activeSkinId } = useSkin()
     if (to.meta.skinOnly !== activeSkinId.value) {
+      const $toast = useToast()
+      $toast.info('This page is not available in the current skin.')
       return { name: ROUTE_NAMES.CHARGING_STATIONS }
     }
   }

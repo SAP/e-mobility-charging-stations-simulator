@@ -71,7 +71,7 @@
       </ActionButton>
       <ActionButton
         variant="primary"
-        :pending="pending || reconnectPending"
+        :pending="submitting"
         @click="submit"
       >
         Save
@@ -81,10 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useChargingStations, useUIClient } from '@/composables'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
+import { stripStationId } from '@/shared/utils/stripStationId.js'
 
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
@@ -96,7 +97,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const { formState, pending, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
+const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $uiClient = useUIClient()
 const $chargingStations = useChargingStations()
 
@@ -106,29 +107,30 @@ const currentStation = computed(() =>
   $chargingStations.value.find(station => station.stationInfo.hashId === props.hashId)
 )
 
-const stripStationId = (url: string, stationId: string): string => {
-  if (stationId.length === 0) return url
-  const suffix = `/${stationId}`
-  return url.endsWith(suffix) ? url.slice(0, -suffix.length) : url
-}
-
-// Pre-fill from current station data
-formState.value.supervisionUrl = stripStationId(
-  currentStation.value?.supervisionUrl ?? '',
-  currentStation.value?.stationInfo.chargingStationId ?? ''
+watch(
+  currentStation,
+  station => {
+    if (station != null) {
+      formState.value.supervisionUrl = stripStationId(
+        station.supervisionUrl ?? '',
+        station.stationInfo.chargingStationId ?? ''
+      )
+      formState.value.supervisionUser = station.stationInfo.supervisionUser ?? ''
+      formState.value.supervisionPassword = station.stationInfo.supervisionPassword ?? ''
+    }
+  },
+  { immediate: true }
 )
-formState.value.supervisionUser = currentStation.value?.stationInfo.supervisionUser ?? ''
-formState.value.supervisionPassword = currentStation.value?.stationInfo.supervisionPassword ?? ''
 
-const reconnectPending = ref(false)
+const submitting = ref(false)
 
 const close = (): void => {
   emit('close')
 }
 
 const submit = async (): Promise<void> => {
-  if (reconnectPending.value) return
-  reconnectPending.value = true
+  if (submitting.value) return
+  submitting.value = true
   try {
     const success = await submitForm()
     if (!success) return
@@ -138,7 +140,7 @@ const submit = async (): Promise<void> => {
     }
     close()
   } finally {
-    reconnectPending.value = false
+    submitting.value = false
   }
 }
 </script>

@@ -1,5 +1,5 @@
 /**
- * @file useStartTxForm.test.ts
+ * @file Tests for useStartTxForm composable
  * @description Tests for the useStartTxForm shared composable.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'

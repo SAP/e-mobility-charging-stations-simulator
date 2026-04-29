@@ -51,13 +51,7 @@
     <div class="modern-card__body">
       <div
         class="modern-card__url-row"
-        role="button"
-        tabindex="0"
         :title="chargingStation.supervisionUrl"
-        aria-label="Edit supervision URL"
-        @click="openSupervisionDialog"
-        @keydown.enter.prevent="openSupervisionDialog"
-        @keydown.space.prevent="openSupervisionDialog"
       >
         <span class="modern-card__url-badge">CSMS</span>
         <p class="modern-card__url">
@@ -68,7 +62,7 @@
           class="modern-card__url-edit"
           title="Edit supervision URL"
           aria-label="Edit supervision URL"
-          @click.stop="openSupervisionDialog"
+          @click="openSupervisionDialog"
         >
           <svg
             viewBox="0 0 24 24"

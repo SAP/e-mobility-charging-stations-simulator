@@ -5,8 +5,18 @@
   >
     <component
       :is="currentSkinLayout"
+      v-if="currentSkinLayout"
       :key="activeSkinId"
     />
+    <div
+      v-else
+      class="skin-fallback"
+    >
+      <p>Unable to load skin layout. Please reload the page.</p>
+      <button @click="reloadPage">
+        Reload
+      </button>
+    </div>
   </Transition>
 </template>
 
@@ -41,6 +51,11 @@ const skinLayoutMap = new Map(
 const currentSkinLayout = computed(
   () => skinLayoutMap.get(activeSkinId.value) ?? skinLayoutMap.values().next().value
 )
+
+/** Reloads the page when skin layout fails to load. */
+function reloadPage (): void {
+  window.location.reload()
+}
 </script>
 
 <style scoped>
@@ -52,5 +67,26 @@ const currentSkinLayout = computed(
 .skin-fade-enter-from,
 .skin-fade-leave-to {
   opacity: 0;
+}
+
+.skin-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  text-align: center;
+  padding: 2rem;
+}
+
+.skin-fallback button {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
 }
 </style>

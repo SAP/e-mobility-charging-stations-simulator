@@ -4,7 +4,7 @@ import { readonly, ref, type Ref } from 'vue'
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 
 export const AVAILABLE_THEMES: readonly string[] = THEME_IDS
-export const DEFAULT_THEME = THEME_IDS[2]
+export const DEFAULT_THEME: (typeof THEME_IDS)[number] = 'tokyo-night-storm'
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof THEME_IDS)[number]

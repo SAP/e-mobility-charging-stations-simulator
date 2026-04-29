@@ -98,7 +98,8 @@ const { run } = useAsyncAction({ atg: false, lock: false, transaction: false }, 
 )
 
 const stopTransaction = (): void => {
-  if (props.connector.transactionId == null) {
+  const txId = props.connector.transactionId
+  if (txId == null) {
     $toast.error('No transaction to stop')
     return
   }
@@ -107,7 +108,7 @@ const stopTransaction = (): void => {
     () =>
       $uiClient.stopTransaction(props.hashId, {
         ocppVersion: props.ocppVersion,
-        transactionId: props.connector.transactionId!,
+        transactionId: txId,
       }),
     'Transaction successfully stopped',
     'Error at stopping transaction'

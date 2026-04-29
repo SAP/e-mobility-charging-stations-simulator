@@ -7,7 +7,7 @@
       class="modern-form"
       @submit.prevent="submit"
     >
-      <p style="margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm)">
+      <p class="modern-dialog__target-label">
         {{ targetLabel }}
       </p>
       <div class="modern-form__row">
@@ -89,9 +89,9 @@ const emit = defineEmits<{ close: [] }>()
 const pending = ref(false)
 const lastFailure = ref<FailureInfo | null>(null)
 
-let cancelled = false
+const isMounted = ref(true)
 onBeforeUnmount(() => {
-  cancelled = true
+  isMounted.value = false
 })
 
 const { formState, submitForm } = useStartTxForm({
@@ -134,10 +134,11 @@ const submit = async (): Promise<void> => {
   lastFailure.value = null
   try {
     const success = await submitForm()
-    if (cancelled) return
-    if (success) emit('close')
+    if (isMounted.value && success) emit('close')
   } finally {
-    pending.value = false
+    if (isMounted.value) {
+      pending.value = false
+    }
   }
 }
 </script>

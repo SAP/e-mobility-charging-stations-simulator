@@ -10,11 +10,16 @@ import { type Ref, ref } from 'vue'
 
 import type { LayoutData } from '@/shared/composables/useLayoutData.js'
 
-import { useChargingStations, useConfiguration, useUIClient } from '@/composables'
+import {
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
+  useChargingStations,
+  useConfiguration,
+  useUIClient,
+} from '@/composables'
 
-import { toastMock } from '../../../setup'
+import { toastMock } from '../../../setup.js'
 import { createUIServerConfig } from '../../constants'
-import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers'
+import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers.js'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
@@ -96,8 +101,16 @@ describe('useSimulatorControl', () => {
     expect(toastMock.error).toHaveBeenCalledWith('Error at starting simulator')
   })
 
+  it('should show error toast when stopSimulator fails', async () => {
+    mockClient.stopSimulator.mockRejectedValueOnce(new Error('stop failed'))
+    const [result] = mountComposable()
+    result.stopSimulator()
+    await flushPromises()
+    expect(toastMock.error).toHaveBeenCalledWith('Error at stopping simulator')
+  })
+
   it('should handle server switch with new index', () => {
-    localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result] = mountComposable()
     result.handleUIServerChange(1)
     expect(mockClient.setConfiguration).toHaveBeenCalledWith(createUIServerConfig({ port: 9090 }))
@@ -137,7 +150,7 @@ describe('useSimulatorControl', () => {
   })
 
   it('should not switch server when index is the same as current', () => {
-    localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(1))
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(1))
     const [result] = mountComposable()
     result.handleUIServerChange(1)
     expect(mockClient.setConfiguration).not.toHaveBeenCalled()
@@ -154,7 +167,7 @@ describe('useSimulatorControl', () => {
 
   it('should call onServerSwitched callback when server open event fires', () => {
     // Arrange
-    localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const onServerSwitched = vi.fn()
     const [result] = mountComposable({ onServerSwitched })
 
@@ -174,7 +187,7 @@ describe('useSimulatorControl', () => {
 
   it('should rollback configuration on server switch error', () => {
     // Arrange
-    localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
+    localStorage.setItem(UI_SERVER_CONFIGURATION_INDEX_KEY, JSON.stringify(0))
     const [result] = mountComposable()
 
     // Act
@@ -194,47 +207,52 @@ describe('useSimulatorControl', () => {
     )
   })
 
-  it('should rollback via timeout when neither open nor error fires', () => {
-    // Arrange
-    vi.useFakeTimers()
-    const [result] = mountComposable()
+  describe('server switch timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
 
-    // Act
-    result.handleUIServerChange(1)
-    expect(result.serverSwitchPending.value).toBe(true)
+    it('should rollback via timeout when neither open nor error fires', () => {
+      // Arrange
+      const [result] = mountComposable()
 
-    vi.advanceTimersByTime(15_000)
+      // Act
+      result.handleUIServerChange(1)
+      expect(result.serverSwitchPending.value).toBe(true)
 
-    // Assert
-    expect(result.serverSwitchPending.value).toBe(false)
-    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
-    expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
-      createUIServerConfig({ port: 8080 })
-    )
-    vi.useRealTimers()
-  })
+      vi.advanceTimersByTime(15_000)
 
-  it('should not rollback via timeout when open fires before timeout', () => {
-    // Arrange
-    vi.useFakeTimers()
-    const [result] = mountComposable()
+      // Assert
+      expect(result.serverSwitchPending.value).toBe(false)
+      expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
+      expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
+        createUIServerConfig({ port: 8080 })
+      )
+    })
 
-    // Act
-    result.handleUIServerChange(1)
+    it('should not rollback via timeout when open fires before timeout', () => {
+      // Arrange
+      const [result] = mountComposable()
 
-    const openCall = vi
-      .mocked(mockClient.registerWSEventListener)
-      .mock.calls.find(([event]) => event === 'open')
-    const openHandler = openCall?.[1] as () => void
-    openHandler()
+      // Act
+      result.handleUIServerChange(1)
 
-    expect(result.serverSwitchPending.value).toBe(false)
+      const openCall = vi
+        .mocked(mockClient.registerWSEventListener)
+        .mock.calls.find(([event]) => event === 'open')
+      const openHandler = openCall?.[1] as () => void
+      openHandler()
 
-    vi.advanceTimersByTime(15_000)
+      expect(result.serverSwitchPending.value).toBe(false)
 
-    // Assert
-    expect(result.serverSwitchPending.value).toBe(false)
-    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
-    vi.useRealTimers()
+      vi.advanceTimersByTime(15_000)
+
+      // Assert
+      expect(result.serverSwitchPending.value).toBe(false)
+      expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
+    })
   })
 })

@@ -1,5 +1,5 @@
 /**
- * @file registry.test.ts
+ * @file Tests for skin registry
  * @description Tests for the skin registry exports and structure.
  */
 import { describe, expect, it } from 'vitest'

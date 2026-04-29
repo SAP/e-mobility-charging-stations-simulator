@@ -1,5 +1,5 @@
 /**
- * @file useAddStationsForm.test.ts
+ * @file Tests for useAddStationsForm composable
  * @description Tests for the useAddStationsForm shared composable.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -49,10 +49,9 @@ describe('useAddStationsForm', () => {
     expect(formState.value.supervisionPassword).toBe('')
   })
 
-  it('should return templates from injection', () => {
+  it('should reflect injected templates reactively', () => {
     const { templates } = useAddStationsForm()
     expect(templates.value).toEqual(['template1.json', 'template2.json'])
-    expect(templates.value.length).toBe(2)
   })
 
   it('should reset form to default state', () => {

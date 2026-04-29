@@ -1,5 +1,5 @@
 /**
- * @file CSData.test.ts
+ * @file Tests for classic CSData component
  * @description Unit tests for classic skin CSData component — station row rendering and actions.
  */
 import { flushPromises, mount } from '@vue/test-utils'

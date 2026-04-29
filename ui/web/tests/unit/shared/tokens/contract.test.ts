@@ -1,5 +1,5 @@
 /**
- * @file contract.test.ts
+ * @file Tests for TOKEN_CONTRACT theme compliance
  * @description Ensures every theme CSS file defines all CSS custom properties declared in TOKEN_CONTRACT.
  */
 import { readFileSync } from 'node:fs'
@@ -12,7 +12,7 @@ const themesDir = resolve(__dirname, '../../../../src/assets/themes')
 const themeFiles = ['tokyo-night-storm.css', 'catppuccin-latte.css', 'sap-horizon.css']
 const baseCss = readFileSync(resolve(themesDir, 'base.css'), 'utf-8')
 
-describe('TOKEN_CONTRACT theme compliance', () => {
+describe('TOKEN_CONTRACT', () => {
   for (const themeFile of themeFiles) {
     it(`should define all contract tokens in ${themeFile}`, () => {
       const css = readFileSync(resolve(themesDir, themeFile), 'utf-8') + '\n' + baseCss

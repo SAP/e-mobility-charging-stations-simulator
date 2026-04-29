@@ -1,5 +1,5 @@
 /**
- * @file Tests for modern ConnectorRow
+ * @file Tests for ConnectorRow component
  * @description Status/lock/ATG pills, primary/stop actions, event emission.
  */
 import { flushPromises, mount } from '@vue/test-utils'
@@ -14,9 +14,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { uiClientKey } from '@/composables'
 import ConnectorRow from '@/skins/modern/components/ConnectorRow.vue'
 
-import { toastMock } from '../../../setup'
+import { toastMock } from '../../../setup.js'
 import { TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
-import { createMockUIClient, type MockUIClient } from '../../helpers'
+import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
 let wrapper: ReturnType<typeof mountRow> | undefined
@@ -56,7 +56,7 @@ function mountRow (
   })
 }
 
-describe('modern ConnectorRow', () => {
+describe('ConnectorRow', () => {
   beforeEach(() => {
     mockClient = createMockUIClient()
   })

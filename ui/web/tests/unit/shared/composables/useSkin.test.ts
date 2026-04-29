@@ -1,5 +1,5 @@
 /**
- * @file useSkin.test.ts
+ * @file Tests for useSkin composable
  * @description Tests for the useSkin shared composable.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

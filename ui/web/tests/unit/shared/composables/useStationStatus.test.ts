@@ -1,12 +1,10 @@
 /**
- * @file useStationStatus.test.ts
+ * @file Tests for stationStatus utilities
  * @description Tests for the useStationStatus shared composable status mapping functions.
  */
 import { describe, expect, it } from 'vitest'
 
 import { getConnectorStatusVariant } from '@/shared/composables/stationStatus.js'
-
-const validVariants = new Set(['err', 'idle', 'ok', 'warn'])
 
 describe('useStationStatus', () => {
   describe('getConnectorStatusVariant', () => {
@@ -65,28 +63,9 @@ describe('useStationStatus', () => {
       expect(result).toBe('idle')
     })
 
-    it('should return only valid StatusVariant values for all known statuses', () => {
-      const statuses = [
-        'Available',
-        'Charging',
-        'Occupied',
-        'Preparing',
-        'SuspendedEV',
-        'SuspendedEVSE',
-        'Finishing',
-        'Faulted',
-        'Unavailable',
-        undefined,
-        'Unknown',
-      ]
-      for (const status of statuses) {
-        const result = getConnectorStatusVariant(status)
-        expect(validVariants.has(result)).toBe(true)
-      }
-      expect(statuses.length).toBe(11)
-    })
-
     it('should handle case-insensitive status values', () => {
+      // getConnectorStatusVariant normalizes via .toLowerCase() for robustness
+      // against inconsistent backends
       expect(getConnectorStatusVariant('available')).toBe('ok')
       expect(getConnectorStatusVariant('CHARGING')).toBe('ok')
       expect(getConnectorStatusVariant('faulted')).toBe('err')

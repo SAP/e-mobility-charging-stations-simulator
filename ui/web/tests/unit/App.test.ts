@@ -1,5 +1,5 @@
 /**
- * @file App.test.ts
+ * @file Tests for App root component
  * @description Smoke test verifying the App.vue skin switching shell mounts without errors.
  */
 import { mount } from '@vue/test-utils'

@@ -1,5 +1,5 @@
 /**
- * @file useTheme.test.ts
+ * @file Tests for useTheme composable
  * @description Tests for the useTheme shared composable.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

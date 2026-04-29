@@ -1,5 +1,5 @@
 /**
- * @file router.test.ts
+ * @file Tests for router configuration
  * @description Tests for the skin-aware router guard (skinOnly meta).
  */
 import { describe, expect, it, vi } from 'vitest'

@@ -1,5 +1,5 @@
 /**
- * @file useLayoutData.test.ts
+ * @file Tests for useLayoutData composable
  * @description Tests for the useLayoutData shared composable.
  */
 import type { ConfigurationData } from 'ui-common'
@@ -166,5 +166,37 @@ describe('useLayoutData', () => {
     expect(mockClient.onRefresh).toHaveBeenCalledWith(expect.any(Function))
     app.unmount()
     expect(unsubscribe).toHaveBeenCalledTimes(1)
+  })
+
+  describe('error handling', () => {
+    it('should set loading to false when getSimulatorState rejects', async () => {
+      mockClient.simulatorState.mockRejectedValueOnce(new Error('network'))
+      mockClient.listTemplates.mockResolvedValue({ status: 'success', templates: [] })
+      mockClient.listChargingStations.mockResolvedValue({ chargingStations: [], status: 'success' })
+      const [result] = mountComposable()
+      result.getData()
+      await flushPromises()
+      expect(result.loading.value).toBe(false)
+    })
+
+    it('should set loading to false when listTemplates rejects', async () => {
+      mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
+      mockClient.listTemplates.mockRejectedValueOnce(new Error('network'))
+      mockClient.listChargingStations.mockResolvedValue({ chargingStations: [], status: 'success' })
+      const [result] = mountComposable()
+      result.getData()
+      await flushPromises()
+      expect(result.loading.value).toBe(false)
+    })
+
+    it('should set loading to false when listChargingStations rejects', async () => {
+      mockClient.simulatorState.mockResolvedValue({ state: { started: false }, status: 'success' })
+      mockClient.listTemplates.mockResolvedValue({ status: 'success', templates: [] })
+      mockClient.listChargingStations.mockRejectedValueOnce(new Error('network'))
+      const [result] = mountComposable()
+      result.getData()
+      await flushPromises()
+      expect(result.loading.value).toBe(false)
+    })
   })
 })
