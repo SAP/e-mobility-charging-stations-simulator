@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action-header">
+  <h1 class="classic-action-header">
     Set Supervision Url
   </h1>
   <h2>{{ chargingStationId }}</h2>

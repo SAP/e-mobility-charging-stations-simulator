@@ -53,6 +53,10 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
    * @returns Whether the submission was successful
    */
   async function submitForm (): Promise<boolean> {
+    if (formState.value.template.length === 0) {
+      $toast.error('Please select a template')
+      return false
+    }
     if (pending.value) return false
     pending.value = true
     try {

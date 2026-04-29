@@ -11,8 +11,8 @@ describe('useTheme', () => {
     localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.style.colorScheme = ''
-    const { setTheme } = useTheme()
-    setTheme('tokyo-night-storm')
+    const { switchTheme } = useTheme()
+    switchTheme('tokyo-night-storm')
   })
 
   it('should return activeThemeId ref', () => {
@@ -28,45 +28,45 @@ describe('useTheme', () => {
     expect(availableThemes).toContain('sap-horizon')
   })
 
-  it('should return setTheme function', () => {
-    const { setTheme } = useTheme()
-    expect(typeof setTheme).toBe('function')
-    expect(setTheme.length).toBe(1)
+  it('should return switchTheme function', () => {
+    const { switchTheme } = useTheme()
+    expect(typeof switchTheme).toBe('function')
+    expect(switchTheme.length).toBe(1)
   })
 
   it('should update document data-theme attribute', () => {
-    const { setTheme } = useTheme()
-    setTheme('catppuccin-latte')
+    const { switchTheme } = useTheme()
+    switchTheme('catppuccin-latte')
     expect(document.documentElement.getAttribute('data-theme')).toBe('catppuccin-latte')
   })
 
   it('should persist the active theme to localStorage', () => {
-    const { setTheme } = useTheme()
-    setTheme('sap-horizon')
+    const { switchTheme } = useTheme()
+    switchTheme('sap-horizon')
     expect(localStorage.getItem('ecs-ui-theme')).toBe('"sap-horizon"')
   })
 
   it('should update activeThemeId ref', () => {
-    const { activeThemeId, setTheme } = useTheme()
-    setTheme('catppuccin-latte')
+    const { activeThemeId, switchTheme } = useTheme()
+    switchTheme('catppuccin-latte')
     expect(activeThemeId.value).toBe('catppuccin-latte')
   })
 
   it('should not set colorScheme inline style (CSS handles it)', () => {
-    const { setTheme } = useTheme()
-    setTheme('tokyo-night-storm')
+    const { switchTheme } = useTheme()
+    switchTheme('tokyo-night-storm')
     expect(document.documentElement.style.colorScheme).toBe('')
-    setTheme('catppuccin-latte')
+    switchTheme('catppuccin-latte')
     expect(document.documentElement.style.colorScheme).toBe('')
-    setTheme('sap-horizon')
+    switchTheme('sap-horizon')
     expect(document.documentElement.style.colorScheme).toBe('')
   })
 
   it('should ignore invalid theme name', () => {
-    const { activeThemeId, setTheme } = useTheme()
+    const { activeThemeId, switchTheme } = useTheme()
     const before = activeThemeId.value
-    const setThemeUntyped = setTheme as (name: string) => void
-    setThemeUntyped('nonexistent')
+    const switchThemeUntyped = switchTheme as (name: string) => void
+    switchThemeUntyped('nonexistent')
     expect(activeThemeId.value).toBe(before)
   })
 
@@ -86,9 +86,9 @@ describe('useTheme', () => {
     it('should not throw when document is undefined', () => {
       // @ts-expect-error simulating SSR environment
       globalThis.document = undefined
-      const { setTheme } = useTheme()
+      const { switchTheme } = useTheme()
       expect(() => {
-        setTheme('catppuccin-latte')
+        switchTheme('catppuccin-latte')
       }).not.toThrow()
       globalThis.document = originalDocument
       const { activeThemeId } = useTheme()

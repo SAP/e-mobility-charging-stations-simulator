@@ -87,22 +87,41 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
 } from '@/composables'
+import SkinLoadError from '@/shared/components/SkinLoadError.vue'
+import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
 import ConfirmDialog from './components/ConfirmDialog.vue'
-const AddStationsDialog = defineAsyncComponent(
-  () => import('./components/dialogs/AddStationsDialog.vue')
-)
-const AuthorizeDialog = defineAsyncComponent(
-  () => import('./components/dialogs/AuthorizeDialog.vue')
-)
-const SetSupervisionUrlDialog = defineAsyncComponent(
-  () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
-)
-const StartTransactionDialog = defineAsyncComponent(
-  () => import('./components/dialogs/StartTransactionDialog.vue')
-)
+
+const AddStationsDialog = defineAsyncComponent({
+  delay: 200,
+  errorComponent: SkinLoadError,
+  loader: () => import('./components/dialogs/AddStationsDialog.vue'),
+  loadingComponent: SkinLoading,
+  timeout: 10000,
+})
+const AuthorizeDialog = defineAsyncComponent({
+  delay: 200,
+  errorComponent: SkinLoadError,
+  loader: () => import('./components/dialogs/AuthorizeDialog.vue'),
+  loadingComponent: SkinLoading,
+  timeout: 10000,
+})
+const SetSupervisionUrlDialog = defineAsyncComponent({
+  delay: 200,
+  errorComponent: SkinLoadError,
+  loader: () => import('./components/dialogs/SetSupervisionUrlDialog.vue'),
+  loadingComponent: SkinLoading,
+  timeout: 10000,
+})
+const StartTransactionDialog = defineAsyncComponent({
+  delay: 200,
+  errorComponent: SkinLoadError,
+  loader: () => import('./components/dialogs/StartTransactionDialog.vue'),
+  loadingComponent: SkinLoading,
+  timeout: 10000,
+})
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 

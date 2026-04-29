@@ -158,4 +158,29 @@ describe('useAddStationsForm', () => {
     const { pending } = useAddStationsForm()
     expect(pending.value).toBe(false)
   })
+
+  it('should show toast error and return false when template is empty', async () => {
+    const { submitForm } = useAddStationsForm()
+    const result = await submitForm()
+    expect(result).toBe(false)
+    expect(toastMock.error).toHaveBeenCalledWith('Please select a template')
+  })
+
+  it('should return false and not call addChargingStations when pending', async () => {
+    const { formState, submitForm } = useAddStationsForm()
+    formState.value.template = 'tpl.json'
+    let resolveFirst!: (value: { status: string }) => void
+    mockAddChargingStations.mockImplementationOnce(
+      () =>
+        new Promise<{ status: string }>(resolve => {
+          resolveFirst = resolve
+        })
+    )
+    const firstCall = submitForm()
+    const secondResult = await submitForm()
+    expect(secondResult).toBe(false)
+    expect(mockAddChargingStations).toHaveBeenCalledTimes(1)
+    resolveFirst({ status: 'success' })
+    await firstCall
+  })
 })

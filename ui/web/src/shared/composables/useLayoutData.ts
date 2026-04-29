@@ -67,7 +67,6 @@ export function useLayoutData (): LayoutData {
   const { fetch: getSimulatorState, fetching: fetchingSimulatorState } = useFetchData(
     () => $uiClient.simulatorState(),
     response => {
-      // ResponsePayload.state is a JSON union type; cast via unknown to our domain type.
       simulatorState.value = response.state as unknown as SimulatorState
     },
     'Error at fetching simulator state'

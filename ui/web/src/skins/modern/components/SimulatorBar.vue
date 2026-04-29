@@ -63,7 +63,7 @@
         :value="activeThemeId"
         class="modern-bar__select"
         aria-label="Theme"
-        @change="e => setTheme(getSelectValue(e) as ThemeName)"
+        @change="e => switchTheme(getSelectValue(e) as ThemeName)"
       >
         <option
           v-for="theme in availableThemes"
@@ -139,7 +139,7 @@ defineEmits<{
 }>()
 
 const { activeSkinId, skins: skinList, switchSkin } = useSkin()
-const { activeThemeId, availableThemes, setTheme } = useTheme()
+const { activeThemeId, availableThemes, switchTheme } = useTheme()
 
 const simulatorStarted = computed(() => props.simulatorState?.started === true)
 

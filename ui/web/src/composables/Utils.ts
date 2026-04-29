@@ -4,8 +4,8 @@ import type { InjectionKey, Ref } from 'vue'
 import { inject, ref as vueRef } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants'
-import { UIClient } from './UIClient'
+import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants.js'
+import { UIClient } from './UIClient.js'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
 export const chargingStationsKey: InjectionKey<Ref<ChargingStationData[]>> =
@@ -90,6 +90,9 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
 export const useUIClient = (): UIClient => {
   const injected = inject(uiClientKey, undefined)
   if (injected != null) return injected
+  if (import.meta.env.DEV) {
+    console.debug('[useUIClient] Accessed outside provide scope — using singleton fallback')
+  }
   return UIClient.getInstance()
 }
 

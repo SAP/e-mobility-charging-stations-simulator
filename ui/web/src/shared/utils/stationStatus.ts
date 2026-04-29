@@ -69,9 +69,10 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
   switch (status?.toLowerCase()) {
     case 'available':
       return 'ok'
+    // Active use states: amber to distinguish from 'available' (green)
     case 'charging':
     case 'occupied':
-      return 'ok'
+      return 'warn'
     case 'faulted':
     case 'unavailable':
       return 'err'

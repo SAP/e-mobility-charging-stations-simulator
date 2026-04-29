@@ -173,7 +173,7 @@ describe('CSConnector', () => {
       lockProps.on?.()
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 2)
-      expect(toastMock.success).toHaveBeenCalledWith('Connector successfully locked')
+      expect(toastMock.success).toHaveBeenCalledWith('Connector locked')
       expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
@@ -187,7 +187,7 @@ describe('CSConnector', () => {
       unlockProps.off?.()
       await flushPromises()
       expect(mockClient.unlockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
-      expect(toastMock.success).toHaveBeenCalledWith('Connector successfully unlocked')
+      expect(toastMock.success).toHaveBeenCalledWith('Connector unlocked')
     })
 
     it('should show Start Transaction toggle when no transaction', () => {
@@ -219,7 +219,7 @@ describe('CSConnector', () => {
         ocppVersion: OCPPVersion.VERSION_16,
         transactionId: 55,
       })
-      expect(toastMock.success).toHaveBeenCalledWith('Transaction successfully stopped')
+      expect(toastMock.success).toHaveBeenCalledWith('Transaction stopped')
     })
 
     it('should toast error when stopTransaction has no transactionId', async () => {
@@ -240,9 +240,7 @@ describe('CSConnector', () => {
       atgStartProps.on?.()
       await flushPromises()
       expect(mockClient.startAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 3)
-      expect(toastMock.success).toHaveBeenCalledWith(
-        'Automatic transaction generator successfully started'
-      )
+      expect(toastMock.success).toHaveBeenCalledWith('ATG started')
     })
 
     it('should call stopAutomaticTransactionGenerator', async () => {
@@ -252,9 +250,7 @@ describe('CSConnector', () => {
       atgStopProps.off?.()
       await flushPromises()
       expect(mockClient.stopAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 3)
-      expect(toastMock.success).toHaveBeenCalledWith(
-        'Automatic transaction generator successfully stopped'
-      )
+      expect(toastMock.success).toHaveBeenCalledWith('ATG stopped')
     })
 
     it('should toast error when lockConnector fails', async () => {
@@ -264,7 +260,7 @@ describe('CSConnector', () => {
       const failProps = stateButtons[0].props() as unknown as StubProps
       failProps.on?.()
       await flushPromises()
-      expect(toastMock.error).toHaveBeenCalledWith('Error at locking connector')
+      expect(toastMock.error).toHaveBeenCalledWith('Error locking connector')
     })
   })
 

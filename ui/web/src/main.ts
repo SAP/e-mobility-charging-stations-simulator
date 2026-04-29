@@ -41,9 +41,9 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
     // TODO: add code for UI notifications or other error handling logic
   }
 
-  const { setTheme } = useTheme()
+  const { switchTheme } = useTheme()
   const storedTheme = getFromLocalStorage<string>(THEME_STORAGE_KEY, config.theme ?? DEFAULT_THEME)
-  setTheme(storedTheme)
+  switchTheme(storedTheme)
 
   const { switchSkin } = useSkin()
   if (getFromLocalStorage<string>(SKIN_STORAGE_KEY, '') === '' && config.skin != null) {

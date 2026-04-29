@@ -92,7 +92,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const pending = ref(false)
 const lastFailure = ref<FailureInfo | null>(null)
 const errorStep = ref<'authorize' | 'startTransaction' | null>(null)
 
@@ -101,7 +100,7 @@ onBeforeUnmount(() => {
   isMounted.value = false
 })
 
-const { formState, submitForm } = useStartTxForm({
+const { formState, pending, submitForm } = useStartTxForm({
   connectorId: props.connectorId,
   evseId: props.evseId,
   hashId: props.hashId,
@@ -139,15 +138,8 @@ const close = (): void => {
 
 const submit = async (): Promise<void> => {
   if (pending.value) return
-  pending.value = true
   lastFailure.value = null
-  try {
-    const success = await submitForm()
-    if (isMounted.value && success) emit('close')
-  } finally {
-    if (isMounted.value) {
-      pending.value = false
-    }
-  }
+  const success = await submitForm()
+  if (success) emit('close')
 }
 </script>

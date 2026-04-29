@@ -65,7 +65,7 @@ import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
 
-import { type FailureInfo, getFailureInfo } from '../../utils/errors'
+import { type FailureInfo, getFailureInfo } from '../../utils/errors.js'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 

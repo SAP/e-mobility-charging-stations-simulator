@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action-header">
+  <h1 class="classic-action-header">
     Start Transaction
   </h1>
   <h2>{{ chargingStationId }}</h2>
@@ -59,7 +59,10 @@ const $route = useRoute()
 const evseId = computed(() =>
   $route.query.evseId != null ? Number($route.query.evseId) : undefined
 )
-const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
+const ocppVersion = computed(() => {
+  const raw = $route.query.ocppVersion
+  return typeof raw === 'string' ? (raw as OCPPVersion) : undefined
+})
 
 const toggleButtonId = computed(
   () => `${props.hashId}-${String(evseId.value ?? 0)}-${props.connectorId}-start-transaction`

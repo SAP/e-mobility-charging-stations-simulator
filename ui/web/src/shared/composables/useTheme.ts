@@ -2,6 +2,7 @@ import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
+import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
 
 export const AVAILABLE_THEMES: readonly string[] = THEME_IDS
 export const DEFAULT_THEME: (typeof THEME_IDS)[number] = 'tokyo-night-storm'
@@ -52,24 +53,37 @@ applyTheme(activeThemeId.value)
 export function useTheme (): {
   activeThemeId: Readonly<Ref<ThemeName>>
   availableThemes: typeof AVAILABLE_THEMES
-  setTheme: (name: string) => void
+  switchTheme: (name: string) => void
 } {
   /**
    * Switches the active theme, updates the DOM, and persists the preference.
    * @param name - The theme name to activate
    */
-  function setTheme (name: string): void {
+  function switchTheme (name: string): void {
     if (!isValidTheme(name)) {
       return
     }
     applyTheme(name)
     activeThemeId.value = name
     setToLocalStorage<string>(THEME_STORAGE_KEY, name)
+    if (import.meta.env.DEV && typeof document !== 'undefined') {
+      requestAnimationFrame(() => {
+        const style = getComputedStyle(document.documentElement)
+        for (const token of TOKEN_CONTRACT) {
+          const prop = `--${token}`
+          if (!style.getPropertyValue(prop).trim()) {
+            console.warn(
+              `[useTheme] Missing CSS token '${prop}' after switching to theme '${name}'`
+            )
+          }
+        }
+      })
+    }
   }
 
   return {
     activeThemeId: readonly(activeThemeId),
     availableThemes: AVAILABLE_THEMES,
-    setTheme,
+    switchTheme,
   }
 }

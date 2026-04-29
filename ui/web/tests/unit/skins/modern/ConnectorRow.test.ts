@@ -81,8 +81,8 @@ describe('ConnectorRow', () => {
   describe('status pill variants', () => {
     it.each<[string, string]>([
       ['Available', 'modern-pill--ok'],
-      ['Charging', 'modern-pill--ok'],
-      ['Occupied', 'modern-pill--ok'],
+      ['Charging', 'modern-pill--warn'],
+      ['Occupied', 'modern-pill--warn'],
       ['Preparing', 'modern-pill--warn'],
       ['Faulted', 'modern-pill--err'],
       ['Unavailable', 'modern-pill--err'],

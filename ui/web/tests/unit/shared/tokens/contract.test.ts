@@ -13,17 +13,12 @@ const themeFiles = ['tokyo-night-storm.css', 'catppuccin-latte.css', 'sap-horizo
 const baseCss = readFileSync(resolve(themesDir, 'base.css'), 'utf-8')
 
 describe('TOKEN_CONTRACT', () => {
-  for (const themeFile of themeFiles) {
-    it(`should define all contract tokens in ${themeFile}`, () => {
-      const css = readFileSync(resolve(themesDir, themeFile), 'utf-8') + '\n' + baseCss
-      for (const token of TOKEN_CONTRACT) {
-        const prop = `--${token}`
-        const propRegex = new RegExp(
-          `^\\s*${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`,
-          'm'
-        )
-        expect(css, `Missing ${prop} in ${themeFile} or base.css`).toMatch(propRegex)
-      }
-    })
-  }
+  it.each(themeFiles)('should define all contract tokens in %s', themeFile => {
+    const css = readFileSync(resolve(themesDir, themeFile), 'utf-8') + '\n' + baseCss
+    for (const token of TOKEN_CONTRACT) {
+      const prop = `--${token}`
+      const propRegex = new RegExp(`^\\s*${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`, 'm')
+      expect(css, `Missing ${prop} in ${themeFile} or base.css`).toMatch(propRegex)
+    }
+  })
 })

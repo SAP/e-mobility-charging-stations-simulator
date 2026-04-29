@@ -45,7 +45,7 @@ function createProvide () {
   }
 }
 
-describe('classic actions', () => {
+describe('Actions', () => {
   describe('AddChargingStations', () => {
     beforeEach(() => {
       mockClient = createMockUIClient()

@@ -151,11 +151,9 @@
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import { computed } from 'vue'
-import { useToast } from 'vue-toast-notification'
 
-import { useUIClient } from '@/composables'
-import { getConnectorStatusVariant } from '@/shared/composables/stationStatus.js'
-import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
+import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
+import { getConnectorStatusVariant } from '@/shared/utils/stationStatus.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
@@ -183,12 +181,18 @@ const emit = defineEmits<{
   ]
 }>()
 
-const $uiClient = useUIClient()
-const $toast = useToast()
-
-const { pending, run } = useAsyncAction({ atg: false, lock: false, stopTx: false }, () =>
-  emit('need-refresh')
-)
+const {
+  lockConnector,
+  pending,
+  startATG,
+  stopATG,
+  stopTransaction: doStopTransaction,
+  unlockConnector,
+} = useConnectorActions({
+  connectorId: computed(() => props.connectorId),
+  hashId: computed(() => props.hashId),
+  onRefresh: () => emit('need-refresh'),
+})
 
 const identifier = computed(() =>
   props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
@@ -216,55 +220,22 @@ const txEnergy = computed(() => {
 
 const toggleLock = (): void => {
   if (props.connector.locked === true) {
-    run(
-      'lock',
-      () => $uiClient.unlockConnector(props.hashId, props.connectorId),
-      'Connector unlocked',
-      'Error unlocking connector'
-    )
+    unlockConnector()
   } else {
-    run(
-      'lock',
-      () => $uiClient.lockConnector(props.hashId, props.connectorId),
-      'Connector locked',
-      'Error locking connector'
-    )
+    lockConnector()
   }
 }
 
 const toggleAtg = (): void => {
   if (props.atgStatus?.start === true) {
-    run(
-      'atg',
-      () => $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
-      'ATG stopped',
-      'Error stopping ATG'
-    )
+    stopATG()
   } else {
-    run(
-      'atg',
-      () => $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
-      'ATG started',
-      'Error starting ATG'
-    )
+    startATG()
   }
 }
 
 const stopTransaction = (): void => {
-  if (props.connector.transactionId == null) {
-    $toast.error('No transaction to stop')
-    return
-  }
-  run(
-    'stopTx',
-    () =>
-      $uiClient.stopTransaction(props.hashId, {
-        ocppVersion: props.ocppVersion,
-        transactionId: props.connector.transactionId,
-      }),
-    'Transaction stopped',
-    'Error stopping transaction'
-  )
+  doStopTransaction(props.connector.transactionId, props.ocppVersion)
 }
 
 const openStartTransaction = (): void => {

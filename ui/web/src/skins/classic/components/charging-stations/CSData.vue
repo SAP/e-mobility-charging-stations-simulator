@@ -33,16 +33,16 @@
     <td>
       <StateButton
         :active="chargingStation.started === true"
-        :off="() => stopChargingStation()"
+        :off="() => stopChargingStation(hashId)"
         off-label="Stop Charging Station"
-        :on="() => startChargingStation()"
+        :on="() => startChargingStation(hashId)"
         on-label="Start Charging Station"
       />
       <StateButton
         :active="isWebSocketOpen"
-        :off="() => closeConnection()"
+        :off="() => closeConnection(hashId)"
         off-label="Close Connection"
-        :on="() => openConnection()"
+        :on="() => openConnection(hashId)"
         on-label="Open Connection"
       />
       <ToggleButton
@@ -125,15 +125,10 @@ import {
 } from 'ui-common'
 import { computed } from 'vue'
 
-import {
-  deleteLocalStorageByKeyPattern,
-  EMPTY_VALUE_PLACEHOLDER,
-  ROUTE_NAMES,
-  useUIClient,
-} from '@/composables'
-import { getATGStatus, getConnectorEntries } from '@/shared/composables/stationStatus.js'
-import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
+import { deleteLocalStorageByKeyPattern, EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/composables'
+import { useStationActions } from '@/shared/composables/useStationActions.js'
 import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
+import { getATGStatus, getConnectorEntries } from '@/shared/utils/stationStatus.js'
 
 import Button from '../buttons/Button.vue'
 import StateButton from '../buttons/StateButton.vue'
@@ -157,54 +152,20 @@ const supervisionUrl = computed((): string =>
   formatSupervisionUrl(props.chargingStation.supervisionUrl, { wordBreak: true })
 )
 
-const $uiClient = useUIClient()
+const {
+  closeConnection,
+  deleteStation,
+  openConnection,
+  startStation: startChargingStation,
+  stopStation: stopChargingStation,
+} = useStationActions({ onRefresh: () => emit('need-refresh') })
 
-const { run } = useAsyncAction({ connection: false, delete: false, startStop: false }, () =>
-  emit('need-refresh')
-)
+const hashId = computed(() => props.chargingStation.stationInfo.hashId)
 
-const startChargingStation = (): void => {
-  run(
-    'startStop',
-    () => $uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
-    'Charging station successfully started',
-    'Error at starting charging station'
-  )
-}
-const stopChargingStation = (): void => {
-  run(
-    'startStop',
-    () => $uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
-    'Charging station successfully stopped',
-    'Error at stopping charging station'
-  )
-}
-const openConnection = (): void => {
-  run(
-    'connection',
-    () => $uiClient.openConnection(props.chargingStation.stationInfo.hashId),
-    'Connection successfully opened',
-    'Error at opening connection'
-  )
-}
-const closeConnection = (): void => {
-  run(
-    'connection',
-    () => $uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
-    'Connection successfully closed',
-    'Error at closing connection'
-  )
-}
 const deleteChargingStation = (): void => {
-  run(
-    'delete',
-    () => $uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId),
-    'Charging station successfully deleted',
-    'Error at deleting charging station',
-    () => {
-      deleteLocalStorageByKeyPattern(props.chargingStation.stationInfo.hashId)
-    }
-  )
+  deleteStation(hashId.value, () => {
+    deleteLocalStorageByKeyPattern(hashId.value)
+  })
 }
 </script>
 

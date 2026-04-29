@@ -125,7 +125,7 @@ describe('SimulatorBar', () => {
     expect(wrapper.text()).toContain('nohost')
   })
 
-  it('should call setTheme when theme select changes', async () => {
+  it('should call switchTheme when theme select changes', async () => {
     const wrapper = mountBar()
     const themeSelect = wrapper.find('.modern-bar__select[aria-label="Theme"]')
     expect(themeSelect.exists()).toBe(true)

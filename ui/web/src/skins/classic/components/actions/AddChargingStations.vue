@@ -1,5 +1,5 @@
 <template>
-  <h1 class="action-header">
+  <h1 class="classic-action-header">
     Add Charging Stations
   </h1>
   <p>Template:</p>
@@ -32,13 +32,13 @@
     type="number"
   >
   <p>Template options overrides:</p>
-  <ul class="template-options">
+  <ul class="classic-template-options">
     <li>
       Base name:
       <input
         id="base-name"
         v-model.trim="formState.baseName"
-        class="base-name"
+        class="classic-base-name"
         name="base-name"
         placeholder="<template value>"
         type="text"

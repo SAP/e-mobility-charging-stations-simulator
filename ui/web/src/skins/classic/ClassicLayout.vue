@@ -1,16 +1,16 @@
 <template>
   <div class="classic-layout">
-    <Container class="charging-stations-container">
-      <Container class="buttons-container">
+    <Container class="classic-stations-container">
+      <Container class="classic-buttons-container">
         <Container
           v-show="uiServerConfigurations.length > 1"
           id="ui-server-container"
-          class="ui-server-container"
+          class="classic-server-container"
         >
           <select
             id="ui-server-selector"
             v-model="state.uiServerIndex"
-            class="ui-server-selector"
+            class="classic-server-selector"
             @change="handleUIServerChange"
           >
             <option
@@ -50,7 +50,7 @@
         </ToggleButton>
         <select
           :value="activeSkinId"
-          class="ui-server-selector"
+          class="classic-server-selector"
           @change="e => switchSkin(getSelectValue(e))"
         >
           <option
@@ -63,8 +63,8 @@
         </select>
         <select
           :value="activeThemeId"
-          class="ui-server-selector"
-          @change="e => setTheme(getSelectValue(e) as ThemeName)"
+          class="classic-server-selector"
+          @change="e => switchTheme(getSelectValue(e) as ThemeName)"
         >
           <option
             v-for="theme in availableThemes"
@@ -90,7 +90,7 @@
         $route.name !== ROUTE_NAMES.CHARGING_STATIONS && $route.name !== ROUTE_NAMES.NOT_FOUND
       "
       id="action-container"
-      class="action-container"
+      class="classic-action-container"
     >
       <router-view name="action" />
     </Container>
@@ -160,7 +160,7 @@ const $route = useRoute()
 const $router = useRouter()
 
 const { activeSkinId, skins, switchSkin } = useSkin()
-const { activeThemeId, availableThemes, setTheme } = useTheme()
+const { activeThemeId, availableThemes, switchTheme } = useTheme()
 
 const {
   handleUIServerChange: switchServer,
@@ -201,7 +201,7 @@ watch(
   height: 100%;
 }
 
-.charging-stations-container {
+.classic-stations-container {
   min-width: 0;
   overflow: hidden;
   height: fit-content;
@@ -209,7 +209,7 @@ watch(
   flex-direction: column;
 }
 
-.ui-server-container {
+.classic-server-container {
   display: flex;
   flex: 3 1 0;
   min-width: 0;
@@ -217,7 +217,7 @@ watch(
   border: 1px solid var(--color-border-row);
 }
 
-.ui-server-selector {
+.classic-server-selector {
   width: 100%;
   background-color: var(--color-bg-input);
   color: var(--color-text);
@@ -225,16 +225,16 @@ watch(
   text-align: center;
 }
 
-.ui-server-selector:hover {
+.classic-server-selector:hover {
   background-color: var(--color-bg-hover);
 }
 
-.ui-server-selector:focus-visible {
+.classic-server-selector:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
 
-.buttons-container {
+.classic-buttons-container {
   display: flex;
   flex-direction: row;
   gap: var(--spacing-xs);
@@ -242,11 +242,11 @@ watch(
   top: 0;
 }
 
-.buttons-container > * {
+.classic-buttons-container > * {
   flex: 1 1 0;
 }
 
-.action-container {
+.classic-action-container {
   flex: none;
   min-width: max-content;
   height: fit-content;

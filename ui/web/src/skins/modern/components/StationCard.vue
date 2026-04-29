@@ -51,7 +51,28 @@
     <div class="modern-card__body">
       <div
         class="modern-card__url-row"
+        role="button"
+        tabindex="0"
+        aria-label="Edit supervision URL"
         :title="chargingStation.supervisionUrl"
+        @click="
+          $emit('open-set-url', {
+            hashId: chargingStation.stationInfo.hashId,
+            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
+          })
+        "
+        @keydown.enter.prevent="
+          $emit('open-set-url', {
+            hashId: chargingStation.stationInfo.hashId,
+            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
+          })
+        "
+        @keydown.space.prevent="
+          $emit('open-set-url', {
+            hashId: chargingStation.stationInfo.hashId,
+            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
+          })
+        "
       >
         <span class="modern-card__url-badge">CSMS</span>
         <p class="modern-card__url">
@@ -62,7 +83,7 @@
           class="modern-card__url-edit"
           title="Edit supervision URL"
           aria-label="Edit supervision URL"
-          @click="openSupervisionDialog"
+          @click.stop="openSupervisionDialog"
         >
           <svg
             viewBox="0 0 24 24"
@@ -146,7 +167,7 @@
       confirm-label="Delete"
       :pending="pending.delete"
       @cancel="confirmingDelete = false"
-      @confirm="deleteStation"
+      @confirm="handleDeleteStation"
     />
   </article>
 </template>
@@ -162,18 +183,14 @@ import {
 } from 'ui-common'
 import { computed, ref } from 'vue'
 
-import {
-  deleteLocalStorageByKeyPattern,
-  EMPTY_VALUE_PLACEHOLDER as EMPTY,
-  useUIClient,
-} from '@/composables'
+import { deleteLocalStorageByKeyPattern, EMPTY_VALUE_PLACEHOLDER as EMPTY } from '@/composables'
+import { useStationActions } from '@/shared/composables/useStationActions.js'
+import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 import {
   getATGStatus,
   getConnectorEntries,
   getWebSocketStateVariant,
-} from '@/shared/composables/stationStatus.js'
-import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
-import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
+} from '@/shared/utils/stationStatus.js'
 
 import ActionButton from './ActionButton.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -199,13 +216,10 @@ const emit = defineEmits<{
   ]
 }>()
 
-const $uiClient = useUIClient()
-
 const confirmingDelete = ref(false)
-const { pending, run } = useAsyncAction(
-  { connection: false, delete: false, startStop: false },
-  () => emit('need-refresh')
-)
+
+const { closeConnection, deleteStation, openConnection, pending, startStation, stopStation } =
+  useStationActions({ onRefresh: () => emit('need-refresh') })
 
 const wsOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
@@ -230,38 +244,18 @@ const getATGStatusForConnector = (connectorId: number): Status | undefined =>
 const toggleStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
   if (props.chargingStation.started === true) {
-    run(
-      'startStop',
-      () => $uiClient.stopChargingStation(hashId),
-      'Charging station stopped',
-      'Error stopping charging station'
-    )
+    stopStation(hashId)
   } else {
-    run(
-      'startStop',
-      () => $uiClient.startChargingStation(hashId),
-      'Charging station started',
-      'Error starting charging station'
-    )
+    startStation(hashId)
   }
 }
 
 const toggleConnection = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
   if (wsOpen.value) {
-    run(
-      'connection',
-      () => $uiClient.closeConnection(hashId),
-      'Connection closed',
-      'Error closing connection'
-    )
+    closeConnection(hashId)
   } else {
-    run(
-      'connection',
-      () => $uiClient.openConnection(hashId),
-      'Connection opened',
-      'Error opening connection'
-    )
+    openConnection(hashId)
   }
 }
 
@@ -279,17 +273,11 @@ const openAuthorizeDialog = (): void => {
   })
 }
 
-const deleteStation = (): void => {
+const handleDeleteStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
-  run(
-    'delete',
-    () => $uiClient.deleteChargingStation(hashId),
-    'Charging station deleted',
-    'Error deleting charging station',
-    () => {
-      deleteLocalStorageByKeyPattern(hashId)
-      confirmingDelete.value = false
-    }
-  )
+  deleteStation(hashId, () => {
+    deleteLocalStorageByKeyPattern(hashId)
+    confirmingDelete.value = false
+  })
 }
 </script>

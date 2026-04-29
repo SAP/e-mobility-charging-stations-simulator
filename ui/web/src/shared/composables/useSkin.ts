@@ -52,7 +52,10 @@ export function useSkin (): {
    * @returns `true` if the skin was successfully switched, `false` otherwise
    */
   async function switchSkin (skinId: string): Promise<boolean> {
-    if (switchPromise != null) return switchPromise
+    if (switchPromise != null) {
+      await switchPromise
+      if (activeSkinId.value === skinId) return true
+    }
     switchPromise = performSkinSwitch(skinId).finally(() => {
       switchPromise = null
     })
@@ -63,7 +66,7 @@ export function useSkin (): {
     activeSkinId: readonly(activeSkinId),
     lastError: readonly(lastError),
     skins,
-    switching,
+    switching: readonly(switching),
     switchSkin,
   }
 }

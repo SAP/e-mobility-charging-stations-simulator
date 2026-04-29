@@ -35,7 +35,7 @@ import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
 
-describe('modern dialogs', () => {
+describe('Dialogs', () => {
   beforeEach(() => {
     mockClient = createMockUIClient()
   })
@@ -284,7 +284,7 @@ describe('modern dialogs', () => {
       expect(mockClient.startTransaction).not.toHaveBeenCalled()
     })
 
-    it('should authorize then starts transaction when authorize-first checked', async () => {
+    it('should authorize then start transaction when authorize-first checked', async () => {
       const wrapper = mountDialog()
       await wrapper.find('#modern-tx-idtag').setValue('RFID-01')
       const checkbox = wrapper.find<HTMLInputElement>('input[type="checkbox"]')
@@ -397,7 +397,7 @@ describe('modern dialogs', () => {
       expect(mockClient.authorize).not.toHaveBeenCalled()
     })
 
-    it('should call authorize and emits close on success', async () => {
+    it('should call authorize and emit close on success', async () => {
       const wrapper = mountDialog()
       await wrapper.find('#modern-auth-tag').setValue('GOOD')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')

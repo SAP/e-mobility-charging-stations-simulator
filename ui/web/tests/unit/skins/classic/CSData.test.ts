@@ -224,7 +224,7 @@ describe('CSData', () => {
       startProps.on?.()
       await flushPromises()
       expect(mockClient.startChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalledWith('Charging station successfully started')
+      expect(toastMock.success).toHaveBeenCalledWith('Charging station started')
       expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
@@ -235,7 +235,7 @@ describe('CSData', () => {
       stopProps.off?.()
       await flushPromises()
       expect(mockClient.stopChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalledWith('Charging station successfully stopped')
+      expect(toastMock.success).toHaveBeenCalledWith('Charging station stopped')
     })
 
     it('should call openConnection', async () => {
@@ -245,7 +245,7 @@ describe('CSData', () => {
       openProps.on?.()
       await flushPromises()
       expect(mockClient.openConnection).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalledWith('Connection successfully opened')
+      expect(toastMock.success).toHaveBeenCalledWith('Connection opened')
     })
 
     it('should call closeConnection', async () => {
@@ -255,7 +255,7 @@ describe('CSData', () => {
       closeProps.off?.()
       await flushPromises()
       expect(mockClient.closeConnection).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalledWith('Connection successfully closed')
+      expect(toastMock.success).toHaveBeenCalledWith('Connection closed')
     })
 
     it('should call deleteChargingStation and clear localStorage', async () => {
@@ -266,7 +266,7 @@ describe('CSData', () => {
       await deleteBtn.trigger('click')
       await flushPromises()
       expect(mockClient.deleteChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
-      expect(toastMock.success).toHaveBeenCalledWith('Charging station successfully deleted')
+      expect(toastMock.success).toHaveBeenCalledWith('Charging station deleted')
       expect(localStorage.getItem(`${TEST_HASH_ID}-some-key`)).toBeNull()
     })
 
@@ -277,7 +277,7 @@ describe('CSData', () => {
       const failProps = stateButtons[0].props() as unknown as StubProps
       failProps.on?.()
       await flushPromises()
-      expect(toastMock.error).toHaveBeenCalledWith('Error at starting charging station')
+      expect(toastMock.error).toHaveBeenCalledWith('Error starting charging station')
     })
 
     it('should toast error when deleteChargingStation fails', async () => {
@@ -287,7 +287,7 @@ describe('CSData', () => {
       const deleteBtn = buttons[buttons.length - 1]
       await deleteBtn.trigger('click')
       await flushPromises()
-      expect(toastMock.error).toHaveBeenCalledWith('Error at deleting charging station')
+      expect(toastMock.error).toHaveBeenCalledWith('Error deleting charging station')
     })
   })
 

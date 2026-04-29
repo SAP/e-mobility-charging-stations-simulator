@@ -4,8 +4,8 @@
     name="skin-fade"
   >
     <component
-      :is="currentSkinLayout"
-      v-if="currentSkinLayout"
+      :is="activeSkinLayout"
+      v-if="activeSkinLayout"
       :key="activeSkinId"
     />
     <div
@@ -52,7 +52,7 @@ const skinLayoutMap = new Map(
   ])
 )
 
-const currentSkinLayout = computed(
+const activeSkinLayout = computed(
   () => skinLayoutMap.get(activeSkinId.value) ?? skinLayoutMap.values().next().value
 )
 

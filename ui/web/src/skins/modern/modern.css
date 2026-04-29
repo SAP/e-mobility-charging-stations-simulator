@@ -33,7 +33,7 @@
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-:root {
+html[data-skin='modern'] {
   /* ── Brand bridge — core colour from theme contract ────────────── */
   --skin-primary-bright: color-mix(in srgb, var(--color-primary) 90%, #ffffff 10%);
   --skin-primary-soft: color-mix(in srgb, var(--skin-primary-bright) 26%, transparent);
@@ -94,13 +94,13 @@
 }
 
 /* ── App shell — fill the viewport ─────────────────────────────────── */
-html:has(.modern-app),
-body:has(.modern-app) {
+html[data-skin='modern'],
+html[data-skin='modern'] body {
   height: 100%;
   min-height: 100vh;
 }
 
-body:has(.modern-app) #app {
+html[data-skin='modern'] #app {
   display: block;
   width: 100%;
   min-height: 100vh;

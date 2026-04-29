@@ -1,6 +1,6 @@
 <template>
   <button
-    :class="['button', { 'button--active': active }]"
+    :class="['classic-button', { 'classic-button--active': active }]"
     type="button"
   >
     <slot />
@@ -21,19 +21,19 @@ withDefaults(
 </script>
 
 <style scoped>
-.button {
+.classic-button {
   display: block;
   width: 100%;
   text-align: center;
   font-size: var(--font-size-sm);
 }
 
-.button:focus-visible {
+.classic-button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
 
-.button--active {
+.classic-button--active {
   color: var(--color-text);
   background-color: var(--color-bg-active);
   border: 1px solid var(--color-accent);

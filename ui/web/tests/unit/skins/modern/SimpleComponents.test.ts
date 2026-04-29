@@ -33,7 +33,7 @@ function queryElement (selector: string): HTMLElement {
   return el
 }
 
-describe('Modern skin simple components', () => {
+describe('SimpleComponents', () => {
   describe('ActionButton', () => {
     it('should render slot content', () => {
       const wrapper = mount(ActionButton, { slots: { default: 'Go' } })

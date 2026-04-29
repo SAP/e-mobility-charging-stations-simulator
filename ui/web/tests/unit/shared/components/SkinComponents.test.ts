@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 
-describe('SkinLoadError and SkinLoading', () => {
+describe('SkinComponents', () => {
   describe('SkinLoadError', () => {
     it('should render an error message', () => {
       const wrapper = mount(SkinLoadError)

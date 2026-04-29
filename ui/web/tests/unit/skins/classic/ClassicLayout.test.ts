@@ -84,7 +84,7 @@ describe('ClassicLayout', () => {
     }
   })
 
-  it('should trigger setTheme when theme select changes', async () => {
+  it('should trigger switchTheme when theme select changes', async () => {
     const wrapper = mountLayout()
     await flushPromises()
     const selects = wrapper.findAll('select')
