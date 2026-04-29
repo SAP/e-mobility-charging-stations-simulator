@@ -20,7 +20,7 @@ export default mergeConfig(
           'src/assets/**',
           'src/router/index.ts',
           'src/App.vue',
-          'src/shared/components/**',
+          // TODO: Add classic skin tests when skin is refactored or phased out (tracked in PR #1815)
           'src/skins/classic/components/**',
           'src/skins/classic/ClassicLayout.vue',
         ],
