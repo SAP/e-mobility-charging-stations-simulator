@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import type { OCPPVersion } from 'ui-common'
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
@@ -94,11 +94,6 @@ const emit = defineEmits<{ close: [] }>()
 
 const lastFailure = ref<FailureInfo | null>(null)
 const errorStep = ref<'authorize' | 'startTransaction' | null>(null)
-
-const isMounted = ref(true)
-onBeforeUnmount(() => {
-  isMounted.value = false
-})
 
 const { formState, pending, submitForm } = useStartTxForm({
   connectorId: props.connectorId,

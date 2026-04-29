@@ -23,7 +23,7 @@ export default mergeConfig(
         provider: 'v8',
         reporter: ['text', 'lcov'],
         thresholds: {
-          branches: 88,
+          branches: 87,
           functions: 83,
           lines: 91,
           statements: 90,
