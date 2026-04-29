@@ -94,17 +94,17 @@ onBeforeUnmount(() => {
   cancelled = true
 })
 
-const { formState, submitForm } = useStartTxForm(
-  props.hashId,
-  props.connectorId,
-  props.evseId,
-  props.ocppVersion,
-  {
+const { formState, submitForm } = useStartTxForm({
+  connectorId: props.connectorId,
+  evseId: props.evseId,
+  hashId: props.hashId,
+  ocppVersion: props.ocppVersion,
+  options: {
     onError: (error: unknown) => {
       lastFailure.value = getFailureInfo(error)
     },
-  }
-)
+  },
+})
 
 const targetLabel = computed(() =>
   props.evseId != null

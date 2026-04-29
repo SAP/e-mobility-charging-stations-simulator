@@ -25,16 +25,12 @@ export const skins: readonly SkinDefinition[] = [
     id: 'classic',
     label: 'Classic',
     loadLayout: () => import('@/skins/classic/ClassicLayout.vue'),
-    loadStyles: async () => {
-      return import('@/skins/classic/classic.css')
-    },
+    loadStyles: () => import('@/skins/classic/classic.css'),
   },
   {
     id: 'modern',
     label: 'Modern',
     loadLayout: () => import('@/skins/modern/ModernLayout.vue'),
-    loadStyles: async () => {
-      return import('@/skins/modern/modern.css')
-    },
+    loadStyles: () => import('@/skins/modern/modern.css'),
   },
 ] as const

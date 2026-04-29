@@ -52,8 +52,11 @@ export function useSimulatorControl (
   const $chargingStations = useChargingStations()
 
   const { getSimulatorState, registerWSEventListeners } = layoutData
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const unregisterWSEventListeners = layoutData.unregisterWSEventListeners ?? (() => {})
+  const unregisterWSEventListeners =
+    layoutData.unregisterWSEventListeners ??
+    ((): void => {
+      /* no-op */
+    })
   const executeAction = useExecuteAction()
 
   const simulatorPending = ref(false)

@@ -63,6 +63,36 @@ describe('useSkin', () => {
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
+  it('should populate lastError on skin load failure', async () => {
+    const modernSkin = skins.find(s => s.id === 'modern')
+    expect(modernSkin).toBeDefined()
+    if (modernSkin == null) return
+    vi.mocked(modernSkin.loadStyles).mockRejectedValueOnce(new Error('Network error'))
+    const { lastError, switchSkin } = useSkin()
+    await switchSkin('modern')
+    expect(lastError.value).toBe('Network error')
+  })
+
+  it('should set switching to true during async load', async () => {
+    const modernSkin = skins.find(s => s.id === 'modern')
+    expect(modernSkin).toBeDefined()
+    if (modernSkin == null) return
+    vi.mocked(modernSkin.loadStyles).mockClear()
+    let rejectLoad!: (err: Error) => void
+    vi.mocked(modernSkin.loadStyles).mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectLoad = reject
+        })
+    )
+    const { switching, switchSkin } = useSkin()
+    const promise = switchSkin('modern')
+    expect(switching.value).toBe(true)
+    rejectLoad(new Error('test cleanup'))
+    await promise
+    expect(switching.value).toBe(false)
+  })
+
   it('should guard against concurrent switchSkin calls', async () => {
     const { activeSkinId, switchSkin } = useSkin()
     const modernSkin = skins.find(s => s.id === 'modern')

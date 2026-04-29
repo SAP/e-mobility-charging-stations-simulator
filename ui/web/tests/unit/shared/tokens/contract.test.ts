@@ -17,7 +17,11 @@ describe('TOKEN_CONTRACT theme compliance', () => {
     it(`should define all contract tokens in ${themeFile}`, () => {
       const css = readFileSync(resolve(themesDir, themeFile), 'utf-8')
       for (const prop of requiredProperties) {
-        expect(css, `Missing ${prop} in ${themeFile}`).toContain(`${prop}:`)
+        const propRegex = new RegExp(
+          `^\\s*${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`,
+          'm'
+        )
+        expect(css, `Missing ${prop} in ${themeFile}`).toMatch(propRegex)
       }
     })
   }

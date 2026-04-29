@@ -20,7 +20,7 @@ import {
 } from '@/composables'
 import { router } from '@/router'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
-import { THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'
+import { DEFAULT_THEME, THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'
 import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
@@ -42,10 +42,7 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   }
 
   const { setTheme } = useTheme()
-  const storedTheme = getFromLocalStorage<string>(
-    THEME_STORAGE_KEY,
-    config.theme ?? 'tokyo-night-storm'
-  )
+  const storedTheme = getFromLocalStorage<string>(THEME_STORAGE_KEY, config.theme ?? DEFAULT_THEME)
   setTheme(storedTheme)
 
   const { switchSkin } = useSkin()

@@ -38,13 +38,13 @@ describe('useStartTxForm', () => {
   })
 
   it('should initialize with default state', () => {
-    const { formState } = useStartTxForm('hash1', '1')
+    const { formState } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     expect(formState.value.idTag).toBe('')
     expect(formState.value.authorizeIdTag).toBe(true)
   })
 
   it('should reset form to defaults', () => {
-    const { formState, resetForm } = useStartTxForm('hash1', '1')
+    const { formState, resetForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.idTag = 'TAG001'
     formState.value.authorizeIdTag = false
     resetForm()
@@ -53,7 +53,12 @@ describe('useStartTxForm', () => {
   })
 
   it('should call startTransaction with correct params on submit', async () => {
-    const { formState, submitForm } = useStartTxForm('hash1', '2', 1, OCPPVersion.VERSION_16)
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '2',
+      evseId: 1,
+      hashId: 'hash1',
+      ocppVersion: OCPPVersion.VERSION_16,
+    })
     formState.value.idTag = 'TAG001'
     await submitForm()
     expect(mockStartTransaction).toHaveBeenCalledWith('hash1', {
@@ -66,7 +71,7 @@ describe('useStartTxForm', () => {
   })
 
   it('should pass undefined idTag when empty on submit', async () => {
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.authorizeIdTag = false
     await submitForm()
     expect(mockStartTransaction).toHaveBeenCalledWith('hash1', {
@@ -78,7 +83,7 @@ describe('useStartTxForm', () => {
   })
 
   it('should authorize first when authorizeIdTag is true', async () => {
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
     await submitForm()
@@ -87,7 +92,7 @@ describe('useStartTxForm', () => {
   })
 
   it('should show error when authorizeIdTag is true but idTag is empty', async () => {
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.authorizeIdTag = true
     formState.value.idTag = ''
     await submitForm()
@@ -97,7 +102,7 @@ describe('useStartTxForm', () => {
 
   it('should handle authorize failure', async () => {
     mockAuthorize.mockRejectedValueOnce(new Error('auth failed'))
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
     const result = await submitForm()
@@ -108,7 +113,7 @@ describe('useStartTxForm', () => {
 
   it('should handle startTransaction failure', async () => {
     mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.idTag = 'TAG001'
     const result = await submitForm()
     expect(result).toBe(false)
@@ -118,8 +123,10 @@ describe('useStartTxForm', () => {
   it('should call onCleanup on authorize failure', async () => {
     mockAuthorize.mockRejectedValueOnce(new Error('auth failed'))
     const onCleanup = vi.fn()
-    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
-      onCleanup,
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '1',
+      hashId: 'hash1',
+      options: { onCleanup },
     })
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
@@ -130,8 +137,10 @@ describe('useStartTxForm', () => {
 
   it('should call onCleanup in finally block on successful transaction', async () => {
     const onCleanup = vi.fn()
-    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
-      onCleanup,
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '1',
+      hashId: 'hash1',
+      options: { onCleanup },
     })
     formState.value.authorizeIdTag = false
     await submitForm()
@@ -141,8 +150,10 @@ describe('useStartTxForm', () => {
   it('should call onCleanup in finally block on transaction failure', async () => {
     mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
     const onCleanup = vi.fn()
-    const { formState, submitForm } = useStartTxForm('hash1', '1', undefined, undefined, {
-      onCleanup,
+    const { formState, submitForm } = useStartTxForm({
+      connectorId: '1',
+      hashId: 'hash1',
+      options: { onCleanup },
     })
     formState.value.authorizeIdTag = false
     const result = await submitForm()
@@ -151,7 +162,7 @@ describe('useStartTxForm', () => {
   })
 
   it('should work without onCleanup option', async () => {
-    const { formState, submitForm } = useStartTxForm('hash1', '1')
+    const { formState, submitForm } = useStartTxForm({ connectorId: '1', hashId: 'hash1' })
     formState.value.authorizeIdTag = false
     const result = await submitForm()
     expect(result).toBe(true)

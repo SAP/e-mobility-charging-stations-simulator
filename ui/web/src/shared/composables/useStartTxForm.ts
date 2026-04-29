@@ -4,6 +4,17 @@ import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables/Utils.js'
 
+export interface StartTxFormConfig {
+  connectorId: string
+  evseId?: number
+  hashId: string
+  ocppVersion?: OCPPVersion
+  options?: {
+    onCleanup?: () => void
+    onError?: (error: unknown) => void
+  }
+}
+
 export interface StartTxFormState {
   authorizeIdTag: boolean
   idTag: string
@@ -11,26 +22,15 @@ export interface StartTxFormState {
 
 /**
  * Returns form state and submission logic for starting a transaction.
- * @param hashId - The charging station hash identifier
- * @param connectorId - The connector identifier string
- * @param evseId - Optional EVSE identifier
- * @param ocppVersion - Optional OCPP version string
- * @param options - Optional callbacks (e.g. onCleanup for skin-specific reset)
- * @param options.onCleanup - Called after action completes; use for skin-specific cleanup (e.g. toggle button reset)
- * @param options.onError - Called with the raw error when authorize or startTransaction fails; use for rich error display
+ * @param config - Configuration for the start transaction form
  * @returns Form state and submit/reset functions
  */
-export function useStartTxForm (
-  hashId: string,
-  connectorId: string,
-  evseId?: number,
-  ocppVersion?: OCPPVersion,
-  options?: { onCleanup?: () => void; onError?: (error: unknown) => void }
-): {
-    formState: Ref<StartTxFormState>
-    resetForm: () => void
-    submitForm: () => Promise<boolean>
-  } {
+export function useStartTxForm (config: StartTxFormConfig): {
+  formState: Ref<StartTxFormState>
+  resetForm: () => void
+  submitForm: () => Promise<boolean>
+} {
+  const { connectorId, evseId, hashId, ocppVersion, options } = config
   const $uiClient = useUIClient()
   const $toast = useToast()
 

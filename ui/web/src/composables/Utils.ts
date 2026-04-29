@@ -40,7 +40,11 @@ export const deleteFromLocalStorage = (key: string): void => {
 }
 
 export const getLocalStorage = (): Storage => {
-  return localStorage
+  try {
+    return localStorage
+  } catch {
+    throw new Error('localStorage is not available')
+  }
 }
 
 /**
@@ -48,9 +52,13 @@ export const getLocalStorage = (): Storage => {
  * @param pattern - Substring to match against localStorage keys
  */
 export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
-  const keysToDelete = Object.keys(localStorage).filter(key => key.includes(pattern))
-  for (const key of keysToDelete) {
-    deleteFromLocalStorage(key)
+  try {
+    const keysToDelete = Object.keys(localStorage).filter(key => key.includes(pattern))
+    for (const key of keysToDelete) {
+      deleteFromLocalStorage(key)
+    }
+  } catch {
+    // Silently fail on SecurityError (Safari Private Browsing)
   }
 }
 

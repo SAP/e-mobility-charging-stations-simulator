@@ -66,17 +66,17 @@ const toggleButtonId = computed(
   () => `${props.hashId}-${String(evseId.value ?? 0)}-${props.connectorId}-start-transaction`
 )
 
-const { formState, submitForm } = useStartTxForm(
-  props.hashId,
-  props.connectorId,
-  evseId.value,
-  ocppVersion.value,
-  {
+const { formState, submitForm } = useStartTxForm({
+  connectorId: props.connectorId,
+  evseId: evseId.value,
+  hashId: props.hashId,
+  ocppVersion: ocppVersion.value,
+  options: {
     onCleanup: () => {
       resetToggleButtonState(toggleButtonId.value, true)
     },
-  }
-)
+  },
+})
 
 const handleStartTransaction = async (): Promise<void> => {
   await submitForm()

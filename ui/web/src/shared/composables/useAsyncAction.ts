@@ -46,6 +46,8 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   ): void {
     if (pending[key]) return
     pending[key] = true as T[keyof T]
+    // The promise chain has .catch() and .finally() attached but the linter cannot
+    // see through the intermediate .then(), hence the suppression.
     // eslint-disable-next-line promise/catch-or-return
     action
       .then(() => {

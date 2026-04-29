@@ -11,8 +11,8 @@ describe('skin registry', () => {
     expect(DEFAULT_SKIN).toBe('classic')
   })
 
-  it('should export skins array with at least 2 entries', () => {
-    expect(skins.length).toBeGreaterThanOrEqual(2)
+  it('should export skins array with exactly 2 entries', () => {
+    expect(skins.length).toBe(2)
   })
 
   it('should include classic skin', () => {
@@ -45,6 +45,15 @@ describe('skin registry', () => {
   it('should return a promise from loadStyles for each skin', async () => {
     for (const skin of skins) {
       await expect(skin.loadStyles()).resolves.toBeDefined()
+    }
+  })
+
+  it('should resolve loadLayout to a valid component module', async () => {
+    for (const skin of skins) {
+      const mod = await skin.loadLayout()
+      expect(mod).toBeDefined()
+      expect(mod.default).toBeDefined()
+      expect(typeof mod.default === 'object' || typeof mod.default === 'function').toBe(true)
     }
   })
 })

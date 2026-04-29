@@ -3,7 +3,7 @@ import { readonly, ref, type Ref } from 'vue'
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 
 export const AVAILABLE_THEMES = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
-const DEFAULT_THEME = 'tokyo-night-storm'
+export const DEFAULT_THEME = 'tokyo-night-storm'
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof AVAILABLE_THEMES)[number]
