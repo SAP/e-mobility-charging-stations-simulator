@@ -20,14 +20,6 @@ import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
 
-beforeEach(() => {
-  mockClient = createMockUIClient()
-})
-
-afterEach(() => {
-  vi.clearAllMocks()
-})
-
 /**
  * Mounts a ConnectorRow with sensible defaults; pass partial overrides.
  * @param props partial props
@@ -64,6 +56,14 @@ function mountRow (
 }
 
 describe('modern ConnectorRow', () => {
+  beforeEach(() => {
+    mockClient = createMockUIClient()
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('identifier display', () => {
     it('should show the bare connector id when no evseId', () => {
       const wrapper = mountRow()

@@ -26,21 +26,6 @@ let mockClient: MockUIClient
 let chargingStations: Ref<unknown[]>
 let templates: Ref<string[]>
 
-beforeEach(() => {
-  mockClient = createMockUIClient()
-  chargingStations = ref([])
-  templates = ref([])
-  vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
-  vi.mocked(useChargingStations).mockReturnValue(
-    chargingStations as ReturnType<typeof useChargingStations>
-  )
-  vi.mocked(useTemplates).mockReturnValue(templates)
-})
-
-afterEach(() => {
-  vi.clearAllMocks()
-})
-
 /**
  * Finds the WS event listener handler registered for the given event type.
  * @param eventType - The WebSocket event name ('open', 'error', 'close')
@@ -62,6 +47,21 @@ function mountComposable () {
 }
 
 describe('useLayoutData', () => {
+  beforeEach(() => {
+    mockClient = createMockUIClient()
+    chargingStations = ref([])
+    templates = ref([])
+    vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
+    vi.mocked(useChargingStations).mockReturnValue(
+      chargingStations as ReturnType<typeof useChargingStations>
+    )
+    vi.mocked(useTemplates).mockReturnValue(templates)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should call simulatorState, listTemplates, and listChargingStations on getData', () => {
     const [result] = mountComposable()
     mockClient.simulatorState.mockClear()

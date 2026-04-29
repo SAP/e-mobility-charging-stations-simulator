@@ -20,15 +20,6 @@ import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
 
-beforeEach(() => {
-  mockClient = createMockUIClient()
-})
-
-afterEach(() => {
-  document.body.innerHTML = ''
-  vi.clearAllMocks()
-})
-
 /**
  * Mounts StationCard with default or overridden station data.
  * @param overrides partial ChargingStationData
@@ -45,6 +36,15 @@ function mountCard (overrides: Partial<ChargingStationData> = {}) {
 }
 
 describe('modern StationCard', () => {
+  beforeEach(() => {
+    mockClient = createMockUIClient()
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+    vi.clearAllMocks()
+  })
+
   describe('header', () => {
     it('should render the chargingStationId as title', () => {
       const wrapper = mountCard()

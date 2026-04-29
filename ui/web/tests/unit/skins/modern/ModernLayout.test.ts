@@ -105,17 +105,17 @@ function mountView (
   })
 }
 
-beforeEach(() => {
-  mockClient = createMockUIClient()
-  vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
-  localStorage.clear()
-})
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
-
 describe('modern ModernLayout', () => {
+  beforeEach(() => {
+    mockClient = createMockUIClient()
+    vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should render the empty state when no stations', async () => {
     const wrapper = mountView()
     await flushPromises()

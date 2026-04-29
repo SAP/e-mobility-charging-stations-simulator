@@ -35,15 +35,15 @@ import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
 
-beforeEach(() => {
-  mockClient = createMockUIClient()
-})
-
-afterEach(() => {
-  vi.clearAllMocks()
-})
-
 describe('Modern skin dialogs', () => {
+  beforeEach(() => {
+    mockClient = createMockUIClient()
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('AddStationsDialog', () => {
     /**
      * @param templates - Template names to provide to the dialog
