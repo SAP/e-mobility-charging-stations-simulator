@@ -102,7 +102,10 @@ const bootstrap = async (): Promise<void> => {
     const parseResult = configurationSchema.safeParse(rawConfig)
     if (!parseResult.success) {
       const msgs = parseResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n')
-      document.body.innerHTML = `<pre style="padding:2rem;color:#ef5350;font-family:monospace">Configuration error in config.json:\n${msgs}</pre>`
+      const errorPre = document.createElement('pre')
+      errorPre.style.cssText = 'padding:2rem;color:#ef5350;font-family:monospace'
+      errorPre.textContent = `Configuration error in config.json:\n${msgs}`
+      document.body.replaceChildren(errorPre)
       return
     }
     config = parseResult.data
