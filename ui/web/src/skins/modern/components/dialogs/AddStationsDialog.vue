@@ -47,10 +47,7 @@
           required
         >
       </div>
-      <fieldset
-        class="modern-form__row"
-        style="border: none; padding: 0; margin: 0"
-      >
+      <fieldset class="modern-form__row modern-form__fieldset">
         <legend class="modern-form__label">
           Naming
         </legend>
@@ -68,10 +65,7 @@
           Fixed name (base name is full station name)
         </label>
       </fieldset>
-      <fieldset
-        class="modern-form__row"
-        style="border: none; padding: 0; margin: 0"
-      >
+      <fieldset class="modern-form__row modern-form__fieldset">
         <legend class="modern-form__label">
           Supervision
         </legend>

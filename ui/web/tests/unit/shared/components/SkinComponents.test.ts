@@ -8,27 +8,29 @@ import { describe, expect, it } from 'vitest'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 
-describe('SkinLoadError', () => {
-  it('should render an error message', () => {
-    const wrapper = mount(SkinLoadError)
-    expect(wrapper.text()).toContain('Failed to load skin layout.')
+describe('Shared Skin Components', () => {
+  describe('SkinLoadError', () => {
+    it('should render an error message', () => {
+      const wrapper = mount(SkinLoadError)
+      expect(wrapper.text()).toContain('Failed to load skin layout.')
+    })
+
+    it('should emit retry event when the retry button is clicked', async () => {
+      const wrapper = mount(SkinLoadError)
+      await wrapper.find('button').trigger('click')
+      expect(wrapper.emitted('retry')).toHaveLength(1)
+    })
   })
 
-  it('should emit retry event when the retry button is clicked', async () => {
-    const wrapper = mount(SkinLoadError)
-    await wrapper.find('button').trigger('click')
-    expect(wrapper.emitted('retry')).toHaveLength(1)
-  })
-})
+  describe('SkinLoading', () => {
+    it('should render a spinner element', () => {
+      const wrapper = mount(SkinLoading)
+      expect(wrapper.find('.skin-loading__spinner').exists()).toBe(true)
+    })
 
-describe('SkinLoading', () => {
-  it('should render a spinner element', () => {
-    const wrapper = mount(SkinLoading)
-    expect(wrapper.find('.skin-loading__spinner').exists()).toBe(true)
-  })
-
-  it('should render loading text', () => {
-    const wrapper = mount(SkinLoading)
-    expect(wrapper.text()).toContain('Loading')
+    it('should render loading text', () => {
+      const wrapper = mount(SkinLoading)
+      expect(wrapper.text()).toContain('Loading')
+    })
   })
 })

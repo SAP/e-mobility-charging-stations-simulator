@@ -8,8 +8,6 @@
 import type { Component } from 'vue'
 
 export interface SkinDefinition {
-  /** Short description of the layout style. */
-  readonly description: string
   /** Unique identifier used in localStorage and config.json. */
   readonly id: string
   /** Display label shown in the UI switcher. */
@@ -24,7 +22,6 @@ export const DEFAULT_SKIN = 'classic'
 
 export const skins: readonly SkinDefinition[] = [
   {
-    description: 'Table-based layout with a sticky sidebar action panel.',
     id: 'classic',
     label: 'Classic',
     loadLayout: () => import('@/skins/classic/ClassicLayout.vue'),
@@ -33,7 +30,6 @@ export const skins: readonly SkinDefinition[] = [
     },
   },
   {
-    description: 'Responsive card grid with modal dialogs.',
     id: 'modern',
     label: 'Modern',
     loadLayout: () => import('@/skins/modern/ModernLayout.vue'),

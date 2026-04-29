@@ -7,7 +7,7 @@
 import { type ResponsePayload, ResponseStatus, ServerFailureError } from 'ui-common'
 import { describe, expect, it } from 'vitest'
 
-import { getFailureInfo } from '@/skins/modern/composables/errors'
+import { getFailureInfo } from '@/skins/modern/utils/errors'
 
 /**
  * Builds a ResponsePayload-shaped object with custom responsesFailed entries.

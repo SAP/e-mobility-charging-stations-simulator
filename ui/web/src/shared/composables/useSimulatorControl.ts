@@ -92,9 +92,11 @@ export function useSimulatorControl (
     )
   }
 
+  const SERVER_SWITCH_TIMEOUT_MS = 15_000
+
   const handleUIServerChange = (newIndex: number): void => {
     const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-    if (newIndex === currentIndex) return
+    if (newIndex === currentIndex || serverSwitchPending.value) return
 
     serverSwitchPending.value = true
 
@@ -103,28 +105,37 @@ export function useSimulatorControl (
     )
     registerWSEventListeners()
 
-    $uiClient.registerWSEventListener(
-      'open',
-      () => {
-        setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
-        serverSwitchPending.value = false
-        options?.onServerSwitched?.()
-      },
-      { once: true }
-    )
+    let settled = false
 
-    $uiClient.registerWSEventListener(
-      'error',
-      () => {
-        serverSwitchPending.value = false
-        const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-        $uiClient.setConfiguration(
-          ($configuration.value.uiServer as UIServerConfigurationSection[])[previousIndex]
-        )
-        registerWSEventListeners()
-      },
-      { once: true }
-    )
+    const openHandler = (): void => {
+      if (settled) return
+      settled = true
+      $uiClient.unregisterWSEventListener('error', errorHandler)
+      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
+      serverSwitchPending.value = false
+      options?.onServerSwitched?.()
+    }
+
+    const errorHandler = (): void => {
+      if (settled) return
+      settled = true
+      $uiClient.unregisterWSEventListener('open', openHandler)
+      serverSwitchPending.value = false
+      const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
+      $uiClient.setConfiguration(
+        ($configuration.value.uiServer as UIServerConfigurationSection[])[previousIndex]
+      )
+      registerWSEventListeners()
+    }
+
+    $uiClient.registerWSEventListener('open', openHandler, { once: true })
+    $uiClient.registerWSEventListener('error', errorHandler, { once: true })
+
+    setTimeout(() => {
+      if (!settled) {
+        errorHandler()
+      }
+    }, SERVER_SWITCH_TIMEOUT_MS)
   }
 
   return {

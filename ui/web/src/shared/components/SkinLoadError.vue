@@ -4,11 +4,26 @@
     <button @click="$emit('retry')">
       Retry
     </button>
+    <button @click="resetToDefault">
+      Switch to Classic
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { setToLocalStorage } from '@/composables/Utils.js'
+import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
+import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
+
 defineEmits<{ retry: [] }>()
+
+/**
+ *
+ */
+function resetToDefault (): void {
+  setToLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
+  window.location.reload()
+}
 </script>
 
 <style scoped>

@@ -22,7 +22,9 @@ const switching = ref(false)
 const lastError: Ref<null | string> = ref(null)
 
 // Eagerly load the initial skin styles.
-loadSkinStyles(activeSkinId.value).catch(() => undefined)
+loadSkinStyles(activeSkinId.value).catch((error: unknown) => {
+  lastError.value = error instanceof Error ? error.message : String(error)
+})
 
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
@@ -43,8 +45,13 @@ export function useSkin (): {
   async function switchSkin (skinId: string): Promise<boolean> {
     if (switching.value) return false
     const skin = skins.find(s => s.id === skinId)
-    if (skin == null || skinId === activeSkinId.value) {
+    if (skin == null) {
       return false
+    }
+    if (skinId === activeSkinId.value) {
+      // Ensure styles are loaded even if skin is already active (idempotent success)
+      await loadSkinStyles(skinId)
+      return true
     }
     switching.value = true
     try {

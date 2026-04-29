@@ -68,11 +68,11 @@
 <script setup lang="ts">
 import type { OCPPVersion } from 'ui-common'
 
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
-import { type FailureInfo, getFailureInfo } from '../../composables/errors'
+import { type FailureInfo, getFailureInfo } from '../../utils/errors'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../Modal.vue'
 
@@ -88,6 +88,11 @@ const emit = defineEmits<{ close: [] }>()
 
 const pending = ref(false)
 const lastFailure = ref<FailureInfo | null>(null)
+
+let cancelled = false
+onBeforeUnmount(() => {
+  cancelled = true
+})
 
 const { formState, submitForm } = useStartTxForm(
   props.hashId,
@@ -124,8 +129,10 @@ const submit = async (): Promise<void> => {
   lastFailure.value = null
   try {
     const success = await submitForm()
+    if (cancelled) return
     if (success) emit('close')
   } catch (error) {
+    if (cancelled) return
     lastFailure.value = getFailureInfo(error)
   } finally {
     pending.value = false

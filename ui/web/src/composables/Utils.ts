@@ -14,13 +14,21 @@ export const templatesKey: InjectionKey<Ref<string[]>> = Symbol('templates')
 export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
 
 export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
-  const item = localStorage.getItem(key)
-  return item != null ? (JSON.parse(item) as T) : defaultValue
+  try {
+    const item = localStorage.getItem(key)
+    return item != null ? (JSON.parse(item) as T) : defaultValue
+  } catch {
+    return defaultValue
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const setToLocalStorage = <T>(key: string, value: T): void => {
-  localStorage.setItem(key, JSON.stringify(value))
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Silently fail on QuotaExceededError or SecurityError (Safari Private Browsing)
+  }
 }
 
 export const deleteFromLocalStorage = (key: string): void => {

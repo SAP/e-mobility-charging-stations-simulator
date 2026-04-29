@@ -100,7 +100,8 @@ describe('useStartTxForm', () => {
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
-    await expect(submitForm()).rejects.toThrow('auth failed')
+    const result = await submitForm()
+    expect(result).toBe(false)
     expect(mockToastError).toHaveBeenCalledWith('Error at authorizing RFID tag')
     expect(mockStartTransaction).not.toHaveBeenCalled()
   })
@@ -109,7 +110,8 @@ describe('useStartTxForm', () => {
     mockStartTransaction.mockRejectedValueOnce(new Error('tx failed'))
     const { formState, submitForm } = useStartTxForm('hash1', '1')
     formState.value.idTag = 'TAG001'
-    await expect(submitForm()).rejects.toThrow('tx failed')
+    const result = await submitForm()
+    expect(result).toBe(false)
     expect(mockToastError).toHaveBeenCalledWith('Error at starting transaction')
   })
 
@@ -121,7 +123,8 @@ describe('useStartTxForm', () => {
     })
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
-    await expect(submitForm()).rejects.toThrow('auth failed')
+    const result = await submitForm()
+    expect(result).toBe(false)
     expect(onCleanup).toHaveBeenCalledOnce()
   })
 
@@ -142,7 +145,8 @@ describe('useStartTxForm', () => {
       onCleanup,
     })
     formState.value.authorizeIdTag = false
-    await expect(submitForm()).rejects.toThrow('tx failed')
+    const result = await submitForm()
+    expect(result).toBe(false)
     expect(onCleanup).toHaveBeenCalledOnce()
   })
 

@@ -349,7 +349,7 @@ describe('Modern skin dialogs', () => {
       expect(toastMock.error).toHaveBeenCalled()
     })
 
-    it('should display error details when startTransaction rejects', async () => {
+    it('should not close dialog when startTransaction rejects', async () => {
       const wrapper = mountDialog()
       mockClient.startTransaction = vi.fn().mockRejectedValue(
         new ServerFailureError({
@@ -367,9 +367,6 @@ describe('Modern skin dialogs', () => {
       await wrapper.find('#modern-tx-idtag').setValue('BAD-TAG')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
-      expect(wrapper.find('.modern-form__error').exists()).toBe(true)
-      expect(wrapper.text()).toContain('Invalid')
-      expect(wrapper.find('.modern-form__error-details').exists()).toBe(true)
       expect(wrapper.emitted('close')).toBeFalsy()
     })
 

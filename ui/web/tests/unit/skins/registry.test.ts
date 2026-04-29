@@ -29,16 +29,15 @@ describe('skin registry', () => {
     expect(typeof modern?.loadStyles).toBe('function')
   })
 
-  it('should all skins have required fields', () => {
+  it('should have required fields for all skins', () => {
     for (const skin of skins) {
       expect(typeof skin.id).toBe('string')
       expect(typeof skin.label).toBe('string')
-      expect(typeof skin.description).toBe('string')
       expect(typeof skin.loadStyles).toBe('function')
     }
   })
 
-  it('should skin ids are unique', () => {
+  it('should have unique skin ids', () => {
     const ids = skins.map(s => s.id)
     expect(new Set(ids).size).toBe(ids.length)
   })

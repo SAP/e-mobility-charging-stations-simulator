@@ -3,7 +3,7 @@
     <Container class="charging-stations-container">
       <Container class="buttons-container">
         <Container
-          v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+          v-show="uiServerConfigurations.length > 1"
           id="ui-server-container"
           class="ui-server-container"
         >
@@ -76,8 +76,7 @@
         </select>
       </Container>
       <CSTable
-        v-show="Array.isArray($chargingStations) && $chargingStations.length > 0"
-        :key="state.renderChargingStations"
+        v-show="$chargingStations.length > 0"
         :charging-stations="$chargingStations"
         @need-refresh="
           () => {
@@ -134,16 +133,13 @@ const simulatorLabel = (action: string): string =>
 
 const state = ref<{
   renderAddChargingStations: UUIDv4
-  renderChargingStations: UUIDv4
   uiServerIndex: number
 }>({
   renderAddChargingStations: randomUUID(),
-  renderChargingStations: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),
 })
 
 const refresh = (): void => {
-  state.value.renderChargingStations = randomUUID()
   state.value.renderAddChargingStations = randomUUID()
 }
 
@@ -178,10 +174,6 @@ const {
 const handleUIServerChange = (): void => {
   switchServer(state.value.uiServerIndex)
 }
-
-watch($chargingStations, () => {
-  state.value.renderChargingStations = randomUUID()
-})
 
 watch(
   () => $route.name,

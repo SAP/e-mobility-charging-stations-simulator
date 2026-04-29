@@ -28,6 +28,7 @@ import 'vue-toast-notification/dist/theme-bootstrap.css'
 // Load all theme CSS files eagerly — they are small (~100 lines each).
 // Switching is instant via [data-theme] attribute selector.
 import './assets/shared.css'
+import './assets/themes/base.css'
 import './assets/themes/catppuccin-latte.css'
 import './assets/themes/sap-horizon.css'
 import './assets/themes/tokyo-night-storm.css'

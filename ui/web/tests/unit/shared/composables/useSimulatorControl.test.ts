@@ -1,9 +1,9 @@
-import type { ConfigurationData } from 'ui-common'
-
 /**
  * @file Tests for useSimulatorControl
  * @description Simulator start/stop and server switch orchestration.
  */
+import type { ConfigurationData } from 'ui-common'
+
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Ref, ref } from 'vue'
@@ -184,5 +184,44 @@ describe('useSimulatorControl', () => {
     expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
       createUIServerConfig({ port: 8080 })
     )
+  })
+
+  it('should rollback via timeout when neither open nor error fires', () => {
+    vi.useFakeTimers()
+    const [result] = mountComposable()
+
+    result.handleUIServerChange(1)
+    expect(result.serverSwitchPending.value).toBe(true)
+
+    // Neither open nor error handler is called — timeout triggers rollback
+    vi.advanceTimersByTime(15_000)
+
+    expect(result.serverSwitchPending.value).toBe(false)
+    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
+    expect(mockClient.setConfiguration).toHaveBeenLastCalledWith(
+      createUIServerConfig({ port: 8080 })
+    )
+    vi.useRealTimers()
+  })
+
+  it('should not rollback via timeout when open fires before timeout', () => {
+    vi.useFakeTimers()
+    const [result] = mountComposable()
+
+    result.handleUIServerChange(1)
+
+    const openCall = vi
+      .mocked(mockClient.registerWSEventListener)
+      .mock.calls.find(([event]) => event === 'open')
+    const openHandler = openCall?.[1] as () => void
+    openHandler()
+
+    expect(result.serverSwitchPending.value).toBe(false)
+
+    // Timeout fires but settled=true so it's a no-op
+    vi.advanceTimersByTime(15_000)
+    expect(result.serverSwitchPending.value).toBe(false)
+    expect(mockClient.setConfiguration).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
   })
 })

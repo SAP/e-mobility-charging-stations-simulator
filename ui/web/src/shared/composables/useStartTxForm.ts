@@ -64,7 +64,7 @@ export function useStartTxForm (
         $toast.error('Error at authorizing RFID tag')
         console.error('Error at authorizing RFID tag:', error)
         options?.onCleanup?.()
-        throw error
+        return false
       }
     }
 
@@ -80,7 +80,7 @@ export function useStartTxForm (
     } catch (error) {
       $toast.error('Error at starting transaction')
       console.error('Error at starting transaction:', error)
-      throw error
+      return false
     } finally {
       options?.onCleanup?.()
     }

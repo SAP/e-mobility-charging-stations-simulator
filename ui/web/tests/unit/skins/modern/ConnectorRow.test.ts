@@ -108,7 +108,7 @@ describe('modern ConnectorRow', () => {
       expect(wrapper.find('.modern-connector__lock--on').exists()).toBe(true)
     })
 
-    it('should is disabled during transaction', () => {
+    it('should be disabled during transaction', () => {
       const wrapper = mountRow({ connector: { transactionStarted: true } })
       const btn = wrapper.find('.modern-connector__lock').element as HTMLButtonElement
       expect(btn.disabled).toBe(true)
@@ -186,7 +186,7 @@ describe('modern ConnectorRow', () => {
       ])
     })
 
-    it('should omits evseId/ocppVersion from emitted data when not set', async () => {
+    it('should omit evseId/ocppVersion from emitted data when not set', async () => {
       const wrapper = mountRow()
       await wrapper.find('.modern-icon-btn--primary').trigger('click')
       const emitted = wrapper.emitted('open-start-tx')?.[0]?.[0] as Record<string, unknown>

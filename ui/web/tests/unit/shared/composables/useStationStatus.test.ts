@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
+import { getConnectorStatusVariant } from '@/shared/composables/stationStatus.js'
 
 const validVariants = new Set(['err', 'idle', 'ok', 'warn'])
 

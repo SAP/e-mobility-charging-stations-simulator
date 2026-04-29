@@ -73,11 +73,11 @@ describe('useAddStationsForm', () => {
     expect(formState.value.autoStart).toBe(false)
   })
 
-  it('should call executeAction with addChargingStations on submit', () => {
+  it('should call executeAction with addChargingStations on submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station-template.json'
     formState.value.numberOfStations = 3
-    submitForm()
+    await submitForm()
     expect(mockAddChargingStations).toHaveBeenCalledWith('station-template.json', 3, {
       autoStart: false,
       baseName: undefined,
@@ -92,7 +92,7 @@ describe('useAddStationsForm', () => {
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('should pass optional fields when set on submit', () => {
+  it('should pass optional fields when set on submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'tpl.json'
     formState.value.numberOfStations = 1
@@ -101,7 +101,7 @@ describe('useAddStationsForm', () => {
     formState.value.supervisionUrl = 'ws://localhost:8080'
     formState.value.supervisionUser = 'admin'
     formState.value.supervisionPassword = 'secret'
-    submitForm()
+    await submitForm()
     expect(mockAddChargingStations).toHaveBeenCalledWith('tpl.json', 1, {
       autoStart: false,
       baseName: 'CS-',
@@ -124,30 +124,30 @@ describe('useAddStationsForm', () => {
     expect(typeof formState.value.renderTemplates).toBe('string')
   })
 
-  it('should reset form via onFinally callback on submit', () => {
+  it('should reset form via onFinally callback on submit', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'station.json'
     formState.value.numberOfStations = 5
-    submitForm()
+    await submitForm()
     expect(formState.value.template).toBe('')
     expect(formState.value.numberOfStations).toBe(1)
   })
 
-  it('should invoke user-provided onFinally callback on submit', () => {
+  it('should invoke user-provided onFinally callback on submit', async () => {
     const onFinally = vi.fn()
     const { formState, submitForm } = useAddStationsForm({ onFinally })
     formState.value.template = 'tpl.json'
     formState.value.numberOfStations = 2
-    submitForm()
+    await submitForm()
     expect(onFinally).toHaveBeenCalledTimes(1)
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
-  it('should call executeAction with numberOfStations = 0', () => {
+  it('should call executeAction with numberOfStations = 0', async () => {
     const { formState, submitForm } = useAddStationsForm()
     formState.value.template = 'boundary.json'
     formState.value.numberOfStations = 0
-    submitForm()
+    await submitForm()
     expect(mockAddChargingStations).toHaveBeenCalledWith('boundary.json', 0, expect.any(Object))
     expect(mockExecuteAction).toHaveBeenCalled()
   })

@@ -1,7 +1,7 @@
 /**
  * @file useAsyncAction.ts
  */
-import { reactive } from 'vue'
+import { reactive, readonly } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 /**
@@ -17,7 +17,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   initialPending: T,
   onRefresh?: () => void
 ): {
-    pending: T
+    pending: Readonly<T>
     run: (
       key: keyof T,
       action: Promise<unknown>,
@@ -48,9 +48,17 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     pending[key] = true as T[keyof T]
     action
       .then(() => {
-        onSuccess?.()
+        try {
+          onSuccess?.()
+        } catch (error: unknown) {
+          console.error('Error in onSuccess callback:', error)
+        }
         $toast.success(successMsg)
-        onRefresh?.()
+        try {
+          onRefresh?.()
+        } catch (error: unknown) {
+          console.error('Error in onRefresh callback:', error)
+        }
         return undefined
       })
       .finally(() => {
@@ -62,5 +70,5 @@ export function useAsyncAction<T extends Record<string, boolean>> (
       })
   }
 
-  return { pending, run }
+  return { pending: readonly(pending) as Readonly<T>, run }
 }

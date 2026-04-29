@@ -1091,6 +1091,12 @@ body:has(.modern-app) #app {
   gap: var(--skin-space-1);
 }
 
+.modern-form__fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
 .modern-form__row--inline {
   flex-direction: row;
   align-items: center;

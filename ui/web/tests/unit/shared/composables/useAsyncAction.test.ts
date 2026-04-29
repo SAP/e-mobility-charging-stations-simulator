@@ -1,5 +1,6 @@
 /**
  * @file Tests for useAsyncAction composable
+ * @description Verifies loading state, error toasts, and success callbacks for async action wrapper.
  */
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'

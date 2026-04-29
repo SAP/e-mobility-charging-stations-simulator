@@ -166,8 +166,8 @@ import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
+import { getConnectorStatusVariant } from '@/shared/composables/stationStatus.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
-import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
