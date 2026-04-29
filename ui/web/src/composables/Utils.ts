@@ -30,7 +30,10 @@ export const setToLocalStorage = <T>(key: string, value: T): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // Silently fail on QuotaExceededError or SecurityError (Safari Private Browsing)
+    // localStorage.setItem() can throw:
+    // - QuotaExceededError when the origin's storage quota is genuinely exceeded
+    // - SecurityError when storage is blocked by user settings or browser policies
+    //   (e.g., "Block All Cookies" in Safari, third-party iframe in Chrome, file: URLs)
     if (import.meta.env.DEV) {
       console.debug(`[localStorage] Failed to write key '${key}'`)
     }
