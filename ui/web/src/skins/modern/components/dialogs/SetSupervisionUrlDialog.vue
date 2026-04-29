@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useChargingStations, useUIClient } from '@/composables'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
@@ -101,15 +101,10 @@ const $chargingStations = useChargingStations()
 
 const reconnect = ref(true)
 
-const currentStation = $chargingStations.value.find(
-  station => station.stationInfo.hashId === props.hashId
+const currentStation = computed(() =>
+  $chargingStations.value.find(station => station.stationInfo.hashId === props.hashId)
 )
 
-// The backend broadcasts `supervisionUrl` as the final wsConnectionUrl —
-// i.e. `<base>/<chargingStationId>`. If we prefilled that into the form
-// and the user saved it back, the backend would append the id a second
-// time on next connect. Strip the trailing id segment so the user only
-// ever edits the base URL.
 const stripStationId = (url: string, stationId: string): string => {
   if (stationId.length === 0) return url
   const suffix = `/${stationId}`
@@ -118,11 +113,11 @@ const stripStationId = (url: string, stationId: string): string => {
 
 // Pre-fill from current station data
 formState.value.supervisionUrl = stripStationId(
-  currentStation?.supervisionUrl ?? '',
-  currentStation?.stationInfo.chargingStationId ?? ''
+  currentStation.value?.supervisionUrl ?? '',
+  currentStation.value?.stationInfo.chargingStationId ?? ''
 )
-formState.value.supervisionUser = currentStation?.stationInfo.supervisionUser ?? ''
-formState.value.supervisionPassword = currentStation?.stationInfo.supervisionPassword ?? ''
+formState.value.supervisionUser = currentStation.value?.stationInfo.supervisionUser ?? ''
+formState.value.supervisionPassword = currentStation.value?.stationInfo.supervisionPassword ?? ''
 
 const pending = ref(false)
 
@@ -139,7 +134,7 @@ const submit = async (): Promise<void> => {
   pending.value = true
   try {
     submitForm()
-    if (reconnect.value && currentStation?.started === true) {
+    if (reconnect.value && currentStation.value?.started === true) {
       $uiClient
         .closeConnection(props.hashId)
         .then(() => $uiClient.openConnection(props.hashId))

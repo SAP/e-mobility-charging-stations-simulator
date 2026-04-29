@@ -1,6 +1,6 @@
 import type { ChargingStationData, SimulatorState } from 'ui-common'
 
-import { computed, type ComputedRef, onMounted, onUnmounted, type Ref, ref } from 'vue'
+import { computed, type ComputedRef, onMounted, onUnmounted, readonly, type Ref, ref } from 'vue'
 
 import { useChargingStations, useFetchData, useTemplates, useUIClient } from '@/composables'
 
@@ -16,9 +16,9 @@ export interface LayoutData {
   /** Registers WS event listeners for open/error/close. */
   registerWSEventListeners: () => void
   /** Whether the simulator has been started. */
-  simulatorStarted: Ref<boolean | undefined>
+  simulatorStarted: ComputedRef<boolean | undefined>
   /** The current simulator state object. */
-  simulatorState: Ref<SimulatorState | undefined>
+  simulatorState: Readonly<Ref<SimulatorState | undefined>>
   /** Unregisters WS event listeners previously registered. */
   unregisterWSEventListeners: () => void
 }
@@ -114,7 +114,7 @@ export function useLayoutData (): LayoutData {
     loading,
     registerWSEventListeners,
     simulatorStarted,
-    simulatorState,
+    simulatorState: readonly(simulatorState) as Readonly<Ref<SimulatorState | undefined>>,
     unregisterWSEventListeners,
   }
 }

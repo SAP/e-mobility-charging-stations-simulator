@@ -27,7 +27,7 @@ export interface AddStationsFormState {
 export function useAddStationsForm (options?: { onFinally?: () => void }): {
   formState: Ref<AddStationsFormState>
   resetForm: () => void
-  submitForm: () => void
+  submitForm: () => Promise<void>
   templates: Ref<string[]>
 } {
   const $uiClient = useUIClient()
@@ -46,31 +46,34 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
   }
 
   /** Submits the form to add charging stations via the UI client. */
-  function submitForm (): void {
-    executeAction(
-      $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
-        autoStart: convertToBoolean(formState.value.autoStart),
-        baseName: nonEmpty(formState.value.baseName),
-        enableStatistics: convertToBoolean(formState.value.enableStatistics),
-        fixedName:
-          formState.value.baseName.length > 0
-            ? convertToBoolean(formState.value.fixedName)
-            : undefined,
-        ocppStrictCompliance: convertToBoolean(formState.value.ocppStrictCompliance),
-        persistentConfiguration: convertToBoolean(formState.value.persistentConfiguration),
-        supervisionPassword: nonEmpty(formState.value.supervisionPassword),
-        supervisionUrls: nonEmpty(formState.value.supervisionUrl),
-        supervisionUser: nonEmpty(formState.value.supervisionUser),
-      }),
-      'Charging stations successfully added',
-      'Error at adding charging stations',
-      {
-        onFinally: () => {
-          options?.onFinally?.()
-          resetForm()
-        },
-      }
-    )
+  async function submitForm (): Promise<void> {
+    return new Promise<void>((resolve) => {
+      executeAction(
+        $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
+          autoStart: convertToBoolean(formState.value.autoStart),
+          baseName: nonEmpty(formState.value.baseName),
+          enableStatistics: convertToBoolean(formState.value.enableStatistics),
+          fixedName:
+            formState.value.baseName.length > 0
+              ? convertToBoolean(formState.value.fixedName)
+              : undefined,
+          ocppStrictCompliance: convertToBoolean(formState.value.ocppStrictCompliance),
+          persistentConfiguration: convertToBoolean(formState.value.persistentConfiguration),
+          supervisionPassword: nonEmpty(formState.value.supervisionPassword),
+          supervisionUrls: nonEmpty(formState.value.supervisionUrl),
+          supervisionUser: nonEmpty(formState.value.supervisionUser),
+        }),
+        'Charging stations successfully added',
+        'Error at adding charging stations',
+        {
+          onFinally: () => {
+            options?.onFinally?.()
+            resetForm()
+            resolve()
+          },
+        }
+      )
+    })
   }
 
   return {

@@ -167,7 +167,7 @@ const submit = async (): Promise<void> => {
   if (pending.value) return
   pending.value = true
   try {
-    submitForm()
+    await submitForm()
     close()
   } finally {
     pending.value = false

@@ -20,10 +20,10 @@
       class="modern-bar__group"
     >
       <select
-        v-model.number="selectedIndex"
+        :value="selectedServerIndex"
         class="modern-bar__select"
         aria-label="UI server"
-        @change="$emit('switch-server', selectedIndex)"
+        @change="e => $emit('switch-server', (e.target as HTMLSelectElement).selectedIndex)"
       >
         <option
           v-for="entry in uiServerConfigurations"
@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import type { SimulatorState, UIServerConfigurationSection } from 'ui-common'
 
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
@@ -128,15 +128,6 @@ defineEmits<{
   'switch-server': [index: number]
   'toggle-simulator': []
 }>()
-
-const selectedIndex = ref(props.selectedServerIndex)
-
-watch(
-  () => props.selectedServerIndex,
-  next => {
-    selectedIndex.value = next
-  }
-)
 
 const simulatorStarted = computed(() => props.simulatorState?.started === true)
 
