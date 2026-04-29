@@ -1,13 +1,14 @@
 import type { ChargingStationData, SimulatorState } from 'ui-common'
-import { type ComputedRef, computed, onMounted, onUnmounted, type Ref, ref } from 'vue'
+
+import { computed, type ComputedRef, onMounted, onUnmounted, type Ref, ref } from 'vue'
 
 import { useChargingStations, useFetchData, useTemplates, useUIClient } from '@/composables'
 
 export interface LayoutData {
-  /** Fetches simulator state, templates, and charging stations. */
-  getData: () => void
   /** Fetches only the charging stations list. */
   getChargingStations: () => void
+  /** Fetches simulator state, templates, and charging stations. */
+  getData: () => void
   /** Fetches only the simulator state. */
   getSimulatorState: () => void
   /** Whether any data fetch is currently in progress. */
@@ -107,8 +108,8 @@ export function useLayoutData (): LayoutData {
   })
 
   return {
-    getData,
     getChargingStations,
+    getData,
     getSimulatorState,
     loading,
     registerWSEventListeners,

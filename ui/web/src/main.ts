@@ -5,7 +5,6 @@ import type {
 } from 'ui-common'
 
 import { configurationSchema } from 'ui-common'
-
 import { type App as AppType, type Component, createApp, shallowRef } from 'vue'
 
 import App from '@/App.vue'
@@ -97,9 +96,7 @@ const bootstrap = async (): Promise<void> => {
     const rawConfig: unknown = await response.json()
     const parseResult = configurationSchema.safeParse(rawConfig)
     if (!parseResult.success) {
-      const msgs = parseResult.error.issues
-        .map(i => `${i.path.join('.')}: ${i.message}`)
-        .join('\n')
+      const msgs = parseResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n')
       document.body.innerHTML = `<pre style="padding:2rem;color:#ef5350;font-family:monospace">Configuration error in config.json:\n${msgs}</pre>`
       return
     }

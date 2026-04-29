@@ -21,13 +21,16 @@ import { skins } from '@/shared/skins/registry.js'
 const { activeSkinId } = useSkin()
 
 const skinLayoutMap = new Map(
-  skins.map(s => [s.id, defineAsyncComponent({
-    delay: 200,
-    errorComponent: SkinLoadError,
-    loadingComponent: SkinLoading,
-    loader: s.loadLayout,
-    timeout: 10000,
-  })])
+  skins.map(s => [
+    s.id,
+    defineAsyncComponent({
+      delay: 200,
+      errorComponent: SkinLoadError,
+      loader: s.loadLayout,
+      loadingComponent: SkinLoading,
+      timeout: 10000,
+    }),
+  ])
 )
 
 const currentSkinLayout = computed(

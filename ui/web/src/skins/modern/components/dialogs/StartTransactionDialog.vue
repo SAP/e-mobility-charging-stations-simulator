@@ -106,9 +106,13 @@ const formattedPayload = computed(() =>
   lastFailure.value?.payload != null ? JSON.stringify(lastFailure.value.payload, null, 2) : ''
 )
 
-watch(formState, () => {
-  lastFailure.value = null
-}, { deep: true })
+watch(
+  formState,
+  () => {
+    lastFailure.value = null
+  },
+  { deep: true }
+)
 
 const close = (): void => {
   emit('close')

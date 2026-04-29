@@ -64,12 +64,7 @@ describe('useSetUrlForm', () => {
     const { formState, submitForm } = useSetUrlForm('hash1', 'CS-001')
     formState.value.supervisionUrl = 'ws://server:8080'
     submitForm()
-    expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
-      'hash1',
-      'ws://server:8080',
-      '',
-      ''
-    )
+    expect(mockSetSupervisionUrl).toHaveBeenCalledWith('hash1', 'ws://server:8080', '', '')
     expect(mockExecuteAction).toHaveBeenCalled()
   })
 
@@ -101,11 +96,6 @@ describe('useSetUrlForm', () => {
     formState.value.supervisionUrl = 'ws://valid-server:9090'
     submitForm()
     expect(mockToastError).not.toHaveBeenCalled()
-    expect(mockSetSupervisionUrl).toHaveBeenCalledWith(
-      'hash1',
-      'ws://valid-server:9090',
-      '',
-      ''
-    )
+    expect(mockSetSupervisionUrl).toHaveBeenCalledWith('hash1', 'ws://valid-server:9090', '', '')
   })
 })

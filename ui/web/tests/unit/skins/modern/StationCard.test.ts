@@ -237,8 +237,9 @@ describe('modern StationCard', () => {
       await delBtn.trigger('click')
       await flushPromises()
       expect(document.body.textContent).toContain('Delete')
-      const cancelBtn =
-        document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')[0]
+      const cancelBtn = document.body.querySelectorAll<HTMLButtonElement>(
+        '.modern-modal__foot button'
+      )[0]
       cancelBtn.click()
       await flushPromises()
       expect(mockClient.deleteChargingStation).not.toHaveBeenCalled()
@@ -249,8 +250,9 @@ describe('modern StationCard', () => {
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
       await delBtn.trigger('click')
       await flushPromises()
-      const confirmBtn =
-        document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')[1]
+      const confirmBtn = document.body.querySelectorAll<HTMLButtonElement>(
+        '.modern-modal__foot button'
+      )[1]
       confirmBtn.click()
       await flushPromises()
       expect(mockClient.deleteChargingStation).toHaveBeenCalledWith(TEST_HASH_ID)
@@ -260,7 +262,9 @@ describe('modern StationCard', () => {
     it('should toast error when startChargingStation fails', async () => {
       mockClient.startChargingStation = vi.fn().mockRejectedValue(new Error('x'))
       const wrapper = mountCard({ started: false })
-      const btn = wrapper.findAll('.modern-card__foot-group .modern-btn').find(b => b.text() === 'Start')
+      const btn = wrapper
+        .findAll('.modern-card__foot-group .modern-btn')
+        .find(b => b.text() === 'Start')
       await btn?.trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalled()

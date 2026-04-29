@@ -78,10 +78,7 @@
 <script setup lang="ts">
 // Modern skin uses component-level dialog state (v-if) instead of router navigation.
 // This avoids URL coupling for modal interactions and enables independent skin operation.
-import {
-  type OCPPVersion,
-  type UIServerConfigurationSection,
-} from 'ui-common'
+import { type OCPPVersion, type UIServerConfigurationSection } from 'ui-common'
 import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -110,8 +107,8 @@ const $uiClient = useUIClient()
 const $toast = useToast()
 
 const {
-  getData,
   getChargingStations,
+  getData,
   getSimulatorState,
   loading,
   registerWSEventListeners,

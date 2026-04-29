@@ -101,11 +101,7 @@
 <script setup lang="ts">
 import './classic.css'
 
-import {
-  randomUUID,
-  type UIServerConfigurationSection,
-  type UUIDv4,
-} from 'ui-common'
+import { randomUUID, type UIServerConfigurationSection, type UUIDv4 } from 'ui-common'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -130,12 +126,8 @@ import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/Container.vue'
 
-const {
-  getSimulatorState,
-  registerWSEventListeners,
-  simulatorStarted,
-  simulatorState,
-} = useLayoutData()
+const { getSimulatorState, registerWSEventListeners, simulatorStarted, simulatorState } =
+  useLayoutData()
 
 const simulatorLabel = (action: string): string =>
   `${action} Simulator${
@@ -241,7 +233,12 @@ const stopSimulator = (): void => {
     $uiClient.stopSimulator(),
     'Simulator successfully stopped',
     'Error at stopping simulator',
-    { onFinally: getSimulatorState, onSuccess: () => { $chargingStations.value = [] } }
+    {
+      onFinally: getSimulatorState,
+      onSuccess: () => {
+        $chargingStations.value = []
+      },
+    }
   )
 }
 </script>

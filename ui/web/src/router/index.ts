@@ -61,7 +61,7 @@ export const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(to => {
   if (to.meta.skinOnly != null) {
     const { activeSkinId } = useSkin()
     if (to.meta.skinOnly !== activeSkinId.value) {

@@ -82,7 +82,8 @@ const focusFirst = (): void => {
   if (dialogEl.value == null) return
   const focusables = collectFocusables()
   // Prefer first non-close button so the user lands on a real input.
-  const target = focusables.find(el => !el.classList.contains('modern-modal__close')) ?? focusables[0]
+  const target =
+    focusables.find(el => !el.classList.contains('modern-modal__close')) ?? focusables[0]
   if (target != null) {
     target.focus()
   } else {

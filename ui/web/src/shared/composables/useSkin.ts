@@ -21,22 +21,6 @@ const loadedSkins = new Set<string>()
 let switching = false
 
 /**
- * Loads the CSS file for a skin if not already loaded.
- * @param skinId - The skin identifier to load styles for
- */
-async function loadSkinStyles (skinId: string): Promise<void> {
-  if (loadedSkins.has(skinId)) {
-    return
-  }
-  const skin = skins.find(s => s.id === skinId)
-  if (skin == null) {
-    return
-  }
-  await skin.loadStyles()
-  loadedSkins.add(skinId)
-}
-
-/**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
  * @returns Skin state and switcher
  */
@@ -70,4 +54,20 @@ export function useSkin (): {
     setSkin,
     skins,
   }
+}
+
+/**
+ * Loads the CSS file for a skin if not already loaded.
+ * @param skinId - The skin identifier to load styles for
+ */
+async function loadSkinStyles (skinId: string): Promise<void> {
+  if (loadedSkins.has(skinId)) {
+    return
+  }
+  const skin = skins.find(s => s.id === skinId)
+  if (skin == null) {
+    return
+  }
+  await skin.loadStyles()
+  loadedSkins.add(skinId)
 }

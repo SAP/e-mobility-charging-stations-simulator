@@ -1,5 +1,10 @@
 <template>
-  <div :class="['modern-connector', { 'modern-connector--active': connector.transactionStarted === true }]">
+  <div
+    :class="[
+      'modern-connector',
+      { 'modern-connector--active': connector.transactionStarted === true },
+    ]"
+  >
     <div class="modern-connector__gutter">
       <span class="modern-connector__id">
         {{ identifier }}

@@ -299,7 +299,9 @@ describe('Modern skin simple components', () => {
         props: { message: 'msg', title: 't' },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>(
+        '.modern-modal__foot button'
+      )
       buttons[0].click()
       expect(wrapper.emitted('cancel')).toHaveLength(1)
       wrapper.unmount()
@@ -311,7 +313,9 @@ describe('Modern skin simple components', () => {
         props: { message: 'msg', title: 't' },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>(
+        '.modern-modal__foot button'
+      )
       buttons[1].click()
       expect(wrapper.emitted('confirm')).toHaveLength(1)
       wrapper.unmount()
@@ -340,7 +344,9 @@ describe('Modern skin simple components', () => {
         },
       })
       await nextTick()
-      const buttons = document.body.querySelectorAll<HTMLButtonElement>('.modern-modal__foot button')
+      const buttons = document.body.querySelectorAll<HTMLButtonElement>(
+        '.modern-modal__foot button'
+      )
       expect(buttons[1].disabled).toBe(true)
       expect(buttons[1].classList.contains('modern-btn--primary')).toBe(true)
       wrapper.unmount()

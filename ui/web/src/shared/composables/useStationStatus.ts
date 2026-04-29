@@ -28,5 +28,3 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
       return 'idle'
   }
 }
-
-
