@@ -51,7 +51,7 @@
         <select
           :value="activeSkinId"
           class="ui-server-selector"
-          @change="e => setSkin((e.target as HTMLSelectElement).value)"
+          @change="e => switchSkin((e.target as HTMLSelectElement).value)"
         >
           <option
             v-for="skin in skins"
@@ -108,16 +108,15 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
+  resetToggleButtonState,
   ROUTE_NAMES,
-  setToLocalStorage,
   TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
   useConfiguration,
-  useExecuteAction,
-  useUIClient,
 } from '@/composables'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
+import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
@@ -126,8 +125,7 @@ import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/Container.vue'
 
-const { getSimulatorState, registerWSEventListeners, simulatorStarted, simulatorState } =
-  useLayoutData()
+const { simulatorStarted, simulatorState } = useLayoutData()
 
 const simulatorLabel = (action: string): string =>
   `${action} Simulator${
@@ -158,8 +156,25 @@ const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
 
-const { activeSkinId, setSkin, skins } = useSkin()
+const { activeSkinId, switchSkin, skins } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
+
+const { handleUIServerChange: switchServer, startSimulator, stopSimulator } = useSimulatorControl({
+  onServerSwitched: () => {
+    clearToggleButtons()
+    refresh()
+    if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    }
+  },
+  onSimulatorStopped: () => {
+    resetToggleButtonState('add-charging-stations', true)
+  },
+})
+
+const handleUIServerChange = (): void => {
+  switchServer(state.value.uiServerIndex)
+}
 
 watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
@@ -171,45 +186,6 @@ watch($route, to => {
   }
 })
 
-const $uiClient = useUIClient()
-
-const executeAction = useExecuteAction()
-
-const handleUIServerChange = (): void => {
-  const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-  if (currentIndex === state.value.uiServerIndex) return
-
-  $uiClient.setConfiguration(
-    ($configuration.value.uiServer as UIServerConfigurationSection[])[state.value.uiServerIndex]
-  )
-  registerWSEventListeners()
-
-  $uiClient.registerWSEventListener(
-    'open',
-    () => {
-      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, state.value.uiServerIndex)
-      clearToggleButtons()
-      refresh()
-      if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
-        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-      }
-    },
-    { once: true }
-  )
-
-  $uiClient.registerWSEventListener(
-    'error',
-    () => {
-      state.value.uiServerIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-      $uiClient.setConfiguration(
-        ($configuration.value.uiServer as UIServerConfigurationSection[])[state.value.uiServerIndex]
-      )
-      registerWSEventListeners()
-    },
-    { once: true }
-  )
-}
-
 const uiServerConfigurations: {
   configuration: UIServerConfigurationSection
   index: number
@@ -219,28 +195,6 @@ const uiServerConfigurations: {
     index,
   })
 )
-
-const startSimulator = (): void => {
-  executeAction(
-    $uiClient.startSimulator(),
-    'Simulator successfully started',
-    'Error at starting simulator',
-    { onFinally: getSimulatorState }
-  )
-}
-const stopSimulator = (): void => {
-  executeAction(
-    $uiClient.stopSimulator(),
-    'Simulator successfully stopped',
-    'Error at stopping simulator',
-    {
-      onFinally: getSimulatorState,
-      onSuccess: () => {
-        $chargingStations.value = []
-      },
-    }
-  )
-}
 </script>
 
 <style scoped>

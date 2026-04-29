@@ -20,6 +20,7 @@ import {
 } from '@/composables'
 import { router } from '@/router'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
+import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 import { THEME_STORAGE_KEY, type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
@@ -46,12 +47,16 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   )
   setTheme(storedTheme as ThemeName)
 
-  const { setSkin } = useSkin()
+  const { switchSkin } = useSkin()
   if (getFromLocalStorage<string>(SKIN_STORAGE_KEY, '') === '' && config.skin != null) {
     setToLocalStorage<string>(SKIN_STORAGE_KEY, config.skin)
   }
   const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? 'classic')
-  await setSkin(initialSkin)
+  const switched = await switchSkin(initialSkin)
+  if (!switched && initialSkin !== DEFAULT_SKIN) {
+    console.warn(`[useSkin] Failed to load skin '${initialSkin}', falling back to default`)
+    await switchSkin(DEFAULT_SKIN)
+  }
 
   if (!Array.isArray(config.uiServer)) {
     config.uiServer = [config.uiServer]

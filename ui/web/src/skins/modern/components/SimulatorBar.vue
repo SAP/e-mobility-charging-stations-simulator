@@ -76,7 +76,7 @@
         :value="activeSkinId"
         class="modern-bar__select"
         aria-label="Skin"
-        @change="e => setSkin((e.target as HTMLSelectElement).value)"
+        @change="e => switchSkin((e.target as HTMLSelectElement).value)"
       >
         <option
           v-for="skin in skinList"
@@ -111,7 +111,7 @@ import StatePill from './StatePill.vue'
 
 const V1_ROUTE_NAME = ROUTE_NAMES.CHARGING_STATIONS
 
-const { activeSkinId, setSkin, skins: skinList } = useSkin()
+const { activeSkinId, switchSkin, skins: skinList } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
 const props = defineProps<{

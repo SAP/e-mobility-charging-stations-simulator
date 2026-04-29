@@ -18,7 +18,11 @@ const activeSkinId: Ref<string> = ref(
   getValidSkinId(getFromLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN))
 )
 const loadedSkins = new Set<string>()
-let switching = false
+const switching = ref(false)
+const lastError: Ref<string | null> = ref(null)
+
+// Eagerly load the initial skin styles.
+loadSkinStyles(activeSkinId.value).catch(() => undefined)
 
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
@@ -26,33 +30,44 @@ let switching = false
  */
 export function useSkin (): {
   activeSkinId: Readonly<Ref<string>>
-  setSkin: (id: string) => Promise<void>
+  lastError: Readonly<Ref<string | null>>
   skins: readonly SkinDefinition[]
+  switchSkin: (id: string) => Promise<boolean>
+  switching: Readonly<Ref<boolean>>
 } {
   /**
    * Switches the active skin and lazy-loads its CSS if needed.
    * @param skinId - The skin identifier to switch to
+   * @returns `true` if the skin was successfully switched, `false` otherwise
    */
-  async function setSkin (skinId: string): Promise<void> {
-    if (switching) return
+  async function switchSkin (skinId: string): Promise<boolean> {
+    if (switching.value) return false
     const skin = skins.find(s => s.id === skinId)
     if (skin == null || skinId === activeSkinId.value) {
-      return
+      return false
     }
-    switching = true
+    switching.value = true
     try {
       await loadSkinStyles(skinId)
       activeSkinId.value = skinId
       setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
+      return true
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.warn(`[useSkin] Failed to load CSS for skin '${skinId}':`, message)
+      lastError.value = message
+      return false
     } finally {
-      switching = false
+      switching.value = false
     }
   }
 
   return {
     activeSkinId: readonly(activeSkinId),
-    setSkin,
+    lastError: readonly(lastError),
     skins,
+    switchSkin,
+    switching: readonly(switching),
   }
 }
 
