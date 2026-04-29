@@ -38,12 +38,13 @@ export interface SimulatorControlOptions {
  * Shared composable encapsulating simulator start/stop and UI server switching logic.
  *
  * Provides consistent error handling and rollback behavior across layout skins.
- * @param layoutData - Layout data providing getSimulatorState and registerWSEventListeners
+ * @param layoutData - Layout data providing getSimulatorState, registerWSEventListeners, and unregisterWSEventListeners
  * @param options - Optional callbacks for skin-specific side effects
  * @returns Simulator control actions and pending state refs
  */
 export function useSimulatorControl (
-  layoutData: Pick<LayoutData, 'getSimulatorState' | 'registerWSEventListeners'>,
+  layoutData: Partial<Pick<LayoutData, 'unregisterWSEventListeners'>> &
+    Pick<LayoutData, 'getSimulatorState' | 'registerWSEventListeners'>,
   options?: SimulatorControlOptions
 ): SimulatorControlActions {
   const $uiClient = useUIClient()
@@ -51,6 +52,8 @@ export function useSimulatorControl (
   const $chargingStations = useChargingStations()
 
   const { getSimulatorState, registerWSEventListeners } = layoutData
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const unregisterWSEventListeners = layoutData.unregisterWSEventListeners ?? (() => {})
   const executeAction = useExecuteAction()
 
   const simulatorPending = ref(false)
@@ -103,6 +106,7 @@ export function useSimulatorControl (
     $uiClient.setConfiguration(
       ($configuration.value.uiServer as UIServerConfigurationSection[])[newIndex]
     )
+    unregisterWSEventListeners()
     registerWSEventListeners()
 
     let settled = false
@@ -110,6 +114,7 @@ export function useSimulatorControl (
     const openHandler = (): void => {
       if (settled) return
       settled = true
+      clearTimeout(timeoutId)
       $uiClient.unregisterWSEventListener('error', errorHandler)
       setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
       serverSwitchPending.value = false
@@ -119,19 +124,21 @@ export function useSimulatorControl (
     const errorHandler = (): void => {
       if (settled) return
       settled = true
+      clearTimeout(timeoutId)
       $uiClient.unregisterWSEventListener('open', openHandler)
       serverSwitchPending.value = false
       const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
       $uiClient.setConfiguration(
         ($configuration.value.uiServer as UIServerConfigurationSection[])[previousIndex]
       )
+      unregisterWSEventListeners()
       registerWSEventListeners()
     }
 
     $uiClient.registerWSEventListener('open', openHandler, { once: true })
     $uiClient.registerWSEventListener('error', errorHandler, { once: true })
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (!settled) {
         errorHandler()
       }

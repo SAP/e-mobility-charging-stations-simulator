@@ -32,7 +32,11 @@ export const setToLocalStorage = <T>(key: string, value: T): void => {
 }
 
 export const deleteFromLocalStorage = (key: string): void => {
-  localStorage.removeItem(key)
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Silently fail on SecurityError (Safari Private Browsing)
+  }
 }
 
 export const getLocalStorage = (): Storage => {

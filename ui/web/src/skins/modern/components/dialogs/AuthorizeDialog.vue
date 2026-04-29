@@ -14,7 +14,7 @@
         >RFID / ID Tag</label>
         <input
           id="modern-auth-tag"
-          v-model.trim="form.idTag"
+          v-model.trim="idTag"
           class="modern-form__input"
           type="text"
           autocomplete="off"
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
@@ -82,9 +82,7 @@ const $toast = useToast()
 const pending = ref(false)
 const lastFailure = ref<FailureInfo | null>(null)
 
-const form = reactive({
-  idTag: '',
-})
+const idTag = ref('')
 
 const formattedPayload = computed(() =>
   lastFailure.value?.payload != null ? JSON.stringify(lastFailure.value.payload, null, 2) : ''
@@ -96,15 +94,15 @@ const close = (): void => {
 
 const submit = async (): Promise<void> => {
   if (pending.value) return
-  if (form.idTag.length === 0) {
+  if (idTag.value.length === 0) {
     $toast.error('Provide an RFID tag')
     return
   }
   pending.value = true
   lastFailure.value = null
   try {
-    await $uiClient.authorize(props.hashId, form.idTag)
-    $toast.success(`Authorized ${form.idTag}`)
+    await $uiClient.authorize(props.hashId, idTag.value)
+    $toast.success(`Authorized ${idTag.value}`)
     close()
   } catch (error) {
     console.error('Error authorizing:', error)

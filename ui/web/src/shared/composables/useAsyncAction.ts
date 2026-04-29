@@ -46,6 +46,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   ): void {
     if (pending[key]) return
     pending[key] = true as T[keyof T]
+    // eslint-disable-next-line promise/catch-or-return
     action
       .then(() => {
         try {
@@ -61,12 +62,12 @@ export function useAsyncAction<T extends Record<string, boolean>> (
         }
         return undefined
       })
-      .finally(() => {
-        pending[key] = false as T[keyof T]
-      })
       .catch((error: unknown) => {
         console.error(`${errorMsg}:`, error)
         $toast.error(errorMsg)
+      })
+      .finally(() => {
+        pending[key] = false as T[keyof T]
       })
   }
 

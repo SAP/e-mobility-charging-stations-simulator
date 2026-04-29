@@ -7,7 +7,7 @@
       {{ chargingStation.started === true ? 'Yes' : 'No' }}
     </td>
     <td>
-      {{ getSupervisionUrl() }}
+      {{ supervisionUrl }}
     </td>
     <td>
       {{ getWebSocketStateName(chargingStation.wsState) ?? EMPTY_VALUE_PLACEHOLDER }}
@@ -98,7 +98,7 @@
         </thead>
         <tbody>
           <CSConnector
-            v-for="entry in getConnectorEntries()"
+            v-for="entry in connectorEntries"
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
             :atg-status="getATGStatus(entry.connectorId)"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
@@ -146,7 +146,7 @@ const $emit = defineEmits<{ 'need-refresh': [] }>()
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
-const getConnectorEntries = (): ConnectorEntry[] => {
+const connectorEntries = computed((): ConnectorEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
     const entries: ConnectorEntry[] = []
     for (const evse of props.chargingStation.evses) {
@@ -170,26 +170,26 @@ const getConnectorEntries = (): ConnectorEntry[] => {
       connectorId: entry.connectorId,
       connectorStatus: entry.connectorStatus,
     }))
-}
+})
 const getATGStatus = (connectorId: number): Status | undefined => {
   return props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
     entry => entry.connectorId === connectorId
   )?.status
 }
-const getSupervisionUrl = (): string => {
-  const supervisionUrl = props.chargingStation.supervisionUrl?.trim()
+const supervisionUrl = computed((): string => {
+  const url = props.chargingStation.supervisionUrl?.trim()
 
-  if (!supervisionUrl) {
+  if (!url) {
     return EMPTY_VALUE_PLACEHOLDER
   }
 
   try {
-    const parsedSupervisionUrl = new URL(supervisionUrl)
+    const parsedSupervisionUrl = new URL(url)
     return `${parsedSupervisionUrl.protocol}//${parsedSupervisionUrl.host.split('.').join('.\u200b')}`
   } catch {
-    return supervisionUrl
+    return url
   }
-}
+})
 
 const $uiClient = useUIClient()
 

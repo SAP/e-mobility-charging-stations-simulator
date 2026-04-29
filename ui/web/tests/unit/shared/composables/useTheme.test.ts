@@ -15,8 +15,7 @@ describe('useTheme', () => {
 
   it('should return activeTheme ref', () => {
     const { activeTheme } = useTheme()
-    expect(typeof activeTheme.value).toBe('string')
-    expect(activeTheme.value.length).toBeGreaterThan(0)
+    expect(activeTheme.value).toBe('tokyo-night-storm')
   })
 
   it('should return availableThemes with 3 entries', () => {

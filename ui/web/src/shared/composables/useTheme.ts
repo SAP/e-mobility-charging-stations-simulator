@@ -2,7 +2,7 @@ import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
 
-const AVAILABLE_THEMES = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
+export const AVAILABLE_THEMES = ['catppuccin-latte', 'sap-horizon', 'tokyo-night-storm'] as const
 const DEFAULT_THEME = 'tokyo-night-storm'
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
@@ -54,13 +54,13 @@ applyTheme(activeTheme.value)
 export function useTheme (): {
   activeTheme: Readonly<Ref<ThemeName>>
   availableThemes: typeof AVAILABLE_THEMES
-  setTheme: (name: ThemeName) => void
+  setTheme: (name: string) => void
 } {
   /**
    * Switches the active theme, updates the DOM, and persists the preference.
    * @param name - The theme name to activate
    */
-  function setTheme (name: ThemeName): void {
+  function setTheme (name: string): void {
     if (!isValidTheme(name)) {
       return
     }

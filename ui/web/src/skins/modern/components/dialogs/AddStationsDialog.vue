@@ -42,6 +42,7 @@
           id="modern-add-count"
           v-model.number="formState.numberOfStations"
           class="modern-form__input"
+          max="100"
           min="1"
           type="number"
           required
@@ -161,8 +162,8 @@ const submit = async (): Promise<void> => {
   if (pending.value) return
   pending.value = true
   try {
-    await submitForm()
-    close()
+    const success = await submitForm()
+    if (success) close()
   } finally {
     pending.value = false
   }

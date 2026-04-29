@@ -10,19 +10,20 @@ export type StatusVariant = 'err' | 'idle' | 'ok' | 'warn'
  * @returns The display variant for the status
  */
 export function getConnectorStatusVariant (status?: string): StatusVariant {
-  switch (status) {
-    case 'Available':
+  // cspell:ignore suspendedev suspendedevse
+  switch (status?.toLowerCase()) {
+    case 'available':
       return 'ok'
-    case 'Charging':
-    case 'Occupied':
+    case 'charging':
+    case 'occupied':
       return 'ok'
-    case 'Faulted':
-    case 'Unavailable':
+    case 'faulted':
+    case 'unavailable':
       return 'err'
-    case 'Finishing':
-    case 'Preparing':
-    case 'SuspendedEV':
-    case 'SuspendedEVSE':
+    case 'finishing':
+    case 'preparing':
+    case 'suspendedev':
+    case 'suspendedevse':
       return 'warn'
     default:
       return 'idle'

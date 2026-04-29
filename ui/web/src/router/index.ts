@@ -51,11 +51,9 @@ export const router = createRouter({
       props: { action: true },
     },
     {
-      components: {
-        action: {
-          template:
-            '<p style="padding: var(--spacing-md, 1rem); text-align: center; color: var(--color-text, inherit)">404 — Page not found</p>',
-        },
+      component: {
+        template:
+          '<p style="padding: var(--spacing-md, 1rem); text-align: center; color: var(--color-text, inherit)">404 — Page not found</p>',
       },
       name: ROUTE_NAMES.NOT_FOUND,
       path: '/:pathMatch(.*)*',

@@ -21,11 +21,6 @@ const loadedSkins = new Set<string>()
 const switching = ref(false)
 const lastError: Ref<null | string> = ref(null)
 
-// Eagerly load the initial skin styles.
-loadSkinStyles(activeSkinId.value).catch((error: unknown) => {
-  lastError.value = error instanceof Error ? error.message : String(error)
-})
-
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
  * @returns Skin state and switcher

@@ -1,6 +1,6 @@
 /**
  * @file Tests for modern presentational primitives
- * @description Unit tests for ActionButton, StatePill, Modal, ConfirmDialog, and V2NotFoundView.
+ * @description Unit tests for ActionButton, StatePill, Modal, and ConfirmDialog components.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'

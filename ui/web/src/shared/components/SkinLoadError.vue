@@ -18,9 +18,18 @@ import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
 defineEmits<{ retry: [] }>()
 
 /**
- *
+ * Resets to default skin with reload loop protection.
+ * NOTE: Successful skin loads (e.g. in useSkin.switchSkin) should clear
+ * the 'skin-error-reload-count' sessionStorage key to reset the counter.
  */
 function resetToDefault (): void {
+  const RELOAD_KEY = 'skin-error-reload-count'
+  const count = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
+  if (count >= 2) {
+    // Stop infinite reload loop — show message instead
+    return
+  }
+  sessionStorage.setItem(RELOAD_KEY, String(count + 1))
   setToLocalStorage<string>(SKIN_STORAGE_KEY, DEFAULT_SKIN)
   window.location.reload()
 }

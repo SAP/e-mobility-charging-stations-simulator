@@ -127,20 +127,13 @@ const close = (): void => {
 
 const submit = async (): Promise<void> => {
   if (pending.value) return
-  if (formState.value.supervisionUrl.length === 0) {
-    submitForm()
-    return
-  }
   pending.value = true
   try {
-    submitForm()
+    const success = await submitForm()
+    if (!success) return
     if (reconnect.value && currentStation.value?.started === true) {
-      $uiClient
-        .closeConnection(props.hashId)
-        .then(() => $uiClient.openConnection(props.hashId))
-        .catch((error: unknown) => {
-          console.error('Error reconnecting:', error)
-        })
+      await $uiClient.closeConnection(props.hashId)
+      await $uiClient.openConnection(props.hashId)
     }
     close()
   } finally {

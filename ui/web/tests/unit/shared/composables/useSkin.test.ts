@@ -38,7 +38,6 @@ describe('useSkin', () => {
   it('should return activeSkinId defaulting to DEFAULT_SKIN', () => {
     const { activeSkinId } = useSkin()
     expect(activeSkinId.value).toBe(DEFAULT_SKIN)
-    expect(typeof activeSkinId.value).toBe('string')
   })
 
   it('should return skins array with 2 entries', () => {

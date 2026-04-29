@@ -22,7 +22,7 @@ export function useSetUrlForm (
     chargingStationId: string
     formState: Ref<SetUrlFormState>
     resetForm: () => void
-    submitForm: () => void
+    submitForm: () => Promise<boolean>
   } {
   const $uiClient = useUIClient()
   const $toast = useToast()
@@ -43,22 +43,36 @@ export function useSetUrlForm (
     }
   }
 
-  /** Validates and submits the supervision URL update. */
-  function submitForm (): void {
+  /**
+   * Validates and submits the supervision URL update.
+   * @returns Whether the submission was successful
+   */
+  async function submitForm (): Promise<boolean> {
     if (formState.value.supervisionUrl.length === 0) {
       $toast.error('Supervision url is required')
-      return
+      return false
     }
-    executeAction(
-      $uiClient.setSupervisionUrl(
-        hashId,
-        formState.value.supervisionUrl,
-        formState.value.supervisionUser,
-        formState.value.supervisionPassword
-      ),
-      'Supervision url successfully set',
-      'Error at setting supervision url'
-    )
+    return new Promise<boolean>(resolve => {
+      let succeeded = false
+      executeAction(
+        $uiClient.setSupervisionUrl(
+          hashId,
+          formState.value.supervisionUrl,
+          formState.value.supervisionUser,
+          formState.value.supervisionPassword
+        ),
+        'Supervision url successfully set',
+        'Error at setting supervision url',
+        {
+          onFinally: () => {
+            resolve(succeeded)
+          },
+          onSuccess: () => {
+            succeeded = true
+          },
+        }
+      )
+    })
   }
 
   return {

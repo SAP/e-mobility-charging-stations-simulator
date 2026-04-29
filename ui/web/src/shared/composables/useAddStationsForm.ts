@@ -1,4 +1,4 @@
-import { convertToBoolean, randomUUID, type UUIDv4 } from 'ui-common'
+import { randomUUID, type UUIDv4 } from 'ui-common'
 import { ref, type Ref, watch } from 'vue'
 
 import { useExecuteAction, useTemplates, useUIClient } from '@/composables/Utils.js'
@@ -27,7 +27,7 @@ export interface AddStationsFormState {
 export function useAddStationsForm (options?: { onFinally?: () => void }): {
   formState: Ref<AddStationsFormState>
   resetForm: () => void
-  submitForm: () => Promise<void>
+  submitForm: () => Promise<boolean>
   templates: Ref<string[]>
 } {
   const $uiClient = useUIClient()
@@ -45,20 +45,21 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
     formState.value = makeInitialState()
   }
 
-  /** Submits the form to add charging stations via the UI client. */
-  async function submitForm (): Promise<void> {
-    return new Promise<void>(resolve => {
+  /**
+   * Submits the form to add charging stations via the UI client.
+   * @returns Whether the submission was successful
+   */
+  async function submitForm (): Promise<boolean> {
+    return new Promise<boolean>(resolve => {
+      let succeeded = false
       executeAction(
         $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
-          autoStart: convertToBoolean(formState.value.autoStart),
+          autoStart: formState.value.autoStart,
           baseName: nonEmpty(formState.value.baseName),
-          enableStatistics: convertToBoolean(formState.value.enableStatistics),
-          fixedName:
-            formState.value.baseName.length > 0
-              ? convertToBoolean(formState.value.fixedName)
-              : undefined,
-          ocppStrictCompliance: convertToBoolean(formState.value.ocppStrictCompliance),
-          persistentConfiguration: convertToBoolean(formState.value.persistentConfiguration),
+          enableStatistics: formState.value.enableStatistics,
+          fixedName: formState.value.baseName.length > 0 ? formState.value.fixedName : undefined,
+          ocppStrictCompliance: formState.value.ocppStrictCompliance,
+          persistentConfiguration: formState.value.persistentConfiguration,
           supervisionPassword: nonEmpty(formState.value.supervisionPassword),
           supervisionUrls: nonEmpty(formState.value.supervisionUrl),
           supervisionUser: nonEmpty(formState.value.supervisionUser),
@@ -69,7 +70,10 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
           onFinally: () => {
             options?.onFinally?.()
             resetForm()
-            resolve()
+            resolve(succeeded)
+          },
+          onSuccess: () => {
+            succeeded = true
           },
         }
       )

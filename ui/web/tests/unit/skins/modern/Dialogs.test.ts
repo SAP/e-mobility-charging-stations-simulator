@@ -14,7 +14,7 @@ import { chargingStationsKey, templatesKey, uiClientKey } from '@/composables'
 vi.mock('@/skins/modern/components/Modal.vue', () => ({
   default: defineComponent({
     emits: ['close'],
-    name: 'V2ModalStub',
+    name: 'ModalStub',
     props: {
       closeOnBackdrop: { default: true, type: Boolean },
       title: { required: true, type: String },

@@ -96,5 +96,12 @@ describe('useStationStatus', () => {
       }
       expect(statuses.length).toBe(11)
     })
+
+    it('should handle case-insensitive status values', () => {
+      expect(getConnectorStatusVariant('available')).toBe('ok')
+      expect(getConnectorStatusVariant('CHARGING')).toBe('ok')
+      expect(getConnectorStatusVariant('faulted')).toBe('err')
+      expect(getConnectorStatusVariant('preparing')).toBe('warn')
+    })
   })
 })

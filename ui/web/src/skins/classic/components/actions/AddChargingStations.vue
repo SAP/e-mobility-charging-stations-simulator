@@ -26,6 +26,7 @@
     id="number-of-stations"
     v-model="formState.numberOfStations"
     class="number-of-stations"
+    max="100"
     min="1"
     name="number-of-stations"
     placeholder="number of stations"

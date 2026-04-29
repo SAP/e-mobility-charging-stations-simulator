@@ -57,6 +57,9 @@
   --skin-radius-lg: 10px;
 
   /* Elevation shadows */
+  --skin-shadow-color: rgba(0, 0, 0, 0.08);
+  --skin-shadow-color-md: rgba(0, 0, 0, 0.12);
+  --skin-backdrop-color: rgba(0, 0, 0, 0.55);
   --skin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
   --skin-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.22);
   --skin-shadow-lg: 0 6px 16px -4px rgba(0, 0, 0, 0.28);
@@ -229,30 +232,6 @@ body:has(.modern-app) #app {
 
 .modern-bar__select:hover {
   border-color: var(--color-primary);
-}
-
-.modern-bar__version-link {
-  font-family: var(--skin-font);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-decoration: none;
-  border: 1px solid var(--skin-border);
-  border-radius: var(--skin-radius-md);
-  padding: var(--skin-space-1) var(--skin-space-3);
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  transition:
-    color var(--skin-transition),
-    border-color var(--skin-transition),
-    background-color var(--skin-transition);
-}
-
-.modern-bar__version-link:hover {
-  color: var(--skin-primary-bright);
-  border-color: var(--color-primary);
-  background-color: var(--skin-primary-ghost);
 }
 
 /* Icon buttons inside the bar (theme toggle) size-match the other
@@ -918,7 +897,7 @@ body:has(.modern-app) #app {
 }
 
 .modern-btn:active:not(:disabled) {
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 3px var(--skin-shadow-color-md);
 }
 
 .modern-btn:focus-visible {
@@ -1002,7 +981,7 @@ body:has(.modern-app) #app {
 .modern-modal__backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.55);
+  background-color: var(--skin-backdrop-color);
   display: flex;
   align-items: center;
   justify-content: center;

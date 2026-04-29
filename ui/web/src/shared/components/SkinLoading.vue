@@ -5,6 +5,10 @@
   </div>
 </template>
 
+<script setup lang="ts">
+defineOptions({ name: 'SkinLoading' })
+</script>
+
 <style scoped>
 .skin-loading {
   display: flex;
