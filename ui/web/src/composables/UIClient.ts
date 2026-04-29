@@ -81,6 +81,10 @@ export class UIClient {
     })
   }
 
+  public isConnected (): boolean {
+    return this.client.connected
+  }
+
   public async listChargingStations (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {})
   }

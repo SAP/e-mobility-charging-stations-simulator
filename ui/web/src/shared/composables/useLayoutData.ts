@@ -125,6 +125,9 @@ export function useLayoutData (): LayoutData {
     unsubscribeRefresh = $uiClient.onRefresh(() => {
       getChargingStations()
     })
+    if ($uiClient.isConnected()) {
+      getData()
+    }
   })
 
   onUnmounted(() => {

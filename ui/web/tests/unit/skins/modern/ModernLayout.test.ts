@@ -123,32 +123,34 @@ describe('ModernLayout', () => {
   })
 
   it('should render a StationCard per charging station', async () => {
-    const wrapper = mountView({
-      chargingStations: [
-        createChargingStationData({
-          stationInfo: {
-            baseName: 'CS-1',
-            chargePointModel: 'm',
-            chargePointVendor: 'v',
-            chargingStationId: 'CS-1',
-            hashId: 'h1',
-            templateIndex: 0,
-            templateName: 't',
-          },
-        }),
-        createChargingStationData({
-          stationInfo: {
-            baseName: 'CS-2',
-            chargePointModel: 'm',
-            chargePointVendor: 'v',
-            chargingStationId: 'CS-2',
-            hashId: 'h2',
-            templateIndex: 0,
-            templateName: 't',
-          },
-        }),
-      ],
-    })
+    const stations = [
+      createChargingStationData({
+        stationInfo: {
+          baseName: 'CS-1',
+          chargePointModel: 'm',
+          chargePointVendor: 'v',
+          chargingStationId: 'CS-1',
+          hashId: 'h1',
+          templateIndex: 0,
+          templateName: 't',
+        },
+      }),
+      createChargingStationData({
+        stationInfo: {
+          baseName: 'CS-2',
+          chargePointModel: 'm',
+          chargePointVendor: 'v',
+          chargingStationId: 'CS-2',
+          hashId: 'h2',
+          templateIndex: 0,
+          templateName: 't',
+        },
+      }),
+    ]
+    mockClient.listChargingStations = vi
+      .fn()
+      .mockResolvedValue({ chargingStations: stations, status: 'success' })
+    const wrapper = mountView({ chargingStations: stations })
     await flushPromises()
     expect(wrapper.findAll('.stub-station-card')).toHaveLength(2)
   })
@@ -328,6 +330,9 @@ describe('ModernLayout', () => {
         templateName: 't',
       },
     })
+    mockClient.listChargingStations = vi
+      .fn()
+      .mockResolvedValue({ chargingStations: [station], status: 'success' })
     const wrapper = mount(ModernLayout, {
       global: {
         provide: {

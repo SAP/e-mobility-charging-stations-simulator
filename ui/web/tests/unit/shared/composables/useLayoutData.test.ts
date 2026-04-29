@@ -70,8 +70,11 @@ describe('useLayoutData', () => {
     vi.clearAllMocks()
   })
 
-  it('should call simulatorState, listTemplates, and listChargingStations on getData', () => {
+  it('should call simulatorState, listTemplates, and listChargingStations on getData', async () => {
     const [result] = mountComposable()
+    // Wait for the initial getData() triggered by onMounted to complete so that
+    // the useFetchData guard (fetching === false) is reset before we call again.
+    await flushPromises()
     mockClient.simulatorState.mockClear()
     mockClient.listTemplates.mockClear()
     mockClient.listChargingStations.mockClear()
@@ -166,6 +169,23 @@ describe('useLayoutData', () => {
     expect(mockClient.onRefresh).toHaveBeenCalledWith(expect.any(Function))
     app.unmount()
     expect(unsubscribe).toHaveBeenCalledTimes(1)
+  })
+
+  it('should call getData immediately on mount when WS is already connected', async () => {
+    mockClient.isConnected.mockReturnValue(true)
+    mountComposable()
+    await flushPromises()
+    expect(mockClient.simulatorState).toHaveBeenCalledTimes(1)
+    expect(mockClient.listTemplates).toHaveBeenCalledTimes(1)
+    expect(mockClient.listChargingStations).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not call getData on mount when WS is not yet connected', () => {
+    mockClient.isConnected.mockReturnValue(false)
+    mountComposable()
+    expect(mockClient.simulatorState).not.toHaveBeenCalled()
+    expect(mockClient.listTemplates).not.toHaveBeenCalled()
+    expect(mockClient.listChargingStations).not.toHaveBeenCalled()
   })
 
   describe('error handling', () => {

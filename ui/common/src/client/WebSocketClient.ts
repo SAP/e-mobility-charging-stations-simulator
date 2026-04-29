@@ -11,6 +11,10 @@ import { WebSocketReadyState } from './types.js'
 export { ServerFailureError } from '../errors.js'
 
 export class WebSocketClient {
+  public get connected (): boolean {
+    return this.ws?.readyState === WebSocketReadyState.OPEN
+  }
+
   public get url (): string {
     const scheme = this.config.secure === true ? 'wss' : 'ws'
     return `${scheme}://${this.config.host}:${this.config.port.toString()}`

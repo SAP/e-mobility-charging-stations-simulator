@@ -13,6 +13,7 @@ export interface MockUIClient {
   authorize: ReturnType<typeof vi.fn>
   closeConnection: ReturnType<typeof vi.fn>
   deleteChargingStation: ReturnType<typeof vi.fn>
+  isConnected: ReturnType<typeof vi.fn>
   listChargingStations: ReturnType<typeof vi.fn>
   listTemplates: ReturnType<typeof vi.fn>
   lockConnector: ReturnType<typeof vi.fn>
@@ -140,6 +141,7 @@ export function createMockUIClient (): MockUIClient {
     authorize: vi.fn().mockResolvedValue(successResponse),
     closeConnection: vi.fn().mockResolvedValue(successResponse),
     deleteChargingStation: vi.fn().mockResolvedValue(successResponse),
+    isConnected: vi.fn().mockReturnValue(false),
     listChargingStations: vi.fn().mockResolvedValue({ ...successResponse, chargingStations: [] }),
     listTemplates: vi.fn().mockResolvedValue({ ...successResponse, templates: [] }),
     lockConnector: vi.fn().mockResolvedValue(successResponse),
