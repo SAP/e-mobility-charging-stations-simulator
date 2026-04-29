@@ -47,7 +47,7 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
 
   /** Submits the form to add charging stations via the UI client. */
   async function submitForm (): Promise<void> {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(resolve => {
       executeAction(
         $uiClient.addChargingStations(formState.value.template, formState.value.numberOfStations, {
           autoStart: convertToBoolean(formState.value.autoStart),

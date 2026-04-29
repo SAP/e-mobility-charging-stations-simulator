@@ -101,13 +101,7 @@ import StationCard from './components/StationCard.vue'
 const $chargingStations = useChargingStations()
 
 const layoutData = useLayoutData()
-const {
-  getChargingStations,
-  getData,
-  loading,
-  simulatorState,
-  uiServerConfigurations,
-} = layoutData
+const { getChargingStations, getData, loading, simulatorState, uiServerConfigurations } = layoutData
 
 const state = ref({
   uiServerIndex: getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0),

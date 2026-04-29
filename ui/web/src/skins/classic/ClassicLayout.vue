@@ -158,21 +158,22 @@ const $router = useRouter()
 const { activeSkinId, skins, switchSkin } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
-const { handleUIServerChange: switchServer, startSimulator, stopSimulator } = useSimulatorControl(
-  layoutData,
-  {
-    onServerSwitched: () => {
-      clearToggleButtons()
-      refresh()
-      if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
-        $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
-      }
-    },
-    onSimulatorStopped: () => {
-      resetToggleButtonState('add-charging-stations', true)
-    },
-  }
-)
+const {
+  handleUIServerChange: switchServer,
+  startSimulator,
+  stopSimulator,
+} = useSimulatorControl(layoutData, {
+  onServerSwitched: () => {
+    clearToggleButtons()
+    refresh()
+    if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    }
+  },
+  onSimulatorStopped: () => {
+    resetToggleButtonState('add-charging-stations', true)
+  },
+})
 
 const handleUIServerChange = (): void => {
   switchServer(state.value.uiServerIndex)
@@ -182,11 +183,14 @@ watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
 })
 
-watch(() => $route.name, name => {
-  if (name === ROUTE_NAMES.CHARGING_STATIONS) {
-    refresh()
+watch(
+  () => $route.name,
+  name => {
+    if (name === ROUTE_NAMES.CHARGING_STATIONS) {
+      refresh()
+    }
   }
-})
+)
 </script>
 
 <style scoped>

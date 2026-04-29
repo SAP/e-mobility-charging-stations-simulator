@@ -2,7 +2,13 @@ import type { ChargingStationData, SimulatorState, UIServerConfigurationSection 
 
 import { computed, type ComputedRef, onMounted, onUnmounted, readonly, type Ref, ref } from 'vue'
 
-import { useChargingStations, useConfiguration, useFetchData, useTemplates, useUIClient } from '@/composables'
+import {
+  useChargingStations,
+  useConfiguration,
+  useFetchData,
+  useTemplates,
+  useUIClient,
+} from '@/composables'
 
 export interface LayoutData {
   /** Fetches only the charging stations list. */
@@ -20,7 +26,9 @@ export interface LayoutData {
   /** The current simulator state object. */
   simulatorState: Readonly<Ref<SimulatorState | undefined>>
   /** Mapped array of UI server configurations with their indices. */
-  uiServerConfigurations: ComputedRef<Array<{ configuration: UIServerConfigurationSection; index: number }>>
+  uiServerConfigurations: ComputedRef<
+    { configuration: UIServerConfigurationSection; index: number }[]
+  >
   /** Unregisters WS event listeners previously registered. */
   unregisterWSEventListeners: () => void
 }

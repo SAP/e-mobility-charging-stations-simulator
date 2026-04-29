@@ -1,3 +1,5 @@
+import type { ConfigurationData } from 'ui-common'
+
 /**
  * @file useLayoutData.test.ts
  * @description Tests for the useLayoutData shared composable.
@@ -5,8 +7,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Ref, ref } from 'vue'
-
-import type { ConfigurationData } from 'ui-common'
 
 import { useChargingStations, useConfiguration, useTemplates, useUIClient } from '@/composables'
 
@@ -64,7 +64,7 @@ describe('useLayoutData', () => {
     )
     vi.mocked(useTemplates).mockReturnValue(templates)
     vi.mocked(useConfiguration).mockReturnValue(
-      configuration as ReturnType<typeof useConfiguration>
+      configuration
     )
   })
 

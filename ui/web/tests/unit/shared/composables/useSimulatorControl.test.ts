@@ -39,6 +39,11 @@ const mockLayoutData: Pick<LayoutData, 'getSimulatorState' | 'registerWSEventLis
   registerWSEventListeners: mockRegisterWSEventListeners,
 }
 
+/**
+ * Mounts the useSimulatorControl composable in a component context.
+ * @param options - Optional callbacks for SimulatorControlOptions
+ * @returns Tuple of [composable result, app instance]
+ */
 function mountComposable (options?: Parameters<typeof useSimulatorControl>[1]) {
   return withSetup(() => useSimulatorControl(mockLayoutData, options))
 }
@@ -48,10 +53,7 @@ describe('useSimulatorControl', () => {
     mockClient = createMockUIClient()
     chargingStations = ref([])
     configuration = ref({
-      uiServer: [
-        createUIServerConfig({ port: 8080 }),
-        createUIServerConfig({ port: 9090 }),
-      ],
+      uiServer: [createUIServerConfig({ port: 8080 }), createUIServerConfig({ port: 9090 })],
     } as unknown as ConfigurationData)
     vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as ReturnType<typeof useUIClient>)
     vi.mocked(useChargingStations).mockReturnValue(
@@ -98,20 +100,14 @@ describe('useSimulatorControl', () => {
     localStorage.setItem('uiServerConfigurationIndex', JSON.stringify(0))
     const [result] = mountComposable()
     result.handleUIServerChange(1)
-    expect(mockClient.setConfiguration).toHaveBeenCalledWith(
-      createUIServerConfig({ port: 9090 })
-    )
+    expect(mockClient.setConfiguration).toHaveBeenCalledWith(createUIServerConfig({ port: 9090 }))
     expect(mockRegisterWSEventListeners).toHaveBeenCalled()
-    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith(
-      'open',
-      expect.any(Function),
-      { once: true }
-    )
-    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith(
-      'error',
-      expect.any(Function),
-      { once: true }
-    )
+    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function), {
+      once: true,
+    })
+    expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('error', expect.any(Function), {
+      once: true,
+    })
   })
 
   it('should expose simulatorPending as reactive ref', () => {
@@ -162,9 +158,9 @@ describe('useSimulatorControl', () => {
     const [result] = mountComposable({ onServerSwitched })
     result.handleUIServerChange(1)
 
-    const openCall = vi.mocked(mockClient.registerWSEventListener).mock.calls.find(
-      ([event]) => event === 'open'
-    )
+    const openCall = vi
+      .mocked(mockClient.registerWSEventListener)
+      .mock.calls.find(([event]) => event === 'open')
     const openHandler = openCall?.[1] as () => void
     openHandler()
 
@@ -177,9 +173,9 @@ describe('useSimulatorControl', () => {
     const [result] = mountComposable()
     result.handleUIServerChange(1)
 
-    const errorCall = vi.mocked(mockClient.registerWSEventListener).mock.calls.find(
-      ([event]) => event === 'error'
-    )
+    const errorCall = vi
+      .mocked(mockClient.registerWSEventListener)
+      .mock.calls.find(([event]) => event === 'error')
     const errorHandler = errorCall?.[1] as () => void
     errorHandler()
 

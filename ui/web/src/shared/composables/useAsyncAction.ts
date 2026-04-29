@@ -17,15 +17,15 @@ export function useAsyncAction<T extends Record<string, boolean>> (
   initialPending: T,
   onRefresh?: () => void
 ): {
-  pending: T
-  run: (
-    key: keyof T,
-    action: Promise<unknown>,
-    successMsg: string,
-    errorMsg: string,
-    onSuccess?: () => void
-  ) => void
-} {
+    pending: T
+    run: (
+      key: keyof T,
+      action: Promise<unknown>,
+      successMsg: string,
+      errorMsg: string,
+      onSuccess?: () => void
+    ) => void
+  } {
   const $toast = useToast()
   const pending = reactive({ ...initialPending }) as T
 

@@ -21,14 +21,14 @@ describe('useAsyncAction', () => {
   })
 
   it('should set pending[key] to true while action is in progress', async () => {
-    let resolve!: (value: unknown) => void
-    const action = new Promise(r => {
-      resolve = r
+    let resolveAction!: (value: unknown) => void
+    const action = new Promise(resolve => {
+      resolveAction = resolve
     })
     const [{ pending, run }] = withSetup(() => useAsyncAction({ a: false }))
     run('a', action, 'ok', 'err')
     expect(pending.a).toBe(true)
-    resolve(undefined)
+    resolveAction(undefined)
     await flushPromises()
     expect(pending.a).toBe(false)
   })
@@ -66,15 +66,15 @@ describe('useAsyncAction', () => {
   })
 
   it('should not start a new action when pending[key] is already true', async () => {
-    let resolve!: (value: unknown) => void
-    const action = new Promise(r => {
-      resolve = r
+    let resolveAction!: (value: unknown) => void
+    const action = new Promise(resolve => {
+      resolveAction = resolve
     })
     const [{ pending, run }] = withSetup(() => useAsyncAction({ a: false }))
     run('a', action, 'first', 'err')
     expect(pending.a).toBe(true)
     run('a', Promise.resolve(), 'second', 'err')
-    resolve(undefined)
+    resolveAction(undefined)
     await flushPromises()
     expect(toastMock.success).toHaveBeenCalledTimes(1)
     expect(toastMock.success).toHaveBeenCalledWith('first')

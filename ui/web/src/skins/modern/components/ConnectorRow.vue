@@ -198,9 +198,8 @@ const emit = defineEmits<{
 const $uiClient = useUIClient()
 const $toast = useToast()
 
-const { pending, run } = useAsyncAction(
-  { atg: false, lock: false, stopTx: false },
-  () => emit('need-refresh')
+const { pending, run } = useAsyncAction({ atg: false, lock: false, stopTx: false }, () =>
+  emit('need-refresh')
 )
 
 const identifier = computed(() =>
