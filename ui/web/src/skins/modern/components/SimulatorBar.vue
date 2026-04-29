@@ -59,7 +59,7 @@
         {{ simulatorStarted ? 'Stop' : 'Start' }} Simulator
       </ActionButton>
       <select
-        :value="activeTheme"
+        :value="activeThemeId"
         class="modern-bar__select"
         aria-label="Theme"
         @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
@@ -102,7 +102,7 @@ import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'
 
 const { activeSkinId, skins: skinList, switchSkin } = useSkin()
-const { activeTheme, availableThemes, setTheme } = useTheme()
+const { activeThemeId, availableThemes, setTheme } = useTheme()
 
 const props = defineProps<{
   refreshPending?: boolean

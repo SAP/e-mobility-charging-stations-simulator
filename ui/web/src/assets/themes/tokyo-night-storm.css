@@ -40,10 +40,13 @@
   --spacing-sm: 0.25rem;
   --spacing-md: 0.5rem;
   --spacing-lg: 1rem;
+  --spacing-xl: 2rem;
 
   /* Typography */
   --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
 
   /* Surface hierarchy (for modern skin) */
   --color-bg-raised: var(--tn-bg-hover);
@@ -54,13 +57,6 @@
   --color-state-warn: #ffb300;
   --color-state-err: #ef5350;
   --color-state-idle: var(--tn-fg-muted);
-
-  /* Spacing extension */
-  --spacing-xl: 2rem;
-
-  /* Typography extension */
-  --font-size-base: 1rem;
-  --font-size-xs: 0.75rem;
 
   color-scheme: dark;
 }

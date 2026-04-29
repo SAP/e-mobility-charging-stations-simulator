@@ -39,10 +39,13 @@
   --spacing-sm: 0.25rem;
   --spacing-md: 0.5rem;
   --spacing-lg: 1rem;
+  --spacing-xl: 2rem;
 
   /* Typography */
   --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-xs: 0.75rem;
 
   /* Surface hierarchy */
   --color-bg-raised: var(--ctp-surface0);
@@ -53,13 +56,6 @@
   --color-state-warn: #ef6c00;
   --color-state-err: #c62828;
   --color-state-idle: var(--ctp-overlay1);
-
-  /* Spacing extension */
-  --spacing-xl: 2rem;
-
-  /* Typography extension */
-  --font-size-base: 1rem;
-  --font-size-xs: 0.75rem;
 
   color-scheme: light;
 }

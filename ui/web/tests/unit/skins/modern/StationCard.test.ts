@@ -19,6 +19,7 @@ import {
 import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
+let wrapper: ReturnType<typeof mountCard> | undefined
 
 /**
  * Mounts StationCard with default or overridden station data.
@@ -41,6 +42,7 @@ describe('modern StationCard', () => {
   })
 
   afterEach(() => {
+    wrapper?.unmount()
     document.body.innerHTML = ''
     vi.clearAllMocks()
   })

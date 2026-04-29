@@ -1,8 +1,8 @@
 import { readonly, ref, type Ref } from 'vue'
 
 import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
-import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/shared/skins/registry.js'
 import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
+import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'
 
 export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
@@ -50,6 +50,9 @@ export function useSkin (): {
     if (skinId === activeSkinId.value) {
       // Ensure styles are loaded even if skin is already active (idempotent success)
       await loadSkinStyles(skinId)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('skin-error-reload-count')
+      }
       return true
     }
     switching.value = true
@@ -108,7 +111,8 @@ async function loadSkinStyles (skinId: string): Promise<void> {
 function validateTokenContract (skinId: string): void {
   if (!import.meta.env.DEV || typeof document === 'undefined') return
   const style = getComputedStyle(document.documentElement)
-  for (const prop of Object.values(TOKEN_CONTRACT)) {
+  for (const token of TOKEN_CONTRACT) {
+    const prop = `--${token}`
     if (!style.getPropertyValue(prop).trim()) {
       console.warn(`[useSkin] Missing CSS token '${prop}' after loading skin '${skinId}'`)
     }

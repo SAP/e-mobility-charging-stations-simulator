@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { ROUTE_NAMES } from '@/composables'
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
+import { DEFAULT_SKIN } from '@/skins/registry.js'
 
 declare module 'vue-router' {
   interface RouteMeta {

@@ -8,7 +8,7 @@ import { getConnectorStatusVariant } from '@/shared/composables/stationStatus.js
 
 const validVariants = new Set(['err', 'idle', 'ok', 'warn'])
 
-describe('useStationStatus', () => {
+describe('stationStatus', () => {
   describe('getConnectorStatusVariant', () => {
     it('should return ok for Available', () => {
       const result = getConnectorStatusVariant('Available')

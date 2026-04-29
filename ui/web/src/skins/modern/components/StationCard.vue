@@ -253,14 +253,14 @@ const toggleStation = (): void => {
   if (props.chargingStation.started === true) {
     run(
       'startStop',
-      $uiClient.stopChargingStation(hashId),
+      () => $uiClient.stopChargingStation(hashId),
       'Charging station stopped',
       'Error stopping charging station'
     )
   } else {
     run(
       'startStop',
-      $uiClient.startChargingStation(hashId),
+      () => $uiClient.startChargingStation(hashId),
       'Charging station started',
       'Error starting charging station'
     )
@@ -272,14 +272,14 @@ const toggleConnection = (): void => {
   if (wsOpen.value) {
     run(
       'connection',
-      $uiClient.closeConnection(hashId),
+      () => $uiClient.closeConnection(hashId),
       'Connection closed',
       'Error closing connection'
     )
   } else {
     run(
       'connection',
-      $uiClient.openConnection(hashId),
+      () => $uiClient.openConnection(hashId),
       'Connection opened',
       'Error opening connection'
     )
@@ -304,7 +304,7 @@ const deleteStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
   run(
     'delete',
-    $uiClient.deleteChargingStation(hashId),
+    () => $uiClient.deleteChargingStation(hashId),
     'Charging station deleted',
     'Error deleting charging station',
     () => {

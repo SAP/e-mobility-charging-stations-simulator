@@ -10,13 +10,13 @@ import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
 
 const themesDir = resolve(__dirname, '../../../../src/assets/themes')
 const themeFiles = ['tokyo-night-storm.css', 'catppuccin-latte.css', 'sap-horizon.css']
-const requiredProperties = Object.values(TOKEN_CONTRACT)
 
 describe('TOKEN_CONTRACT theme compliance', () => {
   for (const themeFile of themeFiles) {
     it(`should define all contract tokens in ${themeFile}`, () => {
       const css = readFileSync(resolve(themesDir, themeFile), 'utf-8')
-      for (const prop of requiredProperties) {
+      for (const token of TOKEN_CONTRACT) {
+        const prop = `--${token}`
         const propRegex = new RegExp(
           `^\\s*${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`,
           'm'

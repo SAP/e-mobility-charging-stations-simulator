@@ -56,9 +56,9 @@ const props = defineProps<{
 const { formState, submitForm } = useSetUrlForm(props.hashId, props.chargingStationId)
 const $router = useRouter()
 
-const setSupervisionUrl = (): void => {
-  submitForm()
-  if (formState.value.supervisionUrl.length > 0) {
+const setSupervisionUrl = async (): Promise<void> => {
+  const success = await submitForm()
+  if (success) {
     resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
     $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
   }

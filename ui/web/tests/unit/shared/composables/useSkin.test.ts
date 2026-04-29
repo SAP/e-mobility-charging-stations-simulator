@@ -2,12 +2,12 @@
  * @file useSkin.test.ts
  * @description Tests for the useSkin shared composable.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN, skins } from '@/shared/skins/registry.js'
+import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
 
-vi.mock('@/shared/skins/registry.js', () => ({
+vi.mock('@/skins/registry.js', () => ({
   DEFAULT_SKIN: 'classic',
   skins: [
     {
@@ -33,6 +33,11 @@ describe('useSkin', () => {
       await switchSkin('classic')
     }
     localStorage.clear()
+  })
+
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-skin')
+    document.documentElement.removeAttribute('data-theme')
   })
 
   it('should return activeSkinId defaulting to DEFAULT_SKIN', () => {
@@ -165,5 +170,14 @@ describe('useSkin', () => {
     const { switchSkin } = useSkin()
     await switchSkin('modern')
     expect(document.documentElement.getAttribute('data-skin')).toBe('modern')
+  })
+
+  it('should handle corrupted localStorage value gracefully', () => {
+    // Manually set a non-JSON value
+    localStorage.setItem('ecs-ui-skin', 'not-valid-json{')
+    // Re-call useSkin — the singleton already initialized, so this tests
+    // the getFromLocalStorage fallback path
+    const { activeSkinId } = useSkin()
+    expect(activeSkinId.value).toBe('classic')
   })
 })

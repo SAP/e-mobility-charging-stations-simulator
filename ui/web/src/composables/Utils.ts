@@ -18,6 +18,9 @@ export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
     const item = localStorage.getItem(key)
     return item != null ? (JSON.parse(item) as T) : defaultValue
   } catch {
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to read key '${key}', using default`)
+    }
     return defaultValue
   }
 }
@@ -28,6 +31,9 @@ export const setToLocalStorage = <T>(key: string, value: T): void => {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
     // Silently fail on QuotaExceededError or SecurityError (Safari Private Browsing)
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to write key '${key}'`)
+    }
   }
 }
 
@@ -35,7 +41,9 @@ export const deleteFromLocalStorage = (key: string): void => {
   try {
     localStorage.removeItem(key)
   } catch {
-    // Silently fail on SecurityError (Safari Private Browsing)
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to delete key '${key}'`)
+    }
   }
 }
 
@@ -58,7 +66,9 @@ export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
       deleteFromLocalStorage(key)
     }
   } catch {
-    // Silently fail on SecurityError (Safari Private Browsing)
+    if (import.meta.env.DEV) {
+      console.debug(`[localStorage] Failed to delete keys matching '${pattern}'`)
+    }
   }
 }
 

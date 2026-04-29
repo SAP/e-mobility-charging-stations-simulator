@@ -17,7 +17,7 @@ function isValidTheme (name: string): name is ThemeName {
   return (AVAILABLE_THEMES as readonly string[]).includes(name)
 }
 
-const activeTheme: Ref<ThemeName> = ref(
+const activeThemeId: Ref<ThemeName> = ref(
   (() => {
     const stored = getFromLocalStorage<string>(THEME_STORAGE_KEY, DEFAULT_THEME)
     return isValidTheme(stored) ? stored : DEFAULT_THEME
@@ -45,14 +45,14 @@ function applyTheme (themeName: ThemeName): void {
 }
 
 // Apply initial theme at module initialization
-applyTheme(activeTheme.value)
+applyTheme(activeThemeId.value)
 
 /**
  * Returns the active theme, available themes, and a function to switch themes at runtime.
  * @returns Theme state and switcher
  */
 export function useTheme (): {
-  activeTheme: Readonly<Ref<ThemeName>>
+  activeThemeId: Readonly<Ref<ThemeName>>
   availableThemes: typeof AVAILABLE_THEMES
   setTheme: (name: string) => void
 } {
@@ -65,12 +65,12 @@ export function useTheme (): {
       return
     }
     applyTheme(name)
-    activeTheme.value = name
+    activeThemeId.value = name
     setToLocalStorage<string>(THEME_STORAGE_KEY, name)
   }
 
   return {
-    activeTheme: readonly(activeTheme),
+    activeThemeId: readonly(activeThemeId),
     availableThemes: AVAILABLE_THEMES,
     setTheme,
   }

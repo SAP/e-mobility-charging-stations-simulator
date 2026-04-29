@@ -13,9 +13,9 @@ describe('useTheme', () => {
     document.documentElement.style.colorScheme = ''
   })
 
-  it('should return activeTheme ref', () => {
-    const { activeTheme } = useTheme()
-    expect(activeTheme.value).toBe('tokyo-night-storm')
+  it('should return activeThemeId ref', () => {
+    const { activeThemeId } = useTheme()
+    expect(activeThemeId.value).toBe('tokyo-night-storm')
   })
 
   it('should return availableThemes with 3 entries', () => {
@@ -44,10 +44,10 @@ describe('useTheme', () => {
     expect(localStorage.getItem('ecs-ui-theme')).toBe('"sap-horizon"')
   })
 
-  it('should update activeTheme ref', () => {
-    const { activeTheme, setTheme } = useTheme()
+  it('should update activeThemeId ref', () => {
+    const { activeThemeId, setTheme } = useTheme()
     setTheme('catppuccin-latte')
-    expect(activeTheme.value).toBe('catppuccin-latte')
+    expect(activeThemeId.value).toBe('catppuccin-latte')
   })
 
   it('should not set colorScheme inline style (CSS handles it)', () => {
@@ -61,17 +61,17 @@ describe('useTheme', () => {
   })
 
   it('should ignore invalid theme name', () => {
-    const { activeTheme, setTheme } = useTheme()
-    const before = activeTheme.value
+    const { activeThemeId, setTheme } = useTheme()
+    const before = activeThemeId.value
     const setThemeUntyped = setTheme as (name: string) => void
     setThemeUntyped('nonexistent')
-    expect(activeTheme.value).toBe(before)
+    expect(activeThemeId.value).toBe(before)
   })
 
   it('should fall back to default for invalid localStorage theme value', () => {
     localStorage.setItem('ecs-ui-theme', '"invalid-theme-name"')
-    const { activeTheme, availableThemes } = useTheme()
-    expect(availableThemes).toContain(activeTheme.value)
+    const { activeThemeId, availableThemes } = useTheme()
+    expect(availableThemes).toContain(activeThemeId.value)
   })
 
   describe('SSR environment', () => {
@@ -89,8 +89,8 @@ describe('useTheme', () => {
         setTheme('catppuccin-latte')
       }).not.toThrow()
       globalThis.document = originalDocument
-      const { activeTheme } = useTheme()
-      expect(activeTheme.value).toBe('catppuccin-latte')
+      const { activeThemeId } = useTheme()
+      expect(activeThemeId.value).toBe('catppuccin-latte')
     })
   })
 })

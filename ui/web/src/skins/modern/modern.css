@@ -977,86 +977,6 @@ body:has(.modern-app) #app {
   }
 }
 
-/* ── Modal ─────────────────────────────────────────────────────────── */
-.modern-modal__backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: var(--skin-backdrop-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--skin-space-4);
-  z-index: 100;
-  animation: modern-fade-in var(--skin-transition);
-}
-
-.modern-modal {
-  background-color: var(--skin-surface-raised);
-  color: var(--color-text);
-  font-family: var(--skin-font);
-  border: 1px solid var(--skin-border);
-  border-radius: var(--skin-radius-lg);
-  box-shadow: var(--skin-shadow-modal);
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: modern-pop var(--skin-transition);
-}
-
-.modern-modal__head {
-  padding: var(--skin-space-4);
-  border-bottom: 1px solid var(--skin-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--skin-space-3);
-}
-
-.modern-modal__title {
-  margin: 0;
-  font-family: var(--skin-font);
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-text-strong);
-  letter-spacing: -0.015em;
-}
-
-.modern-modal__close {
-  background: transparent;
-  border: none;
-  color: var(--color-text-muted);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: var(--skin-space-1) var(--skin-space-2);
-  border-radius: var(--skin-radius-sm);
-  transition:
-    background-color var(--skin-transition),
-    color var(--skin-transition);
-}
-
-.modern-modal__close:hover {
-  color: var(--color-text-strong);
-  background-color: var(--skin-primary-ghost);
-}
-
-.modern-modal__body {
-  padding: var(--skin-space-4);
-  overflow: auto;
-}
-
-.modern-modal__foot {
-  padding: var(--skin-space-3) var(--skin-space-4);
-  border-top: 1px solid var(--skin-border);
-  background-color: var(--skin-surface-sunken);
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--skin-space-2);
-}
-
 /* ── Form ──────────────────────────────────────────────────────────── */
 .modern-form {
   display: flex;
@@ -1195,24 +1115,4 @@ body:has(.modern-app) #app {
   color: var(--color-text);
   max-height: 280px;
   overflow-y: auto;
-}
-
-@keyframes modern-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes modern-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.97) translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }

@@ -62,7 +62,7 @@
           </option>
         </select>
         <select
-          :value="activeTheme"
+          :value="activeThemeId"
           class="ui-server-selector"
           @change="e => setTheme((e.target as HTMLSelectElement).value as ThemeName)"
         >
@@ -150,7 +150,7 @@ const $route = useRoute()
 const $router = useRouter()
 
 const { activeSkinId, skins, switchSkin } = useSkin()
-const { activeTheme, availableThemes, setTheme } = useTheme()
+const { activeThemeId, availableThemes, setTheme } = useTheme()
 
 const {
   handleUIServerChange: switchServer,

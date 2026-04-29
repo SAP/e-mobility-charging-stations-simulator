@@ -230,14 +230,14 @@ const toggleLock = (): void => {
   if (props.connector.locked === true) {
     run(
       'lock',
-      $uiClient.unlockConnector(props.hashId, props.connectorId),
+      () => $uiClient.unlockConnector(props.hashId, props.connectorId),
       'Connector unlocked',
       'Error unlocking connector'
     )
   } else {
     run(
       'lock',
-      $uiClient.lockConnector(props.hashId, props.connectorId),
+      () => $uiClient.lockConnector(props.hashId, props.connectorId),
       'Connector locked',
       'Error locking connector'
     )
@@ -248,14 +248,14 @@ const toggleAtg = (): void => {
   if (props.atgStatus?.start === true) {
     run(
       'atg',
-      $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
+      () => $uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
       'ATG stopped',
       'Error stopping ATG'
     )
   } else {
     run(
       'atg',
-      $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
+      () => $uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
       'ATG started',
       'Error starting ATG'
     )
@@ -269,10 +269,11 @@ const stopTransaction = (): void => {
   }
   run(
     'stopTx',
-    $uiClient.stopTransaction(props.hashId, {
-      ocppVersion: props.ocppVersion,
-      transactionId: props.connector.transactionId,
-    }),
+    () =>
+      $uiClient.stopTransaction(props.hashId, {
+        ocppVersion: props.ocppVersion,
+        transactionId: props.connector.transactionId,
+      }),
     'Transaction stopped',
     'Error stopping transaction'
   )

@@ -156,7 +156,7 @@ Set `skin` in `config.json` to select the default UI layout. Users can switch sk
 | `classic` | Table-based rows with a sticky sidebar for forms. |
 | `modern`  | Responsive card grid with modal dialogs.          |
 
-Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/shared/skins/registry.ts`.
+Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/skins/registry.ts`.
 
 ## Getting started
 

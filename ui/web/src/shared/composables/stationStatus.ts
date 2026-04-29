@@ -1,3 +1,9 @@
+/**
+ * @file stationStatus.ts
+ * @description Pure utility functions for OCPP connector/station status mapping.
+ * These are not Vue composables (no reactive state) but live in the composables directory
+ * because they are consumed exclusively by skin components via the shared layer.
+ */
 import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
 
 /**

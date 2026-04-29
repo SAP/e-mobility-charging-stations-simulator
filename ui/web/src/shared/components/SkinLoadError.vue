@@ -5,7 +5,7 @@
       Retry
     </button>
     <button @click="resetToDefault">
-      Switch to Classic
+      Switch to {{ defaultSkinLabel }}
     </button>
   </div>
 </template>
@@ -13,9 +13,11 @@
 <script setup lang="ts">
 import { setToLocalStorage } from '@/composables/Utils.js'
 import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/shared/skins/registry.js'
+import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
 
 defineEmits<{ retry: [] }>()
+
+const defaultSkinLabel = skins.find(s => s.id === DEFAULT_SKIN)?.label ?? 'Default'
 
 /**
  * Resets to default skin with reload loop protection.

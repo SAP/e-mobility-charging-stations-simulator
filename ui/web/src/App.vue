@@ -16,7 +16,7 @@ import { computed, defineAsyncComponent, markRaw } from 'vue'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { skins } from '@/shared/skins/registry.js'
+import { skins } from '@/skins/registry.js'
 
 const { activeSkinId } = useSkin()
 

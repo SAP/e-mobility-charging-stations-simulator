@@ -1,5 +1,7 @@
 /**
  * @file useAsyncAction.ts
+ * @description Shared async action executor with pending-key guard and toast notifications.
+ * This is the forward pattern for fire-and-forget actions — prefer over useExecuteAction for new code.
  */
 import { reactive, readonly } from 'vue'
 import { useToast } from 'vue-toast-notification'
@@ -20,7 +22,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     pending: Readonly<T>
     run: (
       key: keyof T,
-      action: Promise<unknown>,
+      action: () => Promise<unknown>,
       successMsg: string,
       errorMsg: string,
       onSuccess?: () => void
@@ -39,7 +41,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
    */
   function run (
     key: keyof T,
-    action: Promise<unknown>,
+    action: () => Promise<unknown>,
     successMsg: string,
     errorMsg: string,
     onSuccess?: () => void
@@ -49,7 +51,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     // The promise chain has .catch() and .finally() attached but the linter cannot
     // see through the intermediate .then(), hence the suppression.
     // eslint-disable-next-line promise/catch-or-return
-    action
+    action()
       .then(() => {
         try {
           onSuccess?.()

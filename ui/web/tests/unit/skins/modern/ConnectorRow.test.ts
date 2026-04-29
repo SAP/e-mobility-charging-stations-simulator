@@ -19,6 +19,7 @@ import { TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
 import { createMockUIClient, type MockUIClient } from '../../helpers'
 
 let mockClient: MockUIClient
+let wrapper: ReturnType<typeof mountRow> | undefined
 
 /**
  * Mounts a ConnectorRow with sensible defaults; pass partial overrides.
@@ -61,6 +62,7 @@ describe('modern ConnectorRow', () => {
   })
 
   afterEach(() => {
+    wrapper?.unmount()
     vi.clearAllMocks()
   })
 
