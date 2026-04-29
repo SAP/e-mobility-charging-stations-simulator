@@ -1,0 +1,66 @@
+/**
+ * @file useAsyncAction.ts
+ */
+import { reactive } from 'vue'
+import { useToast } from 'vue-toast-notification'
+
+/**
+ * Creates a reactive pending-state map and a run() helper for async actions with toast notifications.
+ *
+ * Encapsulates the pending-key guard, toast feedback, and error logging pattern
+ * shared by modern skin components.
+ * @param initialPending - Object defining the pending keys (e.g. `{ connection: false, startStop: false }`)
+ * @param onRefresh - Called after each successful action (e.g. `() => emit('need-refresh')`)
+ * @returns `{ pending, run }` — reactive pending map and action executor
+ */
+export function useAsyncAction<T extends Record<string, boolean>> (
+  initialPending: T,
+  onRefresh?: () => void
+): {
+  pending: T
+  run: (
+    key: keyof T,
+    action: Promise<unknown>,
+    successMsg: string,
+    errorMsg: string,
+    onSuccess?: () => void
+  ) => void
+} {
+  const $toast = useToast()
+  const pending = reactive({ ...initialPending }) as T
+
+  /**
+   * Executes an async action with pending-key guard, toast feedback, and error logging.
+   * @param key - The pending key to guard and track
+   * @param action - The async operation to execute
+   * @param successMsg - Toast message on success
+   * @param errorMsg - Toast message and console prefix on failure
+   * @param onSuccess - Optional callback invoked after success (before onRefresh)
+   */
+  function run (
+    key: keyof T,
+    action: Promise<unknown>,
+    successMsg: string,
+    errorMsg: string,
+    onSuccess?: () => void
+  ): void {
+    if (pending[key]) return
+    pending[key] = true as T[keyof T]
+    action
+      .then(() => {
+        onSuccess?.()
+        $toast.success(successMsg)
+        onRefresh?.()
+        return undefined
+      })
+      .finally(() => {
+        pending[key] = false as T[keyof T]
+      })
+      .catch((error: unknown) => {
+        console.error(`${errorMsg}:`, error)
+        $toast.error(errorMsg)
+      })
+  }
+
+  return { pending, run }
+}

@@ -162,10 +162,11 @@
 <script setup lang="ts">
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/composables'
+import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 import { getConnectorStatusVariant } from '@/shared/composables/useStationStatus.js'
 
 import ActionButton from './ActionButton.vue'
@@ -197,11 +198,10 @@ const emit = defineEmits<{
 const $uiClient = useUIClient()
 const $toast = useToast()
 
-const pending = reactive({
-  atg: false,
-  lock: false,
-  stopTx: false,
-})
+const { pending, run } = useAsyncAction(
+  { atg: false, lock: false, stopTx: false },
+  () => emit('need-refresh')
+)
 
 const identifier = computed(() =>
   props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
@@ -226,29 +226,6 @@ const txEnergy = computed(() => {
   if (wh >= 1000) return `${(wh / 1000).toFixed(2)} kWh`
   return `${Math.round(wh)} Wh`
 })
-
-const run = (
-  key: keyof typeof pending,
-  action: Promise<unknown>,
-  successMsg: string,
-  errorMsg: string
-): void => {
-  if (pending[key]) return
-  pending[key] = true
-  action
-    .then(() => {
-      $toast.success(successMsg)
-      emit('need-refresh')
-      return undefined
-    })
-    .finally(() => {
-      pending[key] = false
-    })
-    .catch((error: unknown) => {
-      console.error(`${errorMsg}:`, error)
-      $toast.error(errorMsg)
-    })
-}
 
 const toggleLock = (): void => {
   if (props.connector.locked === true) {

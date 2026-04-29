@@ -166,14 +166,14 @@ import {
   type Status,
   WebSocketReadyState,
 } from 'ui-common'
-import { computed, reactive, ref } from 'vue'
-import { useToast } from 'vue-toast-notification'
+import { computed, ref } from 'vue'
 
 import {
   deleteLocalStorageByKeyPattern,
   EMPTY_VALUE_PLACEHOLDER as EMPTY,
   useUIClient,
 } from '@/composables'
+import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 import ActionButton from './ActionButton.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -200,14 +200,12 @@ const emit = defineEmits<{
 }>()
 
 const $uiClient = useUIClient()
-const $toast = useToast()
 
 const confirmingDelete = ref(false)
-const pending = reactive({
-  connection: false,
-  delete: false,
-  startStop: false,
-})
+const { pending, run } = useAsyncAction(
+  { connection: false, delete: false, startStop: false },
+  () => emit('need-refresh')
+)
 
 const wsOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
@@ -275,31 +273,6 @@ const getATGStatus = (connectorId: number): Status | undefined =>
   props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
     entry => entry.connectorId === connectorId
   )?.status
-
-const run = (
-  key: keyof typeof pending,
-  action: Promise<unknown>,
-  successMsg: string,
-  errorMsg: string,
-  onSuccess?: () => void
-): void => {
-  if (pending[key]) return
-  pending[key] = true
-  action
-    .then(() => {
-      onSuccess?.()
-      $toast.success(successMsg)
-      emit('need-refresh')
-      return undefined
-    })
-    .finally(() => {
-      pending[key] = false
-    })
-    .catch((error: unknown) => {
-      console.error(`${errorMsg}:`, error)
-      $toast.error(errorMsg)
-    })
-}
 
 const toggleStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
