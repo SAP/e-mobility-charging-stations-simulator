@@ -86,7 +86,7 @@ const props = defineProps<{
   ocppVersion?: OCPPVersion
 }>()
 
-const $emit = defineEmits(['need-refresh'])
+const $emit = defineEmits<{ 'need-refresh': [] }>()
 
 const $uiClient = useUIClient()
 

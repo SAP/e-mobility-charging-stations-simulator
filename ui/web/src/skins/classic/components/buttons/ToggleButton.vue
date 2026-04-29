@@ -27,7 +27,7 @@ const props = defineProps<{
   status?: boolean
 }>()
 
-const $emit = defineEmits(['clicked'])
+const $emit = defineEmits<{ clicked: [status: boolean] }>()
 
 const id =
   props.shared === true

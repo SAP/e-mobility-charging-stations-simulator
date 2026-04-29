@@ -102,7 +102,7 @@
 import './classic.css'
 
 import { randomUUID, type UIServerConfigurationSection, type UUIDv4 } from 'ui-common'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -156,7 +156,7 @@ const $chargingStations = useChargingStations()
 const $route = useRoute()
 const $router = useRouter()
 
-const { activeSkinId, switchSkin, skins } = useSkin()
+const { activeSkinId, skins, switchSkin } = useSkin()
 const { activeTheme, availableThemes, setTheme } = useTheme()
 
 const { handleUIServerChange: switchServer, startSimulator, stopSimulator } = useSimulatorControl({
@@ -180,20 +180,16 @@ watch($chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
 })
 
-watch($route, to => {
-  if (to.name === ROUTE_NAMES.CHARGING_STATIONS) {
+watch(() => $route.name, name => {
+  if (name === ROUTE_NAMES.CHARGING_STATIONS) {
     refresh()
   }
 })
 
-const uiServerConfigurations: {
-  configuration: UIServerConfigurationSection
-  index: number
-}[] = ($configuration.value.uiServer as UIServerConfigurationSection[]).map(
-  (configuration: UIServerConfigurationSection, index: number) => ({
-    configuration,
-    index,
-  })
+const uiServerConfigurations = computed(() =>
+  ($configuration.value.uiServer as UIServerConfigurationSection[]).map(
+    (configuration: UIServerConfigurationSection, index: number) => ({ configuration, index })
+  )
 )
 </script>
 

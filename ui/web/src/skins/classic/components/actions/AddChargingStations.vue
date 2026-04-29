@@ -46,8 +46,6 @@
       Fixed name:
       <input
         v-model="formState.fixedName"
-        false-value="false"
-        true-value="true"
         type="checkbox"
       >
     </li>
@@ -87,8 +85,6 @@
       Auto start:
       <input
         v-model="formState.autoStart"
-        false-value="false"
-        true-value="true"
         type="checkbox"
       >
     </li>
@@ -96,8 +92,6 @@
       Persistent configuration:
       <input
         v-model="formState.persistentConfiguration"
-        false-value="false"
-        true-value="true"
         type="checkbox"
       >
     </li>
@@ -105,8 +99,6 @@
       OCPP strict compliance:
       <input
         v-model="formState.ocppStrictCompliance"
-        false-value="false"
-        true-value="true"
         type="checkbox"
       >
     </li>
@@ -114,8 +106,6 @@
       Performance statistics:
       <input
         v-model="formState.enableStatistics"
-        false-value="false"
-        true-value="true"
         type="checkbox"
       >
     </li>

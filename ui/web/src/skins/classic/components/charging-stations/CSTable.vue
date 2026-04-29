@@ -82,7 +82,7 @@ defineProps<{
   chargingStations: ChargingStationData[]
 }>()
 
-const $emit = defineEmits(['need-refresh'])
+const $emit = defineEmits<{ 'need-refresh': [] }>()
 </script>
 
 <style scoped>

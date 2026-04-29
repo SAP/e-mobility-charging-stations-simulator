@@ -142,7 +142,7 @@ const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
 
-const $emit = defineEmits(['need-refresh'])
+const $emit = defineEmits<{ 'need-refresh': [] }>()
 
 const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
