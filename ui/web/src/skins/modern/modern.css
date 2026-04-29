@@ -176,7 +176,7 @@ body:has(.modern-app) #app {
   background-color: var(--color-primary);
   display: grid;
   place-items: center;
-  color: #ffffff;
+  color: var(--color-text-on-button);
   font-weight: 700;
   font-size: 0.85rem;
   letter-spacing: -0.04em;
@@ -543,7 +543,7 @@ body:has(.modern-app) #app {
 }
 
 .modern-icon-btn:hover:not(:disabled) {
-  color: #ffffff;
+  color: var(--color-text-on-button);
   background-color: var(--color-primary);
   border-color: var(--color-primary);
 }
@@ -577,13 +577,13 @@ body:has(.modern-app) #app {
 .modern-icon-btn--primary {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-text-on-button);
 }
 
 .modern-icon-btn--primary:hover:not(:disabled) {
   background-color: var(--skin-primary-bright);
   border-color: var(--skin-primary-bright);
-  color: #ffffff;
+  color: var(--color-text-on-button);
 }
 
 /* Desaturated red fill — mixes 22% neutral gray into the state-err
@@ -592,13 +592,13 @@ body:has(.modern-app) #app {
 .modern-icon-btn--danger {
   background-color: color-mix(in srgb, var(--color-state-err) 78%, #888888 22%);
   border-color: color-mix(in srgb, var(--color-state-err) 78%, #888888 22%);
-  color: #ffffff;
+  color: var(--color-text-on-button);
 }
 
 .modern-icon-btn--danger:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--color-state-err) 92%, #888888 8%);
   border-color: color-mix(in srgb, var(--color-state-err) 92%, #888888 8%);
-  color: #ffffff;
+  color: var(--color-text-on-button);
   box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--color-state-err) 40%, transparent);
 }
 
@@ -933,14 +933,14 @@ body:has(.modern-app) #app {
 
 .modern-btn--primary {
   background-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-text-on-button);
   border-color: var(--color-primary);
 }
 
 .modern-btn--primary:hover:not(:disabled) {
   background-color: var(--skin-primary-bright);
   border-color: var(--skin-primary-bright);
-  color: #ffffff;
+  color: var(--color-text-on-button);
   box-shadow: var(--skin-shadow-md);
 }
 

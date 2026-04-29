@@ -18,6 +18,7 @@
   --sap-button-border: #bcc3ca;
   --sap-button-text: #0064d9;
   --sap-button-emphasized-bg: #0070f2;
+  --sap-white: #fff;
 
   /* Semantic */
   --color-bg: var(--sap-bg);
@@ -32,7 +33,7 @@
   --color-text: var(--sap-text);
   --color-text-strong: var(--sap-text);
   --color-text-muted: var(--sap-label);
-  --color-text-on-button: #fff;
+  --color-text-on-button: var(--sap-white);
   --color-primary: var(--sap-highlight);
   --color-border: var(--sap-border);
   --color-border-row: var(--sap-border);
