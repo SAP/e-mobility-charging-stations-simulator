@@ -1,7 +1,6 @@
 /* SAP Horizon */
 
-:root,
-[data-theme='sap-horizon'] {
+:root[data-theme='sap-horizon'] {
   /* Palette */
   --sap-bg: #f5f6f7;
   --sap-bg-base: #fff;

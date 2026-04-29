@@ -1,7 +1,6 @@
 /* Tokyo Night Storm */
 
-:root,
-[data-theme='tokyo-night-storm'] {
+:root[data-theme='tokyo-night-storm'] {
   /* Palette */
   --tn-bg-dark: #1f2335;
   --tn-bg-base: #24283b;

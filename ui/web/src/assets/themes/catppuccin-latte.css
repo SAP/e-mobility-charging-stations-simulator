@@ -1,7 +1,6 @@
 /* Catppuccin Latte */
 
-:root,
-[data-theme='catppuccin-latte'] {
+:root[data-theme='catppuccin-latte'] {
   /* Palette */
   --ctp-base: #eff1f5;
   --ctp-mantle: #e6e9ef;
