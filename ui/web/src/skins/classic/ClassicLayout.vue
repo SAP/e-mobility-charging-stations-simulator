@@ -119,7 +119,7 @@ import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
 import StateButton from './components/buttons/StateButton.vue'
 import ToggleButton from './components/buttons/ToggleButton.vue'
 import CSTable from './components/charging-stations/CSTable.vue'
-import Container from './components/Container.vue'
+import Container from './components/ClassicContainer.vue'
 
 /**
  * Extracts the value from a select element change event.

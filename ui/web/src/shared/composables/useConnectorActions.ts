@@ -21,7 +21,17 @@ interface ConnectorActionsDeps {
  * @param deps - Connector identity and optional refresh callback
  * @returns Action functions and reactive pending state
  */
-export function useConnectorActions (deps: ConnectorActionsDeps) {
+export function useConnectorActions (deps: ConnectorActionsDeps): {
+  lockConnector: () => void
+  pending: Readonly<{ atg: boolean; lock: boolean; stopTx: boolean }>
+  startATG: () => void
+  stopATG: () => void
+  stopTransaction: (
+    transactionId: null | number | string | undefined,
+    ocppVersion?: OCPPVersion
+  ) => void
+  unlockConnector: () => void
+} {
   const $uiClient = useUIClient()
   const $toast = useToast()
   const { pending, run } = useAsyncAction(

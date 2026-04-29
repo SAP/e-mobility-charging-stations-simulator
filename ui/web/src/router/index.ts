@@ -3,7 +3,7 @@ import { h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
-import { ROUTE_NAMES } from '@/composables'
+import { ROUTE_NAMES } from '@/composables/index.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { DEFAULT_SKIN } from '@/skins/registry.js'
 
@@ -79,6 +79,9 @@ export const router = createRouter({
 })
 
 router.beforeEach(to => {
+  if (to.name === ROUTE_NAMES.NOT_FOUND) {
+    return { name: ROUTE_NAMES.CHARGING_STATIONS }
+  }
   if (to.meta.skinOnly != null) {
     const { activeSkinId } = useSkin()
     if (to.meta.skinOnly !== activeSkinId.value) {

@@ -11,7 +11,7 @@ import { defineComponent, ref } from 'vue'
 import { chargingStationsKey, templatesKey, uiClientKey } from '@/composables'
 
 // Mock Modal to render slots inline (no Teleport), so `wrapper.find()` works.
-vi.mock('@/skins/modern/components/Modal.vue', () => ({
+vi.mock('@/skins/modern/components/ModernModal.vue', () => ({
   default: defineComponent({
     emits: ['close'],
     name: 'ModalStub',

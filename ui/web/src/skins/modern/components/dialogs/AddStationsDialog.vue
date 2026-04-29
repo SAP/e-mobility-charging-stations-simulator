@@ -165,7 +165,7 @@
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import ActionButton from '../ActionButton.vue'
-import Modal from '../Modal.vue'
+import Modal from '../ModernModal.vue'
 
 const emit = defineEmits<{ close: [] }>()
 

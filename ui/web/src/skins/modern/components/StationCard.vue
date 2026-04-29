@@ -55,24 +55,9 @@
         tabindex="0"
         aria-label="Edit supervision URL"
         :title="chargingStation.supervisionUrl"
-        @click="
-          $emit('open-set-url', {
-            hashId: chargingStation.stationInfo.hashId,
-            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
-          })
-        "
-        @keydown.enter.prevent="
-          $emit('open-set-url', {
-            hashId: chargingStation.stationInfo.hashId,
-            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
-          })
-        "
-        @keydown.space.prevent="
-          $emit('open-set-url', {
-            hashId: chargingStation.stationInfo.hashId,
-            chargingStationId: chargingStation.stationInfo.chargingStationId ?? '',
-          })
-        "
+        @click="emitOpenSetUrl"
+        @keydown.enter.prevent="emitOpenSetUrl"
+        @keydown.space.prevent="emitOpenSetUrl"
       >
         <span class="modern-card__url-badge">CSMS</span>
         <p class="modern-card__url">
@@ -83,7 +68,7 @@
           class="modern-card__url-edit"
           title="Edit supervision URL"
           aria-label="Edit supervision URL"
-          @click.stop="openSupervisionDialog"
+          @click.stop="emitOpenSetUrl"
         >
           <svg
             viewBox="0 0 24 24"
@@ -148,7 +133,7 @@
         </ActionButton>
         <ActionButton
           variant="ghost"
-          @click="openAuthorizeDialog"
+          @click="emitOpenAuthorize"
         >
           Authorize
         </ActionButton>
@@ -259,14 +244,14 @@ const toggleConnection = (): void => {
   }
 }
 
-const openSupervisionDialog = (): void => {
+const emitOpenSetUrl = (): void => {
   emit('open-set-url', {
     chargingStationId: props.chargingStation.stationInfo.chargingStationId,
     hashId: props.chargingStation.stationInfo.hashId,
   })
 }
 
-const openAuthorizeDialog = (): void => {
+const emitOpenAuthorize = (): void => {
   emit('open-authorize', {
     chargingStationId: props.chargingStation.stationInfo.chargingStationId,
     hashId: props.chargingStation.stationInfo.hashId,

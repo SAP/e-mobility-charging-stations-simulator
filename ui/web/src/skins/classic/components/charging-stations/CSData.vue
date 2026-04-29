@@ -130,7 +130,7 @@ import { useStationActions } from '@/shared/composables/useStationActions.js'
 import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 import { getATGStatus, getConnectorEntries } from '@/shared/utils/stationStatus.js'
 
-import Button from '../buttons/Button.vue'
+import Button from '../buttons/ClassicButton.vue'
 import StateButton from '../buttons/StateButton.vue'
 import ToggleButton from '../buttons/ToggleButton.vue'
 import CSConnector from './CSConnector.vue'

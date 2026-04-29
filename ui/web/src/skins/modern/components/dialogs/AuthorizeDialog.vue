@@ -67,7 +67,7 @@ import { useUIClient } from '@/composables'
 
 import { type FailureInfo, getFailureInfo } from '../../utils/errors.js'
 import ActionButton from '../ActionButton.vue'
-import Modal from '../Modal.vue'
+import Modal from '../ModernModal.vue'
 
 const props = defineProps<{
   chargingStationId: string

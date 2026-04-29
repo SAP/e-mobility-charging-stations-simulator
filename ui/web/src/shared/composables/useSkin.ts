@@ -32,7 +32,7 @@ let switchPromise: null | Promise<boolean> = null
 const lastError: Ref<null | string> = ref(null)
 
 /** Whether a skin switch is currently in progress. */
-const switching: Ref<boolean> = ref(false)
+const isSwitching: Ref<boolean> = ref(false)
 
 /**
  * Returns the active skin id, available skins, and a function to switch skins at runtime.
@@ -40,9 +40,9 @@ const switching: Ref<boolean> = ref(false)
  */
 export function useSkin (): {
   activeSkinId: Readonly<Ref<string>>
+  isSwitching: Readonly<Ref<boolean>>
   lastError: Readonly<Ref<null | string>>
   skins: readonly SkinDefinition[]
-  switching: Readonly<Ref<boolean>>
   switchSkin: (id: string) => Promise<boolean>
 } {
   /**
@@ -64,9 +64,9 @@ export function useSkin (): {
 
   return {
     activeSkinId: readonly(activeSkinId),
+    isSwitching: readonly(isSwitching),
     lastError: readonly(lastError),
     skins,
-    switching: readonly(switching),
     switchSkin,
   }
 }
@@ -98,17 +98,18 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
   if (skin == null) {
     return false
   }
-  switching.value = true
+  isSwitching.value = true
   if (skinId === activeSkinId.value) {
-    // Ensure styles are loaded even if skin is already active (idempotent success)
     try {
       await loadSkinStyles(skinId)
-      if (typeof sessionStorage !== 'undefined') {
+      try {
         sessionStorage.removeItem('skin-error-reload-count')
+      } catch {
+        /* sessionStorage unavailable */
       }
       return true
     } finally {
-      switching.value = false
+      isSwitching.value = false
     }
   }
   try {
@@ -119,8 +120,10 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
       document.documentElement.setAttribute('data-skin', skinId)
     }
     setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
-    if (typeof sessionStorage !== 'undefined') {
+    try {
       sessionStorage.removeItem('skin-error-reload-count')
+    } catch {
+      /* sessionStorage unavailable */
     }
     return true
   } catch (error) {
@@ -129,7 +132,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     lastError.value = message
     return false
   } finally {
-    switching.value = false
+    isSwitching.value = false
   }
 }
 

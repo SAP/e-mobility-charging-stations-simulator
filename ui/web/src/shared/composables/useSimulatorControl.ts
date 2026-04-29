@@ -11,7 +11,7 @@ import {
   useChargingStations,
   useConfiguration,
   useUIClient,
-} from '@/composables'
+} from '@/composables/index.js'
 import { type LayoutData } from '@/shared/composables/useLayoutData.js'
 
 export interface SimulatorControlActions {

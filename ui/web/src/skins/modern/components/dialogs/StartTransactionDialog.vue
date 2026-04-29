@@ -80,7 +80,7 @@ import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 import { type FailureInfo, getFailureInfo } from '../../utils/errors'
 import ActionButton from '../ActionButton.vue'
-import Modal from '../Modal.vue'
+import Modal from '../ModernModal.vue'
 
 const props = defineProps<{
   chargingStationId: string

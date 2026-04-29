@@ -222,15 +222,6 @@ export default defineConfig([
     },
   },
   {
-    files: [
-      'ui/web/src/skins/classic/components/Container.vue',
-      'ui/web/src/skins/classic/components/buttons/Button.vue',
-    ],
-    rules: {
-      'vue/multi-word-component-names': 'off',
-    },
-  },
-  {
     files: ['tests/**/*.test.ts', 'tests/**/*.test.mts', 'tests/**/*.test.cts'],
     rules: {
       '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],

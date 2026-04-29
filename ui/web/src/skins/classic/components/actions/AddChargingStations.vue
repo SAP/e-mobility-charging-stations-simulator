@@ -126,7 +126,7 @@ import { useRouter } from 'vue-router'
 import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
-import Button from '../buttons/Button.vue'
+import Button from '../buttons/ClassicButton.vue'
 
 const $router = useRouter()
 

@@ -13,7 +13,14 @@ import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
  * @param options.onRefresh - Callback invoked after successful actions
  * @returns Action functions and reactive pending state
  */
-export function useStationActions (options?: { onRefresh?: () => void }) {
+export function useStationActions (options?: { onRefresh?: () => void }): {
+  closeConnection: (hashId: string) => void
+  deleteStation: (hashId: string, onSuccess?: () => void) => void
+  openConnection: (hashId: string) => void
+  pending: Readonly<{ connection: boolean; delete: boolean; startStop: boolean }>
+  startStation: (hashId: string) => void
+  stopStation: (hashId: string) => void
+} {
   const $uiClient = useUIClient()
   const { pending, run } = useAsyncAction(
     { connection: false, delete: false, startStop: false },

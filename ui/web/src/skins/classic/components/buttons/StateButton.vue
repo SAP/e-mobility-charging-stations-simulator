@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import Button from './Button.vue'
+import Button from './ClassicButton.vue'
 
 defineProps<{
   active: boolean

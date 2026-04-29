@@ -60,8 +60,6 @@
 /* global HTMLElement, HTMLDivElement, KeyboardEvent, MouseEvent */
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 
-defineOptions({ name: 'ModernModal' })
-
 const props = withDefaults(
   defineProps<{
     closeOnBackdrop?: boolean

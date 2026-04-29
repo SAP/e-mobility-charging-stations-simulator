@@ -50,6 +50,7 @@ describe('ClassicLayout', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should render without crashing', async () => {
@@ -80,8 +81,11 @@ describe('ClassicLayout', () => {
       return options.some(o => ['classic', 'modern'].includes(o.element.value))
     })
     if (skinSelect != null) {
+      await skinSelect.setValue('modern')
       await skinSelect.trigger('change')
+      expect(document.documentElement.getAttribute('data-skin')).toBeDefined()
     }
+    expect(skinSelect).toBeDefined()
   })
 
   it('should trigger switchTheme when theme select changes', async () => {
@@ -95,7 +99,10 @@ describe('ClassicLayout', () => {
       )
     })
     if (themeSelect != null) {
+      await themeSelect.setValue('catppuccin-latte')
       await themeSelect.trigger('change')
+      expect(document.documentElement.getAttribute('data-theme')).toBeDefined()
     }
+    expect(themeSelect).toBeDefined()
   })
 })

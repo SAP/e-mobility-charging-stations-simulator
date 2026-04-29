@@ -78,7 +78,7 @@ describe('useSkin', () => {
     expect(lastError.value).toBe('Network error')
   })
 
-  it('should set switching to true during async load', async () => {
+  it('should set isSwitching to true during async load', async () => {
     const modernSkin = skins.find(s => s.id === 'modern')
     expect(modernSkin).toBeDefined()
     if (modernSkin == null) return
@@ -90,12 +90,12 @@ describe('useSkin', () => {
           rejectLoad = reject
         })
     )
-    const { switching, switchSkin } = useSkin()
+    const { isSwitching, switchSkin } = useSkin()
     const promise = switchSkin('modern')
-    expect(switching.value).toBe(true)
+    expect(isSwitching.value).toBe(true)
     rejectLoad(new Error('test cleanup'))
     await promise
-    expect(switching.value).toBe(false)
+    expect(isSwitching.value).toBe(false)
   })
 
   it('should guard against concurrent switchSkin calls', async () => {

@@ -8,7 +8,7 @@ import { nextTick } from 'vue'
 
 import ActionButton from '@/skins/modern/components/ActionButton.vue'
 import ConfirmDialog from '@/skins/modern/components/ConfirmDialog.vue'
-import Modal from '@/skins/modern/components/Modal.vue'
+import Modal from '@/skins/modern/components/ModernModal.vue'
 import StatePill from '@/skins/modern/components/StatePill.vue'
 
 /**

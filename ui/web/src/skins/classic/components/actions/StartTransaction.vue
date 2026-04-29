@@ -45,7 +45,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
-import Button from '../buttons/Button.vue'
+import Button from '../buttons/ClassicButton.vue'
 
 const props = defineProps<{
   chargingStationId: string

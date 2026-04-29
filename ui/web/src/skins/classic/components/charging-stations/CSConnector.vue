@@ -74,7 +74,7 @@ import { useRouter } from 'vue-router'
 import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/composables'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 
-import Button from '../buttons/Button.vue'
+import Button from '../buttons/ClassicButton.vue'
 import StateButton from '../buttons/StateButton.vue'
 import ToggleButton from '../buttons/ToggleButton.vue'
 

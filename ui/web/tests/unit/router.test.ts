@@ -15,9 +15,9 @@ vi.mock('@/shared/composables/useSkin.js', async importOriginal => {
     SKIN_STORAGE_KEY: 'ecs-ui-skin',
     useSkin: () => ({
       activeSkinId: readonly(activeSkinId),
+      isSwitching: readonly(ref(false)),
       lastError: readonly(ref(null)),
       skins: [],
-      switching: readonly(ref(false)),
       switchSkin: vi.fn(),
     }),
   }

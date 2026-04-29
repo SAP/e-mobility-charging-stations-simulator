@@ -54,6 +54,7 @@ describe('Actions', () => {
 
     afterEach(() => {
       vi.clearAllMocks()
+      vi.restoreAllMocks()
     })
 
     /** @returns Mounted AddChargingStations wrapper */
@@ -155,6 +156,7 @@ describe('Actions', () => {
 
     afterEach(() => {
       vi.clearAllMocks()
+      vi.restoreAllMocks()
     })
 
     /** @returns Mounted SetSupervisionUrl wrapper */
@@ -250,6 +252,7 @@ describe('Actions', () => {
 
     afterEach(() => {
       vi.clearAllMocks()
+      vi.restoreAllMocks()
     })
 
     /** @returns Mounted StartTransaction wrapper */

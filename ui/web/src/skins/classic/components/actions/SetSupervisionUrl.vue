@@ -47,7 +47,7 @@ import { useRouter } from 'vue-router'
 import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 
-import Button from '../buttons/Button.vue'
+import Button from '../buttons/ClassicButton.vue'
 
 const props = defineProps<{
   chargingStationId: string

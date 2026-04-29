@@ -88,7 +88,7 @@ import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 import { stripStationId } from '@/shared/utils/stripStationId.js'
 
 import ActionButton from '../ActionButton.vue'
-import Modal from '../Modal.vue'
+import Modal from '../ModernModal.vue'
 
 const props = defineProps<{
   chargingStationId: string

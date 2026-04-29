@@ -18,7 +18,7 @@ import {
   TOGGLE_BUTTON_KEY_PREFIX,
 } from '@/composables'
 
-import Button from './Button.vue'
+import Button from './ClassicButton.vue'
 
 const props = defineProps<{
   id: string
