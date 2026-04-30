@@ -88,22 +88,22 @@
     "date-fns": "^4.1.0",
     "http-status-codes": "^2.3.0",
     "logform": "^2.7.0",
-    "mnemonist": "0.40.3",
+    "mnemonist": "0.40.4",
     "mongodb": "^7.2.0",
     "poolifier": "^5.3.2",
     "tar": "^7.5.13",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.20.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.2",
-    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
     "@cspell/eslint-plugin": "^10.0.0",
     "@eslint/js": "^9.39.4",
     "@mikro-orm/cli": "^6.6.13",
