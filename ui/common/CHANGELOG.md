@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.5.1...ui-common@v4.6.0) (2026-04-30)
+
+### 🚀 Features
+
+- **ui-web:** add dracula, gruvbox-dark, rose-pine themes and fix surface hierarchy ([b3a6af7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b3a6af77aca2c5747771044be3bbdfd926093e52))
+- **ui-web:** add teal-dark and teal-light themes and fix sap-horizon state colors ([7f21068](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7f210688177e9e0ce2943fb5176c700e37bcf673))
+- **ui-web:** implement runtime skin system with classic and modern skins ([#1815](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1815)) ([72aba1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72aba1edf1957107024a043cbbd122fc0a4ee552))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1820](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1820)) ([52667c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52667c5e1e2133b83d242d20bee90ca58657bd4a))
+- **ui-web:** resolve WS race condition causing DISCONNECTED on modern skin ([e626ef8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e626ef8a0f8ce4ac1010fc440a0c27dd225b4435))
+- **ui:** make Authorize version-aware for OCPP 2.0.1 stations ([1d31a91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1d31a910211733b0deaf64d6c1398d3248d94b55)), closes [#1817](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1817)
+
+### ✨ Polish
+
+- **ui-common:** use ProcedureName enum instead of string literals in payload builders ([99a793f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a793f304c8199339dab48b2492228e86d1dce0))
+
 ## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.5.0...ui-common@v4.5.1) (2026-04-28)
 
 ### 🐞 Bug Fixes

@@ -1,5 +1,40 @@
 # Changelog
 
+## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.5.1...webui@v4.6.0) (2026-04-30)
+
+### 🚀 Features
+
+- **ui-web:** add dracula, gruvbox-dark, rose-pine themes and fix surface hierarchy ([b3a6af7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b3a6af77aca2c5747771044be3bbdfd926093e52))
+- **ui-web:** add teal-dark and teal-light themes and fix sap-horizon state colors ([7f21068](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7f210688177e9e0ce2943fb5176c700e37bcf673))
+- **ui-web:** implement runtime skin system with classic and modern skins ([#1815](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1815)) ([72aba1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72aba1edf1957107024a043cbbd122fc0a4ee552))
+- **ui-web:** set modern as default skin ([3d7b698](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3d7b698397352ba3d56ab60daa87de7531de3145))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1820](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1820)) ([52667c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52667c5e1e2133b83d242d20bee90ca58657bd4a))
+- **ui-web:** add missing .js extensions to relative test imports ([5b2c268](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5b2c268dda7857d092f0433fdb106559a6f3c4b6))
+- **ui-web:** align StartTransaction dialog with Authorize dialog ([a9cdabd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a9cdabd885ccc58efac12c2475db6028061c4de6))
+- **ui-web:** future-proof light-mode pill overrides and fix import ordering ([147e9f4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/147e9f441aa50f5db9b672d3a9863c10d23a2a0e))
+- **ui-web:** harmonize imports, fix promise chain ordering, and remove dead code ([c3b0ec0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c3b0ec0c4e94954b61792ff400aa6252ecbd8f4b))
+- **ui-web:** resolve WS race condition causing DISCONNECTED on modern skin ([e626ef8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e626ef8a0f8ce4ac1010fc440a0c27dd225b4435))
+- **ui-web:** show # prefix on transaction ID only for numeric IDs ([ea21660](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ea21660de28115fdd8a322ee8883519a236cba79))
+- **ui:** make Authorize version-aware for OCPP 2.0.1 stations ([1d31a91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1d31a910211733b0deaf64d6c1398d3248d94b55)), closes [#1817](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1817)
+
+### ✨ Polish
+
+- **ui-common:** use ProcedureName enum instead of string literals in payload builders ([99a793f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a793f304c8199339dab48b2492228e86d1dce0))
+- **ui-web:** derive color-scheme from CSS instead of duplicated map ([e56f5c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e56f5c504477eccd53a82c59aef762d34b6fd5f0))
+- **ui-web:** fix audit findings — dead code, layer violations, composable extraction ([b7dd9e7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b7dd9e71ff4e0f5bc090cd9b31d04c2e9dd09aba))
+- **ui-web:** reorganize composables into core/ infrastructure and shared/composables/ ([50c6a1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/50c6a1e098df87bac70cb8c6f7262ca8e8a0ca3e))
+- **ui-web:** replace string literals with OCPP16ChargePointStatus enum in tests ([ec16ef6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ec16ef6c7c226193ab9090a7cd6f5edd60dd88d1))
+- **ui-web:** temporarily disable refresh button in modern skin ([212f434](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/212f434426759408c75c05f0d4c32bcf64f7f2c3))
+
+### 📚 Documentation
+
+- **ui-web:** align README with modern skin default and token contract ([7b68a5b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7b68a5b3f56fe34af80691f3666e4d8c7386c6ad))
+- **ui-web:** fix 6 stale comments after refactoring ([b67eb66](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b67eb66c74fd75939a372e2b1994c55a1e1a1123))
+- **ui-web:** update screenshot to modern skin default ([2b21c30](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2b21c30c4780e048d916fd948da7f7c155b6caf3))
+
 ## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.5.0...webui@v4.5.1) (2026-04-28)
 
 ### 🐞 Bug Fixes

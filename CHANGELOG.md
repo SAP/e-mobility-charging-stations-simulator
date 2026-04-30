@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.1...simulator@v4.6.0) (2026-04-30)
+
+### 🚀 Features
+
+- **ui-web:** implement runtime skin system with classic and modern skins ([#1815](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1815)) ([72aba1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72aba1edf1957107024a043cbbd122fc0a4ee552))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1820](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1820)) ([52667c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52667c5e1e2133b83d242d20bee90ca58657bd4a))
+
 ## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.0...simulator@v4.5.1) (2026-04-28)
 
 ### 🐞 Bug Fixes
