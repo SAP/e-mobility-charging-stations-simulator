@@ -1,11 +1,10 @@
-import type { RequestPayload } from '../types/UIProtocol.js'
-
 import {
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20TransactionEventEnumType,
   OCPPVersion,
 } from '../types/ChargingStationType.js'
+import { ProcedureName, type RequestPayload } from '../types/UIProtocol.js'
 
 /**
  * Builds an Authorize request payload adapted to the station's OCPP version.
@@ -52,7 +51,10 @@ export function buildStartTransactionPayload (
   connectorId: number,
   ocppVersion: OCPPVersion | undefined,
   options?: { evseId?: number; idTag?: string }
-): { payload: RequestPayload; procedureName: 'startTransaction' | 'transactionEvent' } {
+): {
+    payload: RequestPayload
+    procedureName: ProcedureName.START_TRANSACTION | ProcedureName.TRANSACTION_EVENT
+  } {
   if (isOCPP20x(ocppVersion)) {
     return {
       payload: {
@@ -63,13 +65,13 @@ export function buildStartTransactionPayload (
           idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
         }),
       },
-      procedureName: 'transactionEvent',
+      procedureName: ProcedureName.TRANSACTION_EVENT,
     }
   }
   assertOCPP16OrUndefined(ocppVersion)
   return {
     payload: { connectorId, ...(options?.idTag != null && { idTag: options.idTag }) },
-    procedureName: 'startTransaction',
+    procedureName: ProcedureName.START_TRANSACTION,
   }
 }
 
@@ -84,7 +86,10 @@ export function buildStopTransactionPayload (
   transactionId: number | string,
   ocppVersion: OCPPVersion | undefined,
   connectorId?: number
-): { payload: RequestPayload; procedureName: 'stopTransaction' | 'transactionEvent' } {
+): {
+    payload: RequestPayload
+    procedureName: ProcedureName.STOP_TRANSACTION | ProcedureName.TRANSACTION_EVENT
+  } {
   if (isOCPP20x(ocppVersion)) {
     return {
       payload: {
@@ -92,13 +97,13 @@ export function buildStopTransactionPayload (
         eventType: OCPP20TransactionEventEnumType.ENDED,
         transactionId: transactionId.toString(),
       },
-      procedureName: 'transactionEvent',
+      procedureName: ProcedureName.TRANSACTION_EVENT,
     }
   }
   assertOCPP16OrUndefined(ocppVersion)
   return {
     payload: { transactionId },
-    procedureName: 'stopTransaction',
+    procedureName: ProcedureName.STOP_TRANSACTION,
   }
 }
 

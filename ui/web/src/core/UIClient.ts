@@ -187,7 +187,7 @@ export class UIClient {
       options.ocppVersion,
       { evseId: options.evseId, idTag: options.idTag }
     )
-    if (procedureName === 'transactionEvent') {
+    if (procedureName === ProcedureName.TRANSACTION_EVENT) {
       return this.transactionEvent(hashId, payload)
     }
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
@@ -251,7 +251,7 @@ export class UIClient {
       options.transactionId,
       options.ocppVersion
     )
-    if (procedureName === 'transactionEvent') {
+    if (procedureName === ProcedureName.TRANSACTION_EVENT) {
       return this.transactionEvent(hashId, payload)
     }
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {

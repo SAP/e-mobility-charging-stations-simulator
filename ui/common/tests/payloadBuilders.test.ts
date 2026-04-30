@@ -6,6 +6,7 @@ import {
   OCPP20TransactionEventEnumType,
   OCPPVersion,
 } from '../src/types/ChargingStationType.js'
+import { ProcedureName } from '../src/types/UIProtocol.js'
 import {
   buildAuthorizePayload,
   buildIdToken,
@@ -71,7 +72,7 @@ await describe('payloadBuilders', async () => {
       const result = buildStartTransactionPayload(1, OCPPVersion.VERSION_16, { idTag: 'TAG1' })
       assert.deepStrictEqual(result, {
         payload: { connectorId: 1, idTag: 'TAG1' },
-        procedureName: 'startTransaction',
+        procedureName: ProcedureName.START_TRANSACTION,
       })
     })
 
@@ -83,7 +84,7 @@ await describe('payloadBuilders', async () => {
           eventType: OCPP20TransactionEventEnumType.STARTED,
           idToken: { idToken: 'TAG1', type: OCPP20IdTokenEnumType.ISO14443 },
         },
-        procedureName: 'transactionEvent',
+        procedureName: ProcedureName.TRANSACTION_EVENT,
       })
     })
 
@@ -99,7 +100,7 @@ await describe('payloadBuilders', async () => {
           evseId: 2,
           idToken: { idToken: 'TAG1', type: OCPP20IdTokenEnumType.ISO14443 },
         },
-        procedureName: 'transactionEvent',
+        procedureName: ProcedureName.TRANSACTION_EVENT,
       })
     })
 
@@ -110,7 +111,7 @@ await describe('payloadBuilders', async () => {
       })
       assert.deepStrictEqual(result, {
         payload: { connectorId: 1, idTag: 'TAG1' },
-        procedureName: 'startTransaction',
+        procedureName: ProcedureName.START_TRANSACTION,
       })
     })
 
@@ -121,7 +122,7 @@ await describe('payloadBuilders', async () => {
           connectorId: 1,
           eventType: OCPP20TransactionEventEnumType.STARTED,
         },
-        procedureName: 'transactionEvent',
+        procedureName: ProcedureName.TRANSACTION_EVENT,
       })
     })
   })
@@ -131,7 +132,7 @@ await describe('payloadBuilders', async () => {
       const result = buildStopTransactionPayload(12345, OCPPVersion.VERSION_16)
       assert.deepStrictEqual(result, {
         payload: { transactionId: 12345 },
-        procedureName: 'stopTransaction',
+        procedureName: ProcedureName.STOP_TRANSACTION,
       })
     })
 
@@ -143,7 +144,7 @@ await describe('payloadBuilders', async () => {
           eventType: OCPP20TransactionEventEnumType.ENDED,
           transactionId: 'uuid-123',
         },
-        procedureName: 'transactionEvent',
+        procedureName: ProcedureName.TRANSACTION_EVENT,
       })
     })
 

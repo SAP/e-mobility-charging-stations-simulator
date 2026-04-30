@@ -64,7 +64,7 @@ export const createTransactionCommands = (program: Command): Command => {
               { evseId: options.evseId, idTag: options.idTag }
             )
             procedureName =
-              proc === 'transactionEvent'
+              proc === ProcedureName.TRANSACTION_EVENT
                 ? ProcedureName.TRANSACTION_EVENT
                 : ProcedureName.START_TRANSACTION
             payload = {
@@ -129,7 +129,7 @@ export const createTransactionCommands = (program: Command): Command => {
               options.connectorId
             )
             procedureName =
-              proc === 'transactionEvent'
+              proc === ProcedureName.TRANSACTION_EVENT
                 ? ProcedureName.TRANSACTION_EVENT
                 : ProcedureName.STOP_TRANSACTION
             payload = {
