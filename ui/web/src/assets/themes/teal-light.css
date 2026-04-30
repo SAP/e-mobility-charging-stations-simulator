@@ -29,14 +29,14 @@
   --color-text-muted: var(--tl-fg-muted);
   --color-text-on-button: var(--tl-white);
   --color-primary: var(--tl-teal);
-  --color-border: #e4e7eb;
-  --color-border-row: #eef0f3;
+  --color-border: var(--tl-bg-active);
+  --color-border-row: var(--tl-bg-hover);
   --color-accent: var(--tl-teal-dim);
   --color-shadow-inset: rgba(16, 24, 40, 0.1);
 
   /* Surface hierarchy */
-  --color-bg-raised: var(--tl-bg-hover);
-  --color-bg-sunken: var(--tl-bg-raised);
+  --color-bg-raised: var(--tl-bg-base);
+  --color-bg-sunken: var(--tl-bg-active);
 
   /* State colors */
   --color-state-ok: #2e7d32;

@@ -1,0 +1,51 @@
+/* Gruvbox Dark */
+
+:root[data-theme='gruvbox-dark'] {
+  /* Palette */
+  --grv-bg0-hard: #1d2021;
+  --grv-bg0: #282828;
+  --grv-bg1: #3c3836;
+  --grv-bg2: #504945;
+  --grv-bg3: #665c54;
+  --grv-fg0: #fbf1c7;
+  --grv-fg1: #ebdbb2;
+  --grv-fg3: #bdae93;
+  --grv-fg4: #a89984;
+  --grv-orange: #fe8019;
+  --grv-yellow: #fabd2f;
+  --grv-green: #b8bb26;
+  --grv-red: #fb4934;
+  --grv-aqua: #8ec07c;
+
+  /* Semantic */
+  --color-bg: var(--grv-bg0);
+  --color-bg-surface: var(--grv-bg0-hard);
+  --color-bg-input: var(--grv-bg0-hard);
+  --color-bg-hover: var(--grv-bg1);
+  --color-bg-active: var(--grv-bg2);
+  --color-bg-header: var(--grv-bg0-hard);
+  --color-bg-caption: var(--grv-bg1);
+  --color-bg-button: var(--grv-orange);
+  --color-bg-button-hover: color-mix(in srgb, var(--grv-orange) 67%, transparent);
+  --color-text: var(--grv-fg1);
+  --color-text-strong: var(--grv-fg0);
+  --color-text-muted: var(--grv-fg4);
+  --color-text-on-button: var(--grv-bg0);
+  --color-primary: var(--grv-orange);
+  --color-border: var(--grv-bg1);
+  --color-border-row: var(--grv-bg2);
+  --color-accent: var(--grv-aqua);
+  --color-shadow-inset: rgba(0, 0, 0, 0.4);
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--grv-bg2);
+  --color-bg-sunken: var(--grv-bg0-hard);
+
+  /* State colors */
+  --color-state-ok: var(--grv-green);
+  --color-state-warn: var(--grv-yellow);
+  --color-state-err: var(--grv-red);
+  --color-state-idle: var(--grv-fg4);
+
+  color-scheme: dark;
+}

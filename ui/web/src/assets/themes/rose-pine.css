@@ -1,0 +1,51 @@
+/* Rosé Pine */
+
+:root[data-theme='rose-pine'] {
+  /* Palette */
+  --rp-base: #191724;
+  --rp-surface: #1f1d2e;
+  --rp-overlay: #26233a;
+  --rp-highlight-low: #2a2740;
+  --rp-highlight-med: #312e48;
+  --rp-muted: #6e6a86;
+  --rp-subtle: #908caa;
+  --rp-text: #e0def4;
+  --rp-love: #eb6f92;
+  --rp-gold: #f6c177;
+  --rp-rose: #ebbcba;
+  --rp-pine: #31748f;
+  --rp-foam: #9ccfd8;
+  --rp-iris: #c4a7e7;
+
+  /* Semantic */
+  --color-bg: var(--rp-surface);
+  --color-bg-surface: var(--rp-base);
+  --color-bg-input: var(--rp-base);
+  --color-bg-hover: var(--rp-overlay);
+  --color-bg-active: var(--rp-highlight-med);
+  --color-bg-header: var(--rp-base);
+  --color-bg-caption: var(--rp-overlay);
+  --color-bg-button: var(--rp-iris);
+  --color-bg-button-hover: color-mix(in srgb, var(--rp-iris) 67%, transparent);
+  --color-text: var(--rp-text);
+  --color-text-strong: var(--rp-text);
+  --color-text-muted: var(--rp-subtle);
+  --color-text-on-button: var(--rp-base);
+  --color-primary: var(--rp-iris);
+  --color-border: var(--rp-overlay);
+  --color-border-row: var(--rp-highlight-low);
+  --color-accent: var(--rp-rose);
+  --color-shadow-inset: rgba(0, 0, 0, 0.4);
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--rp-overlay);
+  --color-bg-sunken: var(--rp-base);
+
+  /* State colors */
+  --color-state-ok: var(--rp-foam);
+  --color-state-warn: var(--rp-gold);
+  --color-state-err: var(--rp-love);
+  --color-state-idle: var(--rp-muted);
+
+  color-scheme: dark;
+}

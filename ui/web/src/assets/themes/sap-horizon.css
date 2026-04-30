@@ -40,7 +40,7 @@
   --color-shadow-inset: rgba(34, 53, 72, 0.15);
 
   /* Surface hierarchy */
-  --color-bg-raised: var(--sap-bg-shell);
+  --color-bg-raised: var(--sap-bg-base);
   --color-bg-sunken: var(--sap-hover);
 
   /* State colors (SAP Horizon palette) */

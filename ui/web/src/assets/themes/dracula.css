@@ -1,0 +1,51 @@
+/* Dracula */
+
+:root[data-theme='dracula'] {
+  /* Palette */
+  --drac-bg: #282a36;
+  --drac-bg-dark: #21222c;
+  --drac-current: #44475a;
+  --drac-highlight: #515672;
+  --drac-border: #363848;
+  --drac-fg: #f8f8f2;
+  --drac-comment: #6272a4;
+  --drac-purple: #bd93f9;
+  --drac-pink: #ff79c6;
+  --drac-green: #50fa7b;
+  --drac-red: #ff5555;
+  --drac-orange: #ffb86c;
+  --drac-yellow: #f1fa8c;
+  --drac-cyan: #8be9fd;
+
+  /* Semantic */
+  --color-bg: var(--drac-bg);
+  --color-bg-surface: var(--drac-bg-dark);
+  --color-bg-input: var(--drac-bg-dark);
+  --color-bg-hover: var(--drac-current);
+  --color-bg-active: var(--drac-highlight);
+  --color-bg-header: var(--drac-bg-dark);
+  --color-bg-caption: var(--drac-current);
+  --color-bg-button: var(--drac-purple);
+  --color-bg-button-hover: color-mix(in srgb, var(--drac-purple) 67%, transparent);
+  --color-text: var(--drac-fg);
+  --color-text-strong: var(--drac-fg);
+  --color-text-muted: var(--drac-comment);
+  --color-text-on-button: var(--drac-bg);
+  --color-primary: var(--drac-purple);
+  --color-border: var(--drac-current);
+  --color-border-row: var(--drac-border);
+  --color-accent: var(--drac-pink);
+  --color-shadow-inset: rgba(0, 0, 0, 0.4);
+
+  /* Surface hierarchy */
+  --color-bg-raised: var(--drac-current);
+  --color-bg-sunken: var(--drac-bg-dark);
+
+  /* State colors */
+  --color-state-ok: var(--drac-green);
+  --color-state-warn: var(--drac-orange);
+  --color-state-err: var(--drac-red);
+  --color-state-idle: var(--drac-comment);
+
+  color-scheme: dark;
+}

@@ -20,11 +20,14 @@ describe('useTheme', () => {
     expect(activeThemeId.value).toBe('tokyo-night-storm')
   })
 
-  it('should return availableThemes with 5 entries', () => {
+  it('should return availableThemes with 8 entries', () => {
     const { availableThemes } = useTheme()
-    expect(availableThemes.length).toBe(5)
+    expect(availableThemes.length).toBe(8)
     expect(availableThemes).toContain('tokyo-night-storm')
     expect(availableThemes).toContain('catppuccin-latte')
+    expect(availableThemes).toContain('dracula')
+    expect(availableThemes).toContain('gruvbox-dark')
+    expect(availableThemes).toContain('rose-pine')
     expect(availableThemes).toContain('teal-dark')
     expect(availableThemes).toContain('teal-light')
     expect(availableThemes).toContain('sap-horizon')

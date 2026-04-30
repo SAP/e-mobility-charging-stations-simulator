@@ -23,8 +23,8 @@
   --color-bg-caption: var(--ctp-crust);
   --color-bg-button: var(--ctp-blue);
   --color-bg-button-hover: color-mix(in srgb, var(--ctp-blue) 67%, transparent);
-  --color-text: var(--ctp-text);
-  --color-text-strong: var(--ctp-subtext1);
+  --color-text: var(--ctp-subtext1);
+  --color-text-strong: var(--ctp-text);
   --color-text-muted: var(--ctp-overlay1);
   --color-text-on-button: var(--ctp-base);
   --color-primary: var(--ctp-blue);
@@ -34,8 +34,8 @@
   --color-shadow-inset: rgba(0, 0, 0, 0.1);
 
   /* Surface hierarchy */
-  --color-bg-raised: var(--ctp-surface0);
-  --color-bg-sunken: var(--ctp-mantle);
+  --color-bg-raised: var(--ctp-base);
+  --color-bg-sunken: var(--ctp-crust);
 
   /* State colors (Material 700 for light mode readability) */
   --color-state-ok: #2e7d32;

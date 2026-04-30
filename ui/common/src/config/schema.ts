@@ -5,6 +5,9 @@ import { AuthenticationType, Protocol, ProtocolVersion } from '../types/UIProtoc
 export const SKIN_IDS = ['classic', 'modern'] as const
 export const THEME_IDS = [
   'catppuccin-latte',
+  'dracula',
+  'gruvbox-dark',
+  'rose-pine',
   'sap-horizon',
   'teal-dark',
   'teal-light',

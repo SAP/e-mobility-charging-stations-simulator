@@ -142,6 +142,9 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | Theme               | Style | Source                                                           |
 | ------------------- | ----- | ---------------------------------------------------------------- |
 | `tokyo-night-storm` | Dark  | [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) |
+| `dracula`           | Dark  | [Dracula](https://github.com/dracula/dracula-theme)              |
+| `gruvbox-dark`      | Dark  | [Gruvbox](https://github.com/morhetz/gruvbox)                    |
+| `rose-pine`         | Dark  | [Rosé Pine](https://github.com/rose-pine/rose-pine-theme)        |
 | `teal-dark`         | Dark  | Material Teal                                                    |
 | `teal-light`        | Light | Material Teal                                                    |
 | `catppuccin-latte`  | Light | [Catppuccin](https://github.com/catppuccin/catppuccin)           |
