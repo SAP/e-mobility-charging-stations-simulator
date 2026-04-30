@@ -78,7 +78,13 @@
               <th scope="row">
                 Tx
               </th>
-              <td>#{{ connector.transactionId }}</td>
+              <td>
+                {{
+                  typeof connector.transactionId === 'number'
+                    ? `#${connector.transactionId}`
+                    : connector.transactionId
+                }}
+              </td>
             </tr>
             <tr>
               <th scope="row">
