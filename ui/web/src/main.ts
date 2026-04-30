@@ -11,6 +11,7 @@ import App from '@/App.vue'
 import {
   chargingStationsKey,
   configurationKey,
+  DEFAULT_SKIN,
   getFromLocalStorage,
   LEGACY_UI_SERVER_CONFIG_KEY,
   setToLocalStorage,
@@ -22,7 +23,6 @@ import {
 import { router } from '@/router/index.js'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
 import { DEFAULT_THEME, THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'
-import { DEFAULT_SKIN } from '@/skins/registry.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 

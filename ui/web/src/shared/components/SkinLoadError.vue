@@ -11,9 +11,10 @@
 </template>
 
 <script setup lang="ts">
-import { MAX_SKIN_ERROR_RELOADS, setToLocalStorage } from '@/core/index.js'
+import { DEFAULT_SKIN, MAX_SKIN_ERROR_RELOADS, setToLocalStorage } from '@/core/index.js'
 import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
+// Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
+import { skins } from '@/skins/registry.js'
 
 defineEmits<{ retry: [] }>()
 
@@ -55,7 +56,7 @@ function resetToDefault (): void {
   gap: 1rem;
   min-height: 50vh;
   padding: 2rem;
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text);
   font-family: system-ui, sans-serif;
 }
 
@@ -70,6 +71,6 @@ function resetToDefault (): void {
 }
 
 .skin-load-error button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-hover);
 }
 </style>

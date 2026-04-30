@@ -17,6 +17,9 @@
   --sap-button-border: #bcc3ca;
   --sap-button-text: #0064d9;
   --sap-button-emphasized-bg: #0070f2;
+  --sap-positive: #256f3a;
+  --sap-critical: #e76500;
+  --sap-negative: #aa0808;
   --sap-white: #fff;
 
   /* Semantic */
@@ -44,9 +47,9 @@
   --color-bg-sunken: var(--sap-hover);
 
   /* State colors (SAP Horizon palette) */
-  --color-state-ok: #256f3a;
-  --color-state-warn: #e76500;
-  --color-state-err: #aa0808;
+  --color-state-ok: var(--sap-positive);
+  --color-state-warn: var(--sap-critical);
+  --color-state-err: var(--sap-negative);
   --color-state-idle: var(--sap-label);
 
   color-scheme: light;

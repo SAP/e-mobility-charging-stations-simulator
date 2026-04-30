@@ -12,6 +12,9 @@
   --ctp-overlay1: #8c8fa1;
   --ctp-blue: #1e66f5;
   --ctp-lavender: #7287fd;
+  --ctp-green: #2e7d32;
+  --ctp-orange: #ef6c00;
+  --ctp-red: #c62828;
 
   /* Semantic */
   --color-bg: var(--ctp-base);
@@ -38,9 +41,9 @@
   --color-bg-sunken: var(--ctp-crust);
 
   /* State colors (Material 700 for light mode readability) */
-  --color-state-ok: #2e7d32;
-  --color-state-warn: #ef6c00;
-  --color-state-err: #c62828;
+  --color-state-ok: var(--ctp-green);
+  --color-state-warn: var(--ctp-orange);
+  --color-state-err: var(--ctp-red);
   --color-state-idle: var(--ctp-overlay1);
 
   color-scheme: light;

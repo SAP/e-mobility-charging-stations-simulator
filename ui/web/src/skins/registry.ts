@@ -23,8 +23,6 @@ export interface SkinDefinition {
   readonly loadStyles: () => Promise<unknown>
 }
 
-export const DEFAULT_SKIN: (typeof SKIN_IDS)[number] = 'classic'
-
 export const skins: readonly SkinDefinition[] = [
   {
     id: 'classic',

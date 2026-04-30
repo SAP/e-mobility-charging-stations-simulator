@@ -1,18 +1,11 @@
-import type { UIServerConfigurationSection } from 'ui-common'
 import type { ComputedRef, Ref } from 'vue'
 
-import { computed, onScopeDispose, readonly, ref } from 'vue'
+import { computed } from 'vue'
 
-import {
-  getFromLocalStorage,
-  setToLocalStorage,
-  UI_SERVER_CONFIGURATION_INDEX_KEY,
-  useChargingStations,
-  useConfiguration,
-  useUIClient,
-} from '@/core/index.js'
+import { useChargingStations, useUIClient } from '@/core/index.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 import { type LayoutData } from '@/shared/composables/useLayoutData.js'
+import { useServerSwitch } from '@/shared/composables/useServerSwitch.js'
 
 export interface SimulatorControlActions {
   /** Switches the active UI server, with error rollback on connection failure. */
@@ -48,7 +41,6 @@ export function useSimulatorControl (
   options?: SimulatorControlOptions
 ): SimulatorControlActions {
   const $uiClient = useUIClient()
-  const $configuration = useConfiguration()
   const $chargingStations = useChargingStations()
 
   const { getSimulatorState, registerWSEventListeners } = layoutData
@@ -62,10 +54,12 @@ export function useSimulatorControl (
     { simulator: false },
     getSimulatorState
   )
-  const serverSwitchPending = ref(false)
-  let activeTimeoutId: ReturnType<typeof setTimeout> | undefined
-  let pendingOpenHandler: (() => void) | undefined
-  let pendingErrorHandler: (() => void) | undefined
+
+  const { handleUIServerChange, serverSwitchPending } = useServerSwitch({
+    onServerSwitched: options?.onServerSwitched,
+    registerWSEventListeners,
+    unregisterWSEventListeners,
+  })
 
   const startSimulator = (): void => {
     runSimulatorAction('simulator', {
@@ -87,82 +81,9 @@ export function useSimulatorControl (
     })
   }
 
-  const SERVER_SWITCH_TIMEOUT_MS = 15_000
-
-  const handleUIServerChange = (newIndex: number): void => {
-    const currentIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-    if (newIndex === currentIndex || serverSwitchPending.value) return
-
-    const servers = $configuration.value.uiServer as UIServerConfigurationSection[]
-    if (newIndex < 0 || newIndex >= servers.length) return
-
-    serverSwitchPending.value = true
-
-    $uiClient.setConfiguration(servers[newIndex])
-    unregisterWSEventListeners()
-    registerWSEventListeners()
-
-    let settled = false
-
-    const openHandler = (): void => {
-      if (settled) return
-      settled = true
-      clearTimeout(activeTimeoutId)
-      $uiClient.unregisterWSEventListener('error', errorHandler)
-      pendingOpenHandler = undefined
-      pendingErrorHandler = undefined
-      setToLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, newIndex)
-      serverSwitchPending.value = false
-      options?.onServerSwitched?.()
-    }
-
-    const errorHandler = (): void => {
-      if (settled) return
-      settled = true
-      clearTimeout(activeTimeoutId)
-      $uiClient.unregisterWSEventListener('open', openHandler)
-      pendingOpenHandler = undefined
-      pendingErrorHandler = undefined
-      serverSwitchPending.value = false
-      const previousIndex = getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0)
-      const rollbackServers = $configuration.value.uiServer as UIServerConfigurationSection[]
-      if (previousIndex >= 0 && previousIndex < rollbackServers.length) {
-        $uiClient.setConfiguration(rollbackServers[previousIndex])
-      }
-      unregisterWSEventListeners()
-      registerWSEventListeners()
-    }
-
-    $uiClient.registerWSEventListener('open', openHandler, { once: true })
-    $uiClient.registerWSEventListener('error', errorHandler, { once: true })
-    pendingOpenHandler = openHandler
-    pendingErrorHandler = errorHandler
-
-    activeTimeoutId = setTimeout(() => {
-      if (!settled) {
-        errorHandler()
-      }
-    }, SERVER_SWITCH_TIMEOUT_MS)
-  }
-
-  onScopeDispose(() => {
-    if (activeTimeoutId != null) {
-      clearTimeout(activeTimeoutId)
-      activeTimeoutId = undefined
-    }
-    if (pendingOpenHandler != null) {
-      $uiClient.unregisterWSEventListener('open', pendingOpenHandler)
-      pendingOpenHandler = undefined
-    }
-    if (pendingErrorHandler != null) {
-      $uiClient.unregisterWSEventListener('error', pendingErrorHandler)
-      pendingErrorHandler = undefined
-    }
-  })
-
   return {
     handleUIServerChange,
-    serverSwitchPending: readonly(serverSwitchPending),
+    serverSwitchPending,
     simulatorPending: computed(() => simulatorPendingState.simulator),
     startSimulator,
     stopSimulator,

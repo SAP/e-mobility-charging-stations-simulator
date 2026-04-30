@@ -853,6 +853,32 @@ html[data-skin='modern'] #app {
   border-color: var(--skin-border-strong);
 }
 
+/* Light-theme pill overrides — state colours are already dark (Material 700)
+ * and readable on light backgrounds without white mixing. */
+:root[data-theme='catppuccin-latte'] .modern-pill--ok,
+:root[data-theme='sap-horizon'] .modern-pill--ok,
+:root[data-theme='teal-light'] .modern-pill--ok {
+  color: var(--color-state-ok);
+  background-color: color-mix(in srgb, var(--color-state-ok) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-state-ok) 35%, transparent);
+}
+
+:root[data-theme='catppuccin-latte'] .modern-pill--warn,
+:root[data-theme='sap-horizon'] .modern-pill--warn,
+:root[data-theme='teal-light'] .modern-pill--warn {
+  color: var(--color-state-warn);
+  background-color: color-mix(in srgb, var(--color-state-warn) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-state-warn) 50%, transparent);
+}
+
+:root[data-theme='catppuccin-latte'] .modern-pill--err,
+:root[data-theme='sap-horizon'] .modern-pill--err,
+:root[data-theme='teal-light'] .modern-pill--err {
+  color: var(--color-state-err);
+  background-color: color-mix(in srgb, var(--color-state-err) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-state-err) 35%, transparent);
+}
+
 /* ── Buttons — flat Material-style ─────────────────────────────────── */
 .modern-btn {
   display: inline-flex;

@@ -4,11 +4,11 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { DEFAULT_SKIN } from '@/core/index.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
+import { skins } from '@/skins/registry.js'
 
 vi.mock('@/skins/registry.js', () => ({
-  DEFAULT_SKIN: 'classic',
   skins: [
     {
       description: 'Table-based layout with a sticky sidebar action panel.',

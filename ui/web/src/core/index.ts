@@ -1,6 +1,7 @@
 export {
   ASYNC_COMPONENT_DELAY_MS,
   ASYNC_COMPONENT_TIMEOUT_MS,
+  DEFAULT_SKIN,
   EMPTY_VALUE_PLACEHOLDER,
   LEGACY_UI_SERVER_CONFIG_KEY,
   MAX_SKIN_ERROR_RELOADS,
@@ -22,7 +23,6 @@ export {
   useUIClient,
 } from './providers.js'
 export {
-  deleteFromLocalStorage,
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
   getLocalStorage,

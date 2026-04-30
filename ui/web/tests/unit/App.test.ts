@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '@/App.vue'
 
 vi.mock('@/skins/registry.js', () => ({
-  DEFAULT_SKIN: 'classic',
   skins: [
     {
       id: 'classic',

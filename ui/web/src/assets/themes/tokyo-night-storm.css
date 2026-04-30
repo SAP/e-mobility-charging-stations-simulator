@@ -12,6 +12,9 @@
   --tn-fg-muted: #8089b3;
   --tn-blue: #7aa2f7;
   --tn-accent: #3d59a1;
+  --tn-green: #66bb6a;
+  --tn-amber: #ffb300;
+  --tn-red: #ef5350;
   --tn-white: #ffffff;
 
   /* Semantic */
@@ -39,9 +42,9 @@
   --color-bg-sunken: var(--tn-bg-raised);
 
   /* State colors */
-  --color-state-ok: #66bb6a;
-  --color-state-warn: #ffb300;
-  --color-state-err: #ef5350;
+  --color-state-ok: var(--tn-green);
+  --color-state-warn: var(--tn-amber);
+  --color-state-err: var(--tn-red);
   --color-state-idle: var(--tn-fg-muted);
 
   color-scheme: dark;

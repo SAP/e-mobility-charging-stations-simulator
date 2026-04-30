@@ -12,6 +12,9 @@
   --td-fg-muted: #78909c;
   --td-teal: #26a69a;
   --td-teal-dim: #00897b;
+  --td-green: #66bb6a;
+  --td-amber: #ffb300;
+  --td-red: #ef5350;
   --td-white: #ffffff;
 
   /* Semantic */
@@ -39,9 +42,9 @@
   --color-bg-sunken: var(--td-bg-dark);
 
   /* State colors */
-  --color-state-ok: #66bb6a;
-  --color-state-warn: #ffb300;
-  --color-state-err: #ef5350;
+  --color-state-ok: var(--td-green);
+  --color-state-warn: var(--td-amber);
+  --color-state-err: var(--td-red);
   --color-state-idle: var(--td-fg-muted);
 
   color-scheme: dark;

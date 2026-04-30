@@ -55,24 +55,6 @@ describe('UIClient', () => {
     })
   })
 
-  describe('isOCPP20x', () => {
-    it('should return true for VERSION_20', () => {
-      expect(UIClient.isOCPP20x(OCPPVersion.VERSION_20)).toBe(true)
-    })
-
-    it('should return true for VERSION_201', () => {
-      expect(UIClient.isOCPP20x(OCPPVersion.VERSION_201)).toBe(true)
-    })
-
-    it('should return false for VERSION_16', () => {
-      expect(UIClient.isOCPP20x(OCPPVersion.VERSION_16)).toBe(false)
-    })
-
-    it('should return false for undefined', () => {
-      expect(UIClient.isOCPP20x(undefined)).toBe(false)
-    })
-  })
-
   describe('WebSocket connection', () => {
     it('should connect with ws:// URL format', () => {
       UIClient.getInstance(createUIServerConfig())

@@ -1,6 +1,9 @@
+import { type SKIN_IDS } from 'ui-common'
+
 // Local UI project constants
 
 export const ASYNC_COMPONENT_DELAY_MS = 200
+export const DEFAULT_SKIN: (typeof SKIN_IDS)[number] = 'classic'
 export const ASYNC_COMPONENT_TIMEOUT_MS = 10_000
 export const EMPTY_VALUE_PLACEHOLDER = 'Ø'
 export const MAX_SKIN_ERROR_RELOADS = 2

@@ -18,7 +18,7 @@ defineOptions({ name: 'SkinLoading' })
   gap: 1rem;
   min-height: 50vh;
   padding: 2rem;
-  color: var(--color-text, #e0e0e0);
+  color: var(--color-text);
   font-family: system-ui, sans-serif;
 }
 

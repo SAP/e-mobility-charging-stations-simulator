@@ -46,7 +46,7 @@ export class UIClient {
     return UIClient.instance
   }
 
-  public static isOCPP20x (version: OCPPVersion | undefined): boolean {
+  private static isOCPP20x (version: OCPPVersion | undefined): boolean {
     return version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
   }
 

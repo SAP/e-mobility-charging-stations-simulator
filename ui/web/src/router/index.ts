@@ -3,9 +3,8 @@ import { h } from 'vue'
 import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
-import { ROUTE_NAMES } from '@/core/index.js'
+import { DEFAULT_SKIN, ROUTE_NAMES } from '@/core/index.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_SKIN } from '@/skins/registry.js'
 
 declare module 'vue-router' {
   interface RouteMeta {
