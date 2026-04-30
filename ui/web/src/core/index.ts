@@ -23,6 +23,7 @@ export {
   useUIClient,
 } from './providers.js'
 export {
+  deleteFromLocalStorage,
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
   getLocalStorage,

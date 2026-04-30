@@ -7,6 +7,7 @@ import { ResponseStatus } from 'ui-common'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  deleteFromLocalStorage,
   getFromLocalStorage,
   getLocalStorage,
   resetToggleButtonState,
@@ -15,7 +16,6 @@ import {
   useConfiguration,
   useTemplates,
 } from '@/core/index.js'
-import { deleteFromLocalStorage } from '@/core/storage.js'
 import { useFetchData } from '@/shared/composables/useFetchData.js'
 
 import { toastMock } from '../setup.js'

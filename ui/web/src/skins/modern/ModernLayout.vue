@@ -92,6 +92,8 @@ import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import SimulatorBar from './components/SimulatorBar.vue'
+import StationCard from './components/StationCard.vue'
 
 /**
  * Creates a lazy-loaded dialog component with shared loading/error boundaries.
@@ -118,8 +120,6 @@ const SetSupervisionUrlDialog = defineAsyncDialog(
 const StartTransactionDialog = defineAsyncDialog(
   () => import('./components/dialogs/StartTransactionDialog.vue')
 )
-import SimulatorBar from './components/SimulatorBar.vue'
-import StationCard from './components/StationCard.vue'
 
 const $chargingStations = useChargingStations()
 
