@@ -4,8 +4,8 @@
  * Single source of truth for available skins.
  * Each skin carries metadata and a lazy CSS loader for code splitting.
  *
- * Convention: All skin CSS MUST scope rules to `html[data-skin='<id>']` to prevent
- * style bleeding when multiple skin stylesheets are loaded in the DOM simultaneously.
+ * Convention: Skin CSS should scope structural rules to `html[data-skin='<id>']` or use
+ * component-scoped class prefixes (e.g. `.classic-*`, `.modern-*`) to prevent style bleeding.
  */
 
 import type { Component } from 'vue'

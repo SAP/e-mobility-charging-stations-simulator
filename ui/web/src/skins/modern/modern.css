@@ -1,7 +1,7 @@
 /* Modern skin styles.
  *
  * Flat, modern design with Material-inspired structural patterns.
- * - Teal primary (Material 500/400) + Green / Amber / Red state colours
+ * - Primary and state colours driven by the active theme contract
  * - Onest across the UI; mono only for the supervision URL itself
  * - Elevation tiers: base < card body < raised (header/modal) + sunken inserts
  * - Hovers only touch colour / shadow, never layout

@@ -30,7 +30,7 @@ const activeSkinId: Ref<SkinName> = ref(
     return isValidSkin(stored) ? stored : DEFAULT_SKIN
   })()
 )
-// JS/testing hook — no CSS uses [data-skin]; skin isolation is via component class scoping.
+// Sets data-skin on document root for CSS scoping (used by modern skin) and JS/testing hooks.
 if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-skin', activeSkinId.value)
 }

@@ -1,8 +1,8 @@
 /**
  * CSS token contract.
  *
- * Typography and spacing tokens are provided by `base.css` (shared across all themes).
- * Color tokens (`color-*`) and `color-scheme` must be defined per theme file.
+ * Typography and spacing tokens have defaults in `base.css` and may be overridden per theme.
+ * Color tokens (`color-*`) have no defaults and MUST be defined per theme file.
  * When adding a new theme, ensure all `color-*` tokens below are defined in your theme CSS.
  *
  * Every theme file MUST define a value for each token (as `--{token-name}`).

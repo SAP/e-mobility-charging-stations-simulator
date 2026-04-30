@@ -62,6 +62,7 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   }
 
   const lockConnector = (): void => {
+    // 'lock' key is shared by lockConnector and unlockConnector
     run('lock', {
       action: () => $uiClient.lockConnector(hashId.value, connectorId.value),
       errorMsg: 'Error locking connector',

@@ -40,7 +40,8 @@ export interface LayoutData {
 /**
  * Extracts the common data-fetching and WebSocket lifecycle logic shared by layout components.
  *
- * Registers `onMounted` / `onUnmounted` hooks internally so consumers do not need to.
+ * Registers `onMounted` / `onUnmounted` hooks internally. Also exposes
+ * `registerWSEventListeners` / `unregisterWSEventListeners` for manual lifecycle management.
  * @returns Layout data state and control functions
  */
 export function useLayoutData (): LayoutData {

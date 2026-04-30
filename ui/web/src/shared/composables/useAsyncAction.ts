@@ -9,7 +9,7 @@ import { useToast } from 'vue-toast-notification'
  * Creates a reactive pending-state map and a run() helper for async actions with toast notifications.
  *
  * Encapsulates the pending-key guard, toast feedback, and error logging pattern
- * shared by modern skin components.
+ * shared across layout composables.
  * @param initialPending - Object defining the pending keys (e.g. `{ connection: false, startStop: false }`)
  * @param onRefresh - Called after each successful action (e.g. `() => emit('need-refresh')`)
  * @returns `{ pending, run }` — reactive pending map and action executor
