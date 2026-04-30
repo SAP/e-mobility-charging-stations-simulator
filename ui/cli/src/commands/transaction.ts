@@ -1,7 +1,8 @@
 import { Command, Option } from 'commander'
 import {
-  OCPP20IdTokenEnumType,
-  OCPP20TransactionEventEnumType,
+  buildStartTransactionPayload,
+  buildStopTransactionPayload,
+  isOCPP20x,
   OCPPVersion,
   ProcedureName,
   type RequestPayload,
@@ -17,9 +18,6 @@ import { buildHashIdsPayload, PAYLOAD_DESC, PAYLOAD_OPTION } from './payload.js'
 
 export const createTransactionCommands = (program: Command): Command => {
   const cmd = new Command('transaction').description('Transaction management')
-  const UNSUPPORTED_OCPP_VERSION_ERROR =
-    'Unsupported OCPP version for this command. ' +
-    'Use ocpp transaction-event -p to pass the payload directly.'
 
   cmd
     .command('start [hashIds...]')
@@ -60,28 +58,18 @@ export const createTransactionCommands = (program: Command): Command => {
               program,
               hashIds
             )
-            switch (ocppVersion) {
-              case OCPPVersion.VERSION_16:
-                procedureName = ProcedureName.START_TRANSACTION
-                payload = {
-                  connectorId: options.connectorId,
-                  idTag: options.idTag,
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              case OCPPVersion.VERSION_20:
-              case OCPPVersion.VERSION_201:
-                procedureName = ProcedureName.TRANSACTION_EVENT
-                payload = {
-                  connectorId: options.connectorId,
-                  eventType: OCPP20TransactionEventEnumType.STARTED,
-                  ...(options.evseId != null && { evseId: options.evseId }),
-                  idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              default:
-                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+            const { payload: built, procedureName: proc } = buildStartTransactionPayload(
+              options.connectorId,
+              ocppVersion,
+              { evseId: options.evseId, idTag: options.idTag }
+            )
+            procedureName =
+              proc === 'transactionEvent'
+                ? ProcedureName.TRANSACTION_EVENT
+                : ProcedureName.START_TRANSACTION
+            payload = {
+              ...built,
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {
@@ -127,32 +115,26 @@ export const createTransactionCommands = (program: Command): Command => {
               program,
               hashIds
             )
-            switch (ocppVersion) {
-              case OCPPVersion.VERSION_16:
-                procedureName = ProcedureName.STOP_TRANSACTION
-                payload = {
-                  transactionId: parseInteger(
-                    options.transactionId,
-                    '--transaction-id (OCPP 1.6 requires integer)'
-                  ),
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              case OCPPVersion.VERSION_20:
-              case OCPPVersion.VERSION_201:
-                if (options.connectorId == null) {
-                  throw new Error('--connector-id is required for OCPP 2.0.x stations')
-                }
-                procedureName = ProcedureName.TRANSACTION_EVENT
-                payload = {
-                  connectorId: options.connectorId,
-                  eventType: OCPP20TransactionEventEnumType.ENDED,
-                  transactionId: options.transactionId,
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              default:
-                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+            if (isOCPP20x(ocppVersion) && options.connectorId == null) {
+              throw new Error('--connector-id is required for OCPP 2.0.x stations')
+            }
+            const { payload: built, procedureName: proc } = buildStopTransactionPayload(
+              ocppVersion === OCPPVersion.VERSION_16
+                ? parseInteger(
+                  options.transactionId,
+                  '--transaction-id (OCPP 1.6 requires integer)'
+                )
+                : options.transactionId,
+              ocppVersion,
+              options.connectorId
+            )
+            procedureName =
+              proc === 'transactionEvent'
+                ? ProcedureName.TRANSACTION_EVENT
+                : ProcedureName.STOP_TRANSACTION
+            payload = {
+              ...built,
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             await runAction(program, procedureName, payload, undefined, config)
           } else {

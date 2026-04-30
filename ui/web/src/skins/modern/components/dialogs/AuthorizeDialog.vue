@@ -60,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { type OCPPVersion } from 'ui-common'
 import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -72,6 +73,7 @@ import Modal from '../ModernModal.vue'
 const props = defineProps<{
   chargingStationId: string
   hashId: string
+  ocppVersion?: OCPPVersion
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -101,7 +103,7 @@ const submit = async (): Promise<void> => {
   pending.value = true
   lastFailure.value = null
   try {
-    await $uiClient.authorize(props.hashId, idTag.value)
+    await $uiClient.authorize(props.hashId, idTag.value, props.ocppVersion)
     $toast.success(`Authorized ${idTag.value}`)
     close()
   } catch (error: unknown) {

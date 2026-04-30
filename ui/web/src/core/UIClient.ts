@@ -1,10 +1,12 @@
+import type { OCPPVersion } from 'ui-common'
+
 import {
+  buildAuthorizePayload,
+  buildStartTransactionPayload,
+  buildStopTransactionPayload,
   type ChargingStationOptions,
   createBrowserWsAdapter,
-  OCPP20IdTokenEnumType,
-  OCPP20TransactionEventEnumType,
-  type OCPP20TransactionEventRequest,
-  OCPPVersion,
+  isOCPP20x,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -46,10 +48,6 @@ export class UIClient {
     return UIClient.instance
   }
 
-  private static isOCPP20x (version: OCPPVersion | undefined): boolean {
-    return version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
-  }
-
   public async addChargingStations (
     template: string,
     numberOfStations: number,
@@ -62,10 +60,14 @@ export class UIClient {
     })
   }
 
-  public async authorize (hashId: string, idTag: string): Promise<ResponsePayload> {
+  public async authorize (
+    hashId: string,
+    idTag: string,
+    ocppVersion?: OCPPVersion
+  ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.AUTHORIZE, {
       hashIds: [hashId],
-      idTag,
+      ...buildAuthorizePayload(idTag, ocppVersion),
     })
   }
 
@@ -180,23 +182,17 @@ export class UIClient {
       ocppVersion?: OCPPVersion
     }
   ): Promise<ResponsePayload> {
-    if (UIClient.isOCPP20x(options.ocppVersion)) {
-      return this.transactionEvent(hashId, {
-        eventType: OCPP20TransactionEventEnumType.STARTED,
-        evse:
-          options.evseId != null
-            ? { connectorId: options.connectorId, id: options.evseId }
-            : undefined,
-        idToken:
-          options.idTag != null
-            ? { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 }
-            : undefined,
-      })
+    const { payload, procedureName } = buildStartTransactionPayload(
+      options.connectorId,
+      options.ocppVersion,
+      { evseId: options.evseId, idTag: options.idTag }
+    )
+    if (procedureName === 'transactionEvent') {
+      return this.transactionEvent(hashId, payload)
     }
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
-      connectorId: options.connectorId,
       hashIds: [hashId],
-      idTag: options.idTag,
+      ...payload,
     })
   }
 
@@ -227,13 +223,19 @@ export class UIClient {
       transactionId: number | string | undefined
     }
   ): Promise<ResponsePayload> {
-    if (UIClient.isOCPP20x(options.ocppVersion)) {
-      return this.transactionEvent(hashId, {
-        eventType: OCPP20TransactionEventEnumType.ENDED,
-        transactionId: options.transactionId?.toString(),
-      })
+    if (options.transactionId == null) {
+      return {
+        responsesFailed: [
+          {
+            errorMessage: 'transactionId is required',
+            hashId,
+            status: ResponseStatus.FAILURE,
+          },
+        ],
+        status: ResponseStatus.FAILURE,
+      }
     }
-    if (typeof options.transactionId === 'string') {
+    if (!isOCPP20x(options.ocppVersion) && typeof options.transactionId === 'string') {
       return {
         responsesFailed: [
           {
@@ -245,9 +247,16 @@ export class UIClient {
         status: ResponseStatus.FAILURE,
       }
     }
+    const { payload, procedureName } = buildStopTransactionPayload(
+      options.transactionId,
+      options.ocppVersion
+    )
+    if (procedureName === 'transactionEvent') {
+      return this.transactionEvent(hashId, payload)
+    }
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      transactionId: options.transactionId,
+      ...payload,
     })
   }
 
@@ -375,7 +384,7 @@ export class UIClient {
 
   private async transactionEvent (
     hashId: string,
-    payload: OCPP20TransactionEventRequest
+    payload: RequestPayload
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
       hashIds: [hashId],

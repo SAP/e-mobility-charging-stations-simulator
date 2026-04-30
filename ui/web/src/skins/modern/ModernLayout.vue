@@ -69,6 +69,7 @@
       v-if="showAuthorizeDialog"
       :hash-id="showAuthorizeDialog.hashId"
       :charging-station-id="showAuthorizeDialog.chargingStationId"
+      :ocpp-version="showAuthorizeDialog.ocppVersion"
       @close="showAuthorizeDialog = null"
     />
   </main>
@@ -158,6 +159,7 @@ const showStartTxDialog = ref<null | {
 const showAuthorizeDialog = ref<null | {
   chargingStationId: string
   hashId: string
+  ocppVersion?: OCPPVersion
 }>(null)
 
 const confirmStopSimulator = (): void => {

@@ -188,7 +188,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'need-refresh': []
-  'open-authorize': [data: { chargingStationId: string; hashId: string }]
+  'open-authorize': [data: { chargingStationId: string; hashId: string; ocppVersion?: OCPPVersion }]
   'open-set-url': [data: { chargingStationId: string; hashId: string }]
   'open-start-tx': [
     data: {
@@ -255,6 +255,7 @@ const emitOpenAuthorize = (): void => {
   emit('open-authorize', {
     chargingStationId: props.chargingStation.stationInfo.chargingStationId,
     hashId: props.chargingStation.stationInfo.hashId,
+    ocppVersion: props.chargingStation.stationInfo.ocppVersion,
   })
 }
 

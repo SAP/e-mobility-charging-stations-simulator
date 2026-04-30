@@ -80,7 +80,7 @@ describe('useStartTxForm', () => {
     formState.value.authorizeIdTag = true
     formState.value.idTag = 'TAG001'
     await submitForm()
-    expect(mockAuthorize).toHaveBeenCalledWith('hash1', 'TAG001')
+    expect(mockAuthorize).toHaveBeenCalledWith('hash1', 'TAG001', undefined)
     expect(mockStartTransaction).toHaveBeenCalled()
   })
 

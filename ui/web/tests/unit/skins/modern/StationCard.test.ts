@@ -3,7 +3,7 @@
  * @description Header pills, connector enumeration, start/connect/delete, supervision/authorize events.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { type ChargingStationData, OCPP16AvailabilityType } from 'ui-common'
+import { type ChargingStationData, OCPP16AvailabilityType, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { uiClientKey } from '@/core/index.js'
@@ -230,7 +230,13 @@ describe('StationCard', () => {
       const btn = buttons.find(b => b.text() === 'Authorize')
       await btn?.trigger('click')
       expect(wrapper.emitted('open-authorize')).toEqual([
-        [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
+        [
+          {
+            chargingStationId: TEST_STATION_ID,
+            hashId: TEST_HASH_ID,
+            ocppVersion: OCPPVersion.VERSION_16,
+          },
+        ],
       ])
     })
 

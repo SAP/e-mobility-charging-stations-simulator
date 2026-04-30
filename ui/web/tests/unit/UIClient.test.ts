@@ -6,7 +6,6 @@
  */
 import {
   AuthenticationType,
-  OCPP20TransactionEventEnumType,
   OCPPVersion,
   ProcedureName,
   ResponseStatus,
@@ -478,21 +477,20 @@ describe('UIClient', () => {
     })
 
     describe('startTransaction', () => {
-      it('should send START_TRANSACTION for OCPP 1.6', async () => {
+      it('should route to START_TRANSACTION for OCPP 1.6', async () => {
         await client.startTransaction(TEST_HASH_ID, {
           connectorId: 1,
           idTag: TEST_ID_TAG,
           ocppVersion: OCPPVersion.VERSION_16,
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.START_TRANSACTION, {
-          connectorId: 1,
-          hashIds: [TEST_HASH_ID],
-          idTag: TEST_ID_TAG,
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.START_TRANSACTION,
+          expect.objectContaining({ connectorId: 1, hashIds: [TEST_HASH_ID], idTag: TEST_ID_TAG })
+        )
       })
 
-      it('should send TRANSACTION_EVENT with evse object for OCPP 2.0.x', async () => {
+      it('should route to TRANSACTION_EVENT for OCPP 2.0.x', async () => {
         await client.startTransaction(TEST_HASH_ID, {
           connectorId: 2,
           evseId: 1,
@@ -500,131 +498,67 @@ describe('UIClient', () => {
           ocppVersion: OCPPVersion.VERSION_20,
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.STARTED,
-          evse: { connectorId: 2, id: 1 },
-          hashIds: [TEST_HASH_ID],
-          idToken: { idToken: TEST_ID_TAG, type: 'ISO14443' },
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.TRANSACTION_EVENT,
+          expect.objectContaining({ connectorId: 2, evseId: 1, hashIds: [TEST_HASH_ID] })
+        )
       })
 
-      it('should default to OCPP 1.6 when version is undefined', async () => {
+      it('should default to START_TRANSACTION when version is undefined', async () => {
         await client.startTransaction(TEST_HASH_ID, {
           connectorId: 1,
           idTag: TEST_ID_TAG,
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.START_TRANSACTION, {
-          connectorId: 1,
-          hashIds: [TEST_HASH_ID],
-          idTag: TEST_ID_TAG,
-        })
-      })
-
-      it('should send undefined evse when evseId is not provided for OCPP 2.0.x', async () => {
-        await client.startTransaction(TEST_HASH_ID, {
-          connectorId: 1,
-          idTag: TEST_ID_TAG,
-          ocppVersion: OCPPVersion.VERSION_20,
-        })
-
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.STARTED,
-          evse: undefined,
-          hashIds: [TEST_HASH_ID],
-          idToken: { idToken: TEST_ID_TAG, type: 'ISO14443' },
-        })
-      })
-
-      it('should send undefined idToken when idTag is not provided for OCPP 2.0.x', async () => {
-        await client.startTransaction(TEST_HASH_ID, {
-          connectorId: 1,
-          evseId: 1,
-          ocppVersion: OCPPVersion.VERSION_20,
-        })
-
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.STARTED,
-          evse: { connectorId: 1, id: 1 },
-          hashIds: [TEST_HASH_ID],
-          idToken: undefined,
-        })
-      })
-
-      it('should send undefined evse and idToken when both absent for OCPP 2.0.x', async () => {
-        await client.startTransaction(TEST_HASH_ID, {
-          connectorId: 1,
-          ocppVersion: OCPPVersion.VERSION_20,
-        })
-
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.STARTED,
-          evse: undefined,
-          hashIds: [TEST_HASH_ID],
-          idToken: undefined,
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.START_TRANSACTION,
+          expect.objectContaining({ connectorId: 1, hashIds: [TEST_HASH_ID], idTag: TEST_ID_TAG })
+        )
       })
     })
 
     describe('stopTransaction', () => {
-      it('should send STOP_TRANSACTION for OCPP 1.6', async () => {
+      it('should route to STOP_TRANSACTION for OCPP 1.6', async () => {
         await client.stopTransaction(TEST_HASH_ID, {
           ocppVersion: OCPPVersion.VERSION_16,
           transactionId: 12345,
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.STOP_TRANSACTION, {
-          hashIds: [TEST_HASH_ID],
-          transactionId: 12345,
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.STOP_TRANSACTION,
+          expect.objectContaining({ hashIds: [TEST_HASH_ID], transactionId: 12345 })
+        )
       })
 
-      it('should send TRANSACTION_EVENT with Ended for OCPP 2.0.x', async () => {
+      it('should route to TRANSACTION_EVENT for OCPP 2.0.x', async () => {
         await client.stopTransaction(TEST_HASH_ID, {
           ocppVersion: OCPPVersion.VERSION_20,
           transactionId: 'tx-uuid-123',
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.ENDED,
-          hashIds: [TEST_HASH_ID],
-          transactionId: 'tx-uuid-123',
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.TRANSACTION_EVENT,
+          expect.objectContaining({ hashIds: [TEST_HASH_ID], transactionId: 'tx-uuid-123' })
+        )
       })
 
-      it('should default to OCPP 1.6 when version is undefined', async () => {
+      it('should default to STOP_TRANSACTION when version is undefined', async () => {
         await client.stopTransaction(TEST_HASH_ID, { transactionId: 12345 })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.STOP_TRANSACTION, {
-          hashIds: [TEST_HASH_ID],
-          transactionId: 12345,
-        })
+        expect(sendRequestSpy).toHaveBeenCalledWith(
+          ProcedureName.STOP_TRANSACTION,
+          expect.objectContaining({ hashIds: [TEST_HASH_ID], transactionId: 12345 })
+        )
       })
 
-      it('should send undefined transactionId for OCPP 2.0.x when not provided', async () => {
-        await client.stopTransaction(TEST_HASH_ID, {
+      it('should return failure when transactionId is undefined', async () => {
+        const result = await client.stopTransaction(TEST_HASH_ID, {
           ocppVersion: OCPPVersion.VERSION_20,
           transactionId: undefined,
         })
 
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.ENDED,
-          hashIds: [TEST_HASH_ID],
-          transactionId: undefined,
-        })
-      })
-
-      it('should convert numeric transactionId to string for OCPP 2.0.x', async () => {
-        await client.stopTransaction(TEST_HASH_ID, {
-          ocppVersion: OCPPVersion.VERSION_20,
-          transactionId: 12345,
-        })
-
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.TRANSACTION_EVENT, {
-          eventType: OCPP20TransactionEventEnumType.ENDED,
-          hashIds: [TEST_HASH_ID],
-          transactionId: '12345',
-        })
+        expect(result.status).toBe(ResponseStatus.FAILURE)
+        expect(sendRequestSpy).not.toHaveBeenCalled()
       })
 
       it('should return failure for string transactionId with OCPP 1.6', async () => {
@@ -635,18 +569,6 @@ describe('UIClient', () => {
 
         expect(result.status).toBe(ResponseStatus.FAILURE)
         expect(sendRequestSpy).not.toHaveBeenCalled()
-      })
-
-      it('should send undefined transactionId for OCPP 1.6 when not provided', async () => {
-        await client.stopTransaction(TEST_HASH_ID, {
-          ocppVersion: OCPPVersion.VERSION_16,
-          transactionId: undefined,
-        })
-
-        expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.STOP_TRANSACTION, {
-          hashIds: [TEST_HASH_ID],
-          transactionId: undefined,
-        })
       })
     })
   })

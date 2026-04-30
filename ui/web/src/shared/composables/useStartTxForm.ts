@@ -66,7 +66,7 @@ export function useStartTxForm (config: StartTxFormConfig): {
           return false
         }
         try {
-          await $uiClient.authorize(hashId, idTag)
+          await $uiClient.authorize(hashId, idTag, toValue(ocppVersion))
         } catch (error: unknown) {
           $toast.error('Error at authorizing RFID tag')
           console.error('Error at authorizing RFID tag:', error)

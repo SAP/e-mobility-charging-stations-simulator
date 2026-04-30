@@ -3,6 +3,7 @@
  * @description Unit tests for classic skin action components: AddChargingStations, SetSupervisionUrl, StartTransaction.
  */
 import { flushPromises, mount } from '@vue/test-utils'
+import { OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
@@ -331,14 +332,18 @@ describe('Actions', () => {
       const submitBtn = wrapper.findComponent(ButtonStub)
       await submitBtn.trigger('click')
       await flushPromises()
-      expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'RFID-001')
+      expect(mockClient.authorize).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        'RFID-001',
+        OCPPVersion.VERSION_16
+      )
       expect(mockClient.startTransaction).toHaveBeenCalledWith(
         TEST_HASH_ID,
         expect.objectContaining({
           connectorId: 1,
           evseId: 1,
           idTag: 'RFID-001',
-          ocppVersion: '1.6',
+          ocppVersion: OCPPVersion.VERSION_16,
         })
       )
     })

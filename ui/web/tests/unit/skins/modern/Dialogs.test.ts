@@ -4,7 +4,7 @@
  *   Modal is mocked to skip the Teleport so wrapper.find() reaches dialog inputs.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { ResponseStatus, ServerFailureError } from 'ui-common'
+import { OCPPVersion, ResponseStatus, ServerFailureError } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 
@@ -291,7 +291,7 @@ describe('Dialogs', () => {
       await checkbox.setValue(true)
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
-      expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'RFID-01')
+      expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'RFID-01', undefined)
       expect(mockClient.startTransaction).toHaveBeenCalledWith(
         TEST_HASH_ID,
         expect.objectContaining({ connectorId: 1, idTag: 'RFID-01' })
@@ -311,13 +311,13 @@ describe('Dialogs', () => {
     })
 
     it('should include evseId and ocppVersion from props', async () => {
-      const wrapper = mountDialog({ evseId: 2, ocppVersion: '1.6' })
+      const wrapper = mountDialog({ evseId: 2, ocppVersion: OCPPVersion.VERSION_16 })
       await wrapper.find('#modern-tx-idtag').setValue('RFID-01')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
       expect(mockClient.startTransaction).toHaveBeenCalledWith(
         TEST_HASH_ID,
-        expect.objectContaining({ evseId: 2, ocppVersion: '1.6' })
+        expect.objectContaining({ evseId: 2, ocppVersion: OCPPVersion.VERSION_16 })
       )
       expect(wrapper.text()).toContain('EVSE 2')
     })
@@ -402,7 +402,7 @@ describe('Dialogs', () => {
       await wrapper.find('#modern-auth-tag').setValue('GOOD')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
       await flushPromises()
-      expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'GOOD')
+      expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, 'GOOD', undefined)
       expect(toastMock.success).toHaveBeenCalled()
       expect(wrapper.emitted('close')).toHaveLength(1)
     })

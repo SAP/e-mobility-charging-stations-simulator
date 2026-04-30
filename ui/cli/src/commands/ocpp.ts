@@ -1,5 +1,5 @@
 import { Command, Option } from 'commander'
-import { OCPP20IdTokenEnumType, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
+import { buildAuthorizePayload, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
 
 import {
   handleActionErrors,
@@ -30,22 +30,9 @@ export const createOcppCommands = (program: Command): Command => {
             program,
             hashIds
           )
-          switch (ocppVersion) {
-            case OCPPVersion.VERSION_16:
-              payload = {
-                idTag: options.idTag,
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            case OCPPVersion.VERSION_20:
-            case OCPPVersion.VERSION_201:
-              payload = {
-                idToken: { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 },
-                ...buildHashIdsPayload(resolvedHashIds),
-              }
-              break
-            default:
-              throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+          payload = {
+            ...buildAuthorizePayload(options.idTag, ocppVersion),
+            ...buildHashIdsPayload(resolvedHashIds),
           }
           await runAction(program, ProcedureName.AUTHORIZE, payload, undefined, config)
         } else {
