@@ -29,8 +29,8 @@ describe('useSkin', () => {
   beforeEach(async () => {
     // Reset module-level singleton state to default
     const { activeSkinId, switchSkin } = useSkin()
-    if (activeSkinId.value !== 'classic') {
-      await switchSkin('classic')
+    if (activeSkinId.value !== DEFAULT_SKIN) {
+      await switchSkin(DEFAULT_SKIN)
     }
     localStorage.clear()
   })
@@ -57,41 +57,41 @@ describe('useSkin', () => {
   })
 
   it('should not update activeSkinId when loadStyles rejects', async () => {
-    const modernSkin = skins.find(s => s.id === 'modern')
-    expect(modernSkin).toBeDefined()
-    if (modernSkin == null) return
-    vi.mocked(modernSkin.loadStyles).mockRejectedValueOnce(new Error('CSS not found'))
+    const classicSkin = skins.find(s => s.id === 'classic')
+    expect(classicSkin).toBeDefined()
+    if (classicSkin == null) return
+    vi.mocked(classicSkin.loadStyles).mockRejectedValueOnce(new Error('CSS not found'))
     const { activeSkinId, switchSkin } = useSkin()
-    const result = await switchSkin('modern')
+    const result = await switchSkin('classic')
     expect(result).toBe(false)
-    expect(activeSkinId.value).toBe('classic')
+    expect(activeSkinId.value).toBe('modern')
     expect(localStorage.getItem('ecs-ui-skin')).toBeNull()
   })
 
   it('should populate lastError on skin load failure', async () => {
-    const modernSkin = skins.find(s => s.id === 'modern')
-    expect(modernSkin).toBeDefined()
-    if (modernSkin == null) return
-    vi.mocked(modernSkin.loadStyles).mockRejectedValueOnce(new Error('Network error'))
+    const classicSkin = skins.find(s => s.id === 'classic')
+    expect(classicSkin).toBeDefined()
+    if (classicSkin == null) return
+    vi.mocked(classicSkin.loadStyles).mockRejectedValueOnce(new Error('Network error'))
     const { lastError, switchSkin } = useSkin()
-    await switchSkin('modern')
+    await switchSkin('classic')
     expect(lastError.value).toBe('Network error')
   })
 
   it('should set isSwitching to true during async load', async () => {
-    const modernSkin = skins.find(s => s.id === 'modern')
-    expect(modernSkin).toBeDefined()
-    if (modernSkin == null) return
-    vi.mocked(modernSkin.loadStyles).mockClear()
+    const classicSkin = skins.find(s => s.id === 'classic')
+    expect(classicSkin).toBeDefined()
+    if (classicSkin == null) return
+    vi.mocked(classicSkin.loadStyles).mockClear()
     let rejectLoad!: (err: Error) => void
-    vi.mocked(modernSkin.loadStyles).mockImplementationOnce(
+    vi.mocked(classicSkin.loadStyles).mockImplementationOnce(
       () =>
         new Promise<void>((_resolve, reject) => {
           rejectLoad = reject
         })
     )
     const { isSwitching, switchSkin } = useSkin()
-    const promise = switchSkin('modern')
+    const promise = switchSkin('classic')
     expect(isSwitching.value).toBe(true)
     rejectLoad(new Error('test cleanup'))
     await promise
@@ -100,48 +100,48 @@ describe('useSkin', () => {
 
   it('should guard against concurrent switchSkin calls', async () => {
     const { activeSkinId, switchSkin } = useSkin()
-    const modernSkin = skins.find(s => s.id === 'modern')
-    expect(modernSkin).toBeDefined()
-    if (modernSkin == null) return
-    vi.mocked(modernSkin.loadStyles).mockClear()
+    const classicSkin = skins.find(s => s.id === 'classic')
+    expect(classicSkin).toBeDefined()
+    if (classicSkin == null) return
+    vi.mocked(classicSkin.loadStyles).mockClear()
     let resolveLoad!: () => void
-    vi.mocked(modernSkin.loadStyles).mockImplementationOnce(
+    vi.mocked(classicSkin.loadStyles).mockImplementationOnce(
       () =>
         new Promise<void>(resolve => {
           resolveLoad = resolve
         })
     )
-    const first = switchSkin('modern')
-    const second = switchSkin('modern')
-    expect(activeSkinId.value).toBe('classic')
+    const first = switchSkin('classic')
+    const second = switchSkin('classic')
+    expect(activeSkinId.value).toBe('modern')
     resolveLoad()
     await first
     await second
-    expect(activeSkinId.value).toBe('modern')
-    expect(modernSkin.loadStyles).toHaveBeenCalledTimes(1)
+    expect(activeSkinId.value).toBe('classic')
+    expect(classicSkin.loadStyles).toHaveBeenCalledTimes(1)
   })
 
   it('should skip loadStyles when the skin is already active', async () => {
-    const classicSkin = skins.find(s => s.id === 'classic')
-    expect(classicSkin).toBeDefined()
-    if (classicSkin == null) return
-    vi.mocked(classicSkin.loadStyles).mockClear()
+    const modernSkin = skins.find(s => s.id === 'modern')
+    expect(modernSkin).toBeDefined()
+    if (modernSkin == null) return
+    vi.mocked(modernSkin.loadStyles).mockClear()
     const { activeSkinId, switchSkin } = useSkin()
-    await switchSkin('classic')
-    expect(classicSkin.loadStyles).not.toHaveBeenCalled()
-    expect(activeSkinId.value).toBe('classic')
+    await switchSkin('modern')
+    expect(modernSkin.loadStyles).not.toHaveBeenCalled()
+    expect(activeSkinId.value).toBe('modern')
   })
 
   it('should update activeSkinId on successful skin switch', async () => {
     const { activeSkinId, switchSkin } = useSkin()
-    await switchSkin('modern')
-    expect(activeSkinId.value).toBe('modern')
+    await switchSkin('classic')
+    expect(activeSkinId.value).toBe('classic')
   })
 
   it('should persist the active skin to localStorage', async () => {
     const { switchSkin } = useSkin()
-    await switchSkin('modern')
-    expect(localStorage.getItem('ecs-ui-skin')).toBe('"modern"')
+    await switchSkin('classic')
+    expect(localStorage.getItem('ecs-ui-skin')).toBe('"classic"')
   })
 
   it('should ignore invalid skin id', async () => {
@@ -162,15 +162,15 @@ describe('useSkin', () => {
   })
 
   it('should return the singleton activeSkinId regardless of later localStorage writes', () => {
-    localStorage.setItem('ecs-ui-skin', '"modern"')
+    localStorage.setItem('ecs-ui-skin', '"classic"')
     const { activeSkinId } = useSkin()
-    expect(activeSkinId.value).toBe('classic')
+    expect(activeSkinId.value).toBe('modern')
   })
 
   it('should set data-skin attribute on document element after switch', async () => {
     const { switchSkin } = useSkin()
-    await switchSkin('modern')
-    expect(document.documentElement.getAttribute('data-skin')).toBe('modern')
+    await switchSkin('classic')
+    expect(document.documentElement.getAttribute('data-skin')).toBe('classic')
   })
 
   it('should handle corrupted localStorage value gracefully', () => {
@@ -179,13 +179,13 @@ describe('useSkin', () => {
     // Re-call useSkin — the singleton already initialized, so this tests
     // the getFromLocalStorage fallback path
     const { activeSkinId } = useSkin()
-    expect(activeSkinId.value).toBe('classic')
+    expect(activeSkinId.value).toBe('modern')
   })
 
   it('should remove skin-error-reload-count from sessionStorage on successful switch', async () => {
     sessionStorage.setItem('skin-error-reload-count', '2')
     const { switchSkin } = useSkin()
-    await switchSkin('modern')
+    await switchSkin('classic')
     expect(sessionStorage.getItem('skin-error-reload-count')).toBeNull()
   })
 

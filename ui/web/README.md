@@ -122,7 +122,7 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 | Field                     | Type                    | Required | Description                               |
 | ------------------------- | ----------------------- | -------- | ----------------------------------------- |
-| `skin`                    | `string`                | No       | Skin name (default: `classic`)            |
+| `skin`                    | `string`                | No       | Skin name (default: `modern`)             |
 | `theme`                   | `string`                | No       | Theme name (default: `tokyo-night-storm`) |
 | `host`                    | `string`                | Yes      | Simulator UI server hostname              |
 | `port`                    | `number`                | Yes      | Simulator UI server port                  |
@@ -161,7 +161,7 @@ Set `skin` in `config.json` to select the default UI layout. Users can switch sk
 | `classic` | Table-based rows with a sticky sidebar for forms. |
 | `modern`  | Responsive card grid with modal dialogs.          |
 
-Default: `classic`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/skins/registry.ts`.
+Default: `modern`. To add a skin, create `src/skins/<name>/`, implement a root layout component, and register it in `src/skins/registry.ts`.
 
 ## Getting started
 

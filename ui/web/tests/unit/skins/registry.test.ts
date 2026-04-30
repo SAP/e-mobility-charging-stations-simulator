@@ -8,8 +8,8 @@ import { DEFAULT_SKIN } from '@/core/index.js'
 import { skins } from '@/skins/registry.js'
 
 describe('registry', () => {
-  it('should export DEFAULT_SKIN as classic', () => {
-    expect(DEFAULT_SKIN).toBe('classic')
+  it('should export DEFAULT_SKIN as modern', () => {
+    expect(DEFAULT_SKIN).toBe('modern')
   })
 
   it('should export skins array with exactly 2 entries', () => {
