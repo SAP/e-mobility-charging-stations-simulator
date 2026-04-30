@@ -8,8 +8,8 @@ Vue.js dashboard for monitoring and controlling the e-mobility charging stations
 
 ![Web UI](./src/assets/webui.png)
 
-1. The top bar lets you switch between UI servers, start/stop the simulator, add charging stations, and refresh the view.
-2. Each charging station is a table row with actions: start, stop, open/close connection, start/stop transaction, and more.
+1. The top bar lets you switch between UI servers, start/stop the simulator, add charging stations, and select themes and skins.
+2. Each charging station is a card with status indicators, connector details, and actions: start, stop, open/close connection, start/stop transaction, and more.
 
 ## Table of contents
 
@@ -20,6 +20,7 @@ Vue.js dashboard for monitoring and controlling the e-mobility charging stations
     - [Multiple servers](#multiple-servers)
   - [Configuration reference](#configuration-reference)
 - [Theming](#theming)
+- [Skins](#skins)
 - [Getting started](#getting-started)
   - [Install dependencies](#install-dependencies)
   - [Development](#development)
@@ -150,7 +151,7 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | `catppuccin-latte`  | Light | [Catppuccin](https://github.com/catppuccin/catppuccin)           |
 | `sap-horizon`       | Light | [SAP Horizon](https://github.com/SAP/theming-base-content)       |
 
-Default: `tokyo-night-storm`. To add a theme, create a CSS file defining the same semantic tokens.
+Default: `tokyo-night-storm`. To add a theme, create a CSS file in this directory defining all required CSS custom properties (see `src/shared/tokens/contract.ts` for the full list).
 
 ## Skins
 
