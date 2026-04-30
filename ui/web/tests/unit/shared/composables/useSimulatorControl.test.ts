@@ -18,7 +18,7 @@ import {
 } from '@/core/index.js'
 
 import { toastMock } from '../../../setup.js'
-import { createUIServerConfig } from '../../constants'
+import { createUIServerConfig } from '../../constants.js'
 import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers.js'
 
 vi.mock('@/core/index.js', async importOriginal => {

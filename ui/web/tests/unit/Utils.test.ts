@@ -18,7 +18,7 @@ import {
 } from '@/core/index.js'
 import { useFetchData } from '@/shared/composables/useFetchData.js'
 
-import { toastMock } from '../setup'
+import { toastMock } from '../setup.js'
 
 describe('Utils', () => {
   describe('localStorage utilities', () => {

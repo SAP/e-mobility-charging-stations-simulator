@@ -23,7 +23,7 @@ vi.mock('@/core/index.js', async importOriginal => {
 
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 
-import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers'
+import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers.js'
 
 let mockClient: MockUIClient
 let chargingStations: Ref<unknown[]>

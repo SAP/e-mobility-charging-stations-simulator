@@ -16,9 +16,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UIClient } from '@/core/index.js'
 
-import { toastMock } from '../setup'
-import { createUIServerConfig, TEST_HASH_ID, TEST_ID_TAG } from './constants'
-import { MockWebSocket } from './helpers'
+import { toastMock } from '../setup.js'
+import { createUIServerConfig, TEST_HASH_ID, TEST_ID_TAG } from './constants.js'
+import { MockWebSocket } from './helpers.js'
 
 // Reset singleton between tests
 beforeEach(() => {

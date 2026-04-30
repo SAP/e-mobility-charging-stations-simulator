@@ -9,8 +9,8 @@ import { ref } from 'vue'
 import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core/index.js'
 import ClassicLayout from '@/skins/classic/ClassicLayout.vue'
 
-import { createUIServerConfig } from '../../constants'
-import { createMockUIClient, type MockUIClient } from '../../helpers'
+import { createUIServerConfig } from '../../constants.js'
+import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ref({ name: 'charging-stations', params: {} }),

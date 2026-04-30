@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import SimulatorBar from '@/skins/modern/components/SimulatorBar.vue'
 
-import { createUIServerConfig } from '../../constants'
+import { createUIServerConfig } from '../../constants.js'
 
 const baseServer = createUIServerConfig({ name: 'Alpha' })
 const altServer = createUIServerConfig({ host: 'beta', name: 'Beta' })

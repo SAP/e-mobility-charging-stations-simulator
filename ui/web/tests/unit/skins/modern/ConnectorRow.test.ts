@@ -15,7 +15,7 @@ import { uiClientKey } from '@/core/index.js'
 import ConnectorRow from '@/skins/modern/components/ConnectorRow.vue'
 
 import { toastMock } from '../../../setup.js'
-import { TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
+import { TEST_HASH_ID, TEST_STATION_ID } from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient

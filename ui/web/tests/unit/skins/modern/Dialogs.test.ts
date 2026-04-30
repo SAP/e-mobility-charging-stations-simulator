@@ -30,7 +30,7 @@ import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSuperv
 import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
 
 import { toastMock } from '../../../setup.js'
-import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../../constants'
+import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient

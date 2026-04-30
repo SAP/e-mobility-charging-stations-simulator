@@ -18,7 +18,7 @@ import {
 import ModernLayout from '@/skins/modern/ModernLayout.vue'
 
 import { toastMock } from '../../../setup.js'
-import { createChargingStationData, createUIServerConfig } from '../../constants'
+import { createChargingStationData, createUIServerConfig } from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 vi.mock('@/core/index.js', async importOriginal => {

@@ -15,7 +15,7 @@ import {
   createConnectorStatus,
   TEST_HASH_ID,
   TEST_STATION_ID,
-} from '../../constants'
+} from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
