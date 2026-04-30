@@ -14,14 +14,18 @@
         <label
           class="modern-form__label"
           for="modern-tx-idtag"
-        >RFID tag</label>
+        >RFID / ID Tag</label>
         <input
           id="modern-tx-idtag"
           v-model.trim="formState.idTag"
           class="modern-form__input"
           type="text"
-          placeholder="optional"
+          autocomplete="off"
+          placeholder="e.g. RFID-1234"
         >
+        <span class="modern-form__hint">
+          Tag used for authorization and transaction identification.
+        </span>
       </div>
       <label class="modern-form__check">
         <input
