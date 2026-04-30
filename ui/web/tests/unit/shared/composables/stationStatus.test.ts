@@ -4,6 +4,7 @@
  */
 import type { ChargingStationData } from 'ui-common'
 
+import { OCPP16ChargePointStatus } from 'ui-common'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -16,47 +17,47 @@ import {
 describe('stationStatus', () => {
   describe('getConnectorStatusVariant', () => {
     it('should return ok for Available', () => {
-      const result = getConnectorStatusVariant('Available')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.AVAILABLE)
       expect(result).toBe('ok')
     })
 
     it('should return warn for Charging', () => {
-      const result = getConnectorStatusVariant('Charging')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.CHARGING)
       expect(result).toBe('warn')
     })
 
     it('should return warn for Occupied', () => {
-      const result = getConnectorStatusVariant('Occupied')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.OCCUPIED)
       expect(result).toBe('warn')
     })
 
     it('should return warn for Preparing', () => {
-      const result = getConnectorStatusVariant('Preparing')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.PREPARING)
       expect(result).toBe('warn')
     })
 
     it('should return warn for SuspendedEV', () => {
-      const result = getConnectorStatusVariant('SuspendedEV')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.SUSPENDED_EV)
       expect(result).toBe('warn')
     })
 
     it('should return warn for SuspendedEVSE', () => {
-      const result = getConnectorStatusVariant('SuspendedEVSE')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.SUSPENDED_EVSE)
       expect(result).toBe('warn')
     })
 
     it('should return warn for Finishing', () => {
-      const result = getConnectorStatusVariant('Finishing')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.FINISHING)
       expect(result).toBe('warn')
     })
 
     it('should return err for Faulted', () => {
-      const result = getConnectorStatusVariant('Faulted')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.FAULTED)
       expect(result).toBe('err')
     })
 
     it('should return err for Unavailable', () => {
-      const result = getConnectorStatusVariant('Unavailable')
+      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.UNAVAILABLE)
       expect(result).toBe('err')
     })
 
@@ -132,9 +133,9 @@ describe('stationStatus', () => {
     it('should return connector entries from connectors array', () => {
       const station = {
         connectors: [
-          { connectorId: 0, connectorStatus: 'Available' },
-          { connectorId: 1, connectorStatus: 'Charging' },
-          { connectorId: 2, connectorStatus: 'Available' },
+          { connectorId: 0, connectorStatus: OCPP16ChargePointStatus.AVAILABLE },
+          { connectorId: 1, connectorStatus: OCPP16ChargePointStatus.CHARGING },
+          { connectorId: 2, connectorStatus: OCPP16ChargePointStatus.AVAILABLE },
         ],
       } as unknown as ChargingStationData
       const entries = getConnectorEntries(station)
@@ -148,14 +149,16 @@ describe('stationStatus', () => {
         evses: [
           {
             evseId: 0,
-            evseStatus: { connectors: [{ connectorId: 1, connectorStatus: 'Available' }] },
+            evseStatus: {
+              connectors: [{ connectorId: 1, connectorStatus: OCPP16ChargePointStatus.AVAILABLE }],
+            },
           },
           {
             evseId: 1,
             evseStatus: {
               connectors: [
-                { connectorId: 0, connectorStatus: 'Available' },
-                { connectorId: 1, connectorStatus: 'Charging' },
+                { connectorId: 0, connectorStatus: OCPP16ChargePointStatus.AVAILABLE },
+                { connectorId: 1, connectorStatus: OCPP16ChargePointStatus.CHARGING },
               ],
             },
           },
@@ -169,7 +172,7 @@ describe('stationStatus', () => {
 
     it('should fall back to connectors when evses is empty', () => {
       const station = {
-        connectors: [{ connectorId: 1, connectorStatus: 'Available' }],
+        connectors: [{ connectorId: 1, connectorStatus: OCPP16ChargePointStatus.AVAILABLE }],
         evses: [],
       } as unknown as ChargingStationData
       const entries = getConnectorEntries(station)

@@ -80,13 +80,13 @@ describe('ConnectorRow', () => {
 
   describe('status pill variants', () => {
     it.each<[string, string]>([
-      ['Available', 'modern-pill--ok'],
-      ['Charging', 'modern-pill--warn'],
-      ['Occupied', 'modern-pill--warn'],
-      ['Preparing', 'modern-pill--warn'],
-      ['Faulted', 'modern-pill--err'],
-      ['Unavailable', 'modern-pill--err'],
-      ['Reserved', 'modern-pill--idle'],
+      [OCPP16ChargePointStatus.AVAILABLE, 'modern-pill--ok'],
+      [OCPP16ChargePointStatus.CHARGING, 'modern-pill--warn'],
+      [OCPP16ChargePointStatus.OCCUPIED, 'modern-pill--warn'],
+      [OCPP16ChargePointStatus.PREPARING, 'modern-pill--warn'],
+      [OCPP16ChargePointStatus.FAULTED, 'modern-pill--err'],
+      [OCPP16ChargePointStatus.UNAVAILABLE, 'modern-pill--err'],
+      [OCPP16ChargePointStatus.RESERVED, 'modern-pill--idle'],
     ])('should map status "%s" to class %s', (status, cls) => {
       wrapper = mountRow({ connector: { status } })
       const pills = wrapper.findAll('.modern-pill')
