@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, shallowRef } from 'vue'
 
-import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/composables'
+import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core'
 import ToggleButton from '@/skins/classic/components/buttons/ToggleButton.vue'
 import CSTable from '@/skins/classic/components/charging-stations/CSTable.vue'
 

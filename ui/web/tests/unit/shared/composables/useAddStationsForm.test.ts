@@ -10,7 +10,7 @@ import { toastMock } from '../../../setup.js'
 const mockAddChargingStations = vi.fn().mockResolvedValue({ status: 'success' })
 const mockTemplates = ref(['template1.json', 'template2.json'])
 
-vi.mock('@/composables/Utils.js', () => ({
+vi.mock('@/core/index.js', () => ({
   resetToggleButtonState: vi.fn(),
   useTemplates: () => mockTemplates,
   useUIClient: () => ({

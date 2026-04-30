@@ -1,7 +1,7 @@
 import { type SKIN_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
-import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
+import { getFromLocalStorage, setToLocalStorage } from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 // Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { DEFAULT_SKIN, type SkinDefinition, skins } from '@/skins/registry.js'

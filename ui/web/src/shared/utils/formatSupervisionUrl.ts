@@ -1,4 +1,4 @@
-import { EMPTY_VALUE_PLACEHOLDER } from '@/composables/Constants.js'
+import { EMPTY_VALUE_PLACEHOLDER } from '@/core/Constants.js'
 
 export interface FormatSupervisionUrlOptions {
   /** Insert zero-width-space after dots for word-break in table cells. */

@@ -4,7 +4,7 @@
  */
 import { readonly } from 'vue'
 
-import { useUIClient } from '@/composables/Utils.js'
+import { useUIClient } from '@/core/index.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 /**

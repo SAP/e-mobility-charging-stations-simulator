@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
+import { resetToggleButtonState, ROUTE_NAMES } from '@/core'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 
 import Button from '../buttons/ClassicButton.vue'

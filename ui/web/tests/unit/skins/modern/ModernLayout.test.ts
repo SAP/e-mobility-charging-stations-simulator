@@ -14,14 +14,14 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   uiClientKey,
   useUIClient,
-} from '@/composables'
+} from '@/core'
 import ModernLayout from '@/skins/modern/ModernLayout.vue'
 
 import { toastMock } from '../../../setup.js'
 import { createChargingStationData, createUIServerConfig } from '../../constants'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
-vi.mock('@/composables', async importOriginal => {
+vi.mock('@/core', async importOriginal => {
   const actual = await importOriginal()
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })

@@ -7,7 +7,7 @@ import type { OCPPVersion } from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useUIClient } from '@/composables/Utils.js'
+import { useUIClient } from '@/core/index.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 interface ConnectorActionsDeps {

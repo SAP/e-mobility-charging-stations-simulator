@@ -81,11 +81,7 @@
 import { type OCPPVersion } from 'ui-common'
 import { defineAsyncComponent, ref } from 'vue'
 
-import {
-  getFromLocalStorage,
-  UI_SERVER_CONFIGURATION_INDEX_KEY,
-  useChargingStations,
-} from '@/composables'
+import { getFromLocalStorage, UI_SERVER_CONFIGURATION_INDEX_KEY, useChargingStations } from '@/core'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'

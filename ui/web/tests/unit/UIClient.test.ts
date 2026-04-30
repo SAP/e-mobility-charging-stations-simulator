@@ -14,7 +14,7 @@ import {
 } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { UIClient } from '@/composables'
+import { UIClient } from '@/core'
 
 import { toastMock } from '../setup'
 import { createUIServerConfig, TEST_HASH_ID, TEST_ID_TAG } from './constants'

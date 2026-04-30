@@ -10,13 +10,9 @@ import {
   shallowRef,
 } from 'vue'
 
-import {
-  useChargingStations,
-  useConfiguration,
-  useFetchData,
-  useTemplates,
-  useUIClient,
-} from '@/composables/index.js'
+import { useChargingStations, useConfiguration, useTemplates, useUIClient } from '@/core/index.js'
+
+import { useFetchData } from './useFetchData.js'
 
 export interface LayoutData {
   /** Fetches only the charging stations list. */

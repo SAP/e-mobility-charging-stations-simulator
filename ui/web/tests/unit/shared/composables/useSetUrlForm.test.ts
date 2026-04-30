@@ -8,7 +8,7 @@ import { toastMock } from '../../../setup.js'
 
 const mockSetSupervisionUrl = vi.fn().mockResolvedValue({ status: 'success' })
 
-vi.mock('@/composables/Utils.js', () => ({
+vi.mock('@/core/index.js', () => ({
   useUIClient: () => ({
     setSupervisionUrl: mockSetSupervisionUrl,
   }),

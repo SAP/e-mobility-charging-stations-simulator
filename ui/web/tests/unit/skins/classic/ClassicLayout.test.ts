@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 
-import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/composables'
+import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core'
 import ClassicLayout from '@/skins/classic/ClassicLayout.vue'
 
 import { createUIServerConfig } from '../../constants'

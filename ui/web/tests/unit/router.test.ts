@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-import { ROUTE_NAMES } from '@/composables'
+import { ROUTE_NAMES } from '@/core'
 import { router } from '@/router/index.js'
 
 vi.mock('@/shared/composables/useSkin.js', async importOriginal => {

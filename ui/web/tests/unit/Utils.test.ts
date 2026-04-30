@@ -14,9 +14,9 @@ import {
   setToLocalStorage,
   useChargingStations,
   useConfiguration,
-  useFetchData,
   useTemplates,
-} from '@/composables'
+} from '@/core'
+import { useFetchData } from '@/shared/composables/useFetchData.js'
 
 import { toastMock } from '../setup'
 

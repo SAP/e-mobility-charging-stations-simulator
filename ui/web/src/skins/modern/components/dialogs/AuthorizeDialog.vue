@@ -63,7 +63,7 @@
 import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useUIClient } from '@/composables'
+import { useUIClient } from '@/core'
 
 import { type FailureInfo, getFailureInfo } from '../../utils/errors.js'
 import ActionButton from '../ActionButton.vue'

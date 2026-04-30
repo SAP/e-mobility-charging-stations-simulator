@@ -11,7 +11,7 @@ import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers.
 
 let mockUIClient: MockUIClient
 
-vi.mock('@/composables/Utils.js', () => ({
+vi.mock('@/core/index.js', () => ({
   useUIClient: () => mockUIClient,
 }))
 

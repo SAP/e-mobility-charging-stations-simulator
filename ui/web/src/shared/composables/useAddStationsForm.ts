@@ -2,7 +2,7 @@ import { randomUUID, type UUIDv4 } from 'ui-common'
 import { type DeepReadonly, readonly, ref, type Ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useTemplates, useUIClient } from '@/composables/Utils.js'
+import { useTemplates, useUIClient } from '@/core/index.js'
 
 export interface AddStationsFormState {
   autoStart: boolean

@@ -42,7 +42,7 @@ import type { OCPPVersion } from 'ui-common'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { resetToggleButtonState, ROUTE_NAMES } from '@/composables'
+import { resetToggleButtonState, ROUTE_NAMES } from '@/core'
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 import Button from '../buttons/ClassicButton.vue'

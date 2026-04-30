@@ -18,7 +18,7 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   UIClient,
   uiClientKey,
-} from '@/composables/index.js'
+} from '@/core/index.js'
 import { router } from '@/router'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
 import { DEFAULT_THEME, THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'

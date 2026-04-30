@@ -1,7 +1,7 @@
 import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
-import { getFromLocalStorage, setToLocalStorage } from '@/composables/Utils.js'
+import { getFromLocalStorage, setToLocalStorage } from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 
 export const AVAILABLE_THEMES = THEME_IDS

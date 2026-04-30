@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { type ConnectorStatus, OCPP16ChargePointStatus, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { uiClientKey } from '@/composables'
+import { uiClientKey } from '@/core'
 import CSConnector from '@/skins/classic/components/charging-stations/CSConnector.vue'
 
 import { toastMock } from '../../../setup.js'

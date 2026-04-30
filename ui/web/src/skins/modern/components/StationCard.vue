@@ -168,7 +168,7 @@ import {
 } from 'ui-common'
 import { computed, ref } from 'vue'
 
-import { deleteLocalStorageByKeyPattern, EMPTY_VALUE_PLACEHOLDER as EMPTY } from '@/composables'
+import { deleteLocalStorageByKeyPattern, EMPTY_VALUE_PLACEHOLDER as EMPTY } from '@/core'
 import { useStationActions } from '@/shared/composables/useStationActions.js'
 import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 import {

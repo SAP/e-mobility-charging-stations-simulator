@@ -10,7 +10,7 @@ import {
   useChargingStations,
   useConfiguration,
   useUIClient,
-} from '@/composables/index.js'
+} from '@/core/index.js'
 import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 import { type LayoutData } from '@/shared/composables/useLayoutData.js'
 

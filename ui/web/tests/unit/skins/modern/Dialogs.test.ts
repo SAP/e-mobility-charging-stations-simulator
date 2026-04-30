@@ -8,7 +8,7 @@ import { ResponseStatus, ServerFailureError } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 
-import { chargingStationsKey, templatesKey, uiClientKey } from '@/composables'
+import { chargingStationsKey, templatesKey, uiClientKey } from '@/core'
 
 // Mock Modal to render slots inline (no Teleport), so `wrapper.find()` works.
 vi.mock('@/skins/modern/components/ModernModal.vue', () => ({

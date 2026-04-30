@@ -2,7 +2,7 @@ import { convertToInt, type OCPPVersion } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useUIClient } from '@/composables/Utils.js'
+import { useUIClient } from '@/core/index.js'
 
 export interface StartTxFormConfig {
   connectorId: string

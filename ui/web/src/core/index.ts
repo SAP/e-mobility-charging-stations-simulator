@@ -6,21 +6,22 @@ export {
   TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
 } from './Constants.js'
-export { UIClient } from './UIClient.js'
 export {
   chargingStationsKey,
   configurationKey,
+  templatesKey,
+  uiClientKey,
+  useChargingStations,
+  useConfiguration,
+  useTemplates,
+  useUIClient,
+} from './providers.js'
+export {
   deleteFromLocalStorage,
   deleteLocalStorageByKeyPattern,
   getFromLocalStorage,
   getLocalStorage,
   resetToggleButtonState,
   setToLocalStorage,
-  templatesKey,
-  uiClientKey,
-  useChargingStations,
-  useConfiguration,
-  useFetchData,
-  useTemplates,
-  useUIClient,
-} from './Utils.js'
+} from './storage.js'
+export { UIClient } from './UIClient.js'

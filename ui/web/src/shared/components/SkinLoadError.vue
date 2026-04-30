@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { setToLocalStorage } from '@/composables/Utils.js'
+import { setToLocalStorage } from '@/core/index.js'
 import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
 import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
 

@@ -15,13 +15,13 @@ import {
   useChargingStations,
   useConfiguration,
   useUIClient,
-} from '@/composables'
+} from '@/core'
 
 import { toastMock } from '../../../setup.js'
 import { createUIServerConfig } from '../../constants'
 import { createMockUIClient, type MockUIClient, withSetup } from '../../helpers.js'
 
-vi.mock('@/composables', async importOriginal => {
+vi.mock('@/core', async importOriginal => {
   const actual = await importOriginal()
   return {
     ...(actual as Record<string, unknown>),

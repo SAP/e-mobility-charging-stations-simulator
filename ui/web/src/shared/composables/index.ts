@@ -1,6 +1,7 @@
 export { useAddStationsForm } from './useAddStationsForm.js'
 export { useAsyncAction } from './useAsyncAction.js'
 export { useConnectorActions } from './useConnectorActions.js'
+export { useFetchData } from './useFetchData.js'
 export { useLayoutData } from './useLayoutData.js'
 export { useSetUrlForm } from './useSetUrlForm.js'
 export { useSimulatorControl } from './useSimulatorControl.js'

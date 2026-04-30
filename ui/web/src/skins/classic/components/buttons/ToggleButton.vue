@@ -16,7 +16,7 @@ import {
   setToLocalStorage,
   SHARED_TOGGLE_BUTTON_KEY_PREFIX,
   TOGGLE_BUTTON_KEY_PREFIX,
-} from '@/composables'
+} from '@/core'
 
 import Button from './ClassicButton.vue'
 
