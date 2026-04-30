@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.5.1...cli@v4.6.0) (2026-04-30)
+
+
+### 🐞 Bug Fixes
+
+* **ui:** make Authorize version-aware for OCPP 2.0.1 stations ([1d31a91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1d31a910211733b0deaf64d6c1398d3248d94b55)), closes [#1817](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1817)
+
+
+### ✨ Polish
+
+* **ui-common:** use ProcedureName enum instead of string literals in payload builders ([99a793f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a793f304c8199339dab48b2492228e86d1dce0))
+
 ## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.5.0...cli@v4.5.1) (2026-04-28)
 
 ### 🐞 Bug Fixes
