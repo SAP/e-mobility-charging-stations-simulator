@@ -42,7 +42,7 @@ import type { OCPPVersion } from 'ui-common'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { resetToggleButtonState, ROUTE_NAMES } from '@/core'
+import { resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
 import Button from '../buttons/ClassicButton.vue'
@@ -70,9 +70,9 @@ const toggleButtonId = computed(
 
 const { formState, submitForm } = useStartTxForm({
   connectorId: props.connectorId,
-  evseId: evseId.value,
+  evseId,
   hashId: props.hashId,
-  ocppVersion: ocppVersion.value,
+  ocppVersion,
   options: {
     onCleanup: () => {
       resetToggleButtonState(toggleButtonId.value, true)

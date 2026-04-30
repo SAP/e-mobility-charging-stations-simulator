@@ -152,6 +152,7 @@ import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import { computed } from 'vue'
 
+import { WH_PER_KWH } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 import { getConnectorStatusVariant } from '@/shared/utils/stationStatus.js'
 
@@ -213,7 +214,7 @@ const lockTitle = computed(() => {
 const txEnergy = computed(() => {
   const wh = props.connector.transactionEnergyActiveImportRegisterValue
   if (wh == null) return '—'
-  if (wh >= 1000) return `${(wh / 1000).toFixed(2)} kWh`
+  if (wh >= WH_PER_KWH) return `${(wh / WH_PER_KWH).toFixed(2)} kWh`
   return `${Math.round(wh)} Wh`
 })
 

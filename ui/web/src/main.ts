@@ -19,7 +19,7 @@ import {
   UIClient,
   uiClientKey,
 } from '@/core/index.js'
-import { router } from '@/router'
+import { router } from '@/router/index.js'
 import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
 import { DEFAULT_THEME, THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'
 import { DEFAULT_SKIN } from '@/skins/registry.js'
@@ -40,8 +40,10 @@ import './assets/themes/tokyo-night-storm.css'
 const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {
   app.config.errorHandler = (error, instance, info) => {
     console.error('Error:', error)
-    console.info('Vue instance:', instance)
-    console.info('Error info:', info)
+    if (import.meta.env.DEV) {
+      console.info('Vue instance:', instance)
+      console.info('Error info:', info)
+    }
     // TODO: add code for UI notifications or other error handling logic
   }
 

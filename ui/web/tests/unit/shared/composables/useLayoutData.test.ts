@@ -8,9 +8,9 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type Ref, ref } from 'vue'
 
-import { useChargingStations, useConfiguration, useTemplates, useUIClient } from '@/core'
+import { useChargingStations, useConfiguration, useTemplates, useUIClient } from '@/core/index.js'
 
-vi.mock('@/core', async importOriginal => {
+vi.mock('@/core/index.js', async importOriginal => {
   const actual = await importOriginal()
   return {
     ...(actual as Record<string, unknown>),

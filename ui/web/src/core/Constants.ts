@@ -1,6 +1,11 @@
 // Local UI project constants
 
+export const ASYNC_COMPONENT_DELAY_MS = 200
+export const ASYNC_COMPONENT_TIMEOUT_MS = 10_000
 export const EMPTY_VALUE_PLACEHOLDER = 'Ø'
+export const MAX_SKIN_ERROR_RELOADS = 2
+export const MAX_STATIONS_PER_ADD = 100
+export const WH_PER_KWH = 1000
 
 export const ROUTE_NAMES = {
   ADD_CHARGING_STATIONS: 'add-charging-stations',

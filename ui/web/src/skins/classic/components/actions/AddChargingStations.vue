@@ -25,7 +25,7 @@
     id="number-of-stations"
     v-model="formState.numberOfStations"
     class="classic-number-of-stations"
-    max="100"
+    :max="MAX_STATIONS_PER_ADD"
     min="1"
     name="number-of-stations"
     placeholder="number of stations"
@@ -123,7 +123,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { resetToggleButtonState, ROUTE_NAMES } from '@/core'
+import { MAX_STATIONS_PER_ADD, resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import Button from '../buttons/ClassicButton.vue'

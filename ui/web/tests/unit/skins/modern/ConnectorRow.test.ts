@@ -11,7 +11,7 @@ import {
 } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { uiClientKey } from '@/core'
+import { uiClientKey } from '@/core/index.js'
 import ConnectorRow from '@/skins/modern/components/ConnectorRow.vue'
 
 import { toastMock } from '../../../setup.js'

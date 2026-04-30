@@ -71,7 +71,7 @@ import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core'
+import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 
 import Button from '../buttons/ClassicButton.vue'

@@ -15,7 +15,7 @@ import {
   useChargingStations,
   useConfiguration,
   useTemplates,
-} from '@/core'
+} from '@/core/index.js'
 import { useFetchData } from '@/shared/composables/useFetchData.js'
 
 import { toastMock } from '../setup'

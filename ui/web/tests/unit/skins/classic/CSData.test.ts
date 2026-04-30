@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { type ChargingStationData, OCPP16AvailabilityType, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { uiClientKey } from '@/core'
+import { uiClientKey } from '@/core/index.js'
 import CSData from '@/skins/classic/components/charging-stations/CSData.vue'
 
 import { toastMock } from '../../../setup.js'

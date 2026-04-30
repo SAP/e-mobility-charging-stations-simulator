@@ -42,7 +42,7 @@
           id="modern-add-count"
           v-model.number="formState.numberOfStations"
           class="modern-form__input"
-          max="100"
+          :max="MAX_STATIONS_PER_ADD"
           min="1"
           type="number"
           required
@@ -162,6 +162,7 @@
 </template>
 
 <script setup lang="ts">
+import { MAX_STATIONS_PER_ADD } from '@/core/index.js'
 import { useAddStationsForm } from '@/shared/composables/useAddStationsForm.js'
 
 import ActionButton from '../ActionButton.vue'

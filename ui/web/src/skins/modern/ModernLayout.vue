@@ -1,14 +1,12 @@
 <template>
   <main class="modern-app">
     <SimulatorBar
-      :refresh-pending="loading"
       :selected-server-index="uiServerIndex"
       :server-switch-pending="serverSwitchPending"
       :simulator-pending="simulatorPending"
       :simulator-state="simulatorState"
       :ui-server-configurations="uiServerConfigurations"
       @add="showAddDialog = true"
-      @refresh="getData"
       @switch-server="handleUIServerChange"
       @toggle-simulator="toggleSimulator"
     />
@@ -81,7 +79,13 @@
 import { type OCPPVersion } from 'ui-common'
 import { defineAsyncComponent, ref } from 'vue'
 
-import { getFromLocalStorage, UI_SERVER_CONFIGURATION_INDEX_KEY, useChargingStations } from '@/core'
+import {
+  ASYNC_COMPONENT_DELAY_MS,
+  ASYNC_COMPONENT_TIMEOUT_MS,
+  getFromLocalStorage,
+  UI_SERVER_CONFIGURATION_INDEX_KEY,
+  useChargingStations,
+} from '@/core/index.js'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
@@ -96,11 +100,11 @@ import ConfirmDialog from './components/ConfirmDialog.vue'
  */
 function defineAsyncDialog (loader: () => Promise<{ default: unknown }>) {
   return defineAsyncComponent({
-    delay: 200,
+    delay: ASYNC_COMPONENT_DELAY_MS,
     errorComponent: SkinLoadError,
     loader: loader as () => Promise<{ default: import('vue').Component }>,
     loadingComponent: SkinLoading,
-    timeout: 10000,
+    timeout: ASYNC_COMPONENT_TIMEOUT_MS,
   })
 }
 
@@ -120,7 +124,7 @@ import StationCard from './components/StationCard.vue'
 const $chargingStations = useChargingStations()
 
 const layoutData = useLayoutData()
-const { getChargingStations, getData, loading, simulatorState, uiServerConfigurations } = layoutData
+const { getChargingStations, simulatorState, uiServerConfigurations } = layoutData
 
 const uiServerIndex = ref(getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0))
 

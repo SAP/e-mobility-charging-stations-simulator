@@ -110,7 +110,7 @@ import {
   TOGGLE_BUTTON_KEY_PREFIX,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   useChargingStations,
-} from '@/core'
+} from '@/core/index.js'
 import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 import { useSkin } from '@/shared/composables/useSkin.js'

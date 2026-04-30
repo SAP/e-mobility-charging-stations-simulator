@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import { useChargingStations, useUIClient } from '@/core'
+import { useChargingStations, useUIClient } from '@/core/index.js'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
 import { stripStationId } from '@/shared/utils/stripStationId.js'
 

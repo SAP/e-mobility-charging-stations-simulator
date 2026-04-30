@@ -78,7 +78,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useStartTxForm } from '@/shared/composables/useStartTxForm.js'
 
-import { type FailureInfo, getFailureInfo } from '../../utils/errors'
+import { type FailureInfo, getFailureInfo } from '../../utils/errors.js'
 import ActionButton from '../ActionButton.vue'
 import Modal from '../ModernModal.vue'
 

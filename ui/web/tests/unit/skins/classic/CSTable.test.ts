@@ -5,7 +5,7 @@
 import { shallowMount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { uiClientKey } from '@/core'
+import { uiClientKey } from '@/core/index.js'
 import CSTable from '@/skins/classic/components/charging-stations/CSTable.vue'
 
 import { createChargingStationData } from '../../constants.js'

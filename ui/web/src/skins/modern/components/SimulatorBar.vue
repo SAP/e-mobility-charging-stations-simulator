@@ -36,14 +36,6 @@
       </select>
     </div>
     <div class="modern-bar__group">
-      <!-- <ActionButton
-        variant="ghost"
-        :pending="refreshPending"
-        title="Refresh charging stations"
-        @click="$emit('refresh')"
-      >
-        Refresh
-      </ActionButton> -->
       <ActionButton
         variant="primary"
         @click="$emit('add')"
@@ -114,7 +106,6 @@ function getSelectIndex (e: Event): number {
 }
 
 const props = defineProps<{
-  refreshPending?: boolean
   selectedServerIndex: number
   serverSwitchPending?: boolean
   simulatorPending?: boolean
@@ -124,7 +115,6 @@ const props = defineProps<{
 
 defineEmits<{
   add: []
-  refresh: []
   'switch-server': [index: number]
   'toggle-simulator': []
 }>()

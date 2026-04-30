@@ -74,13 +74,6 @@ describe('SimulatorBar', () => {
     expect(wrapper.emitted('switch-server')).toEqual([[1]])
   })
 
-  // it('should emit refresh when refresh button is clicked', async () => {
-  //   const wrapper = mountBar()
-  //   const [refreshBtn] = wrapper.findAll('.modern-btn')
-  //   await refreshBtn.trigger('click')
-  //   expect(wrapper.emitted('refresh')).toHaveLength(1)
-  // })
-
   it('should emit add when add-stations button is clicked', async () => {
     const wrapper = mountBar()
     const buttons = wrapper.findAll('.modern-btn')

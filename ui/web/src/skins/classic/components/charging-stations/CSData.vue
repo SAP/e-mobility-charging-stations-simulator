@@ -125,7 +125,11 @@ import {
 } from 'ui-common'
 import { computed } from 'vue'
 
-import { deleteLocalStorageByKeyPattern, EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core'
+import {
+  deleteLocalStorageByKeyPattern,
+  EMPTY_VALUE_PLACEHOLDER,
+  ROUTE_NAMES,
+} from '@/core/index.js'
 import { useStationActions } from '@/shared/composables/useStationActions.js'
 import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
 import { getATGStatus, getConnectorEntries } from '@/shared/utils/stationStatus.js'

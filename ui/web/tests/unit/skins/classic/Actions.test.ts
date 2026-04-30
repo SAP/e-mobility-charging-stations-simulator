@@ -6,7 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
-import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core'
+import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core/index.js'
 import AddChargingStations from '@/skins/classic/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/skins/classic/components/actions/SetSupervisionUrl.vue'
 import StartTransaction from '@/skins/classic/components/actions/StartTransaction.vue'

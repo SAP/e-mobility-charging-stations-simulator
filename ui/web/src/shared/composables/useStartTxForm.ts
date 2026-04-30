@@ -1,14 +1,14 @@
 import { convertToInt, type OCPPVersion } from 'ui-common'
-import { readonly, ref, type Ref } from 'vue'
+import { type MaybeRef, readonly, ref, type Ref, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/core/index.js'
 
 export interface StartTxFormConfig {
   connectorId: string
-  evseId?: number
+  evseId?: MaybeRef<number | undefined>
   hashId: string
-  ocppVersion?: OCPPVersion
+  ocppVersion?: MaybeRef<OCPPVersion | undefined>
   options?: {
     onCleanup?: () => void
     onError?: (error: unknown, step?: 'authorize' | 'startTransaction') => void
@@ -67,7 +67,7 @@ export function useStartTxForm (config: StartTxFormConfig): {
         }
         try {
           await $uiClient.authorize(hashId, idTag)
-        } catch (error) {
+        } catch (error: unknown) {
           $toast.error('Error at authorizing RFID tag')
           console.error('Error at authorizing RFID tag:', error)
           options?.onError?.(error, 'authorize')
@@ -79,13 +79,13 @@ export function useStartTxForm (config: StartTxFormConfig): {
       try {
         await $uiClient.startTransaction(hashId, {
           connectorId: convertToInt(connectorId),
-          evseId,
+          evseId: toValue(evseId),
           idTag,
-          ocppVersion,
+          ocppVersion: toValue(ocppVersion),
         })
         $toast.success('Transaction successfully started')
         return true
-      } catch (error) {
+      } catch (error: unknown) {
         $toast.error('Error at starting transaction')
         console.error('Error at starting transaction:', error)
         options?.onError?.(error, 'startTransaction')

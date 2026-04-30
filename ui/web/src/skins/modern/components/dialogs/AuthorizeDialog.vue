@@ -63,7 +63,7 @@
 import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
-import { useUIClient } from '@/core'
+import { useUIClient } from '@/core/index.js'
 
 import { type FailureInfo, getFailureInfo } from '../../utils/errors.js'
 import ActionButton from '../ActionButton.vue'
@@ -104,7 +104,7 @@ const submit = async (): Promise<void> => {
     await $uiClient.authorize(props.hashId, idTag.value)
     $toast.success(`Authorized ${idTag.value}`)
     close()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error authorizing:', error)
     const info = getFailureInfo(error)
     lastFailure.value = info

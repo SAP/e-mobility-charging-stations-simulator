@@ -14,14 +14,14 @@ import {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   uiClientKey,
   useUIClient,
-} from '@/core'
+} from '@/core/index.js'
 import ModernLayout from '@/skins/modern/ModernLayout.vue'
 
 import { toastMock } from '../../../setup.js'
 import { createChargingStationData, createUIServerConfig } from '../../constants'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
-vi.mock('@/core', async importOriginal => {
+vi.mock('@/core/index.js', async importOriginal => {
   const actual = await importOriginal()
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })
@@ -78,16 +78,14 @@ function mountView (
         },
         SetSupervisionUrlDialog: true,
         SimulatorBar: {
-          emits: ['add', 'refresh', 'switch-server', 'toggle-simulator'],
+          emits: ['add', 'switch-server', 'toggle-simulator'],
           props: [
-            'refreshPending',
             'selectedServerIndex',
             'simulatorPending',
             'simulatorState',
             'uiServerConfigurations',
           ],
           template: `<div class="stub-sim-bar">
-            <button class="stub-refresh" @click="$emit('refresh')">r</button>
             <button class="stub-add" @click="$emit('add')">+</button>
             <button class="stub-toggle" @click="$emit('toggle-simulator')">t</button>
             <button class="stub-switch" @click="$emit('switch-server', 1)">s</button>
@@ -186,7 +184,7 @@ describe('ModernLayout', () => {
     })
     const wrapper = mountView()
     await flushPromises()
-    await wrapper.find('.stub-refresh').trigger('click')
+    getWSHandler('open')?.()
     await flushPromises()
     await wrapper.find('.stub-toggle').trigger('click')
     await flushPromises()
@@ -200,7 +198,7 @@ describe('ModernLayout', () => {
     })
     const wrapper = mountView()
     await flushPromises()
-    await wrapper.find('.stub-refresh').trigger('click')
+    getWSHandler('open')?.()
     await flushPromises()
     await wrapper.find('.stub-toggle').trigger('click')
     await flushPromises()
@@ -217,7 +215,7 @@ describe('ModernLayout', () => {
     })
     const wrapper = mountView()
     await flushPromises()
-    await wrapper.find('.stub-refresh').trigger('click')
+    getWSHandler('open')?.()
     await flushPromises()
     await wrapper.find('.stub-toggle').trigger('click')
     await flushPromises()
@@ -234,7 +232,7 @@ describe('ModernLayout', () => {
     })
     const wrapper = mountView()
     await flushPromises()
-    await wrapper.find('.stub-refresh').trigger('click')
+    getWSHandler('open')?.()
     await flushPromises()
     await wrapper.find('.stub-toggle').trigger('click')
     await flushPromises()
@@ -249,7 +247,7 @@ describe('ModernLayout', () => {
     mockClient.startSimulator = vi.fn().mockRejectedValue(new Error('x'))
     const wrapper = mountView()
     await flushPromises()
-    await wrapper.find('.stub-refresh').trigger('click')
+    getWSHandler('open')?.()
     await flushPromises()
     await wrapper.find('.stub-toggle').trigger('click')
     await flushPromises()

@@ -134,7 +134,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
       /* sessionStorage unavailable */
     }
     return true
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     console.warn(`[useSkin] Failed to load CSS for skin '${skinId}':`, message)
     lastError.value = message

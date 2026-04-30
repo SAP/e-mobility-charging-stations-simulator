@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { setToLocalStorage } from '@/core/index.js'
+import { MAX_SKIN_ERROR_RELOADS, setToLocalStorage } from '@/core/index.js'
 import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
 import { DEFAULT_SKIN, skins } from '@/skins/registry.js'
 
@@ -32,7 +32,7 @@ function resetToDefault (): void {
   } catch {
     // sessionStorage unavailable (e.g. Safari private browsing)
   }
-  if (count >= 2) {
+  if (count >= MAX_SKIN_ERROR_RELOADS) {
     // Stop infinite reload loop — show message instead
     return
   }

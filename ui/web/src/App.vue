@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, markRaw, watch } from 'vue'
 
+import { ASYNC_COMPONENT_DELAY_MS, ASYNC_COMPONENT_TIMEOUT_MS } from '@/core/index.js'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
 import SkinLoading from '@/shared/components/SkinLoading.vue'
 import { useSkin } from '@/shared/composables/useSkin.js'
@@ -41,11 +42,11 @@ const skinLayoutMap = new Map(
     s.id,
     markRaw(
       defineAsyncComponent({
-        delay: 200,
+        delay: ASYNC_COMPONENT_DELAY_MS,
         errorComponent: SkinLoadError,
         loader: () => s.loadLayout(),
         loadingComponent: SkinLoading,
-        timeout: 10000,
+        timeout: ASYNC_COMPONENT_TIMEOUT_MS,
       })
     ),
   ])
