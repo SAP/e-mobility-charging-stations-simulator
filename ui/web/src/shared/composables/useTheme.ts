@@ -8,17 +8,6 @@ export const AVAILABLE_THEMES = THEME_IDS
 export const DEFAULT_THEME: ThemeName = 'tokyo-night-storm'
 export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
-const THEME_COLOR_SCHEME: Record<ThemeName, 'dark' | 'light'> = {
-  'catppuccin-latte': 'light',
-  dracula: 'dark',
-  'gruvbox-dark': 'dark',
-  'rose-pine': 'dark',
-  'sap-horizon': 'light',
-  'teal-dark': 'dark',
-  'teal-light': 'light',
-  'tokyo-night-storm': 'dark',
-}
-
 export type ThemeName = (typeof THEME_IDS)[number]
 
 /**
@@ -41,19 +30,26 @@ const lastError: Ref<null | string> = ref(null)
 
 /**
  * Applies a theme by setting data-theme and data-color-scheme attributes on the document root.
- * Disables CSS transitions during the swap to prevent color flash (VueUse pattern).
  * @param themeName - The theme name to apply
  */
 function applyTheme (themeName: ThemeName): void {
   if (typeof document === 'undefined') return
-  // Disable CSS transitions during theme swap to prevent color flash (VueUse pattern).
   document.documentElement.classList.add('theme-switching')
   document.documentElement.setAttribute('data-theme', themeName)
-  document.documentElement.setAttribute('data-color-scheme', THEME_COLOR_SCHEME[themeName])
-  // Force reflow so browsers apply the transition-disable before restoring transitions.
+  // Force reflow so the theme CSS is resolved before reading color-scheme.
   // eslint-disable-next-line no-void
   void document.documentElement.offsetHeight
+  document.documentElement.setAttribute('data-color-scheme', resolveColorScheme())
   document.documentElement.classList.remove('theme-switching')
+}
+
+/**
+ * Reads the resolved color-scheme from the CSS after theme application.
+ * @returns The color scheme value from the applied theme CSS
+ */
+function resolveColorScheme (): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim()
+  return value === 'light' ? 'light' : 'dark'
 }
 
 applyTheme(activeThemeId.value)
