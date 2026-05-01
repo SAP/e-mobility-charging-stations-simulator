@@ -50,8 +50,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       basic-ftp:
-        specifier: ^5.3.1
-        version: 5.3.1
+        specifier: ^6.0.0
+        version: 6.0.0
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
@@ -2161,8 +2161,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  basic-ftp@5.3.1:
-    resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
+  basic-ftp@6.0.0:
+    resolution: {integrity: sha512-e7YiZyECW7BauqLe6c+oyb49q0VwpMfEGBftvDwtH96uasvkRbFmloKX3Bdd0L38DCUAVgV2uwSJ5ErIAgFzlw==}
     engines: {node: '>=10.0.0'}
 
   bcrypt-pbkdf@1.0.2:
@@ -8790,7 +8790,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.19: {}
 
-  basic-ftp@5.3.1: {}
+  basic-ftp@6.0.0: {}
 
   bcrypt-pbkdf@1.0.2:
     dependencies:
