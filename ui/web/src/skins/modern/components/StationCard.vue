@@ -111,7 +111,6 @@
           :evse-id="entry.evseId"
           :hash-id="chargingStation.stationInfo.hashId"
           :ocpp-version="chargingStation.stationInfo.ocppVersion"
-          @need-refresh="$emit('need-refresh')"
           @open-start-tx="data => $emit('open-start-tx', data)"
         />
       </div>
@@ -187,7 +186,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'need-refresh': []
   'open-authorize': [data: { chargingStationId: string; hashId: string; ocppVersion?: OCPPVersion }]
   'open-set-url': [data: { chargingStationId: string; hashId: string }]
   'open-start-tx': [
@@ -204,7 +202,7 @@ const emit = defineEmits<{
 const confirmingDelete = ref(false)
 
 const { closeConnection, deleteStation, openConnection, pending, startStation, stopStation } =
-  useStationActions({ onRefresh: () => emit('need-refresh') })
+  useStationActions()
 
 const wsOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 

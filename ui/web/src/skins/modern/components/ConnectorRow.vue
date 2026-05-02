@@ -176,7 +176,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'need-refresh': []
   'open-start-tx': [
     data: {
       chargingStationId: string
@@ -198,7 +197,6 @@ const {
 } = useConnectorActions({
   connectorId: computed(() => props.connectorId),
   hashId: computed(() => props.hashId),
-  onRefresh: () => emit('need-refresh'),
 })
 
 const identifier = computed(() =>

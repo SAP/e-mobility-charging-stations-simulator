@@ -11,7 +11,7 @@ import { useToast } from 'vue-toast-notification'
  * Encapsulates the pending-key guard, toast feedback, and error logging pattern
  * shared across layout composables.
  * @param initialPending - Object defining the pending keys (e.g. `{ connection: false, startStop: false }`)
- * @param onRefresh - Called after each successful action (e.g. `() => emit('need-refresh')`)
+ * @param onRefresh - Called after each successful action to signal state has changed
  * @returns `{ pending, run }` — reactive pending map and action executor
  */
 export function useAsyncAction<T extends Record<string, boolean>> (

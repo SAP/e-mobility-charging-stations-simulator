@@ -31,7 +31,6 @@
         v-for="station in $chargingStations"
         :key="station.stationInfo.hashId"
         :charging-station="station"
-        @need-refresh="getChargingStations"
         @open-authorize="openAuthorizeDialog"
         @open-set-url="openSetUrlDialog"
         @open-start-tx="openStartTxDialog"
@@ -125,7 +124,7 @@ const StartTransactionDialog = defineAsyncDialog(
 const $chargingStations = useChargingStations()
 
 const layoutData = useLayoutData()
-const { getChargingStations, simulatorState, uiServerConfigurations } = layoutData
+const { simulatorState, uiServerConfigurations } = layoutData
 
 const uiServerIndex = ref(getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0))
 
