@@ -337,11 +337,8 @@ export class ChargingStation extends EventEmitter {
 
   /** Closes the WebSocket connection to the central server. */
   public closeWSConnection (): void {
-    if (this.wsConnection != null) {
-      if (this.isWebSocketConnectionOpened()) {
-        this.wsConnection.close()
-      }
-      this.wsConnection = null
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection?.close()
     }
   }
 
@@ -2819,7 +2816,6 @@ export class ChargingStation extends EventEmitter {
   private terminateWSConnection (): void {
     if (this.isWebSocketConnectionOpened()) {
       this.wsConnection?.terminate()
-      this.wsConnection = null
     }
   }
 }

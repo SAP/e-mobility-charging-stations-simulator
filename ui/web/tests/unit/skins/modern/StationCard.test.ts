@@ -194,7 +194,6 @@ describe('StationCard', () => {
       await startBtn?.trigger('click')
       await flushPromises()
       expect(mockClient.startChargingStation).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should label Stop when started, calls stopChargingStation', async () => {

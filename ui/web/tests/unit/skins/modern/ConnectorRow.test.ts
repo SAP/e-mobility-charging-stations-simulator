@@ -121,7 +121,6 @@ describe('ConnectorRow', () => {
       await wrapper.find('.modern-connector__lock').trigger('click')
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call unlockConnector when locked', async () => {

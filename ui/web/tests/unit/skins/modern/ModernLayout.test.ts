@@ -93,10 +93,9 @@ function mountView (
         },
         StartTransactionDialog: true,
         StationCard: {
-          emits: ['need-refresh', 'open-authorize', 'open-set-url', 'open-start-tx'],
+          emits: ['open-authorize', 'open-set-url', 'open-start-tx'],
           props: ['chargingStation'],
-          template:
-            '<article class="stub-station-card"><button class="stub-need-refresh" @click="$emit(\'need-refresh\')">r</button></article>',
+          template: '<article class="stub-station-card"></article>',
         },
       },
     },
@@ -347,7 +346,7 @@ describe('ModernLayout', () => {
           SimulatorBar: true,
           StartTransactionDialog: true,
           StationCard: {
-            emits: ['need-refresh', 'open-authorize', 'open-set-url', 'open-start-tx'],
+            emits: ['open-authorize', 'open-set-url', 'open-start-tx'],
             props: ['chargingStation'],
             template: `<article class="stub-station-card">
               <button class="stub-authorize" @click="$emit('open-authorize', { chargingStationId: 'CS-1', hashId: 'h1' })">auth</button>
