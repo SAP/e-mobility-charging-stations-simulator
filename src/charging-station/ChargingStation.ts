@@ -2280,7 +2280,6 @@ export class ChargingStation extends EventEmitter {
   }
 
   private onError (error: WSError): void {
-    this.closeWSConnection()
     logger.error(`${this.logPrefix()} ${moduleName}.onError: WebSocket error:`, error)
   }
 
