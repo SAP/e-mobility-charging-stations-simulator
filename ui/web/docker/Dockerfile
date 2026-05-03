@@ -8,7 +8,7 @@ RUN set -ex \
   && corepack enable \
   && pnpm install --ignore-scripts --frozen-lockfile \
   && cp ui/web/docker/config.json ui/web/public/config.json \
-  && pnpm --filter webui build
+  && pnpm --filter web build
 
 FROM node:lts-alpine
 

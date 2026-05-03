@@ -20,7 +20,7 @@
       "extra-files": ["sonar-project.properties"]
     },
     "ui/web": {
-      "component": "webui",
+      "component": "web",
       "extra-files": ["sonar-project.properties"]
     },
     "tests/ocpp-server": {
@@ -32,7 +32,7 @@
     {
       "type": "linked-versions",
       "groupName": "simulator-ui-ocpp-server",
-      "components": ["simulator", "ui-common", "cli", "webui", "ocpp-server"]
+      "components": ["simulator", "ui-common", "cli", "web", "ocpp-server"]
     }
   ],
   "changelog-sections": [

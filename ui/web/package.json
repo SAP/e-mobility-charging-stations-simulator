@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "webui",
+  "name": "web",
   "version": "4.6.0",
   "readme": "README.md",
   "engines": {
