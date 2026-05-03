@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.1...simulator@v4.6.0) (2026-05-02)
+
+### 🚀 Features
+
+- **ui-web:** implement runtime skin system with classic and modern skins ([#1815](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1815)) ([72aba1e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72aba1edf1957107024a043cbbd122fc0a4ee552))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1820](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1820)) ([52667c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52667c5e1e2133b83d242d20bee90ca58657bd4a))
+- **deps:** update dependency basic-ftp to v6 ([#1822](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1822)) ([14cb552](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/14cb5526a8962acd951341e3a8d4f28c447ed71e))
+- **deps:** update dependency zod to ^4.4.2 ([#1823](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1823)) ([cfb50bf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cfb50bfeca714987eaa9e23d1f7210bb3b56f080))
+- do not nullify wsConnection in onError handler ([f9acca4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f9acca43755ddb79c21d1c05a74b0c02f3059da3))
+- stop nullifying wsConnection prematurely in close/terminate ([b8ba945](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b8ba9459c73b25fa93251c2a97d1aa72a88f0185))
+
 ## [4.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.0...simulator@v4.5.1) (2026-04-28)
 
 ### 🐞 Bug Fixes
