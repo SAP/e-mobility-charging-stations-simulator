@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.15.0",
-    "pnpm": "10.33.2"
+    "pnpm": "10.33.3"
   },
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@10.33.3",
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "zod": "^4.4.2"
+    "zod": "^4.4.3"
   },
   "devDependencies": {}
 }
