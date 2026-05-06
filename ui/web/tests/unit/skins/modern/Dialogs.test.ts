@@ -4,7 +4,13 @@
  *   Modal is mocked to skip the Teleport so wrapper.find() reaches dialog inputs.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { OCPPVersion, ResponseStatus, ServerFailureError } from 'ui-common'
+import {
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+  OCPPVersion,
+  ResponseStatus,
+  ServerFailureError,
+} from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 
@@ -26,6 +32,7 @@ vi.mock('@/skins/modern/components/ModernModal.vue', () => ({
 
 import AddStationsDialog from '@/skins/modern/components/dialogs/AddStationsDialog.vue'
 import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.vue'
+import SetConnectorStatusDialog from '@/skins/modern/components/dialogs/SetConnectorStatusDialog.vue'
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
 import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
 
@@ -437,6 +444,107 @@ describe('Dialogs', () => {
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       await flushPromises()
       expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+  })
+
+  describe('SetConnectorStatusDialog', () => {
+    const hashId = 'station-hash'
+    const connectorId = 1
+    const chargingStationId = 'CS001'
+
+    /**
+     *
+     * @param props
+     * @param props.chargingStationId
+     * @param props.connectorId
+     * @param props.evseId
+     * @param props.hashId
+     * @param props.ocppVersion
+     * @param props.onRefresh
+     */
+    function mountDialog (
+      props: {
+        chargingStationId?: string
+        connectorId?: number
+        evseId?: number
+        hashId?: string
+        ocppVersion?: OCPPVersion
+        onRefresh?: () => void
+      } = {}
+    ) {
+      return mount(SetConnectorStatusDialog, {
+        global: {
+          provide: {
+            [uiClientKey as symbol]: mockClient,
+          },
+        },
+        props: {
+          chargingStationId,
+          connectorId,
+          hashId,
+          ...props,
+        },
+      })
+    }
+
+    it('should render OCPP 1.6 status options by default', () => {
+      const wrapper = mountDialog()
+      const options = wrapper.findAll('#modern-connector-status-select option')
+      const values = options.map(o => (o.element as HTMLOptionElement).value)
+      expect(values).toContain(OCPP16ChargePointStatus.FAULTED)
+      expect(values).toContain(OCPP16ChargePointStatus.CHARGING)
+      // OCPP 1.6 has more statuses than 2.0.x
+      expect(values.length).toBe(Object.values(OCPP16ChargePointStatus).length)
+    })
+
+    it('should render OCPP 2.0.x status options for OCPP 2.0.1 station', () => {
+      const wrapper = mountDialog({ ocppVersion: OCPPVersion.VERSION_201 })
+      const options = wrapper.findAll('#modern-connector-status-select option')
+      const values = options.map(o => (o.element as HTMLOptionElement).value)
+      expect(values).toContain(OCPP20ConnectorStatusEnumType.AVAILABLE)
+      expect(values).toContain(OCPP20ConnectorStatusEnumType.FAULTED)
+      // OCPP 2.0.x has fewer statuses than 1.6
+      expect(values.length).toBe(Object.values(OCPP20ConnectorStatusEnumType).length)
+    })
+
+    it('should call setConnectorStatus and close on submit', async () => {
+      const wrapper = mountDialog()
+      await wrapper
+        .find('#modern-connector-status-select')
+        .setValue(OCPP16ChargePointStatus.FAULTED)
+      await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
+      await flushPromises()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        hashId,
+        connectorId,
+        OCPP16ChargePointStatus.FAULTED,
+        undefined,
+        undefined
+      )
+      expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+
+    it('should display EVSE label when evseId is provided', () => {
+      const wrapper = mountDialog({ evseId: 2 })
+      expect(wrapper.text()).toContain('EVSE 2')
+      expect(wrapper.text()).toContain(`Connector ${String(connectorId)}`)
+    })
+
+    it('should emit close when cancel is clicked', async () => {
+      const wrapper = mountDialog()
+      await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
+      expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+
+    it('should invoke onRefresh after successful status change', async () => {
+      const onRefresh = vi.fn()
+      const wrapper = mountDialog({ onRefresh })
+      await wrapper
+        .find('#modern-connector-status-select')
+        .setValue(OCPP16ChargePointStatus.AVAILABLE)
+      await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
+      await flushPromises()
+      expect(onRefresh).toHaveBeenCalledOnce()
     })
   })
 })

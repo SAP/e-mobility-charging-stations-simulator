@@ -50,7 +50,9 @@
 </template>
 
 <script setup lang="ts">
-import { OCPP16ChargePointStatus } from 'ui-common'
+import type { OCPPVersion } from 'ui-common'
+
+import { isOCPP20x, OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType } from 'ui-common'
 import { computed, ref } from 'vue'
 
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
@@ -63,18 +65,29 @@ const props = defineProps<{
   connectorId: number
   evseId?: number
   hashId: string
+  ocppVersion?: OCPPVersion
   onRefresh?: () => void
 }>()
 
 const emit = defineEmits<{ close: [] }>()
 
-const statusOptions = Object.values(OCPP16ChargePointStatus)
-const selectedStatus = ref<OCPP16ChargePointStatus>(OCPP16ChargePointStatus.AVAILABLE)
+const statusOptions = computed(() =>
+  isOCPP20x(props.ocppVersion)
+    ? Object.values(OCPP20ConnectorStatusEnumType)
+    : Object.values(OCPP16ChargePointStatus)
+)
+
+const selectedStatus = ref<OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType>(
+  isOCPP20x(props.ocppVersion)
+    ? OCPP20ConnectorStatusEnumType.AVAILABLE
+    : OCPP16ChargePointStatus.AVAILABLE
+)
 
 const { pending: pendingState, setConnectorStatus } = useConnectorActions({
   connectorId: props.connectorId,
   evseId: props.evseId,
   hashId: props.hashId,
+  ocppVersion: props.ocppVersion,
   onRefresh: props.onRefresh,
 })
 
@@ -90,7 +103,6 @@ const close = (): void => {
 
 const submit = (): void => {
   if (pendingState.setStatus) return
-  setConnectorStatus(selectedStatus.value)
-  emit('close')
+  setConnectorStatus(selectedStatus.value, close)
 }
 </script>

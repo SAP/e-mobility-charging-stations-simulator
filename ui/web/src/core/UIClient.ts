@@ -8,6 +8,7 @@ import {
   createBrowserWsAdapter,
   isOCPP20x,
   type OCPP16ChargePointStatus,
+  type OCPP20ConnectorStatusEnumType,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -139,9 +140,18 @@ export class UIClient {
   public async setConnectorStatus (
     hashId: string,
     connectorId: number,
-    status: OCPP16ChargePointStatus,
-    evseId?: number
+    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    evseId?: number,
+    ocppVersion?: OCPPVersion
   ): Promise<ResponsePayload> {
+    if (isOCPP20x(ocppVersion)) {
+      return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
+        connectorId,
+        connectorStatus: status,
+        hashIds: [hashId],
+        ...(evseId != null && { evseId }),
+      })
+    }
     return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
       connectorId,
       hashIds: [hashId],

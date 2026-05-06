@@ -4,7 +4,7 @@
  */
 import type { OCPPVersion } from 'ui-common'
 
-import { OCPP16ChargePointStatus } from 'ui-common'
+import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType } from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -15,10 +15,11 @@ interface ConnectorActionsDeps {
   connectorId: MaybeRefOrGetter<number>
   evseId?: MaybeRefOrGetter<number | undefined>
   hashId: MaybeRefOrGetter<string>
+  ocppVersion?: MaybeRefOrGetter<OCPPVersion | undefined>
   onRefresh?: () => void
 }
 
-export { OCPP16ChargePointStatus }
+export { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType }
 
 /**
  * Provides connector-level action handlers with pending state management.
@@ -28,7 +29,10 @@ export { OCPP16ChargePointStatus }
 export function useConnectorActions (deps: ConnectorActionsDeps): {
   lockConnector: () => void
   pending: Readonly<{ atg: boolean; lock: boolean; setStatus: boolean; stopTx: boolean }>
-  setConnectorStatus: (status: OCPP16ChargePointStatus) => void
+  setConnectorStatus: (
+    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    onSuccess?: () => void
+  ) => void
   startATG: () => void
   stopATG: () => void
   stopTransaction: (
@@ -47,6 +51,7 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   const hashId = computed(() => toValue(deps.hashId))
   const connectorId = computed(() => toValue(deps.connectorId))
   const evseId = computed(() => toValue(deps.evseId))
+  const ocppVersion = computed(() => toValue(deps.ocppVersion))
 
   const stopTransaction = (
     transactionId: null | number | string | undefined,
@@ -100,11 +105,21 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
     })
   }
 
-  const setConnectorStatus = (status: OCPP16ChargePointStatus): void => {
+  const setConnectorStatus = (
+    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    onSuccess?: () => void
+  ): void => {
     run('setStatus', {
       action: () =>
-        $uiClient.setConnectorStatus(hashId.value, connectorId.value, status, evseId.value),
+        $uiClient.setConnectorStatus(
+          hashId.value,
+          connectorId.value,
+          status,
+          evseId.value,
+          ocppVersion.value
+        ),
       errorMsg: 'Error setting connector status',
+      onSuccess,
       successMsg: 'Connector status updated',
     })
   }

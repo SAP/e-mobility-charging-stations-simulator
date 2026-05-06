@@ -11,6 +11,8 @@
       :connector-id="connectorId"
       :evse-id="evseId"
       :hash-id="hashId"
+      :ocpp-version="ocppVersion"
+      :on-refresh="() => emit('need-refresh')"
       @close="showSetConnectorStatus = false"
     />
     <div class="modern-connector__gutter">
@@ -191,6 +193,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'need-refresh': []
   'open-start-tx': [
     data: {
       chargingStationId: string

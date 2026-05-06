@@ -4,7 +4,7 @@
  *   pending state guards, toast notifications, and onRefresh callback invocation.
  */
 import { flushPromises } from '@vue/test-utils'
-import { OCPP16ChargePointStatus, OCPPVersion } from 'ui-common'
+import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { toastMock } from '../../../setup.js'
@@ -311,6 +311,7 @@ describe('useConnectorActions', () => {
         hashId,
         connectorId,
         OCPP16ChargePointStatus.FAULTED,
+        undefined,
         undefined
       )
     })
@@ -326,7 +327,8 @@ describe('useConnectorActions', () => {
         hashId,
         connectorId,
         OCPP16ChargePointStatus.AVAILABLE,
-        evseId
+        evseId,
+        undefined
       )
     })
 
@@ -360,6 +362,29 @@ describe('useConnectorActions', () => {
       resolveAction({ status: 'success' })
       await flushPromises()
       expect(pending.setStatus).toBe(false)
+    })
+
+    it('should pass ocppVersion when provided', async () => {
+      const [{ setConnectorStatus }] = withSetup(() =>
+        useConnectorActions({ connectorId, hashId, ocppVersion: OCPPVersion.VERSION_201 })
+      )
+      setConnectorStatus(OCPP20ConnectorStatusEnumType.AVAILABLE)
+      await flushPromises()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        hashId,
+        connectorId,
+        OCPP20ConnectorStatusEnumType.AVAILABLE,
+        undefined,
+        OCPPVersion.VERSION_201
+      )
+    })
+
+    it('should invoke onSuccess callback after successful status update', async () => {
+      const onSuccess = vi.fn()
+      const [{ setConnectorStatus }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
+      setConnectorStatus(OCPP16ChargePointStatus.AVAILABLE, onSuccess)
+      await flushPromises()
+      expect(onSuccess).toHaveBeenCalledOnce()
     })
   })
 

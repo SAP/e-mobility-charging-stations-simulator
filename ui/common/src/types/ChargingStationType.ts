@@ -36,6 +36,14 @@ export enum OCPP16ChargePointStatus {
   UNAVAILABLE = 'Unavailable',
 }
 
+export enum OCPP20ConnectorStatusEnumType {
+  AVAILABLE = 'Available',
+  FAULTED = 'Faulted',
+  OCCUPIED = 'Occupied',
+  RESERVED = 'Reserved',
+  UNAVAILABLE = 'Unavailable',
+}
+
 export enum OCPP16FirmwareStatus {
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
