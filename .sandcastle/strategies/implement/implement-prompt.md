@@ -18,7 +18,7 @@ Explore the repo to understand the architecture before coding. Pay attention to:
 - Test files touching relevant modules
 - Existing patterns in similar code
 
-Read `AGENTS.md` and `CONTRIBUTING.md` for project conventions.
+Read `AGENTS.md`, `CONTRIBUTING.md`, `.serena/memories/code_style_conventions` and `.serena/memories/task_completion_checklist`.
 
 ## Implementation
 

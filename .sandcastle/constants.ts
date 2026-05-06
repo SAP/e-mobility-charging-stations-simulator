@@ -53,11 +53,11 @@ export const MAX_ISSUES_FETCH = 50
 
 export const MAX_PRS_FETCH = 200
 
-export const MAX_PARALLEL = 3
+export const MAX_PARALLEL = 5
 
 export const MAX_STDERR_CHARS = 500
 
-export const MAX_CRITIC_ROUNDS = 5
+export const MAX_CRITIC_ROUNDS = 10
 
 export const MAX_TITLE_LENGTH = 200
 
