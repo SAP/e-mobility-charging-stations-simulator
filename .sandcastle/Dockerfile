@@ -1,10 +1,20 @@
 FROM node:24-trixie
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     jq \
     ca-certificates \
+    gpg \
+    && rm -rf /var/lib/apt/lists/*
+
+# uv (griffo.io APT) — needed for uvx MCP servers
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc \
+       | gpg --dearmor -o /etc/apt/keyrings/debian.griffo.io.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/debian.griffo.io.gpg] https://debian.griffo.io/apt trixie main" \
+       > /etc/apt/sources.list.d/debian.griffo.io.list \
+    && apt-get update && apt-get install -y --no-install-recommends uv \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GitHub CLI
