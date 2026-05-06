@@ -15,5 +15,5 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitOverride": true
   },
-  "include": ["*.ts", "src/**/*.ts", "tests/**/*.ts"]
+  "include": ["*.ts", "src/**/*.ts", ".sandcastle/**/*.ts", "tests/**/*.ts"]
 }

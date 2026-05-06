@@ -66,13 +66,14 @@
     "clean:node_modules": "pnpm exec rimraf node_modules",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "circular-deps": "skott --no-trackTypeOnlyDependencies --showCircularDependencies --exitCodeOnCircularDependencies 0 --displayMode=raw --fileExtensions=.ts --cwd=src",
-    "lint": "cross-env TIMING=1 eslint --cache src tests scripts ./*.js ./*.ts",
-    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests scripts ./*.js ./*.ts",
-    "format": "prettier --cache --write .; eslint --cache --fix src tests scripts ./*.js ./*.ts",
+    "lint": "cross-env TIMING=1 eslint --cache src .sandcastle tests scripts ./*.js ./*.ts",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src .sandcastle tests scripts ./*.js ./*.ts",
+    "format": "prettier --cache --write .; eslint --cache --fix src .sandcastle tests scripts ./*.js ./*.ts",
     "test": "cross-env NODE_ENV=test node --import tsx --test --test-force-exit 'tests/**/*.test.ts'",
     "test:debug": "cross-env NODE_ENV=test node --import tsx --test --inspect 'tests/**/*.test.ts'",
     "test:coverage": "mkdir -p coverage && cross-env NODE_ENV=test node --import tsx --test --test-force-exit --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-reporter=lcov --test-reporter-destination=coverage/lcov.info 'tests/**/*.test.ts'",
     "clinic:clean": "clinic clean",
+    "sandcastle": "tsx .sandcastle/main.ts",
     "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && pnpm exec rimraf ./dist/evse-simulator.blob"
   },
   "dependencies": {
@@ -102,6 +103,7 @@
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
+    "@ai-hero/sandcastle": "^0.5.8",
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@cspell/eslint-plugin": "^10.0.0",

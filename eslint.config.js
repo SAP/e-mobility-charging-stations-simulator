@@ -42,6 +42,9 @@ export default defineConfig([
               'varh',
               'rfid',
               'workerset',
+              'worktree',
+              'dedup',
+              'unpushed',
               'logform',
               'mnemonist',
               'poolifier',
@@ -85,7 +88,7 @@ export default defineConfig([
               'idtoken',
               'issuerkeyhash',
               'issuernamehash',
-              // OCPP SRPC (Simple Remote Procedure Call) message types
+              // OCPP SRPC
               'SRPC',
               'CALLRESULT',
               'CALLERROR',
