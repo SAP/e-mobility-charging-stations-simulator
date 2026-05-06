@@ -109,8 +109,8 @@ export class GithubIssueSource implements TaskSource {
           sandbox: docker({ imageName: this.dockerImage, mounts: [...DOCKER_MOUNTS] }),
           signal: AbortSignal.timeout(TASK_TIMEOUT_MS),
         })
-      } catch {
-        console.error('Planner timed out or failed. Retrying.')
+      } catch (err: unknown) {
+        console.error(`Planner timed out or failed: ${toErrorMessage(err)}`)
         continue
       }
 
