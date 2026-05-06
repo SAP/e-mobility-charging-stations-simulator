@@ -91,7 +91,7 @@
     "mnemonist": "0.40.4",
     "mongodb": "^7.2.0",
     "poolifier": "^5.3.2",
-    "tar": "^7.5.13",
+    "tar": "^7.5.14",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.20.0",
