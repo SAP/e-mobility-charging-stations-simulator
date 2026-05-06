@@ -61,6 +61,20 @@
         :on="() => startAutomaticTransactionGenerator()"
         on-label="Start ATG"
       />
+      <select
+        v-model="selectedStatus"
+        class="connector-status-select"
+        :aria-label="`Set status for connector ${connectorId}`"
+        @change="applyConnectorStatus"
+      >
+        <option
+          v-for="s in statusOptions"
+          :key="s"
+          :value="s"
+        >
+          {{ s }}
+        </option>
+      </select>
     </td>
   </tr>
 </template>
@@ -68,7 +82,8 @@
 <script setup lang="ts">
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import { computed } from 'vue'
+import { OCPP16ChargePointStatus } from 'ui-common'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core/index.js'
@@ -94,17 +109,29 @@ const $router = useRouter()
 
 const {
   lockConnector,
+  setConnectorStatus,
   startATG: startAutomaticTransactionGenerator,
   stopATG: stopAutomaticTransactionGenerator,
   stopTransaction: doStopTransaction,
   unlockConnector,
 } = useConnectorActions({
   connectorId: computed(() => props.connectorId),
+  evseId: computed(() => props.evseId),
   hashId: computed(() => props.hashId),
   onRefresh: () => emit('need-refresh'),
 })
 
+const statusOptions = Object.values(OCPP16ChargePointStatus)
+const selectedStatus = ref<OCPP16ChargePointStatus>(
+  (props.connector.status as OCPP16ChargePointStatus | undefined) ??
+    OCPP16ChargePointStatus.AVAILABLE
+)
+
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)
+}
+
+const applyConnectorStatus = (): void => {
+  setConnectorStatus(selectedStatus.value)
 }
 </script>

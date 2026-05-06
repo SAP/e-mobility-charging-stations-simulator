@@ -7,6 +7,7 @@ import {
   type ChargingStationOptions,
   createBrowserWsAdapter,
   isOCPP20x,
+  type OCPP16ChargePointStatus,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -132,6 +133,20 @@ export class UIClient {
     this.abortConnection = abort
     this.client.connect().catch((error: unknown) => {
       console.error('WebSocket connect failed', error)
+    })
+  }
+
+  public async setConnectorStatus (
+    hashId: string,
+    connectorId: number,
+    status: OCPP16ChargePointStatus,
+    evseId?: number
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
+      connectorId,
+      hashIds: [hashId],
+      status,
+      ...(evseId != null && { evseId }),
     })
   }
 

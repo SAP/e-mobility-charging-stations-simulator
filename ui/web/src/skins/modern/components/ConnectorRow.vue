@@ -5,6 +5,14 @@
       { 'modern-connector--active': connector.transactionStarted === true },
     ]"
   >
+    <SetConnectorStatusDialog
+      v-if="showSetConnectorStatus"
+      :charging-station-id="chargingStationId"
+      :connector-id="connectorId"
+      :evse-id="evseId"
+      :hash-id="hashId"
+      @close="showSetConnectorStatus = false"
+    />
     <div class="modern-connector__gutter">
       <span class="modern-connector__id">
         {{ identifier }}
@@ -148,6 +156,12 @@
         >
           {{ atgStatus?.start === true ? 'Stop ATG' : 'Start ATG' }}
         </ActionButton>
+        <ActionButton
+          variant="chip"
+          @click="openSetConnectorStatus"
+        >
+          Set Status
+        </ActionButton>
       </div>
     </div>
   </div>
@@ -156,13 +170,14 @@
 <script setup lang="ts">
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { WH_PER_KWH } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 import { getConnectorStatusVariant } from '@/shared/utils/stationStatus.js'
 
 import ActionButton from './ActionButton.vue'
+import SetConnectorStatusDialog from './dialogs/SetConnectorStatusDialog.vue'
 import StatePill from './StatePill.vue'
 
 const props = defineProps<{
@@ -203,6 +218,8 @@ const identifier = computed(() =>
   props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
 )
 
+const showSetConnectorStatus = ref(false)
+
 const statusVariant = computed(() => getConnectorStatusVariant(props.connector.status))
 
 // Effectively locked when explicitly locked OR transaction active (physical lock engages).
@@ -240,6 +257,10 @@ const toggleAtg = (): void => {
 
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)
+}
+
+const openSetConnectorStatus = (): void => {
+  showSetConnectorStatus.value = true
 }
 
 const openStartTransaction = (): void => {
