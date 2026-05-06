@@ -65,7 +65,7 @@ export const PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
 
 export const PUSH_TIMEOUT_MS = 60_000
 
-export const TASK_TIMEOUT_MS = 15 * 60 * 1000
+export const TASK_TIMEOUT_MS = 100 * 60 * 1000
 
 export const VALIDATION_COMMAND =
   'pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test'
