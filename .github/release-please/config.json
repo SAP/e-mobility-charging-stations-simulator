@@ -9,23 +9,28 @@
     ".": {
       "exclude-paths": ["ui/common", "ui/cli", "ui/web", "tests/ocpp-server"],
       "component": "simulator",
-      "extra-files": ["sonar-project.properties"]
+      "extra-files": ["sonar-project.properties"],
+      "release-as": "4.6.1"
     },
     "ui/common": {
       "component": "ui-common",
-      "extra-files": ["sonar-project.properties"]
+      "extra-files": ["sonar-project.properties"],
+      "release-as": "4.6.1"
     },
     "ui/cli": {
       "component": "cli",
-      "extra-files": ["sonar-project.properties"]
+      "extra-files": ["sonar-project.properties"],
+      "release-as": "4.6.1"
     },
     "ui/web": {
       "component": "web",
-      "extra-files": ["sonar-project.properties"]
+      "extra-files": ["sonar-project.properties"],
+      "release-as": "4.6.1"
     },
     "tests/ocpp-server": {
       "release-type": "python",
-      "component": "ocpp-server"
+      "component": "ocpp-server",
+      "release-as": "4.6.1"
     }
   },
   "plugins": [
