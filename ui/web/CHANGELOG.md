@@ -2,12 +2,11 @@
 
 ## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.6.0...web@v4.6.1) (2026-05-06)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1825](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1825)) ([c4998a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c4998a1457e09957339042d0e0d42edd7ae50620))
-* **deps:** update all non-major dependencies ([#1830](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1830)) ([81c3678](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/81c3678a5034220cd0d36342f3775c0203b834b1))
-* restore comments lost during rebase conflict resolution ([7cb5abe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7cb5abe497720ec1fec71203a4390f67bc50d0a3))
+- **deps:** update all non-major dependencies ([#1825](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1825)) ([c4998a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c4998a1457e09957339042d0e0d42edd7ae50620))
+- **deps:** update all non-major dependencies ([#1830](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1830)) ([81c3678](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/81c3678a5034220cd0d36342f3775c0203b834b1))
+- restore comments lost during rebase conflict resolution ([7cb5abe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7cb5abe497720ec1fec71203a4390f67bc50d0a3))
 
 ## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v4.5.1...webui@v4.6.0) (2026-05-02)
 
