@@ -27,6 +27,8 @@ RUN npm install -g \
 ARG AGENT_UID=1001
 RUN usermod -u ${AGENT_UID} -d /home/agent -m -l agent node \
     && groupmod -g ${AGENT_UID} -n agent node \
+    && mkdir -p /home/agent/.local/share/pnpm/store \
+               /home/agent/.local/share/opencode \
     && chown -R ${AGENT_UID}:${AGENT_UID} /home/agent
 USER agent
 
