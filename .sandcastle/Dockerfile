@@ -21,8 +21,6 @@ RUN npm install -g \
     @mariozechner/pi-coding-agent \
     opencode-ai
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 # Rename the base image's "node" user to "agent" and align UID/GID.
 # Default 1001 matches GitHub Actions runner UID (ubuntu-latest since May 2025).
 # On macOS, build with --build-arg AGENT_UID=$(id -u) to match host UID.
