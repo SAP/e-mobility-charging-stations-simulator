@@ -7,7 +7,7 @@ Read open GitHub issues and produce a parallelizable execution plan.
 This is a Node.js TypeScript monorepo (pnpm workspace) simulating OCPP charging stations.
 Structure: root simulator (`src/`), `ui/common`, `ui/cli`, `ui/web`, `tests/ocpp-server` (Python).
 Test runner: Node.js native (`node:test`). Build tool: esbuild. Linter: ESLint (neostandard).
-Read `AGENTS.md` for project conventions.
+Read `AGENTS.md` and `.serena/memories/project_overview`.
 
 ## Open Issues
 
