@@ -63,19 +63,20 @@ export function buildPrArgs (
     : ''
 
   const validationCheck = validationPassed ? '- [x]' : '- [ ]'
-  const commitPrefix = spec.labels.includes('feature request')
+  const commitPrefix = spec.labels.includes('enhancement')
     ? 'feat'
     : spec.labels.includes('bug')
       ? 'fix'
       : 'chore'
-  const prTitle = `${commitPrefix}: resolve #${spec.id} \u2014 ${spec.title}`
+  const cleanTitle = spec.title.replace(/^\[(?:FEATURE|BUG|FIX|CHORE)\]\s*/i, '')
+  const prTitle = `${commitPrefix}: resolve #${spec.id} \u2014 ${cleanTitle}`
   const typeOfChange =
     commitPrefix === 'feat'
       ? 'New feature (non-breaking change that adds functionality)'
       : commitPrefix === 'fix'
         ? 'Bug fix (non-breaking change that fixes an issue)'
         : 'Refactoring (no functional changes)'
-  const prBody = `## Description\n\nAutomated ${commitPrefix} for #${spec.id}: ${spec.title}\n\n## Type of Change\n\n- [x] ${typeOfChange}\n\n## Checklist\n\n${validationCheck} I have run validation suite\n- [x] My changes follow the existing code style\n\n## Related Issues\n\nFixes #${spec.id}${outstandingNote}${validationNote}${rebaseNote}`
+  const prBody = `## Description\n\nAutomated ${commitPrefix} for #${spec.id}: ${cleanTitle}\n\n## Type of Change\n\n- [x] ${typeOfChange}\n\n## Checklist\n\n${validationCheck} I have run validation suite\n- [x] My changes follow the existing code style\n\n## Related Issues\n\n${isDraft ? 'Relates to' : 'Fixes'} #${spec.id}${outstandingNote}${validationNote}${rebaseNote}`
 
   const prArgs = [
     'pr',
@@ -89,6 +90,7 @@ export function buildPrArgs (
     prTitle,
     '--body',
     prBody,
+    ...spec.labels.flatMap(label => ['--label', label]),
   ]
 
   return { isDraft, prArgs }
