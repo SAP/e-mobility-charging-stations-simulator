@@ -57,7 +57,7 @@ export const MAX_PARALLEL = 3
 
 export const MAX_STDERR_CHARS = 500
 
-export const MAX_CRITIC_ROUNDS = 5
+export const MAX_CRITIC_ROUNDS = 10
 
 export const MAX_TITLE_LENGTH = 200
 
