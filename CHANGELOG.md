@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.6.0...simulator@v4.6.1) (2026-05-06)
+
+### 🐞 Bug Fixes
+
+- **deps:** override ip-address vulnerability ([2221278](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2221278103c4f697052ce4335bde640211eabba7))
+- **deps:** update all non-major dependencies ([#1825](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1825)) ([c4998a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c4998a1457e09957339042d0e0d42edd7ae50620))
+- **deps:** update all non-major dependencies ([#1830](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1830)) ([81c3678](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/81c3678a5034220cd0d36342f3775c0203b834b1))
+
 ## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.5.1...simulator@v4.6.0) (2026-05-02)
 
 ### 🚀 Features

@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.6.0...ui-common@v4.6.1) (2026-05-06)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1825](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1825)) ([c4998a1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c4998a1457e09957339042d0e0d42edd7ae50620))
+
 ## [4.6.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.5.1...ui-common@v4.6.0) (2026-05-02)
 
 ### 🚀 Features
