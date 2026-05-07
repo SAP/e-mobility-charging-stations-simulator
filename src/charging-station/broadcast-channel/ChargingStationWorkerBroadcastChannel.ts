@@ -450,6 +450,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorId' field is required`
       )
     }
+    const payload = requestPayload as Record<string, unknown>
+    if (payload.connectorStatus == null && payload.status == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorStatus' or 'status' field is required`
+      )
+    }
     await sendAndSetConnectorStatus(
       this.chargingStation,
       requestPayload as unknown as StatusNotificationRequest
