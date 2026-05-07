@@ -60,7 +60,7 @@
         <button
           type="button"
           :class="['modern-pill', 'modern-pill--editable', `modern-pill--${statusVariant}`]"
-          :title="`${connector.status ?? 'unknown'} — click to change`"
+          :title="statusTooltip"
           :aria-label="`Connector status: ${connector.status ?? 'unknown'}. Click to change.`"
           aria-haspopup="dialog"
           @click="openSetConnectorStatus"
@@ -183,8 +183,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
-
+import {
+  type ConnectorStatus,
+  OCPP16ChargePointErrorCode,
+  type OCPPVersion,
+  type Status,
+} from 'ui-common'
 import { computed, ref } from 'vue'
 
 import { WH_PER_KWH } from '@/core/index.js'
@@ -236,6 +240,15 @@ const identifier = computed(() =>
 const showSetConnectorStatus = ref(false)
 
 const statusVariant = computed(() => getConnectorStatusVariant(props.connector.status))
+
+const statusTooltip = computed(() => {
+  const status = props.connector.status ?? 'unknown'
+  const errorCode = props.connector.errorCode
+  if (errorCode != null && errorCode !== OCPP16ChargePointErrorCode.NO_ERROR) {
+    return `${status} (${errorCode})`
+  }
+  return status
+})
 
 // Effectively locked when explicitly locked OR transaction active (physical lock engages).
 const effectiveLocked = computed(

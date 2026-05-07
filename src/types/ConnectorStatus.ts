@@ -1,4 +1,5 @@
 import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates.js'
+import type { OCPP16ChargePointErrorCode } from './ocpp/1.6/ChargePointErrorCode.js'
 import type { OCPP20TransactionEventRequest } from './ocpp/2.0/Transaction.js'
 import type { ChargingProfile } from './ocpp/ChargingProfile.js'
 import type { ConnectorEnumType } from './ocpp/ConnectorEnumType.js'
@@ -19,6 +20,7 @@ export interface ConnectorStatus {
   bootStatus?: ConnectorStatusEnum
   chargingProfiles?: ChargingProfile[]
   energyActiveImportRegisterValue?: number // In Wh
+  errorCode?: OCPP16ChargePointErrorCode
   idTagAuthorized?: boolean
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string

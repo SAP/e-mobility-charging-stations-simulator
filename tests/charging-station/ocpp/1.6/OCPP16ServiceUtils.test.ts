@@ -586,7 +586,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(result.errorCode, ChargePointErrorCode.CONNECTOR_LOCK_FAILURE)
     })
 
-    await it('should default to NO_ERROR when errorCode is not set in payload', () => {
+    await it('should pass through undefined errorCode when not set in payload', () => {
       const input = {
         connectorId: 1,
         status: OCPP16ChargePointStatus.Available,
@@ -594,7 +594,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.buildStatusNotificationRequest(input)
 
-      assert.strictEqual(result.errorCode, ChargePointErrorCode.NO_ERROR)
+      assert.strictEqual(result.errorCode, undefined)
     })
   })
 

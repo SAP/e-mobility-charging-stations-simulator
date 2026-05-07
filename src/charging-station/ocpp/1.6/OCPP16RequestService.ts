@@ -5,6 +5,7 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  ChargePointErrorCode,
   ErrorType,
   type JsonObject,
   type JsonType,
@@ -210,9 +211,10 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        return OCPP16ServiceUtils.buildStatusNotificationRequest(
-          commandParams as unknown as OCPP16StatusNotificationRequest
-        ) as unknown as Request
+        return OCPP16ServiceUtils.buildStatusNotificationRequest({
+          errorCode: ChargePointErrorCode.NO_ERROR,
+          ...commandParams,
+        } as unknown as OCPP16StatusNotificationRequest) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         ;(chargingStation.stationInfo?.transactionDataMeterValues === true ||
           OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
