@@ -6,7 +6,7 @@ import { execFileAsync, toErrorMessage } from '../../utils.js'
 import { runValidation } from '../../validation.js'
 
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
-  actorPromptFile: './.sandcastle/strategies/implement/implement-prompt.md',
+  actorPromptFile: './.sandcastle/strategies/implement/actor-prompt.md',
 
   buildActorArgs: (spec, findings) => ({
     BRANCH: spec.branch,
