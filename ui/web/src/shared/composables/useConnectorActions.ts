@@ -5,9 +5,8 @@
 import type { OCPPVersion } from 'ui-common'
 
 import {
+  type ChargePointStatus,
   type OCPP16ChargePointErrorCode,
-  type OCPP16ChargePointStatus,
-  type OCPP20ConnectorStatusEnumType,
 } from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
@@ -31,7 +30,7 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   lockConnector: () => void
   pending: Readonly<{ atg: boolean; lock: boolean; setStatus: boolean; stopTx: boolean }>
   setConnectorStatus: (
-    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    status: ChargePointStatus,
     onSuccess?: () => void,
     errorCode?: OCPP16ChargePointErrorCode
   ) => void
@@ -110,7 +109,7 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   }
 
   const setConnectorStatus = (
-    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    status: ChargePointStatus,
     onSuccess?: () => void,
     errorCode?: OCPP16ChargePointErrorCode
   ): void => {

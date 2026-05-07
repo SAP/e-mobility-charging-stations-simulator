@@ -2,9 +2,8 @@ import { Command, Option } from 'commander'
 import {
   buildAuthorizePayload,
   buildStatusNotificationPayload,
+  type ChargePointStatus,
   type OCPP16ChargePointErrorCode,
-  type OCPP16ChargePointStatus,
-  type OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   ProcedureName,
   type RequestPayload,
@@ -195,7 +194,7 @@ export const createOcppCommands = (program: Command): Command => {
             payload = {
               ...buildStatusNotificationPayload(
                 options.connectorId,
-                options.status as OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+                options.status as ChargePointStatus,
                 ocppVersion,
                 {
                   errorCode: options.errorCode as OCPP16ChargePointErrorCode | undefined,

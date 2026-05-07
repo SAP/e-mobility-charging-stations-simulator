@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
+import type { ChargePointStatus, ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
 import {
   isOCPP20x,
@@ -146,7 +146,7 @@ const statusOptions = computed(() =>
     : Object.values(OCPP16ChargePointStatus)
 )
 const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
-const selectedStatus = ref<OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType>(
+const selectedStatus = ref<ChargePointStatus>(
   isOCPP20x(props.ocppVersion)
     ? ((props.connector.status as OCPP20ConnectorStatusEnumType | undefined) ??
         OCPP20ConnectorStatusEnumType.AVAILABLE)

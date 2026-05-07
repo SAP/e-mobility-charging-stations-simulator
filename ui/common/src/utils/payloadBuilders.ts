@@ -1,7 +1,6 @@
 import {
+  type ChargePointStatus,
   type OCPP16ChargePointErrorCode,
-  type OCPP16ChargePointStatus,
-  type OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20TransactionEventEnumType,
@@ -90,7 +89,7 @@ export function buildStartTransactionPayload (
  */
 export function buildStatusNotificationPayload (
   connectorId: number,
-  status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+  status: ChargePointStatus,
   ocppVersion: OCPPVersion | undefined,
   options?: { errorCode?: OCPP16ChargePointErrorCode; evseId?: number }
 ): RequestPayload {

@@ -5,12 +5,11 @@ import {
   buildStartTransactionPayload,
   buildStatusNotificationPayload,
   buildStopTransactionPayload,
+  type ChargePointStatus,
   type ChargingStationOptions,
   createBrowserWsAdapter,
   isOCPP20x,
   type OCPP16ChargePointErrorCode,
-  type OCPP16ChargePointStatus,
-  type OCPP20ConnectorStatusEnumType,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -142,7 +141,7 @@ export class UIClient {
   public async setConnectorStatus (
     hashId: string,
     connectorId: number,
-    status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
+    status: ChargePointStatus,
     evseId?: number,
     ocppVersion?: OCPPVersion,
     errorCode?: OCPP16ChargePointErrorCode
