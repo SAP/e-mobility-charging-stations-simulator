@@ -1,4 +1,4 @@
-# Implement Agent
+# Actor Agent: Implementer
 
 Implement issue **#{{TASK_ID}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`.
 

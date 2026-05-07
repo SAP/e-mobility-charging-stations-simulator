@@ -1,4 +1,4 @@
-# Critic Agent
+# Critic Agent: Reviewer
 
 Analyze the implementation on branch `{{BRANCH}}` and produce structured findings.
 
