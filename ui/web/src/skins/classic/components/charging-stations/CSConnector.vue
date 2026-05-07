@@ -149,7 +149,8 @@ const statusOptions = computed(() =>
 const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
 const selectedStatus = ref<OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType>(
   isOCPP20x(props.ocppVersion)
-    ? OCPP20ConnectorStatusEnumType.AVAILABLE
+    ? ((props.connector.status as OCPP20ConnectorStatusEnumType | undefined) ??
+        OCPP20ConnectorStatusEnumType.AVAILABLE)
     : ((props.connector.status as OCPP16ChargePointStatus | undefined) ??
         OCPP16ChargePointStatus.AVAILABLE)
 )

@@ -116,10 +116,10 @@ const selectedStatus = ref<OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumTy
 const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)
 
 const { pending: pendingState, setConnectorStatus } = useConnectorActions({
-  connectorId: props.connectorId,
-  evseId: props.evseId,
-  hashId: props.hashId,
-  ocppVersion: props.ocppVersion,
+  connectorId: computed(() => props.connectorId),
+  evseId: computed(() => props.evseId),
+  hashId: computed(() => props.hashId),
+  ocppVersion: computed(() => props.ocppVersion),
   onRefresh: props.onRefresh,
 })
 

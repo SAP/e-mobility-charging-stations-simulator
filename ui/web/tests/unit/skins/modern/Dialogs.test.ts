@@ -454,14 +454,15 @@ describe('Dialogs', () => {
     const chargingStationId = 'CS001'
 
     /**
-     *
-     * @param props
-     * @param props.chargingStationId
-     * @param props.connectorId
-     * @param props.evseId
-     * @param props.hashId
-     * @param props.ocppVersion
-     * @param props.onRefresh
+     * Mounts SetConnectorStatusDialog with optional prop overrides.
+     * @param props - Optional props to override defaults
+     * @param props.chargingStationId - Charging station display ID
+     * @param props.connectorId - Connector identifier
+     * @param props.evseId - EVSE identifier
+     * @param props.hashId - Station hash identifier
+     * @param props.ocppVersion - OCPP protocol version
+     * @param props.onRefresh - Callback invoked after successful status change
+     * @returns Mounted component wrapper
      */
     function mountDialog (
       props: {
