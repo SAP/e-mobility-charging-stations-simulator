@@ -233,9 +233,9 @@ export async function runRefinementLoop (
 }
 
 /**
- * Captures the current HEAD SHA, returning empty string on failure.
+ * Captures the current HEAD SHA, returning null on failure.
  * @param cwd - Working directory for git operations.
- * @returns The HEAD SHA or empty string.
+ * @returns The HEAD SHA or null.
  */
 async function captureHeadSha (cwd: string): Promise<null | string> {
   try {
@@ -631,7 +631,7 @@ async function runCritic (
 /**
  * Returns true if the best-state reset should be applied after the loop.
  * @param status - Final loop status.
- * @param bestSha - Best intermediate SHA (empty string if none captured).
+ * @param bestSha - Best intermediate SHA (null if none captured).
  * @returns True if reset should be applied.
  */
 function shouldResetToBest (status: LoopStatus, bestSha: null | string): boolean {
