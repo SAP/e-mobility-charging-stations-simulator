@@ -21,6 +21,8 @@ export interface LayoutData {
   getData: () => void
   /** Fetches only the simulator state. */
   getSimulatorState: () => void
+  /** Fetches only the charging station templates list. */
+  getTemplates: () => void
   /** Whether any data fetch is currently in progress. */
   loading: ComputedRef<boolean>
   /** Registers WS event listeners for open/error/close. */
@@ -136,6 +138,7 @@ export function useLayoutData (): LayoutData {
     getChargingStations,
     getData,
     getSimulatorState,
+    getTemplates,
     loading,
     // Exposed for edge cases (e.g. hot-reload); normally called via onMounted/onUnmounted.
     registerWSEventListeners,

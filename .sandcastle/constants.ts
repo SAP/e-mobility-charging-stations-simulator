@@ -110,9 +110,9 @@ export const MAX_TITLE_CHARS = 200
 export const MAX_STDERR_CHARS = 500
 
 export const VALIDATION_COMMAND =
-  'pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test'
+  'pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test'
 
-export const VALIDATION_TIMEOUT_MS = 300_000
+export const VALIDATION_TIMEOUT_MS = 600_000
 
 // ── Deduplication ────────────────────────────────────────────────────────────
 
