@@ -6,13 +6,13 @@ import type { TaskSpec } from './types.js'
 
 import {
   AGENT_IDLE_TIMEOUT_S,
+  AGENT_PLANNER_MODEL,
   COMPLETION_SIGNAL,
   DOCKER_MOUNTS,
   GIT_TIMEOUT_MS,
   MAX_ISSUES_FETCH,
   MAX_PRS_FETCH,
   MAX_TITLE_LENGTH,
-  AGENT_PLANNER_MODEL,
   TASK_TIMEOUT_MS,
 } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
