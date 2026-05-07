@@ -5,7 +5,7 @@ export const AGENT_IDLE_TIMEOUT_S = 300
 
 export const AGENT_ACTOR_MODEL = 'github-copilot/claude-sonnet-4.6'
 
-export const AGENT_CRITIC_MODEL = 'github-copilot/claude-sonnet-4.6'
+export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
 export const BRANCH_PREFIX = 'agent/issue'
 
