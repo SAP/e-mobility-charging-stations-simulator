@@ -116,7 +116,7 @@ await describe('format helpers', async () => {
                   connectorId: 2,
                   connectorStatus: {
                     availability: OCPP16AvailabilityType.OPERATIVE,
-                    status: OCPP16ChargePointStatus.OCCUPIED,
+                    status: OCPP16ChargePointStatus.CHARGING,
                   },
                 },
               ],
@@ -126,7 +126,7 @@ await describe('format helpers', async () => {
         []
       )
       assert.ok(result.includes('1:A'))
-      assert.ok(result.includes('2:O'))
+      assert.ok(result.includes('2:C'))
     })
 
     await it('skips evseId 0', () => {

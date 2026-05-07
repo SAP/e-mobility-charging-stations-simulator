@@ -4,7 +4,7 @@
  */
 import type { ChargingStationData } from 'ui-common'
 
-import { OCPP16ChargePointStatus } from 'ui-common'
+import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType } from 'ui-common'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -27,7 +27,7 @@ describe('stationStatus', () => {
     })
 
     it('should return warn for Occupied', () => {
-      const result = getConnectorStatusVariant(OCPP16ChargePointStatus.OCCUPIED)
+      const result = getConnectorStatusVariant(OCPP20ConnectorStatusEnumType.OCCUPIED)
       expect(result).toBe('warn')
     })
 
