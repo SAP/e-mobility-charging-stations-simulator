@@ -461,7 +461,6 @@ describe('Dialogs', () => {
      * @param props.evseId - EVSE identifier
      * @param props.hashId - Station hash identifier
      * @param props.ocppVersion - OCPP protocol version
-     * @param props.onRefresh - Callback invoked after successful status change
      * @returns Mounted component wrapper
      */
     function mountDialog (
@@ -471,7 +470,6 @@ describe('Dialogs', () => {
         evseId?: number
         hashId?: string
         ocppVersion?: OCPPVersion
-        onRefresh?: () => void
       } = {}
     ) {
       return mount(SetConnectorStatusDialog, {
@@ -537,17 +535,6 @@ describe('Dialogs', () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       expect(wrapper.emitted('close')).toHaveLength(1)
-    })
-
-    it('should invoke onRefresh after successful status change', async () => {
-      const onRefresh = vi.fn()
-      const wrapper = mountDialog({ onRefresh })
-      await wrapper
-        .find('#modern-connector-status-select')
-        .setValue(OCPP16ChargePointStatus.AVAILABLE)
-      await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
-      await flushPromises()
-      expect(onRefresh).toHaveBeenCalledOnce()
     })
   })
 })

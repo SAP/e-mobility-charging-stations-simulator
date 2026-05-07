@@ -179,7 +179,6 @@ describe('CSConnector', () => {
       lockProps.on?.()
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call unlockConnector', async () => {

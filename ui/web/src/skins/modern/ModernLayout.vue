@@ -31,7 +31,6 @@
         v-for="station in $chargingStations"
         :key="station.stationInfo.hashId"
         :charging-station="station"
-        @need-refresh="layoutData.getChargingStations()"
         @open-authorize="openAuthorizeDialog"
         @open-set-url="openSetUrlDialog"
         @open-start-tx="openStartTxDialog"

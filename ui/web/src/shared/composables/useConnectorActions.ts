@@ -20,7 +20,6 @@ interface ConnectorActionsDeps {
   evseId?: MaybeRefOrGetter<number | undefined>
   hashId: MaybeRefOrGetter<string>
   ocppVersion?: MaybeRefOrGetter<OCPPVersion | undefined>
-  onRefresh?: () => void
 }
 
 /**
@@ -47,8 +46,7 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   const $uiClient = useUIClient()
   const $toast = useToast()
   const { pending, run } = useAsyncAction(
-    { atg: false, lock: false, setStatus: false, stopTx: false },
-    deps.onRefresh
+    { atg: false, lock: false, setStatus: false, stopTx: false }
   )
 
   const hashId = computed(() => toValue(deps.hashId))

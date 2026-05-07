@@ -94,7 +94,6 @@ const props = defineProps<{
   evseId?: number
   hashId: string
   ocppVersion?: OCPPVersion
-  onRefresh?: () => void
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -120,7 +119,6 @@ const { pending: pendingState, setConnectorStatus } = useConnectorActions({
   evseId: computed(() => props.evseId),
   hashId: computed(() => props.hashId),
   ocppVersion: computed(() => props.ocppVersion),
-  onRefresh: props.onRefresh,
 })
 
 const targetLabel = computed(() =>

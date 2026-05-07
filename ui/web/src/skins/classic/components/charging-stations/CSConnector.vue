@@ -122,7 +122,7 @@ const props = defineProps<{
   ocppVersion?: OCPPVersion
 }>()
 
-const emit = defineEmits<{ 'need-refresh': [] }>()
+defineEmits<{ 'need-refresh': [] }>()
 
 const $router = useRouter()
 
@@ -138,7 +138,6 @@ const {
   evseId: computed(() => props.evseId),
   hashId: computed(() => props.hashId),
   ocppVersion: computed(() => props.ocppVersion),
-  onRefresh: () => emit('need-refresh'),
 })
 
 const statusOptions = computed(() =>

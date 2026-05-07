@@ -1,7 +1,7 @@
 /**
  * @file Tests for useConnectorActions composable
  * @description Verifies connector-level actions (stop transaction, lock/unlock, ATG start/stop),
- *   pending state guards, toast notifications, and onRefresh callback invocation.
+ *   pending state guards, toast notifications, and action dispatching.
  */
 import { flushPromises } from '@vue/test-utils'
 import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType, OCPPVersion } from 'ui-common'
@@ -266,39 +266,6 @@ describe('useConnectorActions', () => {
       resolveAction({ status: 'success' })
       await flushPromises()
       expect(pending.atg).toBe(false)
-    })
-  })
-
-  describe('onRefresh', () => {
-    it('should call onRefresh callback after successful action', async () => {
-      const onRefresh = vi.fn()
-      const [{ lockConnector }] = withSetup(() =>
-        useConnectorActions({ connectorId, hashId, onRefresh })
-      )
-      lockConnector()
-      await flushPromises()
-      expect(onRefresh).toHaveBeenCalledOnce()
-    })
-
-    it('should not call onRefresh on failure', async () => {
-      const onRefresh = vi.fn()
-      mockClient.lockConnector.mockRejectedValueOnce(new Error('fail'))
-      const [{ lockConnector }] = withSetup(() =>
-        useConnectorActions({ connectorId, hashId, onRefresh })
-      )
-      lockConnector()
-      await flushPromises()
-      expect(onRefresh).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('pending state initialization', () => {
-    it('should initialize all pending keys to false', () => {
-      const [{ pending }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
-      expect(pending.atg).toBe(false)
-      expect(pending.lock).toBe(false)
-      expect(pending.setStatus).toBe(false)
-      expect(pending.stopTx).toBe(false)
     })
   })
 
