@@ -3,7 +3,11 @@ import { existsSync } from 'node:fs'
 
 // ── Agent ────────────────────────────────────────────────────────────────────
 
+export const AGENT_ACTOR_EFFORT = 'high'
+
 export const AGENT_ACTOR_MODEL = 'github-copilot/claude-sonnet-4.6'
+
+export const AGENT_CRITIC_EFFORT = 'medium'
 
 export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
@@ -12,6 +16,8 @@ export const AGENT_IDLE_TIMEOUT_S = 300
 export const AGENT_ITERATION_BUDGET = 50
 
 export const AGENT_MAX_CRITIC_ROUNDS = 10
+
+export const AGENT_PLANNER_EFFORT = 'low'
 
 export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
 
