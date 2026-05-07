@@ -51,9 +51,10 @@ export function buildPrArgs (
 ): { isDraft: boolean; prArgs: string[] } {
   const converged = loopResult.status === 'converged'
   const isDraft = !converged || !validationPassed
+  const lastFindings = loopResult.roundHistory.at(-1)?.findings ?? []
   const outstandingNote =
-    loopResult.lastFindings.length > 0
-      ? `\n\n${converged ? 'ℹ️ Known findings (not addressed):' : '⚠️ Outstanding findings:'}\n${loopResult.lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
+    lastFindings.length > 0
+      ? `\n\n${converged ? 'ℹ️ Known findings (not addressed):' : '⚠️ Outstanding findings:'}\n${lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
       : ''
   const validationNote = !validationPassed
     ? '\n\n⚠️ Validation did not pass. Manual review required.'

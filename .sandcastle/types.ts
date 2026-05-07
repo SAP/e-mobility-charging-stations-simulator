@@ -47,12 +47,7 @@ export interface LoopResult {
   baseBranch: string
   /** Reason for non-converged termination, if applicable. */
   failureReason?: string
-  /** Outstanding findings from the last round. */
-  lastFindings: Finding[]
-  /**
-   * Complete findings history across all rounds.
-   * Authoritative source — `lastFindings` is kept for backward compatibility.
-   */
+  /** Complete findings history across all rounds. */
   roundHistory: RoundSnapshot[]
   /** Number of main-loop rounds completed (excludes post-loop validation retry). */
   roundsCompleted: number
