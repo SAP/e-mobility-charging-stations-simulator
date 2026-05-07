@@ -45,6 +45,8 @@ export interface LoopContext {
 export interface LoopResult {
   /** Base branch used for this loop run. */
   baseBranch: string
+  /** Reason for non-converged termination, if applicable. */
+  failureReason?: string
   /** Outstanding findings from the last round. */
   lastFindings: Finding[]
   /** Number of rounds completed. */

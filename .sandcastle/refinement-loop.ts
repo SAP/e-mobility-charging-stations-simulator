@@ -46,8 +46,8 @@ export interface RefinementLoopOptions {
 
 /** Result of a convergence check. */
 interface ConvergenceResult {
-  /** Best SHA to restore (empty string = no update). */
-  bestSha: string
+  /** Best SHA to restore (null = no update). */
+  bestSha: null | string
   /** Updated last findings. */
   lastFindings: Finding[]
   /** New loop status. */
@@ -124,12 +124,13 @@ export async function runRefinementLoop (
   const ctx: LoopContext = { baseBranch, sandbox, signal, spec, strategy }
 
   const seenKeys = new Set<string>()
+  let failureReason: string | undefined
   let lastFindings: Finding[] = []
   let status: LoopStatus = 'exhausted'
   let totalCommits = 0
   let roundsCompleted = 0
   let previousFindingsCount = Infinity
-  let bestSha = ''
+  let bestSha: null | string = null
   let bestFindingsCount = Infinity
 
   for (let round = 1; round <= maxRounds; round++) {
@@ -146,6 +147,9 @@ export async function runRefinementLoop (
     if (earlyExit !== null) {
       totalCommits = earlyExit.totalCommits
       status = earlyExit.status
+      if (earlyExit.status === 'failed') {
+        failureReason = result.commits === 0 ? 'actor_error' : 'critic_parse_failed'
+      }
       break
     }
 
@@ -173,6 +177,7 @@ export async function runRefinementLoop (
         previousFindingsCount
       )
     ) {
+      failureReason = 'quality_regression'
       status = 'exhausted'
       break
     }
@@ -224,7 +229,7 @@ export async function runRefinementLoop (
     totalCommits = await resetToBestState(sandbox.worktreePath, bestSha, totalCommits, baseBranch)
   }
 
-  return { baseBranch, lastFindings, roundsCompleted, status, totalCommits }
+  return { baseBranch, failureReason, lastFindings, roundsCompleted, status, totalCommits }
 }
 
 /**
@@ -232,12 +237,12 @@ export async function runRefinementLoop (
  * @param cwd - Working directory for git operations.
  * @returns The HEAD SHA or empty string.
  */
-async function captureHeadSha (cwd: string): Promise<string> {
+async function captureHeadSha (cwd: string): Promise<null | string> {
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd })
     return stdout.trim()
   } catch {
-    return ''
+    return null
   }
 }
 
@@ -272,7 +277,7 @@ async function checkConvergence (
   }
 
   return {
-    bestSha: '',
+    bestSha: null,
     lastFindings: nonLowFindings.length > 0 ? nonLowFindings : [],
     status: 'converged',
   }
@@ -503,6 +508,7 @@ async function hashContextLines (
       .digest('hex')
       .slice(0, HASH_PREFIX_LENGTH)
   } catch {
+    console.debug(`  hashContextLines: fallback for ${file}:${String(line)}`)
     return crypto
       .createHash('sha256')
       .update(`${file}:${String(line)}:fallback`)
@@ -546,10 +552,11 @@ function parseFindings (stdout: string, nonce: string): Finding[] | null {
  */
 async function resetToBestState (
   cwd: string,
-  bestSha: string,
+  bestSha: null | string,
   currentCommits: number,
   baseBranch: string
 ): Promise<number> {
+  if (bestSha === null) return currentCommits
   if (!/^[0-9a-f]{40}$/.test(bestSha)) return currentCommits
   try {
     await execFileAsync('git', ['reset', '--hard', bestSha], { cwd })
@@ -627,6 +634,6 @@ async function runCritic (
  * @param bestSha - Best intermediate SHA (empty string if none captured).
  * @returns True if reset should be applied.
  */
-function shouldResetToBest (status: LoopStatus, bestSha: string): boolean {
-  return status !== 'converged' && /^[0-9a-f]{40}$/.test(bestSha)
+function shouldResetToBest (status: LoopStatus, bestSha: null | string): boolean {
+  return status !== 'converged' && bestSha !== null && /^[0-9a-f]{40}$/.test(bestSha)
 }

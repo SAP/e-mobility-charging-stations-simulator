@@ -141,9 +141,7 @@ export class GithubIssueSource implements TaskSource {
       return tasks
     }
 
-    console.warn('Planner failed to produce a valid plan after all retries.')
-    process.exitCode = 1
-    return []
+    throw new Error('Planner failed to produce a valid plan after all retries.')
   }
 
   private async fetchAndSanitizeIssues (): Promise<
