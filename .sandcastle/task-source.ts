@@ -135,6 +135,10 @@ export class GithubIssueSource implements TaskSource {
         return []
       }
 
+      for (const task of tasks) {
+        task.plannerOutput = plan.stdout
+      }
+
       console.log(`Plan: ${String(tasks.length)} issue(s) to work on:`)
       for (const task of tasks) {
         console.log(`  #${task.id}: ${task.title} → ${task.branch}`)

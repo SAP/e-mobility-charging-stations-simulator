@@ -8,6 +8,7 @@ import type {
   LoopResult,
   LoopStatus,
   LoopStrategy,
+  RoundSnapshot,
   SandboxInstance,
   TaskSpec,
 } from './types.js'
@@ -35,8 +36,6 @@ export interface RefinementLoopOptions {
   iterationBudget?: number
   /** Maximum number of implement↔critic rounds. */
   maxRounds?: number
-  /** Optional callback invoked after each round completes. */
-  onRoundComplete?: (round: number, findings: Finding[]) => void
   /** When true, run one extra actor attempt if post-loop validation fails. */
   postLoopValidationRetry?: boolean
   /** Abort signal for cooperative cancellation (kills in-flight agent subprocesses). */
@@ -88,8 +87,6 @@ interface ResolvedLoopOptions {
   budget: number
   /** Maximum number of rounds. */
   maxRounds: number
-  /** Optional round-complete callback (no-op if not provided). */
-  onRoundComplete: (round: number, findings: Finding[]) => void
 }
 
 /** Result of a single implement↔critic round. */
@@ -116,13 +113,14 @@ export async function runRefinementLoop (
   strategy: LoopStrategy,
   opts?: RefinementLoopOptions
 ): Promise<LoopResult> {
-  const { baseBranch, budget, maxRounds, onRoundComplete } = resolveLoopOptions(opts)
+  const { baseBranch, budget, maxRounds } = resolveLoopOptions(opts)
   const signal = opts?.signal
   const validate = strategy.validate ?? ((cwd: string, s: TaskSpec) => runValidation(cwd, s))
 
   const ctx: LoopContext = { baseBranch, sandbox, signal, spec, strategy }
 
   const seenKeys = new Set<string>()
+  const roundHistory: RoundSnapshot[] = []
   let failureReason: string | undefined
   let lastFindings: Finding[] = []
   let status: LoopStatus = 'exhausted'
@@ -141,6 +139,8 @@ export async function runRefinementLoop (
     )
 
     const result = await executeRound(ctx, round, budget, lastFindings)
+
+    roundHistory.push(buildRoundSnapshot(result, round))
 
     const earlyExit = checkEarlyExit(spec, round, result, totalCommits)
     if (earlyExit !== null) {
@@ -188,7 +188,6 @@ export async function runRefinementLoop (
 
     totalCommits += result.commits
     previousFindingsCount = nonLowFindings.length
-    onRoundComplete(round, findings)
 
     if (strategy.shouldConverge?.(findings, round, totalCommits)) {
       lastFindings = findings
@@ -215,6 +214,7 @@ export async function runRefinementLoop (
       status = 'converged'
     } else if (roundsCompleted < maxRounds) {
       const result = await executeRound(ctx, roundsCompleted + 1, budget, lastFindings)
+      roundHistory.push(buildRoundSnapshot(result, roundsCompleted + 1))
       if (result.commits > 0) {
         totalCommits += result.commits
         if (await validate(sandbox.worktreePath, spec)) {
@@ -228,7 +228,34 @@ export async function runRefinementLoop (
     totalCommits = await resetToBestState(sandbox.worktreePath, bestSha, totalCommits, baseBranch)
   }
 
-  return { baseBranch, failureReason, lastFindings, roundsCompleted, status, totalCommits }
+  return {
+    baseBranch,
+    failureReason,
+    lastFindings,
+    roundHistory,
+    roundsCompleted,
+    status,
+    totalCommits,
+  }
+}
+
+/**
+ *
+ * @param result
+ * @param round
+ */
+function buildRoundSnapshot (result: RoundResult, round: number): RoundSnapshot {
+  return {
+    commits: result.commits,
+    findings: result.findings ?? [],
+    round,
+    status:
+      result.findings === null
+        ? 'critic_errored'
+        : result.findings.length > 0
+          ? 'has_findings'
+          : 'no_findings',
+  }
 }
 
 /**
@@ -578,7 +605,6 @@ function resolveLoopOptions (opts: RefinementLoopOptions | undefined): ResolvedL
     baseBranch: opts?.baseBranch ?? GIT_BASE_BRANCH,
     budget: opts?.iterationBudget ?? AGENT_ITERATION_BUDGET,
     maxRounds: opts?.maxRounds ?? AGENT_MAX_CRITIC_ROUNDS,
-    onRoundComplete: opts?.onRoundComplete ?? (() => undefined),
   }
 }
 
