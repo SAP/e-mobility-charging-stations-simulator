@@ -45,9 +45,12 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
 } {
   const $uiClient = useUIClient()
   const $toast = useToast()
-  const { pending, run } = useAsyncAction(
-    { atg: false, lock: false, setStatus: false, stopTx: false }
-  )
+  const { pending, run } = useAsyncAction({
+    atg: false,
+    lock: false,
+    setStatus: false,
+    stopTx: false,
+  })
 
   const hashId = computed(() => toValue(deps.hashId))
   const connectorId = computed(() => toValue(deps.connectorId))
