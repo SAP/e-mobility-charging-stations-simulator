@@ -3,9 +3,9 @@ import crypto from 'node:crypto'
 import type { LoopResult, TaskSpec } from './types.js'
 
 import {
+  GIT_PUSH_TIMEOUT_MS,
   GIT_TIMEOUT_MS,
   MAX_STDERR_CHARS,
-  PUSH_TIMEOUT_MS,
   VALIDATION_COMMAND,
   VALIDATION_TIMEOUT_MS,
 } from './constants.js'
@@ -124,7 +124,7 @@ export async function pushBranch (
     try {
       await execFileAsync('git', ['push', '--force-with-lease', 'origin', 'HEAD'], {
         cwd,
-        timeout: PUSH_TIMEOUT_MS,
+        timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {
@@ -136,7 +136,7 @@ export async function pushBranch (
           ['push', 'origin', `HEAD:refs/heads/rescue/${spec.branch}-${suffix}`],
           {
             cwd,
-            timeout: PUSH_TIMEOUT_MS,
+            timeout: GIT_PUSH_TIMEOUT_MS,
           }
         )
         console.warn(
@@ -153,7 +153,7 @@ export async function pushBranch (
     try {
       await execFileAsync('git', ['push', '-u', 'origin', 'HEAD'], {
         cwd,
-        timeout: PUSH_TIMEOUT_MS,
+        timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {

@@ -1,17 +1,31 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 
-export const AGENT_IDLE_TIMEOUT_S = 300
+// ── Agent ────────────────────────────────────────────────────────────────────
 
 export const AGENT_ACTOR_MODEL = 'github-copilot/claude-sonnet-4.6'
 
 export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
-export const BRANCH_PREFIX = 'agent/issue'
+export const AGENT_IDLE_TIMEOUT_S = 300
 
-export const COMPLETION_SIGNAL = '<promise>COMPLETE</promise>'
+export const AGENT_ITERATION_BUDGET = 50
 
-export const CONTEXT_HASH_RADIUS = 3
+export const AGENT_MAX_CRITIC_ROUNDS = 10
+
+export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
+
+export const AGENT_TASK_TIMEOUT_MS = 6_000_000
+
+// ── Git ──────────────────────────────────────────────────────────────────────
+
+export const GIT_BRANCH_PREFIX = 'agent/issue'
+
+export const GIT_PUSH_TIMEOUT_MS = 60_000
+
+export const GIT_TIMEOUT_MS = 30_000
+
+// ── Docker ───────────────────────────────────────────────────────────────────
 
 export const DOCKER_IMAGE = 'sandcastle-sandbox'
 
@@ -41,35 +55,33 @@ function resolvePnpmStorePath (): string | undefined {
   }
 }
 
-export const GIT_TIMEOUT_MS = 30_000
+// ── GitHub ───────────────────────────────────────────────────────────────────
 
-export const GRACE_TIMEOUT_MS = 30_000
+export const GITHUB_ISSUE_LABEL = 'sandcastle'
 
-export const HASH_PREFIX_LENGTH = 16
+export const GITHUB_MAX_ISSUES_FETCH = 50
 
-export const ITERATION_BUDGET_PER_ROUND = 50
+export const GITHUB_MAX_PRS_FETCH = 200
 
-export const ISSUE_LABEL = 'sandcastle'
-
-export const MAX_ISSUES_FETCH = 50
-
-export const MAX_PRS_FETCH = 200
-
-export const MAX_PARALLEL = 5
-
-export const MAX_STDERR_CHARS = 500
-
-export const MAX_CRITIC_ROUNDS = 10
-
-export const MAX_TITLE_LENGTH = 200
-
-export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
-
-export const PUSH_TIMEOUT_MS = 60_000
-
-export const TASK_TIMEOUT_MS = 100 * 60 * 1000
+// ── Validation ───────────────────────────────────────────────────────────────
 
 export const VALIDATION_COMMAND =
   'pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test'
 
 export const VALIDATION_TIMEOUT_MS = 300_000
+
+// ── Limits & Protocol ────────────────────────────────────────────────────────
+
+export const COMPLETION_SIGNAL = '<promise>COMPLETE</promise>'
+
+export const CONTEXT_HASH_RADIUS = 3
+
+export const GRACE_TIMEOUT_MS = 30_000
+
+export const HASH_PREFIX_LENGTH = 16
+
+export const MAX_PARALLEL = 5
+
+export const MAX_STDERR_CHARS = 500
+
+export const MAX_TITLE_CHARS = 200
