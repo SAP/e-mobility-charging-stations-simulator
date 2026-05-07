@@ -445,6 +445,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleStatusNotification (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<void> {
+    if (requestPayload?.connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorId' field is required`
+      )
+    }
     await sendAndSetConnectorStatus(
       this.chargingStation,
       requestPayload as unknown as StatusNotificationRequest
