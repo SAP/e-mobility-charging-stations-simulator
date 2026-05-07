@@ -3,6 +3,7 @@ import type { OCPPVersion } from 'ui-common'
 import {
   buildAuthorizePayload,
   buildStartTransactionPayload,
+  buildStatusNotificationPayload,
   buildStopTransactionPayload,
   type ChargingStationOptions,
   createBrowserWsAdapter,
@@ -146,20 +147,12 @@ export class UIClient {
     ocppVersion?: OCPPVersion,
     errorCode?: OCPP16ChargePointErrorCode
   ): Promise<ResponsePayload> {
-    if (isOCPP20x(ocppVersion)) {
-      return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
-        connectorId,
-        connectorStatus: status,
-        hashIds: [hashId],
-        ...(evseId != null && { evseId }),
-      })
-    }
     return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
-      connectorId,
       hashIds: [hashId],
-      status,
-      ...(errorCode != null && { errorCode }),
-      ...(evseId != null && { evseId }),
+      ...buildStatusNotificationPayload(connectorId, status, ocppVersion, {
+        errorCode,
+        evseId,
+      }),
     })
   }
 
