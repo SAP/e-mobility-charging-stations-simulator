@@ -75,6 +75,20 @@
           {{ s }}
         </option>
       </select>
+      <select
+        v-if="!isOCPP20x(ocppVersion)"
+        v-model="selectedErrorCode"
+        class="connector-status-select"
+        :aria-label="`Set error code for connector ${connectorId}`"
+      >
+        <option
+          v-for="e in errorCodeOptions"
+          :key="e"
+          :value="e"
+        >
+          {{ e }}
+        </option>
+      </select>
     </td>
   </tr>
 </template>
@@ -82,7 +96,12 @@
 <script setup lang="ts">
 import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import { OCPP16ChargePointStatus } from 'ui-common'
+import {
+  isOCPP20x,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+} from 'ui-common'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -118,20 +137,30 @@ const {
   connectorId: computed(() => props.connectorId),
   evseId: computed(() => props.evseId),
   hashId: computed(() => props.hashId),
+  ocppVersion: computed(() => props.ocppVersion),
   onRefresh: () => emit('need-refresh'),
 })
 
-const statusOptions = Object.values(OCPP16ChargePointStatus)
-const selectedStatus = ref<OCPP16ChargePointStatus>(
-  (props.connector.status as OCPP16ChargePointStatus | undefined) ??
-    OCPP16ChargePointStatus.AVAILABLE
+const statusOptions = computed(() =>
+  isOCPP20x(props.ocppVersion)
+    ? Object.values(OCPP20ConnectorStatusEnumType)
+    : Object.values(OCPP16ChargePointStatus)
 )
+const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
+const selectedStatus = ref<OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType>(
+  isOCPP20x(props.ocppVersion)
+    ? OCPP20ConnectorStatusEnumType.AVAILABLE
+    : ((props.connector.status as OCPP16ChargePointStatus | undefined) ??
+        OCPP16ChargePointStatus.AVAILABLE)
+)
+const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)
 
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)
 }
 
 const applyConnectorStatus = (): void => {
-  setConnectorStatus(selectedStatus.value)
+  const errorCode = isOCPP20x(props.ocppVersion) ? undefined : selectedErrorCode.value
+  setConnectorStatus(selectedStatus.value, undefined, errorCode)
 }
 </script>

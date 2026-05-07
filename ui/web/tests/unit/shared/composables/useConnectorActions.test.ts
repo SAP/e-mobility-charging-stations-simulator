@@ -312,6 +312,7 @@ describe('useConnectorActions', () => {
         connectorId,
         OCPP16ChargePointStatus.FAULTED,
         undefined,
+        undefined,
         undefined
       )
     })
@@ -328,6 +329,7 @@ describe('useConnectorActions', () => {
         connectorId,
         OCPP16ChargePointStatus.AVAILABLE,
         evseId,
+        undefined,
         undefined
       )
     })
@@ -375,7 +377,8 @@ describe('useConnectorActions', () => {
         connectorId,
         OCPP20ConnectorStatusEnumType.AVAILABLE,
         undefined,
-        OCPPVersion.VERSION_201
+        OCPPVersion.VERSION_201,
+        undefined
       )
     })
 

@@ -5,6 +5,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import {
+  OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   OCPP20ConnectorStatusEnumType,
   OCPPVersion,
@@ -519,7 +520,8 @@ describe('Dialogs', () => {
         connectorId,
         OCPP16ChargePointStatus.FAULTED,
         undefined,
-        undefined
+        undefined,
+        OCPP16ChargePointErrorCode.NO_ERROR
       )
       expect(wrapper.emitted('close')).toHaveLength(1)
     })

@@ -7,6 +7,7 @@ import {
   type ChargingStationOptions,
   createBrowserWsAdapter,
   isOCPP20x,
+  type OCPP16ChargePointErrorCode,
   type OCPP16ChargePointStatus,
   type OCPP20ConnectorStatusEnumType,
   ProcedureName,
@@ -142,7 +143,8 @@ export class UIClient {
     connectorId: number,
     status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
     evseId?: number,
-    ocppVersion?: OCPPVersion
+    ocppVersion?: OCPPVersion,
+    errorCode?: OCPP16ChargePointErrorCode
   ): Promise<ResponsePayload> {
     if (isOCPP20x(ocppVersion)) {
       return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
@@ -156,6 +158,7 @@ export class UIClient {
       connectorId,
       hashIds: [hashId],
       status,
+      ...(errorCode != null && { errorCode }),
       ...(evseId != null && { evseId }),
     })
   }

@@ -4,7 +4,11 @@
  */
 import type { OCPPVersion } from 'ui-common'
 
-import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType } from 'ui-common'
+import {
+  type OCPP16ChargePointErrorCode,
+  type OCPP16ChargePointStatus,
+  type OCPP20ConnectorStatusEnumType,
+} from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -19,8 +23,6 @@ interface ConnectorActionsDeps {
   onRefresh?: () => void
 }
 
-export { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType }
-
 /**
  * Provides connector-level action handlers with pending state management.
  * @param deps - Connector identity and optional refresh callback
@@ -31,7 +33,8 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
   pending: Readonly<{ atg: boolean; lock: boolean; setStatus: boolean; stopTx: boolean }>
   setConnectorStatus: (
     status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    errorCode?: OCPP16ChargePointErrorCode
   ) => void
   startATG: () => void
   stopATG: () => void
@@ -107,7 +110,8 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
 
   const setConnectorStatus = (
     status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    errorCode?: OCPP16ChargePointErrorCode
   ): void => {
     run('setStatus', {
       action: () =>
@@ -116,7 +120,8 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
           connectorId.value,
           status,
           evseId.value,
-          ocppVersion.value
+          ocppVersion.value,
+          errorCode
         ),
       errorMsg: 'Error setting connector status',
       onSuccess,

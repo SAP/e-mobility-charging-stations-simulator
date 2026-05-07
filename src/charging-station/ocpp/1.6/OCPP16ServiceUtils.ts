@@ -131,7 +131,10 @@ export class OCPP16ServiceUtils {
   ): OCPP16StatusNotificationRequest {
     return {
       connectorId: commandParams.connectorId,
-      errorCode: ChargePointErrorCode.NO_ERROR,
+      // Callers via broadcast channel pass payloads cast from unknown with errorCode potentially unset
+      errorCode:
+        (commandParams as Partial<OCPP16StatusNotificationRequest>).errorCode ??
+        ChargePointErrorCode.NO_ERROR,
       status: commandParams.status,
     } satisfies OCPP16StatusNotificationRequest
   }
