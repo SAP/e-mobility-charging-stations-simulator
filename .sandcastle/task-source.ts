@@ -14,8 +14,9 @@ import {
   GITHUB_MAX_ISSUES_FETCH,
   GITHUB_MAX_PRS_FETCH,
   MAX_TITLE_CHARS,
+  SANDBOX_AUTH_HOOKS,
 } from './constants.js'
-import { execFileAsync, toErrorMessage } from './utils.js'
+import { agentProvider, execFileAsync, toErrorMessage } from './utils.js'
 
 const RawIssueSchema = z.object({
   body: z
@@ -96,8 +97,9 @@ export class GithubIssueSource implements TaskSource {
       let plan: Awaited<ReturnType<typeof sandcastle.run>>
       try {
         plan = await sandcastle.run({
-          agent: sandcastle.opencode(AGENT_PLANNER_MODEL),
+          agent: agentProvider(AGENT_PLANNER_MODEL),
           completionSignal: COMPLETION_SIGNAL,
+          hooks: SANDBOX_AUTH_HOOKS,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
           maxIterations: 1,
           name: 'Planner',

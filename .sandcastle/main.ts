@@ -13,6 +13,7 @@ import {
   GIT_BRANCH_PREFIX,
   GITHUB_ISSUE_LABEL,
   MAX_PARALLEL,
+  SANDBOX_BUILD_HOOKS,
 } from './constants.js'
 import { runRefinementLoop } from './refinement-loop.js'
 import { implementStrategy } from './strategies/implement/strategy.js'
@@ -50,9 +51,7 @@ if (tasks.length === 0) {
         try {
           await using sandbox = await sandcastle.createSandbox({
             branch: spec.branch,
-            hooks: {
-              sandbox: { onSandboxReady: [{ command: 'pnpm install && pnpm run build' }] },
-            },
+            hooks: SANDBOX_BUILD_HOOKS,
             sandbox: docker({ imageName: DOCKER_IMAGE, mounts: [...DOCKER_MOUNTS] }),
           })
 

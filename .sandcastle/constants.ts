@@ -3,6 +3,10 @@ import { existsSync } from 'node:fs'
 
 // ── Agent ────────────────────────────────────────────────────────────────────
 
+export type AgentProviderType = 'opencode' | 'pi'
+
+export const AGENT_PROVIDER = 'pi' as AgentProviderType
+
 export const AGENT_ACTOR_EFFORT = 'high'
 
 export const AGENT_ACTOR_MODEL = 'github-copilot/claude-sonnet-4.6'
@@ -42,6 +46,30 @@ export const GIT_TIMEOUT_MS = 30_000
 export const DOCKER_IMAGE = 'sandcastle-sandbox'
 
 export const DOCKER_MOUNTS = resolveDockerMounts()
+
+export const SANDBOX_AUTH_HOOKS = {
+  sandbox: {
+    onSandboxReady: [
+      ...(AGENT_PROVIDER === 'pi'
+        ? [
+            {
+              command:
+                'mkdir -p ~/.pi/agent && printf \'%s\' "$PI_AUTH_CONTENT" > ~/.pi/agent/auth.json',
+            },
+          ]
+        : []),
+    ],
+  },
+}
+
+export const SANDBOX_BUILD_HOOKS = {
+  sandbox: {
+    onSandboxReady: [
+      ...SANDBOX_AUTH_HOOKS.sandbox.onSandboxReady,
+      { command: 'pnpm install && pnpm run build' },
+    ],
+  },
+}
 
 /**
  * @returns Mount entries for pnpm store, or empty if store path is unavailable.

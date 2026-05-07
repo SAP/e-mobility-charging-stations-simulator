@@ -32,11 +32,16 @@ jobs:
 
       - name: Validate secrets
         run: |
+          if [ -z "$PI_AUTH_CONTENT" ]; then
+            echo "::error::PI_AUTH_CONTENT secret is not configured"
+            exit 1
+          fi
           if [ -z "$OPENCODE_AUTH_CONTENT" ]; then
             echo "::error::OPENCODE_AUTH_CONTENT secret is not configured"
             exit 1
           fi
         env:
+          PI_AUTH_CONTENT: ${{ secrets.PI_AUTH_CONTENT }}
           OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_AUTH_CONTENT }}
 
       - run: docker build -t sandcastle-sandbox .sandcastle/
@@ -45,9 +50,11 @@ jobs:
         run: |
           printf 'GH_TOKEN=%s\n' "$GH_TOKEN" > .sandcastle/.env
           printf 'GITHUB_TOKEN=%s\n' "$GITHUB_TOKEN" >> .sandcastle/.env
+          printf 'PI_AUTH_CONTENT=%s\n' "$PI_AUTH_CONTENT" >> .sandcastle/.env
           printf 'OPENCODE_AUTH_CONTENT=%s\n' "$OPENCODE_AUTH_CONTENT" >> .sandcastle/.env
         env:
           GH_TOKEN: ${{ github.token }}
+          PI_AUTH_CONTENT: ${{ secrets.PI_AUTH_CONTENT }}
           OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_AUTH_CONTENT }}
 
       - run: pnpm run sandcastle

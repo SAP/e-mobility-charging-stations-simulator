@@ -35,6 +35,7 @@ export default defineConfig([
               'imsi',
               'ocpp',
               'onconnection',
+              'opencode',
               'evse',
               'evses',
               'kvar',
