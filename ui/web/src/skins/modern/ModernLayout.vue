@@ -77,7 +77,7 @@
 <script setup lang="ts">
 // Dialog state via v-if (no URL coupling), enabling skin-independent modal interactions.
 import { type OCPPVersion } from 'ui-common'
-import { defineAsyncComponent, ref } from 'vue'
+import { defineAsyncComponent, ref, watch } from 'vue'
 
 import {
   ASYNC_COMPONENT_DELAY_MS,
@@ -124,7 +124,7 @@ const StartTransactionDialog = defineAsyncDialog(
 const $chargingStations = useChargingStations()
 
 const layoutData = useLayoutData()
-const { simulatorState, uiServerConfigurations } = layoutData
+const { getTemplates, simulatorState, uiServerConfigurations } = layoutData
 
 const uiServerIndex = ref(getFromLocalStorage<number>(UI_SERVER_CONFIGURATION_INDEX_KEY, 0))
 
@@ -144,6 +144,10 @@ const handleUIServerChange = (nextIndex: number): void => {
 const confirmingStopSim = ref(false)
 
 const showAddDialog = ref(false)
+
+watch(showAddDialog, open => {
+  if (open) getTemplates()
+})
 const showSetUrlDialog = ref<null | {
   chargingStationId: string
   hashId: string
