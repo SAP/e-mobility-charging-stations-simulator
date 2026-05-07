@@ -1,8 +1,8 @@
 name: Sandcastle
 
 on:
-  # schedule:
-  #   - cron: '0 2 * * 1'
+  schedule:
+    - cron: '0 22 * * *'
   workflow_dispatch:
 
 concurrency:
