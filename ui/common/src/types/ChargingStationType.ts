@@ -23,12 +23,30 @@ export enum OCPP16AvailabilityType {
   OPERATIVE = 'Operative',
 }
 
+export enum OCPP16ChargePointErrorCode {
+  CONNECTOR_LOCK_FAILURE = 'ConnectorLockFailure',
+  EV_COMMUNICATION_ERROR = 'EVCommunicationError',
+  GROUND_FAILURE = 'GroundFailure',
+  HIGH_TEMPERATURE = 'HighTemperature',
+  INTERNAL_ERROR = 'InternalError',
+  LOCAL_LIST_CONFLICT = 'LocalListConflict',
+  NO_ERROR = 'NoError',
+  OTHER_ERROR = 'OtherError',
+  OVER_CURRENT_FAILURE = 'OverCurrentFailure',
+  OVER_VOLTAGE = 'OverVoltage',
+  POWER_METER_FAILURE = 'PowerMeterFailure',
+  POWER_SWITCH_FAILURE = 'PowerSwitchFailure',
+  READER_FAILURE = 'ReaderFailure',
+  RESET_FAILURE = 'ResetFailure',
+  UNDER_VOLTAGE = 'UnderVoltage',
+  WEAK_SIGNAL = 'WeakSignal',
+}
+
 export enum OCPP16ChargePointStatus {
   AVAILABLE = 'Available',
   CHARGING = 'Charging',
   FAULTED = 'Faulted',
   FINISHING = 'Finishing',
-  OCCUPIED = 'Occupied',
   PREPARING = 'Preparing',
   RESERVED = 'Reserved',
   SUSPENDED_EV = 'SuspendedEV',
@@ -85,6 +103,14 @@ export enum OCPP16RequestCommand {
   START_TRANSACTION = 'StartTransaction',
   STATUS_NOTIFICATION = 'StatusNotification',
   STOP_TRANSACTION = 'StopTransaction',
+}
+
+export enum OCPP20ConnectorStatusEnumType {
+  AVAILABLE = 'Available',
+  FAULTED = 'Faulted',
+  OCCUPIED = 'Occupied',
+  RESERVED = 'Reserved',
+  UNAVAILABLE = 'Unavailable',
 }
 
 export enum OCPP20IdTokenEnumType {
@@ -172,7 +198,7 @@ export type AvailabilityType = OCPP16AvailabilityType
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse
 
-export type ChargePointStatus = OCPP16ChargePointStatus
+export type ChargePointStatus = OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType
 
 export interface ChargingStationData extends JsonObject {
   automaticTransactionGenerator?: ATGConfiguration
@@ -285,6 +311,7 @@ export interface ConnectorStatus extends JsonObject {
   availability: AvailabilityType
   bootStatus?: ChargePointStatus
   energyActiveImportRegisterValue?: number // In Wh
+  errorCode?: OCPP16ChargePointErrorCode
   idTagAuthorized?: boolean
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string

@@ -5,6 +5,17 @@
       { 'modern-connector--active': connector.transactionStarted === true },
     ]"
   >
+    <SetConnectorStatusDialog
+      v-if="showSetConnectorStatus"
+      :charging-station-id="chargingStationId"
+      :connector-id="connectorId"
+      :current-error-code="connector.errorCode"
+      :current-status="connector.status"
+      :evse-id="evseId"
+      :hash-id="hashId"
+      :ocpp-version="ocppVersion"
+      @close="showSetConnectorStatus = false"
+    />
     <div class="modern-connector__gutter">
       <span class="modern-connector__id">
         {{ identifier }}
@@ -48,9 +59,27 @@
     </div>
     <div class="modern-connector__content">
       <div class="modern-connector__meta">
-        <StatePill :variant="statusVariant">
+        <button
+          type="button"
+          :class="['modern-pill', 'modern-pill--editable', `modern-pill--${statusVariant}`]"
+          :title="statusTooltip"
+          :aria-label="`Connector status: ${connector.status ?? 'unknown'}. Click to change.`"
+          aria-haspopup="dialog"
+          @click="openSetConnectorStatus"
+        >
           {{ connector.status ?? 'unknown' }}
-        </StatePill>
+          <svg
+            viewBox="0 0 28 28"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          </svg>
+        </button>
         <StatePill
           v-if="connector.locked === true"
           variant="warn"
@@ -154,15 +183,20 @@
 </template>
 
 <script setup lang="ts">
-import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
-
-import { computed } from 'vue'
+import {
+  type ConnectorStatus,
+  OCPP16ChargePointErrorCode,
+  type OCPPVersion,
+  type Status,
+} from 'ui-common'
+import { computed, ref } from 'vue'
 
 import { WH_PER_KWH } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 import { getConnectorStatusVariant } from '@/shared/utils/stationStatus.js'
 
 import ActionButton from './ActionButton.vue'
+import SetConnectorStatusDialog from './dialogs/SetConnectorStatusDialog.vue'
 import StatePill from './StatePill.vue'
 
 const props = defineProps<{
@@ -203,7 +237,18 @@ const identifier = computed(() =>
   props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
 )
 
+const showSetConnectorStatus = ref(false)
+
 const statusVariant = computed(() => getConnectorStatusVariant(props.connector.status))
+
+const statusTooltip = computed(() => {
+  const status = props.connector.status ?? 'unknown'
+  const errorCode = props.connector.errorCode
+  if (errorCode != null && errorCode !== OCPP16ChargePointErrorCode.NO_ERROR) {
+    return `${status} (${errorCode})`
+  }
+  return status
+})
 
 // Effectively locked when explicitly locked OR transaction active (physical lock engages).
 const effectiveLocked = computed(
@@ -240,6 +285,10 @@ const toggleAtg = (): void => {
 
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)
+}
+
+const openSetConnectorStatus = (): void => {
+  showSetConnectorStatus.value = true
 }
 
 const openStartTransaction = (): void => {

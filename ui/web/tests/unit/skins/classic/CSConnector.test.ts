@@ -3,7 +3,13 @@
  * @description Unit tests for classic skin CSConnector component — connector row rendering and actions.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { type ConnectorStatus, OCPP16ChargePointStatus, OCPPVersion } from 'ui-common'
+import {
+  type ConnectorStatus,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+  OCPPVersion,
+} from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { uiClientKey } from '@/core/index.js'
@@ -173,7 +179,6 @@ describe('CSConnector', () => {
       lockProps.on?.()
       await flushPromises()
       expect(mockClient.lockConnector).toHaveBeenCalled()
-      expect(wrapper.emitted('need-refresh')).toHaveLength(1)
     })
 
     it('should call unlockConnector', async () => {
@@ -253,6 +258,51 @@ describe('CSConnector', () => {
       failProps.on?.()
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalled()
+    })
+
+    it('should render OCPP 1.6 status options by default', () => {
+      const wrapper = mountConnector()
+      const selects = wrapper.findAll('select.connector-status-select')
+      const statusSelect = selects[0]
+      const options = statusSelect.findAll('option')
+      expect(options.length).toBe(Object.values(OCPP16ChargePointStatus).length)
+    })
+
+    it('should render OCPP 2.0.x status options for OCPP 2.0.1 station', () => {
+      const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_201 })
+      const selects = wrapper.findAll('select.connector-status-select')
+      const statusSelect = selects[0]
+      const options = statusSelect.findAll('option')
+      expect(options.length).toBe(Object.values(OCPP20ConnectorStatusEnumType).length)
+    })
+
+    it('should hide error code select for OCPP 2.0.x', () => {
+      const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_201 })
+      const selects = wrapper.findAll('select.connector-status-select')
+      expect(selects.length).toBe(1)
+    })
+
+    it('should show error code select for OCPP 1.6', () => {
+      const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_16 })
+      const selects = wrapper.findAll('select.connector-status-select')
+      expect(selects.length).toBe(2)
+      const errorOptions = selects[1].findAll('option')
+      expect(errorOptions.length).toBe(Object.values(OCPP16ChargePointErrorCode).length)
+    })
+
+    it('should call setConnectorStatus on status change', async () => {
+      const wrapper = mountConnector()
+      const selects = wrapper.findAll('select.connector-status-select')
+      await selects[0].setValue(OCPP16ChargePointStatus.FAULTED)
+      await flushPromises()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        1,
+        OCPP16ChargePointStatus.FAULTED,
+        undefined,
+        OCPPVersion.VERSION_16,
+        OCPP16ChargePointErrorCode.NO_ERROR
+      )
     })
   })
 

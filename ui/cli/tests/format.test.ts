@@ -1,7 +1,11 @@
 import chalk from 'chalk'
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import { OCPP16AvailabilityType, OCPP16ChargePointStatus } from 'ui-common'
+import {
+  OCPP16AvailabilityType,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+} from 'ui-common'
 
 import {
   formatConnectors,
@@ -116,7 +120,7 @@ await describe('format helpers', async () => {
                   connectorId: 2,
                   connectorStatus: {
                     availability: OCPP16AvailabilityType.OPERATIVE,
-                    status: OCPP16ChargePointStatus.OCCUPIED,
+                    status: OCPP20ConnectorStatusEnumType.OCCUPIED,
                   },
                 },
               ],

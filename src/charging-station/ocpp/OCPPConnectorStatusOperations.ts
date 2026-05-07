@@ -5,6 +5,7 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
+  type OCPP16ChargePointErrorCode,
   OCPPVersion,
   RequestCommand,
   type StatusNotificationRequest,
@@ -30,6 +31,7 @@ export const sendAndSetConnectorStatus = async (
   const params = commandParams as Record<string, unknown>
   const connectorId = params.connectorId as number
   const status = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
+  const errorCode = params.errorCode as OCPP16ChargePointErrorCode | undefined
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   if (connectorStatus == null) {
     return
@@ -42,6 +44,7 @@ export const sendAndSetConnectorStatus = async (
     >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
   }
   connectorStatus.status = status
+  connectorStatus.errorCode = errorCode
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
     ...connectorStatus,

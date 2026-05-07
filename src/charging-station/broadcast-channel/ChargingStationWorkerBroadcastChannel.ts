@@ -35,6 +35,7 @@ import {
   ResponseStatus,
   StandardParametersKey,
   type StartTransactionResponse,
+  type StatusNotificationRequest,
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
@@ -47,7 +48,7 @@ import {
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
-import { buildMeterValue, OCPP20ServiceUtils } from '../ocpp/index.js'
+import { buildMeterValue, OCPP20ServiceUtils, sendAndSetConnectorStatus } from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -218,10 +219,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         BroadcastChannelProcedureName.START_TRANSACTION,
         this.passthrough(RequestCommand.START_TRANSACTION),
       ],
-      [
-        BroadcastChannelProcedureName.STATUS_NOTIFICATION,
-        this.passthrough(RequestCommand.STATUS_NOTIFICATION),
-      ],
+      [BroadcastChannelProcedureName.STATUS_NOTIFICATION, this.handleStatusNotification.bind(this)],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
@@ -441,6 +439,26 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         ...requestPayload,
       } as MeterValuesRequest,
       this.requestParams
+    )
+  }
+
+  private async handleStatusNotification (
+    requestPayload?: BroadcastChannelRequestPayload
+  ): Promise<void> {
+    if (requestPayload?.connectorId == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorId' field is required`
+      )
+    }
+    const payload = requestPayload as Record<string, unknown>
+    if (payload.connectorStatus == null && payload.status == null) {
+      throw new BaseError(
+        `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorStatus' or 'status' field is required`
+      )
+    }
+    await sendAndSetConnectorStatus(
+      this.chargingStation,
+      requestPayload as unknown as StatusNotificationRequest
     )
   }
 

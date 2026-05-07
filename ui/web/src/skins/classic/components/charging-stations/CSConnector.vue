@@ -61,14 +61,49 @@
         :on="() => startAutomaticTransactionGenerator()"
         on-label="Start ATG"
       />
+      <select
+        v-model="selectedStatus"
+        class="connector-status-select"
+        :aria-label="`Set status for connector ${connectorId}`"
+        @change="applyConnectorStatus"
+      >
+        <option
+          v-for="s in statusOptions"
+          :key="s"
+          :value="s"
+        >
+          {{ s }}
+        </option>
+      </select>
+      <select
+        v-if="!isOCPP20x(ocppVersion)"
+        v-model="selectedErrorCode"
+        class="connector-status-select"
+        :aria-label="`Set error code for connector ${connectorId}`"
+        @change="applyConnectorStatus"
+      >
+        <option
+          v-for="e in errorCodeOptions"
+          :key="e"
+          :value="e"
+        >
+          {{ e }}
+        </option>
+      </select>
     </td>
   </tr>
 </template>
 
 <script setup lang="ts">
-import type { ConnectorStatus, OCPPVersion, Status } from 'ui-common'
+import type { ChargePointStatus, ConnectorStatus, OCPPVersion, Status } from 'ui-common'
 
-import { computed } from 'vue'
+import {
+  isOCPP20x,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+} from 'ui-common'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core/index.js'
@@ -88,23 +123,54 @@ const props = defineProps<{
   ocppVersion?: OCPPVersion
 }>()
 
-const emit = defineEmits<{ 'need-refresh': [] }>()
+defineEmits<{ 'need-refresh': [] }>()
 
 const $router = useRouter()
 
 const {
   lockConnector,
+  setConnectorStatus,
   startATG: startAutomaticTransactionGenerator,
   stopATG: stopAutomaticTransactionGenerator,
   stopTransaction: doStopTransaction,
   unlockConnector,
 } = useConnectorActions({
   connectorId: computed(() => props.connectorId),
+  evseId: computed(() => props.evseId),
   hashId: computed(() => props.hashId),
-  onRefresh: () => emit('need-refresh'),
+  ocppVersion: computed(() => props.ocppVersion),
 })
+
+const statusOptions = computed(() =>
+  isOCPP20x(props.ocppVersion)
+    ? Object.values(OCPP20ConnectorStatusEnumType)
+    : Object.values(OCPP16ChargePointStatus)
+)
+const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
+const selectedStatus = ref<ChargePointStatus>(
+  isOCPP20x(props.ocppVersion)
+    ? ((props.connector.status as OCPP20ConnectorStatusEnumType | undefined) ??
+        OCPP20ConnectorStatusEnumType.AVAILABLE)
+    : ((props.connector.status as OCPP16ChargePointStatus | undefined) ??
+        OCPP16ChargePointStatus.AVAILABLE)
+)
+const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)
+
+watch(
+  () => props.connector.status,
+  newStatus => {
+    if (newStatus != null) {
+      selectedStatus.value = newStatus
+    }
+  }
+)
 
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)
+}
+
+const applyConnectorStatus = (): void => {
+  const errorCode = isOCPP20x(props.ocppVersion) ? undefined : selectedErrorCode.value
+  setConnectorStatus(selectedStatus.value, undefined, errorCode)
 }
 </script>

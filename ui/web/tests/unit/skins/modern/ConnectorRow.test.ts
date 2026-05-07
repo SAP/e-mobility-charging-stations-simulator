@@ -6,6 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import {
   OCPP16AvailabilityType,
   OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   type Status,
 } from 'ui-common'
@@ -82,7 +83,7 @@ describe('ConnectorRow', () => {
     it.each<[string, string]>([
       [OCPP16ChargePointStatus.AVAILABLE, 'modern-pill--ok'],
       [OCPP16ChargePointStatus.CHARGING, 'modern-pill--warn'],
-      [OCPP16ChargePointStatus.OCCUPIED, 'modern-pill--warn'],
+      [OCPP20ConnectorStatusEnumType.OCCUPIED, 'modern-pill--warn'],
       [OCPP16ChargePointStatus.PREPARING, 'modern-pill--warn'],
       [OCPP16ChargePointStatus.FAULTED, 'modern-pill--err'],
       [OCPP16ChargePointStatus.UNAVAILABLE, 'modern-pill--err'],

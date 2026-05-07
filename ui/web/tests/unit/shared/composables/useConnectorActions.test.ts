@@ -1,10 +1,10 @@
 /**
  * @file Tests for useConnectorActions composable
  * @description Verifies connector-level actions (stop transaction, lock/unlock, ATG start/stop),
- *   pending state guards, toast notifications, and onRefresh callback invocation.
+ *   pending state guards, toast notifications, and action dispatching.
  */
 import { flushPromises } from '@vue/test-utils'
-import { OCPPVersion } from 'ui-common'
+import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { toastMock } from '../../../setup.js'
@@ -269,35 +269,92 @@ describe('useConnectorActions', () => {
     })
   })
 
-  describe('onRefresh', () => {
-    it('should call onRefresh callback after successful action', async () => {
-      const onRefresh = vi.fn()
-      const [{ lockConnector }] = withSetup(() =>
-        useConnectorActions({ connectorId, hashId, onRefresh })
-      )
-      lockConnector()
+  describe('setConnectorStatus', () => {
+    it('should call uiClient.setConnectorStatus with hashId, connectorId, and status', async () => {
+      const [{ setConnectorStatus }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
+      setConnectorStatus(OCPP16ChargePointStatus.FAULTED)
       await flushPromises()
-      expect(onRefresh).toHaveBeenCalledOnce()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        hashId,
+        connectorId,
+        OCPP16ChargePointStatus.FAULTED,
+        undefined,
+        undefined,
+        undefined
+      )
     })
 
-    it('should not call onRefresh on failure', async () => {
-      const onRefresh = vi.fn()
-      mockClient.lockConnector.mockRejectedValueOnce(new Error('fail'))
-      const [{ lockConnector }] = withSetup(() =>
-        useConnectorActions({ connectorId, hashId, onRefresh })
+    it('should pass evseId when provided', async () => {
+      const evseId = 2
+      const [{ setConnectorStatus }] = withSetup(() =>
+        useConnectorActions({ connectorId, evseId, hashId })
       )
-      lockConnector()
+      setConnectorStatus(OCPP16ChargePointStatus.AVAILABLE)
       await flushPromises()
-      expect(onRefresh).not.toHaveBeenCalled()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        hashId,
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        evseId,
+        undefined,
+        undefined
+      )
     })
-  })
 
-  describe('pending state initialization', () => {
-    it('should initialize all pending keys to false', () => {
-      const [{ pending }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
-      expect(pending.atg).toBe(false)
-      expect(pending.lock).toBe(false)
-      expect(pending.stopTx).toBe(false)
+    it('should show success toast on successful status update', async () => {
+      const [{ setConnectorStatus }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
+      setConnectorStatus(OCPP16ChargePointStatus.UNAVAILABLE)
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith('Connector status updated')
+    })
+
+    it('should show error toast on failure', async () => {
+      mockClient.setConnectorStatus.mockRejectedValueOnce(new Error('fail'))
+      const [{ setConnectorStatus }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
+      setConnectorStatus(OCPP16ChargePointStatus.FAULTED)
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith('Error setting connector status')
+    })
+
+    it('should set pending.setStatus while action is in progress', async () => {
+      let resolveAction!: (value: unknown) => void
+      mockClient.setConnectorStatus.mockReturnValueOnce(
+        new Promise(resolve => {
+          resolveAction = resolve
+        })
+      )
+      const [{ pending, setConnectorStatus }] = withSetup(() =>
+        useConnectorActions({ connectorId, hashId })
+      )
+      setConnectorStatus(OCPP16ChargePointStatus.FAULTED)
+      expect(pending.setStatus).toBe(true)
+      resolveAction({ status: 'success' })
+      await flushPromises()
+      expect(pending.setStatus).toBe(false)
+    })
+
+    it('should pass ocppVersion when provided', async () => {
+      const [{ setConnectorStatus }] = withSetup(() =>
+        useConnectorActions({ connectorId, hashId, ocppVersion: OCPPVersion.VERSION_201 })
+      )
+      setConnectorStatus(OCPP20ConnectorStatusEnumType.AVAILABLE)
+      await flushPromises()
+      expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(
+        hashId,
+        connectorId,
+        OCPP20ConnectorStatusEnumType.AVAILABLE,
+        undefined,
+        OCPPVersion.VERSION_201,
+        undefined
+      )
+    })
+
+    it('should invoke onSuccess callback after successful status update', async () => {
+      const onSuccess = vi.fn()
+      const [{ setConnectorStatus }] = withSetup(() => useConnectorActions({ connectorId, hashId }))
+      setConnectorStatus(OCPP16ChargePointStatus.AVAILABLE, onSuccess)
+      await flushPromises()
+      expect(onSuccess).toHaveBeenCalledOnce()
     })
   })
 

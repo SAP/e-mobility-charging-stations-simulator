@@ -1,5 +1,13 @@
 import { Command, Option } from 'commander'
-import { buildAuthorizePayload, OCPPVersion, ProcedureName, type RequestPayload } from 'ui-common'
+import {
+  buildAuthorizePayload,
+  buildStatusNotificationPayload,
+  type ChargePointStatus,
+  type OCPP16ChargePointErrorCode,
+  OCPPVersion,
+  ProcedureName,
+  type RequestPayload,
+} from 'ui-common'
 
 import {
   handleActionErrors,
@@ -180,29 +188,20 @@ export const createOcppCommands = (program: Command): Command => {
               program,
               hashIds
             )
-            switch (ocppVersion) {
-              case OCPPVersion.VERSION_16:
-                if (options.errorCode == null) {
-                  throw new Error('--error-code is required for OCPP 1.6 stations')
+            if (ocppVersion === OCPPVersion.VERSION_16 && options.errorCode == null) {
+              throw new Error('--error-code is required for OCPP 1.6 stations')
+            }
+            payload = {
+              ...buildStatusNotificationPayload(
+                options.connectorId,
+                options.status as ChargePointStatus,
+                ocppVersion,
+                {
+                  errorCode: options.errorCode as OCPP16ChargePointErrorCode | undefined,
+                  evseId: options.evseId,
                 }
-                payload = {
-                  connectorId: options.connectorId,
-                  errorCode: options.errorCode,
-                  status: options.status,
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              case OCPPVersion.VERSION_20:
-              case OCPPVersion.VERSION_201:
-                payload = {
-                  connectorId: options.connectorId,
-                  connectorStatus: options.status,
-                  ...(options.evseId != null && { evseId: options.evseId }),
-                  ...buildHashIdsPayload(resolvedHashIds),
-                }
-                break
-              default:
-                throw new Error(UNSUPPORTED_OCPP_VERSION_ERROR)
+              ),
+              ...buildHashIdsPayload(resolvedHashIds),
             }
             await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
           } else {

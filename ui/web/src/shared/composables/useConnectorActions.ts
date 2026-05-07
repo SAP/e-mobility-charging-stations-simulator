@@ -1,9 +1,10 @@
 /**
  * @file useConnectorActions.ts
- * @description Headless composable for connector-level actions (stop transaction, lock/unlock, ATG toggle).
+ * @description Headless composable for connector-level actions (stop transaction, lock/unlock, ATG toggle, set connector status).
  */
 import type { OCPPVersion } from 'ui-common'
 
+import { type ChargePointStatus, type OCPP16ChargePointErrorCode } from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
@@ -12,8 +13,9 @@ import { useAsyncAction } from '@/shared/composables/useAsyncAction.js'
 
 interface ConnectorActionsDeps {
   connectorId: MaybeRefOrGetter<number>
+  evseId?: MaybeRefOrGetter<number | undefined>
   hashId: MaybeRefOrGetter<string>
-  onRefresh?: () => void
+  ocppVersion?: MaybeRefOrGetter<OCPPVersion | undefined>
 }
 
 /**
@@ -23,7 +25,12 @@ interface ConnectorActionsDeps {
  */
 export function useConnectorActions (deps: ConnectorActionsDeps): {
   lockConnector: () => void
-  pending: Readonly<{ atg: boolean; lock: boolean; stopTx: boolean }>
+  pending: Readonly<{ atg: boolean; lock: boolean; setStatus: boolean; stopTx: boolean }>
+  setConnectorStatus: (
+    status: ChargePointStatus,
+    onSuccess?: () => void,
+    errorCode?: OCPP16ChargePointErrorCode
+  ) => void
   startATG: () => void
   stopATG: () => void
   stopTransaction: (
@@ -34,13 +41,17 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
 } {
   const $uiClient = useUIClient()
   const $toast = useToast()
-  const { pending, run } = useAsyncAction(
-    { atg: false, lock: false, stopTx: false },
-    deps.onRefresh
-  )
+  const { pending, run } = useAsyncAction({
+    atg: false,
+    lock: false,
+    setStatus: false,
+    stopTx: false,
+  })
 
   const hashId = computed(() => toValue(deps.hashId))
   const connectorId = computed(() => toValue(deps.connectorId))
+  const evseId = computed(() => toValue(deps.evseId))
+  const ocppVersion = computed(() => toValue(deps.ocppVersion))
 
   const stopTransaction = (
     transactionId: null | number | string | undefined,
@@ -94,9 +105,31 @@ export function useConnectorActions (deps: ConnectorActionsDeps): {
     })
   }
 
+  const setConnectorStatus = (
+    status: ChargePointStatus,
+    onSuccess?: () => void,
+    errorCode?: OCPP16ChargePointErrorCode
+  ): void => {
+    run('setStatus', {
+      action: () =>
+        $uiClient.setConnectorStatus(
+          hashId.value,
+          connectorId.value,
+          status,
+          evseId.value,
+          ocppVersion.value,
+          errorCode
+        ),
+      errorMsg: 'Error setting connector status',
+      onSuccess,
+      successMsg: 'Connector status updated',
+    })
+  }
+
   return {
     lockConnector,
     pending: readonly(pending),
+    setConnectorStatus,
     startATG,
     stopATG,
     stopTransaction,

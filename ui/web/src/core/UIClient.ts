@@ -3,10 +3,13 @@ import type { OCPPVersion } from 'ui-common'
 import {
   buildAuthorizePayload,
   buildStartTransactionPayload,
+  buildStatusNotificationPayload,
   buildStopTransactionPayload,
+  type ChargePointStatus,
   type ChargingStationOptions,
   createBrowserWsAdapter,
   isOCPP20x,
+  type OCPP16ChargePointErrorCode,
   ProcedureName,
   type RequestPayload,
   type ResponsePayload,
@@ -132,6 +135,23 @@ export class UIClient {
     this.abortConnection = abort
     this.client.connect().catch((error: unknown) => {
       console.error('WebSocket connect failed', error)
+    })
+  }
+
+  public async setConnectorStatus (
+    hashId: string,
+    connectorId: number,
+    status: ChargePointStatus,
+    evseId?: number,
+    ocppVersion?: OCPPVersion,
+    errorCode?: OCPP16ChargePointErrorCode
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
+      hashIds: [hashId],
+      ...buildStatusNotificationPayload(connectorId, status, ocppVersion, {
+        errorCode,
+        evseId,
+      }),
     })
   }
 

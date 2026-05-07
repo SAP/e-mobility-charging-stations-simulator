@@ -873,6 +873,32 @@ html[data-skin='modern'] #app {
   border-color: color-mix(in srgb, var(--color-state-err) 35%, transparent);
 }
 
+/* `color: inherit` overrides the UA <button> colour so the variant tint applies. */
+.modern-pill--editable {
+  color: inherit;
+  cursor: pointer;
+  gap: 6px;
+  transition: border-color var(--skin-transition);
+}
+
+.modern-pill--editable:hover {
+  border-color: currentColor;
+}
+
+.modern-pill--editable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.modern-pill--editable > svg {
+  width: 1.6cap;
+  height: 1.6cap;
+  flex-shrink: 0;
+  /* Negative block margins shrink the icon's outer box back to the text's
+   * line-height so the larger icon overflows visually without expanding the pill. */
+  margin-block: calc((1em - 1.6cap) / 2);
+}
+
 /* ── Buttons — flat Material-style ─────────────────────────────────── */
 .modern-btn {
   display: inline-flex;

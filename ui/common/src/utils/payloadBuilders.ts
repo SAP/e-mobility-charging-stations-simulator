@@ -1,4 +1,6 @@
 import {
+  type ChargePointStatus,
+  type OCPP16ChargePointErrorCode,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20TransactionEventEnumType,
@@ -72,6 +74,38 @@ export function buildStartTransactionPayload (
   return {
     payload: { connectorId, ...(options?.idTag != null && { idTag: options.idTag }) },
     procedureName: ProcedureName.START_TRANSACTION,
+  }
+}
+
+/**
+ * Builds a StatusNotification request payload adapted to the station's OCPP version.
+ * @param connectorId - Connector identifier
+ * @param status - Connector status value (OCPP 1.6 or 2.0.x)
+ * @param ocppVersion - Target OCPP version
+ * @param options - Optional fields
+ * @param options.errorCode - OCPP 1.6 error code (ignored for 2.0.x)
+ * @param options.evseId - EVSE identifier (relevant for both versions, auto-resolved by backend if omitted)
+ * @returns StatusNotification request payload
+ */
+export function buildStatusNotificationPayload (
+  connectorId: number,
+  status: ChargePointStatus,
+  ocppVersion: OCPPVersion | undefined,
+  options?: { errorCode?: OCPP16ChargePointErrorCode; evseId?: number }
+): RequestPayload {
+  if (isOCPP20x(ocppVersion)) {
+    return {
+      connectorId,
+      connectorStatus: status,
+      ...(options?.evseId != null && { evseId: options.evseId }),
+    }
+  }
+  assertOCPP16OrUndefined(ocppVersion)
+  return {
+    connectorId,
+    status,
+    ...(options?.errorCode != null && { errorCode: options.errorCode }),
+    ...(options?.evseId != null && { evseId: options.evseId }),
   }
 }
 

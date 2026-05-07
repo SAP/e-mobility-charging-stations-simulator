@@ -21,6 +21,7 @@ export interface MockUIClient {
   openConnection: ReturnType<typeof vi.fn>
   registerWSEventListener: ReturnType<typeof vi.fn>
   setConfiguration: ReturnType<typeof vi.fn>
+  setConnectorStatus: ReturnType<typeof vi.fn>
   setSupervisionUrl: ReturnType<typeof vi.fn>
   simulatorState: ReturnType<typeof vi.fn>
   startAutomaticTransactionGenerator: ReturnType<typeof vi.fn>
@@ -150,6 +151,7 @@ export function createMockUIClient (): MockUIClient {
     openConnection: vi.fn().mockResolvedValue(successResponse),
     registerWSEventListener: vi.fn(),
     setConfiguration: vi.fn(),
+    setConnectorStatus: vi.fn().mockResolvedValue(successResponse),
     setSupervisionUrl: vi.fn().mockResolvedValue(successResponse),
     simulatorState: vi
       .fn()

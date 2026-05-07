@@ -18,7 +18,6 @@ import {
 } from '../../../charging-station/index.js'
 import { BaseError } from '../../../exception/index.js'
 import {
-  ChargePointErrorCode,
   type ConfigurationKey,
   type GenericResponse,
   type MeterValuesRequest,
@@ -131,7 +130,7 @@ export class OCPP16ServiceUtils {
   ): OCPP16StatusNotificationRequest {
     return {
       connectorId: commandParams.connectorId,
-      errorCode: ChargePointErrorCode.NO_ERROR,
+      errorCode: commandParams.errorCode,
       status: commandParams.status,
     } satisfies OCPP16StatusNotificationRequest
   }
