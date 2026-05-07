@@ -6,8 +6,8 @@ import { execFileAsync, toErrorMessage } from '../../utils.js'
 import { runValidation } from '../../validation.js'
 
 /**
- *
- * @param spec
+ * @param spec - Task specification with optional plan metadata.
+ * @returns Formatted plan context string for the actor prompt, or empty if no context.
  */
 function buildPlanContext (spec: TaskSpec): string {
   const parts: string[] = []

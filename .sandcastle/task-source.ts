@@ -300,16 +300,16 @@ const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
 const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
 
 /**
- *
- * @param value
+ * @param value - Value to check.
+ * @returns Whether value is a valid confidence level.
  */
 function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' {
   return typeof value === 'string' && VALID_CONFIDENCE.has(value)
 }
 
 /**
- *
- * @param value
+ * @param value - Value to check.
+ * @returns Whether value is a valid issue type.
  */
 function isValidIssueType (value: unknown): value is 'bug-fix' | 'feature' | 'refactor' {
   return typeof value === 'string' && VALID_ISSUE_TYPES.has(value)
