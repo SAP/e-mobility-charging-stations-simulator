@@ -115,8 +115,6 @@ export interface TaskSpec {
   issueType?: 'bug-fix' | 'feature' | 'refactor'
   /** Label names associated with the task (platform-specific, optional). */
   labels?: string[]
-  /** Raw planner agent output that produced this task selection. */
-  plannerOutput?: string
   /** Planner's hypothesis about what is broken/missing — for actor to validate, not follow blindly. */
   rootCauseHypothesis?: string
   /** Task title. */
