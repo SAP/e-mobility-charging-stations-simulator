@@ -198,7 +198,7 @@ export type AvailabilityType = OCPP16AvailabilityType
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse
 
-export type ChargePointStatus = OCPP16ChargePointStatus
+export type ChargePointStatus = OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType
 
 export interface ChargingStationData extends JsonObject {
   automaticTransactionGenerator?: ATGConfiguration
