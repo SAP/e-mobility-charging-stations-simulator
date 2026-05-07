@@ -133,6 +133,15 @@ describe('useAddStationsForm', () => {
     expect(mockAddChargingStations).toHaveBeenCalledWith('boundary.json', 0, expect.any(Object))
   })
 
+  it('should not update renderTemplates when refetch returns identical template list', async () => {
+    const { formState } = useAddStationsForm()
+    const before = formState.value.renderTemplates
+    // Assign a new array with the same content to $templates
+    mockTemplates.value = ['template1.json', 'template2.json']
+    await nextTick()
+    expect(formState.value.renderTemplates).toBe(before)
+  })
+
   it('should update renderTemplates reactively when templates ref changes', async () => {
     const { formState } = useAddStationsForm()
     const initial = formState.value.renderTemplates

@@ -50,6 +50,7 @@ describe('Dialogs', () => {
      * @returns Mounted wrapper for AddStationsDialog
      */
     function mountDialog (templates = ['template-A.json', 'template-B.json']) {
+      mockClient.listTemplates.mockResolvedValue({ status: ResponseStatus.SUCCESS, templates })
       return mount(AddStationsDialog, {
         global: {
           provide: {

@@ -39,8 +39,13 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
   const formState = ref<AddStationsFormState>(makeInitialState())
   const pending = ref(false)
 
-  watch($templates, () => {
-    formState.value.renderTemplates = randomUUID()
+  watch($templates, (newTemplates, oldTemplates) => {
+    // Only regenerate the key when the template list content actually changes.
+    // This prevents destroying the user's current selection when an in-flight
+    // refresh returns the same set of templates.
+    if (!templatesEqual(newTemplates, oldTemplates)) {
+      formState.value.renderTemplates = randomUUID()
+    }
   })
 
   /** Resets form state to initial defaults. */
@@ -126,4 +131,15 @@ function makeInitialState (): AddStationsFormState {
  */
 function nonEmpty (value: string): string | undefined {
   return value.length > 0 ? value : undefined
+}
+
+/**
+ * Returns `true` when both arrays have identical length and values in the same order.
+ * @param a - The incoming template list.
+ * @param b - The previous template list.
+ * @returns Whether the two arrays are deeply equal.
+ */
+function templatesEqual (a: string[], b: string[] | undefined): boolean {
+  if (a.length !== b?.length) return false
+  return a.every((v, i) => v === b[i])
 }

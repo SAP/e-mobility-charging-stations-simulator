@@ -123,7 +123,7 @@ import CSTable from './components/charging-stations/CSTable.vue'
 import Container from './components/ClassicContainer.vue'
 
 const layoutData = useLayoutData()
-const { simulatorStarted, simulatorState, uiServerConfigurations } = layoutData
+const { getTemplates, simulatorStarted, simulatorState, uiServerConfigurations } = layoutData
 
 const startSimulatorLabel = computed(
   () =>
@@ -183,6 +183,8 @@ watch(
   name => {
     if (name === ROUTE_NAMES.CHARGING_STATIONS) {
       refresh()
+    } else if (name === ROUTE_NAMES.ADD_CHARGING_STATIONS) {
+      getTemplates()
     }
   }
 )
