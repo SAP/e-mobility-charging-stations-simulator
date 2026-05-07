@@ -91,6 +91,8 @@ import Modal from '../ModernModal.vue'
 const props = defineProps<{
   chargingStationId: string
   connectorId: number
+  currentErrorCode?: OCPP16ChargePointErrorCode
+  currentStatus?: ChargePointStatus
   evseId?: number
   hashId: string
   ocppVersion?: OCPPVersion
@@ -106,13 +108,15 @@ const statusOptions = computed(() =>
 
 const errorCodeOptions = Object.values(OCPP16ChargePointErrorCode)
 
-const selectedStatus = ref<ChargePointStatus>(
-  isOCPP20x(props.ocppVersion)
-    ? OCPP20ConnectorStatusEnumType.AVAILABLE
-    : OCPP16ChargePointStatus.AVAILABLE
-)
+const defaultStatus = isOCPP20x(props.ocppVersion)
+  ? OCPP20ConnectorStatusEnumType.AVAILABLE
+  : OCPP16ChargePointStatus.AVAILABLE
 
-const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)
+const selectedStatus = ref<ChargePointStatus>(props.currentStatus ?? defaultStatus)
+
+const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(
+  props.currentErrorCode ?? OCPP16ChargePointErrorCode.NO_ERROR
+)
 
 const { pending: pendingState, setConnectorStatus } = useConnectorActions({
   connectorId: computed(() => props.connectorId),
