@@ -1,10 +1,10 @@
 import {
   type OCPP16ChargePointErrorCode,
   type OCPP16ChargePointStatus,
+  type OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20TransactionEventEnumType,
-  type OCPP20ConnectorStatusEnumType,
   OCPPVersion,
 } from '../types/ChargingStationType.js'
 import { ProcedureName, type RequestPayload } from '../types/UIProtocol.js'

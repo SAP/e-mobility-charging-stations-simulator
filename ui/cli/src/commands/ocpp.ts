@@ -190,12 +190,10 @@ export const createOcppCommands = (program: Command): Command => {
               throw new Error('--error-code is required for OCPP 1.6 stations')
             }
             payload = {
-              ...buildStatusNotificationPayload(
-                options.connectorId,
-                options.status,
-                ocppVersion,
-                { errorCode: options.errorCode, evseId: options.evseId }
-              ),
+              ...buildStatusNotificationPayload(options.connectorId, options.status, ocppVersion, {
+                errorCode: options.errorCode,
+                evseId: options.evseId,
+              }),
               ...buildHashIdsPayload(resolvedHashIds),
             }
             await runAction(program, ProcedureName.STATUS_NOTIFICATION, payload, undefined, config)
