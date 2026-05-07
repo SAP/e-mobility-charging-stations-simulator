@@ -12,7 +12,7 @@ import {
   MAX_ISSUES_FETCH,
   MAX_PRS_FETCH,
   MAX_TITLE_LENGTH,
-  PLANNER_MODEL,
+  AGENT_PLANNER_MODEL,
   TASK_TIMEOUT_MS,
 } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
@@ -96,7 +96,7 @@ export class GithubIssueSource implements TaskSource {
       let plan: Awaited<ReturnType<typeof sandcastle.run>>
       try {
         plan = await sandcastle.run({
-          agent: sandcastle.opencode(PLANNER_MODEL),
+          agent: sandcastle.opencode(AGENT_PLANNER_MODEL),
           completionSignal: COMPLETION_SIGNAL,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
           maxIterations: 1,

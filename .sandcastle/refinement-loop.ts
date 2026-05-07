@@ -13,8 +13,9 @@ import type {
 } from './types.js'
 
 import {
+  AGENT_ACTOR_MODEL,
+  AGENT_CRITIC_MODEL,
   AGENT_IDLE_TIMEOUT_S,
-  AGENT_MODEL,
   COMPLETION_SIGNAL,
   CONTEXT_HASH_RADIUS,
   HASH_PREFIX_LENGTH,
@@ -432,7 +433,7 @@ async function executeRound (
   let implementerResult: Awaited<ReturnType<typeof sandbox.run>>
   try {
     implementerResult = await sandbox.run({
-      agent: sandcastle.opencode(AGENT_MODEL),
+      agent: sandcastle.opencode(AGENT_ACTOR_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: budget,
@@ -592,7 +593,7 @@ async function runCritic (
   signal?: AbortSignal
 ): Promise<Finding[] | null> {
   let critic = await sandbox.run({
-    agent: sandcastle.opencode(AGENT_MODEL),
+    agent: sandcastle.opencode(AGENT_CRITIC_MODEL),
     completionSignal: COMPLETION_SIGNAL,
     idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
     maxIterations: 1,
@@ -607,7 +608,7 @@ async function runCritic (
   if (findings === null) {
     console.warn(`  #${spec.id}: Critic parse failed. Retrying.`)
     critic = await sandbox.run({
-      agent: sandcastle.opencode(AGENT_MODEL),
+      agent: sandcastle.opencode(AGENT_CRITIC_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,

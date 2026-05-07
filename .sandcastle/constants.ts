@@ -3,7 +3,9 @@ import { existsSync } from 'node:fs'
 
 export const AGENT_IDLE_TIMEOUT_S = 300
 
-export const AGENT_MODEL = 'github-copilot/claude-sonnet-4.6'
+export const AGENT_ACTOR_MODEL = 'github-copilot/claude-sonnet-4.6'
+
+export const AGENT_CRITIC_MODEL = 'github-copilot/claude-sonnet-4.6'
 
 export const BRANCH_PREFIX = 'agent/issue'
 
@@ -61,7 +63,7 @@ export const MAX_CRITIC_ROUNDS = 10
 
 export const MAX_TITLE_LENGTH = 200
 
-export const PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
+export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
 
 export const PUSH_TIMEOUT_MS = 60_000
 
