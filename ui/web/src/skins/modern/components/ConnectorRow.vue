@@ -72,12 +72,11 @@
             aria-hidden="true"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
+            stroke-width="3"
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
           </svg>
         </button>
         <StatePill

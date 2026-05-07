@@ -876,10 +876,8 @@ html[data-skin='modern'] #app {
 .modern-pill--editable {
   font: inherit;
   cursor: pointer;
-  gap: 4px;
-  transition:
-    border-color var(--skin-transition),
-    opacity var(--skin-transition);
+  gap: 3px;
+  transition: border-color var(--skin-transition);
 }
 
 .modern-pill--editable:hover {
@@ -892,16 +890,9 @@ html[data-skin='modern'] #app {
 }
 
 .modern-pill__edit-icon {
-  width: 10px;
-  height: 10px;
-  opacity: 0;
-  transition: opacity var(--skin-transition);
+  width: 8px;
+  height: 8px;
   flex-shrink: 0;
-}
-
-.modern-pill--editable:hover .modern-pill__edit-icon,
-.modern-pill--editable:focus-visible .modern-pill__edit-icon {
-  opacity: 1;
 }
 
 /* ── Buttons — flat Material-style ─────────────────────────────────── */
