@@ -1,10 +1,10 @@
-# Critic Agent
+# Critic Agent: Reviewer
 
 Analyze the implementation on branch `{{BRANCH}}` and produce structured findings.
 
 ## Task
 
-Run `git diff main...{{BRANCH}}` to see all changes. Examine the diff carefully. For each issue found, produce a structured finding.
+Run `git diff {{BASE_BRANCH}}...{{BRANCH}}` to see all changes. Examine the diff carefully. For each issue found, produce a structured finding.
 
 Read `AGENTS.md`, `CONTRIBUTING.md` and `.serena/memories/code_style_conventions`.
 

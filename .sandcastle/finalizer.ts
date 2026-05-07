@@ -2,28 +2,26 @@ import crypto from 'node:crypto'
 
 import type { LoopResult, TaskSpec } from './types.js'
 
-import {
-  GIT_TIMEOUT_MS,
-  MAX_STDERR_CHARS,
-  PUSH_TIMEOUT_MS,
-  VALIDATION_COMMAND,
-  VALIDATION_TIMEOUT_MS,
-} from './constants.js'
+import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
 
 /**
- * Fetches origin/main and rebases the current branch onto it.
+ * Fetches the base branch and rebases the current branch onto it.
  * On failure, aborts the rebase cleanly.
  * @param cwd - Working directory (worktree path).
+ * @param baseBranch - Target branch for rebase.
  * @returns `true` if rebase succeeded, `false` otherwise.
  */
-export async function attemptRebase (cwd: string): Promise<boolean> {
+export async function attemptRebase (cwd: string, baseBranch = GIT_BASE_BRANCH): Promise<boolean> {
   try {
-    await execFileAsync('git', ['fetch', 'origin', 'main'], {
+    await execFileAsync('git', ['fetch', 'origin', baseBranch], {
       cwd,
       timeout: GIT_TIMEOUT_MS,
     })
-    await execFileAsync('git', ['rebase', 'origin/main'], { cwd, timeout: GIT_TIMEOUT_MS })
+    await execFileAsync('git', ['rebase', `origin/${baseBranch}`], {
+      cwd,
+      timeout: GIT_TIMEOUT_MS,
+    })
     return true
   } catch {
     try {
@@ -40,14 +38,16 @@ export async function attemptRebase (cwd: string): Promise<boolean> {
  * @param spec - The task specification.
  * @param loopResult - The result from the refinement loop.
  * @param validationPassed - Whether the validation suite passed.
- * @param rebaseSucceeded - Whether the rebase onto main succeeded.
+ * @param rebaseSucceeded - Whether the rebase onto the base branch succeeded.
+ * @param baseBranch - Target branch for PR base.
  * @returns Object with `isDraft` flag and `prArgs` string array.
  */
 export function buildPrArgs (
   spec: TaskSpec,
   loopResult: LoopResult,
   validationPassed: boolean,
-  rebaseSucceeded: boolean
+  rebaseSucceeded: boolean,
+  baseBranch = GIT_BASE_BRANCH
 ): { isDraft: boolean; prArgs: string[] } {
   const converged = loopResult.status === 'converged'
   const isDraft = !converged || !validationPassed
@@ -59,13 +59,14 @@ export function buildPrArgs (
     ? '\n\n⚠️ Validation did not pass. Manual review required.'
     : ''
   const rebaseNote = !rebaseSucceeded
-    ? '\n\n⚠️ Rebase failed. Branch is not rebased onto main.'
+    ? `\n\n⚠️ Rebase failed. Branch is not rebased onto ${baseBranch}.`
     : ''
 
   const validationCheck = validationPassed ? '- [x]' : '- [ ]'
-  const commitPrefix = spec.labels.includes('enhancement')
+  const labels = spec.labels ?? []
+  const commitPrefix = labels.includes('enhancement')
     ? 'feat'
-    : spec.labels.includes('bug')
+    : labels.includes('bug')
       ? 'fix'
       : 'chore'
   const cleanTitle = spec.title.replace(/^\[(?:FEATURE|BUG|FIX|CHORE)\]\s*/i, '')
@@ -85,46 +86,35 @@ export function buildPrArgs (
     '--head',
     spec.branch,
     '--base',
-    'main',
+    baseBranch,
     '--title',
     prTitle,
     '--body',
     prBody,
-    ...spec.labels.flatMap(label => ['--label', label]),
+    ...labels.flatMap(label => ['--label', label]),
   ]
 
   return { isDraft, prArgs }
 }
 
 /**
- * Extracts stderr from a caught error, truncated to 500 chars.
- * @param err - The caught error value.
- * @returns Stderr string or empty string if unavailable.
- */
-export function extractStderr (err: unknown): string {
-  return err instanceof Error && 'stderr' in err
-    ? String((err as { stderr: unknown }).stderr).slice(0, MAX_STDERR_CHARS)
-    : ''
-}
-
-/**
  * Pushes the branch to origin. When rebase succeeded, uses force-with-lease
  * with a rescue-branch fallback. When rebase was aborted, does a plain push.
- * @param cwd - Working directory (worktree path).
  * @param spec - The task specification.
+ * @param cwd - Working directory (worktree path).
  * @param rebaseSucceeded - Whether the preceding rebase completed successfully.
  * @returns `true` if the primary push succeeded, `false` otherwise.
  */
 export async function pushBranch (
-  cwd: string,
   spec: TaskSpec,
+  cwd: string,
   rebaseSucceeded: boolean
 ): Promise<boolean> {
   if (rebaseSucceeded) {
     try {
       await execFileAsync('git', ['push', '--force-with-lease', 'origin', 'HEAD'], {
         cwd,
-        timeout: PUSH_TIMEOUT_MS,
+        timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {
@@ -136,7 +126,7 @@ export async function pushBranch (
           ['push', 'origin', `HEAD:refs/heads/rescue/${spec.branch}-${suffix}`],
           {
             cwd,
-            timeout: PUSH_TIMEOUT_MS,
+            timeout: GIT_PUSH_TIMEOUT_MS,
           }
         )
         console.warn(
@@ -153,7 +143,7 @@ export async function pushBranch (
     try {
       await execFileAsync('git', ['push', '-u', 'origin', 'HEAD'], {
         cwd,
-        timeout: PUSH_TIMEOUT_MS,
+        timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {
@@ -161,31 +151,5 @@ export async function pushBranch (
       console.warn(`  #${spec.id}: git push failed after rebase abort: ${pushMsg}`)
       return false
     }
-  }
-}
-
-/**
- * Runs the full validation suite.
- * @param cwd - Working directory (worktree path).
- * @param spec - Optional task specification (used for logging).
- * @returns `true` if validation passed, `false` otherwise.
- */
-export async function runValidation (cwd: string, spec?: TaskSpec): Promise<boolean> {
-  try {
-    await execFileAsync('sh', ['-c', VALIDATION_COMMAND], {
-      cwd,
-      maxBuffer: 8 * 1024 * 1024,
-      timeout: VALIDATION_TIMEOUT_MS,
-    })
-    return true
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'killed' in err && (err as { killed: boolean }).killed) {
-      const label = spec ? `#${spec.id}` : 'mid-loop'
-      console.warn(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
-    } else if (spec) {
-      const stderr = extractStderr(err)
-      console.warn(`  #${spec.id}: Validation failed.${stderr ? `\n${stderr}` : ''}`)
-    }
-    return false
   }
 }

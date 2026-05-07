@@ -1,11 +1,12 @@
-import type { StrategyConfig } from '../../types.js'
+import type { FinalizationConfig, LoopStrategy } from '../../types.js'
 
 import { GIT_TIMEOUT_MS } from '../../constants.js'
-import { attemptRebase, buildPrArgs, pushBranch, runValidation } from '../../finalizer.js'
+import { attemptRebase, buildPrArgs, pushBranch } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
+import { runValidation } from '../../validation.js'
 
-export const implementStrategy: StrategyConfig = {
-  actorPromptFile: './.sandcastle/strategies/implement/implement-prompt.md',
+export const implementStrategy: FinalizationConfig & LoopStrategy = {
+  actorPromptFile: './.sandcastle/strategies/implement/actor-prompt.md',
 
   buildActorArgs: (spec, findings) => ({
     BRANCH: spec.branch,
@@ -15,9 +16,9 @@ export const implementStrategy: StrategyConfig = {
     TASK_ID: spec.id,
   }),
 
-  buildCriticArgs: (spec, nonce) => ({
+  buildCriticArgs: (spec, baseBranch) => ({
+    BASE_BRANCH: baseBranch,
     BRANCH: spec.branch,
-    NONCE: nonce,
   }),
 
   criticPromptFile: './.sandcastle/strategies/implement/critic-prompt.md',
@@ -26,20 +27,26 @@ export const implementStrategy: StrategyConfig = {
     const cwd = sandbox.worktreePath
     let validationPassed = await runValidation(cwd, spec)
 
-    const rebaseSucceeded = await attemptRebase(cwd)
+    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch)
     if (rebaseSucceeded && validationPassed) {
       if (!(await runValidation(cwd, spec))) {
         validationPassed = false
       }
     }
 
-    const pushSucceeded = await pushBranch(cwd, spec, rebaseSucceeded)
+    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded)
     if (!pushSucceeded) {
       console.error(`  #${spec.id}: Push failed; cannot create PR without remote branch.`)
       return { success: false }
     }
 
-    const { isDraft, prArgs } = buildPrArgs(spec, loopResult, validationPassed, rebaseSucceeded)
+    const { isDraft, prArgs } = buildPrArgs(
+      spec,
+      loopResult,
+      validationPassed,
+      rebaseSucceeded,
+      loopResult.baseBranch
+    )
 
     let prCreated = false
     try {

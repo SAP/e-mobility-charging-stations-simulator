@@ -5,23 +5,23 @@ import type { TaskSpec } from './types.js'
 
 import { ConcurrencyPool } from './concurrency-pool.js'
 import {
-  BRANCH_PREFIX,
+  AGENT_ITERATION_BUDGET,
+  AGENT_MAX_CRITIC_ROUNDS,
+  AGENT_TASK_TIMEOUT_MS,
   DOCKER_IMAGE,
   DOCKER_MOUNTS,
-  ISSUE_LABEL,
-  ITERATION_BUDGET_PER_ROUND,
-  MAX_CRITIC_ROUNDS,
+  GIT_BRANCH_PREFIX,
+  GITHUB_ISSUE_LABEL,
   MAX_PARALLEL,
-  TASK_TIMEOUT_MS,
 } from './constants.js'
 import { runRefinementLoop } from './refinement-loop.js'
 import { implementStrategy } from './strategies/implement/strategy.js'
 import { GithubIssueSource } from './task-source.js'
 
 const source = new GithubIssueSource({
-  branchPrefix: BRANCH_PREFIX,
+  branchPrefix: GIT_BRANCH_PREFIX,
   dockerImage: DOCKER_IMAGE,
-  label: ISSUE_LABEL,
+  label: GITHUB_ISSUE_LABEL,
 })
 
 let tasks: TaskSpec[]
@@ -43,8 +43,8 @@ if (tasks.length === 0) {
       pool.run(async () => {
         const ac = new AbortController()
         const timer = setTimeout(() => {
-          ac.abort(new Error(`Task #${spec.id} timed out after ${String(TASK_TIMEOUT_MS)}ms`))
-        }, TASK_TIMEOUT_MS)
+          ac.abort(new Error(`Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`))
+        }, AGENT_TASK_TIMEOUT_MS)
         timer.unref()
 
         try {
@@ -58,8 +58,8 @@ if (tasks.length === 0) {
           })
 
           const loopResult = await runRefinementLoop(spec, sandbox, implementStrategy, {
-            iterationBudget: ITERATION_BUDGET_PER_ROUND,
-            maxRounds: MAX_CRITIC_ROUNDS,
+            iterationBudget: AGENT_ITERATION_BUDGET,
+            maxRounds: AGENT_MAX_CRITIC_ROUNDS,
             postLoopValidationRetry: true,
             signal: ac.signal,
           })
