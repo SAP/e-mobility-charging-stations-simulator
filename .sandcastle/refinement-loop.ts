@@ -24,9 +24,9 @@ import {
   GIT_BASE_BRANCH,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
-import { runValidation } from './finalizer.js'
 import { parseFindingsSafe } from './types.js'
 import { execFileAsync } from './utils.js'
+import { runValidation } from './validation.js'
 
 /** Options for configuring the refinement loop. */
 export interface RefinementLoopOptions {
@@ -596,7 +596,7 @@ async function runCritic (
     idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
     maxIterations: 1,
     name: `Critic #${spec.id} R${String(round)}`,
-    promptArgs: strategy.buildCriticArgs(spec, nonce, baseBranch),
+    promptArgs: { ...strategy.buildCriticArgs(spec, baseBranch), NONCE: nonce },
     promptFile: strategy.criticPromptFile,
     signal,
   })
@@ -611,7 +611,7 @@ async function runCritic (
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,
       name: `Critic #${spec.id} R${String(round)} retry`,
-      promptArgs: strategy.buildCriticArgs(spec, nonce, baseBranch),
+      promptArgs: { ...strategy.buildCriticArgs(spec, baseBranch), NONCE: nonce },
       promptFile: strategy.criticPromptFile,
       signal,
     })

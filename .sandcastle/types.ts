@@ -3,7 +3,7 @@ import type * as sandcastle from '@ai-hero/sandcastle'
 import { z } from 'zod'
 
 /** Zod schema for a single critic finding. */
-export const FindingSchema = z.object({
+const FindingSchema = z.object({
   category: z.string(),
   confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   description: z.string(),
@@ -70,8 +70,8 @@ export type LoopStrategy = {
   actorPromptFile: string
   /** Builds promptArgs for the actor run from task spec and previous findings. */
   buildActorArgs: (spec: TaskSpec, findings: Finding[]) => Record<string, string>
-  /** Builds promptArgs for the critic run from task spec, nonce, and base branch. */
-  buildCriticArgs: (spec: TaskSpec, nonce: string, baseBranch: string) => Record<string, string>
+  /** Builds promptArgs for the critic run from task spec and base branch. */
+  buildCriticArgs: (spec: TaskSpec, baseBranch: string) => Record<string, string>
   /** Model for the critic agent. Defaults to AGENT_CRITIC_MODEL constant. */
   criticModel?: string
   /** Path to the critic prompt file. */

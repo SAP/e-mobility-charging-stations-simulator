@@ -17,6 +17,10 @@ export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
 
 export const AGENT_TASK_TIMEOUT_MS = 6_000_000
 
+export const COMPLETION_SIGNAL = '<promise>COMPLETE</promise>'
+
+export const MAX_PARALLEL = 5
+
 // ── Git ──────────────────────────────────────────────────────────────────────
 
 export const GIT_BASE_BRANCH = 'main'
@@ -65,25 +69,19 @@ export const GITHUB_MAX_ISSUES_FETCH = 50
 
 export const GITHUB_MAX_PRS_FETCH = 200
 
+export const MAX_TITLE_CHARS = 200
+
 // ── Validation ───────────────────────────────────────────────────────────────
+
+export const MAX_STDERR_CHARS = 500
 
 export const VALIDATION_COMMAND =
   'pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test'
 
 export const VALIDATION_TIMEOUT_MS = 300_000
 
-// ── Limits & Protocol ────────────────────────────────────────────────────────
-
-export const COMPLETION_SIGNAL = '<promise>COMPLETE</promise>'
+// ── Deduplication ────────────────────────────────────────────────────────────
 
 export const CONTEXT_HASH_RADIUS = 3
 
-export const GRACE_TIMEOUT_MS = 30_000
-
 export const HASH_PREFIX_LENGTH = 16
-
-export const MAX_PARALLEL = 5
-
-export const MAX_STDERR_CHARS = 500
-
-export const MAX_TITLE_CHARS = 200

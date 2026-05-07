@@ -1,8 +1,9 @@
 import type { FinalizationConfig, LoopStrategy } from '../../types.js'
 
 import { GIT_TIMEOUT_MS } from '../../constants.js'
-import { attemptRebase, buildPrArgs, pushBranch, runValidation } from '../../finalizer.js'
+import { attemptRebase, buildPrArgs, pushBranch } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
+import { runValidation } from '../../validation.js'
 
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
   actorPromptFile: './.sandcastle/strategies/implement/implement-prompt.md',
@@ -15,10 +16,9 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     TASK_ID: spec.id,
   }),
 
-  buildCriticArgs: (spec, nonce, baseBranch) => ({
+  buildCriticArgs: (spec, baseBranch) => ({
     BASE_BRANCH: baseBranch,
     BRANCH: spec.branch,
-    NONCE: nonce,
   }),
 
   criticPromptFile: './.sandcastle/strategies/implement/critic-prompt.md',

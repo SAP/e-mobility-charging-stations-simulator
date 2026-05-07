@@ -2,14 +2,7 @@ import crypto from 'node:crypto'
 
 import type { LoopResult, TaskSpec } from './types.js'
 
-import {
-  GIT_BASE_BRANCH,
-  GIT_PUSH_TIMEOUT_MS,
-  GIT_TIMEOUT_MS,
-  MAX_STDERR_CHARS,
-  VALIDATION_COMMAND,
-  VALIDATION_TIMEOUT_MS,
-} from './constants.js'
+import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
 
 /**
@@ -105,17 +98,6 @@ export function buildPrArgs (
 }
 
 /**
- * Extracts stderr from a caught error, truncated to 500 chars.
- * @param err - The caught error value.
- * @returns Stderr string or empty string if unavailable.
- */
-export function extractStderr (err: unknown): string {
-  return err instanceof Error && 'stderr' in err
-    ? String((err as { stderr: unknown }).stderr).slice(0, MAX_STDERR_CHARS)
-    : ''
-}
-
-/**
  * Pushes the branch to origin. When rebase succeeded, uses force-with-lease
  * with a rescue-branch fallback. When rebase was aborted, does a plain push.
  * @param spec - The task specification.
@@ -169,31 +151,5 @@ export async function pushBranch (
       console.warn(`  #${spec.id}: git push failed after rebase abort: ${pushMsg}`)
       return false
     }
-  }
-}
-
-/**
- * Runs the full validation suite.
- * @param cwd - Working directory (worktree path).
- * @param spec - Optional task specification (used for logging).
- * @returns `true` if validation passed, `false` otherwise.
- */
-export async function runValidation (cwd: string, spec?: TaskSpec): Promise<boolean> {
-  try {
-    await execFileAsync('sh', ['-c', VALIDATION_COMMAND], {
-      cwd,
-      maxBuffer: 8 * 1024 * 1024,
-      timeout: VALIDATION_TIMEOUT_MS,
-    })
-    return true
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'killed' in err && (err as { killed: boolean }).killed) {
-      const label = spec ? `#${spec.id}` : 'mid-loop'
-      console.warn(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
-    } else if (spec) {
-      const stderr = extractStderr(err)
-      console.warn(`  #${spec.id}: Validation failed.${stderr ? `\n${stderr}` : ''}`)
-    }
-    return false
   }
 }
