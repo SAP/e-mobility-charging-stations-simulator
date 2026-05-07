@@ -9,6 +9,8 @@
       v-if="showSetConnectorStatus"
       :charging-station-id="chargingStationId"
       :connector-id="connectorId"
+      :current-error-code="connector.errorCode"
+      :current-status="connector.status"
       :evse-id="evseId"
       :hash-id="hashId"
       :ocpp-version="ocppVersion"
@@ -67,8 +69,7 @@
         >
           {{ connector.status ?? 'unknown' }}
           <svg
-            class="modern-pill__edit-icon"
-            viewBox="0 0 24 24"
+            viewBox="0 0 28 28"
             aria-hidden="true"
             fill="none"
             stroke="currentColor"
