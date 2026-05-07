@@ -17,7 +17,7 @@ export const AGENT_ITERATION_BUDGET = 50
 
 export const AGENT_MAX_CRITIC_ROUNDS = 10
 
-export const AGENT_PLANNER_EFFORT = 'low'
+export const AGENT_PLANNER_EFFORT = 'high'
 
 export const AGENT_PLANNER_MODEL = 'github-copilot/claude-opus-4.6'
 
