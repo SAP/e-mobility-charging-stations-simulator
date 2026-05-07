@@ -5,6 +5,7 @@ import { join, sep } from 'node:path'
 
 import type {
   Finding,
+  LoopContext,
   LoopResult,
   LoopStatus,
   LoopStrategy,
@@ -20,6 +21,7 @@ import {
   AGENT_MAX_CRITIC_ROUNDS,
   COMPLETION_SIGNAL,
   CONTEXT_HASH_RADIUS,
+  GIT_BASE_BRANCH,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
 import { runValidation } from './finalizer.js'
@@ -28,13 +30,15 @@ import { execFileAsync } from './utils.js'
 
 /** Options for configuring the refinement loop. */
 export interface RefinementLoopOptions {
+  /** Base branch for commit counting (default: 'main'). */
+  baseBranch?: string
   /** Budget of iterations per round (flat constant applied to every round). */
   iterationBudget?: number
   /** Maximum number of implement↔critic rounds. */
   maxRounds?: number
   /** Optional callback invoked after each round completes. */
   onRoundComplete?: (round: number, findings: Finding[]) => void
-  /** When true, run one extra implementer attempt if post-loop validation fails. */
+  /** When true, run one extra actor attempt if post-loop validation fails. */
   postLoopValidationRetry?: boolean
   /** Abort signal for cooperative cancellation (kills in-flight agent subprocesses). */
   signal?: AbortSignal
@@ -67,7 +71,7 @@ interface HashInput {
  * Groups the per-round identifiers needed for regression detection and rollback.
  */
 interface RatchetContext {
-  /** SHA of HEAD before the implementer ran (used for rollback). */
+  /** SHA of HEAD before the actor ran (used for rollback). */
   readonly beforeSha: string
   /** Working directory for git operations. */
   readonly cwd: string
@@ -79,6 +83,8 @@ interface RatchetContext {
 
 /** Resolved loop options with defaults applied. */
 interface ResolvedLoopOptions {
+  /** Base branch for commit counting. */
+  baseBranch: string
   /** Iteration budget per round. */
   budget: number
   /** Maximum number of rounds. */
@@ -89,9 +95,9 @@ interface ResolvedLoopOptions {
 
 /** Result of a single implement↔critic round. */
 interface RoundResult {
-  /** SHA of HEAD before the implementer ran. */
+  /** SHA of HEAD before the actor ran. */
   beforeSha: string
-  /** Number of commits made by the implementer. */
+  /** Number of commits made by the actor. */
   commits: number
   /** Parsed findings from the critic, or null on critic failure. */
   findings: Finding[] | null
@@ -111,8 +117,11 @@ export async function runRefinementLoop (
   strategy: LoopStrategy,
   opts?: RefinementLoopOptions
 ): Promise<LoopResult> {
-  const { budget, maxRounds, onRoundComplete } = resolveLoopOptions(opts)
+  const { baseBranch, budget, maxRounds, onRoundComplete } = resolveLoopOptions(opts)
   const signal = opts?.signal
+  const validate = strategy.validate ?? ((cwd: string, s: TaskSpec) => runValidation(cwd, s))
+
+  const ctx: LoopContext = { baseBranch, sandbox, signal, spec, strategy }
 
   const seenKeys = new Set<string>()
   let lastFindings: Finding[] = []
@@ -131,7 +140,7 @@ export async function runRefinementLoop (
       `  #${spec.id} round ${String(round)}/${String(maxRounds)} (budget: ${String(budget)})`
     )
 
-    const result = await executeRound(spec, sandbox, round, budget, lastFindings, strategy, signal)
+    const result = await executeRound(ctx, round, budget, lastFindings)
 
     const earlyExit = checkEarlyExit(spec, round, result, totalCommits)
     if (earlyExit !== null) {
@@ -143,14 +152,14 @@ export async function runRefinementLoop (
     if (result.findings === null) break
     const findings: Finding[] = result.findings
 
-    if (result.commits > 0 && (await runValidation(sandbox.worktreePath, spec))) {
+    if (result.commits > 0 && (await validate(sandbox.worktreePath, spec))) {
       totalCommits += result.commits
       status = 'converged'
       break
     }
 
     const cwd = sandbox.worktreePath
-    const newFindings = await deduplicateFindings(findings, seenKeys, cwd)
+    const newFindings = await deduplicateFindings(findings, cwd, seenKeys)
 
     console.log(
       `  #${spec.id}: ${String(findings.length)} findings, ${String(newFindings.length)} new`
@@ -197,22 +206,14 @@ export async function runRefinementLoop (
   // Post-loop validation retry (if enabled)
   if (opts?.postLoopValidationRetry && totalCommits > 0 && status !== 'converged') {
     signal?.throwIfAborted()
-    const validationPassed = await runValidation(sandbox.worktreePath, spec)
+    const validationPassed = await validate(sandbox.worktreePath, spec)
     if (validationPassed) {
       status = 'converged'
     } else if (roundsCompleted < maxRounds) {
-      const result = await executeRound(
-        spec,
-        sandbox,
-        roundsCompleted + 1,
-        budget,
-        lastFindings,
-        strategy,
-        signal
-      )
+      const result = await executeRound(ctx, roundsCompleted + 1, budget, lastFindings)
       if (result.commits > 0) {
         totalCommits += result.commits
-        if (await runValidation(sandbox.worktreePath, spec)) {
+        if (await validate(sandbox.worktreePath, spec)) {
           status = 'converged'
         }
       }
@@ -220,10 +221,10 @@ export async function runRefinementLoop (
   }
 
   if (shouldResetToBest(status, bestSha)) {
-    totalCommits = await resetToBestState(sandbox.worktreePath, bestSha, totalCommits)
+    totalCommits = await resetToBestState(sandbox.worktreePath, bestSha, totalCommits, baseBranch)
   }
 
-  return { lastFindings, roundsCompleted, status, totalCommits }
+  return { baseBranch, lastFindings, roundsCompleted, status, totalCommits }
 }
 
 /**
@@ -375,14 +376,14 @@ async function computeFindingKey (
 /**
  * Filters findings by confidence and deduplicates against previously seen keys.
  * @param findings - Raw findings from the critic.
- * @param seenKeys - Set of previously seen dedup keys (mutated: new keys are added).
  * @param cwd - Working directory for context hashing.
+ * @param seenKeys - Set of previously seen dedup keys (mutated: new keys are added).
  * @returns Array of new, non-LOW-confidence findings.
  */
 async function deduplicateFindings (
   findings: Finding[],
-  seenKeys: Set<string>,
-  cwd: string
+  cwd: string,
+  seenKeys: Set<string>
 ): Promise<Finding[]> {
   const fileCache = new Map<string, string>()
   const keys = await Promise.all(findings.map(f => computeFindingKey(f, cwd, fileCache)))
@@ -400,25 +401,21 @@ async function deduplicateFindings (
 
 /**
  * Executes a single implement↔critic round.
- * @param spec - The task specification.
- * @param sandbox - The sandcastle sandbox instance.
+ * @param ctx - Loop context containing spec, sandbox, strategy, baseBranch, and signal.
  * @param round - Current round number (1-indexed).
- * @param budget - Iteration budget for the implementer.
- * @param lastFindings - Findings from the previous round to feed to the implementer.
- * @param strategy - Strategy config for prompt/arg customization.
- * @param signal - Abort signal for cooperative cancellation.
+ * @param budget - Iteration budget for the actor.
+ * @param lastFindings - Findings from the previous round to feed to the actor.
  * @returns The round result containing commits, findings, and the pre-round SHA.
  */
 async function executeRound (
-  spec: TaskSpec,
-  sandbox: SandboxInstance,
+  ctx: LoopContext,
   round: number,
   budget: number,
-  lastFindings: Finding[],
-  strategy: LoopStrategy,
-  signal?: AbortSignal
+  lastFindings: Finding[]
 ): Promise<RoundResult> {
-  // Capture SHA before implementer runs (for quality ratchet rollback)
+  const { sandbox, signal, spec, strategy } = ctx
+
+  // Capture SHA before actor runs (for quality ratchet rollback)
   let beforeSha = ''
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
@@ -429,15 +426,15 @@ async function executeRound (
     console.warn(`  #${spec.id}: Failed to capture HEAD SHA before round ${String(round)}.`)
   }
 
-  // Implementer
-  let implementerResult: Awaited<ReturnType<typeof sandbox.run>>
+  // Actor
+  let actorResult: Awaited<ReturnType<typeof sandbox.run>>
   try {
-    implementerResult = await sandbox.run({
-      agent: sandcastle.opencode(AGENT_ACTOR_MODEL),
+    actorResult = await sandbox.run({
+      agent: sandcastle.opencode(strategy.actorModel ?? AGENT_ACTOR_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: budget,
-      name: `Implementer #${spec.id} R${String(round)}`,
+      name: `Actor #${spec.id} R${String(round)}`,
       promptArgs: strategy.buildActorArgs(spec, lastFindings),
       promptFile: strategy.actorPromptFile,
       signal,
@@ -447,7 +444,7 @@ async function executeRound (
       throw err
     }
     const msg = err instanceof Error ? (err.stack ?? err.message) : String(err)
-    console.error(`  #${spec.id} R${String(round)}: Implementer threw: ${msg}`)
+    console.error(`  #${spec.id} R${String(round)}: Actor threw: ${msg}`)
     return { beforeSha, commits: 0, findings: null }
   }
 
@@ -455,7 +452,7 @@ async function executeRound (
   const nonce = crypto.randomBytes(4).toString('hex')
   let findings: Finding[] | null
   try {
-    findings = await runCritic(sandbox, spec, round, nonce, strategy, signal)
+    findings = await runCritic(ctx, round, nonce)
   } catch (err: unknown) {
     if (signal?.aborted === true) {
       throw err
@@ -465,7 +462,7 @@ async function executeRound (
     findings = null
   }
 
-  return { beforeSha, commits: implementerResult.commits.length, findings }
+  return { beforeSha, commits: actorResult.commits.length, findings }
 }
 
 /**
@@ -544,17 +541,21 @@ function parseFindings (stdout: string, nonce: string): Finding[] | null {
  * @param cwd - Working directory for git operations.
  * @param bestSha - The SHA to reset to.
  * @param currentCommits - Current total commits (fallback if recount fails).
+ * @param baseBranch - Base branch for commit counting.
  * @returns Updated total commit count.
  */
 async function resetToBestState (
   cwd: string,
   bestSha: string,
-  currentCommits: number
+  currentCommits: number,
+  baseBranch: string
 ): Promise<number> {
   if (!/^[0-9a-f]{40}$/.test(bestSha)) return currentCommits
   try {
     await execFileAsync('git', ['reset', '--hard', bestSha], { cwd })
-    const { stdout } = await execFileAsync('git', ['rev-list', '--count', 'main..HEAD'], { cwd })
+    const { stdout } = await execFileAsync('git', ['rev-list', '--count', `${baseBranch}..HEAD`], {
+      cwd,
+    })
     return parseInt(stdout.trim(), 10) || 0
   } catch {
     return currentCommits
@@ -568,6 +569,7 @@ async function resetToBestState (
  */
 function resolveLoopOptions (opts: RefinementLoopOptions | undefined): ResolvedLoopOptions {
   return {
+    baseBranch: opts?.baseBranch ?? GIT_BASE_BRANCH,
     budget: opts?.iterationBudget ?? AGENT_ITERATION_BUDGET,
     maxRounds: opts?.maxRounds ?? AGENT_MAX_CRITIC_ROUNDS,
     onRoundComplete: opts?.onRoundComplete ?? (() => undefined),
@@ -576,29 +578,25 @@ function resolveLoopOptions (opts: RefinementLoopOptions | undefined): ResolvedL
 
 /**
  * Runs the critic agent, retrying once on parse failure.
- * @param sandbox - The sandcastle sandbox instance.
- * @param spec - The task specification.
+ * @param ctx - Loop context containing spec, sandbox, strategy, baseBranch, and signal.
  * @param round - Current round number.
  * @param nonce - Unique nonce for parsing.
- * @param strategy - Strategy config for prompt/arg customization.
- * @param signal - Abort signal for cooperative cancellation.
  * @returns Parsed findings or null if both attempts failed.
  */
 async function runCritic (
-  sandbox: SandboxInstance,
-  spec: TaskSpec,
+  ctx: LoopContext,
   round: number,
-  nonce: string,
-  strategy: LoopStrategy,
-  signal?: AbortSignal
+  nonce: string
 ): Promise<Finding[] | null> {
+  const { baseBranch, sandbox, signal, spec, strategy } = ctx
+
   let critic = await sandbox.run({
-    agent: sandcastle.opencode(AGENT_CRITIC_MODEL),
+    agent: sandcastle.opencode(strategy.criticModel ?? AGENT_CRITIC_MODEL),
     completionSignal: COMPLETION_SIGNAL,
     idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
     maxIterations: 1,
     name: `Critic #${spec.id} R${String(round)}`,
-    promptArgs: strategy.buildCriticArgs(spec, nonce),
+    promptArgs: strategy.buildCriticArgs(spec, nonce, baseBranch),
     promptFile: strategy.criticPromptFile,
     signal,
   })
@@ -608,12 +606,12 @@ async function runCritic (
   if (findings === null) {
     console.warn(`  #${spec.id}: Critic parse failed. Retrying.`)
     critic = await sandbox.run({
-      agent: sandcastle.opencode(AGENT_CRITIC_MODEL),
+      agent: sandcastle.opencode(strategy.criticModel ?? AGENT_CRITIC_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,
       name: `Critic #${spec.id} R${String(round)} retry`,
-      promptArgs: strategy.buildCriticArgs(spec, nonce),
+      promptArgs: strategy.buildCriticArgs(spec, nonce, baseBranch),
       promptFile: strategy.criticPromptFile,
       signal,
     })

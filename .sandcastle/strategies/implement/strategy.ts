@@ -15,7 +15,8 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     TASK_ID: spec.id,
   }),
 
-  buildCriticArgs: (spec, nonce) => ({
+  buildCriticArgs: (spec, nonce, baseBranch) => ({
+    BASE_BRANCH: baseBranch,
     BRANCH: spec.branch,
     NONCE: nonce,
   }),
@@ -26,20 +27,26 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     const cwd = sandbox.worktreePath
     let validationPassed = await runValidation(cwd, spec)
 
-    const rebaseSucceeded = await attemptRebase(cwd)
+    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch)
     if (rebaseSucceeded && validationPassed) {
       if (!(await runValidation(cwd, spec))) {
         validationPassed = false
       }
     }
 
-    const pushSucceeded = await pushBranch(cwd, spec, rebaseSucceeded)
+    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded)
     if (!pushSucceeded) {
       console.error(`  #${spec.id}: Push failed; cannot create PR without remote branch.`)
       return { success: false }
     }
 
-    const { isDraft, prArgs } = buildPrArgs(spec, loopResult, validationPassed, rebaseSucceeded)
+    const { isDraft, prArgs } = buildPrArgs(
+      spec,
+      loopResult,
+      validationPassed,
+      rebaseSucceeded,
+      loopResult.baseBranch
+    )
 
     let prCreated = false
     try {

@@ -19,6 +19,8 @@ export const AGENT_TASK_TIMEOUT_MS = 6_000_000
 
 // ── Git ──────────────────────────────────────────────────────────────────────
 
+export const GIT_BASE_BRANCH = 'main'
+
 export const GIT_BRANCH_PREFIX = 'agent/issue'
 
 export const GIT_PUSH_TIMEOUT_MS = 60_000

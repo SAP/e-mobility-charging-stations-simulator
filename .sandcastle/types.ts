@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 /** Zod schema for a single critic finding. */
 export const FindingSchema = z.object({
-  category: z.enum(['security', 'logic', 'performance', 'architecture', 'style']),
+  category: z.string(),
   confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   description: z.string(),
   file: z.string(),
@@ -32,8 +32,19 @@ export type FinalizationConfig = {
 /** A single critic finding parsed from agent output. */
 export type Finding = z.infer<typeof FindingSchema>
 
+/** Invariant context for a refinement loop run. */
+export interface LoopContext {
+  readonly baseBranch: string
+  readonly sandbox: SandboxInstance
+  readonly signal?: AbortSignal
+  readonly spec: TaskSpec
+  readonly strategy: LoopStrategy
+}
+
 /** Result returned by the refinement loop. */
 export interface LoopResult {
+  /** Base branch used for this loop run. */
+  baseBranch: string
   /** Outstanding findings from the last round. */
   lastFindings: Finding[]
   /** Number of rounds completed. */
@@ -53,16 +64,22 @@ export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type LoopStrategy = {
-  /** Path to the actor (implementer) prompt file. */
+  /** Model for the actor agent. Defaults to AGENT_ACTOR_MODEL constant. */
+  actorModel?: string
+  /** Path to the actor prompt file. */
   actorPromptFile: string
   /** Builds promptArgs for the actor run from task spec and previous findings. */
   buildActorArgs: (spec: TaskSpec, findings: Finding[]) => Record<string, string>
-  /** Builds promptArgs for the critic run from task spec and nonce. */
-  buildCriticArgs: (spec: TaskSpec, nonce: string) => Record<string, string>
+  /** Builds promptArgs for the critic run from task spec, nonce, and base branch. */
+  buildCriticArgs: (spec: TaskSpec, nonce: string, baseBranch: string) => Record<string, string>
+  /** Model for the critic agent. Defaults to AGENT_CRITIC_MODEL constant. */
+  criticModel?: string
   /** Path to the critic prompt file. */
   criticPromptFile: string
   /** Optional custom convergence check. When omitted, default loop logic applies. */
   shouldConverge?: (findings: Finding[], round: number, totalCommits: number) => boolean
+  /** Optional mid-loop validation. Return true if work passes. When omitted, uses default validation command. */
+  validate?: (cwd: string, spec: TaskSpec) => Promise<boolean>
 }
 
 /** Type alias for a sandcastle sandbox instance. */
@@ -76,8 +93,8 @@ export interface TaskSpec {
   branch: string
   /** Task identifier (e.g. GitHub issue number as string). */
   id: string
-  /** Label names associated with the task. */
-  labels: string[]
+  /** Label names associated with the task (platform-specific, optional). */
+  labels?: string[]
   /** Task title. */
   title: string
 }
