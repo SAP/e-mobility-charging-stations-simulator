@@ -2,6 +2,9 @@ import { Command, Option } from 'commander'
 import {
   buildAuthorizePayload,
   buildStatusNotificationPayload,
+  type OCPP16ChargePointErrorCode,
+  type OCPP16ChargePointStatus,
+  type OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   ProcedureName,
   type RequestPayload,
@@ -190,8 +193,9 @@ export const createOcppCommands = (program: Command): Command => {
               throw new Error('--error-code is required for OCPP 1.6 stations')
             }
             payload = {
-              ...buildStatusNotificationPayload(options.connectorId, options.status, ocppVersion, {
-                errorCode: options.errorCode,
+              ...buildStatusNotificationPayload(options.connectorId,
+                options.status as OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType, ocppVersion, {
+                errorCode: options.errorCode as OCPP16ChargePointErrorCode | undefined,
                 evseId: options.evseId,
               }),
               ...buildHashIdsPayload(resolvedHashIds),

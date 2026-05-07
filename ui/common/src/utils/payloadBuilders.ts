@@ -90,9 +90,9 @@ export function buildStartTransactionPayload (
  */
 export function buildStatusNotificationPayload (
   connectorId: number,
-  status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType | string,
+  status: OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType,
   ocppVersion: OCPPVersion | undefined,
-  options?: { errorCode?: OCPP16ChargePointErrorCode | string; evseId?: number }
+  options?: { errorCode?: OCPP16ChargePointErrorCode; evseId?: number }
 ): RequestPayload {
   if (isOCPP20x(ocppVersion)) {
     return {
