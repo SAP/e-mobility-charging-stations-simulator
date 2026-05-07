@@ -50,7 +50,6 @@ if (tasks.length === 0) {
         try {
           await using sandbox = await sandcastle.createSandbox({
             branch: spec.branch,
-            copyToWorktree: ['node_modules'],
             hooks: {
               sandbox: { onSandboxReady: [{ command: 'pnpm install && pnpm run build' }] },
             },
