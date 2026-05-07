@@ -57,9 +57,29 @@
     </div>
     <div class="modern-connector__content">
       <div class="modern-connector__meta">
-        <StatePill :variant="statusVariant">
+        <button
+          type="button"
+          :class="['modern-pill', 'modern-pill--editable', `modern-pill--${statusVariant}`]"
+          :title="`${connector.status ?? 'unknown'} — click to change`"
+          :aria-label="`Connector status: ${connector.status ?? 'unknown'}. Click to change.`"
+          aria-haspopup="dialog"
+          @click="openSetConnectorStatus"
+        >
           {{ connector.status ?? 'unknown' }}
-        </StatePill>
+          <svg
+            class="modern-pill__edit-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
         <StatePill
           v-if="connector.locked === true"
           variant="warn"
@@ -156,12 +176,6 @@
           @click="toggleAtg"
         >
           {{ atgStatus?.start === true ? 'Stop ATG' : 'Start ATG' }}
-        </ActionButton>
-        <ActionButton
-          variant="chip"
-          @click="openSetConnectorStatus"
-        >
-          Set Status
         </ActionButton>
       </div>
     </div>

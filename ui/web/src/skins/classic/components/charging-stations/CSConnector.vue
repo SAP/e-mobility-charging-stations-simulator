@@ -80,6 +80,7 @@
         v-model="selectedErrorCode"
         class="connector-status-select"
         :aria-label="`Set error code for connector ${connectorId}`"
+        @change="applyConnectorStatus"
       >
         <option
           v-for="e in errorCodeOptions"
@@ -102,7 +103,7 @@ import {
   OCPP16ChargePointStatus,
   OCPP20ConnectorStatusEnumType,
 } from 'ui-common'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core/index.js'
@@ -154,6 +155,15 @@ const selectedStatus = ref<ChargePointStatus>(
         OCPP16ChargePointStatus.AVAILABLE)
 )
 const selectedErrorCode = ref<OCPP16ChargePointErrorCode>(OCPP16ChargePointErrorCode.NO_ERROR)
+
+watch(
+  () => props.connector.status,
+  newStatus => {
+    if (newStatus != null) {
+      selectedStatus.value = newStatus
+    }
+  }
+)
 
 const stopTransaction = (): void => {
   doStopTransaction(props.connector.transactionId, props.ocppVersion)

@@ -873,6 +873,37 @@ html[data-skin='modern'] #app {
   border-color: color-mix(in srgb, var(--color-state-err) 35%, transparent);
 }
 
+.modern-pill--editable {
+  font: inherit;
+  cursor: pointer;
+  gap: 4px;
+  transition:
+    border-color var(--skin-transition),
+    opacity var(--skin-transition);
+}
+
+.modern-pill--editable:hover {
+  border-color: currentColor;
+}
+
+.modern-pill--editable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.modern-pill__edit-icon {
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  transition: opacity var(--skin-transition);
+  flex-shrink: 0;
+}
+
+.modern-pill--editable:hover .modern-pill__edit-icon,
+.modern-pill--editable:focus-visible .modern-pill__edit-icon {
+  opacity: 1;
+}
+
 /* ── Buttons — flat Material-style ─────────────────────────────────── */
 .modern-btn {
   display: inline-flex;
