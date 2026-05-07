@@ -1,4 +1,3 @@
-import * as sandcastle from '@ai-hero/sandcastle'
 import crypto from 'node:crypto'
 import { readFile, realpath } from 'node:fs/promises'
 import { join, sep } from 'node:path'
@@ -25,7 +24,7 @@ import {
   HASH_PREFIX_LENGTH,
 } from './constants.js'
 import { parseFindingsSafe } from './types.js'
-import { execFileAsync } from './utils.js'
+import { agentProvider, execFileAsync } from './utils.js'
 import { runValidation } from './validation.js'
 
 /** Options for configuring the refinement loop. */
@@ -435,7 +434,7 @@ async function executeRound (
   let actorResult: Awaited<ReturnType<typeof sandbox.run>>
   try {
     actorResult = await sandbox.run({
-      agent: sandcastle.opencode(strategy.actorModel ?? AGENT_ACTOR_MODEL),
+      agent: agentProvider(strategy.actorModel ?? AGENT_ACTOR_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: budget,
@@ -598,7 +597,7 @@ async function runCritic (
   const { baseBranch, sandbox, signal, spec, strategy } = ctx
 
   let critic = await sandbox.run({
-    agent: sandcastle.opencode(strategy.criticModel ?? AGENT_CRITIC_MODEL),
+    agent: agentProvider(strategy.criticModel ?? AGENT_CRITIC_MODEL),
     completionSignal: COMPLETION_SIGNAL,
     idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
     maxIterations: 1,
@@ -613,7 +612,7 @@ async function runCritic (
   if (findings === null) {
     console.warn(`  #${spec.id}: Critic parse failed. Retrying.`)
     critic = await sandbox.run({
-      agent: sandcastle.opencode(strategy.criticModel ?? AGENT_CRITIC_MODEL),
+      agent: agentProvider(strategy.criticModel ?? AGENT_CRITIC_MODEL),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,
