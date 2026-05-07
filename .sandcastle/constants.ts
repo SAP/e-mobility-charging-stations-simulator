@@ -11,7 +11,7 @@ export const AGENT_CRITIC_EFFORT = 'medium'
 
 export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
-export const AGENT_IDLE_TIMEOUT_S = 300
+export const AGENT_IDLE_TIMEOUT_S = 600
 
 export const AGENT_ITERATION_BUDGET = 50
 
