@@ -4,10 +4,7 @@
  */
 import type { OCPPVersion } from 'ui-common'
 
-import {
-  type ChargePointStatus,
-  type OCPP16ChargePointErrorCode,
-} from 'ui-common'
+import { type ChargePointStatus, type OCPP16ChargePointErrorCode } from 'ui-common'
 import { computed, type MaybeRefOrGetter, readonly, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
