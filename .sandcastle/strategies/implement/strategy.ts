@@ -1,10 +1,10 @@
-import type { StrategyConfig } from '../../types.js'
+import type { FinalizationConfig, LoopStrategy } from '../../types.js'
 
 import { GIT_TIMEOUT_MS } from '../../constants.js'
 import { attemptRebase, buildPrArgs, pushBranch, runValidation } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
 
-export const implementStrategy: StrategyConfig = {
+export const implementStrategy: FinalizationConfig & LoopStrategy = {
   actorPromptFile: './.sandcastle/strategies/implement/implement-prompt.md',
 
   buildActorArgs: (spec, findings) => ({

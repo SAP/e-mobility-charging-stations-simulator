@@ -68,9 +68,6 @@ export type LoopStrategy = {
 /** Type alias for a sandcastle sandbox instance. */
 export type SandboxInstance = Awaited<ReturnType<typeof sandcastle.createSandbox>>
 
-/** Combined strategy (backward compat alias). */
-export type StrategyConfig = FinalizationConfig & LoopStrategy
-
 /** Specification for a task to be implemented. */
 export interface TaskSpec {
   /** Sanitized issue body text. */
