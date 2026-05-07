@@ -101,7 +101,7 @@ export class GithubIssueSource implements TaskSource {
           completionSignal: COMPLETION_SIGNAL,
           hooks: SANDBOX_AUTH_HOOKS,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
-          maxIterations: 1,
+          maxIterations: 5,
           name: 'Planner',
           promptArgs: {
             BRANCH_PREFIX: this.branchPrefix,
