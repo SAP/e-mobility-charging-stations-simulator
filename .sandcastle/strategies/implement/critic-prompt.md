@@ -8,6 +8,12 @@ Run `git diff {{BASE_BRANCH}}...{{BRANCH}}` to see all changes. Examine the diff
 
 Read `AGENTS.md`, `CONTRIBUTING.md` and `.serena/memories/code_style_conventions`.
 
+## Acceptance Criteria
+
+{{ACCEPTANCE_CRITERIA}}
+
+If acceptance criteria are listed above, verify that the implementation satisfies each one. Report a HIGH finding for any criterion that is not met. Do NOT evaluate whether the actor followed a specific implementation approach — only whether the observable outcome matches the criteria. If no criteria are listed, skip this section.
+
 ## Output Format
 
 Output your findings as JSON wrapped in nonce-tagged delimiters. Use EXACTLY this tag format:

@@ -106,16 +106,24 @@ export type SandboxInstance = Awaited<ReturnType<typeof sandcastle.createSandbox
 
 /** Specification for a task to be implemented. */
 export interface TaskSpec {
+  /** Verifiable conditions that must hold when implementation is complete. */
+  acceptanceCriteria?: string[]
   /** Sanitized issue body text. */
   body: string
   /** Git branch name for this task. */
   branch: string
+  /** Planner's confidence in its analysis: controls plan specificity injected into actor. */
+  confidence?: 'high' | 'low' | 'medium'
   /** Task identifier (e.g. GitHub issue number as string). */
   id: string
+  /** Classification of the issue. */
+  issueType?: 'bug-fix' | 'feature' | 'refactor'
   /** Label names associated with the task (platform-specific, optional). */
   labels?: string[]
   /** Raw planner agent output that produced this task selection. */
   plannerOutput?: string
+  /** Planner's hypothesis about what is broken/missing — for actor to validate, not follow blindly. */
+  rootCauseHypothesis?: string
   /** Task title. */
   title: string
 }

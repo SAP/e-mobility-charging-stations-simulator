@@ -1,9 +1,29 @@
-import type { FinalizationConfig, LoopStrategy } from '../../types.js'
+import type { FinalizationConfig, LoopStrategy, TaskSpec } from '../../types.js'
 
 import { GIT_TIMEOUT_MS } from '../../constants.js'
 import { attemptRebase, buildPrArgs, pushBranch } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
 import { runValidation } from '../../validation.js'
+
+/**
+ *
+ * @param spec
+ */
+function buildPlanContext (spec: TaskSpec): string {
+  const parts: string[] = []
+  const includeHypothesis = spec.confidence === 'high' || spec.confidence === undefined
+
+  if (includeHypothesis && spec.rootCauseHypothesis) {
+    parts.push(`HYPOTHESIS (may be wrong — verify independently): ${spec.rootCauseHypothesis}`)
+  }
+  if (spec.acceptanceCriteria && spec.acceptanceCriteria.length > 0) {
+    parts.push(
+      `Acceptance criteria:\n${spec.acceptanceCriteria.map((c, i) => `${String(i + 1)}. ${c}`).join('\n')}`
+    )
+  }
+  if (parts.length === 0) return ''
+  return `## Planner Analysis\n\n${parts.join('\n\n')}`
+}
 
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
   actorPromptFile: './.sandcastle/strategies/implement/actor-prompt.md',
@@ -13,10 +33,13 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     FINDINGS: findings.length > 0 ? JSON.stringify(findings, null, 2) : '',
     ISSUE_BODY: spec.body,
     ISSUE_TITLE: spec.title,
+    PLAN_CONTEXT: buildPlanContext(spec),
     TASK_ID: spec.id,
   }),
 
   buildCriticArgs: (spec, baseBranch) => ({
+    ACCEPTANCE_CRITERIA:
+      spec.acceptanceCriteria?.map((c, i) => `${String(i + 1)}. ${c}`).join('\n') ?? '',
     BASE_BRANCH: baseBranch,
     BRANCH: spec.branch,
   }),

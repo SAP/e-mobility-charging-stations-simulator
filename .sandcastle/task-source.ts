@@ -246,30 +246,51 @@ export class GithubIssueSource implements TaskSource {
         return null
       }
       const parsed = parseResult.data
-      const validated = parsed.issues.filter(
-        (entry): entry is { branch: string; id: string; title: string } => {
-          if (typeof entry !== 'object' || entry === null) return false
-          const item = entry as Record<string, unknown>
-          if (typeof item.id !== 'string' || !/^\d+$/.test(item.id)) return false
-          if (typeof item.branch !== 'string' || !this.branchPattern.test(item.branch)) return false
-          if (typeof item.title !== 'string') return false
-          if (item.title.length > MAX_TITLE_CHARS) return false
-          // eslint-disable-next-line no-control-regex
-          if (/[\x00-\x1f]/.test(item.title)) return false
-          return true
-        }
-      )
+      const validated = parsed.issues.filter((entry): entry is Record<string, unknown> => {
+        if (typeof entry !== 'object' || entry === null) return false
+        const item = entry as Record<string, unknown>
+        if (typeof item.id !== 'string' || !/^\d+$/.test(item.id)) return false
+        if (typeof item.branch !== 'string' || !this.branchPattern.test(item.branch)) return false
+        if (typeof item.title !== 'string') return false
+        if (item.title.length > MAX_TITLE_CHARS) return false
+        // eslint-disable-next-line no-control-regex
+        if (/[\x00-\x1f]/.test(item.title)) return false
+        return true
+      })
 
       const issueMap = new Map(issuesJson.map(issue => [String(issue.number), issue]))
       return validated
         .map(entry => {
-          const source = issueMap.get(entry.id)
+          const source = issueMap.get(entry.id as string)
           if (!source) return null
-          return {
-            ...entry,
+          const spec: TaskSpec = {
             body: source.body,
+            branch: entry.branch as string,
+            id: entry.id as string,
             labels: source.labels,
+            title: entry.title as string,
           }
+          if (isValidIssueType(entry.issueType)) {
+            spec.issueType = entry.issueType
+          }
+          if (isValidConfidence(entry.confidence)) {
+            spec.confidence = entry.confidence
+          }
+          if (
+            typeof entry.rootCauseHypothesis === 'string' &&
+            entry.rootCauseHypothesis.length > 0
+          ) {
+            spec.rootCauseHypothesis = sanitizeForPrompt(entry.rootCauseHypothesis).slice(0, 500)
+          }
+          if (Array.isArray(entry.acceptanceCriteria)) {
+            const criteria = entry.acceptanceCriteria
+              .filter((c): c is string => typeof c === 'string' && c.length > 0)
+              .map(c => sanitizeForPrompt(c).slice(0, 200))
+            if (criteria.length > 0) {
+              spec.acceptanceCriteria = criteria.slice(0, 5)
+            }
+          }
+          return spec
         })
         .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
     } catch (err: unknown) {
@@ -277,6 +298,25 @@ export class GithubIssueSource implements TaskSource {
       return null
     }
   }
+}
+
+const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
+const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
+
+/**
+ *
+ * @param value
+ */
+function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' {
+  return typeof value === 'string' && VALID_CONFIDENCE.has(value)
+}
+
+/**
+ *
+ * @param value
+ */
+function isValidIssueType (value: unknown): value is 'bug-fix' | 'feature' | 'refactor' {
+  return typeof value === 'string' && VALID_ISSUE_TYPES.has(value)
 }
 
 /**

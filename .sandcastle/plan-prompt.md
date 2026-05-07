@@ -1,6 +1,6 @@
 # Plan Agent
 
-Read open GitHub issues and produce a parallelizable execution plan.
+Read open GitHub issues and produce a parallelizable execution plan with implementation context.
 
 ## Context
 
@@ -21,12 +21,17 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
 
 2. Select all issues that are independent and actionable.
 
-3. For each selected issue, assign a branch name: `{{BRANCH_PREFIX}}-<number>-<slug>` where slug is a short kebab-case summary (e.g., `{{BRANCH_PREFIX}}-42-fix-streaming-id`).
+3. For each selected issue:
+   - Assign a branch name: `{{BRANCH_PREFIX}}-<number>-<slug>` where slug is a short kebab-case summary (e.g., `{{BRANCH_PREFIX}}-42-fix-streaming-id`).
+   - Classify the issue type: `bug-fix`, `feature`, or `refactor`.
+   - Assess your confidence: `high` (clear scope, obvious approach), `medium` (some ambiguity), or `low` (unclear scope, multiple valid approaches).
+   - Formulate a root cause hypothesis: what is broken or missing, and why. This is a hypothesis for the implementer to validate — not a directive.
+   - Define 2-4 acceptance criteria: concrete, verifiable conditions that must be true when the implementation is complete. Focus on observable behavior, not implementation details.
 
 4. Output the plan in this exact format:
 
    ```text
-   <plan>{ "issues": [{ "id": "<number>", "title": "<title>", "branch": "{{BRANCH_PREFIX}}-<number>-<slug>" }] }</plan>
+   <plan>{"issues":[{"id":"<number>","title":"<title>","branch":"{{BRANCH_PREFIX}}-<number>-<slug>","issueType":"bug-fix|feature|refactor","confidence":"high|medium|low","rootCauseHypothesis":"...","acceptanceCriteria":["..."]}]}</plan>
    ```
 
 ## Rules
@@ -42,6 +47,8 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
   ```
 
 - Do not implement anything. Only produce the plan.
+- Acceptance criteria must be testable by reading code or running tests — no subjective assessments.
+- Root cause hypothesis should be specific (mention modules, patterns, or behaviors) — not a restatement of the issue title.
 
 ## Completion
 

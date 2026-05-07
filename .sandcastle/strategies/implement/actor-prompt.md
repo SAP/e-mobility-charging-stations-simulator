@@ -6,6 +6,8 @@ Implement issue **#{{TASK_ID}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`.
 
 {{ISSUE_BODY}}
 
+{{PLAN_CONTEXT}}
+
 ## Review Findings
 
 {{FINDINGS}}
