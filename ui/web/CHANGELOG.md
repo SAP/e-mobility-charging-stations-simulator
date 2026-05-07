@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.7.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.6.1...web@v4.7.0) (2026-05-07)
+
+
+### 🐞 Bug Fixes
+
+* **ui:** allow changing status of individual connectors ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([2a98dc8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2a98dc8b2bc98a2c3136e1737894f4c29891350a))
+* **web:** fetch templates on dialog open via layout composable ([#1837](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1837)) ([#1839](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1839)) ([608d796](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/608d7962dbdde0f3b3261badca05ab6dad36d84b))
+
 ## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.6.0...web@v4.6.1) (2026-05-06)
 
 ### 🐞 Bug Fixes
