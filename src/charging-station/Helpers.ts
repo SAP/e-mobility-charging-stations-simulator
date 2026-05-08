@@ -808,7 +808,9 @@ export const getConnectorChargingProfilesLimit = (
       if (maximumPower == null) {
         return limit
       }
-      const connectorMaximumPower = maximumPower / (chargingStation.powerDivider ?? 1)
+      const connectorMaximumPower =
+        chargingStation.getConnectorStatus(connectorId)?.maximumPower ??
+        maximumPower / (chargingStation.powerDivider ?? 1)
       if (limit > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,

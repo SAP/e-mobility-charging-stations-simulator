@@ -62,6 +62,7 @@
     "0": {},
     "1": {
       "bootStatus": "Available",
+      "maximumPower": 75000,
       "MeterValues": [
         {
           "unit": "Percent",
@@ -77,6 +78,7 @@
     },
     "2": {
       "bootStatus": "Preparing",
+      "maximumPower": 75000,
       "MeterValues": [
         {
           "unit": "Percent",
@@ -92,6 +94,7 @@
     },
     "3": {
       "bootStatus": "Faulted",
+      "maximumPower": 75000,
       "MeterValues": [
         {
           "unit": "Percent",

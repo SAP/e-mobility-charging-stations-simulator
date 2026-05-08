@@ -12,7 +12,7 @@ Read `AGENTS.md`, `CONTRIBUTING.md` and `.serena/memories/code_style_conventions
 
 {{ACCEPTANCE_CRITERIA}}
 
-If acceptance criteria are listed above, verify that the implementation satisfies each one. Report a HIGH finding for any criterion that is not met. Do NOT evaluate whether the actor followed a specific implementation approach — only whether the observable outcome matches the criteria. If no criteria are listed, skip this section.
+If acceptance criteria are listed above, assess from the diff whether the implementation satisfies each one. Report a HIGH finding for any unmet criterion. Only judge observable outcomes, not implementation approach. If no criteria are listed, skip this section.
 
 ## Output Format
 

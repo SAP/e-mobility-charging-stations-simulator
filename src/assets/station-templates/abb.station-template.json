@@ -67,6 +67,7 @@
   "Connectors": {
     "0": {},
     "1": {
+      "maximumPower": 50000,
       "MeterValues": [
         {
           "unit": "Percent",
@@ -96,6 +97,7 @@
       ]
     },
     "2": {
+      "maximumPower": 50000,
       "MeterValues": [
         {
           "unit": "Percent",

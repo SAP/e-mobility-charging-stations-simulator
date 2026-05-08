@@ -525,12 +525,14 @@ export class ChargingStation extends EventEmitter {
       return Number.POSITIVE_INFINITY
     }
     const connectorMaximumPower = maximumPower / (this.powerDivider ?? 1)
+    const connectorHardwareMaximumPower = this.getConnectorStatus(connectorId)?.maximumPower
     const chargingStationChargingProfilesLimit =
       (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
       (this.powerDivider ?? 1)
     const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
+      connectorHardwareMaximumPower ?? Number.POSITIVE_INFINITY,
       connectorAmperageLimitationLimit == null || Number.isNaN(connectorAmperageLimitationLimit)
         ? Number.POSITIVE_INFINITY
         : connectorAmperageLimitationLimit,
@@ -1832,6 +1834,7 @@ export class ChargingStation extends EventEmitter {
     }
     this.bootNotificationRequest = bootNotificationRequest
     this.powerDivider = this.getPowerDivider()
+    this.initializeConnectorsMaximumPower()
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration(options?.persistentConfiguration)
     warnOnOCPP16TemplateKeys(this)
@@ -1913,6 +1916,25 @@ export class ChargingStation extends EventEmitter {
           this.templateFile
         } with no connectors configuration defined, using already defined connectors`
       )
+    }
+  }
+
+  private initializeConnectorsMaximumPower (): void {
+    const maximumPower = this.stationInfo?.maximumPower
+    if (maximumPower == null) {
+      return
+    }
+    const staticCount = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()
+    const defaultMaximumPower = maximumPower / staticCount
+    for (const { connectorId, connectorStatus } of this.iterateConnectors(true)) {
+      if (connectorStatus.maximumPower == null) {
+        connectorStatus.maximumPower = defaultMaximumPower
+        if (this.stationInfo?.powerSharedByConnectors === true) {
+          logger.warn(
+            `${this.logPrefix()} ${moduleName}.initializeConnectorsMaximumPower: Connector ${connectorId.toString()} maximumPower not defined in template, defaulting to ${defaultMaximumPower.toString()} W`
+          )
+        }
+      }
     }
   }
 

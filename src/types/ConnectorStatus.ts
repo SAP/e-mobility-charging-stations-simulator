@@ -25,6 +25,7 @@ export interface ConnectorStatus {
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string
   locked?: boolean
+  maximumPower?: number // In W
   MeterValues: SampledValueTemplate[]
   publicKeySentInTransaction?: boolean
   remoteStartId?: number
