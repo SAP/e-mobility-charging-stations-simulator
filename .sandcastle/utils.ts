@@ -1,4 +1,4 @@
-import type { AgentProvider } from '@ai-hero/sandcastle'
+import type { AgentProvider, PiOptions } from '@ai-hero/sandcastle'
 
 import * as sandcastle from '@ai-hero/sandcastle'
 import { execFile } from 'node:child_process'
@@ -12,15 +12,15 @@ export const execFileAsync = util.promisify(execFile)
 /**
  * Returns a sandcastle agent provider for the given model, selected by AGENT_PROVIDER constant.
  * @param model - The model identifier (e.g., 'github-copilot/claude-sonnet-4.6').
- * @param effort - Reasoning effort level passed as `variant` to opencode.
+ * @param effort - Reasoning effort level passed as `variant` to opencode or `thinking` to pi.
  * @returns The configured agent provider.
  */
-export function agentProvider (model: string, effort?: string): AgentProvider {
+export function agentProvider (model: string, effort?: PiOptions['thinking']): AgentProvider {
   switch (AGENT_PROVIDER) {
     case 'opencode':
       return sandcastle.opencode(model, effort ? { variant: effort } : undefined)
     case 'pi':
-      return sandcastle.pi(model)
+      return sandcastle.pi(model, effort ? { thinking: effort } : undefined)
   }
 }
 

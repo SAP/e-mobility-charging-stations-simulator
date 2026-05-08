@@ -1,0 +1,30 @@
+diff --git a/dist/AgentProvider.d.ts b/dist/AgentProvider.d.ts
+index 134d7cbea22e9f4525f69de0549f0c2e5c9bac67..c661e939c6e40eefc8f8b2dbbb6ed1154b0e8dd6 100644
+--- a/dist/AgentProvider.d.ts
++++ b/dist/AgentProvider.d.ts
+@@ -48,6 +48,8 @@ export interface AgentProvider {
+ export declare const DEFAULT_MODEL = "claude-opus-4-6";
+ /** Options for the pi agent provider. */
+ export interface PiOptions {
++    /** Reasoning/thinking level for the agent. */
++    readonly thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+     /** Environment variables injected by this agent provider. */
+     readonly env?: Record<string, string>;
+ }
+diff --git a/dist/AgentProvider.js b/dist/AgentProvider.js
+index 01b533cb129675070c618dc790b74d41259dab0c..f2a72b46e7e01d534027cb1efec81fdbe9761fa8 100644
+--- a/dist/AgentProvider.js
++++ b/dist/AgentProvider.js
+@@ -140,8 +140,11 @@ export const pi = (model, options) => ({
+     env: options?.env ?? {},
+     captureSessions: false,
+     buildPrintCommand({ prompt }) {
++        const thinkingFlag = options?.thinking
++            ? ` --thinking ${options.thinking}`
++            : "";
+         return {
+-            command: `pi -p --mode json --no-session --model ${shellEscape(model)}`,
++            command: `pi -p --mode json --no-session${thinkingFlag} --model ${shellEscape(model)}`,
+             stdin: prompt,
+         };
+     },

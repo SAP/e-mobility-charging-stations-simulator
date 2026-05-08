@@ -1,4 +1,4 @@
-import type * as sandcastle from '@ai-hero/sandcastle'
+import type { PiOptions, Sandbox } from '@ai-hero/sandcastle'
 
 import { z } from 'zod'
 
@@ -67,7 +67,7 @@ export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type LoopStrategy = {
   /** Reasoning effort for the actor agent. Defaults to AGENT_ACTOR_EFFORT constant. */
-  actorEffort?: string
+  actorEffort?: PiOptions['thinking']
   /** Model for the actor agent. Defaults to AGENT_ACTOR_MODEL constant. */
   actorModel?: string
   /** Path to the actor prompt file. */
@@ -77,7 +77,7 @@ export type LoopStrategy = {
   /** Builds promptArgs for the critic run from task spec and base branch. */
   buildCriticArgs: (spec: TaskSpec, baseBranch: string) => Record<string, string>
   /** Reasoning effort for the critic agent. Defaults to AGENT_CRITIC_EFFORT constant. */
-  criticEffort?: string
+  criticEffort?: PiOptions['thinking']
   /** Model for the critic agent. Defaults to AGENT_CRITIC_MODEL constant. */
   criticModel?: string
   /** Path to the critic prompt file. */
@@ -101,7 +101,7 @@ export interface RoundSnapshot {
 }
 
 /** Type alias for a sandcastle sandbox instance. */
-export type SandboxInstance = Awaited<ReturnType<typeof sandcastle.createSandbox>>
+export type SandboxInstance = Sandbox
 
 /** Specification for a task to be implemented. */
 export interface TaskSpec {

@@ -7,11 +7,11 @@ export type AgentProviderType = 'opencode' | 'pi'
 
 export const AGENT_PROVIDER = 'pi' as AgentProviderType
 
-export const AGENT_ACTOR_EFFORT = 'high'
+export const AGENT_ACTOR_EFFORT = 'high' as const
 
 export const AGENT_ACTOR_MODEL = 'github-copilot/claude-opus-4.6'
 
-export const AGENT_CRITIC_EFFORT = 'medium'
+export const AGENT_CRITIC_EFFORT = 'medium' as const
 
 export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
@@ -21,7 +21,7 @@ export const AGENT_ITERATION_BUDGET = 50
 
 export const AGENT_MAX_CRITIC_ROUNDS = 10
 
-export const AGENT_PLANNER_EFFORT = 'medium'
+export const AGENT_PLANNER_EFFORT = 'medium' as const
 
 export const AGENT_PLANNER_MODEL = 'github-copilot/claude-sonnet-4.6'
 

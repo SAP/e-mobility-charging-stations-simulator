@@ -136,6 +136,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3"
-    ]
+    ],
+    "patchedDependencies": {
+      "@ai-hero/sandcastle": "patches/@ai-hero__sandcastle.patch"
+    }
   }
 }

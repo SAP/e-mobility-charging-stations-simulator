@@ -1,3 +1,5 @@
+import type { SandboxRunResult } from '@ai-hero/sandcastle'
+
 import crypto from 'node:crypto'
 import { readFile, realpath } from 'node:fs/promises'
 import { join, sep } from 'node:path'
@@ -459,7 +461,7 @@ async function executeRound (
   }
 
   // Actor
-  let actorResult: Awaited<ReturnType<typeof sandbox.run>>
+  let actorResult: SandboxRunResult
   try {
     actorResult = await sandbox.run({
       agent: agentProvider(

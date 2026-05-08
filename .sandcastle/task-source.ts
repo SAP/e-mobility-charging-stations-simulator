@@ -1,3 +1,5 @@
+import type { RunResult } from '@ai-hero/sandcastle'
+
 import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
@@ -95,7 +97,7 @@ export class GithubIssueSource implements TaskSource {
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       console.log(`\n=== Planner attempt ${String(attempt)}/${String(this.maxRetries)} ===\n`)
 
-      let plan: Awaited<ReturnType<typeof sandcastle.run>>
+      let plan: RunResult
       try {
         plan = await sandcastle.run({
           agent: agentProvider(AGENT_PLANNER_MODEL, AGENT_PLANNER_EFFORT),
