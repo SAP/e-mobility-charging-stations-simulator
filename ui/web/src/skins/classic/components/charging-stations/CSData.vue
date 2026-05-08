@@ -80,9 +80,6 @@
               Identifier
             </th>
             <th scope="col">
-              Status
-            </th>
-            <th scope="col">
               Locked
             </th>
             <th scope="col">

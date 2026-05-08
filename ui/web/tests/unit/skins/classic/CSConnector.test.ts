@@ -110,28 +110,12 @@ describe('CSConnector', () => {
       expect(cells[0].text()).toBe('1/3')
     })
 
-    it('should render connector status', () => {
-      const wrapper = mountConnector({
-        connectorOverrides: { status: OCPP16ChargePointStatus.CHARGING },
-      })
-      const cells = wrapper.findAll('td')
-      expect(cells[1].text()).toBe('Charging')
-    })
-
-    it('should render placeholder when status is undefined', () => {
-      const wrapper = mountConnector({
-        connectorOverrides: { status: undefined },
-      })
-      const cells = wrapper.findAll('td')
-      expect(cells[1].text()).toBe('Ø')
-    })
-
     it('should render "Yes" when locked', () => {
       const wrapper = mountConnector({
         connectorOverrides: { locked: true },
       })
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('Yes')
+      expect(cells[1].text()).toBe('Yes')
     })
 
     it('should render "No" when not locked', () => {
@@ -139,7 +123,7 @@ describe('CSConnector', () => {
         connectorOverrides: { locked: false },
       })
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('No')
+      expect(cells[1].text()).toBe('No')
     })
 
     it('should render transaction info when transaction is started', () => {
@@ -147,7 +131,7 @@ describe('CSConnector', () => {
         connectorOverrides: { transactionId: 42, transactionStarted: true },
       })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('Yes (42)')
+      expect(cells[2].text()).toBe('Yes (42)')
     })
 
     it('should render "No" when no transaction', () => {
@@ -155,19 +139,19 @@ describe('CSConnector', () => {
         connectorOverrides: { transactionStarted: false },
       })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('No')
+      expect(cells[2].text()).toBe('No')
     })
 
     it('should render ATG started "Yes" when atgStatus.start is true', () => {
       const wrapper = mountConnector({ atgStatus: { start: true } })
       const cells = wrapper.findAll('td')
-      expect(cells[4].text()).toBe('Yes')
+      expect(cells[3].text()).toBe('Yes')
     })
 
     it('should render ATG started "No" when atgStatus is undefined', () => {
       const wrapper = mountConnector({ atgStatus: undefined })
       const cells = wrapper.findAll('td')
-      expect(cells[4].text()).toBe('No')
+      expect(cells[3].text()).toBe('No')
     })
   })
 
@@ -262,7 +246,7 @@ describe('CSConnector', () => {
 
     it('should render OCPP 1.6 status options by default', () => {
       const wrapper = mountConnector()
-      const selects = wrapper.findAll('select.connector-status-select')
+      const selects = wrapper.findAll('select.connector-action-select')
       const statusSelect = selects[0]
       const options = statusSelect.findAll('option')
       expect(options.length).toBe(Object.values(OCPP16ChargePointStatus).length)
@@ -270,7 +254,7 @@ describe('CSConnector', () => {
 
     it('should render OCPP 2.0.x status options for OCPP 2.0.1 station', () => {
       const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_201 })
-      const selects = wrapper.findAll('select.connector-status-select')
+      const selects = wrapper.findAll('select.connector-action-select')
       const statusSelect = selects[0]
       const options = statusSelect.findAll('option')
       expect(options.length).toBe(Object.values(OCPP20ConnectorStatusEnumType).length)
@@ -278,13 +262,13 @@ describe('CSConnector', () => {
 
     it('should hide error code select for OCPP 2.0.x', () => {
       const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_201 })
-      const selects = wrapper.findAll('select.connector-status-select')
+      const selects = wrapper.findAll('select.connector-action-select')
       expect(selects.length).toBe(1)
     })
 
     it('should show error code select for OCPP 1.6', () => {
       const wrapper = mountConnector({ ocppVersion: OCPPVersion.VERSION_16 })
-      const selects = wrapper.findAll('select.connector-status-select')
+      const selects = wrapper.findAll('select.connector-action-select')
       expect(selects.length).toBe(2)
       const errorOptions = selects[1].findAll('option')
       expect(errorOptions.length).toBe(Object.values(OCPP16ChargePointErrorCode).length)
@@ -292,7 +276,7 @@ describe('CSConnector', () => {
 
     it('should call setConnectorStatus on status change', async () => {
       const wrapper = mountConnector()
-      const selects = wrapper.findAll('select.connector-status-select')
+      const selects = wrapper.findAll('select.connector-action-select')
       await selects[0].setValue(OCPP16ChargePointStatus.FAULTED)
       await flushPromises()
       expect(mockClient.setConnectorStatus).toHaveBeenCalledWith(

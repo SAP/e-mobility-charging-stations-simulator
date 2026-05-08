@@ -4,9 +4,6 @@
       {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
     <td>
-      {{ connector.status ?? EMPTY_VALUE_PLACEHOLDER }}
-    </td>
-    <td>
       {{ connector.locked === true ? 'Yes' : 'No' }}
     </td>
     <td>
@@ -16,6 +13,35 @@
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
     </td>
     <td>
+      <select
+        v-model="selectedStatus"
+        class="connector-action-select"
+        :aria-label="`Set status for connector ${connectorId}`"
+        @change="applyConnectorStatus"
+      >
+        <option
+          v-for="s in statusOptions"
+          :key="s"
+          :value="s"
+        >
+          {{ s }}
+        </option>
+      </select>
+      <select
+        v-if="!isOCPP20x(ocppVersion)"
+        v-model="selectedErrorCode"
+        class="connector-action-select"
+        :aria-label="`Set error code for connector ${connectorId}`"
+        @change="applyConnectorStatus"
+      >
+        <option
+          v-for="e in errorCodeOptions"
+          :key="e"
+          :value="e"
+        >
+          {{ e }}
+        </option>
+      </select>
       <StateButton
         :active="connector.locked === true"
         :off="() => unlockConnector()"
@@ -61,35 +87,6 @@
         :on="() => startAutomaticTransactionGenerator()"
         on-label="Start ATG"
       />
-      <select
-        v-model="selectedStatus"
-        class="connector-status-select"
-        :aria-label="`Set status for connector ${connectorId}`"
-        @change="applyConnectorStatus"
-      >
-        <option
-          v-for="s in statusOptions"
-          :key="s"
-          :value="s"
-        >
-          {{ s }}
-        </option>
-      </select>
-      <select
-        v-if="!isOCPP20x(ocppVersion)"
-        v-model="selectedErrorCode"
-        class="connector-status-select"
-        :aria-label="`Set error code for connector ${connectorId}`"
-        @change="applyConnectorStatus"
-      >
-        <option
-          v-for="e in errorCodeOptions"
-          :key="e"
-          :value="e"
-        >
-          {{ e }}
-        </option>
-      </select>
     </td>
   </tr>
 </template>
@@ -106,7 +103,7 @@ import {
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { EMPTY_VALUE_PLACEHOLDER, ROUTE_NAMES } from '@/core/index.js'
+import { ROUTE_NAMES } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
 
 import Button from '../buttons/ClassicButton.vue'
@@ -174,3 +171,13 @@ const applyConnectorStatus = (): void => {
   setConnectorStatus(selectedStatus.value, undefined, errorCode)
 }
 </script>
+
+<style scoped>
+.connector-action-select {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+</style>
