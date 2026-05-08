@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.7.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.6.1...ui-common@v4.7.0) (2026-05-07)
+
+### 🐞 Bug Fixes
+
+- **ui:** allow changing status of individual connectors ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([2a98dc8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2a98dc8b2bc98a2c3136e1737894f4c29891350a))
+
 ## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.6.0...ui-common@v4.6.1) (2026-05-06)
 
 ### 🐞 Bug Fixes

@@ -1,5 +1,42 @@
 # Changelog
 
+## [4.7.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.6.1...simulator@v4.7.0) (2026-05-07)
+
+### 🚀 Features
+
+- **sandcastle:** add roundHistory to LoopResult and plannerOutput to TaskSpec ([32e774c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/32e774c7ca15f2ad965cb244c85cd3bb0af9b055))
+- **sandcastle:** enrich planner with acceptance criteria and root cause hypothesis ([92bffdf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/92bffdfdd8472b5182f4e44c1276849b1bdafa12))
+
+### 🐞 Bug Fixes
+
+- **sandcastle:** add configurable agent provider (pi/opencode) ([b37c57b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b37c57bcf844d99cd6e90a7fdc15c8baa9e270d9))
+- **sandcastle:** add missing JSDoc descriptions to satisfy lint rules ([e735e7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e735e7a4e3246d38140c5356d69fb688f9817608))
+- **sandcastle:** assign opus to actor, sonnet to planner, increase planner iterations ([9f00f3d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9f00f3d4c70e9d2a4c7612af040aaaa1eee27e3b))
+- **sandcastle:** improve PR metadata accuracy ([2c4fc85](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2c4fc85478df3ed0f836c0bf80fedc84f8424f37))
+- **sandcastle:** increase validation timeout to 600s ([26faa36](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/26faa363a8efffaa41025c1aa8fe612d618ee684))
+- **sandcastle:** log planner error details instead of swallowing ([158355d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/158355d488a5b55830427583de4cd93fb17ba98a))
+- **sandcastle:** pre-create .local/share dirs in Dockerfile ([4d43636](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4d43636c784e6dbb90db78b7aee659f0363e8bc9))
+- **sandcastle:** remove corepack prepare from Dockerfile ([bd40364](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd403641e1d35b64ce64ca005eb24f0dba0cdb5d))
+- **sandcastle:** revert idle timeout to 300s and remove redundant copyToWorktree ([ad6edff](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ad6edff5071c7017ae382dd69235581c35b12665))
+- **sandcastle:** run validation across all workspace packages ([43ea60f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/43ea60fc26a00281295219f2f0203c7672613eb3))
+- **ui:** allow changing status of individual connectors ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([2a98dc8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2a98dc8b2bc98a2c3136e1737894f4c29891350a))
+
+### ✨ Polish
+
+- **sandcastle:** add error observability and type-safe sentinels ([8f159e2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8f159e24b6326fd00ab6d708bb2a3527de33a9c4))
+- **sandcastle:** generalize actor/critic loop with LoopContext and coherent API ([16acd0d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/16acd0da8c4ddf3f954f7fdafe5d39762de81b8c))
+- **sandcastle:** improve separation of concerns and API clarity ([5d9bb84](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5d9bb84be72ffe7fc9b1b8b2c4c14eb714cbfa15))
+- **sandcastle:** organize constants by domain with coherent naming ([51b8731](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/51b8731824b8a911f4910f02ad735cd4da76a93f))
+- **sandcastle:** remove plannerOutput from TaskSpec ([fc72801](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fc72801b5fd48492470f0293d5141ea62c026925))
+- **sandcastle:** remove redundant lastFindings from LoopResult ([6dec364](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6dec3647bf859d037bb2566d76ca7249e95cd7a1))
+- **sandcastle:** remove StrategyConfig type alias, inline intersection ([d3aa90e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3aa90ebc6da5b103e089eaf09e01212ee7bd481))
+- **sandcastle:** rename implement-prompt.md to actor-prompt.md ([3b293b4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3b293b4746035b1d33dce32873c60948a43f96a3))
+- **sandcastle:** split AGENT_MODEL into per-role constants ([8c3c3b9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8c3c3b9f333cf541f1c8dd907d9734f255f089d4))
+
+### 📚 Documentation
+
+- **sandcastle:** fix stale JSDoc referencing empty string sentinel ([dc6de0e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dc6de0ec81fd87a4e71b09091899cf96d4facee3))
+
 ## [4.6.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.6.0...simulator@v4.6.1) (2026-05-06)
 
 ### 🐞 Bug Fixes
