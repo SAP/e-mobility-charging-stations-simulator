@@ -66,6 +66,8 @@ export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type LoopStrategy = {
+  /** Reasoning effort for the actor agent. Defaults to AGENT_ACTOR_EFFORT constant. */
+  actorEffort?: string
   /** Model for the actor agent. Defaults to AGENT_ACTOR_MODEL constant. */
   actorModel?: string
   /** Path to the actor prompt file. */
@@ -74,6 +76,8 @@ export type LoopStrategy = {
   buildActorArgs: (spec: TaskSpec, findings: Finding[]) => Record<string, string>
   /** Builds promptArgs for the critic run from task spec and base branch. */
   buildCriticArgs: (spec: TaskSpec, baseBranch: string) => Record<string, string>
+  /** Reasoning effort for the critic agent. Defaults to AGENT_CRITIC_EFFORT constant. */
+  criticEffort?: string
   /** Model for the critic agent. Defaults to AGENT_CRITIC_MODEL constant. */
   criticModel?: string
   /** Path to the critic prompt file. */
