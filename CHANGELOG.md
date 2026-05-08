@@ -2,13 +2,12 @@
 
 ## [4.7.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.0...simulator@v4.7.1) (2026-05-08)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1840](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1840)) ([564c935](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/564c935521dd9ae44ef2a06a3dfe5a947cf7d8da))
-* **sandcastle:** patch pi thinking option and replace type indirections ([550e294](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/550e29441d49dc09a8098ad4eed8a67c22d531ea))
-* **sandcastle:** update pi package to @earendil-works/pi-coding-agent ([3be5314](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3be531486fe1871c7cd7755915e4aa9ce1ba50ca))
-* **sandcastle:** wire reasoning effort through to agent providers ([bd65c6c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd65c6c368bf359f53a923425fbbd22d57bf3262))
+- **deps:** update all non-major dependencies ([#1840](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1840)) ([564c935](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/564c935521dd9ae44ef2a06a3dfe5a947cf7d8da))
+- **sandcastle:** patch pi thinking option and replace type indirections ([550e294](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/550e29441d49dc09a8098ad4eed8a67c22d531ea))
+- **sandcastle:** update pi package to @earendil-works/pi-coding-agent ([3be5314](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3be531486fe1871c7cd7755915e4aa9ce1ba50ca))
+- **sandcastle:** wire reasoning effort through to agent providers ([bd65c6c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd65c6c368bf359f53a923425fbbd22d57bf3262))
 
 ## [4.7.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.6.1...simulator@v4.7.0) (2026-05-07)
 
