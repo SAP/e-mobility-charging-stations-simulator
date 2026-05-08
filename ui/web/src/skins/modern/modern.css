@@ -830,46 +830,57 @@ html[data-skin='modern'] #app {
  * tinted background. In light mode the overrides below keep the
  * darker state colour as text (Material 700 on white is readable). */
 .modern-pill--ok {
+  --_pill-bg: color-mix(in srgb, var(--color-state-ok) 26%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-ok) 12%, transparent);
   color: color-mix(in srgb, var(--color-state-ok) 55%, #ffffff 45%);
-  background-color: color-mix(in srgb, var(--color-state-ok) 26%, transparent);
+  background-color: var(--_pill-bg);
   border-color: color-mix(in srgb, var(--color-state-ok) 45%, transparent);
 }
 
 .modern-pill--warn {
+  --_pill-bg: color-mix(in srgb, var(--color-state-warn) 26%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-warn) 12%, transparent);
   color: color-mix(in srgb, var(--color-state-warn) 60%, #ffffff 40%);
-  background-color: color-mix(in srgb, var(--color-state-warn) 26%, transparent);
+  background-color: var(--_pill-bg);
   border-color: color-mix(in srgb, var(--color-state-warn) 50%, transparent);
 }
 
 .modern-pill--err {
+  --_pill-bg: color-mix(in srgb, var(--color-state-err) 26%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-err) 12%, transparent);
   color: color-mix(in srgb, var(--color-state-err) 55%, #ffffff 45%);
-  background-color: color-mix(in srgb, var(--color-state-err) 26%, transparent);
+  background-color: var(--_pill-bg);
   border-color: color-mix(in srgb, var(--color-state-err) 45%, transparent);
 }
 
 .modern-pill--idle {
+  --_pill-bg: var(--skin-state-idle-bg);
+  --_pill-bg-hover: color-mix(in srgb, var(--skin-state-idle-bg) 50%, transparent);
   color: var(--color-text-strong);
-  background-color: var(--skin-state-idle-bg);
+  background-color: var(--_pill-bg);
   border-color: var(--skin-border-strong);
 }
 
 /* Light-theme pill overrides — state colours are already dark (Material 700)
  * and readable on light backgrounds without white mixing. */
 :root[data-color-scheme='light'] .modern-pill--ok {
+  --_pill-bg: color-mix(in srgb, var(--color-state-ok) 14%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-ok) 4%, transparent);
   color: var(--color-state-ok);
-  background-color: color-mix(in srgb, var(--color-state-ok) 14%, transparent);
   border-color: color-mix(in srgb, var(--color-state-ok) 35%, transparent);
 }
 
 :root[data-color-scheme='light'] .modern-pill--warn {
+  --_pill-bg: color-mix(in srgb, var(--color-state-warn) 18%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-warn) 6%, transparent);
   color: var(--color-state-warn);
-  background-color: color-mix(in srgb, var(--color-state-warn) 18%, transparent);
   border-color: color-mix(in srgb, var(--color-state-warn) 50%, transparent);
 }
 
 :root[data-color-scheme='light'] .modern-pill--err {
+  --_pill-bg: color-mix(in srgb, var(--color-state-err) 14%, transparent);
+  --_pill-bg-hover: color-mix(in srgb, var(--color-state-err) 4%, transparent);
   color: var(--color-state-err);
-  background-color: color-mix(in srgb, var(--color-state-err) 14%, transparent);
   border-color: color-mix(in srgb, var(--color-state-err) 35%, transparent);
 }
 
@@ -878,10 +889,13 @@ html[data-skin='modern'] #app {
   color: inherit;
   cursor: pointer;
   gap: 6px;
-  transition: border-color var(--skin-transition);
+  transition:
+    border-color var(--skin-transition),
+    background-color var(--skin-transition);
 }
 
 .modern-pill--editable:hover {
+  background-color: var(--_pill-bg-hover);
   border-color: currentColor;
 }
 
