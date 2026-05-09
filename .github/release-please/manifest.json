@@ -1,7 +1,7 @@
 {
-  ".": "4.7.1",
-  "ui/common": "4.7.1",
-  "ui/cli": "4.7.1",
-  "ui/web": "4.7.1",
-  "tests/ocpp-server": "4.7.1"
+  ".": "4.7.2",
+  "ui/common": "4.7.2",
+  "ui/cli": "4.7.2",
+  "ui/web": "4.7.2",
+  "tests/ocpp-server": "4.7.2"
 }
