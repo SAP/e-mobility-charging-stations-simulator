@@ -70,13 +70,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v6
@@ -168,13 +168,13 @@ jobs:
           fetch-depth: 0
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v6
@@ -223,13 +223,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v6
