@@ -533,7 +533,9 @@ export class ChargingStation extends EventEmitter {
     const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
-      connectorHardwareMaximumPower ?? Number.POSITIVE_INFINITY,
+      connectorHardwareMaximumPower == null || Number.isNaN(connectorHardwareMaximumPower)
+        ? Number.POSITIVE_INFINITY
+        : connectorHardwareMaximumPower,
       connectorAmperageLimitationLimit == null || Number.isNaN(connectorAmperageLimitationLimit)
         ? Number.POSITIVE_INFINITY
         : connectorAmperageLimitationLimit,
