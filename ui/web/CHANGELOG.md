@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.7.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.0...web@v4.7.1) (2026-05-08)
+
+### 🐞 Bug Fixes
+
+- **ui/web:** fix editable pill hover visibility in light themes ([5550697](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5550697fe8b711f3b206602d67ebb2f461a9778b))
+- **ui/web:** smooth icon-btn danger hover shadow and remove dead token ([528e9e0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/528e9e06fd45bde0c1e8c80030c96af58304e4b5))
+
+### ✨ Polish
+
+- **ui/web:** remove redundant connector status column from classic skin ([2b1db3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2b1db3b373a8c1bf5f7a2fe41bc030c77ac8d51f))
+
 ## [4.7.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.6.1...web@v4.7.0) (2026-05-07)
 
 ### 🐞 Bug Fixes
