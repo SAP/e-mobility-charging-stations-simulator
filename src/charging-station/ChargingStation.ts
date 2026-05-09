@@ -130,6 +130,7 @@ import {
   getChargingStationChargingProfilesLimit,
   getChargingStationId,
   getConnectorChargingProfilesLimit,
+  getDefaultConnectorMaximumPower,
   getDefaultVoltageOut,
   getHashId,
   getIdTagsFile,
@@ -525,12 +526,16 @@ export class ChargingStation extends EventEmitter {
       return Number.POSITIVE_INFINITY
     }
     const connectorMaximumPower = maximumPower / (this.powerDivider ?? 1)
+    const connectorHardwareMaximumPower = this.getConnectorStatus(connectorId)?.maximumPower
     const chargingStationChargingProfilesLimit =
       (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
       (this.powerDivider ?? 1)
     const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
+      connectorHardwareMaximumPower == null || Number.isNaN(connectorHardwareMaximumPower)
+        ? Number.POSITIVE_INFINITY
+        : connectorHardwareMaximumPower,
       connectorAmperageLimitationLimit == null || Number.isNaN(connectorAmperageLimitationLimit)
         ? Number.POSITIVE_INFINITY
         : connectorAmperageLimitationLimit,
@@ -1897,7 +1902,11 @@ export class ChargingStation extends EventEmitter {
             )
             this.connectors.set(connectorId, clone(connectorStatus))
           }
-          initializeConnectorsMapStatus(this.connectors, this.logPrefix())
+          initializeConnectorsMapStatus(
+            this.connectors,
+            this.logPrefix(),
+            getDefaultConnectorMaximumPower(stationTemplate)
+          )
           this.saveConnectorsStatus()
         } else {
           logger.warn(
@@ -2047,7 +2056,11 @@ export class ChargingStation extends EventEmitter {
               ),
             }
             this.evses.set(evseId, evseStatus)
-            initializeConnectorsMapStatus(evseStatus.connectors, this.logPrefix())
+            initializeConnectorsMapStatus(
+              evseStatus.connectors,
+              this.logPrefix(),
+              getDefaultConnectorMaximumPower(stationTemplate)
+            )
           }
           this.saveEvsesStatus()
         } else {

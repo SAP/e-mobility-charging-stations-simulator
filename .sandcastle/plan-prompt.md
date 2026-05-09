@@ -26,7 +26,7 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
    - Classify the issue type: `bug-fix`, `feature`, or `refactor`.
    - Assess your confidence: `high` (clear scope, obvious approach), `medium` (some ambiguity), or `low` (unclear scope, multiple valid approaches).
    - Formulate a root cause hypothesis: what is broken or missing, and why. This is a hypothesis for the implementer to validate — not a directive.
-   - Define 2-4 acceptance criteria: concrete, verifiable conditions that must be true when the implementation is complete. Focus on observable behavior, not implementation details.
+   - Define 2-4 acceptance criteria: concrete, verifiable conditions that must be true when the implementation is complete. Focus on code structure, algorithmic and logic, not runtime behavior.
 
 4. Output the plan in this exact format:
 
@@ -47,7 +47,7 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
   ```
 
 - Do not implement anything. Only produce the plan.
-- Acceptance criteria must be testable by reading code or running tests — no subjective assessments.
+- Acceptance criteria must be verifiable by static code inspection of the diff.
 - Root cause hypothesis should be specific (mention modules, patterns, or behaviors) — not a restatement of the issue title.
 
 ## Completion
