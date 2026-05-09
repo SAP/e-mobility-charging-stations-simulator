@@ -130,6 +130,7 @@ import {
   getChargingStationChargingProfilesLimit,
   getChargingStationId,
   getConnectorChargingProfilesLimit,
+  getDefaultConnectorMaximumPower,
   getDefaultVoltageOut,
   getHashId,
   getIdTagsFile,
@@ -1834,7 +1835,6 @@ export class ChargingStation extends EventEmitter {
     }
     this.bootNotificationRequest = bootNotificationRequest
     this.powerDivider = this.getPowerDivider()
-    this.initializeConnectorsMaximumPower()
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration(options?.persistentConfiguration)
     warnOnOCPP16TemplateKeys(this)
@@ -1900,7 +1900,11 @@ export class ChargingStation extends EventEmitter {
             )
             this.connectors.set(connectorId, clone(connectorStatus))
           }
-          initializeConnectorsMapStatus(this.connectors, this.logPrefix())
+          initializeConnectorsMapStatus(
+            this.connectors,
+            this.logPrefix(),
+            getDefaultConnectorMaximumPower(stationTemplate)
+          )
           this.saveConnectorsStatus()
         } else {
           logger.warn(
@@ -1916,26 +1920,6 @@ export class ChargingStation extends EventEmitter {
           this.templateFile
         } with no connectors configuration defined, using already defined connectors`
       )
-    }
-  }
-
-  private initializeConnectorsMaximumPower (): void {
-    const maximumPower = this.stationInfo?.maximumPower
-    if (maximumPower == null) {
-      return
-    }
-    const staticCount = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()
-    const defaultMaximumPower =
-      this.stationInfo?.powerSharedByConnectors === true ? maximumPower : maximumPower / staticCount
-    for (const { connectorId, connectorStatus } of this.iterateConnectors(true)) {
-      if (connectorStatus.maximumPower == null) {
-        connectorStatus.maximumPower = defaultMaximumPower
-        if (this.stationInfo?.powerSharedByConnectors === true) {
-          logger.warn(
-            `${this.logPrefix()} ${moduleName}.initializeConnectorsMaximumPower: Connector ${connectorId.toString()} maximumPower not defined in template, defaulting to ${defaultMaximumPower.toString()} W`
-          )
-        }
-      }
     }
   }
 
@@ -2070,7 +2054,11 @@ export class ChargingStation extends EventEmitter {
               ),
             }
             this.evses.set(evseId, evseStatus)
-            initializeConnectorsMapStatus(evseStatus.connectors, this.logPrefix())
+            initializeConnectorsMapStatus(
+              evseStatus.connectors,
+              this.logPrefix(),
+              getDefaultConnectorMaximumPower(stationTemplate)
+            )
           }
           this.saveEvsesStatus()
         } else {

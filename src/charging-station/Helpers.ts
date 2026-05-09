@@ -44,6 +44,7 @@ import {
   CurrentType,
   type EvseTemplate,
   OCPPVersion,
+  PowerUnits,
   RecurrencyKindType,
   type Reservation,
   ReservationTerminationReason,
@@ -290,6 +291,35 @@ export const getMaxNumberOfEvses = (evses: Record<string, EvseTemplate> | undefi
   return isEmpty(evses) ? 0 : Object.keys(evses).length
 }
 
+export const getDefaultConnectorMaximumPower = (
+  stationTemplate: ChargingStationTemplate
+): number | undefined => {
+  let maximumPower: number | undefined
+  if (isNotEmptyArray<number>(stationTemplate.power)) {
+    const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
+    maximumPower =
+      stationTemplate.powerUnit === PowerUnits.KILO_WATT
+        ? stationTemplate.power[powerArrayRandomIndex] * 1000
+        : stationTemplate.power[powerArrayRandomIndex]
+  } else if (typeof stationTemplate.power === 'number') {
+    maximumPower =
+      stationTemplate.powerUnit === PowerUnits.KILO_WATT
+        ? stationTemplate.power * 1000
+        : stationTemplate.power
+  }
+  if (maximumPower == null) {
+    return undefined
+  }
+  if (stationTemplate.powerSharedByConnectors === true) {
+    return maximumPower
+  }
+  const staticCount =
+    stationTemplate.Evses != null
+      ? getMaxNumberOfEvses(stationTemplate.Evses)
+      : getMaxNumberOfConnectors(stationTemplate.Connectors)
+  return staticCount > 0 ? maximumPower / staticCount : undefined
+}
+
 const getMaxNumberOfConnectors = (
   connectors: Record<string, ConnectorStatus> | undefined
 ): number => {
@@ -502,7 +532,8 @@ export const buildConnectorsMap = (
 
 export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
-  logPrefix: string
+  logPrefix: string,
+  defaultMaximumPower?: number
 ): void => {
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId > 0 && connectorStatus.transactionStarted === true) {
@@ -525,7 +556,7 @@ export const initializeConnectorsMapStatus = (
       connectorStatus.availability = AvailabilityType.Operative
       connectorStatus.chargingProfiles ??= []
     } else if (connectorId > 0 && connectorStatus.transactionStarted == null) {
-      initializeConnectorStatus(connectorStatus)
+      initializeConnectorStatus(connectorStatus, defaultMaximumPower)
     }
   }
 }
@@ -959,7 +990,10 @@ const checkTemplateMaxConnectors = (
   }
 }
 
-const initializeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+const initializeConnectorStatus = (
+  connectorStatus: ConnectorStatus,
+  defaultMaximumPower?: number
+): void => {
   connectorStatus.availability = AvailabilityType.Operative
   connectorStatus.idTagLocalAuthorized = false
   connectorStatus.idTagAuthorized = false
@@ -968,6 +1002,9 @@ const initializeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
   connectorStatus.energyActiveImportRegisterValue = 0
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   connectorStatus.chargingProfiles ??= []
+  if (defaultMaximumPower != null) {
+    connectorStatus.maximumPower ??= defaultMaximumPower
+  }
 }
 
 const warnDeprecatedTemplateKey = (
