@@ -318,7 +318,6 @@ export const getDefaultConnectorMaximumPower = (
       ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       getMaxNumberOfEvses(stationTemplate.Evses) - (stationTemplate.Evses['0'] != null ? 1 : 0)
       : getMaxNumberOfConnectors(stationTemplate.Connectors) -
-
         (stationTemplate.Connectors?.['0'] != null ? 1 : 0)
   return staticCount > 0 ? maximumPower / staticCount : undefined
 }
