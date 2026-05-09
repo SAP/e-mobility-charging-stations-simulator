@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.7.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.1...simulator@v4.7.2) (2026-05-09)
+
+### 🐞 Bug Fixes
+
+- resolve [#1244](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1244) — add per-connector maximum power support ([#1843](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1843)) ([c9994a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c9994a3576f300bffd6efce3a5c216a58010bb92))
+
 ## [4.7.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.0...simulator@v4.7.1) (2026-05-08)
 
 ### 🐞 Bug Fixes
