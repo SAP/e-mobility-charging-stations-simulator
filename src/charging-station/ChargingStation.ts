@@ -1925,7 +1925,8 @@ export class ChargingStation extends EventEmitter {
       return
     }
     const staticCount = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()
-    const defaultMaximumPower = maximumPower / staticCount
+    const defaultMaximumPower =
+      this.stationInfo?.powerSharedByConnectors === true ? maximumPower : maximumPower / staticCount
     for (const { connectorId, connectorStatus } of this.iterateConnectors(true)) {
       if (connectorStatus.maximumPower == null) {
         connectorStatus.maximumPower = defaultMaximumPower

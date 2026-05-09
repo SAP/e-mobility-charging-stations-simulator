@@ -84,7 +84,7 @@ if (tasks.length === 0) {
     if (outcome.status === 'rejected') {
       const reason: unknown = outcome.reason
       const msg = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)
-      console.error(`  ✗ #${tasks[i].id} failed: ${msg}`)
+      console.error(`  ✗ #${tasks[i]?.id ?? String(i)} failed: ${msg}`)
     }
   }
 
