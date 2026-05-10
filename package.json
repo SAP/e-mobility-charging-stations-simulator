@@ -104,8 +104,8 @@
   },
   "devDependencies": {
     "@ai-hero/sandcastle": "^0.5.10",
-    "@commitlint/cli": "^20.5.3",
-    "@commitlint/config-conventional": "^20.5.3",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@cspell/eslint-plugin": "^10.0.0",
     "@eslint/js": "^9.39.4",
     "@mikro-orm/cli": "^6.6.14",
