@@ -54,13 +54,15 @@
         "
         :on="
           () => {
-            $router.push({
-              name: ROUTE_NAMES.SET_SUPERVISION_URL,
-              params: {
-                hashId: chargingStation.stationInfo.hashId,
-                chargingStationId: chargingStation.stationInfo.chargingStationId,
-              },
-            }).catch(() => undefined)
+            $router
+              .push({
+                name: ROUTE_NAMES.SET_SUPERVISION_URL,
+                params: {
+                  hashId: chargingStation.stationInfo.hashId,
+                  chargingStationId: chargingStation.stationInfo.chargingStationId,
+                },
+              })
+              .catch(() => undefined)
           }
         "
         :shared="true"

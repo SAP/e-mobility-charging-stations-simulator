@@ -59,14 +59,16 @@
         "
         :on="
           () => {
-            $router.push({
-              name: ROUTE_NAMES.START_TRANSACTION,
-              params: { hashId, chargingStationId, connectorId },
-              query: {
-                ...(evseId != null ? { evseId: String(evseId) } : {}),
-                ...(ocppVersion != null ? { ocppVersion } : {}),
-              },
-            }).catch(() => undefined)
+            $router
+              .push({
+                name: ROUTE_NAMES.START_TRANSACTION,
+                params: { hashId, chargingStationId, connectorId },
+                query: {
+                  ...(evseId != null ? { evseId: String(evseId) } : {}),
+                  ...(ocppVersion != null ? { ocppVersion } : {}),
+                },
+              })
+              .catch(() => undefined)
           }
         "
         :shared="true"
