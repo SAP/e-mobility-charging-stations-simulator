@@ -26,9 +26,7 @@ overrides:
   uuid@<7: '>=7.0.0'
 
 patchedDependencies:
-  '@ai-hero/sandcastle':
-    hash: 98ac71a9a8d3bc7df881ffb9c3a698ac315e90f9c507c5d8c356868e3e35a4d5
-    path: patches/@ai-hero__sandcastle.patch
+  '@ai-hero/sandcastle': 98ac71a9a8d3bc7df881ffb9c3a698ac315e90f9c507c5d8c356868e3e35a4d5
 
 importers:
 
