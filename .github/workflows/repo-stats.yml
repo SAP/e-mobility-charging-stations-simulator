@@ -36,7 +36,7 @@ jobs:
           SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
 
       - name: Collect repository traffic stats
-        uses: jgehrcke/github-repo-stats@b1ef746a160025ee47390ea5e332b09a7acb3e80 # v1.4.2+
+        uses: jgehrcke/github-repo-stats@306db38ad131cab2aa5f2cd3062bf6f8aa78c1aa # v1.4.2
         with:
           ghtoken: ${{ secrets.SECRET_TOKEN }}
           repository: ${{ github.repository }}
