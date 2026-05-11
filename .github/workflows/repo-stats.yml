@@ -64,7 +64,7 @@ jobs:
           auth: ${{ secrets.SECRET_TOKEN }}
           gistID: ${{ vars.GIST_ID }}
           filename: clone.json
-          label: Clones
+          label: clones
           message: ${{ steps.clones.outputs.count }}
           color: brightgreen
           logoColor: white
