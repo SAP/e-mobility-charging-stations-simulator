@@ -24,7 +24,7 @@ const CSDataStub = defineComponent({
 vi.mock('vue-router', () => ({
   useRoute: () => ({ name: 'charging-stations', params: {}, query: {} }),
   useRouter: () => ({
-    push: vi.fn(),
+    push: vi.fn().mockResolvedValue(undefined),
   }),
 }))
 

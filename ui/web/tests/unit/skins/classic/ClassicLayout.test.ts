@@ -15,7 +15,7 @@ import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 vi.mock('vue-router', () => ({
   useRoute: () => ref({ name: 'charging-stations', params: {} }),
   useRouter: () => ({
-    push: vi.fn(),
+    push: vi.fn().mockResolvedValue(undefined),
   }),
 }))
 
