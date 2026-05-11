@@ -30,7 +30,7 @@ interface StubProps {
   on?: () => void
 }
 
-const mockPush = vi.fn()
+const mockPush = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ name: 'charging-stations', params: {}, query: {} }),
