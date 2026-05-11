@@ -1,0 +1,71 @@
+name: GitHub Repo Stats
+
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-stats
+  cancel-in-progress: false
+
+jobs:
+  repo-stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.repository == 'sap/e-mobility-charging-stations-simulator'
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Validate configuration
+        run: |
+          if [ -z "$GIST_ID" ]; then
+            echo "::error::GIST_ID variable is not configured"
+            exit 1
+          fi
+          if [ -z "$SECRET_TOKEN" ]; then
+            echo "::error::SECRET_TOKEN secret is not configured"
+            exit 1
+          fi
+        env:
+          GIST_ID: ${{ vars.GIST_ID }}
+          SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+
+      - name: Collect repository traffic stats
+        uses: jgehrcke/github-repo-stats@b1ef746a160025ee47390ea5e332b09a7acb3e80 # v1.4.2+
+        with:
+          ghtoken: ${{ secrets.SECRET_TOKEN }}
+          repository: ${{ github.repository }}
+          databranch: github-repo-stats
+
+      - name: Extract total clone count
+        id: clones
+        run: |
+          git fetch origin github-repo-stats
+          mkdir -p /tmp/stats-data
+          git archive origin/github-repo-stats | tar -x -C /tmp/stats-data 2>/dev/null || true
+          CSV_FILE=$(find /tmp/stats-data -path '*/ghrs-data/views_clones_aggregate.csv' | head -1)
+          if [ -n "$CSV_FILE" ] && [ -f "$CSV_FILE" ]; then
+            TOTAL=$(awk -F',' 'NR>1 {sum+=$2} END {print sum}' "$CSV_FILE")
+            echo "count=$TOTAL" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Could not locate views_clones_aggregate.csv - skipping badge update"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update clone count badge
+        if: steps.clones.outputs.skip != 'true'
+        uses: schneegans/dynamic-badges-action@0e50b8bad39e7e1afd3e4e9c2b7dd145fad07501 # v1.8.0
+        with:
+          auth: ${{ secrets.SECRET_TOKEN }}
+          gistID: ${{ vars.GIST_ID }}
+          filename: clone.json
+          label: Clones
+          message: ${{ steps.clones.outputs.count }}
+          color: brightgreen
+          logoColor: white
+          namedLogo: github
