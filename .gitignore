@@ -96,9 +96,6 @@ build/config.gypi
 .netrwhist
 *~
 
-# Clinic
-*.clinic-*
-
 # System Files
 .DS_Store
 Thumbs.db

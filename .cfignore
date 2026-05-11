@@ -14,8 +14,6 @@ eslint.config.js
 .editorconfig
 .vscode
 *.code-workspace
-.clinic
-*.clinic-*
 .tscache
 .c8rc.json
 .nycrc.json
