@@ -5,13 +5,13 @@ packages:
   - ./ui/web
 
 allowBuilds:
-  '@parcel/watcher': set this to true or false
-  better-sqlite3: true
-  bufferutil: set this to true or false
-  es5-ext: set this to true or false
-  esbuild: set this to true or false
-  msgpackr-extract: set this to true or false
-  utf-8-validate: set this to true or false
+  '@parcel/watcher': false
+  better-sqlite3: false
+  bufferutil: false
+  es5-ext: false
+  esbuild: false
+  msgpackr-extract: false
+  utf-8-validate: false
 
 overrides:
   bn.js@<5.2.3: '>=5.2.3'
