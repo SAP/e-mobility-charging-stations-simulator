@@ -59,20 +59,12 @@ export const has = (property: PropertyKey, object: unknown): boolean => {
   return Object.hasOwn(object, property)
 }
 
-const type = (value: unknown): string => {
-  if (value === null) return 'Null'
-  if (value === undefined) return 'Undefined'
-  if (Number.isNaN(value)) return 'NaN'
-  if (Array.isArray(value)) return 'Array'
-  return Object.prototype.toString.call(value).slice(8, -1)
-}
-
-const isObject = (value: unknown): value is object => {
-  return type(value) === 'Object'
+const isPlainObject = (value: unknown): value is object => {
+  return Object.prototype.toString.call(value) === '[object Object]'
 }
 
 export const isJsonObject = (value: unknown): value is JsonObject => {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
+  return isPlainObject(value)
 }
 
 /**
@@ -85,7 +77,7 @@ export function assertIsJsonObject (
   value: unknown,
   error?: Error | string
 ): asserts value is JsonObject {
-  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+  if (!isJsonObject(value)) {
     if (error instanceof Error) {
       throw error
     }
@@ -109,7 +101,7 @@ export const isEmpty = (value: unknown): boolean => {
   if (Array.isArray(value)) return value.length === 0
   if (value instanceof Map) return value.size === 0
   if (value instanceof Set) return value.size === 0
-  if (isObject(value)) return Object.keys(value).length === 0
+  if (isPlainObject(value)) return Object.keys(value).length === 0
   return false
 }
 
@@ -117,11 +109,11 @@ export const isEmpty = (value: unknown): boolean => {
 export const mergeDeepRight = <T extends object, S extends object>(target: T, source: S): T => {
   const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
 
-  if (isObject(target) && isObject(source)) {
+  if (isPlainObject(target) && isPlainObject(source)) {
     Object.keys(source).forEach(key => {
       const sourceValue = (source as Record<string, unknown>)[key]
       const targetValue = (target as Record<string, unknown>)[key]
-      if (isObject(sourceValue) && isObject(targetValue)) {
+      if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
         output[key] = mergeDeepRight(
           targetValue as Record<string, unknown>,
           sourceValue as Record<string, unknown>
