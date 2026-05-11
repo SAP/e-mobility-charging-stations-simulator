@@ -13,11 +13,5 @@ allowBuilds:
   msgpackr-extract: false
   utf-8-validate: false
 
-minimumReleaseAgeExclude:
-  - ip-address@10.1.1
-
-overrides:
-  ip-address@<=10.1.0: ^10.1.1
-
 patchedDependencies:
   '@ai-hero/sandcastle': patches/@ai-hero__sandcastle.patch
