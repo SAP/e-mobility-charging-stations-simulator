@@ -154,11 +154,11 @@ await describe('OCPP16ServiceUtils — MeterValues', async () => {
       const beginMeterValue: OCPP16MeterValue = {
         sampledValue: [{ context: OCPP16MeterValueContext.TRANSACTION_BEGIN, value: '0' }],
         timestamp: new Date('2025-01-01T00:00:00Z'),
-      } as OCPP16MeterValue
+      }
       const endMeterValue: OCPP16MeterValue = {
         sampledValue: [{ context: OCPP16MeterValueContext.TRANSACTION_END, value: '100' }],
         timestamp: new Date('2025-01-01T01:00:00Z'),
-      } as OCPP16MeterValue
+      }
 
       // Act
       const result = OCPP16ServiceUtils.buildTransactionDataMeterValues(
@@ -176,11 +176,11 @@ await describe('OCPP16ServiceUtils — MeterValues', async () => {
       const beginMeterValue: OCPP16MeterValue = {
         sampledValue: [],
         timestamp: new Date(),
-      } as OCPP16MeterValue
+      }
       const endMeterValue: OCPP16MeterValue = {
         sampledValue: [],
         timestamp: new Date(),
-      } as OCPP16MeterValue
+      }
 
       const result1 = OCPP16ServiceUtils.buildTransactionDataMeterValues(
         beginMeterValue,

@@ -597,10 +597,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean {
-    return isIncomingRequestCommandSupported(
-      chargingStation,
-      commandName as OCPP16IncomingRequestCommand
-    )
+    return isIncomingRequestCommandSupported(chargingStation, commandName)
   }
 
   private composeCompositeSchedule (

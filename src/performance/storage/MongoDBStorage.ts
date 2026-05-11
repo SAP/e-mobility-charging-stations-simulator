@@ -50,7 +50,7 @@ export class MongoDBStorage extends Storage {
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
         .replaceOne(
           { id: performanceStatistics.id },
-          this.serializePerformanceStatistics(performanceStatistics) as unknown as Statistics,
+          this.serializePerformanceStatistics(performanceStatistics),
           { upsert: true }
         )
     } catch (error) {

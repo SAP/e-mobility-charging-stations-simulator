@@ -44,7 +44,7 @@ function createSimpleHandlerStation (): MockChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
-  return station as MockChargingStation
+  return station
 }
 
 await describe('OCPP16ResponseService — SimpleHandlers', async () => {

@@ -37,7 +37,7 @@ class TestableMongoDBStorage extends MongoDBStorage {
   }
 
   public getOpened (): boolean {
-    return Reflect.get(this, 'opened') as boolean
+    return Reflect.get(this, 'opened')
   }
 
   public setClient (client: MockMongoClient): void {
@@ -349,7 +349,7 @@ await describe('MongoDBStorage', async () => {
       stats.statisticsData.set('StatusNotification', {
         requestCount: 50,
         responseCount: 50,
-      } as unknown as Record<string, unknown>)
+      })
 
       // Act
       await storage.storePerformanceStatistics(stats)
@@ -395,7 +395,7 @@ await describe('MongoDBStorage', async () => {
       const failingClient: MockMongoClient = {
         close: async () => Promise.resolve(),
         connect: async () => Promise.resolve(),
-        db: () => ({ collection: () => failingCollection }) as unknown as MockDb,
+        db: () => ({ collection: () => failingCollection }),
       }
       storage.setClient(failingClient)
       storage.setOpened(true)

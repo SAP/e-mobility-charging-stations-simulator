@@ -21,7 +21,7 @@ export const createAtgCommands = (program: Command): Command => {
     .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
-        ...(pickPresent(options as Record<string, unknown>, ['connectorIds']) as RequestPayload),
+        ...(pickPresent(options, ['connectorIds']) as RequestPayload),
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, payload)
@@ -33,7 +33,7 @@ export const createAtgCommands = (program: Command): Command => {
     .option('--connector-ids <ids>', 'comma-separated connector IDs', parseCommaSeparatedInts)
     .action(async (hashIds: string[], options: { connectorIds?: number[] }) => {
       const payload: RequestPayload = {
-        ...(pickPresent(options as Record<string, unknown>, ['connectorIds']) as RequestPayload),
+        ...(pickPresent(options, ['connectorIds']) as RequestPayload),
         ...buildHashIdsPayload(hashIds),
       }
       await runAction(program, ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, payload)

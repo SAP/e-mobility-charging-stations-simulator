@@ -70,7 +70,7 @@ describe('useTheme', () => {
   it('should ignore invalid theme name', () => {
     const { activeThemeId, switchTheme } = useTheme()
     const before = activeThemeId.value
-    const switchThemeUntyped = switchTheme as (name: string) => void
+    const switchThemeUntyped = switchTheme
     switchThemeUntyped('nonexistent')
     expect(activeThemeId.value).toBe(before)
   })

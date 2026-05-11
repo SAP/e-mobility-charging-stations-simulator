@@ -50,7 +50,7 @@ function createBootNotificationStation (): MockChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
-  return station as MockChargingStation
+  return station
 }
 
 await describe('B01 - BootNotificationResponse handler', async () => {
@@ -76,8 +76,8 @@ await describe('B01 - BootNotificationResponse handler', async () => {
     await responseService.responseHandler(
       mockStation,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
-      payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-      {} as Parameters<typeof responseService.responseHandler>[3]
+      payload,
+      {}
     )
   }
 

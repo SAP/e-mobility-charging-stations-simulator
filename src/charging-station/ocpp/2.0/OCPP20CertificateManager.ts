@@ -148,20 +148,20 @@ export class OCPP20CertificateManager {
         issuerPublicKeyDer = issuerCert.publicKey.export({
           format: 'der',
           type: 'spki',
-        }) as Buffer
+        })
       } else if (this.isSelfSignedCertificate(x509)) {
         // Self-signed certificate: issuer = subject, use the certificate's own public key
         issuerPublicKeyDer = x509.publicKey.export({
           format: 'der',
           type: 'spki',
-        }) as Buffer
+        })
       } else {
         // Non-self-signed without issuer cert: use subject's public key as fallback
         // This is technically incorrect per RFC 6960 but maintains backward compatibility
         issuerPublicKeyDer = x509.publicKey.export({
           format: 'der',
           type: 'spki',
-        }) as Buffer
+        })
       }
 
       const issuerKeyHash = hash(algorithmName, issuerPublicKeyDer, 'hex')

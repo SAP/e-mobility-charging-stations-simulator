@@ -70,7 +70,7 @@ await describe('OCPPServiceOperations', async () => {
         requestHandler.mock.calls.length >= 1,
         'request handler should have been called at least once'
       )
-      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'StopTransaction')
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'StopTransaction')
     })
 
     await it('should send TransactionEvent(Ended) for OCPP 2.0 stations and return accepted: true', async () => {
@@ -90,7 +90,7 @@ await describe('OCPPServiceOperations', async () => {
         requestHandler.mock.calls.length >= 1,
         'request handler should have been called at least once'
       )
-      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'TransactionEvent')
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'TransactionEvent')
     })
 
     await it('should throw OCPPError for unsupported OCPP version in stopTransactionOnConnector', async () => {
@@ -209,7 +209,7 @@ await describe('OCPPServiceOperations', async () => {
         requestHandler.mock.calls.length >= 1,
         'request handler should have been called at least once'
       )
-      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'StartTransaction')
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'StartTransaction')
     })
 
     await it('should send TransactionEvent(Started) for OCPP 2.0 stations and return accepted: true', async () => {
@@ -228,7 +228,7 @@ await describe('OCPPServiceOperations', async () => {
         requestHandler.mock.calls.length >= 1,
         'request handler should have been called at least once'
       )
-      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'TransactionEvent')
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'TransactionEvent')
     })
 
     await it('should generate transactionId for OCPP 2.0 when not pre-populated', async () => {

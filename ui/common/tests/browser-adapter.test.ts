@@ -30,7 +30,7 @@ await describe('browser WebSocket adapter', async () => {
   // Test: MessageEvent data extraction
   await it('should extract data from MessageEvent in onmessage', () => {
     const mockWs = createMockBrowserWs()
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     let receivedData: string | undefined
     adapter.onmessage = event => {
       receivedData = event.data
@@ -42,7 +42,7 @@ await describe('browser WebSocket adapter', async () => {
   // Test: onerror produces WebSocketLike error shape
   await it('should produce error shape from browser Event in onerror', () => {
     const mockWs = createMockBrowserWs()
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     let receivedError: unknown
     let receivedMessage: string | undefined
     adapter.onerror = event => {
@@ -57,7 +57,7 @@ await describe('browser WebSocket adapter', async () => {
   // Test: onclose extracts code and reason
   await it('should extract code and reason from CloseEvent in onclose', () => {
     const mockWs = createMockBrowserWs()
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     let receivedCode: number | undefined
     let receivedReason: string | undefined
     adapter.onclose = event => {
@@ -72,7 +72,7 @@ await describe('browser WebSocket adapter', async () => {
   // Test: onopen forwarded
   await it('should forward onopen callback', () => {
     const mockWs = createMockBrowserWs()
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     let opened = false
     adapter.onopen = () => {
       opened = true
@@ -88,7 +88,7 @@ await describe('browser WebSocket adapter', async () => {
     mockWs.send = (data: string) => {
       sentData = data
     }
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     adapter.send('{"test":1}')
     assert.strictEqual(sentData, '{"test":1}')
   })
@@ -97,7 +97,7 @@ await describe('browser WebSocket adapter', async () => {
   await it('should delegate readyState to browser WebSocket', () => {
     const mockWs = createMockBrowserWs()
     mockWs.readyState = WebSocketReadyState.CONNECTING
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     assert.strictEqual(adapter.readyState, WebSocketReadyState.CONNECTING)
   })
 
@@ -108,7 +108,7 @@ await describe('browser WebSocket adapter', async () => {
     mockWs.close = (code?: number) => {
       closedCode = code
     }
-    const adapter = createBrowserWsAdapter(mockWs as never)
+    const adapter = createBrowserWsAdapter(mockWs)
     adapter.close(1000)
     assert.strictEqual(closedCode, 1000)
   })

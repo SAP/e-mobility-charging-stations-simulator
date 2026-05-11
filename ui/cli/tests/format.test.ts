@@ -266,7 +266,7 @@ await describe('format helpers', async () => {
             connectorId: 1,
             connectorStatus: {
               availability: OCPP16AvailabilityType.OPERATIVE,
-              status: undefined as unknown as OCPP16ChargePointStatus,
+              status: undefined,
             },
           },
         ]

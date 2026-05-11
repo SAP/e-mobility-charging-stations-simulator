@@ -217,8 +217,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should handle invalid component gracefully', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
-          component: { name: 'InvalidComponent' as unknown as OCPP20ComponentName },
-          variable: { name: 'SomeVariable' as unknown as OCPP20OptionalVariableName },
+          component: { name: 'InvalidComponent' },
+          variable: { name: 'SomeVariable' },
         },
       ]
 
@@ -474,7 +474,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should reject unknown variables', () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable: VariableType = {
-        name: 'UnknownVariable' as unknown as OCPP20OptionalVariableName,
+        name: 'UnknownVariable',
       }
 
       const isSupported = testable.isVariableSupported(component, variable)
@@ -520,7 +520,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const request: OCPP20SetVariableDataType[] = [
         {
           attributeValue: '20',
-          component: { name: 'InvalidComponent' as unknown as OCPP20ComponentName },
+          component: { name: 'InvalidComponent' },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ]
@@ -537,7 +537,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         {
           attributeValue: '10',
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'UnknownVariable' as unknown as VariableType['name'] },
+          variable: { name: 'UnknownVariable' },
         },
       ]
 
@@ -610,7 +610,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         {
           attributeValue: '10',
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
-          variable: { name: 'InvalidVariable' as unknown as VariableType['name'] },
+          variable: { name: 'InvalidVariable' },
         },
         {
           attributeType: AttributeEnumType.Target,

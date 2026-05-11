@@ -64,15 +64,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
         internals.connectors.set(0, {
           availability: AvailabilityType.Operative,
           MeterValues: [],
-        } as ConnectorStatus)
+        })
         internals.connectors.set(1, {
           availability: AvailabilityType.Operative,
           bootStatus: 'Available',
           MeterValues: [],
           transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
-          transactionEndedMeterValuesSetInterval: interval2 as unknown as NodeJS.Timeout,
+          transactionEndedMeterValuesSetInterval: interval2,
           transactionEventQueue: [],
-          transactionUpdatedMeterValuesSetInterval: interval1 as unknown as NodeJS.Timeout,
+          transactionUpdatedMeterValuesSetInterval: interval1,
         } as unknown as ConnectorStatus)
 
         const result = buildConnectorsStatus(station)
@@ -133,11 +133,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       internals.connectors.set(3, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
 
       const result = buildConnectorsStatus(station)
 
@@ -164,7 +164,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         MeterValues: [],
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
-      } as unknown as ConnectorStatus)
+      })
 
       internals.evses.set(0, {
         availability: AvailabilityType.Operative,
@@ -204,7 +204,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
-      } as unknown as ConnectorStatus)
+      })
 
       internals.evses.set(0, {
         availability: AvailabilityType.Operative,
@@ -242,17 +242,17 @@ await describe('ChargingStationConfigurationUtils', async () => {
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       evseConnectors.set(2, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
 
       const evse0Connectors = new Map<number, ConnectorStatus>()
       evse0Connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
 
       internals.evses.set(0, {
         availability: AvailabilityType.Operative,
@@ -451,7 +451,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       internals.connectors.set(1, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
@@ -459,7 +459,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
-      } as unknown as ConnectorStatus)
+      })
 
       const result = buildConnectorEntries(station)
 
@@ -491,15 +491,15 @@ await describe('ChargingStationConfigurationUtils', async () => {
       internals.connectors.set(0, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       internals.connectors.set(3, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       internals.connectors.set(7, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
 
       const result = buildConnectorEntries(station)
 
@@ -529,7 +529,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
-      } as unknown as ConnectorStatus)
+      })
 
       internals.evses.set(0, {
         availability: AvailabilityType.Operative,
@@ -580,11 +580,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       evse2Connectors.set(2, {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
       evse2Connectors.set(5, {
         availability: AvailabilityType.Inoperative,
         MeterValues: [],
-      } as ConnectorStatus)
+      })
 
       internals.evses.set(0, {
         availability: AvailabilityType.Operative,

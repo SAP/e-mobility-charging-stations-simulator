@@ -29,7 +29,7 @@ const createMockRawWs = (): MockRawWs => ({
 await describe('generic WebSocket adapter factory', async () => {
   await it('should apply dataConverter to message data', () => {
     const mockWs = createMockRawWs()
-    const adapter = createWsAdapter(mockWs as never, {
+    const adapter = createWsAdapter(mockWs, {
       dataConverter: data => `converted:${String(data)}`,
     })
     let receivedData: string | undefined
@@ -42,7 +42,7 @@ await describe('generic WebSocket adapter factory', async () => {
 
   await it('should use custom errorDefault in onerror fallback', () => {
     const mockWs = createMockRawWs()
-    const adapter = createWsAdapter(mockWs as never, {
+    const adapter = createWsAdapter(mockWs, {
       dataConverter: data => data as string,
       errorDefault: 'Custom fallback',
     })
@@ -56,7 +56,7 @@ await describe('generic WebSocket adapter factory', async () => {
 
   await it('should default errorDefault to WebSocket error', () => {
     const mockWs = createMockRawWs()
-    const adapter = createWsAdapter(mockWs as never, {
+    const adapter = createWsAdapter(mockWs, {
       dataConverter: data => data as string,
     })
     let receivedMessage: string | undefined
@@ -78,7 +78,7 @@ await describe('generic WebSocket adapter factory', async () => {
       sentData = data
     }
     mockWs.readyState = WebSocketReadyState.CONNECTING
-    const adapter = createWsAdapter(mockWs as never, {
+    const adapter = createWsAdapter(mockWs, {
       dataConverter: data => data as string,
     })
     adapter.close(1000)
@@ -90,7 +90,7 @@ await describe('generic WebSocket adapter factory', async () => {
 
   await it('should forward onclose and onopen events', () => {
     const mockWs = createMockRawWs()
-    const adapter = createWsAdapter(mockWs as never, {
+    const adapter = createWsAdapter(mockWs, {
       dataConverter: data => data as string,
     })
     let closeCode: number | undefined

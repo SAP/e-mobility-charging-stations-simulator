@@ -65,7 +65,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
       await requestService.requestHandler(station, OCPP16RequestCommand.STATUS_NOTIFICATION, {
         connectorId: 1,
         status: OCPP16ChargePointStatus.Available,
-      } as unknown as JsonType)
+      })
 
       assert.strictEqual(sendMessageMock.mock.callCount(), 1)
       const sentPayload = sendMessageMock.mock.calls[0]
@@ -81,7 +81,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
       await requestService.requestHandler(station, OCPP16RequestCommand.START_TRANSACTION, {
         connectorId: 1,
         idTag: 'TEST001',
-      } as unknown as JsonType)
+      })
 
       assert.strictEqual(sendMessageMock.mock.callCount(), 1)
       const sentPayload = sendMessageMock.mock.calls[0]
@@ -103,7 +103,7 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
 
       await requestService.requestHandler(station, OCPP16RequestCommand.STOP_TRANSACTION, {
         transactionId: 12345,
-      } as unknown as JsonType)
+      })
 
       assert.strictEqual(sendMessageMock.mock.callCount(), 1)
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP16StopTransactionRequest

@@ -72,7 +72,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
           chargingSchedulePeriod: [{ limit: 1000, startPeriod: 0 }],
         },
         stackLevel,
-      } as OCPP16ChargingProfile
+      }
     }
 
     await it('should return false for undefined profiles array', () => {
@@ -276,7 +276,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         chargingSchedulePeriod: [{ limit, startPeriod: 0 }],
         duration: durationSeconds,
         startSchedule: start,
-      } as OCPP16ChargingSchedule
+      }
     }
 
     await it('should return undefined when both schedules are undefined', () => {

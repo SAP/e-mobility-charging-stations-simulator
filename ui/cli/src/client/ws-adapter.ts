@@ -12,7 +12,7 @@ const toDataString = (data: WsWebSocket.Data): string => {
     return Buffer.from(data).toString('utf-8')
   }
   if (Array.isArray(data)) {
-    return Buffer.concat(data as Buffer[]).toString('utf-8')
+    return Buffer.concat(data).toString('utf-8')
   }
   return data
 }

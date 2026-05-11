@@ -335,7 +335,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidCertificate')
       assert.ok(
         response.statusInfo.additionalInfo?.includes(
-          OCPP20OptionalVariableName.MaxCertificateChainSize as string
+          OCPP20OptionalVariableName.MaxCertificateChainSize
         )
       )
     })

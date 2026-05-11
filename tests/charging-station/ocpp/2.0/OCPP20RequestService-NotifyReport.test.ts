@@ -535,7 +535,7 @@ await describe('B07/B08 - NotifyReport', async () => {
 
     // Verify no additional properties are added
     const expectedKeys = ['generatedAt', 'reportData', 'requestId', 'seqNo', 'tbc']
-    const actualKeys = Object.keys(payload as object).sort()
+    const actualKeys = Object.keys(payload).sort()
     expectedKeys.sort()
     assert.deepStrictEqual(actualKeys, expectedKeys)
   })

@@ -54,7 +54,7 @@ function createTemplate (hash: string): ChargingStationTemplate {
     chargePointModel: 'test-model',
     chargePointVendor: 'test-vendor',
     templateHash: hash,
-  } as ChargingStationTemplate
+  }
 }
 
 /**

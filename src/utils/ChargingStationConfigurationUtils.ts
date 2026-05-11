@@ -128,7 +128,7 @@ export const buildEvsesStatus = (
         {
           ...evseStatusRest,
           connectorsStatus,
-        } as EvseStatusConfiguration,
+        },
       ] as [number, EvseStatusConfiguration]
     })
     .toArray()

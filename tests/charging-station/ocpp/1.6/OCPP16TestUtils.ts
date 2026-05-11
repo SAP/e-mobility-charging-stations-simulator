@@ -11,12 +11,10 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   ChargingStationInfo,
   ConfigurationKey,
-  IncomingRequestCommand,
   JsonObject,
   OCPP16ChargingProfile,
   OCPP16ChargingSchedulePeriod,
   OCPP16SampledValue,
-  RequestCommand,
   SampledValueTemplate,
 } from '../../../../src/types/index.js'
 
@@ -99,12 +97,9 @@ export function createCommandsSupport (config: {
   outgoingCommands?: Record<string, boolean>
 }): NonNullable<ChargingStationInfo['commandsSupport']> {
   return {
-    incomingCommands: (config.incomingCommands ?? {}) as unknown as Record<
-      IncomingRequestCommand,
-      boolean
-    >,
+    incomingCommands: config.incomingCommands ?? {},
     ...(config.outgoingCommands != null && {
-      outgoingCommands: config.outgoingCommands as unknown as Record<RequestCommand, boolean>,
+      outgoingCommands: config.outgoingCommands,
     }),
   }
 }
@@ -117,7 +112,7 @@ export function createCommandsSupport (config: {
  * @returns The entries typed as `SampledValueTemplate[]`
  */
 export function createMeterValuesTemplate (entries: OCPP16SampledValue[]): SampledValueTemplate[] {
-  return entries as unknown as SampledValueTemplate[]
+  return entries
 }
 
 /**
@@ -261,7 +256,7 @@ export function createStandardStation (
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
 
-  return station as MockChargingStation
+  return station
 }
 
 /**
@@ -280,12 +275,7 @@ export async function dispatchResponse (
   payload: JsonObject,
   requestPayload: JsonObject = {}
 ): Promise<void> {
-  await responseService.responseHandler(
-    station,
-    command,
-    payload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[2],
-    requestPayload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[3]
-  )
+  await responseService.responseHandler(station, command, payload, requestPayload)
 }
 
 /**

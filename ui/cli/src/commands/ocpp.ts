@@ -64,7 +64,7 @@ export const createOcppCommands = (program: Command): Command => {
         options: { data?: string; messageId?: string; payload?: string; vendorId?: string }
       ) => {
         const payload: RequestPayload = {
-          ...pickDefined(options as Record<string, unknown>, {
+          ...pickDefined(options, {
             data: 'data',
             messageId: 'messageId',
             vendorId: 'vendorId',

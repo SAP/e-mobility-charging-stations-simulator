@@ -33,7 +33,7 @@ class TestableUIHttpServer extends UIHttpServer {
   }
 
   public getAcceptsGzip (): Map<UUIDv4, boolean> {
-    return Reflect.get(this, 'acceptsGzip') as Map<UUIDv4, boolean>
+    return Reflect.get(this, 'acceptsGzip')
   }
 
   public getResponseHandlersSize (): number {

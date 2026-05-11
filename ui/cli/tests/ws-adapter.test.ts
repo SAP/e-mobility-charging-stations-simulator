@@ -171,7 +171,7 @@ await describe('WS Adapter', async () => {
     adapter.onerror = event => {
       receivedMessage = event.message
     }
-    mockWs.onerror?.(42 as unknown as Error)
+    mockWs.onerror?.(42)
     assert.strictEqual(receivedMessage, 'Unknown error')
   })
 

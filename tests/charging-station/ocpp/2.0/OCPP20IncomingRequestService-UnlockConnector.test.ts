@@ -49,7 +49,7 @@ function createUnlockConnectorStation (): {
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
-  return { mockStation: station as MockChargingStation, requestHandlerMock }
+  return { mockStation: station, requestHandlerMock }
 }
 
 await describe('F05 - UnlockConnector', async () => {

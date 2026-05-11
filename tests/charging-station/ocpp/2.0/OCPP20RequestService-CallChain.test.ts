@@ -197,7 +197,7 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
       await service.requestHandler(
         station,
         OCPP20RequestCommand.TRANSACTION_EVENT,
-        preBuiltPayload as unknown as OCPP20TransactionEventRequest,
+        preBuiltPayload,
         { rawPayload: true }
       )
 

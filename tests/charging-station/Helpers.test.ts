@@ -27,13 +27,11 @@ import {
   AvailabilityType,
   type ChargingProfile,
   ChargingProfilePurposeType,
-  type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
-  type MeterValue,
   OCPPVersion,
   type Reservation,
   type SampledValueTemplate,
@@ -58,13 +56,12 @@ await describe('Helpers', async () => {
   })
 
   // Helper to create test reservations with configurable expiry
-  const createTestReservation = (expired = false): Reservation =>
-    ({
-      connectorId: 1,
-      expiryDate: new Date(Date.now() + (expired ? -60000 : 60000)),
-      idTag: 'tag1',
-      reservationId: 1,
-    }) as Reservation
+  const createTestReservation = (expired = false): Reservation => ({
+    connectorId: 1,
+    expiryDate: new Date(Date.now() + (expired ? -60000 : 60000)),
+    idTag: 'tag1',
+    reservationId: 1,
+  })
 
   await it('should return formatted charging station ID with index', () => {
     assert.strictEqual(
@@ -668,7 +665,7 @@ await describe('Helpers', async () => {
     assert.strictEqual(errorMock.mock.calls.length, 1)
     assert.throws(
       () => {
-        checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
+        checkConfiguration({}, 'log prefix |', 'configuration.json')
       },
       { message: /Empty charging station configuration from file configuration\.json/ }
     )
@@ -905,7 +902,7 @@ await describe('Helpers', async () => {
       const connectorStatus: ConnectorStatus = {
         availability: AvailabilityType.Operative,
         MeterValues: [],
-        transactionBeginMeterValue: { sampledValue: [], timestamp: new Date() } as MeterValue,
+        transactionBeginMeterValue: { sampledValue: [], timestamp: new Date() },
         transactionDeauthorized: true,
         transactionDeauthorizedEnergyWh: 500,
         transactionEnergyActiveImportRegisterValue: 1234,

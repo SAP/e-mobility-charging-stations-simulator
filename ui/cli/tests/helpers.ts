@@ -4,10 +4,10 @@ export const captureStream = (stream: 'stderr' | 'stdout', fn: () => void): stri
   const target = stream === 'stdout' ? process.stdout : process.stderr
   const chunks: string[] = []
   const original = target.write.bind(target)
-  target.write = ((chunk: string): boolean => {
+  target.write = (chunk: string): boolean => {
     chunks.push(chunk)
     return true
-  }) as typeof target.write
+  }
   try {
     fn()
   } finally {

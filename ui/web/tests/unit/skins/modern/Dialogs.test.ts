@@ -371,7 +371,7 @@ describe('Dialogs', () => {
             },
           ],
           status: ResponseStatus.FAILURE,
-        } as never)
+        })
       )
       await wrapper.find('#modern-tx-idtag').setValue('BAD-TAG')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')
@@ -429,7 +429,7 @@ describe('Dialogs', () => {
             },
           ],
           status: ResponseStatus.FAILURE,
-        } as never)
+        })
       )
       await wrapper.find('#modern-auth-tag').setValue('BAD')
       await wrapper.findAll('.stub-modal__foot button')[1].trigger('click')

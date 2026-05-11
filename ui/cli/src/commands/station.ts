@@ -60,7 +60,7 @@ export const createStationCommands = (program: Command): Command => {
       }) => {
         const payload: RequestPayload = {
           numberOfStations: options.count,
-          options: pickDefined(options as Record<string, unknown>, {
+          options: pickDefined(options, {
             autoStart: 'autoStart',
             baseName: 'baseName',
             fixedName: 'fixedName',
@@ -83,7 +83,7 @@ export const createStationCommands = (program: Command): Command => {
     .option('--delete-config', 'delete station configuration files')
     .action(async (hashIds: string[], options: { deleteConfig?: true }) => {
       const payload: RequestPayload = {
-        ...(pickDefined(options as Record<string, unknown>, {
+        ...(pickDefined(options, {
           deleteConfig: 'deleteConfiguration',
         }) as RequestPayload),
         ...buildHashIdsPayload(hashIds),

@@ -147,7 +147,7 @@ describe('ConnectorRow', () => {
     })
 
     it('should label "Stop ATG" when running', () => {
-      wrapper = mountRow({ atgStatus: { start: true } as Status })
+      wrapper = mountRow({ atgStatus: { start: true } })
       expect(wrapper.text()).toContain('Stop ATG')
     })
 
@@ -160,7 +160,7 @@ describe('ConnectorRow', () => {
     })
 
     it('should call stopAutomaticTransactionGenerator when stopping', async () => {
-      wrapper = mountRow({ atgStatus: { start: true } as Status })
+      wrapper = mountRow({ atgStatus: { start: true } })
       const chip = wrapper.find('.modern-btn--chip')
       await chip.trigger('click')
       await flushPromises()

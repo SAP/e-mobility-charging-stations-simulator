@@ -201,6 +201,21 @@ export default defineConfig([
     ts: true,
   }),
   {
+    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '**/*.vue'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'none',
+          caughtErrors: 'none',
+          ignoreRestSiblings: true,
+          vars: 'all',
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
     files: [
       'src/charging-station/Bootstrap.ts',
       'src/charging-station/ChargingStation.ts',

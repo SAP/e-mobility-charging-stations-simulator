@@ -190,7 +190,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean {
-    return isRequestCommandSupported(chargingStation, commandName as OCPP20RequestCommand)
+    return isRequestCommandSupported(chargingStation, commandName)
   }
 
   private handleResponseAuthorize (

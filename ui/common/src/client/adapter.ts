@@ -86,7 +86,7 @@ export const createWsAdapter = (ws: RawWebSocket, options: WsAdapterOptions): We
     },
 
     get readyState (): WebSocketReadyState {
-      return ws.readyState as WebSocketReadyState
+      return ws.readyState
     },
 
     send (data: string): void {

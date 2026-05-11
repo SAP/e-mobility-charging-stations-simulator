@@ -166,7 +166,7 @@ export class WebSocketClient {
       responsePayload == null ||
       typeof responsePayload !== 'object' ||
       !('status' in responsePayload) ||
-      typeof (responsePayload as { status: unknown }).status !== 'string'
+      typeof responsePayload.status !== 'string'
     ) {
       this.settleHandler(uuid, handler)
       handler.reject(new Error('Server sent malformed response payload'))

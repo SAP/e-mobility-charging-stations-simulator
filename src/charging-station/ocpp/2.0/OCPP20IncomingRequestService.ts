@@ -977,10 +977,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
   ): boolean {
-    return isIncomingRequestCommandSupported(
-      chargingStation,
-      commandName as OCPP20IncomingRequestCommand
-    )
+    return isIncomingRequestCommandSupported(chargingStation, commandName)
   }
 
   private async authorizeToken (
@@ -3689,8 +3686,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // L01.FR.04: Simulate signature verification
       const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
         chargingStation,
-        OCPP20ComponentName.FirmwareCtrlr as string,
-        OCPP20VendorVariableName.SimulateSignatureVerificationFailure as string,
+        OCPP20ComponentName.FirmwareCtrlr,
+        OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
         false
       )
 

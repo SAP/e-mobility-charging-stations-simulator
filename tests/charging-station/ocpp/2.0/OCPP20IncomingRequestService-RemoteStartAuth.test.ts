@@ -206,8 +206,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       // Given: Request without evseId (undefined)
 
       const request: OCPP20RequestStartTransactionRequest = {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any -- testing invalid undefined input
-        evseId: undefined as any,
+        evseId: undefined,
         idToken: {
           idToken: 'VALID_TOKEN_006',
           type: OCPP20IdTokenEnumType.ISO14443,

@@ -150,7 +150,7 @@ await describe('Configuration', async () => {
     const originalData = internals.configurationData
     internals.configurationData = {
       stationTemplateUrls: [],
-    } as ConfigurationData
+    }
 
     try {
       const distribution = Configuration.getSupervisionUrlDistribution()

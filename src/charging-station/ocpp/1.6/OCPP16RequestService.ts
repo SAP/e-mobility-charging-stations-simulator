@@ -7,7 +7,6 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   ChargePointErrorCode,
   ErrorType,
-  type JsonObject,
   type JsonType,
   OCPP16ChargePointStatus,
   type OCPP16MeterValue,
@@ -17,7 +16,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
-import { generateUUID, logger } from '../../../utils/index.js'
+import { assertIsJsonObject, generateUUID, logger } from '../../../utils/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
@@ -170,16 +169,10 @@ export class OCPP16RequestService extends OCPPRequestService {
   ): Request {
     let connectorId: number | undefined
     let energyActiveImportRegister: number
-    commandParams = commandParams as JsonObject
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building '${commandName}' payload`
     )
     switch (commandName) {
-      case OCPP16RequestCommand.AUTHORIZE:
-        return {
-          idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
-          ...commandParams,
-        } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
       case OCPP16RequestCommand.DATA_TRANSFER:
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
@@ -188,41 +181,57 @@ export class OCPP16RequestService extends OCPPRequestService {
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
+    }
+    assertIsJsonObject(
+      commandParams,
+      new OCPPError(
+        ErrorType.PROTOCOL_ERROR,
+        `'${commandName}' command requires object parameters`,
+        commandName
+      )
+    )
+    const params = commandParams
+    switch (commandName) {
+      case OCPP16RequestCommand.AUTHORIZE:
+        return {
+          idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
+          ...params,
+        } as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
           idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
-            commandParams.connectorId as number,
+            params.connectorId as number,
             true
           ),
           timestamp: new Date(),
           ...(OCPP16ServiceUtils.hasReservation(
             chargingStation,
-            commandParams.connectorId as number,
-            commandParams.idTag as string
+            params.connectorId as number,
+            params.idTag as string
           ) && {
             reservationId: chargingStation.getReservationBy(
               'connectorId',
               chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                 ? 0
-                : (commandParams.connectorId as number)
+                : (params.connectorId as number)
             )?.reservationId,
           }),
-          ...commandParams,
+          ...params,
         } as unknown as Request
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return OCPP16ServiceUtils.buildStatusNotificationRequest({
           errorCode: ChargePointErrorCode.NO_ERROR,
-          ...commandParams,
-        } as unknown as OCPP16StatusNotificationRequest) as unknown as Request
+          ...params,
+        } as OCPP16StatusNotificationRequest) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         ;(chargingStation.stationInfo?.transactionDataMeterValues === true ||
           OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
-            commandParams.transactionId as number
+            params.transactionId as number
           ))
         energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          commandParams.transactionId as number,
+          params.transactionId as number,
           true
         )
         {
@@ -261,11 +270,11 @@ export class OCPP16RequestService extends OCPPRequestService {
             }
           }
           return {
-            idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
+            idTag: chargingStation.getTransactionIdTag(params.transactionId as number),
             meterStop: energyActiveImportRegister,
             timestamp: new Date(),
             ...(transactionData != null && { transactionData }),
-            ...commandParams,
+            ...params,
           } as unknown as Request
         }
       default: {
@@ -274,7 +283,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: ${errorMsg}`
         )
-        throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+        throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, params)
       }
     }
   }

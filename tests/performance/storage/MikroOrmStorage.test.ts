@@ -249,7 +249,7 @@ await describe('MikroOrmStorage', async () => {
       stats.statisticsData.set('StatusNotification', {
         requestCount: 50,
         responseCount: 50,
-      } as unknown as Record<string, unknown>)
+      })
 
       // Act
       await storage.storePerformanceStatistics(stats)

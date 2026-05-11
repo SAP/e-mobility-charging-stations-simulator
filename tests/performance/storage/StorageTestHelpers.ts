@@ -27,5 +27,5 @@ export function buildTestStatistics (id: string, name?: string): Statistics {
     name: name ?? `cs-${id}`,
     statisticsData: statsData,
     uri: 'ws://localhost:8080',
-  } as unknown as Statistics
+  }
 }

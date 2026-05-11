@@ -549,7 +549,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           {
             attributeType: AttributeEnumType.Actual,
             attributeValue: 'false',
-            component: { name: OCPP20ComponentName.ChargingStation as string },
+            component: { name: OCPP20ComponentName.ChargingStation },
             variable: { name: 'AllowNewSessionsPendingFirmwareUpdate' },
           },
         ])
@@ -746,7 +746,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           {
             attributeType: AttributeEnumType.Actual,
             attributeValue: 'true',
-            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            component: { name: OCPP20ComponentName.FirmwareCtrlr },
             variable: { name: 'SimulateSignatureVerificationFailure' },
           },
         ])
@@ -824,7 +824,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           {
             attributeType: AttributeEnumType.Actual,
             attributeValue: 'false',
-            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            component: { name: OCPP20ComponentName.FirmwareCtrlr },
             variable: { name: 'SimulateSignatureVerificationFailure' },
           },
         ])

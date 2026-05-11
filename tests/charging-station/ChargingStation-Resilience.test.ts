@@ -267,7 +267,7 @@ await describe('ChargingStation Resilience', async () => {
       // Set up a heartbeat timer (simulated)
       station.heartbeatSetInterval = setInterval(() => {
         /* empty */
-      }, TEST_HEARTBEAT_INTERVAL_MS) as unknown as NodeJS.Timeout
+      }, TEST_HEARTBEAT_INTERVAL_MS)
 
       // Act - Cleanup station
       cleanupChargingStation(station)

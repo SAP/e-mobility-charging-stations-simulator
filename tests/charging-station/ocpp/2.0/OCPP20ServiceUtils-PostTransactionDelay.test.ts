@@ -31,7 +31,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     const result = createMockChargingStation({
       connectorsCount: 1,
       ocppRequestService: {
-        requestHandler: requestHandler as (...args: unknown[]) => Promise<unknown>,
+        requestHandler,
       },
       ocppVersion: OCPPVersion.VERSION_20,
       started: true,

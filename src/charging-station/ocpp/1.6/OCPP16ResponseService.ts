@@ -178,7 +178,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: RequestCommand
   ): boolean {
-    return isRequestCommandSupported(chargingStation, commandName as OCPP16RequestCommand)
+    return isRequestCommandSupported(chargingStation, commandName)
   }
 
   private handleResponseAuthorize (

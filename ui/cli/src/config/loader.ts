@@ -63,7 +63,7 @@ const loadConfigFile = async (
       if (typeof uiServer !== 'object') {
         throw new Error('Config uiServer must be an object')
       }
-      return uiServer as Partial<UIServerConfigurationSection>
+      return uiServer
     }
     throw new Error(`Config file '${targetPath}' must contain a JSON object`)
   } catch (error: unknown) {

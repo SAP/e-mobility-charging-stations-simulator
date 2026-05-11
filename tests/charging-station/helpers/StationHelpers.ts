@@ -278,7 +278,7 @@ export function createConnectorStatus (
     transactionRemoteStarted: false,
     transactionStart: undefined,
     transactionStarted: false,
-  } as unknown as ConnectorStatus
+  }
 }
 
 /**

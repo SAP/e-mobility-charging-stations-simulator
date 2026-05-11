@@ -31,6 +31,7 @@ export {
 } from './MessageChannelUtils.js'
 export { average, max, median, min, percentile, std } from './StatisticUtils.js'
 export {
+  assertIsJsonObject,
   clampToSafeTimerValue,
   clone,
   computeExponentialBackOffDelay,
@@ -51,6 +52,7 @@ export {
   isArraySorted,
   isAsyncFunction,
   isEmpty,
+  isJsonObject,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,

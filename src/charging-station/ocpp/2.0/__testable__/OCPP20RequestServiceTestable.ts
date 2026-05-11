@@ -132,7 +132,7 @@ export function createTestableRequestService<T extends JsonType = JsonType> (
 
   // Create typed wrapper for the mock
   const sendMessageMock: SendMessageMock = {
-    fn: mockFn as unknown as SendMessageFn,
+    fn: mockFn,
     mock: mockFn.mock as unknown as SendMessageMock['mock'],
   }
 

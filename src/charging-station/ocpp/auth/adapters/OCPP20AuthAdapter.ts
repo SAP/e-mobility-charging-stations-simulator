@@ -174,7 +174,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
             return {
               additionalIdToken: value,
               type: 'string',
-            } as AdditionalInfoType
+            }
           }
         })
       : undefined

@@ -5,8 +5,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStationOcppConfiguration } from '../../src/types/index.js'
-
 import {
   addConfigurationKey,
   buildConfigKey,
@@ -36,7 +34,7 @@ await describe('ConfigurationKeyUtils', async () => {
       // Arrange
       const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
-      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
+      cs.ocppConfiguration = {}
 
       // Act & Assert
       assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
@@ -167,7 +165,7 @@ await describe('ConfigurationKeyUtils', async () => {
       // Arrange
       const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
-      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
+      cs.ocppConfiguration = {}
 
       // Act
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A)
@@ -490,7 +488,7 @@ await describe('ConfigurationKeyUtils', async () => {
       // Arrange
       const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
-      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
+      cs.ocppConfiguration = {}
       const errorMock = t.mock.method(logger, 'error')
 
       // Act
@@ -551,7 +549,7 @@ await describe('ConfigurationKeyUtils', async () => {
       // Arrange
       const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
-      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
+      cs.ocppConfiguration = {}
 
       // Act
       const res = deleteConfigurationKey(cs, TEST_KEY_1)

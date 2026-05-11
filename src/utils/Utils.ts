@@ -15,6 +15,7 @@ import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
 import { env } from 'node:process'
 
 import {
+  type JsonObject,
   type JsonType,
   MapStringifyFormat,
   MessageType,
@@ -55,7 +56,7 @@ export const has = (property: PropertyKey, object: unknown): boolean => {
   if (object == null || (typeof object !== 'object' && typeof object !== 'function')) {
     return false
   }
-  return Object.hasOwn(object as Record<PropertyKey, unknown>, property)
+  return Object.hasOwn(object, property)
 }
 
 const type = (value: unknown): string => {
@@ -68,6 +69,30 @@ const type = (value: unknown): string => {
 
 const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
+}
+
+export const isJsonObject = (value: unknown): value is JsonObject => {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/**
+ * Asserts that the given value is a JSON object (non-null, non-array object).
+ * @param value - Value to assert.
+ * @param error - Optional custom error or context message.
+ * @throws {Error | TypeError} The provided error, or a TypeError with the context message.
+ */
+export function assertIsJsonObject (
+  value: unknown,
+  error?: Error | string
+): asserts value is JsonObject {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new TypeError(
+      error != null ? `Expected a JSON object: ${error}` : 'Expected a JSON object'
+    )
+  }
 }
 
 export const isEmpty = (value: unknown): boolean => {
@@ -93,7 +118,7 @@ export const mergeDeepRight = <T extends object, S extends object>(target: T, so
   const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
 
   if (isObject(target) && isObject(source)) {
-    Object.keys(source as Record<string, unknown>).forEach(key => {
+    Object.keys(source).forEach(key => {
       const sourceValue = (source as Record<string, unknown>)[key]
       const targetValue = (target as Record<string, unknown>)[key]
       if (isObject(sourceValue) && isObject(targetValue)) {
@@ -487,11 +512,11 @@ export const getWebSocketCloseEventStatusString = (code: number): string => {
       return '(For applications)'
     }
   }
-  if (
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString] != null
-  ) {
-    return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString]
+  const statusString = (
+    WebSocketCloseEventStatusString as Readonly<Record<number, string | undefined>>
+  )[code]
+  if (statusString != null) {
+    return statusString
   }
   return '(Unknown)'
 }

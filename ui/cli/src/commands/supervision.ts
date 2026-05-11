@@ -24,7 +24,7 @@ export const createSupervisionCommands = (program: Command): Command => {
       ) => {
         const payload: RequestPayload = {
           url: options.supervisionUrl,
-          ...pickDefined(options as Record<string, unknown>, {
+          ...pickDefined(options, {
             supervisionPassword: 'supervisionPassword',
             supervisionUser: 'supervisionUser',
           }),

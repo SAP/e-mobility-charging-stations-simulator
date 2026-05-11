@@ -127,14 +127,7 @@ class TestableUIMCPServer extends UIMCPServer {
       timeout: ReturnType<typeof setTimeout>
     }
   > {
-    return Reflect.get(this, 'pendingMcpRequests') as Map<
-      string,
-      {
-        reject: (error: Error) => void
-        resolve: (payload: ResponsePayload) => void
-        timeout: ReturnType<typeof setTimeout>
-      }
-    >
+    return Reflect.get(this, 'pendingMcpRequests')
   }
 
   public getPendingMcpRequestsSize (): number {

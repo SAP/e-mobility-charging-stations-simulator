@@ -121,10 +121,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
       const obj = { nested: { deep: { created: date } } } as unknown as JsonType
       convertDateToISOString(obj)
       assert.deepStrictEqual(
-        ((obj as Record<string, unknown>).nested as Record<string, unknown>).deep as Record<
-          string,
-          unknown
-        >,
+        ((obj as Record<string, unknown>).nested as Record<string, unknown>).deep,
         { created: '2025-06-01T12:00:00.000Z' }
       )
     })

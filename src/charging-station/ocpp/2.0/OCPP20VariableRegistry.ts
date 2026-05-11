@@ -2588,7 +2588,7 @@ export function getVariableMetadata (
   }
   return VARIABLE_REGISTRY_LOOKUP_CI[
     buildCaseInsensitiveCompositeKey(component, undefined, variable)
-  ] as undefined | VariableMetadata
+  ]
 }
 
 /**

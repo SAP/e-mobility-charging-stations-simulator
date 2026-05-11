@@ -889,7 +889,7 @@ export class OCPP16ServiceUtils {
         connectorId,
         meterValue: [transactionEndMeterValue],
         transactionId,
-      } as MeterValuesRequest)
+      })
     }
     return await chargingStation.ocppRequestService.requestHandler<
       Partial<StopTransactionRequest>,
@@ -1016,10 +1016,7 @@ export class OCPP16ServiceUtils {
               }
               return schedulePeriod
             }),
-          duration: differenceInSeconds(
-            chargingScheduleInterval.end,
-            compositeInterval.start as Date
-          ),
+          duration: differenceInSeconds(chargingScheduleInterval.end, compositeInterval.start),
           startSchedule: compositeInterval.start as Date,
         }
       }
@@ -1032,10 +1029,7 @@ export class OCPP16ServiceUtils {
               compositeInterval
             )
           ),
-          duration: differenceInSeconds(
-            compositeInterval.end as Date,
-            chargingScheduleInterval.start
-          ),
+          duration: differenceInSeconds(compositeInterval.end, chargingScheduleInterval.start),
         }
       }
       return chargingSchedule

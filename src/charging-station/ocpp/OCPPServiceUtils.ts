@@ -212,7 +212,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
         const item = value[i]
         if (isDate(item)) {
           try {
-            value[i] = item.toISOString() as unknown as typeof item
+            value[i] = item.toISOString()
           } catch {
             // Ignore date conversion error
           }
@@ -1351,7 +1351,7 @@ const getLimitFromSampledValueTemplateCustomValue = (
 
 const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
   const supportedMeasurands = OCPPConstants.OCPP_MEASURANDS_SUPPORTED as readonly string[]
-  return supportedMeasurands.includes(measurand as string)
+  return supportedMeasurands.includes(measurand)
 }
 
 /**
@@ -1476,18 +1476,12 @@ export const resolveSampledValueFields = (
   value: number
 } => {
   const sampledValueMeasurand =
-    (sampledValueTemplate.measurand as MeterValueMeasurand | undefined) ??
-    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    sampledValueTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
   return {
-    context:
-      context ??
-      (sampledValueTemplate.context as MeterValueContext | undefined) ??
-      MeterValueContext.SAMPLE_PERIODIC,
-    location:
-      (sampledValueTemplate.location as MeterValueLocation | undefined) ??
-      getMeasurandDefaultLocation(sampledValueMeasurand),
+    context: context ?? sampledValueTemplate.context ?? MeterValueContext.SAMPLE_PERIODIC,
+    location: sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueMeasurand),
     measurand: sampledValueMeasurand,
-    phase: phase ?? (sampledValueTemplate.phase as MeterValuePhase | undefined),
+    phase: phase ?? sampledValueTemplate.phase,
     unit:
       (sampledValueTemplate.unit as MeterValueUnit | undefined) ??
       getMeasurandDefaultUnit(sampledValueMeasurand),

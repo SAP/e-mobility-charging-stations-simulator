@@ -81,13 +81,7 @@ export abstract class OCPPResponseService {
           if (isAsyncFunction(responseHandler)) {
             await responseHandler(chargingStation, payload, requestPayload)
           } else {
-            ;(
-              responseHandler as (
-                chargingStation: ChargingStation,
-                payload: JsonType,
-                requestPayload?: JsonType
-              ) => void
-            )(chargingStation, payload, requestPayload)
+            const _syncResult = responseHandler(chargingStation, payload, requestPayload)
           }
           logger.debug(
             `${chargingStation.logPrefix()} ${this.moduleName}.responseHandler: '${commandName}' response processed successfully`

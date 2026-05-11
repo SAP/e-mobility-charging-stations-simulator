@@ -36,7 +36,7 @@ function createSimpleHandlerStation (): MockChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
-  return station as MockChargingStation
+  return station
 }
 
 await describe('Simple response handlers', async () => {
@@ -57,12 +57,7 @@ await describe('Simple response handlers', async () => {
     await it('should handle Heartbeat response without throwing', async () => {
       const payload: OCPP20HeartbeatResponse = { currentTime: new Date() }
       await assert.doesNotReject(
-        responseService.responseHandler(
-          mockStation,
-          OCPP20RequestCommand.HEARTBEAT,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
-        )
+        responseService.responseHandler(mockStation, OCPP20RequestCommand.HEARTBEAT, payload, {})
       )
     })
   })
@@ -74,8 +69,8 @@ await describe('Simple response handlers', async () => {
         responseService.responseHandler(
           mockStation,
           OCPP20RequestCommand.NOTIFY_REPORT,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
+          payload,
+          {}
         )
       )
     })
@@ -88,8 +83,8 @@ await describe('Simple response handlers', async () => {
         responseService.responseHandler(
           mockStation,
           OCPP20RequestCommand.STATUS_NOTIFICATION,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
+          payload,
+          {}
         )
       )
     })
