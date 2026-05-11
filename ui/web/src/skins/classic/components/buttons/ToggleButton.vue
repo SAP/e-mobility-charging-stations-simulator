@@ -30,17 +30,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{ clicked: [status: boolean] }>()
 
-const id =
-  props.shared === true
-    ? `${SHARED_TOGGLE_BUTTON_KEY_PREFIX}${props.id}`
-    : `${TOGGLE_BUTTON_KEY_PREFIX}${props.id}`
+const id = props.shared
+  ? `${SHARED_TOGGLE_BUTTON_KEY_PREFIX}${props.id}`
+  : `${TOGGLE_BUTTON_KEY_PREFIX}${props.id}`
 
 const state = ref<{ status: boolean }>({
-  status: getFromLocalStorage<boolean>(id, props.status ?? false),
+  status: getFromLocalStorage<boolean>(id, props.status || false),
 })
 
 const click = (): void => {
-  if (props.shared === true) {
+  if (props.shared) {
     try {
       const keys = Object.keys(getLocalStorage()).filter(
         key => key !== id && key.startsWith(SHARED_TOGGLE_BUTTON_KEY_PREFIX)
@@ -54,7 +53,7 @@ const click = (): void => {
       }
     }
   }
-  const current = getFromLocalStorage<boolean>(id, props.status ?? false)
+  const current = getFromLocalStorage<boolean>(id, props.status || false)
   const newStatus = !current
   setToLocalStorage<boolean>(id, newStatus)
   state.value.status = newStatus

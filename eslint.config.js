@@ -6,129 +6,23 @@ import perfectionist from 'eslint-plugin-perfectionist'
 import pluginVue from 'eslint-plugin-vue'
 import { defineConfig } from 'eslint/config'
 import neostandard, { plugins } from 'neostandard'
+import vueParser from 'vue-eslint-parser'
+
+const GLOB_TS = ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts']
+const GLOB_TS_VUE = [...GLOB_TS, '**/*.vue']
+const GLOB_JS = ['**/*.js', '**/*.mjs', '**/*.cjs']
 
 export default defineConfig([
   {
     ignores: ['**/dist/**'],
   },
+
+  // Base configs
+
   cspellConfigs.recommended,
   {
     rules: {
-      '@cspell/spellchecker': [
-        'warn',
-        {
-          autoFix: true,
-          cspell: {
-            words: [
-              'DECI',
-              'CENTI',
-              'MILLI',
-              'MILLIWATT',
-              'Benoit',
-              'catppuccin',
-              'chargingstations',
-              'ctrlr',
-              'csms',
-              'idtag',
-              'idtags',
-              'iccid',
-              'imsi',
-              'ocpp',
-              'onconnection',
-              'opencode',
-              'evse',
-              'evses',
-              'kvar',
-              'kvarh',
-              'varh',
-              'rfid',
-              'workerset',
-              'worktree',
-              'dedup',
-              'unpushed',
-              'logform',
-              'mnemonist',
-              'poolifier',
-              'measurand',
-              'measurands',
-              'mikro',
-              'neostandard',
-              'recurrency',
-              'shutdowning',
-              'VCAP',
-              'workerd',
-              'yxxx',
-              // OCPP 2.0.x domain terms
-              'cppwm',
-              'heartbeatinterval',
-              'HEARTBEATINTERVAL',
-              'websocketpinginterval',
-              'WEBSOCKETPINGINTERVAL',
-              'connectionurl',
-              'CONNECTIONURL',
-              'chargingstation',
-              'CHARGINGSTATION',
-              'authctrlr',
-              'AUTHCTRLR',
-              'recloser',
-              'deauthorize',
-              'Deauth',
-              'DEAUTHORIZE',
-              'deauthorized',
-              'DEAUTHORIZED',
-              'Deauthorization',
-              'Selftest',
-              'SECC',
-              'Secc',
-              'Overcurrent',
-              'ocsp',
-              'OCSP',
-              'EMAID',
-              'emaid',
-              'IDTOKEN',
-              'idtoken',
-              'issuerkeyhash',
-              'issuernamehash',
-              // OCPP SRPC
-              'SRPC',
-              'CALLRESULT',
-              'CALLERROR',
-              'CALLRESULTERROR',
-              'reservability',
-              // VPN protocol acronyms
-              'PPTP',
-              // UI server protocol acronyms
-              'UIMCP',
-              'Streamable',
-              'modelcontextprotocol',
-              // Signed meter values
-              'OCMF',
-              'ocmf',
-              'secp',
-              'brainpool',
-              'Eichrecht',
-              'eichrecht',
-              'signingmethod',
-              'SIGNINGMETHOD',
-              'encodingmethod',
-              'ENCODINGMETHOD',
-              'signedmeterdata',
-              'SIGNEDMETERDATA',
-              'fiscalmetering',
-              'FISCALMETERING',
-              'publickeywithsignedmetervalue',
-              'PUBLICKEYWITHSIGNEDMETERVALUE',
-              'sampleddatasignreadings',
-              'SAMPLEDDATASIGNREADINGS',
-              // UI component terms
-              'focusables',
-              'Focusables',
-              // Test credential fragments
-              'secret',
-            ],
-          },
-        },
-      ],
+      '@cspell/spellchecker': ['warn', { autoFix: true }],
     },
   },
   js.configs.recommended,
@@ -146,27 +40,27 @@ export default defineConfig([
       ],
     },
   },
+
+  // neostandard
+
+  ...neostandard({ ts: true }),
+
+  // Vue
+
   ...pluginVue.configs['flat/recommended'],
-  {
-    files: ['**/*.vue'],
-    languageOptions: {
-      globals: {
-        localStorage: 'readonly',
-      },
-      parserOptions: {
-        parser: '@typescript-eslint/parser',
-      },
-    },
-  },
+
+  // TypeScript
+
   ...plugins['typescript-eslint'].config(
     {
       extends: [
         ...plugins['typescript-eslint'].configs.strictTypeChecked,
         ...plugins['typescript-eslint'].configs.stylisticTypeChecked,
       ],
-      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'],
+      files: GLOB_TS_VUE,
       languageOptions: {
         parserOptions: {
+          extraFileExtensions: ['.vue'],
           projectService: true,
           // eslint-disable-next-line n/no-unsupported-features/node-builtins
           tsconfigRootDir: import.meta.dirname,
@@ -186,10 +80,32 @@ export default defineConfig([
       },
     },
     {
-      files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+      files: GLOB_JS,
       ...plugins['typescript-eslint'].configs.disableTypeChecked,
     }
   ),
+
+  // Vue parser restoration
+
+  {
+    files: ['**/*.vue'],
+    languageOptions: {
+      globals: {
+        localStorage: 'readonly',
+      },
+      parser: vueParser,
+      parserOptions: {
+        extraFileExtensions: ['.vue'],
+        parser: plugins['typescript-eslint'].parser,
+        projectService: true,
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+
+  // Perfectionist
+
   perfectionist.configs['recommended-natural'],
   {
     files: ['**/*.vue'],
@@ -197,11 +113,11 @@ export default defineConfig([
       'perfectionist/sort-vue-attributes': 'off',
     },
   },
-  ...neostandard({
-    ts: true,
-  }),
+
+  // Rule overrides
+
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '**/*.vue'],
+    files: GLOB_TS_VUE,
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',

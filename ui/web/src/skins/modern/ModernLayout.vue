@@ -75,9 +75,8 @@
 </template>
 
 <script setup lang="ts">
-// Dialog state via v-if (no URL coupling), enabling skin-independent modal interactions.
 import { type OCPPVersion } from 'ui-common'
-import { defineAsyncComponent, ref, watch } from 'vue'
+import { type Component, defineAsyncComponent, ref, watch } from 'vue'
 
 import {
   ASYNC_COMPONENT_DELAY_MS,
@@ -95,17 +94,25 @@ import ConfirmDialog from './components/ConfirmDialog.vue'
 import SimulatorBar from './components/SimulatorBar.vue'
 import StationCard from './components/StationCard.vue'
 
+interface StartTxDialogPayload {
+  chargingStationId: string
+  connectorId: string
+  evseId?: number
+  hashId: string
+  ocppVersion?: OCPPVersion
+}
+
 /**
  * Creates a lazy-loaded dialog component with shared loading/error boundaries.
  * @param loader - Dynamic import function for the dialog component
  * @returns An async component definition with standardized loading and error states
  */
-function defineAsyncDialog (loader: () => Promise<{ default: unknown }>) {
+function defineAsyncDialog (loader: () => Promise<{ default: Component }>) {
   return defineAsyncComponent({
     delay: ASYNC_COMPONENT_DELAY_MS,
-    errorComponent: SkinLoadError,
-    loader: loader as () => Promise<{ default: import('vue').Component }>,
-    loadingComponent: SkinLoading,
+    errorComponent: SkinLoadError as Component,
+    loader,
+    loadingComponent: SkinLoading as Component,
     timeout: ASYNC_COMPONENT_TIMEOUT_MS,
   })
 }
@@ -152,13 +159,7 @@ const showSetUrlDialog = ref<null | {
   chargingStationId: string
   hashId: string
 }>(null)
-const showStartTxDialog = ref<null | {
-  chargingStationId: string
-  connectorId: string
-  evseId?: number
-  hashId: string
-  ocppVersion?: OCPPVersion
-}>(null)
+const showStartTxDialog = ref<null | StartTxDialogPayload>(null)
 const showAuthorizeDialog = ref<null | {
   chargingStationId: string
   hashId: string

@@ -89,13 +89,12 @@ const collectFocusables = (): HTMLElement[] => {
 const focusFirst = (): void => {
   if (dialogEl.value == null) return
   const focusables = collectFocusables()
-  // Prefer first non-close button so the user lands on a real input.
-  const target = focusables.find(el => !el.hasAttribute('data-modal-close')) ?? focusables[0]
-  if (target != null) {
-    target.focus()
-  } else {
+  if (focusables.length === 0) {
     dialogEl.value.focus()
+    return
   }
+  const target = focusables.find(el => !el.hasAttribute('data-modal-close')) ?? focusables[0]
+  target.focus()
 }
 
 const handleEsc = (): void => {
@@ -147,7 +146,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
-  previouslyFocused?.focus?.()
+  previouslyFocused?.focus()
 })
 </script>
 

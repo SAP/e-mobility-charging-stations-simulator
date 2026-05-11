@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, markRaw, watch } from 'vue'
+import { type Component, computed, defineAsyncComponent, markRaw, watch } from 'vue'
 
 import { ASYNC_COMPONENT_DELAY_MS, ASYNC_COMPONENT_TIMEOUT_MS } from '@/core/index.js'
 import SkinLoadError from '@/shared/components/SkinLoadError.vue'
@@ -43,9 +43,9 @@ const skinLayoutMap = new Map(
     markRaw(
       defineAsyncComponent({
         delay: ASYNC_COMPONENT_DELAY_MS,
-        errorComponent: SkinLoadError,
+        errorComponent: SkinLoadError as Component,
         loader: () => s.loadLayout(),
-        loadingComponent: SkinLoading,
+        loadingComponent: SkinLoading as Component,
         timeout: ASYNC_COMPONENT_TIMEOUT_MS,
       })
     ),

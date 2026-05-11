@@ -206,9 +206,7 @@ const { closeConnection, deleteStation, openConnection, pending, startStation, s
 
 const wsOpen = computed(() => props.chargingStation.wsState === WebSocketReadyState.OPEN)
 
-const startedVariant = computed<'err' | 'ok'>(() =>
-  props.chargingStation.started === true ? 'ok' : 'err'
-)
+const startedVariant = computed<'err' | 'ok'>(() => (props.chargingStation.started ? 'ok' : 'err'))
 
 const wsVariant = computed(() => getWebSocketStateVariant(props.chargingStation.wsState))
 
@@ -226,7 +224,7 @@ const getATGStatusForConnector = (connectorId: number): Status | undefined =>
 
 const toggleStation = (): void => {
   const hashId = props.chargingStation.stationInfo.hashId
-  if (props.chargingStation.started === true) {
+  if (props.chargingStation.started) {
     stopStation(hashId)
   } else {
     startStation(hashId)

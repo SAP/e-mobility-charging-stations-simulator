@@ -82,7 +82,7 @@ const { formState, submitForm } = useStartTxForm({
 
 const handleStartTransaction = async (): Promise<void> => {
   await submitForm()
-  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
 }
 </script>
 

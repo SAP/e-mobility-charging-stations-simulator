@@ -54,7 +54,7 @@
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
           }
         "
         :on="
@@ -66,7 +66,7 @@
                 ...(evseId != null ? { evseId: String(evseId) } : {}),
                 ...(ocppVersion != null ? { ocppVersion } : {}),
               },
-            })
+            }).catch(() => undefined)
           }
         "
         :shared="true"

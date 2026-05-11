@@ -49,7 +49,7 @@
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
         :off="
           () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
           }
         "
         :on="
@@ -60,7 +60,7 @@
                 hashId: chargingStation.stationInfo.hashId,
                 chargingStationId: chargingStation.stationInfo.chargingStationId,
               },
-            })
+            }).catch(() => undefined)
           }
         "
         :shared="true"
@@ -159,7 +159,11 @@ const {
   openConnection,
   startStation: startChargingStation,
   stopStation: stopChargingStation,
-} = useStationActions({ onRefresh: () => emit('need-refresh') })
+} = useStationActions({
+  onRefresh: () => {
+    emit('need-refresh')
+  },
+})
 
 const hashId = computed(() => props.chargingStation.stationInfo.hashId)
 

@@ -36,12 +36,12 @@
           :key="state.renderAddChargingStations"
           :off="
             () => {
-              $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+              $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
             }
           "
           :on="
             () => {
-              $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS })
+              $router.push({ name: ROUTE_NAMES.ADD_CHARGING_STATIONS }).catch(() => undefined)
             }
           "
           :shared="true"
@@ -166,7 +166,7 @@ const {
     clearToggleButtons()
     refresh()
     if ($route.name !== ROUTE_NAMES.CHARGING_STATIONS) {
-      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+      $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
     }
   },
   onSimulatorStopped: () => {

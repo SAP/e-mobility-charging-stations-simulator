@@ -234,7 +234,9 @@ const {
 })
 
 const identifier = computed(() =>
-  props.evseId != null ? `${props.evseId}/${props.connectorId}` : String(props.connectorId)
+  props.evseId != null
+    ? `${String(props.evseId)}/${String(props.connectorId)}`
+    : String(props.connectorId)
 )
 
 const showSetConnectorStatus = ref(false)
@@ -264,7 +266,7 @@ const txEnergy = computed(() => {
   const wh = props.connector.transactionEnergyActiveImportRegisterValue
   if (wh == null) return '—'
   if (wh >= WH_PER_KWH) return `${(wh / WH_PER_KWH).toFixed(2)} kWh`
-  return `${Math.round(wh)} Wh`
+  return `${String(Math.round(wh))} Wh`
 })
 
 const toggleLock = (): void => {

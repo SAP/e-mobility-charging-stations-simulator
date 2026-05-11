@@ -101,7 +101,6 @@ import StatePill from './StatePill.vue'
  * @returns The selected option's index
  */
 function getSelectIndex (e: Event): number {
-  // eslint-disable-next-line no-undef
   return (e.target as HTMLSelectElement).selectedIndex
 }
 
@@ -131,7 +130,7 @@ const simulatorVariant = computed<'err' | 'idle' | 'ok'>(() => {
 
 const simulatorLabel = computed(() => {
   if (props.simulatorState == null) return 'Disconnected'
-  const version = props.simulatorState.version != null ? ` (${props.simulatorState.version})` : ''
+  const version = props.simulatorState.version ? ` (${props.simulatorState.version})` : ''
   return `${simulatorStarted.value ? 'Running' : 'Stopped'}${version}`
 })
 </script>

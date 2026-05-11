@@ -133,7 +133,7 @@ const $router = useRouter()
 const { formState, pending, submitForm, templates } = useAddStationsForm({
   onFinally: () => {
     resetToggleButtonState('add-charging-stations', true)
-    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS })
+    $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
   },
 })
 

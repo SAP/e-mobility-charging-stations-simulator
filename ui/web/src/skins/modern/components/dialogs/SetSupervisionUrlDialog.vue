@@ -112,8 +112,8 @@ watch(
   station => {
     if (station != null) {
       formState.value.supervisionUrl = stripStationId(
-        station.supervisionUrl ?? '',
-        station.stationInfo.chargingStationId ?? ''
+        station.supervisionUrl,
+        station.stationInfo.chargingStationId
       )
       formState.value.supervisionUser = station.stationInfo.supervisionUser ?? ''
       formState.value.supervisionPassword = station.stationInfo.supervisionPassword ?? ''
