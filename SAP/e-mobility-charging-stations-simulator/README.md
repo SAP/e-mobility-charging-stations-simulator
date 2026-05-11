@@ -5,3 +5,4 @@
 - workflow that created this README: `GitHub Repo Stats`
 
 **Latest report PDF**: [report.pdf](https://github.com/SAP/e-mobility-charging-stations-simulator/raw/github-repo-stats/SAP/e-mobility-charging-stations-simulator/latest-report/report.pdf)
+
