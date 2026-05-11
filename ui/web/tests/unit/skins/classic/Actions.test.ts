@@ -16,7 +16,7 @@ import { toastMock } from '../../../setup.js'
 import { createUIServerConfig, TEST_HASH_ID, TEST_STATION_ID } from '../../constants.js'
 import { ButtonStub, createMockUIClient, type MockUIClient } from '../../helpers.js'
 
-const mockPush = vi.fn()
+const mockPush = vi.fn().mockResolvedValue(undefined)
 const mockRoute = ref<{
   name: string
   params: Record<string, string>

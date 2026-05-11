@@ -11,7 +11,7 @@ import CSTable from '@/skins/classic/components/charging-stations/CSTable.vue'
 import { createChargingStationData } from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
-const mockPush = vi.fn()
+const mockPush = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ name: 'charging-stations', params: {}, query: {} }),
