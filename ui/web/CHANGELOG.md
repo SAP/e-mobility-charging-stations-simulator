@@ -2,19 +2,17 @@
 
 ## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.2...web@v4.7.3) (2026-05-13)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1855](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1855)) ([d3f125f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3f125ff8ec9c5156355f7242cee42621fa2b62b))
-* **lint:** enable Vue strictTypeChecked and fix config ([b4020a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b4020a3ad105ce23502428828878010202e6d8a4))
-* **test:** mock router.push in all remaining test files ([b8e7c7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b8e7c7ac2f12d6e791b0d165d33f1a39b8dd5570))
-* **test:** mock router.push to return Promise ([61f8576](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/61f8576e1b3e63e97bb05a4ecbc20098c5be37df))
-* **test:** mock router.push to return Promise in all test files ([7e924f7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7e924f708315728b3921be758749a943bd73b389))
-
+- **deps:** update all non-major dependencies ([#1855](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1855)) ([d3f125f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3f125ff8ec9c5156355f7242cee42621fa2b62b))
+- **lint:** enable Vue strictTypeChecked and fix config ([b4020a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b4020a3ad105ce23502428828878010202e6d8a4))
+- **test:** mock router.push in all remaining test files ([b8e7c7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b8e7c7ac2f12d6e791b0d165d33f1a39b8dd5570))
+- **test:** mock router.push to return Promise ([61f8576](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/61f8576e1b3e63e97bb05a4ecbc20098c5be37df))
+- **test:** mock router.push to return Promise in all test files ([7e924f7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7e924f708315728b3921be758749a943bd73b389))
 
 ### ✨ Polish
 
-* remove unnecessary type assertions across monorepo ([f2fe22c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f2fe22cada0c10ff63eb5d0ee6ca8f79a74de430))
+- remove unnecessary type assertions across monorepo ([f2fe22c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f2fe22cada0c10ff63eb5d0ee6ca8f79a74de430))
 
 ## [4.7.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.1...web@v4.7.2) (2026-05-09)
 
