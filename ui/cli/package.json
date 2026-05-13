@@ -34,7 +34,7 @@
     "commander": "^14.0.3",
     "ora": "^9.4.0",
     "ui-common": "workspace:*",
-    "ws": "^8.20.0"
+    "ws": "^8.20.1"
   },
   "devDependencies": {
     "@types/ws": "^8.18.1",
