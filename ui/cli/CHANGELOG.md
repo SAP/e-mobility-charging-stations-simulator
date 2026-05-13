@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.7.2...cli@v4.7.3) (2026-05-13)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1855](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1855)) ([d3f125f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3f125ff8ec9c5156355f7242cee42621fa2b62b))
+
+
+### ✨ Polish
+
+* remove unnecessary type assertions across monorepo ([f2fe22c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f2fe22cada0c10ff63eb5d0ee6ca8f79a74de430))
+
 ## [4.7.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.7.1...cli@v4.7.2) (2026-05-09)
 
 ### 🧹 Chores
