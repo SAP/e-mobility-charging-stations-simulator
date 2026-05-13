@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.7.2...ocpp-server@v4.7.3) (2026-05-13)
+
+### 🧹 Chores
+
+- **ocpp-server:** Synchronize simulator-ui-ocpp-server versions
+
 ## [4.7.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v4.7.1...ocpp-server@v4.7.2) (2026-05-09)
 
 ### 🧹 Chores

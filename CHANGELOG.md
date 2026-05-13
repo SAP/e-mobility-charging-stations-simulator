@@ -1,5 +1,26 @@
 # Changelog
 
+## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.2...simulator@v4.7.3) (2026-05-13)
+
+### 🐞 Bug Fixes
+
+- **ci:** lowercase badge label for consistency ([92317d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/92317d093ae2ad98d2aa37e4acba9797447e76a3))
+- **ci:** use stable v1.4.2 release of github-repo-stats ([dd1f008](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dd1f008df4450f73293a03ef732758a738cbe35f))
+- **deps:** update all non-major dependencies ([#1855](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1855)) ([d3f125f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3f125ff8ec9c5156355f7242cee42621fa2b62b))
+- **lint:** enable Vue strictTypeChecked and fix config ([b4020a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b4020a3ad105ce23502428828878010202e6d8a4))
+- regenerate lockfile matching overrides configuration ([025615b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/025615b1cf5638d435222e4400e710d6ef7755d4))
+- set allowBuilds placeholders to false ([ab01a95](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ab01a9540af165b8ffb89acdfc08eafe01fd1286))
+
+### ✨ Polish
+
+- consolidate object-check utilities to eliminate duplication ([2990944](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2990944535b2e13826897657d526da65b9d17ec4))
+- remove unnecessary type assertions across monorepo ([f2fe22c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f2fe22cada0c10ff63eb5d0ee6ca8f79a74de430))
+
+### 🤖 Automation
+
+- add --interpreted-frames-native-stack to profiling scripts ([b1d02d7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b1d02d7cea9481e59205d057289c511f135f94fb))
+- add dev profiling script and fix prod profiling ([5294fbd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5294fbd61100140155b7a523802817031a735af9))
+
 ## [4.7.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.1...simulator@v4.7.2) (2026-05-09)
 
 ### 🐞 Bug Fixes
