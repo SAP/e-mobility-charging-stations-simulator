@@ -39,6 +39,7 @@ export const createMockBootstrap = (): IBootstrap => ({
     templateStatistics: new Map(),
     version: '0.0.0',
   }),
+  shouldAutoStart: () => true,
   start: () => Promise.resolve(),
   stop: () => Promise.resolve(),
 })

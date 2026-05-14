@@ -4,7 +4,7 @@ import type { Worker } from 'node:worker_threads'
 
 import { EventEmitter } from 'node:events'
 import { dirname, extname, join } from 'node:path'
-import process, { exit } from 'node:process'
+import process, { env, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isMainThread } from 'node:worker_threads'
 import { availableParallelism, type MessageHandler } from 'poolifier'
@@ -51,6 +51,7 @@ import {
   type WorkerAbstract,
   WorkerFactory,
 } from '../worker/index.js'
+import { readStateFile, reconstructTemplateIndexes, writeStateFile } from './BootstrapStateUtils.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
 import { UIServerFactory } from './ui-server/UIServerFactory.js'
 
@@ -86,6 +87,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
 
   private started: boolean
   private starting: boolean
+  private readonly stateFilePath: string
   private stopping: boolean
   private storage?: Storage
   private readonly templateStatistics: Map<string, TemplateStatistics>
@@ -93,6 +95,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   private uiServerStarted: boolean
   private readonly version: string = packageJson.version
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
+
+  private get configurationsDir (): string {
+    return dirname(this.stateFilePath)
+  }
 
   private get numberOfAddedChargingStations (): number {
     return [...this.templateStatistics.values()].reduce(
@@ -105,6 +111,13 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.started,
       0
+    )
+  }
+
+  private get persistStateEnabled (): boolean {
+    return (
+      (Configuration.getConfigurationData()?.persistState ?? true) &&
+      env.SIMULATOR_COLD_START !== 'true'
     )
   }
 
@@ -121,6 +134,12 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.stopping = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
+    this.stateFilePath = join(
+      dirname(fileURLToPath(import.meta.url)),
+      'assets',
+      'configurations',
+      'state.json'
+    )
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
       this
@@ -196,6 +215,17 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     }
   }
 
+  public shouldAutoStart (): boolean {
+    if (!this.persistStateEnabled) {
+      return true
+    }
+    const stateFile = readStateFile(this.stateFilePath, this.logPrefix)
+    if (stateFile == null) {
+      return true
+    }
+    return stateFile.started
+  }
+
   public async start (): Promise<void> {
     if (!this.started) {
       if (!this.starting) {
@@ -241,6 +271,15 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           ) {
             this.uiServer.start()
             this.uiServerStarted = true
+          }
+          // Reconstruct template indexes from per-station configuration files
+          if (this.persistStateEnabled) {
+            reconstructTemplateIndexes(
+              this.configurationsDir,
+              this.stateFilePath,
+              this.templateStatistics,
+              this.logPrefix
+            )
           }
           // Start ChargingStation object instance in worker thread
           for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
@@ -307,6 +346,9 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
             this.workerImplementation?.info
           )
           this.started = true
+          if (this.persistStateEnabled) {
+            await writeStateFile(this.stateFilePath, true)
+          }
         } finally {
           this.starting = false
         }
@@ -341,6 +383,9 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           await this.storage?.close()
           delete this.storage
           this.started = false
+          if (this.persistStateEnabled) {
+            await writeStateFile(this.stateFilePath, false)
+          }
         } finally {
           this.stopping = false
         }
