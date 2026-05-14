@@ -15,7 +15,7 @@ export const AGENT_CRITIC_EFFORT = 'medium' as const
 
 export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
 
-export const AGENT_IDLE_TIMEOUT_S = 300
+export const AGENT_IDLE_TIMEOUT_S = 720
 
 export const AGENT_ITERATION_BUDGET = 50
 
@@ -112,7 +112,7 @@ export const MAX_STDERR_CHARS = 500
 export const VALIDATION_COMMAND =
   'pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test'
 
-export const VALIDATION_TIMEOUT_MS = 600_000
+export const VALIDATION_TIMEOUT_MS = 900_000
 
 // ── Deduplication ────────────────────────────────────────────────────────────
 
