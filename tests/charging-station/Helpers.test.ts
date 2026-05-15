@@ -10,7 +10,6 @@ import {
   checkChargingStationState,
   checkConfiguration,
   checkStationInfoConnectorStatus,
-  checkTemplate,
   getBootConnectorStatus,
   getChargingStationId,
   getHashId,
@@ -625,30 +624,6 @@ await describe('Helpers', async () => {
   await it('should return -1 for undefined EVSEs and 0 for empty object', () => {
     assert.strictEqual(getMaxNumberOfEvses(undefined), -1)
     assert.strictEqual(getMaxNumberOfEvses({}), 0)
-  })
-
-  await it('should throw for undefined or empty template', t => {
-    // Arrange
-    const warnMock = t.mock.method(logger, 'warn')
-    const errorMock = t.mock.method(logger, 'error')
-
-    // Act & Assert
-    assert.throws(
-      () => {
-        checkTemplate(undefined, 'log prefix |', 'test-template.json')
-      },
-      { message: /Failed to read charging station template file test-template\.json/ }
-    )
-    assert.strictEqual(errorMock.mock.calls.length, 1)
-    assert.throws(
-      () => {
-        checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
-      },
-      { message: /Empty charging station information from template file test-template\.json/ }
-    )
-    assert.strictEqual(errorMock.mock.calls.length, 2)
-    checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
-    assert.strictEqual(warnMock.mock.calls.length, 1)
   })
 
   await it('should throw for undefined or empty configuration', t => {
