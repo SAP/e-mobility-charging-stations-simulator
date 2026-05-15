@@ -4,6 +4,12 @@
       "path": ".",
     },
     {
+      "path": "ui/common",
+    },
+    {
+      "path": "ui/cli",
+    },
+    {
       "path": "ui/web",
     },
     {
