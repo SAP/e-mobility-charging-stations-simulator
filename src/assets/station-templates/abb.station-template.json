@@ -1,4 +1,5 @@
 {
+  "$schemaVersion": 1,
   "idTagsFile": "idtags.json",
   "baseName": "CS-ABB",
   "chargePointModel": "MD_TERRA_53",

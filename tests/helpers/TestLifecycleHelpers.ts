@@ -257,6 +257,21 @@ export function createTimerScope (
 }
 
 /**
+ * Install no-op spies on the logger warn and debug methods.
+ * @param t - Test context from node:test.
+ * @param logger - Logger instance to spy on.
+ * @param logger.debug - Logger debug method
+ * @param logger.warn - Logger warn method
+ */
+export function mockLoggerWarnDebug (
+  t: MockContext,
+  logger: { debug: unknown; warn: unknown }
+): void {
+  t.mock.method(logger, 'warn')
+  t.mock.method(logger, 'debug')
+}
+
+/**
  * Setup a connector with an active transaction
  *
  * Reduces boilerplate when tests need a connector in transaction state.

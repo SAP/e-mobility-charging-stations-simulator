@@ -1,4 +1,5 @@
 {
+  "$schemaVersion": 1,
   "idTagsFile": "idtags.json",
   "baseName": "CS-CHARGEX",
   "chargePointModel": "Aqueduct 1.0",
