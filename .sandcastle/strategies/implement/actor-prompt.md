@@ -4,12 +4,12 @@ Implement issue **#{{ISSUE_NUMBER}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`
 
 ## Inputs
 
-- `{{ISSUE_NUMBER}}` — GitHub issue number.
-- `{{ISSUE_TITLE}}` — issue title.
-- `{{BRANCH}}` — working branch, already checked out.
-- `{{ISSUE_BODY}}` — sanitised issue body.
-- `{{PLAN_CONTEXT}}` — optional planner analysis (hypothesis, acceptance criteria); empty when absent.
-- `{{FINDINGS}}` — optional JSON array of critic findings from the previous round; empty on the first round.
+- `ISSUE_NUMBER` — GitHub issue number.
+- `ISSUE_TITLE` — issue title.
+- `BRANCH` — working branch, already checked out.
+- `ISSUE_BODY` — sanitised issue body.
+- `PLAN_CONTEXT` — optional planner analysis (hypothesis, acceptance criteria); empty when absent.
+- `FINDINGS` — optional JSON array of critic findings from the previous round; empty on the first round.
 
 {{ISSUE_BODY}}
 
@@ -20,7 +20,7 @@ Implement issue **#{{ISSUE_NUMBER}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`
 ## Task
 
 1. Read `AGENTS.md`, `CONTRIBUTING.md`, `.serena/memories/code_style_conventions`, and `.serena/memories/task_completion_checklist`. Explore files surrounding the issue and similar patterns in the repo.
-2. If `{{FINDINGS}}` is non-empty, cross-validate each finding against the code; fix the ones you agree with, ignore the rest.
+2. If `FINDINGS` is non-empty, cross-validate each finding against the code; fix the ones you agree with, ignore the rest.
 3. Otherwise implement the issue end-to-end, including matching tests using `node:test` + `node:assert`.
 4. Before every commit, run the full quality-gate chain in every affected sub-project. Root-level chain:
 

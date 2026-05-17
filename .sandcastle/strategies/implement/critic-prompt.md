@@ -4,10 +4,10 @@ Review the diff on `{{BRANCH}}` against `{{BASE_BRANCH}}` and emit structured fi
 
 ## Inputs
 
-- `{{BRANCH}}` — branch under review.
-- `{{BASE_BRANCH}}` — branch to diff against.
-- `{{NONCE}}` — unique tag id used to delimit the findings payload.
-- `{{ACCEPTANCE_CRITERIA}}` — numbered acceptance criteria from the planner; empty when absent.
+- `BRANCH` — branch under review.
+- `BASE_BRANCH` — branch to diff against.
+- `NONCE` — unique tag id used to delimit the findings payload.
+- `ACCEPTANCE_CRITERIA` — numbered acceptance criteria from the planner; empty when absent.
 
 {{ACCEPTANCE_CRITERIA}}
 

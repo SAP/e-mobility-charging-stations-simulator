@@ -4,7 +4,7 @@ Read open GitHub issues and produce a parallelizable execution plan.
 
 ## Inputs
 
-- `{{ISSUES_JSON}}` — JSON array of open issues, each entry `{ number, title, body, labels }`.
+- `ISSUES_JSON` — JSON array of open issues, each entry `{ number, title, body, labels }`.
 
 {{ISSUES_JSON}}
 
