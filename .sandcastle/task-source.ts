@@ -334,6 +334,8 @@ export class GithubIssueSource implements TaskSource {
     if (item.title.length > MAX_TITLE_CHARS) return null
     // eslint-disable-next-line no-control-regex -- guard against control characters in titles
     if (/[\x00-\x1f]/.test(item.title)) return null
+    const sanitizedTitle = this.sanitizeForPrompt(item.title).trim()
+    if (sanitizedTitle.length === 0) return null
 
     const source = issueMap.get(item.id)
     if (!source) return null
@@ -344,7 +346,7 @@ export class GithubIssueSource implements TaskSource {
       id: item.id,
       labels: source.labels,
       strategyKey: source.strategyKey,
-      title: item.title,
+      title: sanitizedTitle,
     }
     if (isValidIssueType(item.issueType)) {
       spec.issueType = item.issueType
