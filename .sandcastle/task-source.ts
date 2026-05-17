@@ -84,8 +84,7 @@ export class GithubIssueSource implements TaskSource {
     this.strategies = config.strategies
 
     this.branchPatterns = this.strategies.map(
-      entry =>
-        new RegExp(`^${escapeRegex(branchPrefixOf(entry.key))}-(\\d+)-${SLUG_PATTERN_BODY}$`)
+      entry => new RegExp(`^${escapeRegex(branchPrefixOf(entry.key))}-(\\d+)-${SLUG_PATTERN_BODY}$`)
     )
     this.controlTagPattern = buildControlTagPattern(this.strategies)
   }
@@ -315,9 +314,28 @@ export class GithubIssueSource implements TaskSource {
       const parsed = parseResult.data
       const issueMap = new Map(actionableIssues.map(issue => [String(issue.number), issue]))
 
-      return parsed.issues
-        .map(entry => this.validatePlanEntry(entry, issueMap))
-        .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+      const seenIds = new Set<string>()
+      const validated: TaskSpec[] = []
+      for (const entry of parsed.issues) {
+        const spec = this.validatePlanEntry(entry, issueMap)
+        if (spec === null) continue
+        if (seenIds.has(spec.id)) {
+          console.warn(
+            `Planner produced duplicate id '${spec.id}'; keeping first occurrence and dropping the rest.`
+          )
+          continue
+        }
+        seenIds.add(spec.id)
+        validated.push(spec)
+      }
+
+      if (parsed.issues.length > 0 && validated.length === 0) {
+        console.error(
+          `Planner produced ${String(parsed.issues.length)} entries but none passed validation. Retrying.`
+        )
+        return null
+      }
+      return validated
     } catch (err: unknown) {
       console.error(`Planner produced invalid JSON: ${toErrorMessage(err)}. Retrying.`)
       return null
