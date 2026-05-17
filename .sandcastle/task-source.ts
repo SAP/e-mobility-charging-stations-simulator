@@ -84,7 +84,8 @@ export class GithubIssueSource implements TaskSource {
     this.strategies = config.strategies
 
     this.branchPatterns = this.strategies.map(
-      entry => new RegExp(`^${escapeRegex(branchPrefixOf(entry.key))}-(\\d+)-`)
+      entry =>
+        new RegExp(`^${escapeRegex(branchPrefixOf(entry.key))}-(\\d+)-${SLUG_PATTERN_BODY}$`)
     )
     this.controlTagPattern = buildControlTagPattern(this.strategies)
   }
@@ -367,12 +368,15 @@ export class GithubIssueSource implements TaskSource {
 }
 
 /**
- * Strict kebab-case slug accepted from plan entries: lowercase letters/digits,
- * hyphen-separated, no leading/trailing/double hyphen, no underscore. Mirrors
- * the strategy-key shape so the assembled branch `<branchPrefix>-<id>-<slug>`
- * is uniformly kebab-cased.
+ * Strict kebab-case slug body shared by plan validation and PR-coverage
+ * branch parsing: lowercase letters/digits, hyphen-separated, no leading,
+ * trailing or double hyphen, no underscore. Anchored consumers wrap it in
+ * `^...$`. Mirrors the strategy-key shape so the assembled branch
+ * `<branchPrefix>-<id>-<slug>` is uniformly kebab-cased.
  */
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const SLUG_PATTERN_BODY = '[a-z0-9]+(?:-[a-z0-9]+)*'
+
+const SLUG_PATTERN = new RegExp(`^${SLUG_PATTERN_BODY}$`)
 
 const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
 const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
