@@ -10,15 +10,16 @@ import {
   checkChargingStationState,
   checkConfiguration,
   checkStationInfoConnectorStatus,
-  checkTemplate,
   getBootConnectorStatus,
   getChargingStationId,
   getHashId,
+  getMaxConfiguredNumberOfConnectors,
   getMaxNumberOfEvses,
   getPhaseRotationValue,
   hasPendingReservation,
   hasPendingReservations,
   hasReservationExpired,
+  pickConfiguredNumberOfConnectors,
   resetConnectorStatus,
   setChargingStationOptions,
   validateStationInfo,
@@ -627,30 +628,6 @@ await describe('Helpers', async () => {
     assert.strictEqual(getMaxNumberOfEvses({}), 0)
   })
 
-  await it('should throw for undefined or empty template', t => {
-    // Arrange
-    const warnMock = t.mock.method(logger, 'warn')
-    const errorMock = t.mock.method(logger, 'error')
-
-    // Act & Assert
-    assert.throws(
-      () => {
-        checkTemplate(undefined, 'log prefix |', 'test-template.json')
-      },
-      { message: /Failed to read charging station template file test-template\.json/ }
-    )
-    assert.strictEqual(errorMock.mock.calls.length, 1)
-    assert.throws(
-      () => {
-        checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
-      },
-      { message: /Empty charging station information from template file test-template\.json/ }
-    )
-    assert.strictEqual(errorMock.mock.calls.length, 2)
-    checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
-    assert.strictEqual(warnMock.mock.calls.length, 1)
-  })
-
   await it('should throw for undefined or empty configuration', t => {
     // Arrange
     const errorMock = t.mock.method(logger, 'error')
@@ -985,6 +962,48 @@ await describe('Helpers', async () => {
       assert.strictEqual(connectorStatus.availability, AvailabilityType.Operative)
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
       assert.strictEqual(connectorStatus.MeterValues.length, 1)
+    })
+  })
+
+  await describe('getMaxConfiguredNumberOfConnectors', async () => {
+    await it('should return undefined for undefined input', () => {
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors(undefined), undefined)
+    })
+
+    await it('should return undefined for empty array', () => {
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors([]), undefined)
+    })
+
+    await it('should return the number itself for scalar input', () => {
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors(3), 3)
+    })
+
+    await it('should return the worst-case (max) of a non-empty array', () => {
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors([2, 4, 6]), 6)
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors([1]), 1)
+      assert.strictEqual(getMaxConfiguredNumberOfConnectors([5, 1, 3]), 5)
+    })
+  })
+
+  await describe('pickConfiguredNumberOfConnectors', async () => {
+    await it('should return undefined for undefined input', () => {
+      assert.strictEqual(pickConfiguredNumberOfConnectors(undefined), undefined)
+    })
+
+    await it('should return undefined for empty array', () => {
+      assert.strictEqual(pickConfiguredNumberOfConnectors([]), undefined)
+    })
+
+    await it('should return the number itself for scalar input', () => {
+      assert.strictEqual(pickConfiguredNumberOfConnectors(3), 3)
+    })
+
+    await it('should return one of the array elements for non-empty array', () => {
+      const candidates = [2, 4, 6]
+      for (let i = 0; i < 50; i++) {
+        const picked = pickConfiguredNumberOfConnectors(candidates)
+        assert.ok(picked != null && candidates.includes(picked))
+      }
     })
   })
 })
