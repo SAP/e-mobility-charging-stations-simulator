@@ -21,13 +21,22 @@ const migrations: ReadonlyMap<number, MigrationFn> = new Map<number, MigrationFn
 ])
 
 /**
+ * Strict integer-string pattern for $schemaVersion.
+ * Mirrors the canonical "non-negative integer string" pattern used in
+ * `TemplateSchema` for connector/EVSE keys. Rejects permissive `Number()`
+ * coercions (`'1.0'`, `'0x1'`, `'1e0'`, `' 1 '`, `''`, `'+1'`).
+ */
+const SCHEMA_VERSION_STRING_PATTERN = /^\d+$/
+
+/**
  * Coerce a raw `$schemaVersion` value to a validated integer.
  * - Missing → 0 (legacy/pre-versioning template — triggers v0→CURRENT migration
  *   so deprecated keys (`supervisionUrl`, `authorizationFile`,
  *   `payloadSchemaValidation`, `mustAuthorizeAtRemoteStart`) are renamed
  *   before strict schema validation)
- * - String numeric → parsed integer
- * - Negative, float, or future → fatal error
+ * - Non-negative integer (number or canonical decimal string) → parsed integer
+ * - Anything else (negative, float, NaN, Infinity, hex/exponential/whitespace
+ *   string, future version) → fatal error
  * @param raw - Raw value from parsed JSON
  * @returns Validated integer version
  */
@@ -35,18 +44,28 @@ export const coerceVersion = (raw: unknown): number => {
   if (raw == null) {
     return 0
   }
+  let parsed: number
   let rawStr: string
-  if (typeof raw === 'object') {
-    rawStr = JSON.stringify(raw)
-  } else if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+  if (typeof raw === 'number') {
+    parsed = raw
     rawStr = String(raw)
+  } else if (typeof raw === 'string' && SCHEMA_VERSION_STRING_PATTERN.test(raw)) {
+    parsed = Number(raw)
+    rawStr = raw
   } else {
-    rawStr = 'unknown'
-  }
-  const parsed = typeof raw === 'string' ? Number(raw) : raw
-  if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+    if (typeof raw === 'object') {
+      rawStr = JSON.stringify(raw)
+    } else if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+      rawStr = String(raw)
+    } else if (typeof raw === 'bigint') {
+      rawStr = `${raw.toString()}n`
+    } else if (typeof raw === 'symbol') {
+      rawStr = raw.toString()
+    } else {
+      rawStr = 'unknown'
+    }
     throw new BaseError(
-      `${moduleName}.coerceVersion: Invalid $schemaVersion value '${rawStr}' — must be a positive integer`
+      `${moduleName}.coerceVersion: Invalid $schemaVersion value '${rawStr}' — must be a non-negative integer`
     )
   }
   if (!Number.isInteger(parsed) || parsed < 0) {

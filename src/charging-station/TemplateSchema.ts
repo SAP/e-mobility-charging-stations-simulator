@@ -259,9 +259,9 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   }
   // Validate Evses topology (OCPP 2.0.1 §7.2 constraints)
   if (hasEvses && template.Evses != null) {
-    for (const evseKey in template.Evses) {
+    for (const [evseKey, evse] of Object.entries(template.Evses)) {
       const evseId = Number(evseKey)
-      const connectorIds = Object.keys(template.Evses[evseKey].Connectors).map(Number)
+      const connectorIds = Object.keys(evse.Connectors).map(Number)
       if (evseId === 0) {
         for (const connectorId of connectorIds) {
           if (connectorId !== 0) {

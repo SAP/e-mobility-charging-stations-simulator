@@ -43,7 +43,7 @@ await describe('TemplateMigrations', async () => {
     })
 
     await it('should throw for non-numeric string', () => {
-      assert.throws(() => coerceVersion('abc'), { message: /Invalid \$schemaVersion value/ })
+      assert.throws(() => coerceVersion('abc'), { message: /must be a non-negative integer/ })
     })
 
     await it('should throw for negative value', () => {
@@ -51,6 +51,26 @@ await describe('TemplateMigrations', async () => {
     })
 
     await it('should throw for float value', () => {
+      assert.throws(() => coerceVersion(1.5), { message: /must be a non-negative integer/ })
+    })
+
+    await it('should reject permissive numeric string forms', () => {
+      for (const bad of ['1.0', '0x1', ' 1 ', '1e0', '', '01a', '+1', '-1']) {
+        assert.throws(
+          () => coerceVersion(bad),
+          { message: /must be a non-negative integer/ },
+          `should reject ${JSON.stringify(bad)}`
+        )
+      }
+    })
+
+    await it('should use harmonized "non-negative integer" wording for all rejection branches', () => {
+      assert.throws(() => coerceVersion('abc'), { message: /must be a non-negative integer/ })
+      assert.throws(() => coerceVersion(Number.NaN), { message: /must be a non-negative integer/ })
+      assert.throws(() => coerceVersion(Number.POSITIVE_INFINITY), {
+        message: /must be a non-negative integer/,
+      })
+      assert.throws(() => coerceVersion(-1), { message: /must be a non-negative integer/ })
       assert.throws(() => coerceVersion(1.5), { message: /must be a non-negative integer/ })
     })
 

@@ -37,6 +37,26 @@ await describe('TemplateValidation', async () => {
       assert.strictEqual(result.chargePointModel, 'TestModel')
     })
 
+    await it('should accept string "$schemaVersion": "1" at current version (no-migration path)', t => {
+      t.mock.method(logger, 'warn')
+      const parsed: Record<string, unknown> = {
+        $schemaVersion: '1',
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: { 0: {}, 1: {} },
+      }
+
+      const result = validateTemplate(parsed, 'string-version.json')
+
+      assert.strictEqual(result.baseName, 'CS-TEST')
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).$schemaVersion,
+        1,
+        '$schemaVersion should be normalized to numeric 1'
+      )
+    })
+
     await it('should throw BaseError for empty template', () => {
       assert.throws(
         () => validateTemplate({}, 'test.json'),
