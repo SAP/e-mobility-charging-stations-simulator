@@ -5,4 +5,5 @@ export enum FileType {
   Configuration = 'configuration',
   JsonSchema = 'json schema',
   PerformanceRecords = 'performance records',
+  SimulatorState = 'simulator state',
 }

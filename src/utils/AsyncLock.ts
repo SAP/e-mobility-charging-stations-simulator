@@ -7,6 +7,7 @@ import { isAsyncFunction } from './Utils.js'
 export enum AsyncLockType {
   configuration = 'configuration',
   performance = 'performance',
+  simulatorState = 'simulatorState',
 }
 
 type ResolveType = (value: PromiseLike<void> | void) => void
