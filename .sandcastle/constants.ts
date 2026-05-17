@@ -35,8 +35,6 @@ export const MAX_PARALLEL = 5
 
 export const GIT_BASE_BRANCH = 'main'
 
-export const GIT_BRANCH_PREFIX = 'agent/issue'
-
 export const GIT_PUSH_TIMEOUT_MS = 60_000
 
 export const GIT_TIMEOUT_MS = 30_000
@@ -96,8 +94,6 @@ function resolvePnpmStorePath (): string | undefined {
 }
 
 // ── GitHub ───────────────────────────────────────────────────────────────────
-
-export const GITHUB_ISSUE_LABEL = 'sandcastle'
 
 export const GITHUB_MAX_ISSUES_FETCH = 50
 

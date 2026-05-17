@@ -10,19 +10,16 @@ import {
   AGENT_TASK_TIMEOUT_MS,
   DOCKER_IMAGE,
   DOCKER_MOUNTS,
-  GIT_BRANCH_PREFIX,
-  GITHUB_ISSUE_LABEL,
   MAX_PARALLEL,
   SANDBOX_BUILD_HOOKS,
 } from './constants.js'
 import { runRefinementLoop } from './refinement-loop.js'
-import { implementStrategy } from './strategies/implement/strategy.js'
+import { STRATEGY_BY_KEY, STRATEGY_REGISTRY } from './strategies/index.js'
 import { GithubIssueSource } from './task-source.js'
 
 const source = new GithubIssueSource({
-  branchPrefix: GIT_BRANCH_PREFIX,
   dockerImage: DOCKER_IMAGE,
-  label: GITHUB_ISSUE_LABEL,
+  strategies: STRATEGY_REGISTRY,
 })
 
 let tasks: TaskSpec[]
@@ -42,6 +39,12 @@ if (tasks.length === 0) {
   const settled = await Promise.allSettled(
     tasks.map(spec =>
       pool.run(async () => {
+        const entry = STRATEGY_BY_KEY.get(spec.strategyKey)
+        if (!entry) {
+          throw new Error(
+            `Task #${spec.id}: unknown strategy '${spec.strategyKey}' (not in registry).`
+          )
+        }
         const ac = new AbortController()
         const timer = setTimeout(() => {
           ac.abort(new Error(`Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`))
@@ -55,7 +58,7 @@ if (tasks.length === 0) {
             sandbox: docker({ imageName: DOCKER_IMAGE, mounts: [...DOCKER_MOUNTS] }),
           })
 
-          const loopResult = await runRefinementLoop(spec, sandbox, implementStrategy, {
+          const loopResult = await runRefinementLoop(spec, sandbox, entry.strategy, {
             iterationBudget: AGENT_ITERATION_BUDGET,
             maxRounds: AGENT_MAX_CRITIC_ROUNDS,
             postLoopValidationRetry: true,
@@ -64,8 +67,8 @@ if (tasks.length === 0) {
 
           let workSuccess = false
           if (loopResult.totalCommits > 0) {
-            const finalizeResult = await implementStrategy.finalize(spec, loopResult, sandbox)
-            workSuccess = implementStrategy.isWorkComplete(finalizeResult)
+            const finalizeResult = await entry.strategy.finalize(spec, loopResult, sandbox)
+            workSuccess = entry.strategy.isWorkComplete(finalizeResult)
           }
 
           return { spec, success: workSuccess }

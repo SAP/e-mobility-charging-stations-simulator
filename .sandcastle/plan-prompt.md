@@ -11,6 +11,10 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
 
 ## Open Issues
 
+Each issue has been pre-resolved to a strategy (`strategyKey`) and the matching
+git branch prefix (`branchPrefix`). You MUST preserve both verbatim in your plan
+output for the corresponding issue.
+
 {{ISSUES_JSON}}
 
 ## Steps
@@ -22,7 +26,11 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
 2. Select all issues that are independent and actionable.
 
 3. For each selected issue:
-   - Assign a branch name: `{{BRANCH_PREFIX}}-<number>-<slug>` where slug is a short kebab-case summary (e.g., `{{BRANCH_PREFIX}}-42-fix-streaming-id`).
+   - Assign a branch name: `<branchPrefix>-<number>-<slug>` where `<branchPrefix>` is the value
+     provided for that issue and `<slug>` is a short kebab-case summary
+     (e.g., for an issue with `branchPrefix: "agent/implement"` and number 42:
+     `agent/implement-42-fix-streaming-id`).
+   - Echo the issue's `strategyKey` verbatim in the output.
    - Classify the issue type: `bug-fix`, `feature`, or `refactor`.
    - Assess your confidence: `high` (clear scope, obvious approach), `medium` (some ambiguity), or `low` (unclear scope, multiple valid approaches).
    - Formulate a root cause hypothesis: what is broken or missing, and why. This is a hypothesis for the implementer to validate — not a directive.
@@ -31,7 +39,7 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
 4. Output the plan in this exact format:
 
    ```text
-   <plan>{"issues":[{"id":"<number>","title":"<title>","branch":"{{BRANCH_PREFIX}}-<number>-<slug>","issueType":"bug-fix|feature|refactor","confidence":"high|medium|low","rootCauseHypothesis":"...","acceptanceCriteria":["..."]}]}</plan>
+   <plan>{"issues":[{"id":"<number>","title":"<title>","branch":"<branchPrefix>-<number>-<slug>","strategyKey":"<strategyKey>","issueType":"bug-fix|feature|refactor","confidence":"high|medium|low","rootCauseHypothesis":"...","acceptanceCriteria":["..."]}]}</plan>
    ```
 
 ## Rules
@@ -49,6 +57,7 @@ Read `AGENTS.md` and `.serena/memories/project_overview`.
 - Do not implement anything. Only produce the plan.
 - Acceptance criteria must be verifiable by static code inspection of the diff.
 - Root cause hypothesis should be specific (mention modules, patterns, or behaviors) — not a restatement of the issue title.
+- Do not invent a `strategyKey` or override `branchPrefix`: copy the values provided per issue.
 
 ## Completion
 

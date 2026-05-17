@@ -121,6 +121,8 @@ export interface TaskSpec {
   labels?: string[]
   /** Planner's hypothesis about what is broken/missing — for actor to validate, not follow blindly. */
   rootCauseHypothesis?: string
+  /** Strategy key from the registry that drives the actor/critic loop for this task. */
+  strategyKey: string
   /** Task title. */
   title: string
 }
