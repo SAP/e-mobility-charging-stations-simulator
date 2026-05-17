@@ -170,22 +170,32 @@ export class GithubIssueSource implements TaskSource {
   }
 
   /**
-   * Fetches issues for each registered strategy, deduplicating by issue number
-   * (first strategy in registry order wins). Each issue is annotated with the
-   * strategy that will handle it and the corresponding branch prefix.
+   * Fetches issues for each registered strategy in parallel, then deduplicates
+   * by issue number in registry order (first strategy registered wins). Each
+   * issue is annotated with the strategy that will handle it and the
+   * corresponding branch prefix.
    * @returns Sanitized issues with their resolved strategy.
    */
   private async fetchAndSanitizeIssues (): Promise<ResolvedIssue[]> {
+    const fetched = await Promise.all(
+      this.strategies.map(async entry => ({
+        entry,
+        rawIssues: await this.fetchIssuesByLabel(labelOf(entry.key)),
+      }))
+    )
     const seen = new Map<number, ResolvedIssue>()
-    for (const entry of this.strategies) {
-      const label = labelOf(entry.key)
-      const rawIssues = await this.fetchIssuesByLabel(label)
+    for (const { entry, rawIssues } of fetched) {
       for (const issue of rawIssues) {
         const previous = seen.get(issue.number)
         if (previous !== undefined) {
+          const winnerLabel = labelOf(previous.strategyKey)
+          const droppedLabel = labelOf(entry.key)
           console.warn(
-            `Issue #${String(issue.number)} carries multiple sandcastle-* labels; ` +
-              `using strategy '${previous.strategyKey}' (registered first), skipping '${entry.key}'.`
+            `Issue #${String(issue.number)} carries multiple strategy labels ` +
+              `('${winnerLabel}' and '${droppedLabel}'); processing as '${winnerLabel}' ` +
+              `(registered first), skipping '${droppedLabel}'. ` +
+              'To remove the unwanted label: ' +
+              `gh issue edit ${String(issue.number)} --remove-label ${droppedLabel}`
           )
           continue
         }
