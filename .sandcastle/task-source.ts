@@ -410,5 +410,8 @@ function buildControlTagPattern (strategies: readonly StrategyEntry[]): RegExp {
     for (const tag of entry.controlTags ?? []) tags.add(tag)
   }
   const alternation = [...tags].map(escapeRegex).join('|')
-  return new RegExp(`</?(?:${alternation})[^>]*>`, 'gi')
+  // Lookahead asserts the tag name ends at an XML-tag-name boundary
+  // (whitespace, `/` for self-closing, or `>`), preventing prefix collisions
+  // such as `<plant>` matching alternative `plan`.
+  return new RegExp(`</?(?:${alternation})(?=[\\s/>])[^>]*>`, 'gi')
 }
