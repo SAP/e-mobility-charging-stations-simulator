@@ -97,7 +97,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
 
   private get configurationsDir (): string {
-    return dirname(this.stateFilePath)
+    return join(dirname(fileURLToPath(import.meta.url)), 'assets', 'configurations')
   }
 
   private get numberOfAddedChargingStations (): number {
@@ -115,10 +115,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private get persistStateEnabled (): boolean {
-    return (
-      (Configuration.getConfigurationData()?.persistState ?? true) &&
-      env.SIMULATOR_COLD_START !== 'true'
-    )
+    return Configuration.getPersistState() && env.SIMULATOR_COLD_START !== 'true'
   }
 
   private constructor () {
@@ -134,12 +131,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.stopping = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.stateFilePath = join(
-      dirname(fileURLToPath(import.meta.url)),
-      'assets',
-      'configurations',
-      'state.json'
-    )
+    this.stateFilePath = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'state.json')
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
       this
@@ -272,15 +264,6 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
             this.uiServer.start()
             this.uiServerStarted = true
           }
-          // Reconstruct template indexes from per-station configuration files
-          if (this.persistStateEnabled) {
-            reconstructTemplateIndexes(
-              this.configurationsDir,
-              this.stateFilePath,
-              this.templateStatistics,
-              this.logPrefix
-            )
-          }
           // Start ChargingStation object instance in worker thread
           for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
             const nbStations = stationTemplateUrl.numberOfStations
@@ -347,7 +330,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           )
           this.started = true
           if (this.persistStateEnabled) {
-            await writeStateFile(this.stateFilePath, true)
+            await writeStateFile(this.stateFilePath, true, this.logPrefix)
           }
         } finally {
           this.starting = false
@@ -362,6 +345,28 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         `${this.logPrefix()} ${moduleName}.start: Cannot start an already started charging stations simulator`
       )
     }
+  }
+
+  public startUIServer (): void {
+    if (this.uiServerStarted) {
+      return
+    }
+    if (
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .enabled !== true
+    ) {
+      return
+    }
+    this.uiServer.setChargingStationTemplates(
+      Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
+        buildTemplateName(stationTemplateUrl.file)
+      )
+    )
+    if (this.persistStateEnabled) {
+      reconstructTemplateIndexes(this.configurationsDir, this.templateStatistics, this.logPrefix)
+    }
+    this.uiServer.start()
+    this.uiServerStarted = true
   }
 
   public async stop (): Promise<void> {
@@ -384,7 +389,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           delete this.storage
           this.started = false
           if (this.persistStateEnabled) {
-            await writeStateFile(this.stateFilePath, false)
+            await writeStateFile(this.stateFilePath, false, this.logPrefix)
           }
         } finally {
           this.stopping = false

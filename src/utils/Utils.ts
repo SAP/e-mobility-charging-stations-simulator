@@ -32,6 +32,10 @@ export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
 }
 
+export const formatLogPrefix = (logPrefixFn?: () => string): string => {
+  return logPrefixFn != null ? `${logPrefixFn()} ` : ''
+}
+
 export const once = <A extends unknown[], R>(fn: (...args: A) => R): ((...args: A) => R) => {
   let hasBeenCalled = false
   let result!: R

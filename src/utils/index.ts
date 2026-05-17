@@ -43,6 +43,7 @@ export {
   extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
+  formatLogPrefix,
   generateUUID,
   getMessageTypeString,
   getRandomFloatFluctuatedRounded,

@@ -14,7 +14,6 @@ export interface IBootstrap {
   getLastContiguousIndex(templateName: string): number
   getPerformanceStatistics(): IterableIterator<Statistics> | undefined
   getState(): SimulatorState
-  shouldAutoStart(): boolean
   start(): Promise<void>
   stop(): Promise<void>
 }

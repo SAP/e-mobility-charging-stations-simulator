@@ -29,7 +29,7 @@ await describe('BootstrapStateUtils', async () => {
       `bootstrap-state-test-${Date.now().toString()}-${Math.random().toString(36).slice(2)}`
     )
     configurationsDir = join(testDir, 'configurations')
-    stateFilePath = join(configurationsDir, 'state.json')
+    stateFilePath = join(testDir, 'state.json')
     mkdirSync(configurationsDir, { recursive: true })
   })
 
@@ -97,6 +97,17 @@ await describe('BootstrapStateUtils', async () => {
       // Assert
       assert.strictEqual(existsSync(`${stateFilePath}.tmp`), false)
     })
+
+    await it('should not throw when target directory is read-only', async () => {
+      // Arrange
+      const invalidPath = join(testDir, 'does-not-exist', '\0invalid', 'state.json')
+
+      // Act & Assert: writeStateFile must swallow filesystem errors so callers
+      // (Bootstrap.start/stop) do not surface persistence failures as fatal errors.
+      await assert.doesNotReject(async () => {
+        await writeStateFile(invalidPath, true)
+      })
+    })
   })
 
   await describe('readStateFile', async () => {
@@ -135,7 +146,7 @@ await describe('BootstrapStateUtils', async () => {
       assert.strictEqual(existsSync(stateFilePath), false)
     })
 
-    await it('should return undefined and delete file when schema version is incompatible', () => {
+    await it('should return undefined and quarantine file when schema version is incompatible', () => {
       // Arrange
       writeFileSync(stateFilePath, JSON.stringify({ started: true, version: 999 }), 'utf8')
 
@@ -145,6 +156,7 @@ await describe('BootstrapStateUtils', async () => {
       // Assert
       assert.strictEqual(result, undefined)
       assert.strictEqual(existsSync(stateFilePath), false)
+      assert.strictEqual(existsSync(`${stateFilePath}.v999.bak`), true)
     })
 
     await it('should return undefined and delete file when started field is missing', () => {
@@ -219,7 +231,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       const indexes = templateStatistics.get('template-a')?.indexes
@@ -244,7 +256,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -260,7 +272,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -276,7 +288,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -288,7 +300,7 @@ await describe('BootstrapStateUtils', async () => {
       writeFileSync(join(configurationsDir, 'corrupt.json'), '{not valid}', 'utf8')
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -300,25 +312,7 @@ await describe('BootstrapStateUtils', async () => {
       writeFileSync(join(configurationsDir, 'readme.txt'), 'not a config', 'utf8')
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
-
-      // Assert
-      assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
-    })
-
-    await it('should skip state.json file', () => {
-      // Arrange
-      const templateStatistics = createTemplateStatistics([['template-a', 1]])
-      writeFileSync(
-        stateFilePath,
-        JSON.stringify({
-          stationInfo: { templateIndex: 1, templateName: 'template-a' },
-        }),
-        'utf8'
-      )
-
-      // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -329,7 +323,7 @@ await describe('BootstrapStateUtils', async () => {
       const templateStatistics = createTemplateStatistics([['template-a', 1]])
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -341,7 +335,7 @@ await describe('BootstrapStateUtils', async () => {
       const nonExistentDir = join(testDir, 'nonexistent')
 
       // Act
-      reconstructTemplateIndexes(nonExistentDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(nonExistentDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
@@ -370,7 +364,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 2)
@@ -390,7 +384,7 @@ await describe('BootstrapStateUtils', async () => {
       )
 
       // Act
-      reconstructTemplateIndexes(configurationsDir, stateFilePath, templateStatistics)
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)

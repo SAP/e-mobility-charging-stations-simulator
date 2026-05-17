@@ -6,6 +6,7 @@ import { Bootstrap } from './charging-station/index.js'
 
 try {
   const bootstrap = Bootstrap.getInstance()
+  bootstrap.startUIServer()
   if (bootstrap.shouldAutoStart()) {
     await bootstrap.start()
   }
