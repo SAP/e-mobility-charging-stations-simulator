@@ -53,6 +53,7 @@ export interface ConfigurationData {
   /** @deprecated Moved to log configuration section. */
   logStatisticsInterval?: number
   performanceStorage?: StorageConfiguration
+  persistState?: boolean
   stationTemplateUrls: StationTemplateUrl[]
   supervisionUrlDistribution?: SupervisionUrlDistribution
   supervisionUrls?: string | string[]

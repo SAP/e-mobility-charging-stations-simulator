@@ -24,6 +24,7 @@
       "password": "admin"
     }
   },
+  "persistState": true,
   "stationTemplateUrls": [
     {
       "file": "siemens.station-template.json",
