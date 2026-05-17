@@ -69,13 +69,16 @@ const CONTROL_TAG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 
 /**
  * Builds the strategy-key index, validating each entry and throwing on
- * malformed or duplicate keys so registry mistakes (typos, wrong casing,
- * empty tag) fail loudly at module load instead of silently producing
- * undiscoverable labels, invalid git branches or empty regex alternatives.
+ * malformed, duplicate, or prefix-overlapping keys so registry mistakes
+ * (typos, wrong casing, empty tag, key colliding with another key's branch
+ * prefix) fail loudly at module load instead of silently producing
+ * undiscoverable labels, invalid git branches, empty regex alternatives in
+ * the prompt sanitizer, or ambiguous open-PR dedup matches.
  * @param entries - Canonical registry entries.
  * @returns Map from key to entry.
  * @throws {Error} when an entry has an invalid key, an invalid controlTag,
- *   or a duplicate key.
+ *   a duplicate key, or a key whose branch prefix overlaps a previously
+ *   registered one.
  */
 function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, StrategyEntry> {
   const map = new Map<string, StrategyEntry>()
@@ -96,6 +99,15 @@ function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, Str
     }
     if (map.has(entry.key)) {
       throw new Error(`Duplicate strategy key in STRATEGY_REGISTRY: '${entry.key}'.`)
+    }
+    for (const existing of map.keys()) {
+      if (entry.key.startsWith(`${existing}-`) || existing.startsWith(`${entry.key}-`)) {
+        throw new Error(
+          `Strategy key '${entry.key}' overlaps with '${existing}' in STRATEGY_REGISTRY: ` +
+            `branch '${branchPrefixOf(existing)}-<n>-…' would also match the regex derived ` +
+            `from '${branchPrefixOf(entry.key)}-' (or vice versa), making open-PR dedup ambiguous.`
+        )
+      }
     }
     map.set(entry.key, entry)
   }
