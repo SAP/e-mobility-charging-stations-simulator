@@ -86,6 +86,8 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
 
 const defaultPersistState = true
 
+export const DEFAULT_PERSIST_STATE = defaultPersistState
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
   public static configurationChangeCallback?: () => Promise<void>

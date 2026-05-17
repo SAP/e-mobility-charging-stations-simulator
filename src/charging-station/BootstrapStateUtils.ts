@@ -54,7 +54,15 @@ export const readStateFile = (
     return undefined
   }
   try {
-    const content = JSON.parse(readFileSync(stateFilePath, 'utf8')) as Partial<SimulatorStateFile>
+    const parsed = JSON.parse(readFileSync(stateFilePath, 'utf8')) as unknown
+    if (parsed == null || typeof parsed !== 'object') {
+      logger.warn(
+        `${formatLogPrefix(logPrefixFn)}${moduleName}.readStateFile: State file content is not a JSON object, deleting`
+      )
+      deleteStateFile(stateFilePath, logPrefixFn)
+      return undefined
+    }
+    const content = parsed as Partial<SimulatorStateFile>
     if (typeof content.version !== 'number' || typeof content.started !== 'boolean') {
       logger.warn(
         `${formatLogPrefix(logPrefixFn)}${moduleName}.readStateFile: Invalid state file content, deleting`
@@ -99,7 +107,9 @@ export const reconstructTemplateIndexes = (
   }
   let files: string[]
   try {
-    files = readdirSync(configurationsDir).filter(file => file.endsWith('.json'))
+    files = readdirSync(configurationsDir).filter(
+      file => file.endsWith('.json') && !file.startsWith('.')
+    )
   } catch (error) {
     logger.warn(
       `${formatLogPrefix(logPrefixFn)}${moduleName}.reconstructTemplateIndexes: Failed to read configurations directory:`,
@@ -138,9 +148,9 @@ export const writeStateFile = async (
   logPrefixFn?: () => string
 ): Promise<void> => {
   await AsyncLock.runExclusive(AsyncLockType.simulatorState, () => {
+    const tmpFile = `${stateFilePath}.tmp`
     try {
       mkdirSync(dirname(stateFilePath), { recursive: true })
-      const tmpFile = `${stateFilePath}.tmp`
       const stateData: SimulatorStateFile = {
         started,
         version: STATE_FILE_VERSION,
@@ -148,6 +158,12 @@ export const writeStateFile = async (
       writeFileSync(tmpFile, JSON.stringify(stateData, undefined, 2), 'utf8')
       renameSync(tmpFile, stateFilePath)
     } catch (error) {
+      // Best-effort tmp cleanup; ignore secondary failure to surface the original error.
+      try {
+        rmSync(tmpFile, { force: true })
+      } catch {
+        // Ignore
+      }
       handleFileException(
         stateFilePath,
         FileType.SimulatorState,

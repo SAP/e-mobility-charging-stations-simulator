@@ -43,6 +43,7 @@ import {
   isNotEmptyArray,
   logger,
   logPrefix,
+  once,
 } from '../utils/index.js'
 import {
   DEFAULT_ELEMENTS_PER_WORKER,
@@ -65,6 +66,12 @@ enum exitCodes {
   gracefulShutdownError = 4,
 }
 
+enum StopReason {
+  reload = 'reload',
+  shutdown = 'shutdown',
+  user = 'user',
+}
+
 export class Bootstrap extends EventEmitter implements IBootstrap {
   private static instance: Bootstrap | null = null
   public get numberOfChargingStationTemplates (): number {
@@ -85,6 +92,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     )
   }
 
+  private readonly assetsDir: string
+  private readonly configurationsDir: string
   private started: boolean
   private starting: boolean
   private readonly stateFilePath: string
@@ -94,11 +103,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   private readonly uiServer: AbstractUIServer
   private uiServerStarted: boolean
   private readonly version: string = packageJson.version
+  private readonly warnPersistStateWithoutUIServerOnce: () => void
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
-
-  private get configurationsDir (): string {
-    return join(dirname(fileURLToPath(import.meta.url)), 'assets', 'configurations')
-  }
 
   private get numberOfAddedChargingStations (): number {
     return [...this.templateStatistics.values()].reduce(
@@ -115,7 +121,20 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private get persistStateEnabled (): boolean {
-    return Configuration.getPersistState() && env.SIMULATOR_COLD_START !== 'true'
+    if (env[Constants.ENV_SIMULATOR_COLD_START] === 'true') {
+      return false
+    }
+    if (!Configuration.getPersistState()) {
+      return false
+    }
+    if (
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .enabled !== true
+    ) {
+      this.warnPersistStateWithoutUIServerOnce()
+      return false
+    }
+    return true
   }
 
   private constructor () {
@@ -131,12 +150,19 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.stopping = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.stateFilePath = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'state.json')
+    this.assetsDir = join(dirname(fileURLToPath(import.meta.url)), 'assets')
+    this.configurationsDir = join(this.assetsDir, 'configurations')
+    this.stateFilePath = join(this.configurationsDir, '.simulator-state.json')
+    this.warnPersistStateWithoutUIServerOnce = once(() => {
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}: persistState is enabled but UI server is disabled. Persistence has no recovery channel and is ignored`
+      )
+    })
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
       this
     )
-    this.initializeCounters()
+    this.prepareTemplateStatistics()
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
     )
@@ -165,12 +191,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     const stationInfo = await this.workerImplementation?.addElement({
       index,
       options,
-      templateFile: join(
-        dirname(fileURLToPath(import.meta.url)),
-        'assets',
-        'station-templates',
-        templateFile
-      ),
+      templateFile: join(this.assetsDir, 'station-templates', templateFile),
     })
     const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))
     if (stationInfo != null && templateStatistics != null) {
@@ -250,17 +271,13 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
               await this.storage.open()
             }
           }
-          this.uiServer.setChargingStationTemplates(
-            Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
-              buildTemplateName(stationTemplateUrl.file)
-            )
-          )
           if (
             !this.uiServerStarted &&
             Configuration.getConfigurationSection<UIServerConfiguration>(
               ConfigurationSection.uiServer
             ).enabled === true
           ) {
+            this.syncUIServerTemplates()
             this.uiServer.start()
             this.uiServerStarted = true
           }
@@ -357,19 +374,12 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     ) {
       return
     }
-    this.uiServer.setChargingStationTemplates(
-      Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
-        buildTemplateName(stationTemplateUrl.file)
-      )
-    )
-    if (this.persistStateEnabled) {
-      reconstructTemplateIndexes(this.configurationsDir, this.templateStatistics, this.logPrefix)
-    }
+    this.syncUIServerTemplates()
     this.uiServer.start()
     this.uiServerStarted = true
   }
 
-  public async stop (): Promise<void> {
+  public async stop (reason: StopReason = StopReason.user): Promise<void> {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
@@ -388,7 +398,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           await this.storage?.close()
           delete this.storage
           this.started = false
-          if (this.persistStateEnabled) {
+          if (this.persistStateEnabled && reason === StopReason.user) {
             await writeStateFile(this.stateFilePath, false, this.logPrefix)
           }
         } finally {
@@ -407,7 +417,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private gracefulShutdown (): void {
-    this.stop()
+    this.stop(StopReason.shutdown)
       .then(() => {
         logger.info(`${this.logPrefix()} ${moduleName}.gracefulShutdown: Graceful shutdown`)
         if (this.uiServerStarted) {
@@ -614,8 +624,13 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     }
   }
 
+  private prepareTemplateStatistics (): void {
+    this.initializeCounters()
+    reconstructTemplateIndexes(this.configurationsDir, this.templateStatistics, this.logPrefix)
+  }
+
   private async restart (): Promise<void> {
-    await this.stop()
+    await this.stop(StopReason.reload)
     if (
       this.uiServerStarted &&
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
@@ -624,12 +639,21 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       this.uiServer.stop()
       this.uiServerStarted = false
     }
-    this.initializeCounters()
+    this.prepareTemplateStatistics()
+    this.syncUIServerTemplates()
     // TODO: compare worker configuration hash to skip unnecessary re-initialization
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
     )
     await this.start()
+  }
+
+  private syncUIServerTemplates (): void {
+    this.uiServer.setChargingStationTemplates(
+      Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
+        buildTemplateName(stationTemplateUrl.file)
+      )
+    )
   }
 
   private async waitChargingStationsStopped (): Promise<string> {

@@ -100,7 +100,7 @@ await describe('BootstrapStateUtils', async () => {
       assert.strictEqual(existsSync(`${stateFilePath}.tmp`), false)
     })
 
-    await it('should not throw when target directory is read-only', async () => {
+    await it('should not throw when target path is rejected by the OS', async () => {
       // Arrange
       const invalidPath = join(testDir, 'does-not-exist', '\0invalid', 'state.json')
 
@@ -109,6 +109,18 @@ await describe('BootstrapStateUtils', async () => {
       await assert.doesNotReject(async () => {
         await writeStateFile(invalidPath, true)
       })
+    })
+
+    await it('should clean up tmp file when atomic rename fails', async () => {
+      // Arrange
+      mkdirSync(stateFilePath, { recursive: true })
+      writeFileSync(join(stateFilePath, 'placeholder'), 'x', 'utf8')
+
+      // Act
+      await writeStateFile(stateFilePath, true)
+
+      // Assert
+      assert.strictEqual(existsSync(`${stateFilePath}.tmp`), false)
     })
   })
 
@@ -176,6 +188,42 @@ await describe('BootstrapStateUtils', async () => {
     await it('should return undefined and delete file when version field is missing', () => {
       // Arrange
       writeFileSync(stateFilePath, JSON.stringify({ started: true }), 'utf8')
+
+      // Act
+      const result = readStateFile(stateFilePath)
+
+      // Assert
+      assert.strictEqual(result, undefined)
+      assert.strictEqual(existsSync(stateFilePath), false)
+    })
+
+    await it('should return undefined and delete file when content is JSON null', () => {
+      // Arrange
+      writeFileSync(stateFilePath, 'null', 'utf8')
+
+      // Act
+      const result = readStateFile(stateFilePath)
+
+      // Assert
+      assert.strictEqual(result, undefined)
+      assert.strictEqual(existsSync(stateFilePath), false)
+    })
+
+    await it('should return undefined and delete file when content is a JSON primitive', () => {
+      // Arrange
+      writeFileSync(stateFilePath, '42', 'utf8')
+
+      // Act
+      const result = readStateFile(stateFilePath)
+
+      // Assert
+      assert.strictEqual(result, undefined)
+      assert.strictEqual(existsSync(stateFilePath), false)
+    })
+
+    await it('should return undefined and delete file when content is a JSON array', () => {
+      // Arrange
+      writeFileSync(stateFilePath, '[]', 'utf8')
 
       // Act
       const result = readStateFile(stateFilePath)
@@ -390,6 +438,28 @@ await describe('BootstrapStateUtils', async () => {
 
       // Assert
       assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 0)
+    })
+
+    await it('should skip dot-prefixed metadata files', () => {
+      // Arrange
+      const templateStatistics = createTemplateStatistics([['template-a', 1]])
+      writeFileSync(
+        join(configurationsDir, '.simulator-state.json'),
+        JSON.stringify({ started: true, version: 1 }),
+        'utf8'
+      )
+      writeFileSync(
+        join(configurationsDir, 'station1.json'),
+        JSON.stringify({ stationInfo: { templateIndex: 1, templateName: 'template-a' } }),
+        'utf8'
+      )
+
+      // Act
+      reconstructTemplateIndexes(configurationsDir, templateStatistics)
+
+      // Assert
+      assert.strictEqual(templateStatistics.get('template-a')?.indexes.size, 1)
+      assert.strictEqual(templateStatistics.get('template-a')?.indexes.has(1), true)
     })
   })
 })
