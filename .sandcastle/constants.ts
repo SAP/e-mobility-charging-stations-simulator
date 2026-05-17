@@ -99,6 +99,8 @@ export const GITHUB_MAX_ISSUES_FETCH = 50
 
 export const GITHUB_MAX_PRS_FETCH = 200
 
+export const MAX_SLUG_CHARS = 40
+
 export const MAX_TITLE_CHARS = 200
 
 // ── Validation ───────────────────────────────────────────────────────────────

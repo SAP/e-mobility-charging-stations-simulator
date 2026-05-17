@@ -16,6 +16,7 @@ import {
   GIT_TIMEOUT_MS,
   GITHUB_MAX_ISSUES_FETCH,
   GITHUB_MAX_PRS_FETCH,
+  MAX_SLUG_CHARS,
   MAX_TITLE_CHARS,
   SANDBOX_AUTH_HOOKS,
 } from './constants.js'
@@ -372,8 +373,6 @@ export class GithubIssueSource implements TaskSource {
  * is uniformly kebab-cased.
  */
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-
-const MAX_SLUG_CHARS = 40
 
 const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
 const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
