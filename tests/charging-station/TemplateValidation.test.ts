@@ -84,16 +84,149 @@ await describe('TemplateValidation', async () => {
       assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
     })
 
-    await it('should default $schemaVersion to 1 when missing', t => {
+    await it('should auto-migrate template missing $schemaVersion (legacy v0 default)', t => {
       t.mock.method(logger, 'warn')
+      t.mock.method(logger, 'debug')
       const parsed: Record<string, unknown> = {
+        authorizationFile: 'tags.json',
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
+        mustAuthorizeAtRemoteStart: true,
+        payloadSchemaValidation: false,
+        supervisionUrl: 'ws://localhost:8080',
       }
 
-      const result = validateTemplate(parsed, 'test.json')
-      assert.ok(result)
+      const result = validateTemplate(parsed, 'legacy.json')
+
+      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
+      assert.strictEqual(result.idTagsFile, 'tags.json')
+      assert.strictEqual(result.remoteAuthorization, true)
+      assert.strictEqual(result.ocppStrictCompliance, false)
+      assert.strictEqual((result as unknown as Record<string, unknown>).supervisionUrl, undefined)
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).authorizationFile,
+        undefined
+      )
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).mustAuthorizeAtRemoteStart,
+        undefined
+      )
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).payloadSchemaValidation,
+        undefined
+      )
+    })
+
+    await it('should throw BaseError for null parsed payload', () => {
+      assert.throws(
+        () => validateTemplate(null, 'null.json'),
+        (error: unknown) =>
+          error instanceof BaseError && error.message.includes('not a JSON object')
+      )
+    })
+
+    await it('should throw BaseError for string parsed payload', () => {
+      assert.throws(
+        () => validateTemplate('a string', 'string.json'),
+        (error: unknown) =>
+          error instanceof BaseError && error.message.includes('not a JSON object')
+      )
+    })
+
+    await it('should throw BaseError for array parsed payload', () => {
+      assert.throws(
+        () => validateTemplate([1, 2, 3], 'array.json'),
+        (error: unknown) =>
+          error instanceof BaseError && error.message.includes('not a JSON object')
+      )
+    })
+
+    await it('should reject v1 template containing legacy supervisionUrl key', t => {
+      t.mock.method(logger, 'warn')
+      assert.throws(
+        () =>
+          validateTemplate(
+            {
+              $schemaVersion: 1,
+              baseName: 'CS-TEST',
+              chargePointModel: 'TestModel',
+              chargePointVendor: 'TestVendor',
+              supervisionUrl: 'ws://localhost:8080',
+            },
+            'v1-legacy.json'
+          ),
+        (error: unknown) =>
+          error instanceof TemplateValidationError &&
+          error.fieldErrors.some(
+            e => e.path === 'supervisionUrl' && e.message.includes('Deprecated')
+          )
+      )
+    })
+
+    await it('should reject v1 template containing legacy mustAuthorizeAtRemoteStart key', t => {
+      t.mock.method(logger, 'warn')
+      assert.throws(
+        () =>
+          validateTemplate(
+            {
+              $schemaVersion: 1,
+              baseName: 'CS-TEST',
+              chargePointModel: 'TestModel',
+              chargePointVendor: 'TestVendor',
+              mustAuthorizeAtRemoteStart: true,
+            },
+            'v1-legacy.json'
+          ),
+        (error: unknown) =>
+          error instanceof TemplateValidationError &&
+          error.fieldErrors.some(
+            e => e.path === 'mustAuthorizeAtRemoteStart' && e.message.includes('Deprecated')
+          )
+      )
+    })
+
+    await it('should reject v1 template containing legacy payloadSchemaValidation key', t => {
+      t.mock.method(logger, 'warn')
+      assert.throws(
+        () =>
+          validateTemplate(
+            {
+              $schemaVersion: 1,
+              baseName: 'CS-TEST',
+              chargePointModel: 'TestModel',
+              chargePointVendor: 'TestVendor',
+              payloadSchemaValidation: false,
+            },
+            'v1-legacy.json'
+          ),
+        (error: unknown) =>
+          error instanceof TemplateValidationError &&
+          error.fieldErrors.some(
+            e => e.path === 'payloadSchemaValidation' && e.message.includes('Deprecated')
+          )
+      )
+    })
+
+    await it('should include "(migrated from vX → vY)" note in TemplateValidationError message', t => {
+      t.mock.method(logger, 'warn')
+      t.mock.method(logger, 'debug')
+      try {
+        validateTemplate(
+          {
+            $schemaVersion: 0,
+            baseName: '',
+            chargePointModel: 'TestModel',
+            chargePointVendor: 'TestVendor',
+          },
+          'broken.json'
+        )
+        assert.fail('Expected TemplateValidationError')
+      } catch (error) {
+        assert.ok(error instanceof TemplateValidationError)
+        assert.strictEqual(error.migratedFrom, 0)
+        assert.match(error.message, /migrated from v0 → v1/)
+      }
     })
   })
 
@@ -118,7 +251,7 @@ await describe('TemplateValidation', async () => {
       assert.ok(warnMessages.some(m => m.includes('Missing id tags file')))
     })
 
-    await it('should force randomConnectors when connector count exceeds config', t => {
+    await it('should force randomConnectors when scalar numberOfConnectors exceeds defined connectors', t => {
       // Arrange
       t.mock.method(logger, 'warn')
       const parsed: Record<string, unknown> = {
@@ -136,6 +269,45 @@ await describe('TemplateValidation', async () => {
 
       // Assert
       assert.strictEqual(result.randomConnectors, true)
+    })
+
+    await it('should force randomConnectors when max(numberOfConnectors[]) exceeds defined connectors', t => {
+      // Arrange
+      t.mock.method(logger, 'warn')
+      const parsed: Record<string, unknown> = {
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: { 0: {}, 1: {}, 2: {} },
+        numberOfConnectors: [2, 4, 6],
+        randomConnectors: false,
+      }
+
+      // Act
+      const result = validateTemplate(parsed, 'test.json')
+
+      // Assert (regression for finding #2: arr[0]=2 ≤ 2 would have missed; max=6 > 2 forces)
+      assert.strictEqual(result.randomConnectors, true)
+    })
+
+    await it('should not force randomConnectors when max(numberOfConnectors[]) does not exceed defined connectors', t => {
+      // Arrange
+      t.mock.method(logger, 'warn')
+      const parsed: Record<string, unknown> = {
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: { 0: {}, 1: {}, 2: {}, 3: {}, 4: {} },
+        numberOfConnectors: [1, 2, 3, 4],
+      }
+
+      // Act
+      const result = validateTemplate(parsed, 'test.json')
+
+      // Assert
+      assert.notStrictEqual(result.randomConnectors, true)
     })
 
     await it('should not force randomConnectors when already true', t => {
@@ -156,6 +328,31 @@ await describe('TemplateValidation', async () => {
 
       // Assert
       assert.strictEqual(result.randomConnectors, true)
+    })
+
+    await it('should not log error for empty Connectors map (regression for dead < 0 branch)', t => {
+      // Arrange
+      const errorMock = t.mock.method(logger, 'error')
+      t.mock.method(logger, 'warn')
+      const parsed: Record<string, unknown> = {
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: {},
+      }
+
+      // Act
+      validateTemplate(parsed, 'test.json')
+
+      // Assert
+      const errorMessages = errorMock.mock.calls.map(c =>
+        typeof c.arguments[0] === 'string' ? c.arguments[0] : ''
+      )
+      assert.ok(
+        !errorMessages.some(m => m.includes('no connectors configuration defined')),
+        'transformTemplate must not emit the dead-branch error for empty Connectors'
+      )
     })
   })
 

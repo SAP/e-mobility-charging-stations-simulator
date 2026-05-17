@@ -22,7 +22,10 @@ const migrations: ReadonlyMap<number, MigrationFn> = new Map<number, MigrationFn
 
 /**
  * Coerce a raw `$schemaVersion` value to a validated integer.
- * - Missing → 1 (default)
+ * - Missing → 0 (legacy/pre-versioning template — triggers v0→CURRENT migration
+ *   so deprecated keys (`supervisionUrl`, `authorizationFile`,
+ *   `payloadSchemaValidation`, `mustAuthorizeAtRemoteStart`) are renamed
+ *   before strict schema validation)
  * - String numeric → parsed integer
  * - Negative, float, or future → fatal error
  * @param raw - Raw value from parsed JSON
@@ -30,7 +33,7 @@ const migrations: ReadonlyMap<number, MigrationFn> = new Map<number, MigrationFn
  */
 export const coerceVersion = (raw: unknown): number => {
   if (raw == null) {
-    return 1
+    return 0
   }
   let rawStr: string
   if (typeof raw === 'object') {

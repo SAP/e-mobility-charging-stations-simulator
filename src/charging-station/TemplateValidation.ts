@@ -4,6 +4,7 @@ import type { ChargingStationTemplate } from '../types/index.js'
 
 import { BaseError } from '../exception/index.js'
 import { isEmpty, isNotEmptyString, logger } from '../utils/index.js'
+import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { TemplateSchema } from './TemplateSchema.js'
 
@@ -26,7 +27,13 @@ export class TemplateValidationError extends BaseError {
     const fieldSummary = fieldErrors
       .map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`)
       .join('\n')
-    super(`${moduleName}: Template validation failed for '${context.filePath}':\n${fieldSummary}`)
+    const migrationNote =
+      context.migratedFrom != null
+        ? ` (migrated from v${context.migratedFrom.toString()} → v${CURRENT_SCHEMA_VERSION.toString()})`
+        : ''
+    super(
+      `${moduleName}: Template validation failed for '${context.filePath}'${migrationNote}:\n${fieldSummary}`
+    )
     this.filePath = context.filePath
     this.fieldErrors = fieldErrors
     this.migratedFrom = context.migratedFrom
@@ -35,28 +42,28 @@ export class TemplateValidationError extends BaseError {
 
 /**
  * Validate a parsed template object through the migration → validation → transform pipeline.
- * @param parsed - Raw parsed JSON object
+ * @param parsed - Raw parsed JSON value (any type — guarded internally)
  * @param filePath - Template file path (for error messages)
  * @returns Validated and transformed ChargingStationTemplate
  */
-export const validateTemplate = (
-  parsed: Record<string, unknown>,
-  filePath: string
-): ChargingStationTemplate => {
-  // Null/empty checks (absorbs checkTemplate's null/empty validation)
+export const validateTemplate = (parsed: unknown, filePath: string): ChargingStationTemplate => {
+  if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new BaseError(
+      `${moduleName}.validateTemplate: Invalid charging station template payload (not a JSON object) in template file ${filePath}`
+    )
+  }
   if (isEmpty(parsed)) {
     throw new BaseError(
       `${moduleName}.validateTemplate: Empty charging station information from template file ${filePath}`
     )
   }
+  const parsedRecord = parsed as Record<string, unknown>
 
-  // Version coercion and migration
-  const version = coerceVersion(parsed.$schemaVersion)
+  const version = coerceVersion(parsedRecord.$schemaVersion)
   const migratedFrom = version < CURRENT_SCHEMA_VERSION ? version : undefined
   const migrated =
-    version < CURRENT_SCHEMA_VERSION ? applyMigration(version, parsed, filePath) : parsed
+    migratedFrom != null ? applyMigration(version, parsedRecord, filePath) : parsedRecord
 
-  // Schema validation
   const result = TemplateSchema.safeParse(migrated)
   if (!result.success) {
     throw new TemplateValidationError(result.error, { filePath, migratedFrom })
@@ -69,7 +76,11 @@ export const validateTemplate = (
  * Post-validation transform. Separate from schema because schemas must be pure (no side-effects).
  *
  * Preserves checkConnectorsConfiguration() mutation:
- * forces randomConnectors=true when connector count > configured connector definitions.
+ * forces randomConnectors=true when the worst-case configured connector count
+ * (max of `numberOfConnectors[]`, or its scalar value) exceeds the available
+ * connector definitions in the template. The worst-case bound is intentional:
+ * runtime random pick can hit any value of the array, so any value above the
+ * available count requires `randomConnectors=true` to be safe under any pick.
  *
  * Also warns about missing idTagsFile (non-fatal advisory from checkTemplate).
  * @param validated - Schema-validated template data
@@ -80,7 +91,6 @@ function transformTemplate (
   validated: Record<string, unknown>,
   filePath: string
 ): ChargingStationTemplate {
-  // Advisory warning for missing idTagsFile (from checkTemplate)
   if (
     validated.idTagsFile == null ||
     (typeof validated.idTagsFile === 'string' && !isNotEmptyString(validated.idTagsFile))
@@ -90,41 +100,30 @@ function transformTemplate (
     )
   }
 
-  // Connector count check and randomConnectors mutation (from checkConnectorsConfiguration)
   if (validated.Connectors != null && typeof validated.Connectors === 'object') {
     const connectors = validated.Connectors as Record<string, unknown>
-    const connectorKeys = Object.keys(connectors)
-    const templateMaxConnectors = connectorKeys.length
+    const templateMaxConnectors = Object.keys(connectors).length
     const templateMaxAvailableConnectors =
       connectors['0'] != null ? templateMaxConnectors - 1 : templateMaxConnectors
 
-    // Determine configured max connectors
-    let configuredMaxConnectors = 0
-    if (Array.isArray(validated.numberOfConnectors)) {
-      const arr = validated.numberOfConnectors as number[]
-      configuredMaxConnectors = arr.length > 0 ? arr[0] : 0
-    } else if (typeof validated.numberOfConnectors === 'number') {
-      configuredMaxConnectors = validated.numberOfConnectors
-    } else {
-      configuredMaxConnectors = templateMaxAvailableConnectors
-    }
+    const configuredMaxConnectors =
+      getMaxConfiguredNumberOfConnectors(
+        validated.numberOfConnectors as number | number[] | undefined
+      ) ?? templateMaxAvailableConnectors
 
-    if (configuredMaxConnectors > templateMaxAvailableConnectors) {
-      if (validated.randomConnectors !== true) {
-        logger.warn(
-          `${moduleName}.transformTemplate: Number of connectors exceeds the number of connector configurations in template ${filePath}, forcing random connector configurations affectation`
-        )
-        validated.randomConnectors = true
-      }
+    if (
+      configuredMaxConnectors > templateMaxAvailableConnectors &&
+      validated.randomConnectors !== true
+    ) {
+      logger.warn(
+        `${moduleName}.transformTemplate: Number of connectors (${configuredMaxConnectors.toString()}) exceeds the number of connector configurations (${templateMaxAvailableConnectors.toString()}) in template ${filePath}, forcing random connector configurations affectation`
+      )
+      validated.randomConnectors = true
     }
 
     if (templateMaxConnectors === 0) {
       logger.warn(
         `${moduleName}.transformTemplate: Charging station information from template ${filePath} with empty connectors configuration`
-      )
-    } else if (templateMaxConnectors < 0) {
-      logger.error(
-        `${moduleName}.transformTemplate: Charging station information from template ${filePath} with no connectors configuration defined`
       )
     }
 

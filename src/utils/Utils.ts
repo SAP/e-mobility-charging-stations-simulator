@@ -34,7 +34,7 @@ export const logPrefix = (prefixString = ''): string => {
 
 /**
  * Formats a log prefix for direct concatenation with a module/method tag.
- * @param logPrefixFn - Prefix-producing function. Defaults to `logPrefix` (timestamp only) so callers without a
+ * @param logPrefixFn - Prefix-producing function. Defaults to `logPrefix` so callers without a
  *                     module-specific prefix still emit a timestamped log line.
  * @returns The prefix followed by a single trailing space (e.g. `"<prefix> "`). The trailing space is part of the
  *          contract: call sites concatenate the result directly with the message body, e.g.

@@ -837,14 +837,12 @@ export const waitChargingStationEvents = async (
 export const getConfiguredMaxNumberOfConnectors = (
   stationTemplate: ChargingStationTemplate
 ): number => {
+  const picked = pickConfiguredNumberOfConnectors(stationTemplate.numberOfConnectors)
+  if (picked != null) {
+    return picked
+  }
   let configuredMaxNumberOfConnectors = 0
-  if (isNotEmptyArray<number>(stationTemplate.numberOfConnectors)) {
-    const numberOfConnectors = stationTemplate.numberOfConnectors
-    configuredMaxNumberOfConnectors =
-      numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
-  } else if (typeof stationTemplate.numberOfConnectors === 'number') {
-    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors
-  } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
+  if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
     configuredMaxNumberOfConnectors =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       stationTemplate.Connectors[0] != null
@@ -857,6 +855,52 @@ export const getConfiguredMaxNumberOfConnectors = (
     }
   }
   return configuredMaxNumberOfConnectors
+}
+
+/**
+ * Worst-case upper bound on the configured connector count from the
+ * `numberOfConnectors` template field. Used at validation time to decide
+ * whether `randomConnectors` must be auto-enabled (i.e. whether *any*
+ * runtime random pick could exceed the connector definitions).
+ *
+ * Symmetric with `pickConfiguredNumberOfConnectors`: both consume the same
+ * field; this one returns `Math.max(arr)` (deterministic upper bound), the
+ * other returns a per-instance random pick.
+ * @param numberOfConnectors - Template `numberOfConnectors` field value
+ * @returns Upper bound, or `undefined` when the field is not set
+ */
+export const getMaxConfiguredNumberOfConnectors = (
+  numberOfConnectors: number | readonly number[] | undefined
+): number | undefined => {
+  if (isNotEmptyArray<number>(numberOfConnectors)) {
+    return Math.max(...numberOfConnectors)
+  }
+  if (typeof numberOfConnectors === 'number') {
+    return numberOfConnectors
+  }
+  return undefined
+}
+
+/**
+ * Random pick from the `numberOfConnectors` template field. Used at
+ * runtime to materialize the actual connector count for one station
+ * instance.
+ *
+ * Symmetric with `getMaxConfiguredNumberOfConnectors`: see that helper for
+ * the shared semantics.
+ * @param numberOfConnectors - Template `numberOfConnectors` field value
+ * @returns Picked count, or `undefined` when the field is not set
+ */
+export const pickConfiguredNumberOfConnectors = (
+  numberOfConnectors: number | readonly number[] | undefined
+): number | undefined => {
+  if (isNotEmptyArray<number>(numberOfConnectors)) {
+    return numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
+  }
+  if (typeof numberOfConnectors === 'number') {
+    return numberOfConnectors
+  }
+  return undefined
 }
 
 const initializeConnectorStatus = (

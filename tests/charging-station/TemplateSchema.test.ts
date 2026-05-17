@@ -12,6 +12,7 @@ await describe('TemplateSchema', async () => {
   await describe('required fields', async () => {
     await it('should accept a minimal valid template with Connectors', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -26,6 +27,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject missing baseName', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
       })
@@ -35,6 +37,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject empty baseName', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: '',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -44,6 +47,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject missing chargePointModel', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointVendor: 'TestVendor',
       })
@@ -53,6 +57,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject missing chargePointVendor', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
       })
@@ -62,17 +67,17 @@ await describe('TemplateSchema', async () => {
   })
 
   await describe('$schemaVersion', async () => {
-    await it('should default $schemaVersion to 1 when missing', () => {
+    await it('should reject template missing $schemaVersion (post-migration schema is strict)', () => {
       const result = TemplateSchema.safeParse({
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
       })
-      assert.ok(result.success)
-      assert.strictEqual(result.data.$schemaVersion, 1)
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.includes('$schemaVersion')))
     })
 
-    await it('should accept explicit $schemaVersion', () => {
+    await it('should accept explicit $schemaVersion equal to CURRENT_SCHEMA_VERSION', () => {
       const result = TemplateSchema.safeParse({
         $schemaVersion: 1,
         baseName: 'CS-TEST',
@@ -82,11 +87,165 @@ await describe('TemplateSchema', async () => {
       assert.ok(result.success)
       assert.strictEqual(result.data.$schemaVersion, 1)
     })
+
+    await it('should reject $schemaVersion not equal to CURRENT_SCHEMA_VERSION', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 0,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+      })
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.includes('$schemaVersion')))
+    })
+  })
+
+  await describe('deprecated keys rejection', async () => {
+    await it('should reject template containing legacy supervisionUrl key', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        supervisionUrl: 'ws://localhost:8080',
+      })
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.path.includes('supervisionUrl') && i.message.includes('Deprecated')
+        )
+      )
+    })
+
+    await it('should reject template containing legacy authorizationFile key', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        authorizationFile: 'tags.json',
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+      })
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.path.includes('authorizationFile') && i.message.includes('Deprecated')
+        )
+      )
+    })
+
+    await it('should reject template containing legacy mustAuthorizeAtRemoteStart key', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        mustAuthorizeAtRemoteStart: true,
+      })
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.path.includes('mustAuthorizeAtRemoteStart') && i.message.includes('Deprecated')
+        )
+      )
+    })
+
+    await it('should reject template containing legacy payloadSchemaValidation key', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        payloadSchemaValidation: false,
+      })
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.path.includes('payloadSchemaValidation') && i.message.includes('Deprecated')
+        )
+      )
+    })
+  })
+
+  await describe('typed sub-schemas', async () => {
+    await it('should accept structured signedMeterValue with vendor extensions', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: {
+          0: {},
+          1: {
+            MeterValues: [
+              {
+                signedMeterValue: {
+                  encodingMethod: 'Other',
+                  publicKey: 'pk',
+                  signedMeterData: 'data',
+                  signingMethod: 'Other',
+                  vendorField: 'preserved',
+                },
+                unit: 'Wh',
+              },
+            ],
+          },
+        },
+      })
+      assert.ok(result.success)
+    })
+
+    await it('should reject signedMeterValue with non-string encodingMethod', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        Connectors: {
+          0: {},
+          1: {
+            MeterValues: [
+              {
+                signedMeterValue: { encodingMethod: 42 },
+                unit: 'Wh',
+              },
+            ],
+          },
+        },
+      })
+      assert.ok(!result.success)
+    })
+
+    await it('should accept structured wsOptions with known fields', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        wsOptions: {
+          handshakeTimeout: 5000,
+          headers: { 'X-Custom': 'value' },
+          rejectUnauthorized: false,
+        },
+      })
+      assert.ok(result.success)
+    })
+
+    await it('should reject wsOptions with non-object headers', () => {
+      const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
+        baseName: 'CS-TEST',
+        chargePointModel: 'TestModel',
+        chargePointVendor: 'TestVendor',
+        wsOptions: { headers: 'not an object' },
+      })
+      assert.ok(!result.success)
+    })
   })
 
   await describe('topology discrimination', async () => {
     await it('should reject template with both Connectors and Evses', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -99,6 +258,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should accept template with only Connectors', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -109,6 +269,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should accept template with only Evses', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -122,6 +283,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should accept template with neither Connectors nor Evses', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -133,6 +295,7 @@ await describe('TemplateSchema', async () => {
   await describe('Evses validation (OCPP 2.0.1 §7.2)', async () => {
     await it('should reject EVSE 0 with non-zero connector id', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -148,6 +311,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject EVSE > 0 with connector id 0', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -161,6 +325,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should accept valid EVSE configuration', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -177,6 +342,7 @@ await describe('TemplateSchema', async () => {
   await describe('MeterValues normalization', async () => {
     await it('should accept string value in MeterValues', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -194,6 +360,7 @@ await describe('TemplateSchema', async () => {
 
     await it('should coerce number value to string in MeterValues', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -213,6 +380,7 @@ await describe('TemplateSchema', async () => {
   await describe('looseObject behavior', async () => {
     await it('should tolerate unknown top-level keys', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -229,6 +397,7 @@ await describe('TemplateSchema', async () => {
   await describe('connector key validation', async () => {
     await it('should accept numeric string keys in Connectors', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
@@ -239,36 +408,13 @@ await describe('TemplateSchema', async () => {
 
     await it('should reject non-numeric keys in Connectors', () => {
       const result = TemplateSchema.safeParse({
+        $schemaVersion: 1,
         baseName: 'CS-TEST',
         chargePointModel: 'TestModel',
         chargePointVendor: 'TestVendor',
         Connectors: { abc: {} },
       })
       assert.ok(!result.success)
-    })
-  })
-
-  await describe('all template files validation', async () => {
-    await it('should validate all 15 station template files', async () => {
-      const fs = await import('node:fs')
-      const path = await import('node:path')
-      const templateDir = path.join(import.meta.dirname, '../../src/assets/station-templates')
-      const files = fs.readdirSync(templateDir).filter(f => f.endsWith('.json'))
-      assert.strictEqual(files.length, 15)
-
-      for (const file of files) {
-        const content = fs.readFileSync(path.join(templateDir, file), 'utf8')
-        const parsed = JSON.parse(content) as Record<string, unknown>
-        const result = TemplateSchema.safeParse(parsed)
-        assert.ok(
-          result.success,
-          `Template ${file} failed validation: ${
-            result.success
-              ? ''
-              : result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
-          }`
-        )
-      }
     })
   })
 })

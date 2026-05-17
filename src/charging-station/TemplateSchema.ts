@@ -1,8 +1,35 @@
 import { z } from 'zod'
 
+import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
+
 // ---------------------------------------------------------------
 // Sub-schemas
 // ---------------------------------------------------------------
+
+/**
+ * SignedMeterValue — OCPP signed meter value envelope.
+ * Mirrors `OCPP20SignedMeterValueType` and the OCPP 1.6 vendor-specific
+ * structure. `.catchall(z.unknown())` preserves forward-compatibility for
+ * vendor-specific extensions.
+ */
+const SignedMeterValueSchema = z
+  .object({
+    encodingMethod: z.string().optional(),
+    publicKey: z.string().optional(),
+    signedMeterData: z.string().optional(),
+    signingMethod: z.string().optional(),
+  })
+  .catchall(z.unknown())
+
+/**
+ * UnitOfMeasure — OCPP 2.0 unit-of-measure descriptor.
+ */
+const UnitOfMeasureSchema = z
+  .object({
+    multiplier: z.number().int().optional(),
+    unit: z.string().optional(),
+  })
+  .catchall(z.unknown())
 
 /**
  * SampledValueTemplate — MeterValues entries in connectors.
@@ -17,11 +44,28 @@ const SampledValueTemplateSchema = z.looseObject({
   measurand: z.string().optional(),
   minimumValue: z.number().optional(),
   phase: z.string().optional(),
-  signedMeterValue: z.looseObject({}).optional(),
+  signedMeterValue: SignedMeterValueSchema.optional(),
   unit: z.string().optional(),
-  unitOfMeasure: z.looseObject({}).optional(),
+  unitOfMeasure: UnitOfMeasureSchema.optional(),
   value: z.union([z.string(), z.number()]).pipe(z.coerce.string()).optional(),
 })
+
+/**
+ * WsOptions — `ws.ClientOptions & ClientRequestArgs` intersection.
+ * The full surface is large (~60 fields) and external; the schema types the
+ * commonly used fields and preserves the rest via `.catchall(z.unknown())`.
+ */
+const WsOptionsSchema = z
+  .object({
+    handshakeTimeout: z.number().optional(),
+    headers: z.record(z.string(), z.string()).optional(),
+    maxPayload: z.number().optional(),
+    perMessageDeflate: z.union([z.boolean(), z.record(z.string(), z.unknown())]).optional(),
+    protocolVersion: z.number().optional(),
+    rejectUnauthorized: z.boolean().optional(),
+    skipUTF8Validation: z.boolean().optional(),
+  })
+  .catchall(z.unknown())
 
 /**
  * ConnectorStatus — individual connector configuration within a template.
@@ -117,7 +161,7 @@ const EvsesVariant = z.looseObject({
 // ---------------------------------------------------------------
 
 const BaseTemplateSchema = z.looseObject({
-  $schemaVersion: z.number().int().min(1).default(1),
+  $schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   amperageLimitationOcppKey: z.string().optional(),
   amperageLimitationUnit: z.string().optional(),
   AutomaticTransactionGenerator: AutomaticTransactionGeneratorSchema.optional(),
@@ -150,7 +194,6 @@ const BaseTemplateSchema = z.looseObject({
   meteringPerTransaction: z.boolean().optional(),
   meterSerialNumberPrefix: z.string().optional(),
   meterType: z.string().optional(),
-  mustAuthorizeAtRemoteStart: z.boolean().optional(),
   nameSuffix: z.string().optional(),
   numberOfConnectors: z.union([z.number(), z.array(z.number())]).optional(),
   numberOfPhases: z.number().optional(),
@@ -159,7 +202,6 @@ const BaseTemplateSchema = z.looseObject({
   ocppStrictCompliance: z.boolean().optional(),
   ocppVersion: z.string().optional(),
   outOfOrderEndMeterValues: z.boolean().optional(),
-  payloadSchemaValidation: z.boolean().optional(),
   phaseLineToLineVoltageMeterValues: z.boolean().optional(),
   postTransactionDelay: z.number().optional(),
   power: z.union([z.number(), z.array(z.number())]).optional(),
@@ -181,15 +223,31 @@ const BaseTemplateSchema = z.looseObject({
   transactionDataMeterValues: z.boolean().optional(),
   useConnectorId0: z.boolean().optional(),
   voltageOut: z.number().optional(),
-  wsOptions: z.looseObject({}).optional(),
+  wsOptions: WsOptionsSchema.optional(),
   x509Certificates: z.record(z.string(), z.string()).optional(),
 })
+
+const LEGACY_KEYS = [
+  'authorizationFile',
+  'mustAuthorizeAtRemoteStart',
+  'payloadSchemaValidation',
+  'supervisionUrl',
+] as const
 
 /**
  * TemplateSchema — validates that the template has valid structure and
  * defines either Connectors OR Evses (not both, not neither).
  */
 export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => {
+  for (const legacyKey of LEGACY_KEYS) {
+    if ((template as Record<string, unknown>)[legacyKey] !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `Deprecated template key '${legacyKey}' is not allowed at $schemaVersion ${CURRENT_SCHEMA_VERSION.toString()}. Remove '$schemaVersion' to trigger automatic v0 migration, or replace the key with its v1 equivalent`,
+        path: [legacyKey],
+      })
+    }
+  }
   const hasConnectors = template.Connectors != null
   const hasEvses = template.Evses != null
   if (hasConnectors && hasEvses) {

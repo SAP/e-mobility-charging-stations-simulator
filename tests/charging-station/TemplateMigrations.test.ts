@@ -27,9 +27,9 @@ await describe('TemplateMigrations', async () => {
   })
 
   await describe('coerceVersion', async () => {
-    await it('should return 1 for null or undefined', () => {
-      assert.strictEqual(coerceVersion(null), 1)
-      assert.strictEqual(coerceVersion(undefined), 1)
+    await it('should return 0 for null or undefined (legacy templates trigger v0 migration)', () => {
+      assert.strictEqual(coerceVersion(null), 0)
+      assert.strictEqual(coerceVersion(undefined), 0)
     })
 
     await it('should return the number for valid integer', () => {
