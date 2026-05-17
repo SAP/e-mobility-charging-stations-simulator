@@ -13,6 +13,7 @@ import {
 } from '../../src/charging-station/TemplateMigrations.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { buildLegacyTemplate } from './helpers/TemplateFixtures.js'
 
 await describe('TemplateMigrations', async () => {
   afterEach(() => {
@@ -65,13 +66,9 @@ await describe('TemplateMigrations', async () => {
     })
 
     await it('should use harmonized "non-negative integer" wording for all rejection branches', () => {
-      assert.throws(() => coerceVersion('abc'), { message: /must be a non-negative integer/ })
-      assert.throws(() => coerceVersion(Number.NaN), { message: /must be a non-negative integer/ })
-      assert.throws(() => coerceVersion(Number.POSITIVE_INFINITY), {
-        message: /must be a non-negative integer/,
-      })
-      assert.throws(() => coerceVersion(-1), { message: /must be a non-negative integer/ })
-      assert.throws(() => coerceVersion(1.5), { message: /must be a non-negative integer/ })
+      for (const bad of ['abc', Number.NaN, Number.POSITIVE_INFINITY, -1, 1.5]) {
+        assert.throws(() => coerceVersion(bad), { message: /must be a non-negative integer/ })
+      }
     })
 
     await it('should throw for future version', () => {
@@ -90,75 +87,64 @@ await describe('TemplateMigrations', async () => {
   })
 
   await describe('applyMigration', async () => {
-    await it('should migrate v0 to v1 renaming deprecated keys', t => {
-      // Arrange
+    await it('should migrate v0 to v1 renaming all deprecated keys at once', t => {
       t.mock.method(logger, 'warn')
       t.mock.method(logger, 'debug')
-      const template: Record<string, unknown> = {
-        baseName: 'CS-TEST',
-        chargePointModel: 'Test',
-        chargePointVendor: 'Test',
+      const template = buildLegacyTemplate({
+        authorizationFile: 'tags.json',
         mustAuthorizeAtRemoteStart: true,
+        payloadSchemaValidation: false,
         supervisionUrl: 'ws://localhost:8080',
-      }
+      })
 
-      // Act
       const result = applyMigration(0, template)
 
-      // Assert
       assert.strictEqual(result.$schemaVersion, CURRENT_SCHEMA_VERSION)
       assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
-      assert.strictEqual(result.supervisionUrl, undefined)
-      assert.strictEqual(result.remoteAuthorization, true)
-      assert.strictEqual(result.mustAuthorizeAtRemoteStart, undefined)
-    })
-
-    await it('should migrate v0 renaming authorizationFile to idTagsFile', t => {
-      // Arrange
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
-      const template: Record<string, unknown> = {
-        authorizationFile: 'tags.json',
-        baseName: 'CS-TEST',
-      }
-
-      // Act
-      const result = applyMigration(0, template)
-
-      // Assert
       assert.strictEqual(result.idTagsFile, 'tags.json')
-      assert.strictEqual(result.authorizationFile, undefined)
-    })
-
-    await it('should migrate v0 renaming payloadSchemaValidation to ocppStrictCompliance', t => {
-      // Arrange
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
-      const template: Record<string, unknown> = {
-        baseName: 'CS-TEST',
-        payloadSchemaValidation: false,
-      }
-
-      // Act
-      const result = applyMigration(0, template)
-
-      // Assert
+      assert.strictEqual(result.remoteAuthorization, true)
       assert.strictEqual(result.ocppStrictCompliance, false)
+      assert.strictEqual(result.supervisionUrl, undefined)
+      assert.strictEqual(result.authorizationFile, undefined)
+      assert.strictEqual(result.mustAuthorizeAtRemoteStart, undefined)
       assert.strictEqual(result.payloadSchemaValidation, undefined)
     })
 
-    await it('should throw for unknown source version', () => {
-      assert.throws(() => applyMigration(99, { baseName: 'CS-TEST' }), {
-        message: /No migration defined/,
+    for (const [deprecated, replacement, value] of [
+      ['supervisionUrl', 'supervisionUrls', 'ws://localhost:8080'],
+      ['authorizationFile', 'idTagsFile', 'tags.json'],
+      ['payloadSchemaValidation', 'ocppStrictCompliance', false],
+      ['mustAuthorizeAtRemoteStart', 'remoteAuthorization', true],
+    ] as const) {
+      await it(`should migrate v0 renaming ${deprecated} to ${replacement}`, t => {
+        t.mock.method(logger, 'warn')
+        t.mock.method(logger, 'debug')
+        const template = buildLegacyTemplate({ [deprecated]: value })
+
+        const result = applyMigration(0, template)
+
+        assert.strictEqual(result[replacement], value)
+        assert.strictEqual(result[deprecated], undefined)
       })
-    })
+    }
+
+    for (const [label, sourceVersion] of [
+      ['unknown source version', 99],
+      ['source version equal to CURRENT_SCHEMA_VERSION (no-op boundary)', CURRENT_SCHEMA_VERSION],
+      ['negative source version', -1],
+    ] as const) {
+      await it(`should throw for ${label}`, () => {
+        assert.throws(() => applyMigration(sourceVersion, buildLegacyTemplate()), {
+          message: /No migration defined/,
+        })
+      })
+    }
 
     await it('should set $schemaVersion to CURRENT_SCHEMA_VERSION after migration', t => {
       t.mock.method(logger, 'warn')
       t.mock.method(logger, 'debug')
-      const template: Record<string, unknown> = { baseName: 'CS-TEST' }
 
-      const result = applyMigration(0, template)
+      const result = applyMigration(0, buildLegacyTemplate())
 
       assert.strictEqual(result.$schemaVersion, CURRENT_SCHEMA_VERSION)
     })

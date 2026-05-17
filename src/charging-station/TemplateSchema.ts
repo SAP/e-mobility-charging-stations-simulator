@@ -8,8 +8,7 @@ import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 /**
  * SignedMeterValue — OCPP signed meter value envelope.
- * Mirrors `OCPP20SignedMeterValueType` and the OCPP 1.6 vendor-specific
- * structure. `.catchall(z.unknown())` preserves forward-compatibility for
+ * `.catchall(z.unknown())` preserves forward-compatibility for
  * vendor-specific extensions.
  */
 const SignedMeterValueSchema = z
@@ -58,7 +57,12 @@ const SampledValueTemplateSchema = z.looseObject({
 const WsOptionsSchema = z
   .object({
     handshakeTimeout: z.number().optional(),
-    headers: z.record(z.string(), z.string()).optional(),
+    // Node's OutgoingHttpHeader at runtime accepts string | number | string[],
+    // broader than the strict ws.ClientOptions intersection. Field-names must
+    // be non-empty per RFC 9110 §5.1.
+    headers: z
+      .record(z.string().min(1), z.union([z.string(), z.number(), z.array(z.string())]))
+      .optional(),
     maxPayload: z.number().optional(),
     perMessageDeflate: z.union([z.boolean(), z.record(z.string(), z.unknown())]).optional(),
     protocolVersion: z.number().optional(),

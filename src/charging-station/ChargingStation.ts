@@ -1602,7 +1602,6 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
-    // Template is already validated by getTemplateFromFile() via validateTemplate()
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.templateIndex = this.index
     stationInfo.templateName = buildTemplateName(this.templateFile)
@@ -1650,8 +1649,12 @@ export class ChargingStation extends EventEmitter {
         const parsed = JSON.parse(rawContent) as Record<string, unknown>
         template = validateTemplate(parsed, this.templateFile)
         PerformanceStatistics.endMeasure(measureId, beginId)
-        const contentHash = hash(Constants.DEFAULT_HASH_ALGORITHM, rawContent, 'hex')
-        template.templateHash = `${contentHash}:v${CURRENT_SCHEMA_VERSION.toString()}`
+        // SRI-style key `${algorithm}:${schemaVersion}:${contentHash}`.
+        // Hashing the validated template (not the raw file) keeps the key
+        // stable across cosmetic whitespace edits; the algorithm and version
+        // prefixes ensure cache entries are invalidated when either bumps.
+        const contentHash = hash(Constants.DEFAULT_HASH_ALGORITHM, JSON.stringify(template), 'hex')
+        template.templateHash = `${Constants.DEFAULT_HASH_ALGORITHM}:${CURRENT_SCHEMA_VERSION.toString()}:${contentHash}`
         this.sharedLRUCache.setChargingStationTemplate(template)
         this.templateFileHash = template.templateHash
       }
@@ -1773,7 +1776,6 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} ${moduleName}.initialize: ${errorMsg}`)
       throw new BaseError(errorMsg)
     }
-    // Template is already validated by getTemplateFromFile() via validateTemplate()
     this.configurationFile = join(
       dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${getHashId(this.index, stationTemplate)}.json`

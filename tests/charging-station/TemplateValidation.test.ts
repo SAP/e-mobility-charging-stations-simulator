@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import { ZodError } from 'zod'
 
+import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/TemplateMigrations.js'
 import {
   TemplateValidationError,
   validateTemplate,
@@ -14,6 +15,8 @@ import {
 import { BaseError } from '../../src/exception/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
+import { buildLegacyTemplate, buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
 await describe('TemplateValidation', async () => {
   afterEach(() => {
@@ -23,45 +26,50 @@ await describe('TemplateValidation', async () => {
   await describe('validateTemplate', async () => {
     await it('should validate a minimal valid template', t => {
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
-        Connectors: { 0: {}, 1: {} },
-      }
+      const parsed = buildMinimalTemplate({ Connectors: { 0: {}, 1: {} } })
 
       const result = validateTemplate(parsed, 'test.json')
 
-      assert.strictEqual(result.baseName, 'CS-TEST')
-      assert.strictEqual(result.chargePointModel, 'TestModel')
+      assert.strictEqual(result.baseName, TEST_CHARGING_STATION_BASE_NAME)
     })
 
     await it('should accept string "$schemaVersion": "1" at current version (no-migration path)', t => {
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
+      const parsed = buildMinimalTemplate({
         $schemaVersion: '1',
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
         Connectors: { 0: {}, 1: {} },
-      }
+      })
 
       const result = validateTemplate(parsed, 'string-version.json')
 
-      assert.strictEqual(result.baseName, 'CS-TEST')
+      assert.strictEqual(result.baseName, TEST_CHARGING_STATION_BASE_NAME)
       assert.strictEqual(
         (result as unknown as Record<string, unknown>).$schemaVersion,
-        1,
-        '$schemaVersion should be normalized to numeric 1'
+        CURRENT_SCHEMA_VERSION,
+        '$schemaVersion should be normalized to numeric CURRENT_SCHEMA_VERSION'
       )
+    })
+
+    await it('should not mutate the caller-supplied parsed object (immutability boundary)', t => {
+      t.mock.method(logger, 'warn')
+      t.mock.method(logger, 'debug')
+      const parsed = buildLegacyTemplate({
+        Connectors: { 0: {}, 1: {} },
+        supervisionUrl: 'ws://localhost:8080',
+      })
+      const before = structuredClone(parsed)
+
+      validateTemplate(parsed, 'immutable.json')
+
+      assert.deepStrictEqual(parsed, before)
     })
 
     await it('should throw BaseError for empty template', () => {
       assert.throws(
         () => validateTemplate({}, 'test.json'),
         (error: unknown) =>
-          error instanceof BaseError && error.message.includes('Empty charging station')
+          error instanceof BaseError &&
+          error.message.includes('Empty charging station information from template file')
       )
     })
 
@@ -90,14 +98,11 @@ await describe('TemplateValidation', async () => {
     await it('should apply migration for v0 templates', t => {
       t.mock.method(logger, 'warn')
       t.mock.method(logger, 'debug')
-      const parsed: Record<string, unknown> = {
+      const parsed = buildLegacyTemplate({
         $schemaVersion: 0,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
         Connectors: { 0: {}, 1: {} },
         supervisionUrl: 'ws://localhost:8080',
-      }
+      })
 
       const result = validateTemplate(parsed, 'test.json')
 
@@ -107,15 +112,13 @@ await describe('TemplateValidation', async () => {
     await it('should auto-migrate template missing $schemaVersion (legacy v0 default)', t => {
       t.mock.method(logger, 'warn')
       t.mock.method(logger, 'debug')
-      const parsed: Record<string, unknown> = {
+      const parsed = buildLegacyTemplate({
         authorizationFile: 'tags.json',
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
+        Connectors: { 0: {}, 1: {} },
         mustAuthorizeAtRemoteStart: true,
         payloadSchemaValidation: false,
         supervisionUrl: 'ws://localhost:8080',
-      }
+      })
 
       const result = validateTemplate(parsed, 'legacy.json')
 
@@ -123,124 +126,50 @@ await describe('TemplateValidation', async () => {
       assert.strictEqual(result.idTagsFile, 'tags.json')
       assert.strictEqual(result.remoteAuthorization, true)
       assert.strictEqual(result.ocppStrictCompliance, false)
-      assert.strictEqual((result as unknown as Record<string, unknown>).supervisionUrl, undefined)
-      assert.strictEqual(
-        (result as unknown as Record<string, unknown>).authorizationFile,
-        undefined
-      )
-      assert.strictEqual(
-        (result as unknown as Record<string, unknown>).mustAuthorizeAtRemoteStart,
-        undefined
-      )
-      assert.strictEqual(
-        (result as unknown as Record<string, unknown>).payloadSchemaValidation,
-        undefined
-      )
+      const raw = result as unknown as Record<string, unknown>
+      assert.strictEqual(raw.supervisionUrl, undefined)
+      assert.strictEqual(raw.authorizationFile, undefined)
+      assert.strictEqual(raw.mustAuthorizeAtRemoteStart, undefined)
+      assert.strictEqual(raw.payloadSchemaValidation, undefined)
     })
 
-    await it('should throw BaseError for null parsed payload', () => {
-      assert.throws(
-        () => validateTemplate(null, 'null.json'),
-        (error: unknown) =>
-          error instanceof BaseError && error.message.includes('not a JSON object')
-      )
-    })
+    for (const [label, payload] of [
+      ['null', null],
+      ['string', 'a string'],
+      ['array', [1, 2, 3]],
+    ] as const) {
+      await it(`should throw BaseError for ${label} parsed payload`, () => {
+        assert.throws(
+          () => validateTemplate(payload, `${label}.json`),
+          (error: unknown) =>
+            error instanceof BaseError &&
+            error.message.includes('Invalid charging station template payload (not a JSON object)')
+        )
+      })
+    }
 
-    await it('should throw BaseError for string parsed payload', () => {
-      assert.throws(
-        () => validateTemplate('a string', 'string.json'),
-        (error: unknown) =>
-          error instanceof BaseError && error.message.includes('not a JSON object')
-      )
-    })
-
-    await it('should throw BaseError for array parsed payload', () => {
-      assert.throws(
-        () => validateTemplate([1, 2, 3], 'array.json'),
-        (error: unknown) =>
-          error instanceof BaseError && error.message.includes('not a JSON object')
-      )
-    })
-
-    await it('should reject v1 template containing legacy supervisionUrl key', t => {
-      t.mock.method(logger, 'warn')
-      assert.throws(
-        () =>
-          validateTemplate(
-            {
-              $schemaVersion: 1,
-              baseName: 'CS-TEST',
-              chargePointModel: 'TestModel',
-              chargePointVendor: 'TestVendor',
-              supervisionUrl: 'ws://localhost:8080',
-            },
-            'v1-legacy.json'
-          ),
-        (error: unknown) =>
-          error instanceof TemplateValidationError &&
-          error.fieldErrors.some(
-            e => e.path === 'supervisionUrl' && e.message.includes('Deprecated')
-          )
-      )
-    })
-
-    await it('should reject v1 template containing legacy mustAuthorizeAtRemoteStart key', t => {
-      t.mock.method(logger, 'warn')
-      assert.throws(
-        () =>
-          validateTemplate(
-            {
-              $schemaVersion: 1,
-              baseName: 'CS-TEST',
-              chargePointModel: 'TestModel',
-              chargePointVendor: 'TestVendor',
-              mustAuthorizeAtRemoteStart: true,
-            },
-            'v1-legacy.json'
-          ),
-        (error: unknown) =>
-          error instanceof TemplateValidationError &&
-          error.fieldErrors.some(
-            e => e.path === 'mustAuthorizeAtRemoteStart' && e.message.includes('Deprecated')
-          )
-      )
-    })
-
-    await it('should reject v1 template containing legacy payloadSchemaValidation key', t => {
-      t.mock.method(logger, 'warn')
-      assert.throws(
-        () =>
-          validateTemplate(
-            {
-              $schemaVersion: 1,
-              baseName: 'CS-TEST',
-              chargePointModel: 'TestModel',
-              chargePointVendor: 'TestVendor',
-              payloadSchemaValidation: false,
-            },
-            'v1-legacy.json'
-          ),
-        (error: unknown) =>
-          error instanceof TemplateValidationError &&
-          error.fieldErrors.some(
-            e => e.path === 'payloadSchemaValidation' && e.message.includes('Deprecated')
-          )
-      )
-    })
+    for (const [legacyKey, legacyValue] of [
+      ['supervisionUrl', 'ws://localhost:8080'],
+      ['mustAuthorizeAtRemoteStart', true],
+      ['payloadSchemaValidation', false],
+    ] as const) {
+      await it(`should reject v1 template containing legacy ${legacyKey} key`, t => {
+        t.mock.method(logger, 'warn')
+        assert.throws(
+          () =>
+            validateTemplate(buildMinimalTemplate({ [legacyKey]: legacyValue }), 'v1-legacy.json'),
+          (error: unknown) =>
+            error instanceof TemplateValidationError &&
+            error.fieldErrors.some(e => e.path === legacyKey && e.message.includes('Deprecated'))
+        )
+      })
+    }
 
     await it('should include "(migrated from vX → vY)" note in TemplateValidationError message', t => {
       t.mock.method(logger, 'warn')
       t.mock.method(logger, 'debug')
       try {
-        validateTemplate(
-          {
-            $schemaVersion: 0,
-            baseName: '',
-            chargePointModel: 'TestModel',
-            chargePointVendor: 'TestVendor',
-          },
-          'broken.json'
-        )
+        validateTemplate(buildLegacyTemplate({ $schemaVersion: 0, baseName: '' }), 'broken.json')
         assert.fail('Expected TemplateValidationError')
       } catch (error) {
         assert.ok(error instanceof TemplateValidationError)
@@ -252,19 +181,11 @@ await describe('TemplateValidation', async () => {
 
   await describe('transformTemplate', async () => {
     await it('should warn about missing idTagsFile', t => {
-      // Arrange
       const warnMock = t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
-      }
+      const parsed = buildMinimalTemplate()
 
-      // Act
       validateTemplate(parsed, 'test.json')
 
-      // Assert
       const warnMessages = warnMock.mock.calls.map(c =>
         typeof c.arguments[0] === 'string' ? c.arguments[0] : ''
       )
@@ -272,107 +193,67 @@ await describe('TemplateValidation', async () => {
     })
 
     await it('should force randomConnectors when scalar numberOfConnectors exceeds defined connectors', t => {
-      // Arrange
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
+      const parsed = buildMinimalTemplate({
         Connectors: { 0: {}, 1: {} },
         numberOfConnectors: 5,
         randomConnectors: false,
-      }
+      })
 
-      // Act
       const result = validateTemplate(parsed, 'test.json')
 
-      // Assert
       assert.strictEqual(result.randomConnectors, true)
     })
 
     await it('should force randomConnectors when max(numberOfConnectors[]) exceeds defined connectors', t => {
-      // Arrange
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
+      const parsed = buildMinimalTemplate({
         Connectors: { 0: {}, 1: {}, 2: {} },
         numberOfConnectors: [2, 4, 6],
         randomConnectors: false,
-      }
+      })
 
-      // Act
       const result = validateTemplate(parsed, 'test.json')
 
-      // Assert (regression for finding #2: arr[0]=2 ≤ 2 would have missed; max=6 > 2 forces)
       assert.strictEqual(result.randomConnectors, true)
     })
 
     await it('should not force randomConnectors when max(numberOfConnectors[]) does not exceed defined connectors', t => {
-      // Arrange
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
+      const parsed = buildMinimalTemplate({
         Connectors: { 0: {}, 1: {}, 2: {}, 3: {}, 4: {} },
         numberOfConnectors: [1, 2, 3, 4],
-      }
+      })
 
-      // Act
       const result = validateTemplate(parsed, 'test.json')
 
-      // Assert
       assert.notStrictEqual(result.randomConnectors, true)
     })
 
     await it('should not force randomConnectors when already true', t => {
-      // Arrange
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
+      const parsed = buildMinimalTemplate({
         Connectors: { 0: {}, 1: {} },
         numberOfConnectors: 5,
         randomConnectors: true,
-      }
+      })
 
-      // Act
       const result = validateTemplate(parsed, 'test.json')
 
-      // Assert
       assert.strictEqual(result.randomConnectors, true)
     })
 
-    await it('should not log error for empty Connectors map (regression for dead < 0 branch)', t => {
-      // Arrange
+    await it('should not log error for empty Connectors map', t => {
       const errorMock = t.mock.method(logger, 'error')
       t.mock.method(logger, 'warn')
-      const parsed: Record<string, unknown> = {
-        $schemaVersion: 1,
-        baseName: 'CS-TEST',
-        chargePointModel: 'TestModel',
-        chargePointVendor: 'TestVendor',
-        Connectors: {},
-      }
+      const parsed = buildMinimalTemplate({ Connectors: {} })
 
-      // Act
       validateTemplate(parsed, 'test.json')
 
-      // Assert
       const errorMessages = errorMock.mock.calls.map(c =>
         typeof c.arguments[0] === 'string' ? c.arguments[0] : ''
       )
-      assert.ok(
-        !errorMessages.some(m => m.includes('no connectors configuration defined')),
-        'transformTemplate must not emit the dead-branch error for empty Connectors'
-      )
+      assert.ok(!errorMessages.some(m => m.includes('no connectors configuration defined')))
     })
   })
 

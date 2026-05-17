@@ -13,18 +13,15 @@ export const CURRENT_SCHEMA_VERSION = 1
 type MigrationFn = (template: Record<string, unknown>) => Record<string, unknown>
 
 /**
- * Migration registry: maps source version to a function that migrates
- * directly to CURRENT_SCHEMA_VERSION.
+ * Sequential migration chain. Index `i` migrates a v`i` template to v`i+1`.
+ * To add schema version N+1: append one `migrateV{N}ToV{N+1}` function and
+ * bump `CURRENT_SCHEMA_VERSION`.
  */
-const migrations: ReadonlyMap<number, MigrationFn> = new Map<number, MigrationFn>([
-  [0, migrateV0ToV1],
-])
+const migrationChain: readonly MigrationFn[] = [migrateV0ToV1]
 
 /**
- * Strict integer-string pattern for $schemaVersion.
- * Mirrors the canonical "non-negative integer string" pattern used in
- * `TemplateSchema` for connector/EVSE keys. Rejects permissive `Number()`
- * coercions (`'1.0'`, `'0x1'`, `'1e0'`, `' 1 '`, `''`, `'+1'`).
+ * Strict integer-string pattern for `$schemaVersion`. Rejects permissive
+ * `Number()` coercions (`'1.0'`, `'0x1'`, `'1e0'`, `' 1 '`, `''`, `'+1'`).
  */
 const SCHEMA_VERSION_STRING_PATTERN = /^\d+$/
 
@@ -82,8 +79,10 @@ export const coerceVersion = (raw: unknown): number => {
 }
 
 /**
- * Apply migration from the given source version to CURRENT_SCHEMA_VERSION.
- * Returns the migrated template (mutated in place for efficiency).
+ * Apply migrations sequentially from the given source version to
+ * `CURRENT_SCHEMA_VERSION`, advancing `$schemaVersion` after each hop.
+ * Mutates `template` in place and returns the same reference. Callers that
+ * need to preserve their input must clone before invocation.
  * @param sourceVersion - Source schema version to migrate from
  * @param template - Raw parsed template object
  * @param filePath - Optional file path for log messages
@@ -94,8 +93,7 @@ export const applyMigration = (
   template: Record<string, unknown>,
   filePath?: string
 ): Record<string, unknown> => {
-  const migrationFn = migrations.get(sourceVersion)
-  if (migrationFn == null) {
+  if (sourceVersion < 0 || sourceVersion >= CURRENT_SCHEMA_VERSION) {
     throw new BaseError(
       `${moduleName}.applyMigration: No migration defined for $schemaVersion ${sourceVersion.toString()} → ${CURRENT_SCHEMA_VERSION.toString()}`
     )
@@ -103,16 +101,18 @@ export const applyMigration = (
   logger.debug(
     `${moduleName}.applyMigration: Migrating template${filePath != null ? ` '${filePath}'` : ''} from v${sourceVersion.toString()} to v${CURRENT_SCHEMA_VERSION.toString()}`
   )
-  const migrated = migrationFn(template)
-  migrated.$schemaVersion = CURRENT_SCHEMA_VERSION
+  let migrated = template
+  for (let v = sourceVersion; v < CURRENT_SCHEMA_VERSION; v++) {
+    migrated = migrationChain[v](migrated)
+    migrated.$schemaVersion = v + 1
+  }
   return migrated
 }
 
 /**
- * Migrate v0 (no $schemaVersion) to v1.
- * Replaces warnTemplateKeysDeprecation() — renames 4 deprecated keys.
- * @param template - Raw parsed template object with deprecated keys
- * @returns Template with deprecated keys migrated
+ * Migrate a v0 template to v1 by renaming deprecated keys to their v1 equivalents.
+ * @param template - Pre-migration template object
+ * @returns Same reference with deprecated keys renamed
  */
 function migrateV0ToV1 (template: Record<string, unknown>): Record<string, unknown> {
   const deprecatedKeys: { deprecatedKey: string; key?: string }[] = [

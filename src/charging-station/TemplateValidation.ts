@@ -57,11 +57,11 @@ export const validateTemplate = (parsed: unknown, filePath: string): ChargingSta
       `${moduleName}.validateTemplate: Empty charging station information from template file ${filePath}`
     )
   }
-  const parsedRecord = parsed as Record<string, unknown>
+  // Clone before mutating $schemaVersion below and inside applyMigration,
+  // so the caller's parsed JSON stays untouched.
+  const parsedRecord = structuredClone(parsed) as Record<string, unknown>
 
   const version = coerceVersion(parsedRecord.$schemaVersion)
-  // Mirror applyMigration's $schemaVersion overwrite so the no-migration path
-  // also satisfies $schemaVersion: z.literal(CURRENT_SCHEMA_VERSION).
   parsedRecord.$schemaVersion = version
   const migratedFrom = version < CURRENT_SCHEMA_VERSION ? version : undefined
   const migrated =
@@ -76,23 +76,21 @@ export const validateTemplate = (parsed: unknown, filePath: string): ChargingSta
 }
 
 /**
- * Post-validation transform. Separate from schema because schemas must be pure (no side-effects).
+ * Post-validation transform.
  *
- * Preserves checkConnectorsConfiguration() mutation:
- * forces randomConnectors=true when the worst-case configured connector count
- * (max of `numberOfConnectors[]`, or its scalar value) exceeds the available
- * connector definitions in the template. The worst-case bound is intentional:
- * runtime random pick can hit any value of the array, so any value above the
- * available count requires `randomConnectors=true` to be safe under any pick.
+ * Forces `randomConnectors=true` when the worst-case configured connector
+ * count (max of `numberOfConnectors[]`, or its scalar value) exceeds the
+ * available connector definitions in the template — runtime random pick
+ * can hit any value of the array, so any value above the available count
+ * requires `randomConnectors=true` to be safe under any pick.
  *
- * Also warns about missing idTagsFile (non-fatal advisory from checkTemplate).
+ * Warns about missing `idTagsFile` (advisory, non-fatal).
  *
- * Warning emission frequency: validation runs only on template-cache miss
- * (see ChargingStation.getTemplateFromFile), so warnings here fire once per
- * `(templateFile, schemaVersion)` cache miss rather than per station instance.
- * This is template-scoped on purpose — every station built from the same
- * template would receive the identical warning. The `templateFile` is included
- * in each message for traceability.
+ * Warnings fire once per `(templateFile, schemaVersion)` cache miss,
+ * not per station instance.
+ *
+ * Connector-count diagnostics fire only for the `Connectors` topology;
+ * the `Evses` topology does not currently emit equivalent warnings.
  * @param validated - Schema-validated template data
  * @param filePath - Template file path (for log messages)
  * @returns Transformed ChargingStationTemplate

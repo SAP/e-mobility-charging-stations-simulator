@@ -862,10 +862,6 @@ export const getConfiguredMaxNumberOfConnectors = (
  * `numberOfConnectors` template field. Used at validation time to decide
  * whether `randomConnectors` must be auto-enabled (i.e. whether *any*
  * runtime random pick could exceed the connector definitions).
- *
- * Symmetric with `pickConfiguredNumberOfConnectors`: both consume the same
- * field; this one returns `Math.max(arr)` (deterministic upper bound), the
- * other returns a per-instance random pick.
  * @param numberOfConnectors - Template `numberOfConnectors` field value
  * @returns Upper bound, or `undefined` when the field is not set
  */
@@ -885,9 +881,6 @@ export const getMaxConfiguredNumberOfConnectors = (
  * Random pick from the `numberOfConnectors` template field. Used at
  * runtime to materialize the actual connector count for one station
  * instance.
- *
- * Symmetric with `getMaxConfiguredNumberOfConnectors`: see that helper for
- * the shared semantics.
  * @param numberOfConnectors - Template `numberOfConnectors` field value
  * @returns Picked count, or `undefined` when the field is not set
  */
