@@ -52,16 +52,48 @@ export function labelOf (key: string): string {
 }
 
 /**
- * Builds the strategy-key index, throwing on duplicate keys so registry
- * mistakes (e.g. copy-paste) fail loudly at module load instead of silently
- * shadowing a previous entry.
+ * Strict kebab-case: lowercase letters/digits, hyphen-separated, must start
+ * with a letter. Constrains `key` because it flows verbatim into the GitHub
+ * label `sandcastle-<key>` and the git branch prefix `agent/<key>`.
+ */
+const STRATEGY_KEY_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+
+/**
+ * XML-name-safe subset for `controlTags`: must start with a letter, followed
+ * by letters, digits, `_` or `-`. Looser than {@link STRATEGY_KEY_PATTERN}
+ * to accept agent vocabulary such as `tool_call` while still rejecting
+ * empty strings and angle-bracket characters that would corrupt the
+ * sanitizer regex.
+ */
+const CONTROL_TAG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
+
+/**
+ * Builds the strategy-key index, validating each entry and throwing on
+ * malformed or duplicate keys so registry mistakes (typos, wrong casing,
+ * empty tag) fail loudly at module load instead of silently producing
+ * undiscoverable labels, invalid git branches or empty regex alternatives.
  * @param entries - Canonical registry entries.
  * @returns Map from key to entry.
- * @throws {Error} when two entries share the same key.
+ * @throws {Error} when an entry has an invalid key, an invalid controlTag,
+ *   or a duplicate key.
  */
 function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, StrategyEntry> {
   const map = new Map<string, StrategyEntry>()
   for (const entry of entries) {
+    if (!STRATEGY_KEY_PATTERN.test(entry.key)) {
+      throw new Error(
+        `Invalid strategy key '${entry.key}' in STRATEGY_REGISTRY: ` +
+          `must match ${STRATEGY_KEY_PATTERN.source} (kebab-case).`
+      )
+    }
+    for (const tag of entry.controlTags ?? []) {
+      if (!CONTROL_TAG_PATTERN.test(tag)) {
+        throw new Error(
+          `Invalid controlTag '${tag}' for strategy '${entry.key}' in STRATEGY_REGISTRY: ` +
+            `must match ${CONTROL_TAG_PATTERN.source}.`
+        )
+      }
+    }
     if (map.has(entry.key)) {
       throw new Error(`Duplicate strategy key in STRATEGY_REGISTRY: '${entry.key}'.`)
     }
