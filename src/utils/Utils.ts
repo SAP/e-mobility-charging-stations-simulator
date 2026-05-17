@@ -32,6 +32,13 @@ export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
 }
 
+/**
+ * Formats a log prefix for direct concatenation with a module/method tag.
+ * @param logPrefixFn - Optional prefix-producing function.
+ * @returns The prefix followed by a single trailing space (e.g. `"<prefix> "`), or the empty string when `logPrefixFn`
+ *          is `undefined`. The trailing space is part of the contract: call sites concatenate the result directly with
+ *          the message body, e.g. `` `${formatLogPrefix(fn)}${moduleName}.method: ...` ``.
+ */
 export const formatLogPrefix = (logPrefixFn?: () => string): string => {
   return logPrefixFn != null ? `${logPrefixFn()} ` : ''
 }

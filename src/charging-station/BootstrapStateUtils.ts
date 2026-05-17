@@ -125,7 +125,7 @@ export const reconstructTemplateIndexes = (
       }
       if (stationInfo?.templateName == null || stationInfo.templateIndex == null) {
         logger.warn(
-          `${formatLogPrefix(logPrefixFn)}${moduleName}.reconstructTemplateIndexes: Skipping ${file} — missing templateName or templateIndex`
+          `${formatLogPrefix(logPrefixFn)}${moduleName}.reconstructTemplateIndexes: Skipping ${file}: not a charging station configuration (missing stationInfo.templateName/templateIndex)`
         )
         continue
       }
