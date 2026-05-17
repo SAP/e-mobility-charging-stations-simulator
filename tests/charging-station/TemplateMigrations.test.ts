@@ -12,7 +12,7 @@ import {
   CURRENT_SCHEMA_VERSION,
 } from '../../src/charging-station/TemplateMigrations.js'
 import { logger } from '../../src/utils/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { buildLegacyTemplate } from './helpers/TemplateFixtures.js'
 
 await describe('TemplateMigrations', async () => {
@@ -88,8 +88,7 @@ await describe('TemplateMigrations', async () => {
 
   await describe('applyMigration', async () => {
     await it('should migrate v0 to v1 renaming all deprecated keys at once', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       const template = buildLegacyTemplate({
         authorizationFile: 'tags.json',
         mustAuthorizeAtRemoteStart: true,
@@ -117,8 +116,7 @@ await describe('TemplateMigrations', async () => {
       ['mustAuthorizeAtRemoteStart', 'remoteAuthorization', true],
     ] as const) {
       await it(`should migrate v0 renaming ${deprecated} to ${replacement}`, t => {
-        t.mock.method(logger, 'warn')
-        t.mock.method(logger, 'debug')
+        mockLoggerWarnDebug(t, logger)
         const template = buildLegacyTemplate({ [deprecated]: value })
 
         const result = applyMigration(0, template)
@@ -141,8 +139,7 @@ await describe('TemplateMigrations', async () => {
     }
 
     await it('should set $schemaVersion to CURRENT_SCHEMA_VERSION after migration', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
 
       const result = applyMigration(0, buildLegacyTemplate())
 

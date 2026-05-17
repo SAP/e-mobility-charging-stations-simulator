@@ -14,7 +14,7 @@ import {
 } from '../../src/charging-station/TemplateValidation.js'
 import { BaseError } from '../../src/exception/index.js'
 import { logger } from '../../src/utils/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildLegacyTemplate, buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -51,8 +51,7 @@ await describe('TemplateValidation', async () => {
     })
 
     await it('should not mutate the caller-supplied parsed object (immutability boundary)', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       const parsed = buildLegacyTemplate({
         Connectors: { 0: {}, 1: {} },
         supervisionUrl: 'ws://localhost:8080',
@@ -96,8 +95,7 @@ await describe('TemplateValidation', async () => {
     })
 
     await it('should apply migration for v0 templates', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       const parsed = buildLegacyTemplate({
         $schemaVersion: 0,
         Connectors: { 0: {}, 1: {} },
@@ -110,8 +108,7 @@ await describe('TemplateValidation', async () => {
     })
 
     await it('should auto-migrate template missing $schemaVersion (legacy v0 default)', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       const parsed = buildLegacyTemplate({
         authorizationFile: 'tags.json',
         Connectors: { 0: {}, 1: {} },
@@ -166,8 +163,7 @@ await describe('TemplateValidation', async () => {
     }
 
     await it('should include "(migrated from vX → vY)" note in TemplateValidationError message', t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       try {
         validateTemplate(buildLegacyTemplate({ $schemaVersion: 0, baseName: '' }), 'broken.json')
         assert.fail('Expected TemplateValidationError')
@@ -286,8 +282,7 @@ await describe('TemplateValidation', async () => {
 
   await describe('all template files round-trip', async () => {
     await it('should validate all 15 station template files through the pipeline', async t => {
-      t.mock.method(logger, 'warn')
-      t.mock.method(logger, 'debug')
+      mockLoggerWarnDebug(t, logger)
       const fs = await import('node:fs')
       const path = await import('node:path')
       const templateDir = path.join(import.meta.dirname, '../../src/assets/station-templates')
