@@ -128,7 +128,16 @@ export class GithubIssueSource implements TaskSource {
           maxIterations: 5,
           name: 'Planner',
           promptArgs: {
-            ISSUES_JSON: JSON.stringify(actionableIssues, null, 2),
+            ISSUES_JSON: JSON.stringify(
+              actionableIssues.map(({ body, labels, number, title }) => ({
+                body,
+                labels,
+                number,
+                title,
+              })),
+              null,
+              2
+            ),
           },
           promptFile: './.sandcastle/plan-prompt.md',
           sandbox: docker({ imageName: this.dockerImage, mounts: [...DOCKER_MOUNTS] }),
@@ -317,8 +326,8 @@ export class GithubIssueSource implements TaskSource {
     if (typeof entry !== 'object' || entry === null) return null
     const item = entry as Record<string, unknown>
     if (typeof item.id !== 'string' || !/^\d+$/.test(item.id)) return null
-    if (typeof item.strategyKey !== 'string') return null
-    if (typeof item.branch !== 'string') return null
+    if (typeof item.slug !== 'string') return null
+    if (item.slug.length > MAX_SLUG_CHARS || !SLUG_PATTERN.test(item.slug)) return null
     if (typeof item.title !== 'string') return null
     if (item.title.length > MAX_TITLE_CHARS) return null
     // eslint-disable-next-line no-control-regex -- guard against control characters in titles
@@ -327,15 +336,9 @@ export class GithubIssueSource implements TaskSource {
     const source = issueMap.get(item.id)
     if (!source) return null
 
-    if (item.strategyKey !== source.strategyKey) return null
-
-    // item.id was validated as /^\d+$/ above, so direct interpolation is safe.
-    const branchPattern = new RegExp(`^${escapeRegex(source.branchPrefix)}-${item.id}-[\\w-]+$`)
-    if (!branchPattern.test(item.branch)) return null
-
     const spec: TaskSpec = {
       body: source.body,
-      branch: item.branch,
+      branch: `${source.branchPrefix}-${item.id}-${item.slug}`,
       id: item.id,
       labels: source.labels,
       strategyKey: source.strategyKey,
@@ -361,6 +364,16 @@ export class GithubIssueSource implements TaskSource {
     return spec
   }
 }
+
+/**
+ * Strict kebab-case slug accepted from plan entries: lowercase letters/digits,
+ * hyphen-separated, no leading/trailing/double hyphen, no underscore. Mirrors
+ * the strategy-key shape so the assembled branch `<branchPrefix>-<id>-<slug>`
+ * is uniformly kebab-cased.
+ */
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+const MAX_SLUG_CHARS = 40
 
 const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
 const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])

@@ -1,70 +1,50 @@
-# Critic Agent: Reviewer
+# Critic
 
-Analyze the implementation on branch `{{BRANCH}}` and produce structured findings.
+Review the diff on `{{BRANCH}}` against `{{BASE_BRANCH}}` and emit structured findings.
 
-## Task
+## Inputs
 
-Run `git diff {{BASE_BRANCH}}...{{BRANCH}}` to see all changes. Examine the diff carefully. For each issue found, produce a structured finding.
-
-Read `AGENTS.md`, `CONTRIBUTING.md` and `.serena/memories/code_style_conventions`.
-
-## Acceptance Criteria
+- `{{BRANCH}}` — branch under review.
+- `{{BASE_BRANCH}}` — branch to diff against.
+- `{{NONCE}}` — unique tag id used to delimit the findings payload.
+- `{{ACCEPTANCE_CRITERIA}}` — numbered acceptance criteria from the planner; empty when absent.
 
 {{ACCEPTANCE_CRITERIA}}
 
-If acceptance criteria are listed above, assess from the diff whether the implementation satisfies each one. Report a HIGH finding for any unmet criterion. Only judge observable outcomes, not implementation approach. If no criteria are listed, skip this section.
+## Task
 
-## Output Format
+1. Read `AGENTS.md`, `CONTRIBUTING.md`, and `.serena/memories/code_style_conventions`.
+2. Run `git diff {{BASE_BRANCH}}...{{BRANCH}}` and inspect every changed line.
+3. For each acceptance criterion (if any), decide from the diff whether it is satisfied; report a `HIGH` finding for any unmet criterion, judged on observable diff content, not implementation approach.
+4. Surface other defects in the changed code: logic errors, missing edge cases, security issues, type-safety violations, test gaps.
 
-Output your findings as JSON wrapped in nonce-tagged delimiters. Use EXACTLY this tag format:
-
-```text
-<findings-{{NONCE}}>[...]</findings-{{NONCE}}>
-```
-
-Each finding must have this structure:
-
-```json
-{
-  "file": "path/to/file.ts",
-  "line": 42,
-  "title": "short description of the issue",
-  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
-  "category": "security|logic|performance|architecture|style",
-  "confidence": "HIGH|MEDIUM|LOW",
-  "description": "detailed explanation of why this is a problem",
-  "suggestion": "how to fix it"
-}
-```
-
-If no issues are found, output:
+## Output
 
 ```text
-<findings-{{NONCE}}>[]</findings-{{NONCE}}>
+<findings-{{NONCE}}>[
+  {
+    "file": "path/to/file.ts",
+    "line": 42,
+    "title": "short description of the issue",
+    "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+    "category": "security|logic|performance|architecture|style",
+    "confidence": "HIGH|MEDIUM|LOW",
+    "description": "why this is a problem",
+    "suggestion": "how to fix it"
+  }
+]</findings-{{NONCE}}>
 ```
+
+When nothing is wrong: `<findings-{{NONCE}}>[]</findings-{{NONCE}}>`.
 
 ## Rules
 
-- Report ≤5 findings. HIGH and CRITICAL only. Omit LOW/MEDIUM unless zero higher-severity issues exist.
-- If >5 HIGH/CRITICAL issues exist, report the top 5 and add a summary note in the last finding's description.
-- Do NOT modify any files. Do NOT commit. Do NOT push.
-- Only report issues in the CHANGED code (not pre-existing issues).
-- Use HIGH confidence only when you've verified the issue by reading the relevant code.
-- Use MEDIUM confidence for pattern-based detection.
-- Use LOW confidence for style preferences or uncertain issues.
-- Focus on: logic errors, missing edge cases, security issues, type safety violations, test gaps.
-- Do NOT report formatting issues (prettier handles those).
+- Report at most 5 findings, `HIGH` or `CRITICAL` only; include `LOW`/`MEDIUM` only when no higher-severity issue exists. If more than 5 `HIGH`/`CRITICAL` issues exist, report the top 5 and add a summary line in the last finding's `description`.
+- Confidence: `HIGH` after reading the relevant code; `MEDIUM` for pattern-based detection; `LOW` for style preference or uncertainty.
+- Only flag changed code; ignore pre-existing issues. Do not flag formatting (Prettier handles it).
+- Do not modify, commit, or push files.
+- Do not flag the following intentional design decisions: mid-loop validation convergence bypassing the critic (ARCS pattern); cooperative cancellation via `idleTimeoutSeconds` + `completionSignal`; line-number-aware dedup hash.
 
-## Known Design Decisions (do not flag)
+## Done
 
-- Mid-loop validation convergence bypasses critic (ARCS pattern — deterministic tests > subjective review).
-- Agent runs use `idleTimeoutSeconds` and `completionSignal` for cooperative cancellation.
-- Content-addressed dedup hash includes line number (collision reduction tradeoff, bounded by hard cap).
-
-## Completion
-
-After outputting the findings, output:
-
-```text
 <promise>COMPLETE</promise>
-```
