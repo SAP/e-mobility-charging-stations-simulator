@@ -1,3 +1,13 @@
+# Cutover note (one-time, can be removed after the first post-rename run):
+# The previous setup used label `sandcastle` and branch prefix `agent/issue`.
+# Before the first run on the new naming, the operator MUST:
+#   1. Rename the GitHub label:
+#      gh label edit sandcastle --name sandcastle-implement
+#   2. Close or merge any open PR whose head branch starts with `agent/issue-`,
+#      since the new pattern `agent/<key>-<n>-` does not match legacy branches
+#      and they are no longer recognised as covering an issue (which would
+#      otherwise produce duplicate PRs on the next nightly).
+
 name: Sandcastle
 
 on:

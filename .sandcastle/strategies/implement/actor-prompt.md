@@ -1,79 +1,52 @@
-# Actor Agent: Implementer
+# Actor
 
-Implement issue **#{{TASK_ID}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`.
+Implement issue **#{{ISSUE_NUMBER}}** ("{{ISSUE_TITLE}}") on branch `{{BRANCH}}`, or address review findings if present.
 
-## Issue Details
+## Inputs
+
+- `ISSUE_NUMBER` — GitHub issue number.
+- `ISSUE_TITLE` — issue title.
+- `BRANCH` — working branch, already checked out.
+- `ISSUE_BODY` — sanitised issue body.
+- `PLAN_CONTEXT` — optional planner analysis (hypothesis, acceptance criteria); empty when absent.
+- `FINDINGS` — optional JSON array of critic findings from the previous round; empty on the first round.
 
 {{ISSUE_BODY}}
 
 {{PLAN_CONTEXT}}
 
-## Review Findings
-
 {{FINDINGS}}
 
-## Exploration
+## Task
 
-Explore the repo to understand the architecture before coding. Pay attention to:
-
-- Files related to the issue
-- Test files touching relevant modules
-- Existing patterns in similar code
-
-Read `AGENTS.md`, `CONTRIBUTING.md`, `.serena/memories/code_style_conventions` and `.serena/memories/task_completion_checklist`.
-
-## Implementation
-
-1. If review findings are provided above, cross-validate each one against the code. Fix findings you agree with. Ignore findings that are incorrect or not applicable.
-
-2. If no findings are provided, implement the issue from scratch following existing patterns:
-   - Strict TypeScript, no `any`/`@ts-ignore`
-   - Use existing error classes (BaseError, OCPPError)
-   - Follow existing naming conventions (camelCase functions, PascalCase classes/types)
-   - Tests use Node.js native test runner (`node:test` + `node:assert`)
-
-3. Before every commit, run the quality gates for the affected sub-project(s):
+1. Read `AGENTS.md`, `CONTRIBUTING.md`, `.serena/memories/code_style_conventions`, and `.serena/memories/task_completion_checklist`. Explore files surrounding the issue and similar patterns in the repo.
+2. If `FINDINGS` is non-empty, cross-validate each finding against the code; fix the ones you agree with, ignore the rest.
+3. Otherwise implement the issue end-to-end, including matching tests using `node:test` + `node:assert`.
+4. Before every commit, run the full quality-gate chain in every affected sub-project. Root-level chain:
 
    ```bash
    pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test
    ```
 
-   If changes affect `ui/web`:
+   For changes inside `ui/web` or `ui/cli`, run the same chain in that directory (substitute `pnpm test:coverage` for `pnpm test` in `ui/web`).
 
-   ```bash
-   cd ui/web && pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test:coverage
-   ```
-
-   If changes affect `ui/cli`:
-
-   ```bash
-   cd ui/cli && pnpm format && pnpm typecheck && pnpm lint && pnpm build && pnpm test
-   ```
-
-4. Commit with conventional commits:
-   - `fix: <description>` — bug fix
-   - `feat: <description>` — new feature
-   - `refactor: <description>` — restructuring
-   - `chore: <description>` — tooling/config
-
-5. Push the branch:
+5. Commit one logical change at a time using Conventional Commits (`fix:`, `feat:`, `refactor:`, `chore:`).
+6. Push the branch:
 
    ```bash
    git push -u origin {{BRANCH}}
    ```
 
+## Output
+
+Commits on `{{BRANCH}}` pushed to `origin`. No structured stdout payload.
+
 ## Rules
 
-- One logical change per commit.
-- Tests must pass before pushing. Zero type errors, zero test failures.
-- Do not modify unrelated files.
-- Do not bump version numbers.
-- Push BEFORE signaling completion.
+- Strict TypeScript: no `any`, no `@ts-ignore`, no non-null `!`; use the existing typed errors (`BaseError`, `OCPPError`).
+- Do not modify unrelated files; do not bump version numbers.
+- Push before signaling completion; HEAD must have zero type errors and zero test failures.
 
-## Completion
+## Done
 
-When validation passes and the branch is pushed, output:
-
-```text
 <promise>COMPLETE</promise>
-```

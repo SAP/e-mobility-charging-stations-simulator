@@ -1,59 +1,40 @@
-# Plan Agent
+# Plan
 
-Read open GitHub issues and produce a parallelizable execution plan with implementation context.
+Read open GitHub issues and produce a parallelizable execution plan.
 
-## Context
+## Inputs
 
-This is a Node.js TypeScript monorepo (pnpm workspace) simulating OCPP charging stations.
-Structure: root simulator (`src/`), `ui/common`, `ui/cli`, `ui/web`, `tests/ocpp-server` (Python).
-Test runner: Node.js native (`node:test`). Build tool: esbuild. Linter: ESLint (neostandard).
-Read `AGENTS.md` and `.serena/memories/project_overview`.
-
-## Open Issues
+- `ISSUES_JSON` — JSON array of open issues, each entry `{ number, title, body, labels }`.
 
 {{ISSUES_JSON}}
 
-## Steps
+## Task
 
-1. Analyze the issues above. For each, determine:
-   - Can it be implemented independently (no blocking dependency on another open issue)?
-   - Is the scope clear enough to implement without further clarification?
+1. Read `AGENTS.md` and `.serena/memories/project_overview` for repository context.
+2. For each issue, decide whether it is independently actionable: scope is clear and there is no blocking dependency on another open issue.
+3. Drop issues labelled `wontfix`, `duplicate`, or `question`, or blocked by another open issue. If every issue is blocked, keep only the highest-priority candidate.
+4. For each kept issue, derive:
+   - `id`: the issue number as a string.
+   - `slug`: a short kebab-case summary of the change matching `^[a-z0-9]+(?:-[a-z0-9]+)*$` (≤ 40 chars).
+   - `title`: the issue title.
+   - `issueType`: `bug-fix`, `feature`, or `refactor`.
+   - `confidence`: `high` (clear scope), `medium` (some ambiguity), or `low` (unclear scope).
+   - `rootCauseHypothesis`: a specific hypothesis (modules, patterns, behaviours) for the implementer to validate — not a restatement of the title.
+   - `acceptanceCriteria`: 2–4 conditions verifiable by static inspection of the diff (code structure, logic, algorithms — not runtime behaviour).
+5. Do not implement anything; output only the plan.
 
-2. Select all issues that are independent and actionable.
+## Output
 
-3. For each selected issue:
-   - Assign a branch name: `{{BRANCH_PREFIX}}-<number>-<slug>` where slug is a short kebab-case summary (e.g., `{{BRANCH_PREFIX}}-42-fix-streaming-id`).
-   - Classify the issue type: `bug-fix`, `feature`, or `refactor`.
-   - Assess your confidence: `high` (clear scope, obvious approach), `medium` (some ambiguity), or `low` (unclear scope, multiple valid approaches).
-   - Formulate a root cause hypothesis: what is broken or missing, and why. This is a hypothesis for the implementer to validate — not a directive.
-   - Define 2-4 acceptance criteria: concrete, verifiable conditions that must be true when the implementation is complete. Focus on code structure, algorithmic and logic, not runtime behavior.
+```text
+<plan>{"issues":[{"id":"<number>","slug":"<kebab-slug>","title":"<title>","issueType":"bug-fix|feature|refactor","confidence":"high|medium|low","rootCauseHypothesis":"...","acceptanceCriteria":["..."]}]}</plan>
+```
 
-4. Output the plan in this exact format:
-
-   ```text
-   <plan>{"issues":[{"id":"<number>","title":"<title>","branch":"{{BRANCH_PREFIX}}-<number>-<slug>","issueType":"bug-fix|feature|refactor","confidence":"high|medium|low","rootCauseHypothesis":"...","acceptanceCriteria":["..."]}]}</plan>
-   ```
+When no issue is actionable: `<plan>{"issues":[]}</plan>`.
 
 ## Rules
 
-- Exclude issues labeled `wontfix`, `duplicate`, or `question`.
-- Exclude issues that depend on another open issue (mention "blocked by #N" or similar).
-- Prefer issues where scope fits a single-file change over cross-cutting refactors.
-- If every issue is blocked, include the single highest-priority candidate (fewest/weakest dependencies).
-- If no actionable issues exist, output:
+- Prefer single-file scope over cross-cutting refactors.
 
-  ```text
-  <plan>{ "issues": [] }</plan>
-  ```
+## Done
 
-- Do not implement anything. Only produce the plan.
-- Acceptance criteria must be verifiable by static code inspection of the diff.
-- Root cause hypothesis should be specific (mention modules, patterns, or behaviors) — not a restatement of the issue title.
-
-## Completion
-
-After outputting the plan, output:
-
-```text
 <promise>COMPLETE</promise>
-```

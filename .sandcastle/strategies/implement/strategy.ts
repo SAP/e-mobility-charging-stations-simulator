@@ -21,8 +21,7 @@ function buildPlanContext (spec: TaskSpec): string {
       `Acceptance criteria:\n${spec.acceptanceCriteria.map((c, i) => `${String(i + 1)}. ${c}`).join('\n')}`
     )
   }
-  if (parts.length === 0) return ''
-  return `## Planner Analysis\n\n${parts.join('\n\n')}`
+  return parts.join('\n\n')
 }
 
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
@@ -32,9 +31,9 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     BRANCH: spec.branch,
     FINDINGS: findings.length > 0 ? JSON.stringify(findings, null, 2) : '',
     ISSUE_BODY: spec.body,
+    ISSUE_NUMBER: spec.id,
     ISSUE_TITLE: spec.title,
     PLAN_CONTEXT: buildPlanContext(spec),
-    TASK_ID: spec.id,
   }),
 
   buildCriticArgs: (spec, baseBranch) => ({
