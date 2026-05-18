@@ -41,7 +41,7 @@ When nothing is wrong: `<findings-{{NONCE}}>[]</findings-{{NONCE}}>`.
 
 - Report at most 5 findings, `HIGH` or `CRITICAL` only; include `LOW`/`MEDIUM` only when no higher-severity issue exists. If more than 5 `HIGH`/`CRITICAL` issues exist, report the top 5 and add a summary line in the last finding's `description`.
 - Confidence: `HIGH` after reading the relevant code; `MEDIUM` for pattern-based detection; `LOW` for style preference or uncertainty.
-- Only flag changed code; ignore pre-existing issues. Do not flag formatting (Prettier handles it).
+- Only flag changed code; ignore pre-existing issues. Do not flag formatting.
 - Do not modify, commit, or push files.
 - Do not flag the following intentional design decisions: mid-loop validation convergence bypassing the critic (ARCS pattern); cooperative cancellation via `idleTimeoutSeconds` + `completionSignal`; line-number-aware dedup hash.
 
