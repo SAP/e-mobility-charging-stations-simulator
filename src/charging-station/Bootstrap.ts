@@ -271,16 +271,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
               await this.storage.open()
             }
           }
-          if (
-            !this.uiServerStarted &&
-            Configuration.getConfigurationSection<UIServerConfiguration>(
-              ConfigurationSection.uiServer
-            ).enabled === true
-          ) {
-            this.syncUIServerTemplates()
-            this.uiServer.start()
-            this.uiServerStarted = true
-          }
+          this.startUIServer()
           // Start ChargingStation object instance in worker thread
           for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
             const nbStations = stationTemplateUrl.numberOfStations
@@ -420,10 +411,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.stop(StopReason.shutdown)
       .then(() => {
         logger.info(`${this.logPrefix()} ${moduleName}.gracefulShutdown: Graceful shutdown`)
-        if (this.uiServerStarted) {
-          this.uiServer.stop()
-          this.uiServerStarted = false
-        }
+        this.stopUIServer()
         return exit(exitCodes.succeeded)
       })
       .catch((error: unknown) => {
@@ -632,20 +620,28 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   private async restart (): Promise<void> {
     await this.stop(StopReason.reload)
     if (
-      this.uiServerStarted &&
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
         .enabled !== true
     ) {
-      this.uiServer.stop()
-      this.uiServerStarted = false
+      this.stopUIServer()
     }
     this.prepareTemplateStatistics()
-    this.syncUIServerTemplates()
+    if (this.uiServerStarted) {
+      this.syncUIServerTemplates()
+    }
     // TODO: compare worker configuration hash to skip unnecessary re-initialization
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
     )
     await this.start()
+  }
+
+  private stopUIServer (): void {
+    if (!this.uiServerStarted) {
+      return
+    }
+    this.uiServer.stop()
+    this.uiServerStarted = false
   }
 
   private syncUIServerTemplates (): void {
