@@ -30,6 +30,22 @@ export const STRATEGY_REGISTRY: readonly StrategyEntry[] = [
   { controlTags: ['review'], key: 'implement', strategy: implementStrategy },
 ] as const
 
+/**
+ * Strict kebab-case: lowercase letters/digits, hyphen-separated, must start
+ * with a letter. Constrains `key` because it flows verbatim into the GitHub
+ * label `sandcastle-<key>` and the git branch prefix `agent/<key>`.
+ */
+const STRATEGY_KEY_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+
+/**
+ * XML-name-safe subset for `controlTags`: must start with a letter, followed
+ * by letters, digits, `_` or `-`. Looser than {@link STRATEGY_KEY_PATTERN}
+ * to accept agent vocabulary such as `tool_call` while still rejecting
+ * empty strings and angle-bracket characters that would corrupt the
+ * sanitizer regex.
+ */
+const CONTROL_TAG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
+
 /** Indexed view: strategy key → entry. Throws on duplicate keys at load time. */
 export const STRATEGY_BY_KEY: ReadonlyMap<string, StrategyEntry> = indexByKey(STRATEGY_REGISTRY)
 
@@ -50,22 +66,6 @@ export function branchPrefixOf (key: string): string {
 export function labelOf (key: string): string {
   return `sandcastle-${key}`
 }
-
-/**
- * Strict kebab-case: lowercase letters/digits, hyphen-separated, must start
- * with a letter. Constrains `key` because it flows verbatim into the GitHub
- * label `sandcastle-<key>` and the git branch prefix `agent/<key>`.
- */
-const STRATEGY_KEY_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
-
-/**
- * XML-name-safe subset for `controlTags`: must start with a letter, followed
- * by letters, digits, `_` or `-`. Looser than {@link STRATEGY_KEY_PATTERN}
- * to accept agent vocabulary such as `tool_call` while still rejecting
- * empty strings and angle-bracket characters that would corrupt the
- * sanitizer regex.
- */
-const CONTROL_TAG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 
 /**
  * Builds the strategy-key index, validating each entry and throwing on
