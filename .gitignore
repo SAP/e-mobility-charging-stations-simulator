@@ -101,6 +101,7 @@ build/config.gypi
 Thumbs.db
 
 # oh-my-opencode
+.omo/
 .sisyphus/
 
 # Winston
