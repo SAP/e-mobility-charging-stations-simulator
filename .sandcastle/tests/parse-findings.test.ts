@@ -21,10 +21,27 @@ const tag = (nonce: string, body: string): string =>
   `<findings-${nonce}>${body}</findings-${nonce}>`
 
 await describe('parseFindings', async () => {
-  await it('returns null when nonce contains non-hex characters', () => {
-    assert.equal(parseFindings(tag('not-hex', '[]'), 'not-hex'), null)
+  await it('returns null when nonce violates allowed alphabet', () => {
     assert.equal(parseFindings(tag('XX', '[]'), 'XX'), null)
     assert.equal(parseFindings(tag('a.b', '[]'), 'a.b'), null)
+    assert.equal(parseFindings(tag('a$b', '[]'), 'a$b'), null)
+    assert.equal(parseFindings(tag('-abc', '[]'), '-abc'), null)
+    const tooLong = 'a'.repeat(65)
+    assert.equal(parseFindings(tag(tooLong, '[]'), tooLong), null)
+  })
+
+  await it('parses runtime per-slot nonce shape (`<base>-c<idx>`)', () => {
+    const nonce = 'cafe1234-c0'
+    const stdout = tag(nonce, JSON.stringify([validFinding]))
+    const findings = parseFindings(stdout, nonce)
+    assert.ok(findings)
+    assert.equal(findings.length, 1)
+  })
+
+  await it('parses runtime arbiter nonce shape (`<base>-arbiter`)', () => {
+    const nonce = 'cafe1234-arbiter'
+    const stdout = tag(nonce, '[]')
+    assert.deepEqual(parseFindings(stdout, nonce), [])
   })
 
   await it('returns null when stdout has no findings tags', () => {

@@ -148,7 +148,7 @@ export function mergeCriticFindings (
     merged.push({
       category: sourceFinding.category,
       confidence: aggregatedConfidence,
-      contested: !aboveThreshold,
+      ...(!aboveThreshold && { contested: true }),
       description: sourceFinding.description,
       disagreementScore: disagreement,
       file: sourceFinding.file,
@@ -332,10 +332,16 @@ function resolveThreshold (
 }
 
 /**
- * Severity disagreement score = sample variance of severity ranks normalized
- * by the theoretical maximum variance of the 4-level ordinal ladder
- * (`((maxRank - minRank) ** 2) / 4 = 9/4 = 2.25`). Returns 0 for unanimity,
- * 1 for the most extreme split (half voters at LOW, half at CRITICAL).
+ * Severity disagreement score in [0, 1].
+ *
+ * Computed as population variance of voters' severity ranks divided by the
+ * theoretical max-variance for a half/half distribution at the ladder
+ * extremes (`((R−1)²) / 4` for an R-level ladder, equal to `9/4 = 2.25`
+ * here). The result is approximately normalized; the final
+ * `Math.min(1, …)` clamp guarantees the upper bound for sample sizes
+ * where the half/half theoretical max is not exact (small or odd N).
+ * Returns 0 for unanimity, ~1 for the most extreme split (half voters at
+ * LOW, half at CRITICAL).
  * @param findings - Findings sharing the merged key.
  * @returns Disagreement score in [0, 1].
  */

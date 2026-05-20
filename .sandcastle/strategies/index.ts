@@ -122,6 +122,13 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
         `Invalid criticPool in ${ctx}: must be a non-empty array.`
       )
     }
+    if (strategy.criticPool.length > MAX_CRITIC_COUNT) {
+      throw new StrategyValidationError(
+        `${ctx}.criticPool`,
+        `Invalid criticPool in ${ctx}: length ${String(strategy.criticPool.length)} exceeds ` +
+          `MAX_CRITIC_COUNT (${String(MAX_CRITIC_COUNT)}).`
+      )
+    }
     for (let i = 0; i < strategy.criticPool.length; i++) {
       validateAgentSpec(`${ctx}.criticPool[${String(i)}]`, strategy.criticPool[i])
     }
@@ -153,7 +160,9 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
   }
 
   if (strategy.arbiter !== undefined) {
-    validateAgentSpec(`${ctx}.arbiter.agent`, strategy.arbiter.agent)
+    if (strategy.arbiter.agent !== undefined) {
+      validateAgentSpec(`${ctx}.arbiter.agent`, strategy.arbiter.agent)
+    }
     if (
       typeof strategy.arbiter.promptFile !== 'string' ||
       strategy.arbiter.promptFile.length === 0

@@ -1,0 +1,267 @@
+/**
+ * @file Kernel integration tests for `runOneCritic`, `runCritic`, and
+ * `maybeRunArbiter`.
+ * @description Drives the kernel critic flow with a `SandboxInstance` stub
+ * (no LLM round-trips, no git, no `execFileAsync`). Locks the runtime
+ * nonce-shape contract that the unit `parseFindings` tests cannot reach,
+ * and pins the quorum / merge / arbiter / parse-retry behaviors that
+ * shipped non-functional in PR #1866 before the audit remediation.
+ */
+import type { Sandbox, SandboxRunOptions, SandboxRunResult } from '@ai-hero/sandcastle'
+
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+
+import type {
+  CriticSlot,
+  Finding,
+  LoopContext,
+  LoopStrategy,
+  SandboxInstance,
+  TaskSpec,
+} from '../types.js'
+
+import { maybeRunArbiter, runCritic, runOneCritic } from '../refinement-loop.js'
+
+const baseFinding: Finding = {
+  category: 'logic',
+  confidence: 'HIGH',
+  description: 'desc',
+  file: 'src/a.ts',
+  severity: 'HIGH',
+  title: 't',
+}
+
+const criticalFinding: Finding = {
+  ...baseFinding,
+  severity: 'CRITICAL',
+  title: 'critical t',
+}
+
+const tag = (nonce: string, body: string): string =>
+  `<findings-${nonce}>${body}</findings-${nonce}>`
+
+const wellFormedStdout = (nonce: string, findings: Finding[]): string =>
+  tag(nonce, JSON.stringify(findings))
+
+/** Per-call stub for `sandbox.run`. Receives the call index (0-based). */
+type RunStub = (
+  options: SandboxRunOptions,
+  callIndex: number
+) => Promise<SandboxRunResult> | SandboxRunResult
+
+/**
+ * Minimal fake `Sandbox` for kernel integration tests. Records every
+ * `run()` invocation; ignores `interactive` / `close` / `[asyncDispose]`
+ * which the kernel never calls in these flows.
+ * @param run - Per-call stub returning a `SandboxRunResult`.
+ * @returns The fake sandbox + a recorder of received `SandboxRunOptions`.
+ */
+const makeFakeSandbox = (
+  run: RunStub
+): { recorded: SandboxRunOptions[]; sandbox: SandboxInstance } => {
+  let calls = 0
+  const recorded: SandboxRunOptions[] = []
+  const fake = {
+    branch: 'agent/test-1-fake',
+    run: async (options: SandboxRunOptions): Promise<SandboxRunResult> => {
+      recorded.push(options)
+      return await run(options, calls++)
+    },
+    worktreePath: '/tmp/fake-worktree-does-not-exist',
+  }
+  return { recorded, sandbox: fake as unknown as Sandbox }
+}
+
+const baseStrategy: LoopStrategy = {
+  actorPromptFile: '/tmp/actor.md',
+  buildActorArgs: () => ({}),
+  buildCriticArgs: () => ({}),
+  criticPromptFile: '/tmp/critic.md',
+}
+
+const baseSpec: TaskSpec = {
+  body: '',
+  branch: 'agent/test-1',
+  id: '1',
+  strategyKey: 'implement',
+  title: 't',
+}
+
+const ctxFor = (sandbox: SandboxInstance, strategy: LoopStrategy): LoopContext => ({
+  baseBranch: 'main',
+  sandbox,
+  spec: baseSpec,
+  strategy,
+})
+
+const slot0: CriticSlot = { effort: 'medium', index: 0, model: 'm0' }
+
+const stubResult = (stdout: string): SandboxRunResult => ({ commits: [], iterations: [], stdout })
+
+await describe('refinement-loop kernel', async () => {
+  await describe('runOneCritic', async () => {
+    await it('parses well-formed stdout under runtime per-slot nonce shape', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
+      )
+      const ctx = ctxFor(sandbox, baseStrategy)
+      const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
+      assert.ok(findings)
+      assert.equal(findings.length, 1)
+      assert.equal(findings[0].title, 't')
+      assert.equal(recorded.length, 1)
+      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
+    })
+
+    await it('retries with fresh `-r1` nonce on parse failure', async () => {
+      const { recorded, sandbox } = makeFakeSandbox((opts, callIndex) => {
+        if (callIndex === 0) return stubResult('garbage no tags')
+        return stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
+      })
+      const ctx = ctxFor(sandbox, baseStrategy)
+      const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
+      assert.ok(findings)
+      assert.equal(findings.length, 1)
+      assert.equal(recorded.length, 2)
+      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
+      assert.equal(recorded[1].promptArgs?.NONCE, 'cafe1234-c0-r1')
+    })
+
+    await it('returns null when both attempts fail', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(() => stubResult('still no tags'))
+      const ctx = ctxFor(sandbox, baseStrategy)
+      const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
+      assert.equal(findings, null)
+      assert.equal(recorded.length, 2)
+    })
+  })
+
+  await describe('runCritic', async () => {
+    await it('returns merged findings when ≥quorum slots succeed (N=3, 2 valid)', async () => {
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        criticPool: [
+          { effort: 'medium', model: 'm0' },
+          { effort: 'medium', model: 'm1' },
+          { effort: 'medium', model: 'm2' },
+        ],
+      }
+      const { sandbox } = makeFakeSandbox(opts => {
+        const nonce = String(opts.promptArgs?.NONCE ?? '')
+        if (nonce.endsWith('-c2') || nonce.endsWith('-c2-r1')) {
+          return stubResult('garbage no tags')
+        }
+        return stubResult(wellFormedStdout(nonce, [baseFinding]))
+      })
+      const ctx = ctxFor(sandbox, strategy)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.equal(result.validCriticCount, 2)
+      assert.ok(result.findings)
+      assert.equal(result.findings.length, 1)
+      assert.equal(result.findings[0].votes, 2)
+    })
+
+    await it('returns findings:null below quorum (N=3, all parse-fail)', async () => {
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        criticPool: [
+          { effort: 'medium', model: 'm0' },
+          { effort: 'medium', model: 'm1' },
+          { effort: 'medium', model: 'm2' },
+        ],
+      }
+      const { sandbox } = makeFakeSandbox(() => stubResult('garbage no tags'))
+      const ctx = ctxFor(sandbox, strategy)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.equal(result.findings, null)
+      assert.equal(result.validCriticCount, 0)
+    })
+
+    await it('short-circuits without merge when N=1 (legacy single-critic identity)', async () => {
+      const { sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
+      )
+      const ctx = ctxFor(sandbox, baseStrategy)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.equal(result.validCriticCount, 1)
+      assert.ok(result.findings)
+      assert.equal(result.findings.length, 1)
+      assert.equal(result.findings[0].votes, undefined)
+      assert.equal(result.findings[0].voters, undefined)
+    })
+  })
+
+  await describe('maybeRunArbiter', async () => {
+    const strategyWithArbiter: LoopStrategy = {
+      ...baseStrategy,
+      arbiter: { promptFile: '/tmp/arb.md' },
+    }
+
+    await it('triggers and replaces merged when at least one HIGH/CRITICAL finding present', async () => {
+      const refined = [{ ...baseFinding, title: 'arbiter-refined' }]
+      const { recorded, sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), refined))
+      )
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
+      assert.equal(result.length, 1)
+      assert.equal(result[0].title, 'arbiter-refined')
+      assert.equal(recorded.length, 1)
+      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-arbiter')
+    })
+
+    await it('uses AGENT_ARBITER_DEFAULT when strategy.arbiter.agent is unset', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), []))
+      )
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      await maybeRunArbiter(ctx, 1, 'cafe1234', [[criticalFinding]], [criticalFinding])
+      assert.equal(recorded.length, 1)
+      assert.ok(recorded[0].agent, 'agent should be supplied (the canonical default)')
+    })
+
+    await it('skips when merged contains no HIGH/CRITICAL finding', async () => {
+      const lowFinding: Finding = { ...baseFinding, severity: 'LOW' }
+      const { recorded, sandbox } = makeFakeSandbox(() => {
+        throw new Error('arbiter must not be invoked')
+      })
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[lowFinding]], [lowFinding])
+      assert.equal(recorded.length, 0)
+      assert.deepEqual(result, [lowFinding])
+    })
+
+    await it('returns merged on parse failure (no exception)', async () => {
+      const { sandbox } = makeFakeSandbox(() => stubResult('garbage no tags'))
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
+      assert.deepEqual(result, [baseFinding])
+    })
+
+    await it('returns merged when sandbox.run throws (no exception escapes)', async () => {
+      const { sandbox } = makeFakeSandbox(() => {
+        throw new Error('boom')
+      })
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
+      assert.deepEqual(result, [baseFinding])
+    })
+
+    await it('skips entirely when strategy.arbiter is undefined', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(() => {
+        throw new Error('arbiter must not be invoked')
+      })
+      const ctx = ctxFor(sandbox, baseStrategy)
+      const result = await maybeRunArbiter(
+        ctx,
+        1,
+        'cafe1234',
+        [[criticalFinding]],
+        [criticalFinding]
+      )
+      assert.equal(recorded.length, 0)
+      assert.deepEqual(result, [criticalFinding])
+    })
+  })
+})

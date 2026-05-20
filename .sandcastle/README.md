@@ -54,7 +54,9 @@ GitHub issues ──▶ Planner ──▶ TaskSpec ──▶ Sandbox ──▶  
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------- |
 | [`main.ts`](./main.ts)                             | Entrypoint. Discovers tasks, fans out under `ConcurrencyPool`, dispatches to strategy via `STRATEGY_BY_KEY`.                      | ✓               |
 | [`refinement-loop.ts`](./refinement-loop.ts)       | Implement↔critic loop kernel: rounds, convergence, ratchet, best-state, post-loop retry.                                          | ✗               |
+| [`loop-control.ts`](./loop-control.ts)             | Pure predicates extracted from the kernel: early-exit, best-state-reset gating, snapshot building, options resolution.            | ✗               |
 | [`merge-findings.ts`](./merge-findings.ts)         | Pure module: slot resolution, cross-critic dedup, voted merge with median tie-up, disagreement scoring.                           | ✗               |
+| [`parse-findings.ts`](./parse-findings.ts)         | Nonce-tagged JSON extractor with regex-injection guard; handles last-non-trivial-match retry and code-fence stripping.            | ✗               |
 | [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                              | ✗               |
 | [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                   | ✓               |
 | [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                | ✗               |
@@ -122,14 +124,14 @@ Failure mode catch: when fewer than `⌈N/2⌉` slots return parseable findings,
 
 ### Canonical agent defaults ([`constants.ts`](./constants.ts))
 
-| Constant                    | Role                                      | Used by                                                              |
-| --------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| `AGENT_ACTOR_DEFAULT`       | Implementer                               | `runRefinementLoop` when `LoopStrategy.actor` is unset               |
-| `AGENT_CRITIC_POOL_DEFAULT` | Critic pool (non-empty `AgentSpec` tuple) | `resolveCriticSlots` when `LoopStrategy.criticPool` is unset         |
-| `AGENT_ARBITER_DEFAULT`     | Stage-2 synthesis                         | Strategy-supplied via `arbiter.agent` (spread for canonical default) |
-| `AGENT_PLANNER_DEFAULT`     | Issue triage / acceptance criteria        | `task-source.ts` planner step                                        |
+| Constant                    | Role                                      | Used by                                                                                |
+| --------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| `AGENT_ACTOR_DEFAULT`       | Implementer                               | `runRefinementLoop` when `LoopStrategy.actor` is unset                                 |
+| `AGENT_CRITIC_POOL_DEFAULT` | Critic pool (non-empty `AgentSpec` tuple) | `resolveCriticSlots` when `LoopStrategy.criticPool` is unset                           |
+| `AGENT_ARBITER_DEFAULT`     | Stage-2 synthesis                         | `maybeRunArbiter` when `strategy.arbiter` is set and `strategy.arbiter.agent` is unset |
+| `AGENT_PLANNER_DEFAULT`     | Issue triage / acceptance criteria        | `task-source.ts` planner step                                                          |
 
-All four are `AgentSpec` shaped: `{ effort: 'low'|'medium'|'high'; model: string }`. The right effort is a property of the model — required, not inferred.
+All four are `AgentSpec` shaped: `{ effort: 'low'|'medium'|'high'; model: string }`. The right effort is a property of the model — required, not inferred. Strategies enable the arbiter by setting `arbiter: { promptFile: '...' }`; declaring `arbiter.agent` is optional and overrides the canonical default.
 
 ### Loop tunables ([`constants.ts`](./constants.ts))
 
@@ -195,7 +197,7 @@ pnpm test:sandcastle:coverage
 pnpm test:sandcastle:debug
 ```
 
-41 unit tests cover backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, disagreement scoring, and registry-load validation (one case per fail-fast rule).
+The unit suite covers slot resolution, voted merge invariants (point cases plus property-based via [fast-check](https://fast-check.dev/)), registry-load validation (one case per fail-fast rule), kernel control predicates (early-exit, best-state gating, snapshot building, options resolution), partial-recovery JSON parsing, the concurrency pool's FIFO + release-on-reject contract, the finalizer's `buildPrArgs` matrix, and the `isValidSha` predicate. Backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, and disagreement scoring are all exercised against `mergeCriticFindings` directly.
 
 ## Using with AI coding agents
 

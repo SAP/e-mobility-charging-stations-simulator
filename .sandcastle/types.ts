@@ -77,7 +77,7 @@ export interface LoopResult {
   /** Base branch used for this loop run. */
   baseBranch: string
   /** Reason for non-converged termination, if applicable. */
-  failureReason?: string
+  failureReason?: 'actor_error' | 'critic_parse_failed' | 'quality_regression'
   /** Complete findings history across all rounds. */
   roundHistory: RoundSnapshot[]
   /** Number of main-loop rounds completed (excludes post-loop validation retry). */
@@ -114,12 +114,13 @@ export type LoopStrategy = {
   /**
    * Optional stage-2 arbiter. When set, the merged HIGH/CRITICAL findings
    * are passed to the arbiter agent for synthesis. Failure is non-fatal:
-   * the unrefined merged list is used. Both fields of the struct are
-   * required when `arbiter` is set (XOR encoded by the type).
+   * the unrefined merged list is used. `agent` is optional and falls back
+   * to `AGENT_ARBITER_DEFAULT` from `constants.ts`; declare it only to
+   * override the canonical default.
    */
   arbiter?: {
-    /** Agent spec for the arbiter LLM. */
-    readonly agent: AgentSpec
+    /** Agent spec for the arbiter LLM. Defaults to `AGENT_ARBITER_DEFAULT` when unset. */
+    readonly agent?: AgentSpec
     /** Path to the arbiter prompt file. */
     readonly promptFile: string
   }
@@ -161,8 +162,14 @@ export type LoopStrategy = {
   criticPromptFile: string
   /** Optional custom convergence check. When omitted, default loop logic applies. */
   shouldConverge?: (findings: Finding[], round: number, totalCommits: number) => boolean
-  /** Optional mid-loop validation. Return true if work passes. When omitted, uses default validation command. */
-  validate?: (cwd: string, spec: TaskSpec) => Promise<boolean>
+  /**
+   * Optional mid-loop validation. Return true if work passes. When omitted,
+   * the kernel uses {@link runValidation} (which runs `VALIDATION_COMMAND`
+   * with a 15-min cap). The optional `signal` is forwarded so cooperative
+   * cancellation reaches in-flight validation child processes when
+   * `AGENT_TASK_TIMEOUT_MS` triggers an abort.
+   */
+  validate?: (cwd: string, spec: TaskSpec, signal?: AbortSignal) => Promise<boolean>
 }
 
 /** Snapshot of a single implement↔critic round. */
@@ -176,9 +183,9 @@ export interface RoundSnapshot {
   /** Outcome of the critic phase for this round. */
   status: 'critic_errored' | 'has_findings' | 'no_findings'
   /**
-   * Number of critics that returned parseable findings this round. Used by
-   * the quality ratchet to refuse rollback when ensemble health degraded
-   * between rounds.
+   * Number of critics that returned a parseable findings list this round.
+   * Reported as telemetry; not consulted by the quality ratchet, which
+   * compares absolute non-LOW finding counts across rounds.
    */
   validCriticCount?: number
 }

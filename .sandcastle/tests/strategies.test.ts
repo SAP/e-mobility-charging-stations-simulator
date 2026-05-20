@@ -114,6 +114,13 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticPool'))
     })
 
+    await it('rejects criticPool length > MAX_CRITIC_COUNT', () => {
+      const oversized = Array.from({ length: 9 }, (_, i) => spec(`m${String(i)}`, 'low'))
+      assert.throws(() => {
+        validateLoopStrategyEnsemble('test', baseStrategy({ criticPool: asInvalidPool(oversized) }))
+      }, expectFieldError('test.criticPool'))
+    })
+
     await it('rejects criticAgreementThreshold > criticCount', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
@@ -165,6 +172,17 @@ await describe('strategies', async () => {
           'test',
           baseStrategy({
             arbiter: { agent: spec('gpt-x', 'high'), promptFile: './arb.md' },
+          })
+        )
+      })
+    })
+
+    await it('accepts an arbiter struct with only promptFile (agent inherits AGENT_ARBITER_DEFAULT)', () => {
+      assert.doesNotThrow(() => {
+        validateLoopStrategyEnsemble(
+          'test',
+          baseStrategy({
+            arbiter: { promptFile: './arb.md' },
           })
         )
       })
