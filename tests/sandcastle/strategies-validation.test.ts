@@ -25,12 +25,9 @@ await describe('validateLoopStrategyEnsemble', async () => {
     })
   })
 
-  await it('accepts a strategy with criticModel/criticEffort only (legacy)', () => {
+  await it('accepts a strategy with criticEffort only', () => {
     assert.doesNotThrow(() => {
-      validateLoopStrategyEnsemble(
-        'test',
-        baseStrategy({ criticEffort: 'low', criticModel: 'gpt-x' })
-      )
+      validateLoopStrategyEnsemble('test', baseStrategy({ criticEffort: 'low' }))
     })
   })
 

@@ -88,8 +88,8 @@ export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
  * Multi-critic ensemble fields (`criticCount`, `criticModels`, `criticEfforts`,
  * `criticAgreementThreshold`, `criticFillStrategy`, `criticEnsembleSeed`,
  * `criticArbiterModel`, `criticArbiterEffort`, `criticArbiterPromptFile`) are
- * additive and optional. When none of them are set, the loop runs the legacy
- * single-critic path using `criticModel`/`criticEffort` exactly as before.
+ * additive and optional. When none of them are set, the loop runs a single
+ * critic using `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`.
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type LoopStrategy = {
@@ -148,8 +148,6 @@ export type LoopStrategy = {
    * `random-with-replacement`: sample with replacement using `criticEnsembleSeed`.
    */
   criticFillStrategy?: 'random-with-replacement' | 'round-robin'
-  /** Model for the critic agent. Defaults to AGENT_CRITIC_MODEL constant. */
-  criticModel?: string
   /** Ordered preference list of critic model identifiers. */
   criticModels?: readonly string[]
   /** Path to the critic prompt file. */

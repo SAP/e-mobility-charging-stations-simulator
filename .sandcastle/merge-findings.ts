@@ -7,7 +7,6 @@ import type { CriticSlot, Finding, LoopStrategy } from './types.js'
 import {
   AGENT_CRITIC_COUNT,
   AGENT_CRITIC_EFFORT,
-  AGENT_CRITIC_MODEL,
   AGENT_CRITIC_MODELS,
   CRITIC_AGREEMENT_FRACTION,
   CRITIC_FILL_STRATEGY_DEFAULT,
@@ -193,8 +192,8 @@ export function normalizeCategory (category: string): string {
  * Builds the resolved per-slot critic invocation list from a strategy.
  *
  * Resolution rules (additive, backward-compatible):
- *  1. When `criticCount` and `criticModels` are both unset → single legacy
- *     slot from `criticModel`/`criticEffort` (byte-equivalent to today).
+ *  1. When `criticCount` and `criticModels` are both unset → single slot
+ *     using `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`.
  *  2. When `criticCount <= criticModels.length` → first `criticCount` models
  *     in declared order, no RNG.
  *  3. When `criticCount > criticModels.length` → declared models first, then
@@ -214,7 +213,7 @@ export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot
       {
         effort: strategy.criticEffort ?? AGENT_CRITIC_EFFORT,
         index: 0,
-        model: strategy.criticModel ?? AGENT_CRITIC_MODEL,
+        model: AGENT_CRITIC_MODELS[0],
       },
     ])
   }
@@ -222,9 +221,7 @@ export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot
   const declaredModels =
     strategy.criticModels && strategy.criticModels.length > 0
       ? strategy.criticModels
-      : AGENT_CRITIC_MODELS.length > 0
-        ? AGENT_CRITIC_MODELS
-        : [strategy.criticModel ?? AGENT_CRITIC_MODEL]
+      : AGENT_CRITIC_MODELS
   const count = strategy.criticCount ?? Math.max(AGENT_CRITIC_COUNT, declaredModels.length)
   const fillStrategy = strategy.criticFillStrategy ?? CRITIC_FILL_STRATEGY_DEFAULT
   const efforts = resolvePerSlotEfforts(strategy, count)

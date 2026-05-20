@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
+import { AGENT_CRITIC_MODELS } from '../../.sandcastle/constants.js'
 import {
   findingDedupKey,
   mergeCriticFindings,
@@ -71,10 +72,10 @@ await describe('merge-findings', async () => {
   })
 
   await describe('resolveCriticSlots', async () => {
-    await it('returns single legacy slot when no ensemble fields set (backward compat)', () => {
-      const slots = resolveCriticSlots(fakeStrategy({ criticEffort: 'low', criticModel: 'm-x' }))
+    await it('returns single default slot when no ensemble fields set', () => {
+      const slots = resolveCriticSlots(fakeStrategy({ criticEffort: 'low' }))
       assert.equal(slots.length, 1)
-      assert.equal(slots[0]?.model, 'm-x')
+      assert.equal(slots[0]?.model, AGENT_CRITIC_MODELS[0])
       assert.equal(slots[0]?.effort, 'low')
       assert.equal(slots[0]?.index, 0)
     })

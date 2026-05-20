@@ -13,15 +13,13 @@ export const AGENT_ACTOR_MODEL = 'github-copilot/claude-opus-4.6'
 
 export const AGENT_CRITIC_EFFORT = 'medium' as const
 
-export const AGENT_CRITIC_MODEL = 'github-copilot/gpt-5.4'
+export const AGENT_CRITIC_MODELS = ['github-copilot/gpt-5.4'] as const
 
 export const AGENT_IDLE_TIMEOUT_S = 720
 
 export const AGENT_ITERATION_BUDGET = 50
 
 export const AGENT_CRITIC_COUNT = 1 as const
-
-export const AGENT_CRITIC_MODELS: readonly string[] = [AGENT_CRITIC_MODEL] as const
 
 export const CRITIC_AGREEMENT_FRACTION = 0.5 as const
 

@@ -27,7 +27,7 @@ A round can run **N critics in parallel** instead of a single critic, with major
 | Field                      | Type                                         | Default                               | Purpose                                                                                                                                        |
 | -------------------------- | -------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `criticCount`              | `number`                                     | `1`                                   | Number of critic slots per round. Hard-capped at `MAX_CRITIC_COUNT = 8`.                                                                       |
-| `criticModels`             | `readonly string[]`                          | `[criticModel ?? AGENT_CRITIC_MODEL]` | Ordered preference list of critic models.                                                                                                      |
+| `criticModels`             | `readonly string[]`                          | `AGENT_CRITIC_MODELS`                 | Ordered preference list of critic models.                                                                                                      |
 | `criticEfforts`            | `Effort \| readonly Effort[]`                | `criticEffort ?? AGENT_CRITIC_EFFORT` | Per-slot reasoning effort; scalar broadcasts across slots, array must align with `criticModels.length`.                                        |
 | `criticAgreementThreshold` | `number \| ((validCount: number) => number)` | `Math.ceil(validCount / 2)`           | Min vote count to keep a finding (simple majority by default).                                                                                 |
 | `criticFillStrategy`       | `'round-robin' \| 'random-with-replacement'` | `'round-robin'`                       | How to fill slots when `criticCount > criticModels.length`.                                                                                    |
@@ -38,7 +38,7 @@ A round can run **N critics in parallel** instead of a single critic, with major
 
 ### Slot resolution
 
-When `criticCount` and `criticModels` are both unset → single legacy slot built from `criticModel`/`criticEffort`. When `criticCount <= criticModels.length` → take first `criticCount` models in declared order. When `criticCount > criticModels.length`:
+When `criticCount` and `criticModels` are both unset → single default slot built from `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`. When `criticCount <= criticModels.length` → take first `criticCount` models in declared order. When `criticCount > criticModels.length`:
 
 - `round-robin` (default): cyclic `criticModels[i % L]`. Deterministic, no RNG.
 - `random-with-replacement`: seeded uniform sampling via `crypto`-derived index from `criticEnsembleSeed`. Reproducible across runs with the same seed.
