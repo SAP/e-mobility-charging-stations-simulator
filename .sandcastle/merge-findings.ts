@@ -60,7 +60,7 @@ type SeverityRank = 0 | 1 | 2 | 3
  * @returns Deduplication key.
  */
 export function findingDedupKey (f: Finding, contextHash: string): string {
-  return `${f.file}::${normalizeCategory(f.category)}::${contextHash}`
+  return `${f.file || 'global'}::${normalizeCategory(f.category)}::${contextHash}`
 }
 
 /**
@@ -180,11 +180,18 @@ export function mergeCriticFindings (
  * dedup ({@link findingDedupKey} via {@link fallbackHash}) and the cross-round
  * dedup (`computeFindingKey` in `refinement-loop.ts`) call this so a line-less
  * finding lands in the same bucket regardless of which path constructs the key.
- * @param file - Source file path of the finding (use `'global'` placeholder when missing).
- * @returns 16-char SHA-256 hex prefix of `${file}:_`.
+ * Empty `file` values are normalized to `'global'` so cross-path parity holds
+ * even when a critic emits a global finding without a file path.
+ * @param file - Source file path of the finding (empty string normalized to `'global'`).
+ * @returns 16-char SHA-256 hex prefix of `${file || 'global'}:_`.
  */
 export function noLineFallbackHash (file: string): string {
-  return crypto.createHash('sha256').update(`${file}:_`).digest('hex').slice(0, HASH_PREFIX_LENGTH)
+  const safeFile = file || 'global'
+  return crypto
+    .createHash('sha256')
+    .update(`${safeFile}:_`)
+    .digest('hex')
+    .slice(0, HASH_PREFIX_LENGTH)
 }
 
 /**

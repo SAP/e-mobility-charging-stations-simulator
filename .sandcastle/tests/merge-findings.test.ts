@@ -75,6 +75,24 @@ await describe('merge-findings', async () => {
       assert.equal(merged.length, 1, 'titles vary, file+category match → one merged finding')
       assert.equal(merged[0].votes, 2)
     })
+
+    await it('normalizes empty file to "global" so empty and "global" produce the same hash', () => {
+      assert.equal(noLineFallbackHash(''), noLineFallbackHash('global'))
+    })
+
+    await it('cross-critic key for line-less + empty-file finding starts with "global::" segment', () => {
+      const f = fakeFinding({ file: '', line: undefined })
+      const key = findingDedupKey(f, noLineFallbackHash(f.file))
+      assert.match(key, /^global::/)
+    })
+
+    await it('cross-path parity for line-less + empty-file finding (cross-critic key === cross-round key formula)', () => {
+      const f = fakeFinding({ file: '', line: undefined })
+      const crossCriticKey = findingDedupKey(f, noLineFallbackHash(f.file))
+      const fileSegment = f.file || 'global'
+      const crossRoundKey = `${fileSegment}::${normalizeCategory(f.category)}::${noLineFallbackHash(f.file)}`
+      assert.equal(crossCriticKey, crossRoundKey)
+    })
   })
 
   await describe('resolveCriticSlots', async () => {

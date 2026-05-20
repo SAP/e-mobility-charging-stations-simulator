@@ -22,6 +22,7 @@ import {
   AGENT_IDLE_TIMEOUT_S,
   COMPLETION_SIGNAL,
   CONTEXT_HASH_RADIUS,
+  GIT_TIMEOUT_MS,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
 import {
@@ -78,6 +79,8 @@ interface RatchetContext {
   readonly cwd: string
   /** Current round number (1-indexed). */
   readonly round: number
+  /** Optional abort signal forwarded to the rollback git invocation. */
+  readonly signal?: AbortSignal
   /** The task specification. */
   readonly spec: TaskSpec
 }
@@ -350,7 +353,7 @@ export async function runRefinementLoop (
     const nonLowFindings = findings.filter(f => f.confidence !== 'LOW')
     if (
       await checkQualityRatchet(
-        { beforeSha: result.beforeSha, cwd, round, spec },
+        { beforeSha: result.beforeSha, cwd, round, signal, spec },
         nonLowFindings.length,
         previousFindingsCount
       )
@@ -362,7 +365,7 @@ export async function runRefinementLoop (
 
     if (nonLowFindings.length < bestFindingsCount) {
       bestFindingsCount = nonLowFindings.length
-      bestSha = await captureHeadSha(cwd)
+      bestSha = await captureHeadSha(cwd, signal)
     }
 
     totalCommits += result.commits
@@ -374,7 +377,13 @@ export async function runRefinementLoop (
       break
     }
 
-    const convergenceResult = await checkConvergence(cwd, findings, newFindings, nonLowFindings)
+    const convergenceResult = await checkConvergence(
+      cwd,
+      findings,
+      newFindings,
+      nonLowFindings,
+      signal
+    )
     if (convergenceResult !== null) {
       lastFindings = convergenceResult.lastFindings
       status = convergenceResult.status
@@ -402,7 +411,7 @@ export async function runRefinementLoop (
         const nonLowRetry = (result.findings ?? []).filter(f => f.confidence !== 'LOW')
         if (nonLowRetry.length < bestFindingsCount) {
           bestFindingsCount = nonLowRetry.length
-          bestSha = await captureHeadSha(sandbox.worktreePath)
+          bestSha = await captureHeadSha(sandbox.worktreePath, signal)
         }
         if (await validate(sandbox.worktreePath, spec, signal)) {
           status = 'converged'
@@ -413,7 +422,13 @@ export async function runRefinementLoop (
   }
 
   if (shouldResetToBest(status, bestSha)) {
-    totalCommits = await resetToBestState(sandbox.worktreePath, bestSha, totalCommits, baseBranch)
+    totalCommits = await resetToBestState(
+      sandbox.worktreePath,
+      bestSha,
+      totalCommits,
+      baseBranch,
+      signal
+    )
   }
 
   return {
@@ -429,11 +444,16 @@ export async function runRefinementLoop (
 /**
  * Captures the current HEAD SHA, returning null on failure.
  * @param cwd - Working directory for git operations.
+ * @param signal - Optional abort signal forwarded to the git invocation.
  * @returns The HEAD SHA or null.
  */
-async function captureHeadSha (cwd: string): Promise<null | string> {
+async function captureHeadSha (cwd: string, signal?: AbortSignal): Promise<null | string> {
   try {
-    const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd })
+    const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
+      cwd,
+      signal,
+      timeout: GIT_TIMEOUT_MS,
+    })
     return stdout.trim()
   } catch {
     return null
@@ -446,13 +466,15 @@ async function captureHeadSha (cwd: string): Promise<null | string> {
  * @param allFindings - All findings from the critic.
  * @param newFindings - Deduplicated new findings.
  * @param nonLowFindings - Non-LOW-confidence findings.
+ * @param signal - Optional abort signal forwarded to git invocations.
  * @returns A ConvergenceResult if the loop should break, or null to continue.
  */
 async function checkConvergence (
   cwd: string,
   allFindings: Finding[],
   newFindings: Finding[],
-  nonLowFindings: Finding[]
+  nonLowFindings: Finding[],
+  signal?: AbortSignal
 ): Promise<ConvergenceResult | null> {
   if (newFindings.length !== 0) return null
 
@@ -464,7 +486,7 @@ async function checkConvergence (
   if (criticalPersistent.length > 0) {
     // Capture current HEAD so post-loop reset is a no-op (code matches findings)
     return {
-      bestSha: await captureHeadSha(cwd),
+      bestSha: await captureHeadSha(cwd, signal),
       lastFindings: criticalPersistent,
       status: 'exhausted',
     }
@@ -500,7 +522,11 @@ async function checkQualityRatchet (
   }
 
   try {
-    await execFileAsync('git', ['reset', '--hard', beforeSha], { cwd })
+    await execFileAsync('git', ['reset', '--hard', beforeSha], {
+      cwd,
+      signal: ctx.signal,
+      timeout: GIT_TIMEOUT_MS,
+    })
     console.warn(
       `  #${spec.id} R${String(round)}: Regression detected (${String(previousCount)} → ${String(findingsCount)}). Rolled back.`
     )
@@ -532,16 +558,16 @@ async function computeFindingKey (
   fileCache?: Map<string, string>
 ): Promise<string> {
   const category = normalizeCategory(f.category)
+  const fileSegment = f.file || 'global'
   if (f.line == null) {
-    const file = f.file || 'global'
-    return `${file}::${category}::${noLineFallbackHash(file)}`
+    return `${fileSegment}::${category}::${noLineFallbackHash(f.file)}`
   }
   const contextHash = await hashContextLines(
     { cwd, file: f.file, line: f.line },
     CONTEXT_HASH_RADIUS,
     fileCache
   )
-  return `${f.file}::${category}::${contextHash}`
+  return `${fileSegment}::${category}::${contextHash}`
 }
 
 /**
@@ -591,6 +617,8 @@ async function executeRound (
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
       cwd: sandbox.worktreePath,
+      signal,
+      timeout: GIT_TIMEOUT_MS,
     })
     beforeSha = stdout.trim()
   } catch {
@@ -698,20 +726,28 @@ async function hashContextLines (
  * @param bestSha - The SHA to reset to.
  * @param currentCommits - Current total commits (fallback if recount fails).
  * @param baseBranch - Base branch for commit counting.
+ * @param signal - Optional abort signal forwarded to every git invocation.
  * @returns Updated total commit count.
  */
 async function resetToBestState (
   cwd: string,
   bestSha: null | string,
   currentCommits: number,
-  baseBranch: string
+  baseBranch: string,
+  signal?: AbortSignal
 ): Promise<number> {
   if (bestSha === null) return currentCommits
   if (!isValidSha(bestSha)) return currentCommits
   try {
-    await execFileAsync('git', ['reset', '--hard', bestSha], { cwd })
+    await execFileAsync('git', ['reset', '--hard', bestSha], {
+      cwd,
+      signal,
+      timeout: GIT_TIMEOUT_MS,
+    })
     const { stdout } = await execFileAsync('git', ['rev-list', '--count', `${baseBranch}..HEAD`], {
       cwd,
+      signal,
+      timeout: GIT_TIMEOUT_MS,
     })
     return parseInt(stdout.trim(), 10) || 0
   } catch {

@@ -32,7 +32,11 @@ export async function attemptRebase (
     return true
   } catch {
     try {
-      await execFileAsync('git', ['rebase', '--abort'], { cwd })
+      await execFileAsync('git', ['rebase', '--abort'], {
+        cwd,
+        signal,
+        timeout: GIT_TIMEOUT_MS,
+      })
     } catch {
       /* empty */
     }
