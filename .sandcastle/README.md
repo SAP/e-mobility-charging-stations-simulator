@@ -24,7 +24,7 @@ A round can run **N critics in parallel** instead of a single critic, with major
 
 ### `AgentSpec` — the canonical (model, effort) pair
 
-Every agent role (actor, critic-pool entry, arbiter) is described by an `AgentSpec`:
+Every agent role — **actor, critic-pool entry, arbiter, planner** — is described by an `AgentSpec`:
 
 ```ts
 interface AgentSpec {
@@ -35,17 +35,26 @@ interface AgentSpec {
 
 `effort` is **required**: the right effort is a property of the model, so silent role-wide effort fallbacks would defeat the purpose of the pairing. Strategies that want a different effort for a different model declare a distinct `AgentSpec`. To override the model while keeping the canonical effort: `{ ...AGENT_ACTOR_DEFAULT, model: 'x' }`.
 
+Canonical defaults are exported from [`constants.ts`](./constants.ts):
+
+| Constant                    | Role                                         | Used by                                                       |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| `AGENT_ACTOR_DEFAULT`       | Actor (implementer)                          | `runRefinementLoop` when `LoopStrategy.actor` is unset.       |
+| `AGENT_CRITIC_POOL_DEFAULT` | Critic pool (non-empty `AgentSpec` tuple)    | `resolveCriticSlots` when `LoopStrategy.criticPool` is unset. |
+| `AGENT_ARBITER_DEFAULT`     | Stage-2 arbiter (synthesis over merged list) | Strategy-supplied; spread into `arbiter.agent` to opt in.     |
+| `AGENT_PLANNER_DEFAULT`     | Planner (issue triage / acceptance criteria) | `task-source.ts` GitHub issue planning step.                  |
+
 ### Strategy fields (all optional)
 
-| Field                      | Type                                         | Default                     | Purpose                                                                                                                                       |
-| -------------------------- | -------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `actor`                    | `AgentSpec`                                  | `AGENT_ACTOR_DEFAULT`       | Actor agent.                                                                                                                                  |
-| `criticPool`               | `readonly [AgentSpec, ...AgentSpec[]]`       | `AGENT_CRITIC_POOL_DEFAULT` | Non-empty pool of critic agents drawn from each round (compile-time tuple).                                                                   |
-| `criticCount`              | `number`                                     | `1`                         | Number of critic slots per round. Hard-capped at `MAX_CRITIC_COUNT = 8`.                                                                      |
-| `criticAgreementThreshold` | `number \| ((validCount: number) => number)` | `Math.ceil(validCount / 2)` | Min vote count to keep a finding (simple majority by default).                                                                                |
-| `criticFillStrategy`       | `'round-robin' \| 'random-with-replacement'` | `'round-robin'`             | How to fill slots when `criticCount > criticPool.length`.                                                                                     |
-| `criticEnsembleSeed`       | `number`                                     | n/a                         | Required when `criticFillStrategy === 'random-with-replacement'`; deterministic seeded fill.                                                  |
-| `arbiter`                  | `{ agent: AgentSpec; promptFile: string }`   | n/a                         | Optional stage-2 arbiter LLM (MoA pattern); applied to HIGH/CRITICAL findings only when set. Both fields required together (encoded by type). |
+| Field                      | Type                                         | Default                     | Purpose                                                                                                                                                                                                              |
+| -------------------------- | -------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actor`                    | `AgentSpec`                                  | `AGENT_ACTOR_DEFAULT`       | Actor agent.                                                                                                                                                                                                         |
+| `criticPool`               | `readonly [AgentSpec, ...AgentSpec[]]`       | `AGENT_CRITIC_POOL_DEFAULT` | Non-empty pool of critic agents drawn from each round (compile-time tuple).                                                                                                                                          |
+| `criticCount`              | `number`                                     | `1`                         | Number of critic slots per round. Hard-capped at `MAX_CRITIC_COUNT = 8`.                                                                                                                                             |
+| `criticAgreementThreshold` | `number \| ((validCount: number) => number)` | `Math.ceil(validCount / 2)` | Min vote count to keep a finding (simple majority by default).                                                                                                                                                       |
+| `criticFillStrategy`       | `'round-robin' \| 'random-with-replacement'` | `'round-robin'`             | How to fill slots when `criticCount > criticPool.length`.                                                                                                                                                            |
+| `criticEnsembleSeed`       | `number`                                     | n/a                         | Required when `criticFillStrategy === 'random-with-replacement'`; deterministic seeded fill.                                                                                                                         |
+| `arbiter`                  | `{ agent: AgentSpec; promptFile: string }`   | n/a                         | Optional stage-2 arbiter LLM (MoA pattern); applied to HIGH/CRITICAL findings only when set. Both fields required together (encoded by type). Spread `AGENT_ARBITER_DEFAULT` into `agent` for the canonical default. |
 
 ### Slot resolution
 

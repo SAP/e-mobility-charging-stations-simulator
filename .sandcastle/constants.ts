@@ -14,9 +14,19 @@ export const AGENT_ACTOR_DEFAULT: AgentSpec = {
   model: 'github-copilot/claude-opus-4.6',
 }
 
+export const AGENT_ARBITER_DEFAULT: AgentSpec = {
+  effort: 'high',
+  model: 'github-copilot/claude-opus-4.6',
+}
+
 export const AGENT_CRITIC_POOL_DEFAULT: readonly [AgentSpec, ...AgentSpec[]] = [
   { effort: 'medium', model: 'github-copilot/gpt-5.4' },
 ] as const
+
+export const AGENT_PLANNER_DEFAULT: AgentSpec = {
+  effort: 'medium',
+  model: 'github-copilot/claude-sonnet-4.6',
+}
 
 export const AGENT_IDLE_TIMEOUT_S = 720
 
@@ -31,10 +41,6 @@ export const CRITIC_FILL_STRATEGY_DEFAULT = 'round-robin' as const
 export const MAX_CRITIC_COUNT = 8 as const
 
 export const AGENT_MAX_CRITIC_ROUNDS = 10
-
-export const AGENT_PLANNER_EFFORT = 'medium' as const
-
-export const AGENT_PLANNER_MODEL = 'github-copilot/claude-sonnet-4.6'
 
 export const AGENT_TASK_TIMEOUT_MS = 30_000_000
 

@@ -8,8 +8,7 @@ import type { TaskSpec } from './types.js'
 
 import {
   AGENT_IDLE_TIMEOUT_S,
-  AGENT_PLANNER_EFFORT,
-  AGENT_PLANNER_MODEL,
+  AGENT_PLANNER_DEFAULT,
   AGENT_TASK_TIMEOUT_MS,
   COMPLETION_SIGNAL,
   DOCKER_MOUNTS,
@@ -122,7 +121,7 @@ export class GithubIssueSource implements TaskSource {
       let plan: RunResult
       try {
         plan = await sandcastle.run({
-          agent: agentProvider(AGENT_PLANNER_MODEL, AGENT_PLANNER_EFFORT),
+          agent: agentProvider(AGENT_PLANNER_DEFAULT.model, AGENT_PLANNER_DEFAULT.effort),
           completionSignal: COMPLETION_SIGNAL,
           hooks: SANDBOX_AUTH_HOOKS,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
