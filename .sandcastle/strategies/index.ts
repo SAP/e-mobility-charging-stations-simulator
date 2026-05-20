@@ -1,5 +1,6 @@
 import type { FinalizationConfig, LoopStrategy } from '../types.js'
 
+import { MAX_CRITIC_COUNT } from '../constants.js'
 import { implementStrategy } from './implement/strategy.js'
 
 /**
@@ -68,6 +69,81 @@ export function labelOf (key: string): string {
 }
 
 /**
+ * Same fail-fast checks as {@link validateEnsembleFields}, exposed for tests
+ * with a caller-supplied error context label.
+ * @param ctx - Free-form context fragment included in error messages.
+ * @param strategy - Strategy declaration to validate.
+ * @throws {Error} Field-named error when any ensemble field is invalid.
+ */
+export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrategy): void {
+  if (strategy.criticCount !== undefined) {
+    if (
+      !Number.isInteger(strategy.criticCount) ||
+      strategy.criticCount < 1 ||
+      strategy.criticCount > MAX_CRITIC_COUNT
+    ) {
+      throw new Error(
+        `Invalid criticCount in ${ctx}: must be an integer in [1, ${String(MAX_CRITIC_COUNT)}].`
+      )
+    }
+  }
+
+  if (strategy.criticModels !== undefined) {
+    if (strategy.criticModels.length === 0) {
+      throw new Error(`Invalid criticModels in ${ctx}: must be a non-empty array.`)
+    }
+    for (const m of strategy.criticModels) {
+      if (typeof m !== 'string' || m.trim().length === 0) {
+        throw new Error(`Invalid criticModels in ${ctx}: all entries must be non-empty strings.`)
+      }
+    }
+  }
+
+  if (Array.isArray(strategy.criticEfforts)) {
+    const expected = strategy.criticModels?.length ?? 1
+    if (strategy.criticEfforts.length !== expected) {
+      throw new Error(
+        `Invalid criticEfforts in ${ctx}: array length (${String(strategy.criticEfforts.length)}) ` +
+          `must equal criticModels.length (${String(expected)}).`
+      )
+    }
+  }
+
+  if (typeof strategy.criticAgreementThreshold === 'number') {
+    const upper = strategy.criticCount ?? strategy.criticModels?.length ?? 1
+    if (
+      !Number.isInteger(strategy.criticAgreementThreshold) ||
+      strategy.criticAgreementThreshold < 1 ||
+      strategy.criticAgreementThreshold > upper
+    ) {
+      throw new Error(
+        `Invalid criticAgreementThreshold in ${ctx}: must be an integer in [1, ${String(upper)}].`
+      )
+    }
+  }
+
+  if (
+    strategy.criticFillStrategy === 'random-with-replacement' &&
+    typeof strategy.criticEnsembleSeed !== 'number'
+  ) {
+    throw new Error(
+      `Invalid criticEnsembleSeed in ${ctx}: numeric seed is required when ` +
+        "criticFillStrategy === 'random-with-replacement' (for reproducibility)."
+    )
+  }
+
+  if (
+    (strategy.criticArbiterModel != null && strategy.criticArbiterPromptFile == null) ||
+    (strategy.criticArbiterPromptFile != null && strategy.criticArbiterModel == null)
+  ) {
+    throw new Error(
+      `Invalid arbiter configuration in ${ctx}: criticArbiterModel and ` +
+        'criticArbiterPromptFile must be set together.'
+    )
+  }
+}
+
+/**
  * Builds the strategy-key index, validating each entry and throwing on
  * malformed, duplicate, or prefix-overlapping keys so registry mistakes
  * (typos, wrong casing, empty tag, key colliding with another key's branch
@@ -97,6 +173,7 @@ function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, Str
         )
       }
     }
+    validateEnsembleFields(entry.key, entry.strategy)
     if (map.has(entry.key)) {
       throw new Error(`Duplicate strategy key in STRATEGY_REGISTRY: '${entry.key}'.`)
     }
@@ -112,4 +189,22 @@ function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, Str
     map.set(entry.key, entry)
   }
   return map
+}
+
+/**
+ * Fail-fast validator for the multi-critic ensemble fields on a strategy.
+ *
+ * Throws on:
+ *  - `criticCount` not a positive integer or > MAX_CRITIC_COUNT.
+ *  - `criticModels` is an empty array, or contains non-string / empty / blank entries.
+ *  - `criticEfforts` is an array whose length ≠ `criticModels.length`.
+ *  - `criticAgreementThreshold` (when number) outside `[1, criticCount]`.
+ *  - `criticFillStrategy === 'random-with-replacement'` without a numeric `criticEnsembleSeed`.
+ *  - `criticArbiterModel` set without `criticArbiterPromptFile` (or vice versa).
+ * @param key - Strategy key (for error context).
+ * @param strategy - Strategy declaration to validate.
+ * @throws {Error} Field-named error when any rule above is violated.
+ */
+function validateEnsembleFields (key: string, strategy: LoopStrategy): void {
+  validateLoopStrategyEnsemble(`strategy '${key}'`, strategy)
 }
