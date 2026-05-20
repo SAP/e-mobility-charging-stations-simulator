@@ -32,7 +32,12 @@ import {
   type RoundResult,
   shouldResetToBest,
 } from './loop-control.js'
-import { mergeCriticFindings, normalizeCategory, resolveCriticSlots } from './merge-findings.js'
+import {
+  mergeCriticFindings,
+  noLineFallbackHash,
+  normalizeCategory,
+  resolveCriticSlots,
+} from './merge-findings.js'
 import { parseFindings } from './parse-findings.js'
 import { agentProvider, execFileAsync, isValidSha, toErrorMessage } from './utils.js'
 import { runValidation } from './validation.js'
@@ -87,15 +92,15 @@ interface RatchetContext {
  * @param ctx - Loop context.
  * @param round - Current round number.
  * @param baseNonce - Round-level nonce; arbiter nonce is `${baseNonce}-arbiter`.
- * @param perCriticOutputs - Raw per-slot findings (null entries excluded).
- * @param merged - Merged finding list from `mergeCriticFindings`.
+ * @param perCriticOutputs - Per-slot findings (parse-failed slots are filtered out by the caller).
+ * @param merged - Merged finding list from `mergeCriticFindings`, or the sole critic's output when N=1.
  * @returns Arbiter-refined merged list, or the original merged list on failure.
  */
 export async function maybeRunArbiter (
   ctx: LoopContext,
   round: number,
   baseNonce: string,
-  perCriticOutputs: readonly (Finding[] | null)[],
+  perCriticOutputs: readonly Finding[][],
   merged: Finding[]
 ): Promise<Finding[]> {
   const { sandbox, signal, spec, strategy } = ctx
@@ -186,15 +191,18 @@ export async function runCritic (
     return { findings: null, validCriticCount }
   }
 
+  const validOutputs = perCriticOutputs.filter((o): o is Finding[] => o !== null)
+
   if (slots.length === 1) {
-    return { findings: perCriticOutputs[0] ?? null, validCriticCount }
+    const sole = validOutputs[0]
+    const refinedSingle = await maybeRunArbiter(ctx, round, baseNonce, validOutputs, sole)
+    return { findings: refinedSingle, validCriticCount }
   }
 
   const cwd = ctx.sandbox.worktreePath
   const fileCache = new Map<string, string>()
   const contextHashes = new Map<Finding, string>()
-  for (const findings of perCriticOutputs) {
-    if (findings === null) continue
+  for (const findings of validOutputs) {
     for (const f of findings) {
       if (f.line == null) continue
       const hash = await hashContextLines(
@@ -207,12 +215,12 @@ export async function runCritic (
   }
 
   const threshold = strategy.criticAgreementThreshold
-  const { merged } = mergeCriticFindings(perCriticOutputs, {
+  const { merged } = mergeCriticFindings(validOutputs, {
     ...(threshold !== undefined && { agreementThreshold: threshold }),
     contextHashes,
   })
 
-  const refined = await maybeRunArbiter(ctx, round, baseNonce, perCriticOutputs, merged)
+  const refined = await maybeRunArbiter(ctx, round, baseNonce, validOutputs, merged)
 
   return { findings: refined, validCriticCount }
 }
@@ -252,6 +260,7 @@ export async function runOneCritic (
   let findings = parseFindings(critic.stdout, nonce)
 
   if (findings === null) {
+    signal?.throwIfAborted()
     console.warn(`  #${spec.id} R${String(round)} C${String(slot.index)}: parse failed. Retrying.`)
     const retryNonce = `${nonce}-r1`
     critic = await sandbox.run({
@@ -286,14 +295,13 @@ export async function runRefinementLoop (
 ): Promise<LoopResult> {
   const { baseBranch, budget, maxRounds } = resolveLoopOptions(opts)
   const signal = opts?.signal
-  const validate =
-    strategy.validate ?? ((cwd: string, s: TaskSpec) => runValidation(cwd, s, signal))
+  const validate = strategy.validate ?? runValidation
 
   const ctx: LoopContext = { baseBranch, sandbox, signal, spec, strategy }
 
   const seenKeys = new Set<string>()
   const roundHistory: RoundSnapshot[] = []
-  let failureReason: 'actor_error' | 'critic_parse_failed' | 'quality_regression' | undefined
+  let failureReason: LoopResult['failureReason']
   let lastFindings: Finding[] = []
   let status: LoopStatus = 'exhausted'
   let totalCommits = 0
@@ -318,14 +326,13 @@ export async function runRefinementLoop (
     if (earlyExit !== null) {
       totalCommits = earlyExit.totalCommits
       status = earlyExit.status
-      if (earlyExit.status === 'failed') {
-        failureReason = result.commits === 0 ? 'actor_error' : 'critic_parse_failed'
+      if (earlyExit.failureReason !== undefined) {
+        failureReason = earlyExit.failureReason
       }
       break
     }
 
-    if (result.findings === null) break
-    const findings: Finding[] = result.findings
+    const findings: Finding[] = result.findings ?? []
 
     if (result.commits > 0 && (await validate(sandbox.worktreePath, spec, signal))) {
       totalCommits += result.commits
@@ -384,13 +391,22 @@ export async function runRefinementLoop (
     const validationPassed = await validate(sandbox.worktreePath, spec, signal)
     if (validationPassed) {
       status = 'converged'
+      failureReason = undefined
     } else if (roundsCompleted < maxRounds) {
-      const result = await executeRound(ctx, roundsCompleted + 1, budget, lastFindings)
-      roundHistory.push(buildRoundSnapshot(result, roundsCompleted + 1))
+      const retryRound = roundsCompleted + 1
+      const result = await executeRound(ctx, retryRound, budget, lastFindings)
+      roundHistory.push(buildRoundSnapshot(result, retryRound))
+      roundsCompleted = retryRound
       if (result.commits > 0) {
         totalCommits += result.commits
+        const nonLowRetry = (result.findings ?? []).filter(f => f.confidence !== 'LOW')
+        if (nonLowRetry.length < bestFindingsCount) {
+          bestFindingsCount = nonLowRetry.length
+          bestSha = await captureHeadSha(sandbox.worktreePath)
+        }
         if (await validate(sandbox.worktreePath, spec, signal)) {
           status = 'converged'
+          failureReason = undefined
         }
       }
     }
@@ -502,6 +518,9 @@ async function checkQualityRatchet (
  * intentionally identical to {@link findingDedupKey} (cross-critic merge)
  * so cross-round dedup recognizes the same defect even when critics
  * rephrase its category between rounds (`"sql-injection"` vs `"SQLInjection"`).
+ * For findings without `line`, both paths converge on
+ * {@link noLineFallbackHash} for the third segment, so a line-less defect
+ * dedupes by file+category whether seen across rounds or across critics.
  * @param f - Finding to compute a key for.
  * @param cwd - Working directory (worktree path) for reading file context.
  * @param fileCache - Optional cache of file contents keyed by resolved path.
@@ -513,18 +532,9 @@ async function computeFindingKey (
   fileCache?: Map<string, string>
 ): Promise<string> {
   const category = normalizeCategory(f.category)
-  if (!f.file || f.line == null) {
-    const normalizedTitle = f.title
-      .toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-    const titleHash = crypto
-      .createHash('sha256')
-      .update(normalizedTitle)
-      .digest('hex')
-      .slice(0, HASH_PREFIX_LENGTH)
-    return `${f.file || 'global'}::${category}::${titleHash}`
+  if (f.line == null) {
+    const file = f.file || 'global'
+    return `${file}::${category}::${noLineFallbackHash(file)}`
   }
   const contextHash = await hashContextLines(
     { cwd, file: f.file, line: f.line },

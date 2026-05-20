@@ -11,6 +11,7 @@ import { AGENT_CRITIC_POOL_DEFAULT } from '../constants.js'
 import {
   findingDedupKey,
   mergeCriticFindings,
+  noLineFallbackHash,
   normalizeCategory,
   resolveCriticSlots,
 } from '../merge-findings.js'
@@ -44,6 +45,35 @@ await describe('merge-findings', async () => {
       const f2 = fakeFinding({ file: 'b.ts' })
       assert.notEqual(findingDedupKey(f1, 'h'), findingDedupKey(f2, 'h'))
       assert.notEqual(findingDedupKey(f1, 'h1'), findingDedupKey(f1, 'h2'))
+    })
+  })
+
+  await describe('noLineFallbackHash', async () => {
+    await it('produces a stable 16-char hex digest of <file>:_', () => {
+      const h = noLineFallbackHash('src/x.ts')
+      assert.equal(h.length, 16)
+      assert.match(h, /^[0-9a-f]{16}$/)
+      assert.equal(noLineFallbackHash('src/x.ts'), h)
+    })
+
+    await it('cross-critic key for line-less findings uses noLineFallbackHash', () => {
+      const f = fakeFinding({ file: 'src/x.ts', line: undefined, title: 'Variant A' })
+      const expected = `${f.file}::${normalizeCategory(f.category)}::${noLineFallbackHash(f.file)}`
+      const merged = mergeCriticFindings([[f]], { contextHashes: new Map() }).merged
+      assert.equal(merged.length, 1)
+      assert.equal(findingDedupKey(f, noLineFallbackHash(f.file)), expected)
+    })
+
+    await it('cross-critic dedups two line-less findings differing only by title (same file+category)', () => {
+      const f1 = fakeFinding({ file: 'src/x.ts', line: undefined, title: 'monolith' })
+      const f2 = fakeFinding({
+        file: 'src/x.ts',
+        line: undefined,
+        title: 'too many responsibilities',
+      })
+      const merged = mergeCriticFindings([[f1], [f2]], { contextHashes: new Map() }).merged
+      assert.equal(merged.length, 1, 'titles vary, file+category match → one merged finding')
+      assert.equal(merged[0].votes, 2)
     })
   })
 

@@ -7,6 +7,7 @@ import {
   AGENT_CRITIC_POOL_DEFAULT,
   CRITIC_AGREEMENT_FRACTION,
   CRITIC_FILL_STRATEGY_DEFAULT,
+  HASH_PREFIX_LENGTH,
 } from './constants.js'
 
 /** Options for {@link mergeCriticFindings}. */
@@ -175,6 +176,18 @@ export function mergeCriticFindings (
 }
 
 /**
+ * Stable key suffix for findings without a line number. Both the cross-critic
+ * dedup ({@link findingDedupKey} via {@link fallbackHash}) and the cross-round
+ * dedup (`computeFindingKey` in `refinement-loop.ts`) call this so a line-less
+ * finding lands in the same bucket regardless of which path constructs the key.
+ * @param file - Source file path of the finding (use `'global'` placeholder when missing).
+ * @returns 16-char SHA-256 hex prefix of `${file}:_`.
+ */
+export function noLineFallbackHash (file: string): string {
+  return crypto.createHash('sha256').update(`${file}:_`).digest('hex').slice(0, HASH_PREFIX_LENGTH)
+}
+
+/**
  * Lowercases and strips non-alphanumeric characters from a critic-emitted
  * category label so superficial phrasing differences (e.g. `"sql-injection"`,
  * `"SQL Injection"`, `"SQLInjection"`) collapse to the same dedup bucket.
@@ -253,14 +266,17 @@ function deterministicIndex (seed: number, slot: number, range: number): number 
 
 /**
  * @param f - Finding lacking a precomputed context hash.
- * @returns Stable hash derived from `${file}:${line}` (no FS access).
+ * @returns Stable hash derived from `${file}:${line ?? '_'}` (no FS access).
+ *   Line-less findings delegate to {@link noLineFallbackHash} so the key
+ *   is identical to the one produced by the cross-round dedup path.
  */
 function fallbackHash (f: Finding): string {
+  if (f.line == null) return noLineFallbackHash(f.file)
   return crypto
     .createHash('sha256')
-    .update(`${f.file}:${String(f.line ?? '_')}`)
+    .update(`${f.file}:${String(f.line)}`)
     .digest('hex')
-    .slice(0, 16)
+    .slice(0, HASH_PREFIX_LENGTH)
 }
 
 /**

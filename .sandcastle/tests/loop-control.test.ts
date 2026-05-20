@@ -31,9 +31,46 @@ await describe('loop-control', async () => {
       assert.deepEqual(r, { status: 'skipped', totalCommits: 0 })
     })
 
-    await it('returns failed when findings is null (regardless of round)', () => {
-      const r = checkEarlyExit(fakeSpec(), 2, round({ commits: 1, findings: null }), 5)
-      assert.deepEqual(r, { status: 'failed', totalCommits: 6 })
+    await it('returns failed with critic_parse_failed when validCriticCount is 0', () => {
+      const r = checkEarlyExit(
+        fakeSpec(),
+        2,
+        round({ commits: 1, findings: null, validCriticCount: 0 }),
+        5
+      )
+      assert.deepEqual(r, {
+        failureReason: 'critic_parse_failed',
+        status: 'failed',
+        totalCommits: 6,
+      })
+    })
+
+    await it('returns failed with critic_quorum_failed when some slots succeeded but quorum failed', () => {
+      const r = checkEarlyExit(
+        fakeSpec(),
+        2,
+        round({ commits: 1, findings: null, validCriticCount: 1 }),
+        5
+      )
+      assert.deepEqual(r, {
+        failureReason: 'critic_quorum_failed',
+        status: 'failed',
+        totalCommits: 6,
+      })
+    })
+
+    await it('returns failed with actor_error when commits is 0 in round > 1 and findings is null', () => {
+      const r = checkEarlyExit(
+        fakeSpec(),
+        3,
+        round({ commits: 0, findings: null, validCriticCount: 0 }),
+        5
+      )
+      assert.deepEqual(r, {
+        failureReason: 'actor_error',
+        status: 'failed',
+        totalCommits: 5,
+      })
     })
 
     await it('returns exhausted when round>1 and commits=0', () => {

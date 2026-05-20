@@ -67,7 +67,12 @@ if (tasks.length === 0) {
 
           let workSuccess = false
           if (loopResult.totalCommits > 0) {
-            const finalizeResult = await entry.strategy.finalize(spec, loopResult, sandbox)
+            const finalizeResult = await entry.strategy.finalize(
+              spec,
+              loopResult,
+              sandbox,
+              ac.signal
+            )
             workSuccess = entry.strategy.isWorkComplete(finalizeResult)
           }
 

@@ -1,6 +1,7 @@
-import type { Finding, LoopStatus, RoundSnapshot, TaskSpec } from './types.js'
+import type { Finding, LoopResult, LoopStatus, RoundSnapshot, TaskSpec } from './types.js'
 
 import { AGENT_ITERATION_BUDGET, AGENT_MAX_CRITIC_ROUNDS, GIT_BASE_BRANCH } from './constants.js'
+import { isValidSha } from './utils.js'
 
 /** Options for configuring the refinement loop. */
 export interface RefinementLoopOptions {
@@ -60,25 +61,45 @@ export function buildRoundSnapshot (result: RoundResult, round: number): RoundSn
 
 /**
  * Checks whether the round result warrants an early exit from the loop.
+ *
+ * When the critic phase produced no parseable list (`result.findings === null`),
+ * the failure is split into two cases via `result.validCriticCount`:
+ *  - `0` valid slots → all slots parse-failed twice → `'critic_parse_failed'`.
+ *  - `> 0` but below quorum → `'critic_quorum_failed'` (mixed parse/error/timeout).
+ *
+ * Actor-side failure (`commits === 0` after round 1) is mapped to
+ * `'actor_error'`; round 1 with zero commits is `'skipped'` and carries no
+ * reason because nothing has been attempted yet.
  * @param spec - The task specification.
  * @param round - Current round number.
  * @param result - The round result.
  * @param totalCommits - Running total of commits before this round.
- * @returns An object with updated status and totalCommits if early exit, or null to continue.
+ * @returns An object with updated status, totalCommits, and (optionally) the
+ *   precise `failureReason` literal if early exit, or null to continue.
  */
 export function checkEarlyExit (
   spec: TaskSpec,
   round: number,
   result: RoundResult,
   totalCommits: number
-): null | { status: LoopStatus; totalCommits: number } {
+): null | {
+  failureReason?: LoopResult['failureReason']
+  status: LoopStatus
+  totalCommits: number
+} {
   if (round === 1 && result.commits === 0) {
     console.warn(`  #${spec.id}: 0 commits on round 1. Skipping.`)
     return { status: 'skipped', totalCommits }
   }
   if (result.findings === null) {
     console.warn(`  #${spec.id}: Critic failed twice. Breaking (non-converged).`)
-    return { status: 'failed', totalCommits: totalCommits + result.commits }
+    const failureReason: LoopResult['failureReason'] =
+      result.commits === 0
+        ? 'actor_error'
+        : result.validCriticCount === 0
+          ? 'critic_parse_failed'
+          : 'critic_quorum_failed'
+    return { failureReason, status: 'failed', totalCommits: totalCommits + result.commits }
   }
   if (round > 1 && result.commits === 0) {
     return { status: 'exhausted', totalCommits }
@@ -106,5 +127,5 @@ export function resolveLoopOptions (opts: RefinementLoopOptions | undefined): Re
  * @returns True if reset should be applied.
  */
 export function shouldResetToBest (status: LoopStatus, bestSha: null | string): boolean {
-  return status !== 'converged' && bestSha !== null && /^[0-9a-f]{40}$/.test(bestSha)
+  return status !== 'converged' && bestSha !== null && isValidSha(bestSha)
 }

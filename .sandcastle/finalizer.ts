@@ -10,16 +10,23 @@ import { execFileAsync, toErrorMessage } from './utils.js'
  * On failure, aborts the rebase cleanly.
  * @param cwd - Working directory (worktree path).
  * @param baseBranch - Target branch for rebase.
+ * @param signal - Optional abort signal forwarded to every git invocation.
  * @returns `true` if rebase succeeded, `false` otherwise.
  */
-export async function attemptRebase (cwd: string, baseBranch = GIT_BASE_BRANCH): Promise<boolean> {
+export async function attemptRebase (
+  cwd: string,
+  baseBranch = GIT_BASE_BRANCH,
+  signal?: AbortSignal
+): Promise<boolean> {
   try {
     await execFileAsync('git', ['fetch', 'origin', baseBranch], {
       cwd,
+      signal,
       timeout: GIT_TIMEOUT_MS,
     })
     await execFileAsync('git', ['rebase', `origin/${baseBranch}`], {
       cwd,
+      signal,
       timeout: GIT_TIMEOUT_MS,
     })
     return true
@@ -104,17 +111,20 @@ export function buildPrArgs (
  * @param spec - The task specification.
  * @param cwd - Working directory (worktree path).
  * @param rebaseSucceeded - Whether the preceding rebase completed successfully.
+ * @param signal - Optional abort signal forwarded to every git invocation.
  * @returns `true` if the primary push succeeded, `false` otherwise.
  */
 export async function pushBranch (
   spec: TaskSpec,
   cwd: string,
-  rebaseSucceeded: boolean
+  rebaseSucceeded: boolean,
+  signal?: AbortSignal
 ): Promise<boolean> {
   if (rebaseSucceeded) {
     try {
       await execFileAsync('git', ['push', '--force-with-lease', 'origin', 'HEAD'], {
         cwd,
+        signal,
         timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
@@ -127,6 +137,7 @@ export async function pushBranch (
           ['push', 'origin', `HEAD:refs/heads/rescue/${spec.branch}-${suffix}`],
           {
             cwd,
+            signal,
             timeout: GIT_PUSH_TIMEOUT_MS,
           }
         )
@@ -144,6 +155,7 @@ export async function pushBranch (
     try {
       await execFileAsync('git', ['push', '-u', 'origin', 'HEAD'], {
         cwd,
+        signal,
         timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true

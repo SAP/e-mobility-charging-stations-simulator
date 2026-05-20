@@ -47,7 +47,8 @@ export type FinalizationConfig = {
   finalize: (
     spec: TaskSpec,
     loopResult: LoopResult,
-    sandbox: SandboxInstance
+    sandbox: SandboxInstance,
+    signal?: AbortSignal
   ) => Promise<{ success: boolean }>
   /** Determines if the finalization result counts as completed work. */
   isWorkComplete: (finalizeResult: { success: boolean }) => boolean
@@ -77,10 +78,14 @@ export interface LoopResult {
   /** Base branch used for this loop run. */
   baseBranch: string
   /** Reason for non-converged termination, if applicable. */
-  failureReason?: 'actor_error' | 'critic_parse_failed' | 'quality_regression'
+  failureReason?:
+    | 'actor_error'
+    | 'critic_parse_failed'
+    | 'critic_quorum_failed'
+    | 'quality_regression'
   /** Complete findings history across all rounds. */
   roundHistory: RoundSnapshot[]
-  /** Number of main-loop rounds completed (excludes post-loop validation retry). */
+  /** Number of rounds executed, including the optional post-loop validation retry round when it ran. */
   roundsCompleted: number
   /** Termination status. */
   status: LoopStatus

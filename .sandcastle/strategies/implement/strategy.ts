@@ -45,18 +45,18 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
 
   criticPromptFile: './.sandcastle/strategies/implement/critic-prompt.md',
 
-  finalize: async (spec, loopResult, sandbox) => {
+  finalize: async (spec, loopResult, sandbox, signal) => {
     const cwd = sandbox.worktreePath
-    let validationPassed = await runValidation(cwd, spec)
+    let validationPassed = await runValidation(cwd, spec, signal)
 
-    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch)
+    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch, signal)
     if (rebaseSucceeded && validationPassed) {
-      if (!(await runValidation(cwd, spec))) {
+      if (!(await runValidation(cwd, spec, signal))) {
         validationPassed = false
       }
     }
 
-    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded)
+    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded, signal)
     if (!pushSucceeded) {
       console.error(`  #${spec.id}: Push failed; cannot create PR without remote branch.`)
       return { success: false }
@@ -75,6 +75,7 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
       await execFileAsync('gh', prArgs, {
         cwd,
         maxBuffer: 8 * 1024 * 1024,
+        signal,
         timeout: GIT_TIMEOUT_MS,
       })
       console.log(`  #${spec.id}: PR created${isDraft ? ' (draft)' : ''}.`)

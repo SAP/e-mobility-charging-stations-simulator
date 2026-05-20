@@ -10,6 +10,10 @@
 import type { Sandbox, SandboxRunOptions, SandboxRunResult } from '@ai-hero/sandcastle'
 
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 
 import type {
@@ -21,7 +25,7 @@ import type {
   TaskSpec,
 } from '../types.js'
 
-import { maybeRunArbiter, runCritic, runOneCritic } from '../refinement-loop.js'
+import { maybeRunArbiter, runCritic, runOneCritic, runRefinementLoop } from '../refinement-loop.js'
 
 const baseFinding: Finding = {
   category: 'logic',
@@ -98,6 +102,22 @@ const ctxFor = (sandbox: SandboxInstance, strategy: LoopStrategy): LoopContext =
 const slot0: CriticSlot = { effort: 'medium', index: 0, model: 'm0' }
 
 const stubResult = (stdout: string): SandboxRunResult => ({ commits: [], iterations: [], stdout })
+
+/**
+ * Spins up a fresh temp git repo with a single initial commit. Used by the
+ * `runRefinementLoop end-to-end` describe block where the kernel's
+ * `execFileAsync('git', ['rev-parse', 'HEAD'], ...)` calls must hit a real
+ * repository (no production code is mocked).
+ * @returns The repo's working directory + an async cleanup function.
+ */
+const setupTempRepo = async (): Promise<{ cleanup: () => Promise<void>; cwd: string }> => {
+  const cwd = await mkdtemp(join(tmpdir(), 'sandcastle-loop-test-'))
+  execFileSync('git', ['init', '--initial-branch=main'], { cwd, stdio: 'pipe' })
+  execFileSync('git', ['config', 'user.email', 'test@test.local'], { cwd, stdio: 'pipe' })
+  execFileSync('git', ['config', 'user.name', 'Sandcastle Test'], { cwd, stdio: 'pipe' })
+  execFileSync('git', ['commit', '--allow-empty', '-m', 'initial'], { cwd, stdio: 'pipe' })
+  return { cleanup: () => rm(cwd, { force: true, recursive: true }), cwd }
+}
 
 await describe('refinement-loop kernel', async () => {
   await describe('runOneCritic', async () => {
@@ -190,6 +210,30 @@ await describe('refinement-loop kernel', async () => {
       assert.equal(result.findings[0].votes, undefined)
       assert.equal(result.findings[0].voters, undefined)
     })
+
+    await it('runs maybeRunArbiter even when N=1 (single-critic with arbiter set)', async () => {
+      const refined: Finding[] = [{ ...baseFinding, title: 'arbiter-refined-singleton' }]
+      const strategyWithArbiter: LoopStrategy = {
+        ...baseStrategy,
+        arbiter: { promptFile: '/tmp/arb.md' },
+      }
+      const { recorded, sandbox } = makeFakeSandbox((opts, idx) => {
+        if (idx === 0) {
+          return stubResult(
+            wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [criticalFinding])
+          )
+        }
+        return stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), refined))
+      })
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.equal(result.validCriticCount, 1)
+      assert.ok(result.findings)
+      assert.equal(result.findings.length, 1)
+      assert.equal(result.findings[0].title, 'arbiter-refined-singleton')
+      assert.equal(recorded.length, 2)
+      assert.equal(String(recorded[1].promptArgs?.NONCE), 'cafe1234-arbiter')
+    })
   })
 
   await describe('maybeRunArbiter', async () => {
@@ -262,6 +306,69 @@ await describe('refinement-loop kernel', async () => {
       )
       assert.equal(recorded.length, 0)
       assert.deepEqual(result, [criticalFinding])
+    })
+
+    await it('PER_CRITIC_FINDINGS prompt arg never contains literal `null` (post-filter contract)', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), []))
+      )
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      await maybeRunArbiter(ctx, 1, 'cafe1234', [[criticalFinding]], [criticalFinding])
+      const perCriticArg = String(recorded[0].promptArgs?.PER_CRITIC_FINDINGS ?? '')
+      assert.ok(
+        !perCriticArg.includes('null'),
+        `PER_CRITIC_FINDINGS should not contain "null", got: ${perCriticArg}`
+      )
+    })
+  })
+
+  await describe('runRefinementLoop end-to-end', async () => {
+    await it('post-loop retry success clears failureReason and converges', async () => {
+      const { cleanup, cwd } = await setupTempRepo()
+      try {
+        let validateCalls = 0
+        const strategy: LoopStrategy = {
+          ...baseStrategy,
+          validate: () => Promise.resolve(++validateCalls > 3),
+        }
+        const sandbox: SandboxInstance = {
+          branch: 'agent/test',
+          run: (opts: SandboxRunOptions) => {
+            const isActor = String(opts.name).startsWith('Actor')
+            if (isActor) {
+              execFileSync(
+                'git',
+                ['commit', '--allow-empty', '-m', `actor-${String(validateCalls)}`],
+                { cwd, stdio: 'pipe' }
+              )
+              const sha = execFileSync('git', ['rev-parse', 'HEAD'], {
+                cwd,
+                encoding: 'utf-8',
+              }).trim()
+              return Promise.resolve({ commits: [{ sha }], iterations: [], stdout: '' })
+            }
+            const nonce = String(opts.promptArgs?.NONCE ?? '')
+            return Promise.resolve({
+              commits: [],
+              iterations: [],
+              stdout: wellFormedStdout(nonce, [baseFinding]),
+            })
+          },
+          worktreePath: cwd,
+        } as unknown as SandboxInstance
+        const result = await runRefinementLoop(baseSpec, sandbox, strategy, {
+          maxRounds: 3,
+          postLoopValidationRetry: true,
+        })
+        assert.equal(result.status, 'converged')
+        assert.equal(result.failureReason, undefined)
+        assert.ok(
+          result.totalCommits >= 3,
+          `expected ≥3 commits, got ${String(result.totalCommits)}`
+        )
+      } finally {
+        await cleanup()
+      }
     })
   })
 })

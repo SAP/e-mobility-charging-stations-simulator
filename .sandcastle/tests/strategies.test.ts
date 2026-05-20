@@ -121,6 +121,18 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticPool'))
     })
 
+    await it('rejects criticCount < criticPool.length (silent truncation guard)', () => {
+      assert.throws(() => {
+        validateLoopStrategyEnsemble(
+          'test',
+          baseStrategy({
+            criticCount: 1,
+            criticPool: [spec('a', 'low'), spec('b', 'high'), spec('c', 'medium')],
+          })
+        )
+      }, expectFieldError('test.criticCount'))
+    })
+
     await it('rejects criticAgreementThreshold > criticCount', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(

@@ -134,6 +134,19 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
     }
   }
 
+  if (
+    strategy.criticCount !== undefined &&
+    strategy.criticPool !== undefined &&
+    strategy.criticCount < strategy.criticPool.length
+  ) {
+    throw new StrategyValidationError(
+      `${ctx}.criticCount`,
+      `Invalid criticCount in ${ctx}: ${String(strategy.criticCount)} is less than ` +
+        `criticPool length ${String(strategy.criticPool.length)} — would silently drop pool entries. ` +
+        'Either raise criticCount or shrink the pool.'
+    )
+  }
+
   if (typeof strategy.criticAgreementThreshold === 'number') {
     const upper = strategy.criticCount ?? strategy.criticPool?.length ?? 1
     if (
