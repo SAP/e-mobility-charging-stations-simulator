@@ -312,6 +312,7 @@ export async function runRefinementLoop (
   let previousFindingsCount = Infinity
   let bestSha: null | string = null
   let bestFindingsCount = Infinity
+  let validationCertified = false
 
   for (let round = 1; round <= maxRounds; round++) {
     signal?.throwIfAborted()
@@ -340,6 +341,7 @@ export async function runRefinementLoop (
     if (result.commits > 0 && (await validate(sandbox.worktreePath, spec, signal))) {
       totalCommits += result.commits
       status = 'converged'
+      validationCertified = true
       break
     }
 
@@ -400,6 +402,7 @@ export async function runRefinementLoop (
     const validationPassed = await validate(sandbox.worktreePath, spec, signal)
     if (validationPassed) {
       status = 'converged'
+      validationCertified = true
       failureReason = undefined
     } else if (roundsCompleted < maxRounds) {
       const retryRound = roundsCompleted + 1
@@ -417,6 +420,7 @@ export async function runRefinementLoop (
         }
         if (await validate(sandbox.worktreePath, spec, signal)) {
           status = 'converged'
+          validationCertified = true
           failureReason = undefined
         }
       }
@@ -440,6 +444,7 @@ export async function runRefinementLoop (
     roundsCompleted,
     status,
     totalCommits,
+    validationCertified,
   }
 }
 

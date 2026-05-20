@@ -94,5 +94,6 @@ export const fakeLoopResult = (overrides: Partial<LoopResult> = {}): LoopResult 
   roundsCompleted: 1,
   status: 'converged',
   totalCommits: 1,
+  validationCertified: true,
   ...overrides,
 })

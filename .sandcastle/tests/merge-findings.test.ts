@@ -158,6 +158,38 @@ await describe('merge-findings', async () => {
       assert.equal(s1.length, 5)
     })
 
+    await it('seeded random-with-replacement covers multiple pool entries (no degenerate-zero bias)', () => {
+      // Locks the BigInt fix in deterministicIndex: the previous double-precision
+      // arithmetic (`high * 2^32 + low`) collapsed `combined % range` toward 0
+      // for ~99% of digests, which would make every fill slot resolve to pool[0].
+      const pool = [
+        spec('a'),
+        spec('b'),
+        spec('c'),
+        spec('d'),
+        spec('e'),
+        spec('f'),
+        spec('g'),
+        spec('h'),
+      ]
+      const seenModels = new Set<string>()
+      for (let seed = 1; seed <= 32; seed++) {
+        const slots = resolveCriticSlots(
+          fakeStrategy({
+            criticCount: 8,
+            criticEnsembleSeed: seed,
+            criticFillStrategy: 'random-with-replacement',
+            criticPool: pool,
+          })
+        )
+        for (const s of slots) seenModels.add(s.model)
+      }
+      assert.ok(
+        seenModels.size >= 4,
+        `Expected at least 4 distinct pool entries across 32 seeds × 8 slots, got ${String(seenModels.size)}`
+      )
+    })
+
     await it('preserves per-spec effort when reordering pool (atomic model+effort pairing)', () => {
       const before = resolveCriticSlots(
         fakeStrategy({
@@ -249,6 +281,23 @@ await describe('merge-findings', async () => {
         promoteSingletonCritical: false,
       })
       assert.equal(result.merged.length, 0)
+    })
+
+    await it('keeps multi-voter below-threshold CRITICAL+HIGH (asymmetric-cost rule applies beyond singletons)', () => {
+      const c0 = fakeFinding({ confidence: 'HIGH', severity: 'CRITICAL', title: 'rce' })
+      const c1 = fakeFinding({ confidence: 'HIGH', severity: 'CRITICAL', title: 'rce' })
+      const result = mergeCriticFindings([[c0], [c1], [], [], []], {
+        contextHashes: ctxHashesFor(c0, c1),
+        criticAgreementThreshold: 3,
+      })
+      assert.equal(
+        result.merged.length,
+        1,
+        'votes=2 < threshold=3 but CRITICAL+HIGH escape applies'
+      )
+      assert.equal(result.merged[0]?.votes, 2)
+      assert.equal(result.merged[0]?.severity, 'HIGH', 'capped per D4')
+      assert.equal(result.merged[0]?.contested, true)
     })
   })
 

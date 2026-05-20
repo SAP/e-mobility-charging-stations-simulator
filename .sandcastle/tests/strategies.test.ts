@@ -151,6 +151,18 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticAgreementThreshold'))
     })
 
+    await it('accepts threshold up to resolved slot count when criticCount is unset (validator aligned with resolveCriticSlots)', () => {
+      assert.doesNotThrow(() => {
+        validateLoopStrategyEnsemble(
+          'test',
+          baseStrategy({
+            criticAgreementThreshold: 2,
+            criticPool: [spec('a', 'low'), spec('b', 'high')],
+          })
+        )
+      })
+    })
+
     await it('rejects random-with-replacement without seed', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
@@ -206,6 +218,17 @@ await describe('strategies', async () => {
           'test',
           baseStrategy({
             arbiter: { agent: spec('gpt-x', 'high'), promptFile: '' },
+          })
+        )
+      }, expectFieldError('test.arbiter.promptFile'))
+    })
+
+    await it('rejects arbiter with whitespace-only promptFile', () => {
+      assert.throws(() => {
+        validateLoopStrategyEnsemble(
+          'test',
+          baseStrategy({
+            arbiter: { agent: spec('gpt-x', 'high'), promptFile: '   ' },
           })
         )
       }, expectFieldError('test.arbiter.promptFile'))

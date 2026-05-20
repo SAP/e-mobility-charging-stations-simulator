@@ -91,6 +91,15 @@ export interface LoopResult {
   status: LoopStatus
   /** Total commits produced across all rounds. */
   totalCommits: number
+  /**
+   * True iff the kernel ran `validate(...)` and it returned true on the SHA
+   * that set `status === 'converged'`. False on `'exhausted'`/`'failed'`/`'skipped'`,
+   * and false on convergence paths that never invoke validation
+   * (`strategy.shouldConverge` shortcut, `checkConvergence` finding-based).
+   * Consumers needing a validation guarantee on the converged tree must
+   * gate on this flag, not on `status` alone.
+   */
+  validationCertified: boolean
 }
 
 /** Outcome status of the refinement loop. */

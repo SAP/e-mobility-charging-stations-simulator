@@ -1,6 +1,6 @@
 import type { AgentSpec, FinalizationConfig, LoopStrategy } from '../types.js'
 
-import { MAX_CRITIC_COUNT } from '../constants.js'
+import { AGENT_CRITIC_COUNT, AGENT_CRITIC_POOL_DEFAULT, MAX_CRITIC_COUNT } from '../constants.js'
 import { implementStrategy } from './implement/strategy.js'
 
 /**
@@ -148,7 +148,9 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
   }
 
   if (typeof strategy.criticAgreementThreshold === 'number') {
-    const upper = strategy.criticCount ?? strategy.criticPool?.length ?? 1
+    const upper =
+      strategy.criticCount ??
+      Math.max(AGENT_CRITIC_COUNT, (strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT).length)
     if (
       !Number.isInteger(strategy.criticAgreementThreshold) ||
       strategy.criticAgreementThreshold < 1 ||
@@ -178,7 +180,7 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
     }
     if (
       typeof strategy.arbiter.promptFile !== 'string' ||
-      strategy.arbiter.promptFile.length === 0
+      strategy.arbiter.promptFile.trim().length === 0
     ) {
       throw new StrategyValidationError(
         `${ctx}.arbiter.promptFile`,

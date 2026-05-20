@@ -362,9 +362,121 @@ await describe('refinement-loop kernel', async () => {
         })
         assert.equal(result.status, 'converged')
         assert.equal(result.failureReason, undefined)
+        assert.equal(
+          result.validationCertified,
+          true,
+          'post-loop retry validate succeeded → certified=true (path 4)'
+        )
         assert.ok(
           result.totalCommits >= 3,
           `expected ≥3 commits, got ${String(result.totalCommits)}`
+        )
+      } finally {
+        await cleanup()
+      }
+    })
+
+    await it('mid-loop validate success sets validationCertified=true (path 1)', async () => {
+      const { cleanup, cwd } = await setupTempRepo()
+      try {
+        const strategy: LoopStrategy = {
+          ...baseStrategy,
+          validate: () => Promise.resolve(true),
+        }
+        const sandbox: SandboxInstance = {
+          branch: 'agent/test',
+          run: (opts: SandboxRunOptions) => {
+            const isActor = String(opts.name).startsWith('Actor')
+            if (isActor) {
+              execFileSync('git', ['commit', '--allow-empty', '-m', 'actor-1'], {
+                cwd,
+                stdio: 'pipe',
+              })
+              const sha = execFileSync('git', ['rev-parse', 'HEAD'], {
+                cwd,
+                encoding: 'utf-8',
+              }).trim()
+              return Promise.resolve({ commits: [{ sha }], iterations: [], stdout: '' })
+            }
+            const nonce = String(opts.promptArgs?.NONCE ?? '')
+            return Promise.resolve({
+              commits: [],
+              iterations: [],
+              stdout: wellFormedStdout(nonce, []),
+            })
+          },
+          worktreePath: cwd,
+        } as unknown as SandboxInstance
+        const result = await runRefinementLoop(baseSpec, sandbox, strategy, {
+          maxRounds: 3,
+          postLoopValidationRetry: true,
+        })
+        assert.equal(result.status, 'converged')
+        assert.equal(
+          result.validationCertified,
+          true,
+          'mid-loop validate succeeded → certified=true (path 1)'
+        )
+      } finally {
+        await cleanup()
+      }
+    })
+
+    await it('finding-based convergence leaves validationCertified=false (path 3)', async () => {
+      const { cleanup, cwd } = await setupTempRepo()
+      try {
+        let validateCalls = 0
+        const strategy: LoopStrategy = {
+          ...baseStrategy,
+          // Always fail validate so path 1 never converges; the loop must converge
+          // via path 3 (no new findings, no persistent CRITICAL/HIGH).
+          validate: () => {
+            validateCalls += 1
+            return Promise.resolve(false)
+          },
+        }
+        let criticCallCount = 0
+        const sandbox: SandboxInstance = {
+          branch: 'agent/test',
+          run: (opts: SandboxRunOptions) => {
+            const isActor = String(opts.name).startsWith('Actor')
+            if (isActor) {
+              execFileSync(
+                'git',
+                ['commit', '--allow-empty', '-m', `actor-${String(criticCallCount)}`],
+                { cwd, stdio: 'pipe' }
+              )
+              const sha = execFileSync('git', ['rev-parse', 'HEAD'], {
+                cwd,
+                encoding: 'utf-8',
+              }).trim()
+              return Promise.resolve({ commits: [{ sha }], iterations: [], stdout: '' })
+            }
+            const nonce = String(opts.promptArgs?.NONCE ?? '')
+            // Round 1: emit baseFinding (MEDIUM-confidence non-persistent).
+            // Round 2+: emit nothing → newFindings=0 → checkConvergence path 3 fires.
+            const findings = criticCallCount++ === 0 ? [baseFinding] : []
+            return Promise.resolve({
+              commits: [],
+              iterations: [],
+              stdout: wellFormedStdout(nonce, findings),
+            })
+          },
+          worktreePath: cwd,
+        } as unknown as SandboxInstance
+        const result = await runRefinementLoop(baseSpec, sandbox, strategy, {
+          maxRounds: 5,
+          postLoopValidationRetry: false,
+        })
+        assert.equal(result.status, 'converged', 'path 3 reached')
+        assert.equal(
+          result.validationCertified,
+          false,
+          'no successful validate() call → certified=false (path 3)'
+        )
+        assert.ok(
+          validateCalls >= 1,
+          `expected validate to have run at least once mid-loop, got ${String(validateCalls)}`
         )
       } finally {
         await cleanup()

@@ -24,9 +24,11 @@ export interface MergeOpts {
    */
   readonly contextHashes?: ReadonlyMap<Finding, string>
   /**
-   * When true (default), retain singleton findings flagged with
-   * severity=CRITICAL AND confidence=HIGH that fall below the agreement
-   * threshold; their merged severity is capped at HIGH (per design D4).
+   * When true (default), retain below-threshold findings flagged by at least
+   * one voter with severity=CRITICAL AND confidence=HIGH; their merged
+   * severity is capped at HIGH (per design D4). The option name reflects
+   * the most common case (a single voter), but the rule deliberately also
+   * keeps stronger minority signals — see README "Multi-critic ensemble".
    */
   readonly promoteSingletonCritical?: boolean
 }
@@ -265,10 +267,13 @@ function deterministicIndex (seed: number, slot: number, range: number): number 
     .createHash('sha256')
     .update(`${String(seed)}:${String(slot)}`)
     .digest()
-  const high = digest.readUInt32BE(0)
-  const low = digest.readUInt32BE(4)
-  const combined = high * 0x100000000 + low
-  return combined % range
+  // Read the full 64-bit slice as BigInt so the modulo operates on the exact
+  // digest value. Plain `high * 2^32 + low` in a JS double would round
+  // values above Number.MAX_SAFE_INTEGER (2^53−1) and bias the result toward
+  // multiples of `range` (in particular, all 0 once the rounding spacing
+  // exceeds `range`). Number(...) is lossless because range ≤ MAX_CRITIC_COUNT.
+  const combined = digest.readBigUInt64BE(0)
+  return Number(combined % BigInt(range))
 }
 
 /**
