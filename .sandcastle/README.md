@@ -50,21 +50,21 @@ GitHub issues ──▶ Planner ──▶ TaskSpec ──▶ Sandbox ──▶  
 
 ## Module map
 
-| File                                               | Purpose                                                                                                                           | Strategy-aware? |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| [`main.ts`](./main.ts)                             | Entrypoint. Discovers tasks, fans out under `ConcurrencyPool`, dispatches to strategy via `STRATEGY_BY_KEY`.                      | ✓               |
-| [`refinement-loop.ts`](./refinement-loop.ts)       | Implement↔critic loop kernel: rounds, convergence, ratchet, best-state, post-loop retry.                                          | ✗               |
-| [`loop-control.ts`](./loop-control.ts)             | Pure predicates extracted from the kernel: early-exit, best-state-reset gating, snapshot building, options resolution.            | ✗               |
-| [`merge-findings.ts`](./merge-findings.ts)         | Pure module: slot resolution, cross-critic dedup, voted merge with median tie-up, disagreement scoring.                           | ✗               |
-| [`parse-findings.ts`](./parse-findings.ts)         | Nonce-tagged JSON extractor with regex-injection guard; handles last-non-trivial-match retry and code-fence stripping.            | ✗               |
-| [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                              | ✗               |
-| [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                   | ✓               |
-| [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                | ✗               |
-| [`validation.ts`](./validation.ts)                 | Default work-quality validation runner (`pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`).  | ✗               |
-| [`strategies/index.ts`](./strategies/index.ts)     | Canonical `STRATEGY_REGISTRY`. Validates every strategy at module load (key pattern, control tags, agent specs, ensemble fields). | n/a             |
-| [`strategies/implement/`](./strategies/implement/) | Default strategy: actor + critic prompts + finalize (rebase, push, `gh pr create`).                                               | n/a             |
-| [`types.ts`](./types.ts)                           | Shared types: `LoopStrategy`, `AgentSpec`, `CriticSlot`, `Finding`, `RoundSnapshot`, `TaskSpec`.                                  | n/a             |
-| [`constants.ts`](./constants.ts)                   | Canonical defaults: agent specs, model providers, timeouts, sandbox hooks, validation command.                                    | n/a             |
+| File                                               | Purpose                                                                                                                                                                                         | Strategy-aware? |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| [`main.ts`](./main.ts)                             | Entrypoint. Discovers tasks, fans out under `ConcurrencyPool`, dispatches to strategy via `STRATEGY_BY_KEY`.                                                                                    | ✓               |
+| [`refinement-loop.ts`](./refinement-loop.ts)       | Implement↔critic loop kernel: rounds, convergence, ratchet, best-state, post-loop retry.                                                                                                        | ✗               |
+| [`loop-control.ts`](./loop-control.ts)             | Pure predicates extracted from the kernel: early-exit, best-state-reset gating, snapshot building, options resolution.                                                                          | ✗               |
+| [`merge-findings.ts`](./merge-findings.ts)         | Pure module: slot resolution, cross-critic dedup, voted merge with median tie-up, disagreement scoring, and `noLineFallbackHash` (line-less dedup-key parity primitive shared with the kernel). | ✗               |
+| [`parse-findings.ts`](./parse-findings.ts)         | Nonce-tagged JSON extractor with regex-injection guard; handles last-non-trivial-match retry and code-fence stripping.                                                                          | ✗               |
+| [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                                                                                            | ✗               |
+| [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                                                                                 | ✓               |
+| [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                                                                              | ✗               |
+| [`validation.ts`](./validation.ts)                 | Default work-quality validation runner (`pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`).                                                                | ✗               |
+| [`strategies/index.ts`](./strategies/index.ts)     | Canonical `STRATEGY_REGISTRY`. Validates every strategy at module load (key pattern, control tags, agent specs, ensemble fields).                                                               | n/a             |
+| [`strategies/implement/`](./strategies/implement/) | Default strategy: actor + critic prompts + finalize (rebase, push, `gh pr create`).                                                                                                             | n/a             |
+| [`types.ts`](./types.ts)                           | Shared types: `LoopStrategy`, `AgentSpec`, `CriticSlot`, `Finding`, `RoundSnapshot`, `TaskSpec`.                                                                                                | n/a             |
+| [`constants.ts`](./constants.ts)                   | Canonical defaults: agent specs, model providers, timeouts, sandbox hooks, validation command.                                                                                                  | n/a             |
 
 ## Core concepts
 
@@ -101,7 +101,7 @@ A critic phase runs **N parallel critic agents** drawn from `strategy.criticPool
 - **Round-robin** (default): cyclic `pool[i % L]` when `criticCount > pool.length`.
 - **Random with replacement**: seeded sampling via `criticEnsembleSeed`. Reproducible across runs.
 
-Findings merge with majority voting (default threshold `⌈valid/2⌉`). One **escape hatch**: a finding flagged by exactly one critic with `severity=CRITICAL` AND `confidence=HIGH` survives, but is capped at `HIGH` and tagged `contested = true`. Optional **stage-2 arbiter** (MoA pattern, [arXiv:2406.04692](https://arxiv.org/abs/2406.04692)) refines HIGH/CRITICAL findings when `strategy.arbiter` is set; arbiter failure is non-fatal.
+Findings merge with majority voting (default threshold `⌈valid/2⌉`). One **escape hatch**: a finding flagged by exactly one critic with `severity=CRITICAL` AND `confidence=HIGH` survives, but is capped at `HIGH` and tagged `contested = true`. Optional **stage-2 arbiter** (MoA pattern, [arXiv:2406.04692](https://arxiv.org/abs/2406.04692)) is triggered when at least one merged finding has severity HIGH or CRITICAL; the arbiter receives the full merged list and its parsed output entirely replaces it. Arbiter or parse failure is non-fatal (the merged list is preserved).
 
 Failure mode catch: when fewer than `⌈N/2⌉` slots return parseable findings, the round is marked `critic_errored` and not merged. The simple-majority quorum is calibrated for crash-fault tolerance — LLM critics fail by parse error / timeout / OOM, not adversarially, so BFT thresholds are unwarranted.
 
@@ -109,16 +109,16 @@ Failure mode catch: when fewer than `⌈N/2⌉` slots return parseable findings,
 
 ## Robustness mechanisms
 
-| Mechanism                      | Where                                                            | Trigger                                                                  | Action                                                                 |
-| ------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| **Quality ratchet**            | [`refinement-loop.ts:checkQualityRatchet`](./refinement-loop.ts) | Round ≥ 3 AND non-LOW findings rose                                      | `git reset --hard` to `beforeSha`, mark loop `exhausted`               |
-| **Best-state restore**         | [`refinement-loop.ts:resetToBestState`](./refinement-loop.ts)    | Loop ends non-converged AND a better intermediate SHA was captured       | Reset worktree to that SHA, recount commits vs. base                   |
-| **Critic parse retry**         | [`refinement-loop.ts:runOneCritic`](./refinement-loop.ts)        | Per-slot: `parseFindings` returns `null`                                 | One re-invocation with the same nonce                                  |
-| **Critic quorum gate**         | [`refinement-loop.ts:runCritic`](./refinement-loop.ts)           | `validCount < ⌈N/2⌉`                                                     | Round = `critic_errored`, no merge, no rollback                        |
-| **Mid-loop validation**        | `strategy.validate`                                              | After actor commits in a round                                           | Pass + `commits > 0` ⇒ `converged` and break                           |
-| **Post-loop validation retry** | [`refinement-loop.ts:runRefinementLoop`](./refinement-loop.ts)   | `postLoopValidationRetry: true` AND non-converged AND `totalCommits > 0` | One extra actor round if validation fails                              |
-| **Push rescue branch**         | [`finalizer.ts:pushBranch`](./finalizer.ts)                      | `git push --force-with-lease` fails post-rebase                          | Push to `rescue/<branch>-<random>` so commits survive sandbox disposal |
-| **Sandbox abort**              | [`main.ts`](./main.ts)                                           | `AGENT_TASK_TIMEOUT_MS` reached                                          | `AbortController.abort()` propagated to all in-flight agents           |
+| Mechanism                      | Where                                                            | Trigger                                                                  | Action                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **Quality ratchet**            | [`refinement-loop.ts:checkQualityRatchet`](./refinement-loop.ts) | Round ≥ 3 AND non-LOW findings rose                                      | `git reset --hard` to `beforeSha`, mark loop `exhausted`                                                 |
+| **Best-state restore**         | [`refinement-loop.ts:resetToBestState`](./refinement-loop.ts)    | Loop ends non-converged AND a better intermediate SHA was captured       | Reset worktree to that SHA, recount commits vs. base                                                     |
+| **Critic parse retry**         | [`refinement-loop.ts:runOneCritic`](./refinement-loop.ts)        | Per-slot: `parseFindings` returns `null`                                 | One re-invocation with the same nonce                                                                    |
+| **Critic quorum gate**         | [`refinement-loop.ts:runCritic`](./refinement-loop.ts)           | `validCount < ⌈N/2⌉`                                                     | Round = `critic_errored`, no merge, no rollback                                                          |
+| **Mid-loop validation**        | `strategy.validate`                                              | After actor commits in a round                                           | Pass + `commits > 0` ⇒ `converged` and break                                                             |
+| **Post-loop validation retry** | [`refinement-loop.ts:runRefinementLoop`](./refinement-loop.ts)   | `postLoopValidationRetry: true` AND non-converged AND `totalCommits > 0` | One extra actor round if validation fails                                                                |
+| **Push rescue branch**         | [`finalizer.ts:pushBranch`](./finalizer.ts)                      | `git push --force-with-lease` fails post-rebase                          | Push to `rescue/<branch>-<random>` so commits survive sandbox disposal                                   |
+| **Sandbox abort**              | [`main.ts`](./main.ts)                                           | `AGENT_TASK_TIMEOUT_MS` reached                                          | `AbortController.abort()` propagated to all in-flight agent invocations and kernel-internal git syscalls |
 
 ## Configuration
 

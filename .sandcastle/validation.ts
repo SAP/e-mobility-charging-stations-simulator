@@ -39,7 +39,7 @@ export async function runValidation (
 }
 
 /**
- * Extracts stderr from a caught error, truncated to 500 chars.
+ * Extracts stderr from a caught error, truncated to {@link MAX_STDERR_CHARS} chars.
  * @param err - The caught error value.
  * @returns Stderr string or empty string if unavailable.
  */

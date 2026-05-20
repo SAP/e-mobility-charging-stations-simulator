@@ -27,8 +27,7 @@ try {
   tasks = await source.discover()
 } catch (err) {
   console.error(err instanceof Error ? err.message : String(err))
-  process.exitCode = 1
-  process.exit()
+  process.exit(1)
 }
 
 if (tasks.length === 0) {

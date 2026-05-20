@@ -47,7 +47,10 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
 
   finalize: async (spec, loopResult, sandbox, signal) => {
     const cwd = sandbox.worktreePath
-    let validationPassed = await runValidation(cwd, spec, signal)
+    // The loop already validated the pre-rebase tree on convergence; skip the
+    // duplicate pre-rebase run and rely on the post-rebase validation below.
+    let validationPassed =
+      loopResult.status === 'converged' || (await runValidation(cwd, spec, signal))
 
     const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch, signal)
     if (rebaseSucceeded && validationPassed) {
@@ -81,6 +84,7 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
       console.log(`  #${spec.id}: PR created${isDraft ? ' (draft)' : ''}.`)
       prCreated = true
     } catch (err: unknown) {
+      if (signal?.aborted === true) throw err
       console.error(`  #${spec.id}: PR creation failed: ${toErrorMessage(err)}`)
     }
 

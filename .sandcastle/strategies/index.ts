@@ -163,11 +163,11 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
 
   if (
     strategy.criticFillStrategy === 'random-with-replacement' &&
-    typeof strategy.criticEnsembleSeed !== 'number'
+    !Number.isInteger(strategy.criticEnsembleSeed)
   ) {
     throw new StrategyValidationError(
       `${ctx}.criticEnsembleSeed`,
-      `Invalid criticEnsembleSeed in ${ctx}: numeric seed is required when ` +
+      `Invalid criticEnsembleSeed in ${ctx}: integer seed is required when ` +
         "criticFillStrategy === 'random-with-replacement' (for reproducibility)."
     )
   }

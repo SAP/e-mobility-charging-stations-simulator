@@ -4,7 +4,7 @@ import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
 
-import type { TaskSpec } from './types.js'
+import type { TaskConfidence, TaskIssueType, TaskSpec } from './types.js'
 
 import {
   AGENT_IDLE_TIMEOUT_S,
@@ -20,6 +20,7 @@ import {
   SANDBOX_AUTH_HOOKS,
 } from './constants.js'
 import { branchPrefixOf, labelOf, type StrategyEntry } from './strategies/index.js'
+import { TASK_CONFIDENCE_VALUES, TASK_ISSUE_TYPE_VALUES } from './types.js'
 import { agentProvider, execFileAsync, toErrorMessage } from './utils.js'
 
 const RawIssueSchema = z.object({
@@ -397,8 +398,8 @@ const SLUG_PATTERN_BODY = '[a-z0-9]+(?:-[a-z0-9]+)*'
 
 const SLUG_PATTERN = new RegExp(`^${SLUG_PATTERN_BODY}$`)
 
-const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
-const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
+const VALID_CONFIDENCE: ReadonlySet<string> = new Set(TASK_CONFIDENCE_VALUES)
+const VALID_ISSUE_TYPES: ReadonlySet<string> = new Set(TASK_ISSUE_TYPE_VALUES)
 
 /**
  * @param value - Value to escape for safe interpolation in a regex.
@@ -412,7 +413,7 @@ function escapeRegex (value: string): string {
  * @param value - Value to check.
  * @returns Whether value is a valid confidence level.
  */
-function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' {
+function isValidConfidence (value: unknown): value is TaskConfidence {
   return typeof value === 'string' && VALID_CONFIDENCE.has(value)
 }
 
@@ -420,7 +421,7 @@ function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' 
  * @param value - Value to check.
  * @returns Whether value is a valid issue type.
  */
-function isValidIssueType (value: unknown): value is 'bug-fix' | 'feature' | 'refactor' {
+function isValidIssueType (value: unknown): value is TaskIssueType {
   return typeof value === 'string' && VALID_ISSUE_TYPES.has(value)
 }
 

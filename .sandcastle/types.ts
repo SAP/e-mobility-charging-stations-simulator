@@ -207,11 +207,11 @@ export interface TaskSpec {
   /** Git branch name for this task. */
   branch: string
   /** Planner's confidence in its analysis: controls plan specificity injected into actor. */
-  confidence?: 'high' | 'low' | 'medium'
+  confidence?: TaskConfidence
   /** Task identifier (e.g. GitHub issue number as string). */
   id: string
   /** Classification of the issue. */
-  issueType?: 'bug-fix' | 'feature' | 'refactor'
+  issueType?: TaskIssueType
   /** Label names associated with the task (platform-specific, optional). */
   labels?: string[]
   /** Planner's hypothesis about what is broken/missing — for actor to validate, not follow blindly. */
@@ -221,6 +221,16 @@ export interface TaskSpec {
   /** Task title. */
   title: string
 }
+
+/** Canonical literal set for {@link TaskSpec.confidence}. */
+export const TASK_CONFIDENCE_VALUES = ['high', 'low', 'medium'] as const
+/** Canonical literal set for {@link TaskSpec.issueType}. */
+export const TASK_ISSUE_TYPE_VALUES = ['bug-fix', 'feature', 'refactor'] as const
+
+/** Planner-emitted confidence level. */
+export type TaskConfidence = (typeof TASK_CONFIDENCE_VALUES)[number]
+/** Planner-emitted issue classification. */
+export type TaskIssueType = (typeof TASK_ISSUE_TYPE_VALUES)[number]
 
 /**
  * Parses a findings array with partial recovery — invalid entries are discarded.

@@ -360,11 +360,11 @@ function resolveThreshold (
  * Computed as population variance of voters' severity ranks divided by the
  * theoretical max-variance for a half/half distribution at the ladder
  * extremes (`((R−1)²) / 4` for an R-level ladder, equal to `9/4 = 2.25`
- * here). The result is approximately normalized; the final
- * `Math.min(1, …)` clamp guarantees the upper bound for sample sizes
- * where the half/half theoretical max is not exact (small or odd N).
- * Returns 0 for unanimity, ~1 for the most extreme split (half voters at
- * LOW, half at CRITICAL).
+ * here). Popoviciu's inequality guarantees `variance ≤ (R−1)²/4` for any
+ * distribution on `[0, R−1]`, so the ratio is always in `[0, 1]`; the
+ * final `Math.min(1, …)` clamp is purely defensive against floating-point
+ * round-off. Returns 0 for unanimity, ~1 for the most extreme split (half
+ * voters at LOW, half at CRITICAL).
  * @param findings - Findings sharing the merged key.
  * @returns Disagreement score in [0, 1].
  */
@@ -374,7 +374,7 @@ function severityDisagreementScore (findings: readonly Finding[]): number {
   const mean = ranks.reduce((a, b) => a + b, 0) / ranks.length
   const variance = ranks.reduce((a, r) => a + (r - mean) ** 2, 0) / ranks.length
   const maxVariance = (SEVERITY_LADDER.length - 1) ** 2 / 4
-  return Math.min(1, Math.max(0, variance / maxVariance))
+  return Math.min(1, variance / maxVariance)
 }
 
 /**

@@ -408,10 +408,12 @@ export async function runRefinementLoop (
       roundsCompleted = retryRound
       if (result.commits > 0) {
         totalCommits += result.commits
-        const nonLowRetry = (result.findings ?? []).filter(f => f.confidence !== 'LOW')
-        if (nonLowRetry.length < bestFindingsCount) {
-          bestFindingsCount = nonLowRetry.length
-          bestSha = await captureHeadSha(sandbox.worktreePath, signal)
+        if (result.findings !== null) {
+          const nonLowRetry = result.findings.filter(f => f.confidence !== 'LOW')
+          if (nonLowRetry.length < bestFindingsCount) {
+            bestFindingsCount = nonLowRetry.length
+            bestSha = await captureHeadSha(sandbox.worktreePath, signal)
+          }
         }
         if (await validate(sandbox.worktreePath, spec, signal)) {
           status = 'converged'

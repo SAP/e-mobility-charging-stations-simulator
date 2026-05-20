@@ -133,6 +133,7 @@ export async function pushBranch (
       })
       return true
     } catch (pushErr: unknown) {
+      if (signal?.aborted === true) throw pushErr
       const pushMsg = toErrorMessage(pushErr)
       try {
         const suffix = crypto.randomBytes(4).toString('hex')
@@ -148,7 +149,8 @@ export async function pushBranch (
         console.warn(
           `  #${spec.id}: Push failed. Commits preserved at rescue/${spec.branch}-${suffix}`
         )
-      } catch {
+      } catch (rescueErr: unknown) {
+        signal?.throwIfAborted()
         console.error(
           `  #${spec.id}: Push failed and rescue failed. Commits will be lost on sandbox disposal: ${pushMsg}`
         )
@@ -164,6 +166,7 @@ export async function pushBranch (
       })
       return true
     } catch (pushErr: unknown) {
+      if (signal?.aborted === true) throw pushErr
       const pushMsg = toErrorMessage(pushErr)
       console.warn(`  #${spec.id}: git push failed after rebase abort: ${pushMsg}`)
       return false
