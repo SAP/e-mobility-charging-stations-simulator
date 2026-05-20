@@ -25,6 +25,15 @@ export function agentProvider (model: string, effort?: PiOptions['thinking']): A
 }
 
 /**
+ * Validates a 40-char lowercase-hex git SHA-1.
+ * @param s - Candidate SHA string.
+ * @returns `true` iff `s` matches `/^[0-9a-f]{40}$/`.
+ */
+export function isValidSha (s: string): boolean {
+  return /^[0-9a-f]{40}$/.test(s)
+}
+
+/**
  * Converts an unknown thrown value to a human-readable error message.
  * @param err - The caught value (may be an `Error` or any other type).
  * @returns The `message` property if `err` is an `Error`, otherwise `String(err)`.

@@ -14,34 +14,8 @@ import {
   normalizeCategory,
   resolveCriticSlots,
 } from '../merge-findings.js'
-import { type AgentSpec, type Finding, type LoopStrategy } from '../types.js'
-
-const fakeStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
-  actorPromptFile: 'a.md',
-  buildActorArgs: () => ({}),
-  buildCriticArgs: () => ({}),
-  criticPromptFile: 'c.md',
-  ...overrides,
-})
-
-const fakeFinding = (overrides: Partial<Finding> = {}): Finding => ({
-  category: 'logic',
-  confidence: 'MEDIUM',
-  description: 'desc',
-  file: 'src/a.ts',
-  line: 10,
-  severity: 'MEDIUM',
-  title: 'title',
-  ...overrides,
-})
-
-const ctxHashesFor = (...findings: Finding[]): ReadonlyMap<Finding, string> => {
-  const map = new Map<Finding, string>()
-  for (const f of findings) map.set(f, `h-${f.file}-${String(f.line ?? 0)}`)
-  return map
-}
-
-const spec = (model: string, effort: AgentSpec['effort']): AgentSpec => ({ effort, model })
+import { type Finding, type LoopStrategy } from '../types.js'
+import { ctxHashesFor, fakeFinding, fakeStrategy, spec } from './factories.js'
 
 await describe('merge-findings', async () => {
   await describe('normalizeCategory', async () => {
@@ -183,9 +157,19 @@ await describe('merge-findings', async () => {
 
   await describe('mergeCriticFindings — voting', async () => {
     await it('drops below-threshold non-CRITICAL findings', () => {
-      const f1 = fakeFinding({ severity: 'MEDIUM', title: 'only-critic-0' })
-      const f2 = fakeFinding({ file: 'src/b.ts', severity: 'MEDIUM', title: 'shared' })
-      const f2b = fakeFinding({ file: 'src/b.ts', severity: 'MEDIUM', title: 'shared' })
+      const f1 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM', title: 'only-critic-0' })
+      const f2 = fakeFinding({
+        confidence: 'MEDIUM',
+        file: 'src/b.ts',
+        severity: 'MEDIUM',
+        title: 'shared',
+      })
+      const f2b = fakeFinding({
+        confidence: 'MEDIUM',
+        file: 'src/b.ts',
+        severity: 'MEDIUM',
+        title: 'shared',
+      })
       const result = mergeCriticFindings([[f1, f2], [f2b], []], {
         contextHashes: ctxHashesFor(f1, f2, f2b),
       })
@@ -222,17 +206,17 @@ await describe('merge-findings', async () => {
 
   await describe('mergeCriticFindings — aggregation', async () => {
     await it('severity median ties UP the ladder', () => {
-      const a = fakeFinding({ severity: 'MEDIUM' })
-      const b = fakeFinding({ severity: 'HIGH' })
+      const a = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM' })
+      const b = fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
       const result = mergeCriticFindings([[a], [b]], { contextHashes: ctxHashesFor(a, b) })
       assert.equal(result.merged.length, 1)
       assert.equal(result.merged[0]?.severity, 'HIGH', 'median of [MEDIUM,HIGH] ties up to HIGH')
     })
 
     await it('three-voter median picks middle (LOW, MEDIUM, HIGH → MEDIUM)', () => {
-      const a = fakeFinding({ severity: 'LOW' })
-      const b = fakeFinding({ severity: 'MEDIUM' })
-      const c = fakeFinding({ severity: 'HIGH' })
+      const a = fakeFinding({ confidence: 'MEDIUM', severity: 'LOW' })
+      const b = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM' })
+      const c = fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
       const result = mergeCriticFindings([[a], [b], [c]], {
         contextHashes: ctxHashesFor(a, b, c),
       })
@@ -253,7 +237,9 @@ await describe('merge-findings', async () => {
     })
 
     await it('disagreementScore is 0 for unanimous severity', () => {
-      const findings = Array.from({ length: 3 }, () => fakeFinding({ severity: 'HIGH' }))
+      const findings = Array.from({ length: 3 }, () =>
+        fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
+      )
       const ctx = ctxHashesFor(...findings)
       const result = mergeCriticFindings(
         findings.map(f => [f]),
@@ -273,11 +259,13 @@ await describe('merge-findings', async () => {
 
     await it('title/description picked from lowest-slot voter (M1: no verbosity bias)', () => {
       const verbose = fakeFinding({
+        confidence: 'MEDIUM',
         description: 'a very long, exhaustive description with extra words to inflate length',
         severity: 'HIGH',
         title: 'verbose-from-slot-1',
       })
       const concise = fakeFinding({
+        confidence: 'MEDIUM',
         description: 'short',
         severity: 'HIGH',
         title: 'concise-from-slot-0',
@@ -297,8 +285,8 @@ await describe('merge-findings', async () => {
 
   await describe('mergeCriticFindings — quorum and ordering', async () => {
     await it('null slots are excluded from votes/threshold denominator', () => {
-      const f1 = fakeFinding()
-      const f2 = fakeFinding()
+      const f1 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM' })
+      const f2 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM' })
       const result = mergeCriticFindings([[f1], null, [f2]], {
         contextHashes: ctxHashesFor(f1, f2),
       })

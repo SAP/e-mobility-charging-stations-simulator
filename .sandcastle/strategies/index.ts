@@ -22,6 +22,26 @@ export interface StrategyEntry {
 }
 
 /**
+ * Strategy / registry validation error carrying the offending field path
+ * alongside the human-readable message. Tests assert against `field` for
+ * stable contract decoupled from message wording (see `AGENTS.md`: "typed
+ * errors with structured properties").
+ */
+export class StrategyValidationError extends Error {
+  /** Dotted path of the offending field (e.g. `'test.actor.model'`, `'STRATEGY_REGISTRY[2].key'`). */
+  readonly field: string
+  /**
+   * @param field - Dotted path of the offending field.
+   * @param message - Human-readable error message.
+   */
+  constructor (field: string, message: string) {
+    super(message)
+    this.field = field
+    this.name = 'StrategyValidationError'
+  }
+}
+
+/**
  * Canonical registry of strategies. Order matters: when an issue carries
  * several `sandcastle-*` labels, the first matching entry wins.
  *
@@ -69,11 +89,13 @@ export function labelOf (key: string): string {
 }
 
 /**
- * Same fail-fast checks as {@link validateEnsembleFields}, exposed for tests
- * with a caller-supplied error context label.
- * @param ctx - Free-form context fragment included in error messages.
+ * Fail-fast validator for the actor / critic / arbiter / ensemble fields on
+ * a {@link LoopStrategy}. Throws a {@link StrategyValidationError} whose
+ * `field` identifies the offending path. Used at module load via
+ * {@link indexByKey} and exposed for tests.
+ * @param ctx - Free-form context fragment used as a field-path prefix in error messages.
  * @param strategy - Strategy declaration to validate.
- * @throws {Error} Field-named error when any agent or ensemble field is invalid.
+ * @throws {StrategyValidationError} Field-named error when any rule is violated.
  */
 export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrategy): void {
   if (strategy.actor !== undefined) {
@@ -86,7 +108,8 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
       strategy.criticCount < 1 ||
       strategy.criticCount > MAX_CRITIC_COUNT
     ) {
-      throw new Error(
+      throw new StrategyValidationError(
+        `${ctx}.criticCount`,
         `Invalid criticCount in ${ctx}: must be an integer in [1, ${String(MAX_CRITIC_COUNT)}].`
       )
     }
@@ -94,7 +117,10 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
 
   if (strategy.criticPool !== undefined) {
     if (strategy.criticPool.length === 0) {
-      throw new Error(`Invalid criticPool in ${ctx}: must be a non-empty array.`)
+      throw new StrategyValidationError(
+        `${ctx}.criticPool`,
+        `Invalid criticPool in ${ctx}: must be a non-empty array.`
+      )
     }
     for (let i = 0; i < strategy.criticPool.length; i++) {
       validateAgentSpec(`${ctx}.criticPool[${String(i)}]`, strategy.criticPool[i])
@@ -108,7 +134,8 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
       strategy.criticAgreementThreshold < 1 ||
       strategy.criticAgreementThreshold > upper
     ) {
-      throw new Error(
+      throw new StrategyValidationError(
+        `${ctx}.criticAgreementThreshold`,
         `Invalid criticAgreementThreshold in ${ctx}: must be an integer in [1, ${String(upper)}].`
       )
     }
@@ -118,7 +145,8 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
     strategy.criticFillStrategy === 'random-with-replacement' &&
     typeof strategy.criticEnsembleSeed !== 'number'
   ) {
-    throw new Error(
+    throw new StrategyValidationError(
+      `${ctx}.criticEnsembleSeed`,
       `Invalid criticEnsembleSeed in ${ctx}: numeric seed is required when ` +
         "criticFillStrategy === 'random-with-replacement' (for reproducibility)."
     )
@@ -130,8 +158,77 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
       typeof strategy.arbiter.promptFile !== 'string' ||
       strategy.arbiter.promptFile.length === 0
     ) {
-      throw new Error(`Invalid arbiter.promptFile in ${ctx}: must be a non-empty string.`)
+      throw new StrategyValidationError(
+        `${ctx}.arbiter.promptFile`,
+        `Invalid arbiter.promptFile in ${ctx}: must be a non-empty string.`
+      )
     }
+  }
+}
+
+/**
+ * Validates a list of strategy registry entries; throws on the first violation.
+ *
+ * Rules enforced (each fails fast with a `StrategyValidationError` whose
+ * `field` identifies the offending position):
+ *
+ *  - `STRATEGY_REGISTRY[i].key` must match {@link STRATEGY_KEY_PATTERN}
+ *    (kebab-case starting with a letter).
+ *  - `STRATEGY_REGISTRY[i].controlTags[j]` must match {@link CONTROL_TAG_PATTERN}.
+ *  - Per-entry strategy ensemble fields validated via
+ *    {@link validateLoopStrategyEnsemble}.
+ *  - No duplicate `key` across entries.
+ *  - No `key` that prefix-overlaps another (`a` vs `a-b`), which would make
+ *    open-PR dedup ambiguous because branch prefixes derive from keys.
+ *
+ * Exposed for tests; production callers go through `STRATEGY_BY_KEY` /
+ * {@link indexByKey} which calls this internally at module load.
+ * @param entries - Registry entries to validate.
+ * @throws {StrategyValidationError} On first violation, with `field` set
+ *   to a path like `STRATEGY_REGISTRY[2].key` or
+ *   `STRATEGY_REGISTRY[2].controlTags[0]`.
+ */
+export function validateRegistryEntries (entries: readonly StrategyEntry[]): void {
+  const seenKeys = new Set<string>()
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]
+    const fieldPrefix = `STRATEGY_REGISTRY[${String(i)}]`
+
+    if (!STRATEGY_KEY_PATTERN.test(entry.key)) {
+      throw new StrategyValidationError(
+        `${fieldPrefix}.key`,
+        `Invalid strategy key '${entry.key}' in STRATEGY_REGISTRY: ` +
+          `must match ${STRATEGY_KEY_PATTERN.source} (kebab-case).`
+      )
+    }
+    for (let j = 0; j < (entry.controlTags?.length ?? 0); j++) {
+      const tag = entry.controlTags?.[j] ?? ''
+      if (!CONTROL_TAG_PATTERN.test(tag)) {
+        throw new StrategyValidationError(
+          `${fieldPrefix}.controlTags[${String(j)}]`,
+          `Invalid controlTag '${tag}' for strategy '${entry.key}' in STRATEGY_REGISTRY: ` +
+            `must match ${CONTROL_TAG_PATTERN.source}.`
+        )
+      }
+    }
+    validateLoopStrategyEnsemble(`strategy '${entry.key}'`, entry.strategy)
+    if (seenKeys.has(entry.key)) {
+      throw new StrategyValidationError(
+        `${fieldPrefix}.key`,
+        `Duplicate strategy key in STRATEGY_REGISTRY: '${entry.key}'.`
+      )
+    }
+    for (const existing of seenKeys) {
+      if (entry.key.startsWith(`${existing}-`) || existing.startsWith(`${entry.key}-`)) {
+        throw new StrategyValidationError(
+          `${fieldPrefix}.key`,
+          `Strategy key '${entry.key}' overlaps with '${existing}' in STRATEGY_REGISTRY: ` +
+            `branch '${branchPrefixOf(existing)}-<n>-…' would also match the regex derived ` +
+            `from '${branchPrefixOf(entry.key)}-' (or vice versa), making open-PR dedup ambiguous.`
+        )
+      }
+    }
+    seenKeys.add(entry.key)
   }
 }
 
@@ -149,35 +246,9 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
  *   registered one.
  */
 function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, StrategyEntry> {
+  validateRegistryEntries(entries)
   const map = new Map<string, StrategyEntry>()
   for (const entry of entries) {
-    if (!STRATEGY_KEY_PATTERN.test(entry.key)) {
-      throw new Error(
-        `Invalid strategy key '${entry.key}' in STRATEGY_REGISTRY: ` +
-          `must match ${STRATEGY_KEY_PATTERN.source} (kebab-case).`
-      )
-    }
-    for (const tag of entry.controlTags ?? []) {
-      if (!CONTROL_TAG_PATTERN.test(tag)) {
-        throw new Error(
-          `Invalid controlTag '${tag}' for strategy '${entry.key}' in STRATEGY_REGISTRY: ` +
-            `must match ${CONTROL_TAG_PATTERN.source}.`
-        )
-      }
-    }
-    validateEnsembleFields(entry.key, entry.strategy)
-    if (map.has(entry.key)) {
-      throw new Error(`Duplicate strategy key in STRATEGY_REGISTRY: '${entry.key}'.`)
-    }
-    for (const existing of map.keys()) {
-      if (entry.key.startsWith(`${existing}-`) || existing.startsWith(`${entry.key}-`)) {
-        throw new Error(
-          `Strategy key '${entry.key}' overlaps with '${existing}' in STRATEGY_REGISTRY: ` +
-            `branch '${branchPrefixOf(existing)}-<n>-…' would also match the regex derived ` +
-            `from '${branchPrefixOf(entry.key)}-' (or vice versa), making open-PR dedup ambiguous.`
-        )
-      }
-    }
     map.set(entry.key, entry)
   }
   return map
@@ -192,29 +263,15 @@ function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, Str
  */
 function validateAgentSpec (ctx: string, spec: AgentSpec): void {
   if (typeof spec.model !== 'string' || spec.model.trim().length === 0) {
-    throw new Error(`Invalid ${ctx}.model: must be a non-empty string.`)
+    throw new StrategyValidationError(
+      `${ctx}.model`,
+      `Invalid ${ctx}.model: must be a non-empty string.`
+    )
   }
   if (spec.effort !== 'low' && spec.effort !== 'medium' && spec.effort !== 'high') {
-    throw new Error(
+    throw new StrategyValidationError(
+      `${ctx}.effort`,
       `Invalid ${ctx}.effort: must be 'low', 'medium', or 'high' (got ${String(spec.effort)}).`
     )
   }
-}
-
-/**
- * Fail-fast validator for the multi-critic ensemble fields on a strategy.
- *
- * Throws on:
- *  - `criticCount` not a positive integer or > MAX_CRITIC_COUNT.
- *  - `criticModels` is an empty array, or contains non-string / empty / blank entries.
- *  - `criticEfforts` is an array whose length ≠ `criticModels.length`.
- *  - `criticAgreementThreshold` (when number) outside `[1, criticCount]`.
- *  - `criticFillStrategy === 'random-with-replacement'` without a numeric `criticEnsembleSeed`.
- *  - `criticArbiterModel` set without `criticArbiterPromptFile` (or vice versa).
- * @param key - Strategy key (for error context).
- * @param strategy - Strategy declaration to validate.
- * @throws {Error} Field-named error when any rule above is violated.
- */
-function validateEnsembleFields (key: string, strategy: LoopStrategy): void {
-  validateLoopStrategyEnsemble(`strategy '${key}'`, strategy)
 }
