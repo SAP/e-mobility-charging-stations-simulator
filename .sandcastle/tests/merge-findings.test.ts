@@ -7,14 +7,14 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { AGENT_CRITIC_POOL_DEFAULT } from '../../.sandcastle/constants.js'
+import { AGENT_CRITIC_POOL_DEFAULT } from '../constants.js'
 import {
   findingDedupKey,
   mergeCriticFindings,
   normalizeCategory,
   resolveCriticSlots,
-} from '../../.sandcastle/merge-findings.js'
-import { type AgentSpec, type Finding, type LoopStrategy } from '../../.sandcastle/types.js'
+} from '../merge-findings.js'
+import { type AgentSpec, type Finding, type LoopStrategy } from '../types.js'
 
 const fakeStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
   actorPromptFile: 'a.md',

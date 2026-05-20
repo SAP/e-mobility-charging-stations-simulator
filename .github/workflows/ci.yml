@@ -106,6 +106,12 @@ jobs:
       - name: pnpm test:coverage
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
         run: pnpm test:coverage
+      - name: pnpm test:sandcastle
+        if: ${{ !(github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x') }}
+        run: pnpm test:sandcastle
+      - name: pnpm test:sandcastle:coverage
+        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
+        run: pnpm test:sandcastle:coverage
       - name: SonarCloud Scan
         if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
         uses: sonarsource/sonarqube-scan-action@v8.1

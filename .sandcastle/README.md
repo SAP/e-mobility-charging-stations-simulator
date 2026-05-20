@@ -182,12 +182,17 @@ pnpm sandcastle
 
 ## Testing
 
+Sandcastle tests live next to the module they exercise, under [`.sandcastle/tests/`](./tests/), and are run by a dedicated script — deliberately separate from the repo-wide `pnpm test` so the orchestrator's test suite stays self-contained:
+
 ```sh
 # Pure unit tests (slot resolution, voted merge, registry validation):
-NODE_ENV=test node --import tsx --test 'tests/sandcastle/*.test.ts'
+pnpm test:sandcastle
 
-# Or as part of the repo-wide suite:
-pnpm test
+# Same with coverage report at .sandcastle/coverage/lcov.info:
+pnpm test:sandcastle:coverage
+
+# Same under the Node inspector:
+pnpm test:sandcastle:debug
 ```
 
 41 unit tests cover backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, disagreement scoring, and registry-load validation (one case per fail-fast rule).

@@ -7,8 +7,8 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { validateLoopStrategyEnsemble } from '../../.sandcastle/strategies/index.js'
-import { type AgentSpec, type LoopStrategy } from '../../.sandcastle/types.js'
+import { validateLoopStrategyEnsemble } from '../strategies/index.js'
+import { type AgentSpec, type LoopStrategy } from '../types.js'
 
 const baseStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
   actorPromptFile: './a.md',
