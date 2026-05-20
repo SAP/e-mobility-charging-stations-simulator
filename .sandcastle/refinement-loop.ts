@@ -5,6 +5,7 @@ import { readFile, realpath } from 'node:fs/promises'
 import { join, sep } from 'node:path'
 
 import type {
+  CriticSlot,
   Finding,
   LoopContext,
   LoopResult,
@@ -18,8 +19,6 @@ import type {
 import {
   AGENT_ACTOR_EFFORT,
   AGENT_ACTOR_MODEL,
-  AGENT_CRITIC_EFFORT,
-  AGENT_CRITIC_MODEL,
   AGENT_IDLE_TIMEOUT_S,
   AGENT_ITERATION_BUDGET,
   AGENT_MAX_CRITIC_ROUNDS,
@@ -28,8 +27,9 @@ import {
   GIT_BASE_BRANCH,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
+import { mergeCriticFindings, resolveCriticSlots } from './merge-findings.js'
 import { parseFindingsSafe } from './types.js'
-import { agentProvider, execFileAsync } from './utils.js'
+import { agentProvider, execFileAsync, toErrorMessage } from './utils.js'
 import { runValidation } from './validation.js'
 
 /** Options for configuring the refinement loop. */
@@ -101,6 +101,8 @@ interface RoundResult {
   commits: number
   /** Parsed findings from the critic, or null on critic failure. */
   findings: Finding[] | null
+  /** Number of critic slots that returned parseable findings (undefined for legacy single-critic). */
+  validCriticCount?: number
 }
 
 /**
@@ -258,6 +260,7 @@ function buildRoundSnapshot (result: RoundResult, round: number): RoundSnapshot 
         : result.findings.length > 0
           ? 'has_findings'
           : 'no_findings',
+    ...(result.validCriticCount !== undefined && { validCriticCount: result.validCriticCount }),
   }
 }
 
@@ -488,8 +491,11 @@ async function executeRound (
   // Critic
   const nonce = crypto.randomBytes(4).toString('hex')
   let findings: Finding[] | null
+  let validCriticCount: number | undefined
   try {
-    findings = await runCritic(ctx, round, nonce)
+    const criticResult = await runCritic(ctx, round, nonce)
+    findings = criticResult.findings
+    validCriticCount = criticResult.validCriticCount
   } catch (err: unknown) {
     if (signal?.aborted === true) {
       throw err
@@ -499,7 +505,12 @@ async function executeRound (
     findings = null
   }
 
-  return { beforeSha, commits: actorResult.commits.length, findings }
+  return {
+    beforeSha,
+    commits: actorResult.commits.length,
+    findings,
+    ...(validCriticCount !== undefined && { validCriticCount }),
+  }
 }
 
 /**
@@ -546,6 +557,65 @@ async function hashContextLines (
       .update(`${file}:${String(line)}:fallback`)
       .digest('hex')
       .slice(0, HASH_PREFIX_LENGTH)
+  }
+}
+
+/**
+ * Optional stage-2 arbiter pass (MoA pattern, arXiv:2406.04692). Triggered
+ * only when `criticArbiterModel`/`criticArbiterPromptFile` are both set AND
+ * the merged list contains at least one HIGH or CRITICAL finding. Failure
+ * is non-fatal: returns the unrefined merged list on any error.
+ * @param ctx - Loop context.
+ * @param round - Current round number.
+ * @param baseNonce - Round-level nonce; arbiter nonce is `${baseNonce}-arbiter`.
+ * @param perCriticOutputs - Raw per-slot findings (null entries excluded).
+ * @param merged - Merged finding list from `mergeCriticFindings`.
+ * @returns Arbiter-refined merged list, or the original merged list on failure.
+ */
+async function maybeRunArbiter (
+  ctx: LoopContext,
+  round: number,
+  baseNonce: string,
+  perCriticOutputs: readonly (Finding[] | null)[],
+  merged: Finding[]
+): Promise<Finding[]> {
+  const { sandbox, signal, spec, strategy } = ctx
+  if (
+    strategy.criticArbiterModel == null ||
+    strategy.criticArbiterPromptFile == null ||
+    !merged.some(f => f.severity === 'HIGH' || f.severity === 'CRITICAL')
+  ) {
+    return merged
+  }
+
+  const nonce = `${baseNonce}-arbiter`
+  try {
+    const arbiter = await sandbox.run({
+      agent: agentProvider(strategy.criticArbiterModel, strategy.criticArbiterEffort),
+      completionSignal: COMPLETION_SIGNAL,
+      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
+      maxIterations: 1,
+      name: `Arbiter #${spec.id} R${String(round)}`,
+      promptArgs: {
+        MERGED_FINDINGS: JSON.stringify(merged, null, 2),
+        NONCE: nonce,
+        PER_CRITIC_FINDINGS: JSON.stringify(perCriticOutputs, null, 2),
+      },
+      promptFile: strategy.criticArbiterPromptFile,
+      signal,
+    })
+    const refined = parseFindings(arbiter.stdout, nonce)
+    if (refined === null) {
+      console.warn(`  #${spec.id} R${String(round)}: arbiter parse failed; keeping merge result.`)
+      return merged
+    }
+    return refined
+  } catch (err: unknown) {
+    if (signal?.aborted === true) throw err
+    console.warn(
+      `  #${spec.id} R${String(round)}: arbiter threw: ${toErrorMessage(err)}; keeping merge result.`
+    )
+    return merged
   }
 }
 
@@ -615,28 +685,107 @@ function resolveLoopOptions (opts: RefinementLoopOptions | undefined): ResolvedL
 }
 
 /**
- * Runs the critic agent, retrying once on parse failure.
+ * Runs the critic phase: resolves N slots from the strategy, fans them out
+ * in parallel via Promise.allSettled, enforces ⌈N/2⌉ quorum, and merges the
+ * per-slot outputs by majority vote with deduplication. Falls back to the
+ * legacy single-critic single-retry behavior when no ensemble fields are set.
  * @param ctx - Loop context containing spec, sandbox, strategy, baseBranch, and signal.
  * @param round - Current round number.
- * @param nonce - Unique nonce for parsing.
- * @returns Parsed findings or null if both attempts failed.
+ * @param baseNonce - Round-level nonce; per-slot nonces are derived as `${baseNonce}-c{slot}`.
+ * @returns Merged findings (null when quorum failed) and the count of slots that parsed.
  */
 async function runCritic (
   ctx: LoopContext,
   round: number,
-  nonce: string
+  baseNonce: string
+): Promise<{ findings: Finding[] | null; validCriticCount: number }> {
+  const { signal, spec, strategy } = ctx
+  const slots = resolveCriticSlots(strategy)
+  const quorum = Math.ceil(slots.length / 2)
+
+  const settlements = await Promise.allSettled(
+    slots.map(slot => runOneCritic(ctx, round, baseNonce, slot))
+  )
+
+  if (signal?.aborted === true) {
+    throw signal.reason instanceof Error ? signal.reason : new Error('Aborted')
+  }
+
+  const perCriticOutputs: (Finding[] | null)[] = settlements.map((s, idx) => {
+    if (s.status === 'fulfilled') return s.value
+    const reason: unknown = s.reason
+    const msg = reason instanceof Error ? reason.message : String(reason)
+    console.error(
+      `  #${spec.id} R${String(round)} C${String(idx)}/${String(slots.length)}: critic threw: ${msg}`
+    )
+    return null
+  })
+
+  const validCriticCount = perCriticOutputs.filter(o => o !== null).length
+
+  if (validCriticCount < quorum) {
+    console.warn(
+      `  #${spec.id} R${String(round)}: critic quorum failed (${String(validCriticCount)}/${String(slots.length)} < ${String(quorum)}).`
+    )
+    return { findings: null, validCriticCount }
+  }
+
+  if (slots.length === 1) {
+    return { findings: perCriticOutputs[0] ?? null, validCriticCount }
+  }
+
+  const cwd = ctx.sandbox.worktreePath
+  const fileCache = new Map<string, string>()
+  const contextHashes = new Map<Finding, string>()
+  for (const findings of perCriticOutputs) {
+    if (findings === null) continue
+    for (const f of findings) {
+      if (f.line == null) continue
+      const hash = await hashContextLines(
+        { cwd, file: f.file, line: f.line },
+        CONTEXT_HASH_RADIUS,
+        fileCache
+      )
+      contextHashes.set(f, hash)
+    }
+  }
+
+  const threshold = strategy.criticAgreementThreshold
+  const { merged } = mergeCriticFindings(perCriticOutputs, {
+    ...(threshold !== undefined && { agreementThreshold: threshold }),
+    contextHashes,
+  })
+
+  const refined = await maybeRunArbiter(ctx, round, baseNonce, perCriticOutputs, merged)
+
+  return { findings: refined, validCriticCount }
+}
+
+/**
+ * Runs a single critic slot with one parse-retry, mirroring the legacy
+ * single-critic semantics on a per-slot basis. Returns null when both
+ * attempts fail to produce parseable findings.
+ * @param ctx - Loop context.
+ * @param round - Current round number.
+ * @param baseNonce - Round-level nonce; per-slot nonce is `${baseNonce}-c{slot.index}`.
+ * @param slot - Resolved critic slot (model + effort + index).
+ * @returns Parsed findings, or null on definitive parse failure.
+ */
+async function runOneCritic (
+  ctx: LoopContext,
+  round: number,
+  baseNonce: string,
+  slot: CriticSlot
 ): Promise<Finding[] | null> {
   const { baseBranch, sandbox, signal, spec, strategy } = ctx
+  const nonce = `${baseNonce}-c${String(slot.index)}`
 
   let critic = await sandbox.run({
-    agent: agentProvider(
-      strategy.criticModel ?? AGENT_CRITIC_MODEL,
-      strategy.criticEffort ?? AGENT_CRITIC_EFFORT
-    ),
+    agent: agentProvider(slot.model, slot.effort),
     completionSignal: COMPLETION_SIGNAL,
     idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
     maxIterations: 1,
-    name: `Critic #${spec.id} R${String(round)}`,
+    name: `Critic #${spec.id} R${String(round)} C${String(slot.index)}`,
     promptArgs: { ...strategy.buildCriticArgs(spec, baseBranch), NONCE: nonce },
     promptFile: strategy.criticPromptFile,
     signal,
@@ -645,16 +794,13 @@ async function runCritic (
   let findings = parseFindings(critic.stdout, nonce)
 
   if (findings === null) {
-    console.warn(`  #${spec.id}: Critic parse failed. Retrying.`)
+    console.warn(`  #${spec.id} R${String(round)} C${String(slot.index)}: parse failed. Retrying.`)
     critic = await sandbox.run({
-      agent: agentProvider(
-        strategy.criticModel ?? AGENT_CRITIC_MODEL,
-        strategy.criticEffort ?? AGENT_CRITIC_EFFORT
-      ),
+      agent: agentProvider(slot.model, slot.effort),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,
-      name: `Critic #${spec.id} R${String(round)} retry`,
+      name: `Critic #${spec.id} R${String(round)} C${String(slot.index)} retry`,
       promptArgs: { ...strategy.buildCriticArgs(spec, baseBranch), NONCE: nonce },
       promptFile: strategy.criticPromptFile,
       signal,
