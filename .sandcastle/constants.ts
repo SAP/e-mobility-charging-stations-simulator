@@ -19,6 +19,16 @@ export const AGENT_IDLE_TIMEOUT_S = 720
 
 export const AGENT_ITERATION_BUDGET = 50
 
+export const AGENT_CRITIC_COUNT = 1 as const
+
+export const AGENT_CRITIC_MODELS: readonly string[] = [AGENT_CRITIC_MODEL] as const
+
+export const CRITIC_AGREEMENT_FRACTION = 0.5 as const
+
+export const CRITIC_FILL_STRATEGY_DEFAULT = 'round-robin' as const
+
+export const MAX_CRITIC_COUNT = 8 as const
+
 export const AGENT_MAX_CRITIC_ROUNDS = 10
 
 export const AGENT_PLANNER_EFFORT = 'medium' as const
