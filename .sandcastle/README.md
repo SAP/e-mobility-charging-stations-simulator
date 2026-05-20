@@ -20,28 +20,41 @@ Internal orchestration layer that drives an actor↔critic loop on top of `@ai-h
 
 ## Multi-critic ensemble
 
-A round can run **N critics in parallel** instead of a single critic, with majority voting and ordinal severity aggregation. Backward compatible: when no ensemble fields are set on the strategy, the loop runs the legacy single-critic path byte-equivalent to the pre-ensemble behavior.
+A round can run **N critics in parallel** instead of a single critic, with majority voting and ordinal severity aggregation. Backward compatible: when no agent or ensemble fields are set on the strategy, the loop runs a single-critic round byte-equivalent to the pre-ensemble behavior, using `AGENT_CRITIC_POOL_DEFAULT[0]`.
+
+### `AgentSpec` — the canonical (model, effort) pair
+
+Every agent role (actor, critic-pool entry, arbiter) is described by an `AgentSpec`:
+
+```ts
+interface AgentSpec {
+  readonly effort: 'low' | 'medium' | 'high' // bound to this specific model
+  readonly model: string // provider-qualified id
+}
+```
+
+`effort` is **required**: the right effort is a property of the model, so silent role-wide effort fallbacks would defeat the purpose of the pairing. Strategies that want a different effort for a different model declare a distinct `AgentSpec`. To override the model while keeping the canonical effort: `{ ...AGENT_ACTOR_DEFAULT, model: 'x' }`.
 
 ### Strategy fields (all optional)
 
-| Field                      | Type                                         | Default                               | Purpose                                                                                                                                        |
-| -------------------------- | -------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `criticCount`              | `number`                                     | `1`                                   | Number of critic slots per round. Hard-capped at `MAX_CRITIC_COUNT = 8`.                                                                       |
-| `criticModels`             | `readonly string[]`                          | `AGENT_CRITIC_MODELS`                 | Ordered preference list of critic models.                                                                                                      |
-| `criticEfforts`            | `Effort \| readonly Effort[]`                | `criticEffort ?? AGENT_CRITIC_EFFORT` | Per-slot reasoning effort; scalar broadcasts across slots, array must align with `criticModels.length`.                                        |
-| `criticAgreementThreshold` | `number \| ((validCount: number) => number)` | `Math.ceil(validCount / 2)`           | Min vote count to keep a finding (simple majority by default).                                                                                 |
-| `criticFillStrategy`       | `'round-robin' \| 'random-with-replacement'` | `'round-robin'`                       | How to fill slots when `criticCount > criticModels.length`.                                                                                    |
-| `criticEnsembleSeed`       | `number`                                     | n/a                                   | Required when `criticFillStrategy === 'random-with-replacement'`; deterministic seeded fill.                                                   |
-| `criticArbiterModel`       | `string`                                     | n/a                                   | Optional stage-2 arbiter LLM (MoA pattern); applied to HIGH/CRITICAL findings only when set with `criticArbiterPromptFile`. Failure non-fatal. |
-| `criticArbiterEffort`      | `Effort`                                     | n/a                                   | Stage-2 arbiter effort.                                                                                                                        |
-| `criticArbiterPromptFile`  | `string`                                     | n/a                                   | Stage-2 arbiter prompt path.                                                                                                                   |
+| Field                      | Type                                         | Default                     | Purpose                                                                                                                                       |
+| -------------------------- | -------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actor`                    | `AgentSpec`                                  | `AGENT_ACTOR_DEFAULT`       | Actor agent.                                                                                                                                  |
+| `criticPool`               | `readonly [AgentSpec, ...AgentSpec[]]`       | `AGENT_CRITIC_POOL_DEFAULT` | Non-empty pool of critic agents drawn from each round (compile-time tuple).                                                                   |
+| `criticCount`              | `number`                                     | `1`                         | Number of critic slots per round. Hard-capped at `MAX_CRITIC_COUNT = 8`.                                                                      |
+| `criticAgreementThreshold` | `number \| ((validCount: number) => number)` | `Math.ceil(validCount / 2)` | Min vote count to keep a finding (simple majority by default).                                                                                |
+| `criticFillStrategy`       | `'round-robin' \| 'random-with-replacement'` | `'round-robin'`             | How to fill slots when `criticCount > criticPool.length`.                                                                                     |
+| `criticEnsembleSeed`       | `number`                                     | n/a                         | Required when `criticFillStrategy === 'random-with-replacement'`; deterministic seeded fill.                                                  |
+| `arbiter`                  | `{ agent: AgentSpec; promptFile: string }`   | n/a                         | Optional stage-2 arbiter LLM (MoA pattern); applied to HIGH/CRITICAL findings only when set. Both fields required together (encoded by type). |
 
 ### Slot resolution
 
-When `criticCount` and `criticModels` are both unset → single default slot built from `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`. When `criticCount <= criticModels.length` → take first `criticCount` models in declared order. When `criticCount > criticModels.length`:
+The active pool is `strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT` (compile-time non-empty by virtue of the tuple type). Slot count is `strategy.criticCount ?? max(AGENT_CRITIC_COUNT, pool.length)`. When `count <= pool.length` → take first `count` specs in declared order. When `count > pool.length`:
 
-- `round-robin` (default): cyclic `criticModels[i % L]`. Deterministic, no RNG.
+- `round-robin` (default): cyclic `pool[i % L]`. Deterministic, no RNG.
 - `random-with-replacement`: seeded uniform sampling via `crypto`-derived index from `criticEnsembleSeed`. Reproducible across runs with the same seed.
+
+Each resolved slot carries the `AgentSpec`'s `model` and `effort` atomically — reordering `criticPool` cannot misalign efforts because there is nothing to misalign with (the legacy `criticModels`/`criticEfforts` parallel-array failure mode is structurally eliminated).
 
 ### Parallel execution
 
@@ -85,12 +98,12 @@ Industry SAST aggregation conventionally uses **MAX** severity (CVSS v3.1 §3.8 
 
 Strategies are validated at module load (`strategies/index.ts`). Misconfiguration throws field-named errors before any sandbox is spawned:
 
+- `actor.model` blank, or `actor.effort` outside `'low'|'medium'|'high'`.
 - `criticCount` not an integer in `[1, MAX_CRITIC_COUNT]`.
-- `criticModels` empty array, or contains non-string / blank entries.
-- `criticEfforts` array length ≠ `criticModels.length`.
+- `criticPool` empty array; pool entry with blank model or invalid effort.
 - `criticAgreementThreshold` (when number) outside `[1, criticCount]`.
 - `criticFillStrategy === 'random-with-replacement'` without `criticEnsembleSeed`.
-- `criticArbiterModel` and `criticArbiterPromptFile` not set together.
+- `arbiter.agent` invalid, or `arbiter.promptFile` blank. (The "set together" rule for arbiter is encoded structurally by the type.)
 
 ## Cost model
 

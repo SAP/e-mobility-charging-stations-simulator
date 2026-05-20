@@ -1,13 +1,10 @@
-import type { PiOptions } from '@ai-hero/sandcastle'
-
 import crypto from 'node:crypto'
 
-import type { CriticSlot, Finding, LoopStrategy } from './types.js'
+import type { AgentSpec, CriticSlot, Finding, LoopStrategy } from './types.js'
 
 import {
   AGENT_CRITIC_COUNT,
-  AGENT_CRITIC_EFFORT,
-  AGENT_CRITIC_MODELS,
+  AGENT_CRITIC_POOL_DEFAULT,
   CRITIC_AGREEMENT_FRACTION,
   CRITIC_FILL_STRATEGY_DEFAULT,
 } from './constants.js'
@@ -191,63 +188,40 @@ export function normalizeCategory (category: string): string {
 /**
  * Builds the resolved per-slot critic invocation list from a strategy.
  *
- * Resolution rules (additive, backward-compatible):
- *  1. When `criticCount` and `criticModels` are both unset → single slot
- *     using `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`.
- *  2. When `criticCount <= criticModels.length` → first `criticCount` models
- *     in declared order, no RNG.
- *  3. When `criticCount > criticModels.length` → declared models first, then
- *     fill remainder per `criticFillStrategy`:
- *       - `'round-robin'` (default): cyclic `criticModels[i % L]`.
+ * Resolution rules:
+ *  1. The active pool is `strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT`
+ *     (compile-time non-empty by virtue of the tuple type).
+ *  2. Slot count is `strategy.criticCount ?? max(AGENT_CRITIC_COUNT, pool.length)`.
+ *  3. When `count <= pool.length` → take first `count` specs in declared order, no RNG.
+ *  4. When `count > pool.length` → declared specs first, then fill remainder per
+ *     `criticFillStrategy`:
+ *       - `'round-robin'` (default): cyclic `pool[i % L]`.
  *       - `'random-with-replacement'`: seeded uniform sampling using
  *         `criticEnsembleSeed` (registry validation enforces seed presence).
  * @param strategy - Strategy declaration.
  * @returns Frozen ordered slot list of length `max(1, resolvedCriticCount)`.
  */
 export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot[] {
-  const ensembleConfigured =
-    strategy.criticCount !== undefined || strategy.criticModels !== undefined
-
-  if (!ensembleConfigured) {
-    return Object.freeze([
-      {
-        effort: strategy.criticEffort ?? AGENT_CRITIC_EFFORT,
-        index: 0,
-        model: AGENT_CRITIC_MODELS[0],
-      },
-    ])
-  }
-
-  const declaredModels =
-    strategy.criticModels && strategy.criticModels.length > 0
-      ? strategy.criticModels
-      : AGENT_CRITIC_MODELS
-  const count = strategy.criticCount ?? Math.max(AGENT_CRITIC_COUNT, declaredModels.length)
+  const pool = strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT
+  const count = strategy.criticCount ?? Math.max(AGENT_CRITIC_COUNT, pool.length)
   const fillStrategy = strategy.criticFillStrategy ?? CRITIC_FILL_STRATEGY_DEFAULT
-  const efforts = resolvePerSlotEfforts(strategy, count)
 
-  const resolvedModels: string[] = []
+  const resolved: CriticSlot[] = []
   for (let i = 0; i < count; i++) {
-    if (i < declaredModels.length) {
-      resolvedModels.push(declaredModels[i])
-      continue
-    }
-    if (fillStrategy === 'random-with-replacement') {
+    let spec: AgentSpec
+    if (i < pool.length) {
+      spec = pool[i]
+    } else if (fillStrategy === 'random-with-replacement') {
       const seed = strategy.criticEnsembleSeed ?? 0
-      const idx = deterministicIndex(seed, i, declaredModels.length)
-      resolvedModels.push(declaredModels[idx])
+      const idx = deterministicIndex(seed, i, pool.length)
+      spec = pool[idx]
     } else {
-      resolvedModels.push(declaredModels[i % declaredModels.length])
+      spec = pool[i % pool.length]
     }
+    resolved.push({ effort: spec.effort, index: i, model: spec.model })
   }
 
-  return Object.freeze(
-    resolvedModels.map((model, index) => ({
-      effort: efforts[index] ?? strategy.criticEffort ?? AGENT_CRITIC_EFFORT,
-      index,
-      model,
-    }))
-  )
+  return Object.freeze(resolved)
 }
 
 /**
@@ -337,23 +311,6 @@ function pickSourceByLowestSlot (entries: readonly GroupEntry[]): Finding {
     if (entry.slot < best.slot) best = entry
   }
   return best.finding
-}
-
-/**
- * Resolves per-slot effort list from strategy + slot count. Scalar broadcasts;
- * array is taken as-is (length validated at registry-load time, not here).
- * @param strategy - Strategy declaration.
- * @param modelCount - Number of declared models (broadcast length).
- * @returns Per-slot effort array (length === modelCount).
- */
-function resolvePerSlotEfforts (
-  strategy: LoopStrategy,
-  modelCount: number
-): readonly (PiOptions['thinking'] | undefined)[] {
-  const e = strategy.criticEfforts
-  if (e === undefined) return Array.from<undefined>({ length: modelCount }).fill(undefined)
-  if (Array.isArray(e)) return e as readonly PiOptions['thinking'][]
-  return Array.from<PiOptions['thinking']>({ length: modelCount }).fill(e as PiOptions['thinking'])
 }
 
 /**

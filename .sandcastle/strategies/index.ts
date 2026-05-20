@@ -1,4 +1,4 @@
-import type { FinalizationConfig, LoopStrategy } from '../types.js'
+import type { AgentSpec, FinalizationConfig, LoopStrategy } from '../types.js'
 
 import { MAX_CRITIC_COUNT } from '../constants.js'
 import { implementStrategy } from './implement/strategy.js'
@@ -73,9 +73,13 @@ export function labelOf (key: string): string {
  * with a caller-supplied error context label.
  * @param ctx - Free-form context fragment included in error messages.
  * @param strategy - Strategy declaration to validate.
- * @throws {Error} Field-named error when any ensemble field is invalid.
+ * @throws {Error} Field-named error when any agent or ensemble field is invalid.
  */
 export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrategy): void {
+  if (strategy.actor !== undefined) {
+    validateAgentSpec(`${ctx}.actor`, strategy.actor)
+  }
+
   if (strategy.criticCount !== undefined) {
     if (
       !Number.isInteger(strategy.criticCount) ||
@@ -88,29 +92,17 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
     }
   }
 
-  if (strategy.criticModels !== undefined) {
-    if (strategy.criticModels.length === 0) {
-      throw new Error(`Invalid criticModels in ${ctx}: must be a non-empty array.`)
+  if (strategy.criticPool !== undefined) {
+    if (strategy.criticPool.length === 0) {
+      throw new Error(`Invalid criticPool in ${ctx}: must be a non-empty array.`)
     }
-    for (const m of strategy.criticModels) {
-      if (typeof m !== 'string' || m.trim().length === 0) {
-        throw new Error(`Invalid criticModels in ${ctx}: all entries must be non-empty strings.`)
-      }
-    }
-  }
-
-  if (Array.isArray(strategy.criticEfforts)) {
-    const expected = strategy.criticModels?.length ?? 1
-    if (strategy.criticEfforts.length !== expected) {
-      throw new Error(
-        `Invalid criticEfforts in ${ctx}: array length (${String(strategy.criticEfforts.length)}) ` +
-          `must equal criticModels.length (${String(expected)}).`
-      )
+    for (let i = 0; i < strategy.criticPool.length; i++) {
+      validateAgentSpec(`${ctx}.criticPool[${String(i)}]`, strategy.criticPool[i])
     }
   }
 
   if (typeof strategy.criticAgreementThreshold === 'number') {
-    const upper = strategy.criticCount ?? strategy.criticModels?.length ?? 1
+    const upper = strategy.criticCount ?? strategy.criticPool?.length ?? 1
     if (
       !Number.isInteger(strategy.criticAgreementThreshold) ||
       strategy.criticAgreementThreshold < 1 ||
@@ -132,14 +124,14 @@ export function validateLoopStrategyEnsemble (ctx: string, strategy: LoopStrateg
     )
   }
 
-  if (
-    (strategy.criticArbiterModel != null && strategy.criticArbiterPromptFile == null) ||
-    (strategy.criticArbiterPromptFile != null && strategy.criticArbiterModel == null)
-  ) {
-    throw new Error(
-      `Invalid arbiter configuration in ${ctx}: criticArbiterModel and ` +
-        'criticArbiterPromptFile must be set together.'
-    )
+  if (strategy.arbiter !== undefined) {
+    validateAgentSpec(`${ctx}.arbiter.agent`, strategy.arbiter.agent)
+    if (
+      typeof strategy.arbiter.promptFile !== 'string' ||
+      strategy.arbiter.promptFile.length === 0
+    ) {
+      throw new Error(`Invalid arbiter.promptFile in ${ctx}: must be a non-empty string.`)
+    }
   }
 }
 
@@ -189,6 +181,24 @@ function indexByKey (entries: readonly StrategyEntry[]): ReadonlyMap<string, Str
     map.set(entry.key, entry)
   }
   return map
+}
+
+/**
+ * Validates an {@link AgentSpec}: model is a non-blank string, effort is in
+ * the canonical reasoning-effort enum.
+ * @param ctx - Free-form context fragment included in error messages.
+ * @param spec - The candidate agent spec.
+ * @throws {Error} Field-named error when model or effort is invalid.
+ */
+function validateAgentSpec (ctx: string, spec: AgentSpec): void {
+  if (typeof spec.model !== 'string' || spec.model.trim().length === 0) {
+    throw new Error(`Invalid ${ctx}.model: must be a non-empty string.`)
+  }
+  if (spec.effort !== 'low' && spec.effort !== 'medium' && spec.effort !== 'high') {
+    throw new Error(
+      `Invalid ${ctx}.effort: must be 'low', 'medium', or 'high' (got ${String(spec.effort)}).`
+    )
+  }
 }
 
 /**

@@ -18,14 +18,24 @@ const FindingSchema = z.object({
   votes: z.number().int().min(1).optional(),
 })
 
-/** Resolved critic slot used by the parallel critic fan-out. */
-export interface CriticSlot {
-  /** Reasoning effort for this slot. */
+/**
+ * Canonical (model, reasoning-effort) pair for any agent role (actor, critic
+ * pool entry, arbiter). Both fields are required: the right effort is a
+ * property of the model, so silent role-wide effort fallbacks would defeat
+ * the purpose of the pairing. Strategies that want a different effort for a
+ * different model declare a distinct AgentSpec rather than rely on a fallback.
+ */
+export interface AgentSpec {
+  /** Reasoning effort, bound to this specific model. */
   readonly effort: PiOptions['thinking']
+  /** Provider-qualified model identifier (e.g. 'github-copilot/gpt-5.4'). */
+  readonly model: string
+}
+
+/** Resolved critic slot used by the parallel critic fan-out. */
+export interface CriticSlot extends AgentSpec {
   /** Zero-based slot index, also used in per-slot nonces. */
   readonly index: number
-  /** Resolved model identifier for this slot. */
-  readonly model: string
 }
 
 /**
@@ -82,23 +92,37 @@ export interface LoopResult {
 export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
 
 /**
- * Configuration for the refinement loop strategy.
- * Defines prompts, argument builders, and optional convergence logic.
+ * Configuration for the refinement loop strategy. Defines prompts, agent
+ * specs, argument builders, and optional convergence/validation logic.
  *
- * Multi-critic ensemble fields (`criticCount`, `criticModels`, `criticEfforts`,
- * `criticAgreementThreshold`, `criticFillStrategy`, `criticEnsembleSeed`,
- * `criticArbiterModel`, `criticArbiterEffort`, `criticArbiterPromptFile`) are
- * additive and optional. When none of them are set, the loop runs a single
- * critic using `AGENT_CRITIC_MODELS[0]` and `criticEffort ?? AGENT_CRITIC_EFFORT`.
+ * Agent fields all share the canonical {@link AgentSpec} shape:
+ *   - `actor`     — single AgentSpec (one implementer per round).
+ *   - `criticPool` — non-empty AgentSpec tuple (catalog drawn from each round).
+ *   - `arbiter`   — optional stage-2 struct bundling AgentSpec + prompt file.
+ *
+ * Defaults from `constants.ts` apply when fields are unset:
+ *   - `actor` → AGENT_ACTOR_DEFAULT
+ *   - `criticPool` → AGENT_CRITIC_POOL_DEFAULT
+ *   - `criticCount` → AGENT_CRITIC_COUNT
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type LoopStrategy = {
-  /** Reasoning effort for the actor agent. Defaults to AGENT_ACTOR_EFFORT constant. */
-  actorEffort?: PiOptions['thinking']
-  /** Model for the actor agent. Defaults to AGENT_ACTOR_MODEL constant. */
-  actorModel?: string
+  /** Actor agent spec. Defaults to AGENT_ACTOR_DEFAULT when unset. */
+  actor?: AgentSpec
   /** Path to the actor prompt file. */
   actorPromptFile: string
+  /**
+   * Optional stage-2 arbiter. When set, the merged HIGH/CRITICAL findings
+   * are passed to the arbiter agent for synthesis. Failure is non-fatal:
+   * the unrefined merged list is used. Both fields of the struct are
+   * required when `arbiter` is set (XOR encoded by the type).
+   */
+  arbiter?: {
+    /** Agent spec for the arbiter LLM. */
+    readonly agent: AgentSpec
+    /** Path to the arbiter prompt file. */
+    readonly promptFile: string
+  }
   /** Builds promptArgs for the actor run from task spec and previous findings. */
   buildActorArgs: (spec: TaskSpec, findings: Finding[]) => Record<string, string>
   /** Builds promptArgs for the critic run from task spec and base branch. */
@@ -110,47 +134,30 @@ export type LoopStrategy = {
    * the singleton CRITICAL+HIGH-confidence escape hatch (see merge spec).
    */
   criticAgreementThreshold?: ((validCount: number) => number) | number
-  /** Reasoning effort for the optional stage-2 arbiter agent. */
-  criticArbiterEffort?: PiOptions['thinking']
   /**
-   * Optional stage-2 arbiter model. When set together with
-   * `criticArbiterPromptFile`, the merged HIGH/CRITICAL findings are passed
-   * to a single arbiter LLM that synthesizes canonical descriptions/
-   * suggestions. Failure of the arbiter is non-fatal: the merged list is
-   * used as-is.
-   */
-  criticArbiterModel?: string
-  /** Path to the optional stage-2 arbiter prompt file. */
-  criticArbiterPromptFile?: string
-  /**
-   * Number of critics to run per round. Defaults to AGENT_CRITIC_COUNT (1).
-   * When > criticModels.length, the slot list is filled per
-   * `criticFillStrategy`. Capped at MAX_CRITIC_COUNT at registry-load time.
+   * Number of critic slots per round. Defaults to AGENT_CRITIC_COUNT.
+   * When > `criticPool.length`, slots are filled per `criticFillStrategy`.
+   * Capped at MAX_CRITIC_COUNT at registry-load time.
    */
   criticCount?: number
-  /** Reasoning effort for the critic agent. Defaults to AGENT_CRITIC_EFFORT constant. */
-  criticEffort?: PiOptions['thinking']
-  /**
-   * Per-slot reasoning efforts. When a single value is provided it is
-   * broadcast across all slots; when an array, its length must equal
-   * `criticModels.length` (validated at registry load). When omitted the
-   * loop falls back to `criticEffort` / AGENT_CRITIC_EFFORT for every slot.
-   */
-  criticEfforts?: PiOptions['thinking'] | readonly PiOptions['thinking'][]
   /**
    * Optional seed for reproducible random slot fill. Required when
    * `criticFillStrategy === 'random-with-replacement'`.
    */
   criticEnsembleSeed?: number
   /**
-   * Strategy for filling the slot list when `criticCount > criticModels.length`.
-   * `round-robin` (default): cycle through `criticModels` deterministically.
+   * Strategy for filling slots when `criticCount > criticPool.length`.
+   * `round-robin` (default): cycle through `criticPool` deterministically.
    * `random-with-replacement`: sample with replacement using `criticEnsembleSeed`.
    */
   criticFillStrategy?: 'random-with-replacement' | 'round-robin'
-  /** Ordered preference list of critic model identifiers. */
-  criticModels?: readonly string[]
-  /** Path to the critic prompt file. */
+  /**
+   * Pool of critic agent specs drawn from each round. Non-empty by
+   * construction (compile-time tuple type). Defaults to
+   * AGENT_CRITIC_POOL_DEFAULT.
+   */
+  criticPool?: readonly [AgentSpec, ...AgentSpec[]]
+  /** Path to the critic prompt file (shared across all critic slots). */
   criticPromptFile: string
   /** Optional custom convergence check. When omitted, default loop logic applies. */
   shouldConverge?: (findings: Finding[], round: number, totalCommits: number) => boolean
@@ -169,10 +176,9 @@ export interface RoundSnapshot {
   /** Outcome of the critic phase for this round. */
   status: 'critic_errored' | 'has_findings' | 'no_findings'
   /**
-   * Number of critics that returned parseable findings this round. Equals
-   * the slot count for legacy single-critic strategies (1) or the count of
-   * non-null per-critic outputs for ensembles. Used by the quality ratchet
-   * to refuse rollback when ensemble health degraded between rounds.
+   * Number of critics that returned parseable findings this round. Used by
+   * the quality ratchet to refuse rollback when ensemble health degraded
+   * between rounds.
    */
   validCriticCount?: number
 }

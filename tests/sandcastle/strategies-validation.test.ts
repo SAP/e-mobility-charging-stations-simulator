@@ -1,14 +1,14 @@
 /**
  * @file Tests for the strategy-registry ensemble-field validation.
  * @description Verifies that `validateLoopStrategyEnsemble` throws field-named
- * errors on each invalid critic-ensemble configuration, and accepts valid
- * configurations including the legacy single-critic form.
+ * errors on each invalid agent or ensemble configuration, and accepts valid
+ * configurations including the no-overrides default form.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { validateLoopStrategyEnsemble } from '../../.sandcastle/strategies/index.js'
-import { type LoopStrategy } from '../../.sandcastle/types.js'
+import { type AgentSpec, type LoopStrategy } from '../../.sandcastle/types.js'
 
 const baseStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
   actorPromptFile: './a.md',
@@ -18,24 +18,41 @@ const baseStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
   ...overrides,
 })
 
+const spec = (model: string, effort: AgentSpec['effort']): AgentSpec => ({ effort, model })
+
 await describe('validateLoopStrategyEnsemble', async () => {
-  await it('accepts a strategy with no ensemble fields (backward compat)', () => {
+  await it('accepts a strategy with no overrides (uses defaults)', () => {
     assert.doesNotThrow(() => {
       validateLoopStrategyEnsemble('test', baseStrategy())
     })
   })
 
-  await it('accepts a strategy with criticEffort only', () => {
+  await it('accepts an actor-only override', () => {
     assert.doesNotThrow(() => {
-      validateLoopStrategyEnsemble('test', baseStrategy({ criticEffort: 'low' }))
+      validateLoopStrategyEnsemble('test', baseStrategy({ actor: spec('gpt-x', 'low') }))
     })
   })
 
-  await it('accepts criticCount=3 with criticModels=["a","b"] (round-robin)', () => {
+  await it('rejects actor.model = blank string', () => {
+    assert.throws(() => {
+      validateLoopStrategyEnsemble('test', baseStrategy({ actor: spec('  ', 'low') }))
+    }, /actor\.model.+non-empty/)
+  })
+
+  await it('rejects actor.effort outside the canonical enum', () => {
+    assert.throws(() => {
+      validateLoopStrategyEnsemble(
+        'test',
+        baseStrategy({ actor: { effort: 'extreme' as AgentSpec['effort'], model: 'gpt-x' } })
+      )
+    }, /actor\.effort.+'low'.+'medium'.+'high'/)
+  })
+
+  await it('accepts criticCount=3 with criticPool length 2 (round-robin)', () => {
     assert.doesNotThrow(() => {
       validateLoopStrategyEnsemble(
         'test',
-        baseStrategy({ criticCount: 3, criticModels: ['a', 'b'] })
+        baseStrategy({ criticCount: 3, criticPool: [spec('a', 'low'), spec('b', 'high')] })
       )
     })
   })
@@ -58,34 +75,31 @@ await describe('validateLoopStrategyEnsemble', async () => {
     }, /criticCount/)
   })
 
-  await it('rejects empty criticModels', () => {
-    assert.throws(() => {
-      validateLoopStrategyEnsemble('test', baseStrategy({ criticModels: [] }))
-    }, /criticModels.+non-empty array/)
-  })
-
-  await it('rejects criticModels with empty-string entry', () => {
-    assert.throws(() => {
-      validateLoopStrategyEnsemble('test', baseStrategy({ criticModels: ['a', ''] }))
-    }, /criticModels.+non-empty strings/)
-  })
-
-  await it('rejects criticEfforts array length mismatch', () => {
+  await it('rejects criticPool entry with blank model', () => {
     assert.throws(() => {
       validateLoopStrategyEnsemble(
         'test',
-        baseStrategy({ criticEfforts: ['low', 'high', 'medium'], criticModels: ['a', 'b'] })
+        baseStrategy({
+          criticPool: [spec('a', 'low'), { effort: 'low', model: '' }] as unknown as readonly [
+            AgentSpec,
+            ...AgentSpec[]
+          ],
+        })
       )
-    }, /criticEfforts.+array length.+must equal/)
+    }, /criticPool\[1\]\.model.+non-empty/)
   })
 
-  await it('accepts criticEfforts as scalar (broadcast)', () => {
-    assert.doesNotThrow(() => {
+  await it('rejects criticPool entry with invalid effort', () => {
+    assert.throws(() => {
       validateLoopStrategyEnsemble(
         'test',
-        baseStrategy({ criticEfforts: 'high', criticModels: ['a', 'b'] })
+        baseStrategy({
+          criticPool: [
+            { effort: 'extreme' as AgentSpec['effort'], model: 'a' },
+          ] as unknown as readonly [AgentSpec, ...AgentSpec[]],
+        })
       )
-    })
+    }, /criticPool\[0\]\.effort/)
   })
 
   await it('rejects criticAgreementThreshold > criticCount', () => {
@@ -113,7 +127,7 @@ await describe('validateLoopStrategyEnsemble', async () => {
         baseStrategy({
           criticCount: 5,
           criticFillStrategy: 'random-with-replacement',
-          criticModels: ['a', 'b'],
+          criticPool: [spec('a', 'low'), spec('b', 'high')],
         })
       )
     }, /criticEnsembleSeed.+required/)
@@ -127,33 +141,56 @@ await describe('validateLoopStrategyEnsemble', async () => {
           criticCount: 5,
           criticEnsembleSeed: 42,
           criticFillStrategy: 'random-with-replacement',
-          criticModels: ['a', 'b'],
+          criticPool: [spec('a', 'low'), spec('b', 'high')],
         })
       )
     })
   })
 
-  await it('rejects criticArbiterModel without criticArbiterPromptFile', () => {
-    assert.throws(() => {
-      validateLoopStrategyEnsemble('test', baseStrategy({ criticArbiterModel: 'gpt-x' }))
-    }, /arbiter configuration.+set together/)
-  })
-
-  await it('rejects criticArbiterPromptFile without criticArbiterModel', () => {
-    assert.throws(() => {
-      validateLoopStrategyEnsemble('test', baseStrategy({ criticArbiterPromptFile: './arb.md' }))
-    }, /arbiter configuration.+set together/)
-  })
-
-  await it('accepts both arbiter fields set together', () => {
+  await it('accepts an arbiter struct with both fields set', () => {
     assert.doesNotThrow(() => {
       validateLoopStrategyEnsemble(
         'test',
         baseStrategy({
-          criticArbiterModel: 'gpt-x',
-          criticArbiterPromptFile: './arb.md',
+          arbiter: { agent: spec('gpt-x', 'high'), promptFile: './arb.md' },
         })
       )
     })
+  })
+
+  await it('rejects arbiter with blank promptFile', () => {
+    assert.throws(() => {
+      validateLoopStrategyEnsemble(
+        'test',
+        baseStrategy({
+          arbiter: { agent: spec('gpt-x', 'high'), promptFile: '' },
+        })
+      )
+    }, /arbiter\.promptFile.+non-empty/)
+  })
+
+  await it('rejects arbiter with invalid agent.effort', () => {
+    assert.throws(() => {
+      validateLoopStrategyEnsemble(
+        'test',
+        baseStrategy({
+          arbiter: {
+            agent: { effort: 'extreme' as AgentSpec['effort'], model: 'gpt-x' },
+            promptFile: './arb.md',
+          },
+        })
+      )
+    }, /arbiter\.agent\.effort/)
+  })
+
+  await it('rejects arbiter with blank agent.model', () => {
+    assert.throws(() => {
+      validateLoopStrategyEnsemble(
+        'test',
+        baseStrategy({
+          arbiter: { agent: spec('  ', 'high'), promptFile: './arb.md' },
+        })
+      )
+    }, /arbiter\.agent\.model.+non-empty/)
   })
 })

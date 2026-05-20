@@ -1,19 +1,22 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 
+import type { AgentSpec } from './types.js'
+
 // ── Agent ────────────────────────────────────────────────────────────────────
 
 export type AgentProviderType = 'opencode' | 'pi'
 
 export const AGENT_PROVIDER = 'pi' as AgentProviderType
 
-export const AGENT_ACTOR_EFFORT = 'high' as const
+export const AGENT_ACTOR_DEFAULT: AgentSpec = {
+  effort: 'high',
+  model: 'github-copilot/claude-opus-4.6',
+}
 
-export const AGENT_ACTOR_MODEL = 'github-copilot/claude-opus-4.6'
-
-export const AGENT_CRITIC_EFFORT = 'medium' as const
-
-export const AGENT_CRITIC_MODELS = ['github-copilot/gpt-5.4'] as const
+export const AGENT_CRITIC_POOL_DEFAULT: readonly [AgentSpec, ...AgentSpec[]] = [
+  { effort: 'medium', model: 'github-copilot/gpt-5.4' },
+] as const
 
 export const AGENT_IDLE_TIMEOUT_S = 720
 

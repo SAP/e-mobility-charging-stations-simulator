@@ -17,8 +17,7 @@ import type {
 } from './types.js'
 
 import {
-  AGENT_ACTOR_EFFORT,
-  AGENT_ACTOR_MODEL,
+  AGENT_ACTOR_DEFAULT,
   AGENT_IDLE_TIMEOUT_S,
   AGENT_ITERATION_BUDGET,
   AGENT_MAX_CRITIC_ROUNDS,
@@ -466,11 +465,9 @@ async function executeRound (
   // Actor
   let actorResult: SandboxRunResult
   try {
+    const actor = strategy.actor ?? AGENT_ACTOR_DEFAULT
     actorResult = await sandbox.run({
-      agent: agentProvider(
-        strategy.actorModel ?? AGENT_ACTOR_MODEL,
-        strategy.actorEffort ?? AGENT_ACTOR_EFFORT
-      ),
+      agent: agentProvider(actor.model, actor.effort),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: budget,
@@ -581,8 +578,7 @@ async function maybeRunArbiter (
 ): Promise<Finding[]> {
   const { sandbox, signal, spec, strategy } = ctx
   if (
-    strategy.criticArbiterModel == null ||
-    strategy.criticArbiterPromptFile == null ||
+    strategy.arbiter == null ||
     !merged.some(f => f.severity === 'HIGH' || f.severity === 'CRITICAL')
   ) {
     return merged
@@ -590,8 +586,8 @@ async function maybeRunArbiter (
 
   const nonce = `${baseNonce}-arbiter`
   try {
-    const arbiter = await sandbox.run({
-      agent: agentProvider(strategy.criticArbiterModel, strategy.criticArbiterEffort),
+    const sandboxRun = await sandbox.run({
+      agent: agentProvider(strategy.arbiter.agent.model, strategy.arbiter.agent.effort),
       completionSignal: COMPLETION_SIGNAL,
       idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
       maxIterations: 1,
@@ -601,10 +597,10 @@ async function maybeRunArbiter (
         NONCE: nonce,
         PER_CRITIC_FINDINGS: JSON.stringify(perCriticOutputs, null, 2),
       },
-      promptFile: strategy.criticArbiterPromptFile,
+      promptFile: strategy.arbiter.promptFile,
       signal,
     })
-    const refined = parseFindings(arbiter.stdout, nonce)
+    const refined = parseFindings(sandboxRun.stdout, nonce)
     if (refined === null) {
       console.warn(`  #${spec.id} R${String(round)}: arbiter parse failed; keeping merge result.`)
       return merged

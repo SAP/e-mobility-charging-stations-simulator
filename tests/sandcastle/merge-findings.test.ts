@@ -7,14 +7,14 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { AGENT_CRITIC_MODELS } from '../../.sandcastle/constants.js'
+import { AGENT_CRITIC_POOL_DEFAULT } from '../../.sandcastle/constants.js'
 import {
   findingDedupKey,
   mergeCriticFindings,
   normalizeCategory,
   resolveCriticSlots,
 } from '../../.sandcastle/merge-findings.js'
-import { type Finding, type LoopStrategy } from '../../.sandcastle/types.js'
+import { type AgentSpec, type Finding, type LoopStrategy } from '../../.sandcastle/types.js'
 
 const fakeStrategy = (overrides: Partial<LoopStrategy> = {}): LoopStrategy => ({
   actorPromptFile: 'a.md',
@@ -40,6 +40,8 @@ const ctxHashesFor = (...findings: Finding[]): ReadonlyMap<Finding, string> => {
   for (const f of findings) map.set(f, `h-${f.file}-${String(f.line ?? 0)}`)
   return map
 }
+
+const spec = (model: string, effort: AgentSpec['effort']): AgentSpec => ({ effort, model })
 
 await describe('merge-findings', async () => {
   await describe('normalizeCategory', async () => {
@@ -72,79 +74,85 @@ await describe('merge-findings', async () => {
   })
 
   await describe('resolveCriticSlots', async () => {
-    await it('returns single default slot when no ensemble fields set', () => {
-      const slots = resolveCriticSlots(fakeStrategy({ criticEffort: 'low' }))
-      assert.equal(slots.length, 1)
-      assert.equal(slots[0]?.model, AGENT_CRITIC_MODELS[0])
-      assert.equal(slots[0]?.effort, 'low')
+    await it('falls back to AGENT_CRITIC_POOL_DEFAULT when criticPool is unset', () => {
+      const slots = resolveCriticSlots(fakeStrategy())
+      assert.equal(slots.length, AGENT_CRITIC_POOL_DEFAULT.length)
+      assert.equal(slots[0]?.model, AGENT_CRITIC_POOL_DEFAULT[0].model)
+      assert.equal(slots[0]?.effort, AGENT_CRITIC_POOL_DEFAULT[0].effort)
       assert.equal(slots[0]?.index, 0)
     })
 
-    await it('takes first criticCount in declared order when count <= models.length', () => {
+    await it('takes first criticCount specs in declared order when count <= pool.length', () => {
       const slots = resolveCriticSlots(
-        fakeStrategy({ criticCount: 2, criticModels: ['a', 'b', 'c'] })
+        fakeStrategy({
+          criticCount: 2,
+          criticPool: [spec('a', 'low'), spec('b', 'medium'), spec('c', 'high')],
+        })
       )
       assert.deepEqual(
         slots.map(s => s.model),
         ['a', 'b']
       )
+      assert.deepEqual(
+        slots.map(s => s.effort),
+        ['low', 'medium']
+      )
     })
 
-    await it('cycles round-robin when count > models.length (default)', () => {
-      const slots = resolveCriticSlots(fakeStrategy({ criticCount: 5, criticModels: ['a', 'b'] }))
+    await it('cycles round-robin when count > pool.length (default)', () => {
+      const slots = resolveCriticSlots(
+        fakeStrategy({
+          criticCount: 5,
+          criticPool: [spec('a', 'low'), spec('b', 'high')],
+        })
+      )
       assert.deepEqual(
         slots.map(s => s.model),
         ['a', 'b', 'a', 'b', 'a']
       )
+      assert.deepEqual(
+        slots.map(s => s.effort),
+        ['low', 'high', 'low', 'high', 'low']
+      )
     })
 
     await it('uses random-with-replacement deterministically when seeded', () => {
-      const s1 = resolveCriticSlots(
-        fakeStrategy({
-          criticCount: 5,
-          criticEnsembleSeed: 42,
-          criticFillStrategy: 'random-with-replacement',
-          criticModels: ['a', 'b', 'c'],
-        })
-      )
-      const s2 = resolveCriticSlots(
-        fakeStrategy({
-          criticCount: 5,
-          criticEnsembleSeed: 42,
-          criticFillStrategy: 'random-with-replacement',
-          criticModels: ['a', 'b', 'c'],
-        })
-      )
+      const cfg: Partial<LoopStrategy> = {
+        criticCount: 5,
+        criticEnsembleSeed: 42,
+        criticFillStrategy: 'random-with-replacement',
+        criticPool: [spec('a', 'low'), spec('b', 'medium'), spec('c', 'high')],
+      }
+      const s1 = resolveCriticSlots(fakeStrategy(cfg))
+      const s2 = resolveCriticSlots(fakeStrategy(cfg))
       assert.deepEqual(
         s1.map(s => s.model),
         s2.map(s => s.model)
       )
       for (let i = 0; i < 3; i++) {
         assert.equal(s1[i]?.model, ['a', 'b', 'c'][i])
+        assert.equal(s1[i]?.effort, ['low', 'medium', 'high'][i])
       }
       assert.equal(s1.length, 5)
     })
 
-    await it('broadcasts scalar criticEfforts across slots', () => {
-      const slots = resolveCriticSlots(
-        fakeStrategy({ criticCount: 3, criticEfforts: 'high', criticModels: ['a', 'b'] })
-      )
-      assert.deepEqual(
-        slots.map(s => s.effort),
-        ['high', 'high', 'high']
-      )
-    })
-
-    await it('aligns array criticEfforts by index for declared slots', () => {
-      const slots = resolveCriticSlots(
+    await it('preserves per-spec effort when reordering pool (atomic model+effort pairing)', () => {
+      const before = resolveCriticSlots(
         fakeStrategy({
           criticCount: 2,
-          criticEfforts: ['low', 'high'],
-          criticModels: ['a', 'b'],
+          criticPool: [spec('a', 'low'), spec('b', 'high')],
         })
       )
-      assert.equal(slots[0]?.effort, 'low')
-      assert.equal(slots[1]?.effort, 'high')
+      const after = resolveCriticSlots(
+        fakeStrategy({
+          criticCount: 2,
+          criticPool: [spec('b', 'high'), spec('a', 'low')],
+        })
+      )
+      assert.equal(before[0]?.model, 'a')
+      assert.equal(before[0]?.effort, 'low')
+      assert.equal(after[0]?.model, 'b')
+      assert.equal(after[0]?.effort, 'high')
     })
   })
 
