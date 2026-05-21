@@ -163,15 +163,15 @@ await describe('merge-findings', async () => {
       // arithmetic (`high * 2^32 + low`) collapsed `combined % range` toward 0
       // for ~99% of digests, which would make every fill slot resolve to pool[0].
       const pool = [
-        spec('a'),
-        spec('b'),
-        spec('c'),
-        spec('d'),
-        spec('e'),
-        spec('f'),
-        spec('g'),
-        spec('h'),
-      ]
+        spec('a', 'low'),
+        spec('b', 'low'),
+        spec('c', 'low'),
+        spec('d', 'low'),
+        spec('e', 'low'),
+        spec('f', 'low'),
+        spec('g', 'low'),
+        spec('h', 'low'),
+      ] as const
       const seenModels = new Set<string>()
       for (let seed = 1; seed <= 32; seed++) {
         const slots = resolveCriticSlots(
@@ -287,8 +287,8 @@ await describe('merge-findings', async () => {
       const c0 = fakeFinding({ confidence: 'HIGH', severity: 'CRITICAL', title: 'rce' })
       const c1 = fakeFinding({ confidence: 'HIGH', severity: 'CRITICAL', title: 'rce' })
       const result = mergeCriticFindings([[c0], [c1], [], [], []], {
+        agreementThreshold: 3,
         contextHashes: ctxHashesFor(c0, c1),
-        criticAgreementThreshold: 3,
       })
       assert.equal(
         result.merged.length,
@@ -412,6 +412,99 @@ await describe('merge-findings', async () => {
       assert.equal(result.merged.length, 2)
       assert.equal(result.merged[0]?.severity, 'CRITICAL')
       assert.equal(result.merged[1]?.severity, 'HIGH')
+    })
+  })
+
+  await describe('mergeCriticFindings — invariants', async () => {
+    await it('validCount equals the count of non-null slots across heterogeneous layouts', () => {
+      const f = fakeFinding()
+      const ctx = ctxHashesFor(f)
+      assert.equal(mergeCriticFindings([], { contextHashes: ctx }).validCount, 0)
+      assert.equal(mergeCriticFindings([null, null], { contextHashes: ctx }).validCount, 0)
+      assert.equal(mergeCriticFindings([null, [f], null], { contextHashes: ctx }).validCount, 1)
+      assert.equal(
+        mergeCriticFindings([[], null, [], null, []], { contextHashes: ctx }).validCount,
+        3
+      )
+      assert.equal(
+        mergeCriticFindings([[f], [f], [f], [f], [f]], { contextHashes: ctx }).validCount,
+        5
+      )
+    })
+
+    await it('every merged finding has 1 ≤ votes ≤ validCount', () => {
+      const shared0 = fakeFinding({ file: 'src/x.ts', line: 1, title: 'shared' })
+      const shared1 = fakeFinding({ file: 'src/x.ts', line: 1, title: 'shared' })
+      const shared2 = fakeFinding({ file: 'src/x.ts', line: 1, title: 'shared' })
+      const lone = fakeFinding({
+        confidence: 'HIGH',
+        file: 'src/y.ts',
+        line: 9,
+        severity: 'CRITICAL',
+      })
+      const ctx = ctxHashesFor(shared0, shared1, shared2, lone)
+      const result = mergeCriticFindings([[shared0, lone], [shared1], null, [shared2]], {
+        contextHashes: ctx,
+      })
+      assert.equal(result.validCount, 3)
+      assert.ok(result.merged.length > 0)
+      for (const m of result.merged) {
+        assert.ok((m.votes ?? 0) >= 1, `votes ≥ 1 violated for ${m.title}`)
+        assert.ok((m.votes ?? 0) <= result.validCount, `votes ≤ validCount violated for ${m.title}`)
+      }
+    })
+
+    await it('disagreementScore stays strictly inside (0, 1) for an interior 3-way severity split', () => {
+      const a = fakeFinding({ severity: 'LOW' })
+      const b = fakeFinding({ severity: 'MEDIUM' })
+      const c = fakeFinding({ severity: 'HIGH' })
+      const result = mergeCriticFindings([[a], [b], [c]], {
+        contextHashes: ctxHashesFor(a, b, c),
+      })
+      assert.equal(result.merged.length, 1)
+      // Ranks [0,1,2]: variance = 2/3, max = 9/4 → score = 8/27 ≈ 0.296.
+      const score = result.merged[0]?.disagreementScore ?? -1
+      assert.ok(score > 0 && score < 1, `interior split: 0 < score < 1, got ${String(score)}`)
+    })
+
+    await it('dedup is non-expansive: merged.length ≤ total input findings', () => {
+      const s0 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
+      const s1 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
+      const s2 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
+      const indep = fakeFinding({
+        confidence: 'HIGH',
+        file: 'src/y.ts',
+        line: 99,
+        severity: 'CRITICAL',
+      })
+      const inputs: (Finding[] | null)[] = [[s0, indep], [s1], [s2]]
+      const flatCount = inputs.flatMap(o => o ?? []).length
+      const result = mergeCriticFindings(inputs, {
+        contextHashes: ctxHashesFor(s0, s1, s2, indep),
+      })
+      assert.ok(
+        result.merged.length <= flatCount,
+        `merged.length=${String(result.merged.length)} > flatCount=${String(flatCount)}`
+      )
+      assert.equal(result.merged.length, 2, '3 duplicates collapse to 1; indep stays')
+    })
+
+    await it('sort tie-break: votes desc beats file-asc within the same severity tier', () => {
+      // Same severity (MEDIUM) on both groups; file-asc would order 'a.ts' first
+      // but 'z.ts' has 3 votes vs 'a.ts' 2 — votes-desc must win the second sort key.
+      const z0 = fakeFinding({ file: 'z.ts', line: 5, severity: 'MEDIUM', title: 'g-z' })
+      const z1 = fakeFinding({ file: 'z.ts', line: 5, severity: 'MEDIUM', title: 'g-z' })
+      const z2 = fakeFinding({ file: 'z.ts', line: 5, severity: 'MEDIUM', title: 'g-z' })
+      const a0 = fakeFinding({ file: 'a.ts', line: 5, severity: 'MEDIUM', title: 'g-a' })
+      const a1 = fakeFinding({ file: 'a.ts', line: 5, severity: 'MEDIUM', title: 'g-a' })
+      const result = mergeCriticFindings([[z0, a0], [z1, a1], [z2]], {
+        contextHashes: ctxHashesFor(z0, z1, z2, a0, a1),
+      })
+      assert.equal(result.merged.length, 2)
+      assert.equal(result.merged[0]?.file, 'z.ts')
+      assert.equal(result.merged[0]?.votes, 3)
+      assert.equal(result.merged[1]?.file, 'a.ts')
+      assert.equal(result.merged[1]?.votes, 2)
     })
   })
 })

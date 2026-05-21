@@ -197,7 +197,7 @@ pnpm test:sandcastle:coverage
 pnpm test:sandcastle:debug
 ```
 
-The unit suite covers slot resolution, voted merge invariants (point cases plus property-based via [fast-check](https://fast-check.dev/)), registry-load validation (one case per fail-fast rule), kernel control predicates (early-exit, best-state gating, snapshot building, options resolution), partial-recovery JSON parsing, the concurrency pool's FIFO + release-on-reject contract, the finalizer's `buildPrArgs` matrix, and the `isValidSha` predicate. Backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, and disagreement scoring are all exercised against `mergeCriticFindings` directly.
+The unit suite covers slot resolution, voted merge invariants (point cases plus example-locked invariants for validCount accounting, vote-count bounds, disagreement-score range, dedup non-expansiveness, and sort-order monotonicity), registry-load validation (one case per fail-fast rule), kernel control predicates (early-exit, best-state gating, snapshot building, options resolution), partial-recovery JSON parsing, the concurrency pool's FIFO + release-on-reject contract, the finalizer's `buildPrArgs` matrix, and the `isValidSha` predicate. Backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, and disagreement scoring are all exercised against `mergeCriticFindings` directly.
 
 ## Using with AI coding agents
 
