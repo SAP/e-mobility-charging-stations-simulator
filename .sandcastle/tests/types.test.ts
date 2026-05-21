@@ -1,6 +1,7 @@
 /**
  * @file Tests for `parseFindingsSafe` partial-recovery behavior.
- * @description Closes the 50% function-coverage gap on `types.ts` exports.
+ * @description Verifies non-array inputs return `[]` and invalid array
+ * entries are silently dropped while valid entries are preserved.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'

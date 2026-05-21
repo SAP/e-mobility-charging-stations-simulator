@@ -92,13 +92,20 @@ export function checkEarlyExit (
     return { status: 'skipped', totalCommits }
   }
   if (result.findings === null) {
-    console.warn(`  #${spec.id}: Critic failed twice. Breaking (non-converged).`)
-    const failureReason: LoopResult['failureReason'] =
+    const failureReason: NonNullable<LoopResult['failureReason']> =
       result.commits === 0
         ? 'actor_error'
         : result.validCriticCount === 0
           ? 'critic_parse_failed'
           : 'critic_quorum_failed'
+    const message: Record<typeof failureReason, string> = {
+      actor_error: 'Actor produced no commits',
+      critic_parse_failed: 'All critic slots failed to produce parseable findings',
+      critic_quorum_failed: `Critic quorum not reached (${result.validCriticCount === undefined ? 'unknown' : String(result.validCriticCount)} valid slot(s))`,
+    }
+    console.warn(
+      `  #${spec.id}: ${message[failureReason]}. Breaking (non-converged, ${failureReason}).`
+    )
     return { failureReason, status: 'failed', totalCommits: totalCommits + result.commits }
   }
   if (round > 1 && result.commits === 0) {

@@ -20,10 +20,8 @@ const FindingSchema = z.object({
 
 /**
  * Canonical (model, reasoning-effort) pair for any agent role (actor, critic
- * pool entry, arbiter). Both fields are required: the right effort is a
- * property of the model, so silent role-wide effort fallbacks would defeat
- * the purpose of the pairing. Strategies that want a different effort for a
- * different model declare a distinct AgentSpec rather than rely on a fallback.
+ * pool entry, arbiter). Both fields are required: effort is a property of
+ * the model, not the role.
  */
 export interface AgentSpec {
   /** Reasoning effort, bound to this specific model. */
@@ -57,10 +55,9 @@ export type FinalizationConfig = {
 /**
  * A single critic finding parsed from agent output.
  *
- * The optional `votes`/`voters`/`disagreementScore`/`contested` fields are
- * populated only on findings emitted by `mergeCriticFindings` from a
- * multi-critic ensemble round; they are absent on findings produced by a
- * single critic invocation (backward-compatible).
+ * `votes`/`voters`/`disagreementScore`/`contested` are populated only by
+ * `mergeCriticFindings` (multi-critic round); they are absent on the
+ * per-slot output of a single critic invocation.
  */
 export type Finding = z.infer<typeof FindingSchema>
 

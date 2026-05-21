@@ -25,10 +25,9 @@ export interface MergeOpts {
   readonly contextHashes?: ReadonlyMap<Finding, string>
   /**
    * When true (default), retain below-threshold findings flagged by at least
-   * one voter with severity=CRITICAL AND confidence=HIGH; their merged
-   * severity is capped at HIGH (per design D4). The option name reflects
-   * the most common case (a single voter), but the rule deliberately also
-   * keeps stronger minority signals — see README "Multi-critic ensemble".
+   * one voter with severity=CRITICAL AND confidence=HIGH; merged severity is
+   * capped at HIGH and `contested = true` is set. Applies to any minority
+   * signal, not only true singletons.
    */
   readonly promoteSingletonCritical?: boolean
 }
@@ -74,8 +73,8 @@ export function findingDedupKey (f: Finding, contextHash: string): string {
  *     across all valid critics. `votes(key)` = number of distinct critic
  *     slots flagging that key.
  *  3. Drop a key whose `votes < threshold`, UNLESS at least one voter
- *     flagged it with severity=CRITICAL AND confidence=HIGH (singleton
- *     escape, D4); kept singletons have merged severity capped at HIGH and
+ *     flagged it with severity=CRITICAL AND confidence=HIGH (escape hatch);
+ *     kept entries have merged severity capped at HIGH and
  *     `contested = true`.
  *  4. For surviving keys, aggregate:
  *       - severity:   median of voters' severities, ties broken UP the

@@ -1,14 +1,14 @@
 # `.sandcastle/` — Actor↔critic refinement loop
 
-> Task-agnostic refinement kernel. Tasks are inputs; **the loop is the product.** Plug in a `LoopStrategy` and the kernel handles round budgeting, critic voting, deduplication, regression rollback, and post-loop validation.
+> Task-agnostic actor↔critic refinement kernel. A `LoopStrategy` plugs in prompts, agents, and a finalize step; the kernel handles round budgeting, critic voting, deduplication, regression rollback, and post-loop validation.
 
 ## What it is
 
 `.sandcastle/` is an internal orchestrator that runs an **iterative actor↔critic loop** over GitHub issues, in a per-task ephemeral Docker sandbox provided by [`@ai-hero/sandcastle`](https://www.npmjs.com/package/@ai-hero/sandcastle).
 
-The kernel modules ([`refinement-loop.ts`](./refinement-loop.ts), [`merge-findings.ts`](./merge-findings.ts), [`concurrency-pool.ts`](./concurrency-pool.ts), [`finalizer.ts`](./finalizer.ts), [`validation.ts`](./validation.ts)) **do not import any strategy.** Strategies are pluggable: each declares prompts, prompt-arg builders, and a finalization step (push + PR creation, in the default `implement` strategy). Adding a new task type — review, migration, benchmark generation, etc. — is one strategy entry, not a kernel change.
+The kernel modules ([`refinement-loop.ts`](./refinement-loop.ts), [`merge-findings.ts`](./merge-findings.ts), [`concurrency-pool.ts`](./concurrency-pool.ts), [`finalizer.ts`](./finalizer.ts), [`validation.ts`](./validation.ts)) do not import any strategy. Each strategy declares prompts, prompt-arg builders, and a finalization step (push + PR creation, in the default `implement` strategy).
 
-Today the registry contains exactly one strategy ([`implement`](./strategies/implement/)) — resolve a labelled issue into a draft/ready PR. The kernel runs unchanged for any future strategy.
+The registry currently contains one strategy ([`implement`](./strategies/implement/)): resolve a labelled issue into a draft/ready PR.
 
 ## How it works
 
@@ -101,11 +101,11 @@ A critic phase runs **N parallel critic agents** drawn from `strategy.criticPool
 - **Round-robin** (default): cyclic `pool[i % L]` when `criticCount > pool.length`.
 - **Random with replacement**: seeded sampling via `criticEnsembleSeed`. Reproducible across runs.
 
-Findings merge with majority voting (default threshold `⌈valid/2⌉`). One **escape hatch**: a below-threshold finding survives if at least one critic flagged it with `severity=CRITICAL` AND `confidence=HIGH`; the merged severity is capped at `HIGH` and the finding is tagged `contested = true`. The historical option name (`promoteSingletonCritical`) reflects the most common case (a single voter), but the rule deliberately also keeps stronger minority signals (e.g. 2 of 5 voters flagging CRITICAL+HIGH against a threshold of 3) — the asymmetric cost of missing a true CRITICAL outweighs accepting a contested one. Optional **stage-2 arbiter** (MoA pattern, [arXiv:2406.04692](https://arxiv.org/abs/2406.04692)) is triggered when at least one merged finding has severity HIGH or CRITICAL; the arbiter receives the full merged list and its parsed output entirely replaces it. Arbiter or parse failure is non-fatal (the merged list is preserved).
+Findings merge with majority voting (default threshold `⌈valid/2⌉`). Escape hatch: a below-threshold finding survives if at least one critic flagged it with `severity=CRITICAL` AND `confidence=HIGH`; merged severity is capped at `HIGH` and `contested = true` is set. Applies to any minority signal, not only true singletons. Optional **stage-2 arbiter** (MoA pattern, [arXiv:2406.04692](https://arxiv.org/abs/2406.04692)) is triggered when at least one merged finding has severity HIGH or CRITICAL; the arbiter receives the full merged list and its parsed output entirely replaces it. Arbiter or parse failure is non-fatal (the merged list is preserved).
 
-Failure mode catch: when fewer than `⌈N/2⌉` slots return parseable findings, the round is marked `critic_errored` and not merged. The simple-majority quorum is calibrated for crash-fault tolerance — LLM critics fail by parse error / timeout / OOM, not adversarially, so BFT thresholds are unwarranted.
+When fewer than `⌈N/2⌉` slots return parseable findings, the round is marked `critic_errored` and not merged. The quorum assumes crash faults (parse error, timeout, OOM), not byzantine faults.
 
-**Industry-norm divergence (D2)**: SAST tooling conventionally aggregates severity by **MAX** (CVSS v3.1 §3.8; GitHub/GHAS; DefectDojo). This module uses **median tie-up** because LLM critics are stochastic and miscalibrated; median is robust to outlier critics. The singleton-CRITICAL escape hatch covers the asymmetric-cost case.
+**Severity aggregation**: SAST tooling conventionally uses MAX (CVSS v3.1 §3.8; GitHub/GHAS; DefectDojo). This module uses median tie-up — robust to outlier votes — with the singleton-CRITICAL escape hatch covering the high-severity asymmetric-cost case.
 
 ## Robustness mechanisms
 
@@ -197,20 +197,20 @@ pnpm test:sandcastle:coverage
 pnpm test:sandcastle:debug
 ```
 
-The unit suite covers slot resolution, voted merge invariants (point cases plus example-locked invariants for validCount accounting, vote-count bounds, disagreement-score range, dedup non-expansiveness, and sort-order monotonicity), registry-load validation (one case per fail-fast rule), kernel control predicates (early-exit, best-state gating, snapshot building, options resolution), partial-recovery JSON parsing, the concurrency pool's FIFO + release-on-reject contract, the finalizer's `buildPrArgs` matrix, and the `isValidSha` predicate. Backward-compat single-critic identity, round-robin / seeded-random slot fill, severity median tie-up, cross-critic dedup with category-phrasing variance, singleton-CRITICAL escape with HIGH cap, and disagreement scoring are all exercised against `mergeCriticFindings` directly.
+The unit suite exercises `mergeCriticFindings` (voting, dedup, severity median tie-up, singleton-CRITICAL escape, disagreement scoring, slot fill), `parseFindings`, kernel control predicates, the concurrency pool, the finalizer's `buildPrArgs`, and `isValidSha`. See `tests/` for the per-module test files.
 
-## Using with AI coding agents
+## Extension constraints
 
-When extending `.sandcastle/` with Copilot / Claude / Cursor:
+When adding new strategies or modifying the kernel:
 
-- **Canonical extension point: a new `LoopStrategy`.** Don't modify the kernel — it has zero strategy-specific code, and reviewers will reject changes that couple it to a task type.
-- **Agent specs are atomic.** When tweaking models or efforts, edit a single `AgentSpec` literal — never split the (model, effort) pair.
-- **Validation is fail-fast at module load.** Misconfiguration (empty pool, blank model, invalid effort, threshold OOB, missing seed for random fill) throws with a field-named error in [`strategies/index.ts:validateLoopStrategyEnsemble`](./strategies/index.ts) — read the error, fix the field.
-- **Prompts are XML-tag-delimited.** The actor/critic/arbiter outputs are extracted from `<promise>COMPLETE</promise>` and per-call `<findings-{NONCE}>...</findings-{NONCE}>` markers; preserve these in any new prompts.
+- Add a new `LoopStrategy` rather than modifying the kernel.
+- Edit `AgentSpec` literals as a unit — never split `(model, effort)`.
+- Misconfiguration throws a field-named `StrategyValidationError` at module load via [`validateLoopStrategyEnsemble`](./strategies/index.ts).
+- Preserve the `<promise>COMPLETE</promise>` and `<findings-{NONCE}>...</findings-{NONCE}>` markers in any new prompts.
 
 ## References
 
-The design draws on (citations are inline in code comments where applicable):
+The design draws on:
 
 - **Mixture-of-Agents** ([Wang et al. 2024, arXiv:2406.04692](https://arxiv.org/abs/2406.04692)) — stage-2 arbiter pattern.
 - **Self-Consistency** ([Wang et al. 2022, arXiv:2203.11171](https://arxiv.org/abs/2203.11171)) — N-sample voting; rationale for `MAX_CRITIC_COUNT = 8`.

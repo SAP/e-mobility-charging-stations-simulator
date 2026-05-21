@@ -1,8 +1,8 @@
 /**
  * @file Tests for the multi-critic ensemble merge function.
  * @description Pure-function unit tests for `mergeCriticFindings` and
- * `resolveCriticSlots` covering backward compat, voting, dedup,
- * singleton-CRITICAL escape, severity median tie-up, and slot-fill.
+ * `resolveCriticSlots` covering N=1 identity, voting, dedup, singleton-
+ * CRITICAL escape, severity median tie-up, and slot-fill.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
@@ -159,9 +159,10 @@ await describe('merge-findings', async () => {
     })
 
     await it('seeded random-with-replacement covers multiple pool entries (no degenerate-zero bias)', () => {
-      // Locks the BigInt fix in deterministicIndex: the previous double-precision
-      // arithmetic (`high * 2^32 + low`) collapsed `combined % range` toward 0
-      // for ~99% of digests, which would make every fill slot resolve to pool[0].
+      // Locks the BigInt arithmetic in deterministicIndex: a JS-double
+      // `high * 2^32 + low` rounds for values above Number.MAX_SAFE_INTEGER
+      // and collapses `combined % range` toward 0 for ~99% of digests, which
+      // would make every fill slot resolve to pool[0].
       const pool = [
         spec('a', 'low'),
         spec('b', 'low'),
@@ -210,7 +211,7 @@ await describe('merge-findings', async () => {
     })
   })
 
-  await describe('mergeCriticFindings — backward compat', async () => {
+  await describe('mergeCriticFindings — N=1 identity', async () => {
     await it('N=1, single output → identity', () => {
       const f = fakeFinding({ severity: 'HIGH' })
       const result = mergeCriticFindings([[f]], { contextHashes: ctxHashesFor(f) })

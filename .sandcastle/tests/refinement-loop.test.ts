@@ -1,11 +1,10 @@
 /**
- * @file Kernel integration tests for `runOneCritic`, `runCritic`, and
- * `maybeRunArbiter`.
+ * @file Kernel integration tests for `runOneCritic`, `runCritic`,
+ * `maybeRunArbiter`, `runRefinementLoop`, and `computeFindingKey`.
  * @description Drives the kernel critic flow with a `SandboxInstance` stub
  * (no LLM round-trips, no git, no `execFileAsync`). Locks the runtime
- * nonce-shape contract that the unit `parseFindings` tests cannot reach,
- * and pins the quorum / merge / arbiter / parse-retry behaviors that
- * shipped non-functional in PR #1866 before the audit remediation.
+ * nonce-shape contract and the quorum / merge / arbiter / parse-retry
+ * behaviors.
  */
 import type { Sandbox, SandboxRunOptions, SandboxRunResult } from '@ai-hero/sandcastle'
 
@@ -25,7 +24,13 @@ import type {
   TaskSpec,
 } from '../types.js'
 
-import { maybeRunArbiter, runCritic, runOneCritic, runRefinementLoop } from '../refinement-loop.js'
+import {
+  computeFindingKey,
+  maybeRunArbiter,
+  runCritic,
+  runOneCritic,
+  runRefinementLoop,
+} from '../refinement-loop.js'
 
 const baseFinding: Finding = {
   category: 'logic',
@@ -198,7 +203,7 @@ await describe('refinement-loop kernel', async () => {
       assert.equal(result.validCriticCount, 0)
     })
 
-    await it('short-circuits without merge when N=1 (legacy single-critic identity)', async () => {
+    await it('short-circuits without merge when N=1 (single-critic identity)', async () => {
       const { sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
       )
@@ -477,6 +482,28 @@ await describe('refinement-loop kernel', async () => {
         assert.ok(
           validateCalls >= 1,
           `expected validate to have run at least once mid-loop, got ${String(validateCalls)}`
+        )
+      } finally {
+        await cleanup()
+      }
+    })
+  })
+
+  await describe('computeFindingKey', async () => {
+    await it('cross-path key parity for line-PRESENT empty-file finding (file:"" === file:"global")', async () => {
+      // The temp repo has no `global` file; both lookups hit the ENOENT
+      // fallback inside hashContextLines, which hashes `'global:42:fallback'`
+      // for both inputs after the `file || 'global'` normalization.
+      const { cleanup, cwd } = await setupTempRepo()
+      try {
+        const f1 = { ...baseFinding, file: '', line: 42 }
+        const f2 = { ...baseFinding, file: 'global', line: 42 }
+        const k1 = await computeFindingKey(f1, cwd)
+        const k2 = await computeFindingKey(f2, cwd)
+        assert.equal(
+          k1,
+          k2,
+          `empty-file and "global"-file findings must produce identical keys; got\n  k1=${k1}\n  k2=${k2}`
         )
       } finally {
         await cleanup()

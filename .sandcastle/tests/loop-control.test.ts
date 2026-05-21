@@ -1,8 +1,7 @@
 /**
- * @file Tests for the pure loop-control predicates extracted from `refinement-loop.ts`.
- * @description Covers `checkEarlyExit`, `shouldResetToBest`, `buildRoundSnapshot`,
- * and `resolveLoopOptions`. These are file-private inside `refinement-loop.ts`
- * before extraction; the move makes them unit-testable.
+ * @file Tests for `loop-control.ts` predicates.
+ * @description Covers `checkEarlyExit`, `shouldResetToBest`,
+ * `buildRoundSnapshot`, and `resolveLoopOptions`.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'

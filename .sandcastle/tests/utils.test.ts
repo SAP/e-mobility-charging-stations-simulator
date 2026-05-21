@@ -1,8 +1,8 @@
 /**
- * @file Tests for `.sandcastle/utils.ts` exported helpers.
- * @description Currently exercises `isValidSha`; `agentProvider`,
- * `execFileAsync`, and `toErrorMessage` are deliberately untested per the
- * audit (1-line wrappers around external libraries).
+ * @file Tests for `.sandcastle/utils.ts` helpers.
+ * @description Exercises `isValidSha`. The other exports
+ * (`agentProvider`, `execFileAsync`, `toErrorMessage`) are thin
+ * wrappers over external libraries and not covered here.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'

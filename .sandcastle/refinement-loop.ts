@@ -43,7 +43,7 @@ import { parseFindings } from './parse-findings.js'
 import { agentProvider, execFileAsync, isValidSha, toErrorMessage } from './utils.js'
 import { runValidation } from './validation.js'
 
-/** Options for the refinement loop. Re-exported from loop-control.js for backward compat. */
+/** Options for the refinement loop. Re-exported from `loop-control.js`. */
 export type { RefinementLoopOptions } from './loop-control.js'
 
 /** Result of a convergence check. */
@@ -83,6 +83,39 @@ interface RatchetContext {
   readonly signal?: AbortSignal
   /** The task specification. */
   readonly spec: TaskSpec
+}
+
+/**
+ * Computes a deduplication key for a finding using a context hash of surrounding lines.
+ *
+ * The key shape `${file}::${normalizeCategory(category)}::${ctxHash}` is
+ * intentionally identical to {@link findingDedupKey} (cross-critic merge)
+ * so cross-round dedup recognizes the same defect even when critics
+ * rephrase its category between rounds (`"sql-injection"` vs `"SQLInjection"`).
+ * For findings without `line`, both paths converge on
+ * {@link noLineFallbackHash} for the third segment, so a line-less defect
+ * dedupes by file+category whether seen across rounds or across critics.
+ * @param f - Finding to compute a key for.
+ * @param cwd - Working directory (worktree path) for reading file context.
+ * @param fileCache - Optional cache of file contents keyed by resolved path.
+ * @returns Composite dedup key.
+ */
+export async function computeFindingKey (
+  f: Finding,
+  cwd: string,
+  fileCache?: Map<string, string>
+): Promise<string> {
+  const category = normalizeCategory(f.category)
+  const file = f.file || 'global'
+  if (f.line == null) {
+    return `${file}::${category}::${noLineFallbackHash(file)}`
+  }
+  const contextHash = await hashContextLines(
+    { cwd, file, line: f.line },
+    CONTEXT_HASH_RADIUS,
+    fileCache
+  )
+  return `${file}::${category}::${contextHash}`
 }
 
 /**
@@ -149,8 +182,8 @@ export async function maybeRunArbiter (
 /**
  * Runs the critic phase: resolves N slots from the strategy, fans them out
  * in parallel via Promise.allSettled, enforces ⌈N/2⌉ quorum, and merges the
- * per-slot outputs by majority vote with deduplication. Falls back to the
- * legacy single-critic single-retry behavior when no ensemble fields are set.
+ * per-slot outputs by majority vote with deduplication. When N=1 the merge
+ * is skipped and the sole critic's output is returned directly.
  *
  * Exported for kernel integration tests; not part of the public API.
  * @param ctx - Loop context containing spec, sandbox, strategy, baseBranch, and signal.
@@ -229,8 +262,7 @@ export async function runCritic (
 }
 
 /**
- * Runs a single critic slot with one parse-retry, mirroring the legacy
- * single-critic semantics on a per-slot basis. Returns null when both
+ * Runs a single critic slot with one parse-retry. Returns null when both
  * attempts fail to produce parseable findings.
  *
  * Exported for kernel integration tests; not part of the public API.
@@ -545,39 +577,6 @@ async function checkQualityRatchet (
 }
 
 /**
- * Computes a deduplication key for a finding using a context hash of surrounding lines.
- *
- * The key shape `${file}::${normalizeCategory(category)}::${ctxHash}` is
- * intentionally identical to {@link findingDedupKey} (cross-critic merge)
- * so cross-round dedup recognizes the same defect even when critics
- * rephrase its category between rounds (`"sql-injection"` vs `"SQLInjection"`).
- * For findings without `line`, both paths converge on
- * {@link noLineFallbackHash} for the third segment, so a line-less defect
- * dedupes by file+category whether seen across rounds or across critics.
- * @param f - Finding to compute a key for.
- * @param cwd - Working directory (worktree path) for reading file context.
- * @param fileCache - Optional cache of file contents keyed by resolved path.
- * @returns Composite dedup key.
- */
-async function computeFindingKey (
-  f: Finding,
-  cwd: string,
-  fileCache?: Map<string, string>
-): Promise<string> {
-  const category = normalizeCategory(f.category)
-  const fileSegment = f.file || 'global'
-  if (f.line == null) {
-    return `${fileSegment}::${category}::${noLineFallbackHash(f.file)}`
-  }
-  const contextHash = await hashContextLines(
-    { cwd, file: f.file, line: f.line },
-    CONTEXT_HASH_RADIUS,
-    fileCache
-  )
-  return `${fileSegment}::${category}::${contextHash}`
-}
-
-/**
  * Filters findings by confidence and deduplicates against previously seen keys.
  * @param findings - Raw findings from the critic.
  * @param cwd - Working directory for context hashing.
@@ -681,7 +680,16 @@ async function executeRound (
 }
 
 /**
- * Hashes a window of lines around the finding for dedup stability.
+ * Hashes a window of lines around the given line number for cross-finding
+ * dedup stability. Falls back to a stable digest of `${file}:${line}:fallback`
+ * on any I/O / path-traversal error so dedup keys remain deterministic.
+ *
+ * Empty `file` is normalized to `'global'` BEFORE both the filesystem
+ * resolution and the hash input, so a finding with `file:''` and a finding
+ * with `file:'global'` (same line, same category) produce identical hashes.
+ * Mirrors {@link noLineFallbackHash} and `findingDedupKey` (line-less and
+ * first-segment paths) so the empty-file invariant holds across all dedup
+ * paths.
  * @param input - Hash input containing cwd, file, and line.
  * @param radius - Number of lines above/below to include in the context window.
  * @param fileCache - Optional cache of file contents keyed by resolved path.
@@ -692,7 +700,8 @@ async function hashContextLines (
   radius: number,
   fileCache?: Map<string, string>
 ): Promise<string> {
-  const { cwd, file, line } = input
+  const { cwd, line } = input
+  const file = input.file || 'global'
   try {
     const fullPath = await realpath(join(cwd, file))
     if (!fullPath.startsWith((await realpath(cwd)) + sep)) {

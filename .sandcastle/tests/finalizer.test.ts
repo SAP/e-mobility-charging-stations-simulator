@@ -1,9 +1,9 @@
 /**
  * @file Tests for `buildPrArgs` (PR-creation argument builder).
- * @description Pure function tests for the label-driven commit-prefix mapping
- * (`feat:` / `fix:` / `chore:`), draft-toggle rules (status × validation), title
- * sanitization (stripping bracketed prefixes), and outstanding-findings note
- * rendering. Customer-facing PR title/body content; high regression risk.
+ * @description Pure-function coverage of the label → commit-prefix mapping
+ * (`feat:` / `fix:` / `chore:`), draft-toggle rules (status × validation),
+ * title sanitization (stripping bracketed prefixes), and outstanding-findings
+ * note rendering.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'

@@ -22,10 +22,9 @@ export interface StrategyEntry {
 }
 
 /**
- * Strategy / registry validation error carrying the offending field path
- * alongside the human-readable message. Tests assert against `field` for
- * stable contract decoupled from message wording (see `AGENTS.md`: "typed
- * errors with structured properties").
+ * Validation error carrying the offending field path alongside the message.
+ * Tests assert against `field` rather than message wording so wording can
+ * change without breaking tests.
  */
 export class StrategyValidationError extends Error {
   /** Dotted path of the offending field (e.g. `'test.actor.model'`, `'STRATEGY_REGISTRY[2].key'`). */
@@ -44,8 +43,6 @@ export class StrategyValidationError extends Error {
 /**
  * Canonical registry of strategies. Order matters: when an issue carries
  * several `sandcastle-*` labels, the first matching entry wins.
- *
- * Adding a new strategy is one line + one `strategies/<key>/` sub-directory.
  */
 export const STRATEGY_REGISTRY: readonly StrategyEntry[] = [
   { controlTags: ['review'], key: 'implement', strategy: implementStrategy },
