@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@ai-hero/sandcastle': 98ac71a9a8d3bc7df881ffb9c3a698ac315e90f9c507c5d8c356868e3e35a4d5
+  '@ai-hero/sandcastle@0.5.11': 45a060c13c42624c505f5d00557472c08c80746330ed7b1a3d8f8e7be99e3f02
 
 importers:
 
@@ -73,8 +73,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@ai-hero/sandcastle':
-        specifier: ^0.5.10
-        version: 0.5.10(patch_hash=98ac71a9a8d3bc7df881ffb9c3a698ac315e90f9c507c5d8c356868e3e35a4d5)(@effect/cluster@0.57.0(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.17.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/typeclass@0.39.0(effect@3.21.2))(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+        specifier: ^0.5.11
+        version: 0.5.11(patch_hash=45a060c13c42624c505f5d00557472c08c80746330ed7b1a3d8f8e7be99e3f02)(@effect/cluster@0.57.0(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.17.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/typeclass@0.39.0(effect@3.21.2))(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       '@commitlint/cli':
         specifier: ^21.0.1
         version: 21.0.1(@types/node@24.12.4)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
@@ -258,8 +258,8 @@ importers:
 
 packages:
 
-  '@ai-hero/sandcastle@0.5.10':
-    resolution: {integrity: sha512-6nEUfWA0W5fRxEgyPrqUqqJyBsniNSM2ABKo8+5fKZ9yeBStqz7CWn0jG7HzNYa4AB5yVHKFZg5yW5kZUSbSog==}
+  '@ai-hero/sandcastle@0.5.11':
+    resolution: {integrity: sha512-ILoZTQatOKhv5Lc6ZPXLi4JXKjBND9WsNuWB7+2iQyy0WNtUr4IP0qA2qNZlbicmkmba2pYcOg+kwrzsoTt+ng==}
     hasBin: true
     peerDependencies:
       '@daytona/sdk': ^0.164.0
@@ -5011,7 +5011,7 @@ packages:
 
 snapshots:
 
-  '@ai-hero/sandcastle@0.5.10(patch_hash=98ac71a9a8d3bc7df881ffb9c3a698ac315e90f9c507c5d8c356868e3e35a4d5)(@effect/cluster@0.57.0(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.17.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/typeclass@0.39.0(effect@3.21.2))(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+  '@ai-hero/sandcastle@0.5.11(patch_hash=45a060c13c42624c505f5d00557472c08c80746330ed7b1a3d8f8e7be99e3f02)(@effect/cluster@0.57.0(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.17.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/rpc@0.74.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.50.0(@effect/experimental@0.59.0(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.95.0(effect@3.21.2))(effect@3.21.2))(@effect/typeclass@0.39.0(effect@3.21.2))(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@clack/prompts': 1.4.0
       '@effect/cli': 0.74.0(@effect/platform@0.95.0(effect@3.21.2))(@effect/printer-ansi@0.48.0(@effect/typeclass@0.39.0(effect@3.21.2))(effect@3.21.2))(@effect/printer@0.48.0(@effect/typeclass@0.39.0(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)
