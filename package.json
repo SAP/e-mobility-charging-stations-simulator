@@ -113,7 +113,7 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.4",
-    "eslint-plugin-jsdoc": "^62.9.0",
+    "eslint-plugin-jsdoc": "^63.0.0",
     "eslint-plugin-perfectionist": "^5.9.0",
     "eslint-plugin-vue": "^10.9.1",
     "husky": "^9.1.7",
