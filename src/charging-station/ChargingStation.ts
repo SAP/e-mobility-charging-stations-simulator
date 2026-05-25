@@ -2605,7 +2605,8 @@ export class ChargingStation extends EventEmitter {
               this.configurationFile,
               FileType.ChargingStationConfiguration,
               ensureError(error),
-              this.logPrefix()
+              this.logPrefix(),
+              { throwError: false }
             )
           })
         } else {

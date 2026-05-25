@@ -419,9 +419,13 @@ export class OCPP20CertificateManager {
         await mkdir(dirPath, { recursive: true })
       }
 
-      await atomicWriteFile(filePath, pemData, FileType.Certificate, '', {
-        ensureDir: false,
-      })
+      await atomicWriteFile(
+        filePath,
+        pemData,
+        FileType.Certificate,
+        `${stationHashId} OCPP20CertificateManager.storeCertificate |`,
+        { ensureDir: false }
+      )
 
       return {
         filePath,

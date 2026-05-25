@@ -36,26 +36,17 @@ export class JsonFileStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     this.setPerformanceStatistics(performanceStatistics)
-    try {
-      await AsyncLock.runExclusive(AsyncLockType.performance, () => {
-        // The storage directory is created by `open()`; skip the per-write `mkdir`
-        // to keep the per-sample cost minimal.
-        atomicWriteFileSync(
-          this.dbName,
-          JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
-          FileType.PerformanceRecords,
-          this.logPrefix,
-          { ensureDir: false }
-        )
-      })
-    } catch (error) {
-      handleFileException(
+    await AsyncLock.runExclusive(AsyncLockType.performance, () => {
+      // The storage directory is created by `open()`; skip the per-write `mkdir`
+      // to keep the per-sample cost minimal.
+      atomicWriteFileSync(
         this.dbName,
+        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
         FileType.PerformanceRecords,
-        ensureError(error),
         this.logPrefix,
+        { ensureDir: false },
         { throwError: false }
       )
-    }
+    })
   }
 }
