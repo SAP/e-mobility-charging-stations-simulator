@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { hash, X509Certificate } from 'node:crypto'
-import { mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../index.js'
@@ -12,11 +12,18 @@ import {
   type CertificateHashDataType,
   CertificateSigningUseEnumType,
   DeleteCertificateStatusEnumType,
+  FileType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
-import { convertToDate, getErrorMessage, isEmpty, isNotEmptyArray } from '../../../utils/index.js'
+import {
+  atomicWriteFile,
+  convertToDate,
+  getErrorMessage,
+  isEmpty,
+  isNotEmptyArray,
+} from '../../../utils/index.js'
 import { extractDerIssuer } from './Asn1DerUtils.js'
 
 /**
@@ -412,7 +419,9 @@ export class OCPP20CertificateManager {
         await mkdir(dirPath, { recursive: true })
       }
 
-      await writeFile(filePath, pemData, 'utf8')
+      await atomicWriteFile(filePath, pemData, FileType.Certificate, '', {
+        ensureDir: false,
+      })
 
       return {
         filePath,

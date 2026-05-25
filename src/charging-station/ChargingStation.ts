@@ -3,7 +3,7 @@
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 import { hash, randomInt } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
@@ -69,6 +69,7 @@ import {
   ACElectricUtils,
   AsyncLock,
   AsyncLockType,
+  atomicWriteFileSync,
   buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
@@ -2589,10 +2590,11 @@ export class ChargingStation extends EventEmitter {
             configurationData.configurationHash = configurationHash
             const measureId = `${FileType.ChargingStationConfiguration} write`
             const beginId = PerformanceStatistics.beginMeasure(measureId)
-            writeFileSync(
+            atomicWriteFileSync(
               this.configurationFile,
               JSON.stringify(configurationData, undefined, 2),
-              'utf8'
+              FileType.ChargingStationConfiguration,
+              this.logPrefix()
             )
             PerformanceStatistics.endMeasure(measureId, beginId)
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
