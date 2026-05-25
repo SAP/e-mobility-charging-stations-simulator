@@ -57,7 +57,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        VALID_PEM_CERTIFICATE_EXTENDED
+        VALID_PEM_CERTIFICATE_EXTENDED,
+        'test |'
       )
 
       assert.notStrictEqual(result, undefined)
@@ -74,7 +75,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        INVALID_PEM_CERTIFICATE_MISSING_MARKERS
+        INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
+        'test |'
       )
 
       assert.notStrictEqual(result, undefined)
@@ -89,7 +91,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        EMPTY_PEM_CERTIFICATE
+        EMPTY_PEM_CERTIFICATE,
+        'test |'
       )
 
       assert.notStrictEqual(result, undefined)
@@ -101,7 +104,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_CHARGING_STATION_HASH_ID,
         InstallCertificateUseEnumType.V2GRootCertificate,
-        VALID_PEM_CERTIFICATE_EXTENDED
+        VALID_PEM_CERTIFICATE_EXTENDED,
+        'test |'
       )
 
       assert.notStrictEqual(result, undefined)
@@ -411,12 +415,14 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         manager.storeCertificate(
           TEST_CHARGING_STATION_HASH_ID,
           InstallCertificateUseEnumType.CSMSRootCertificate,
-          VALID_PEM_CERTIFICATE_EXTENDED
+          VALID_PEM_CERTIFICATE_EXTENDED,
+          'test |'
         ),
         manager.storeCertificate(
           TEST_CHARGING_STATION_HASH_ID,
           InstallCertificateUseEnumType.V2GRootCertificate,
-          VALID_PEM_CERTIFICATE_EXTENDED
+          VALID_PEM_CERTIFICATE_EXTENDED,
+          'test |'
         ),
         manager.getInstalledCertificates(TEST_CHARGING_STATION_HASH_ID),
       ])
@@ -433,7 +439,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_CHARGING_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        longChain
+        longChain,
+        'test |'
       )
 
       assert.notStrictEqual(result, undefined)

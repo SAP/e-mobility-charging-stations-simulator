@@ -150,8 +150,7 @@ export const writeStateFile = async (
       JSON.stringify(stateData, undefined, 2),
       FileType.SimulatorState,
       logPrefixFn?.() ?? '',
-      undefined,
-      { throwError: false }
+      { errorParams: { throwError: false } }
     )
   })
 }

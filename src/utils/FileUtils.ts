@@ -13,6 +13,7 @@ import {
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { pid } from 'node:process'
+import { threadId } from 'node:worker_threads'
 
 import type { EmptyObject, FileType, HandleErrorParams } from '../types/index.js'
 
@@ -22,21 +23,10 @@ import { isNotEmptyString } from './Utils.js'
 
 const moduleName = 'FileUtils'
 
-/**
- * Default file mode for newly created files (umask is applied by the OS).
- */
 const DEFAULT_FILE_MODE = 0o666
 
-/**
- * Monotonic counter used together with the process id to build unique temp filenames.
- * Single-process simulators do not need cryptographic randomness here; uniqueness within
- * the process suffices because callers serialize concurrent writes externally.
- */
 let tmpInvocationCounter = 0
 
-/**
- * Options for atomic file write operations.
- */
 export interface AtomicWriteOptions {
   /**
    * Character encoding when `data` is a string. Defaults to `'utf8'`.
@@ -48,28 +38,25 @@ export interface AtomicWriteOptions {
    */
   ensureDir?: boolean
   /**
+   * Error handling parameters forwarded to {@link handleFileException}. Defaults
+   * to `{ throwError: true, consoleOut: false }` (log at error level and rethrow).
+   */
+  errorParams?: HandleErrorParams<EmptyObject>
+  /**
    * Whether to flush (`fsync`) the temp file to the storage device before renaming.
-   * Provides crash durability at a small performance cost. Defaults to `true`.
+   * Defaults to `true`.
    */
   flush?: boolean
   /**
-   * File mode to apply when creating the temp file. The OS umask is applied on top.
-   * Defaults to `0o666`.
+   * File mode applied at temp file creation; the OS umask is applied on top. The
+   * destination inherits the temp file's mode after rename. Defaults to `0o666`.
    */
   mode?: number
 }
 
-/**
- * Builds a unique temporary file path placed in the same directory as `file`.
- *
- * Same-directory placement guarantees `rename(2)` cannot fail with `EXDEV` and that
- * the rename is atomic at the filesystem level.
- * @param file - Final destination file path.
- * @returns Temporary file path.
- */
 const buildTmpPath = (file: string): string => {
   tmpInvocationCounter += 1
-  return `${file}.${pid.toString()}.${tmpInvocationCounter.toString()}.tmp`
+  return `${file}.${pid.toString()}.${threadId.toString()}.${tmpInvocationCounter.toString()}.tmp`
 }
 
 export const watchJsonFile = (
@@ -97,38 +84,57 @@ export const watchJsonFile = (
  * Asynchronously writes `data` to `file` atomically using a write-then-rename strategy.
  *
  * The data is first written to a unique temporary file in the same directory as `file`,
- * optionally flushed to disk, then atomically renamed to `file`. Concurrent readers see
- * either the previous file content or the complete new content, never a partial write.
+ * optionally flushed to disk via `fsync`, then renamed to `file`. The rename step is
+ * atomic at the filesystem level, so a concurrent reader observes either the previous
+ * file content or the complete new content, never a partially written file.
  *
- * Concurrent writers to the same `file` MUST be serialized externally (for example via
- * `AsyncLock.runExclusive`); this primitive does not queue or deduplicate calls.
+ * Temporary file name encodes `pid`, `threadId` (0 in the main thread, non-zero per
+ * worker thread), and a per-thread monotonic counter. This guarantees uniqueness across
+ * processes and worker threads of the same process.
  *
- * On error, the temporary file is removed best-effort and the failure is funnelled
- * through {@link handleFileException} using `fileType` and `logPrefix`.
+ * Concurrent writers to the same `file` must be serialized externally (typically via
+ * `AsyncLock.runExclusive`); this primitive does not queue, deduplicate, or order
+ * concurrent calls. The `AsyncLock` instances in the project are per-thread, so when a
+ * given destination can be written from multiple threads the caller must additionally
+ * partition paths or coordinate across threads.
+ *
+ * Durability: when `flush` is `true` (default) the temporary file is fsync'd before
+ * `rename`. The parent directory entry is not separately fsync'd, so a kernel-level
+ * crash between `rename` and the directory inode flush may, on some filesystems,
+ * revert the rename. This is acceptable for the simulator's persistence needs (config
+ * files, simulator state, performance records, certificates) but is not full POSIX D
+ * durability.
+ *
+ * On `SIGKILL`, OOM kill, or power loss between `writeFile` and `rename`, the
+ * temporary `<file>.<pid>.<threadId>.<n>.tmp` artifact may remain on disk; it is inert
+ * and safe to delete manually. Normal failure paths clean it up best-effort.
+ *
+ * On error, the temporary file is removed best-effort and the failure is forwarded to
+ * {@link handleFileException} using `fileType`, `logPrefix`, and `options.errorParams`.
  * @param file - Destination file path.
  * @param data - Content to write.
  * @param fileType - File type used for error logging.
  * @param logPrefix - Caller-supplied log prefix used for error logging.
  * @param options - Atomic write options.
- * @param errorParams - Error handling parameters forwarded to {@link handleFileException}.
- * @returns A promise that resolves once the rename has completed, or rejects when
- *   `errorParams.throwError !== false` and the write failed.
+ * @returns A promise that resolves once the rename has completed.
+ * @throws {Error} When the write fails and `options.errorParams.throwError !== false`
+ *   (the default). The thrown error is the underlying `NodeJS.ErrnoException`
+ *   re-thrown by {@link handleFileException} after logging.
  */
 export const atomicWriteFile = async (
   file: string,
   data: NodeJS.ArrayBufferView | string,
   fileType: FileType,
   logPrefix: string,
-  options?: AtomicWriteOptions,
-  errorParams?: HandleErrorParams<EmptyObject>
+  options?: AtomicWriteOptions
 ): Promise<void> => {
-  const { encoding, ensureDir, flush, mode } = {
-    encoding: 'utf8' as BufferEncoding,
-    ensureDir: true,
-    flush: true,
-    mode: DEFAULT_FILE_MODE,
-    ...options,
-  }
+  const {
+    encoding = 'utf8',
+    ensureDir = true,
+    errorParams,
+    flush = true,
+    mode = DEFAULT_FILE_MODE,
+  } = options ?? {}
   const tmpFile = buildTmpPath(file)
   try {
     if (ensureDir) {
@@ -156,23 +162,24 @@ export const atomicWriteFile = async (
  * @param fileType - File type used for error logging.
  * @param logPrefix - Caller-supplied log prefix used for error logging.
  * @param options - Atomic write options.
- * @param errorParams - Error handling parameters forwarded to {@link handleFileException}.
+ * @throws {Error} When the write fails and `options.errorParams.throwError !== false`
+ *   (the default). The thrown error is the underlying `NodeJS.ErrnoException`
+ *   re-thrown by {@link handleFileException} after logging.
  */
 export const atomicWriteFileSync = (
   file: string,
   data: NodeJS.ArrayBufferView | string,
   fileType: FileType,
   logPrefix: string,
-  options?: AtomicWriteOptions,
-  errorParams?: HandleErrorParams<EmptyObject>
+  options?: AtomicWriteOptions
 ): void => {
-  const { encoding, ensureDir, flush, mode } = {
-    encoding: 'utf8' as BufferEncoding,
-    ensureDir: true,
-    flush: true,
-    mode: DEFAULT_FILE_MODE,
-    ...options,
-  }
+  const {
+    encoding = 'utf8',
+    ensureDir = true,
+    errorParams,
+    flush = true,
+    mode = DEFAULT_FILE_MODE,
+  } = options ?? {}
   const tmpFile = buildTmpPath(file)
   try {
     if (ensureDir) {

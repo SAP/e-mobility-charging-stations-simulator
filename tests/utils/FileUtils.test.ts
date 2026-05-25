@@ -5,10 +5,12 @@
 import assert from 'node:assert/strict'
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   type WatchListener,
   writeFileSync,
 } from 'node:fs'
@@ -147,11 +149,14 @@ await describe('FileUtils', async () => {
       const parent = join(tmpDir, 'missing-parent')
       const target = join(parent, 'output.json')
 
-      assert.throws(() => {
-        atomicWriteFileSync(target, '{}', FileType.SimulatorState, LOG_PREFIX, {
-          ensureDir: false,
-        })
-      })
+      assert.throws(
+        () => {
+          atomicWriteFileSync(target, '{}', FileType.SimulatorState, LOG_PREFIX, {
+            ensureDir: false,
+          })
+        },
+        { code: 'ENOENT' }
+      )
 
       assert.strictEqual(existsSync(target), false)
       assert.strictEqual(existsSync(parent), false)
@@ -163,14 +168,10 @@ await describe('FileUtils', async () => {
       const target = join(tmpDir, 'missing-parent', 'output.json')
 
       assert.doesNotThrow(() => {
-        atomicWriteFileSync(
-          target,
-          '{}',
-          FileType.SimulatorState,
-          LOG_PREFIX,
-          { ensureDir: false },
-          { throwError: false }
-        )
+        atomicWriteFileSync(target, '{}', FileType.SimulatorState, LOG_PREFIX, {
+          ensureDir: false,
+          errorParams: { throwError: false },
+        })
       })
 
       assert.strictEqual(existsSync(target), false)
@@ -225,7 +226,8 @@ await describe('FileUtils', async () => {
       await assert.rejects(
         atomicWriteFile(target, '{}', FileType.SimulatorState, LOG_PREFIX, {
           ensureDir: false,
-        })
+        }),
+        { code: 'ENOENT' }
       )
 
       assert.strictEqual(existsSync(target), false)
@@ -238,14 +240,10 @@ await describe('FileUtils', async () => {
       const target = join(tmpDir, 'missing-parent', 'output.json')
 
       await assert.doesNotReject(
-        atomicWriteFile(
-          target,
-          '{}',
-          FileType.SimulatorState,
-          LOG_PREFIX,
-          { ensureDir: false },
-          { throwError: false }
-        )
+        atomicWriteFile(target, '{}', FileType.SimulatorState, LOG_PREFIX, {
+          ensureDir: false,
+          errorParams: { throwError: false },
+        })
       )
 
       assert.strictEqual(existsSync(target), false)
@@ -270,6 +268,25 @@ await describe('FileUtils', async () => {
       assert.deepStrictEqual(
         readdirSync(tmpDir).filter(name => name.endsWith('.tmp')),
         []
+      )
+    })
+
+    await it('should leave the destination intact and clean up the temp file when rename fails', async () => {
+      const target = join(tmpDir, 'preserved-dir')
+      mkdirSync(target)
+      mkdirSync(join(target, 'child'))
+
+      await assert.rejects(
+        atomicWriteFile(target, 'NEW', FileType.SimulatorState, LOG_PREFIX),
+        (err: NodeJS.ErrnoException) =>
+          err.code === 'EISDIR' || err.code === 'ENOTEMPTY' || err.code === 'EPERM'
+      )
+
+      assert.ok(statSync(target).isDirectory(), 'target directory must remain intact')
+      assert.deepStrictEqual(
+        readdirSync(tmpDir).filter(name => name.endsWith('.tmp')),
+        [],
+        'temp file should be cleaned up after rename failure'
       )
     })
   })
