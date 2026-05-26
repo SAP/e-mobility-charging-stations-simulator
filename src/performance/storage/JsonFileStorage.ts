@@ -1,5 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
+import { fileURLToPath } from 'node:url'
+
 import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
 import {
   AsyncLock,
@@ -14,7 +16,13 @@ import { Storage } from './Storage.js'
 export class JsonFileStorage extends Storage {
   constructor (storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix)
-    this.dbName = this.storageUri.pathname
+    // Decode `file:` URIs into a native filesystem path; `URL.pathname` would yield
+    // `/C:/...` on Windows which is not usable as-is. Other schemes (typically a relative
+    // path passed as `jsonfile:./...`) keep `pathname` semantics for backward compatibility.
+    this.dbName =
+      this.storageUri.protocol === 'file:'
+        ? fileURLToPath(this.storageUri)
+        : this.storageUri.pathname
   }
 
   public close (): void {
