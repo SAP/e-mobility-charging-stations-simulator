@@ -31,7 +31,6 @@ import {
   DEFAULT_WORKER_START_DELAY_MS,
   WorkerProcessType,
 } from '../worker/index.js'
-import { checkDeprecatedConfigurationKeys } from './ConfigurationMigration.js'
 import {
   buildPerformanceUriFilePath,
   getDefaultPerformanceStorageUri,
@@ -195,10 +194,6 @@ export class Configuration {
   }
 
   public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
-    const checkDeprecatedConfigurationKeysOnce = once(() => {
-      checkDeprecatedConfigurationKeys(Configuration.getConfigurationData())
-    })
-    checkDeprecatedConfigurationKeysOnce()
     return Configuration.getConfigurationData()?.stationTemplateUrls
   }
 
