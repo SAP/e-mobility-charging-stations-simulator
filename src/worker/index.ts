@@ -15,4 +15,3 @@ export {
   WorkerMessageEvents,
   WorkerProcessType,
 } from './WorkerTypes.js'
-export { checkWorkerProcessType } from './WorkerUtils.js'

@@ -4,6 +4,12 @@ import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../charging-station/ConfigurationMigrations.js'
+import {
+  ConfigurationValidationError,
+  validateConfiguration,
+} from '../charging-station/ConfigurationValidation.js'
+import { BaseError } from '../exception/index.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -19,7 +25,6 @@ import {
   type WorkerConfiguration,
 } from '../types/index.js'
 import {
-  checkWorkerProcessType,
   DEFAULT_ELEMENT_ADD_DELAY_MS,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
@@ -29,12 +34,12 @@ import {
 import { checkDeprecatedConfigurationKeys } from './ConfigurationMigration.js'
 import {
   buildPerformanceUriFilePath,
-  checkWorkerElementsPerWorker,
   getDefaultPerformanceStorageUri,
   logPrefix,
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
+import { logger } from './Logger.js'
 import {
   convertToInt,
   has,
@@ -109,6 +114,7 @@ export class Configuration {
         )}`
       )
       Configuration.configurationData = {
+        $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
         log: defaultLogConfiguration,
         performanceStorage: defaultStorageConfiguration,
         stationTemplateUrls: [
@@ -144,9 +150,22 @@ export class Configuration {
       isNotEmptyString(Configuration.configurationFile)
     ) {
       try {
-        Configuration.configurationData = JSON.parse(
-          readFileSync(Configuration.configurationFile, 'utf8')
-        ) as ConfigurationData
+        const parsed: unknown = JSON.parse(readFileSync(Configuration.configurationFile, 'utf8'))
+        try {
+          Configuration.configurationData = validateConfiguration(
+            parsed,
+            Configuration.configurationFile
+          )
+        } catch (validationError) {
+          if (
+            validationError instanceof ConfigurationValidationError ||
+            validationError instanceof BaseError
+          ) {
+            console.error(chalk.red(validationError.message))
+            process.exit(1)
+          }
+          throw validationError
+        }
         Configuration.configurationFileWatcher ??= Configuration.getConfigurationFileWatcher()
       } catch (error) {
         handleFileException(
@@ -321,11 +340,9 @@ export class Configuration {
       }
     }
     if (has('elementStartDelay', configurationData?.worker)) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key migration
       deprecatedWorkerConfiguration.elementAddDelay = configurationData?.worker?.elementStartDelay
     }
     if (configurationData != null) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional deprecated key removal
       delete configurationData.workerPoolStrategy
     }
     const workerConfiguration: WorkerConfiguration = {
@@ -333,10 +350,6 @@ export class Configuration {
       ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
       ...(has(ConfigurationSection.worker, configurationData) && configurationData?.worker),
     }
-    if (workerConfiguration.processType != null) {
-      checkWorkerProcessType(workerConfiguration.processType)
-    }
-    checkWorkerElementsPerWorker(workerConfiguration.elementsPerWorker)
     return workerConfiguration
   }
 
@@ -385,19 +398,7 @@ export class Configuration {
               `${FileType.Configuration} ${Configuration.configurationFile} file has changed, reload`
             )}`
           )
-          delete Configuration.configurationData
-          Configuration.configurationSectionCache.clear()
-          if (Configuration.configurationChangeCallback != null) {
-            Configuration.configurationChangeCallback()
-              .finally(() => {
-                Configuration.configurationFileReloading = false
-              })
-              .catch((error: unknown) => {
-                throw ensureError(error)
-              })
-          } else {
-            Configuration.configurationFileReloading = false
-          }
+          Configuration.reloadConfiguration()
         }
       })
     } catch (error) {
@@ -413,5 +414,52 @@ export class Configuration {
 
   private static isConfigurationSectionCached (sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName)
+  }
+
+  /**
+   * Reload the configuration file with snapshot-based rollback semantics.
+   * Captures previous data and cache BEFORE clearing them, so any parse or
+   * validation error during reload restores the prior state. The change
+   * callback is only invoked when reload succeeds; the reloading flag is
+   * cleared in `finally` on both paths.
+   */
+  private static reloadConfiguration (): void {
+    const previousData =
+      Configuration.configurationData != null
+        ? structuredClone(Configuration.configurationData)
+        : undefined
+    const previousCache = new Map(Configuration.configurationSectionCache)
+    try {
+      delete Configuration.configurationData
+      Configuration.configurationSectionCache.clear()
+      if (isNotEmptyString(Configuration.configurationFile)) {
+        const parsed: unknown = JSON.parse(readFileSync(Configuration.configurationFile, 'utf8'))
+        Configuration.configurationData = validateConfiguration(
+          parsed,
+          Configuration.configurationFile
+        )
+      }
+      if (Configuration.configurationChangeCallback != null) {
+        Configuration.configurationChangeCallback().catch((error: unknown) => {
+          logger.error(`${logPrefix()} Configuration change callback error:`, ensureError(error))
+        })
+      }
+    } catch (error) {
+      if (error instanceof ConfigurationValidationError || error instanceof BaseError) {
+        logger.error(
+          `${logPrefix()} Configuration hot-reload failed; rolling back to previous configuration:`,
+          error
+        )
+      } else {
+        logger.error(
+          `${logPrefix()} Configuration hot-reload failed with unexpected error; rolling back:`,
+          ensureError(error)
+        )
+      }
+      Configuration.configurationData = previousData
+      Configuration.configurationSectionCache = previousCache
+    } finally {
+      Configuration.configurationFileReloading = false
+    }
   }
 }
