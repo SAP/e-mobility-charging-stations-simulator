@@ -19,7 +19,12 @@ export {
   handleUncaughtException,
   handleUnhandledRejection,
 } from './ErrorUtils.js'
-export { watchJsonFile } from './FileUtils.js'
+export {
+  atomicWriteFile,
+  atomicWriteFileSync,
+  type AtomicWriteOptions,
+  watchJsonFile,
+} from './FileUtils.js'
 export { logger } from './Logger.js'
 export {
   buildAddedMessage,

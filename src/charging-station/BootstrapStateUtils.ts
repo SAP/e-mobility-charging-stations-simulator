@@ -1,15 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
+import { basename, join } from 'node:path'
 
 import type { TemplateStatistics } from '../types/index.js'
 
@@ -17,6 +9,7 @@ import { FileType } from '../types/index.js'
 import {
   AsyncLock,
   AsyncLockType,
+  atomicWriteFileSync,
   ensureError,
   formatLogPrefix,
   handleFileException,
@@ -148,29 +141,16 @@ export const writeStateFile = async (
   logPrefixFn?: () => string
 ): Promise<void> => {
   await AsyncLock.runExclusive(AsyncLockType.simulatorState, () => {
-    const tmpFile = `${stateFilePath}.tmp`
-    try {
-      mkdirSync(dirname(stateFilePath), { recursive: true })
-      const stateData: SimulatorStateFile = {
-        started,
-        version: STATE_FILE_VERSION,
-      }
-      writeFileSync(tmpFile, JSON.stringify(stateData, undefined, 2), 'utf8')
-      renameSync(tmpFile, stateFilePath)
-    } catch (error) {
-      // Best-effort tmp cleanup; ignore secondary failure to surface the original error.
-      try {
-        rmSync(tmpFile, { force: true })
-      } catch {
-        // Ignore
-      }
-      handleFileException(
-        stateFilePath,
-        FileType.SimulatorState,
-        ensureError(error),
-        logPrefixFn?.() ?? '',
-        { throwError: false }
-      )
+    const stateData: SimulatorStateFile = {
+      started,
+      version: STATE_FILE_VERSION,
     }
+    atomicWriteFileSync(
+      stateFilePath,
+      JSON.stringify(stateData, undefined, 2),
+      FileType.SimulatorState,
+      logPrefixFn?.() ?? '',
+      { errorParams: { throwError: false } }
+    )
   })
 }
