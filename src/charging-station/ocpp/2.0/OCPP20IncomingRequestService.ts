@@ -1542,7 +1542,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const result = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate,
-        certificateChain
+        certificateChain,
+        chargingStation.logPrefix()
       )
 
       const storeResult = result instanceof Promise ? await result : result
@@ -2073,7 +2074,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const rawResult = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateType,
-        certificate
+        certificate,
+        chargingStation.logPrefix()
       )
       const resultPromise: Promise<StoreCertificateResult> =
         rawResult instanceof Promise

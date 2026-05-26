@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { hash, X509Certificate } from 'node:crypto'
-import { mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../index.js'
@@ -12,11 +12,18 @@ import {
   type CertificateHashDataType,
   CertificateSigningUseEnumType,
   DeleteCertificateStatusEnumType,
+  FileType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/index.js'
-import { convertToDate, getErrorMessage, isEmpty, isNotEmptyArray } from '../../../utils/index.js'
+import {
+  atomicWriteFile,
+  convertToDate,
+  getErrorMessage,
+  isEmpty,
+  isNotEmptyArray,
+} from '../../../utils/index.js'
 import { extractDerIssuer } from './Asn1DerUtils.js'
 
 /**
@@ -62,7 +69,8 @@ export interface OCPP20CertificateManagerInterface {
   storeCertificate(
     stationHashId: string,
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
-    pemData: string
+    pemData: string,
+    logPrefix: string
   ): Promise<StoreCertificateResult> | StoreCertificateResult
   validateCertificateFormat(pemData: unknown): boolean
   validateCertificateX509(pem: string): ValidateCertificateX509Result
@@ -377,12 +385,14 @@ export class OCPP20CertificateManager {
    * @param certType - Certificate type for storage (InstallCertificateUseEnumType for root certificates
    *   or CertificateSigningUseEnumType for signed leaf certificates)
    * @param pemData - PEM-encoded certificate data
+   * @param logPrefix - Caller-supplied log prefix used for atomic write error logging
    * @returns Storage result with success status and file path or error
    */
   public async storeCertificate (
     stationHashId: string,
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
-    pemData: string
+    pemData: string,
+    logPrefix: string
   ): Promise<StoreCertificateResult> {
     if (!this.validateCertificateFormat(pemData)) {
       return {
@@ -407,12 +417,16 @@ export class OCPP20CertificateManager {
 
       await this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
-      const dirPath = resolve(filePath, '..')
-      if (!(await this.pathExists(dirPath))) {
-        await mkdir(dirPath, { recursive: true })
-      }
-
-      await writeFile(filePath, pemData, 'utf8')
+      // Per-path serialization is implicit: the destination path is keyed by the
+      // certificate serial number, so concurrent calls writing byte-identical PEMs
+      // collapse to equivalent writes, and certificates with distinct serials use
+      // distinct paths. No external AsyncLock is required for these cases. Concurrent
+      // calls writing different PEM bytes to the same serial (rare in practice) are
+      // last-writer-wins. Parent directory creation is delegated to atomicWriteFile
+      // via its default `ensureDir: true`.
+      await atomicWriteFile(filePath, pemData, FileType.Certificate, logPrefix, {
+        mode: 0o600,
+      })
 
       return {
         filePath,

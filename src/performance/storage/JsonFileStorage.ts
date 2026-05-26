@@ -1,12 +1,12 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { closeSync, openSync, writeSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-import { BaseError } from '../../exception/index.js'
 import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
 import {
   AsyncLock,
   AsyncLockType,
+  atomicWriteFileSync,
   ensureError,
   handleFileException,
   JSONStringify,
@@ -14,36 +14,24 @@ import {
 import { Storage } from './Storage.js'
 
 export class JsonFileStorage extends Storage {
-  private fd?: number
-
   constructor (storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix)
-    this.dbName = this.storageUri.pathname
+    // Decode `file:` URIs into a native filesystem path; `URL.pathname` would yield
+    // `/C:/...` on Windows which is not usable as-is. Other schemes (typically a relative
+    // path passed as `jsonfile:./...`) keep `pathname` semantics for backward compatibility.
+    this.dbName =
+      this.storageUri.protocol === 'file:'
+        ? fileURLToPath(this.storageUri)
+        : this.storageUri.pathname
   }
 
   public close (): void {
     this.clearPerformanceStatistics()
-    try {
-      if (this.fd != null) {
-        closeSync(this.fd)
-        delete this.fd
-      }
-    } catch (error) {
-      handleFileException(
-        this.dbName,
-        FileType.PerformanceRecords,
-        ensureError(error),
-        this.logPrefix
-      )
-    }
   }
 
   public open (): void {
     try {
-      if (this.fd == null) {
-        this.ensureDBDirectory()
-        this.fd = openSync(this.dbName, 'w')
-      }
+      this.ensureDBDirectory()
     } catch (error) {
       handleFileException(
         this.dbName,
@@ -54,32 +42,19 @@ export class JsonFileStorage extends Storage {
     }
   }
 
-  public storePerformanceStatistics (performanceStatistics: Statistics): void {
+  public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     this.setPerformanceStatistics(performanceStatistics)
-    const fd = this.checkPerformanceRecordsFile()
-    AsyncLock.runExclusive(AsyncLockType.performance, () => {
-      writeSync(
-        fd,
-        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
-        0,
-        'utf8'
-      )
-    }).catch((error: unknown) => {
-      handleFileException(
+    await AsyncLock.runExclusive(AsyncLockType.performance, () => {
+      // Performance records are observability data; skip the per-sample `mkdir` (the
+      // directory is created by `open()`) and `fsync` (durability across crashes is
+      // not required for telemetry) to keep the hot path cheap.
+      atomicWriteFileSync(
         this.dbName,
+        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
         FileType.PerformanceRecords,
-        ensureError(error),
-        this.logPrefix
+        this.logPrefix,
+        { ensureDir: false, errorParams: { throwError: false }, flush: false }
       )
     })
-  }
-
-  private checkPerformanceRecordsFile (): number {
-    if (this.fd == null) {
-      throw new BaseError(
-        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
-      )
-    }
-    return this.fd
   }
 }

@@ -3,7 +3,7 @@
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 import { hash, randomInt } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
@@ -69,6 +69,7 @@ import {
   ACElectricUtils,
   AsyncLock,
   AsyncLockType,
+  atomicWriteFileSync,
   buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
@@ -2589,22 +2590,37 @@ export class ChargingStation extends EventEmitter {
             configurationData.configurationHash = configurationHash
             const measureId = `${FileType.ChargingStationConfiguration} write`
             const beginId = PerformanceStatistics.beginMeasure(measureId)
-            writeFileSync(
+            atomicWriteFileSync(
               this.configurationFile,
               JSON.stringify(configurationData, undefined, 2),
-              'utf8'
+              FileType.ChargingStationConfiguration,
+              this.logPrefix()
             )
             PerformanceStatistics.endMeasure(measureId, beginId)
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
             this.sharedLRUCache.setChargingStationConfiguration(configurationData)
             this.configurationFileHash = configurationHash
           }).catch((error: unknown) => {
-            handleFileException(
-              this.configurationFile,
-              FileType.ChargingStationConfiguration,
-              ensureError(error),
-              this.logPrefix()
-            )
+            // File-system failures are already logged at error level by the atomic
+            // write via handleFileException; absorb them here at debug level. Other
+            // failures inside the lock body (JSON serialization, cache mutation, ...)
+            // would otherwise go unobserved, so log them at error level.
+            const isErrnoException =
+              typeof error === 'object' &&
+              error !== null &&
+              'code' in error &&
+              typeof (error as NodeJS.ErrnoException).code === 'string'
+            if (isErrnoException) {
+              logger.debug(
+                `${this.logPrefix()} ${moduleName}.saveConfiguration: configuration save rejected:`,
+                error
+              )
+            } else {
+              logger.error(
+                `${this.logPrefix()} ${moduleName}.saveConfiguration: unexpected error inside configuration save lock:`,
+                ensureError(error)
+              )
+            }
           })
         } else {
           logger.debug(
