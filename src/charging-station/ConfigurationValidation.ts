@@ -100,8 +100,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
       `${moduleName}.validateConfiguration: Empty simulator configuration from file ${filePath}`
     )
   }
-  // Clone before mutating $schemaVersion below and inside the migration chain,
-  // so the caller's parsed JSON stays untouched.
+  // Defensive clone: $schemaVersion is rewritten below.
   const parsedRecord = structuredClone(parsed) as Record<string, unknown>
 
   const version = coerceConfigurationVersion(parsedRecord.$schemaVersion)
@@ -114,8 +113,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
       canonicalDestination == null
         ? 'no longer used; remove it from the configuration'
         : `use '${canonicalDestination}' instead`
-    // console.warn (not logger.warn): logger boot path calls back into
-    // Configuration → validateConfiguration → recursion.
+    // console.warn: logger.warn would recurse via Configuration → validateConfiguration.
     console.warn(
       `${chalk.green(logPrefix())} ${chalk.yellow(
         `${moduleName}: deprecated configuration key '${sourceKey}' detected in '${filePath}'; ${guidance}`
