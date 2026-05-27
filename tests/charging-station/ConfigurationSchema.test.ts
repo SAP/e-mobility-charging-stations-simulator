@@ -7,8 +7,14 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, it } from 'node:test'
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/charging-station/ConfigurationMigrations.js'
-import { ConfigurationSchema } from '../../src/charging-station/ConfigurationSchema.js'
+import {
+  CURRENT_CONFIGURATION_SCHEMA_VERSION,
+  DEPRECATED_KEY_REMAPPINGS,
+} from '../../src/charging-station/ConfigurationMigrations.js'
+import {
+  ConfigurationSchema,
+  WorkerConfigurationSchema,
+} from '../../src/charging-station/ConfigurationSchema.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   BAD_FIXTURES,
@@ -417,6 +423,179 @@ await describe('ConfigurationSchema', async () => {
         `hardcoded fallback failed schema validation: ${result.success ? '' : JSON.stringify(result.error.issues)}`
       )
       assert.strictEqual(result.data.$schemaVersion, CURRENT_CONFIGURATION_SCHEMA_VERSION)
+    })
+  })
+
+  await describe('strict sub-section parity', async () => {
+    await it('should reject unknown key in performanceStorage section', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ performanceStorage: { bogusStorageKey: true } })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').startsWith('performanceStorage')))
+    })
+
+    await it('should reject unknown key in uiServer.authentication section', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            authentication: {
+              bogusAuthKey: 'x',
+              enabled: true,
+              type: 'protocol-basic-auth',
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+    })
+  })
+
+  await describe('StationTemplateUrl entries', async () => {
+    await it('should reject empty file string', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          stationTemplateUrls: [{ file: '', numberOfStations: 1 }],
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.') === 'stationTemplateUrls.0.file'))
+    })
+
+    await it('should reject negative numberOfStations', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          stationTemplateUrls: [{ file: 'a.json', numberOfStations: -1 }],
+        })
+      )
+      assert.ok(!result.success)
+    })
+
+    await it('should accept deprecated numberOfStation alias', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          stationTemplateUrls: [{ file: 'a.json', numberOfStation: 1, numberOfStations: 1 }],
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected deprecated numberOfStation to be accepted, got: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject unknown key in stationTemplateUrls entry', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          stationTemplateUrls: [{ bogusEntryKey: 1, file: 'a.json', numberOfStations: 1 }],
+        })
+      )
+      assert.ok(!result.success)
+    })
+  })
+
+  await describe('worker numeric constraints', async () => {
+    for (const invalid of [0, -1] as const) {
+      await it(`should reject worker.elementsPerWorker = ${invalid.toString()}`, () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ worker: { elementsPerWorker: invalid } })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'worker.elementsPerWorker'))
+      })
+    }
+
+    await it('should reject worker.poolMaxSize = 0', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ worker: { poolMaxSize: 0 } })
+      )
+      assert.ok(!result.success)
+    })
+
+    await it('should reject worker.poolMinSize = -1', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({ worker: { poolMinSize: -1 } })
+      )
+      assert.ok(!result.success)
+    })
+  })
+
+  await describe('log numeric constraints', async () => {
+    for (const invalid of [-1, 1.5] as const) {
+      await it(`should reject log.statisticsInterval = ${invalid.toString()}`, () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({ log: { statisticsInterval: invalid } })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'log.statisticsInterval'))
+      })
+    }
+  })
+
+  await describe('schema / DEPRECATED_KEY_REMAPPINGS sync (RG-X)', async () => {
+    interface SchemaShapeEntry {
+      description?: string
+    }
+    interface ZodObjectLike {
+      shape: Record<string, SchemaShapeEntry>
+    }
+
+    await it('should mark every top-level DEPRECATED_KEY_REMAPPINGS entry as @deprecated in the schema', () => {
+      const shape = (ConfigurationSchema as unknown as ZodObjectLike).shape
+      for (const legacy of Object.keys(DEPRECATED_KEY_REMAPPINGS)) {
+        if (legacy.includes('.')) {
+          continue
+        }
+        const entry = shape[legacy]
+        assert.notStrictEqual(entry, undefined, `Schema is missing top-level key '${legacy}'`)
+        assert.match(
+          entry.description ?? '',
+          /@deprecated/,
+          `Schema key '${legacy}' must carry a @deprecated description`
+        )
+      }
+    })
+
+    await it('should mark every nested DEPRECATED_KEY_REMAPPINGS entry as @deprecated in the matching sub-schema', () => {
+      const subSchemas: Record<string, ZodObjectLike> = {
+        worker: WorkerConfigurationSchema,
+      }
+      for (const legacy of Object.keys(DEPRECATED_KEY_REMAPPINGS)) {
+        if (!legacy.includes('.')) {
+          continue
+        }
+        const [section, leaf] = legacy.split('.')
+        const subSchema = subSchemas[section]
+        assert.notStrictEqual(
+          subSchema,
+          undefined,
+          `No sub-schema registered for section '${section}'; extend subSchemas above`
+        )
+        const entry = subSchema.shape[leaf]
+        assert.notStrictEqual(
+          entry,
+          undefined,
+          `Sub-schema '${section}' is missing nested key '${leaf}'`
+        )
+        assert.match(
+          entry.description ?? '',
+          /@deprecated/,
+          `Schema key '${section}.${leaf}' must carry a @deprecated description`
+        )
+      }
+    })
+
+    await it('should list every @deprecated top-level schema key in DEPRECATED_KEY_REMAPPINGS', () => {
+      const shape = (ConfigurationSchema as unknown as ZodObjectLike).shape
+      for (const [fieldName, def] of Object.entries(shape)) {
+        if (def.description?.includes('@deprecated') === true) {
+          assert.ok(
+            fieldName in DEPRECATED_KEY_REMAPPINGS,
+            `Schema field '${fieldName}' marked @deprecated but missing from DEPRECATED_KEY_REMAPPINGS`
+          )
+        }
+      }
     })
   })
 })

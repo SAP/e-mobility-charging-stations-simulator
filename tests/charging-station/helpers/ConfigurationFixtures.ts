@@ -78,6 +78,60 @@ export const buildFullConfiguration = (): Record<string, unknown> => ({
 })
 
 /**
+ * Build an invalid JSON string for hot-reload parse-error tests.
+ * @returns A string that fails `JSON.parse`
+ */
+export const buildInvalidJsonString = (): string => '{ this is not valid json'
+
+/**
+ * Build a v1 configuration carrying a single deprecated key.
+ *
+ * Top-level keys are placed at the root; dotted keys
+ * (e.g. `'worker.elementStartDelay'`) are placed inside their nested
+ * sub-section. Used for B1 regression (no recursive logger access during
+ * boot) and the unconditional-sweep B3 path.
+ * @param key - Deprecated key name (must be a key of `DEPRECATED_KEY_REMAPPINGS`)
+ * @param value - Schema-valid sample value
+ * @returns A minimal v1 config carrying the deprecated key
+ */
+export const buildV1WithDeprecatedKey = (key: string, value: unknown): Record<string, unknown> => {
+  if (!key.includes('.')) {
+    return buildMinimalConfiguration({ [key]: value })
+  }
+  const [section, leaf] = key.split('.')
+  return buildMinimalConfiguration({ [section]: { [leaf]: value } })
+}
+
+/**
+ * Build a v0 configuration with TWO deprecated keys mapping to the SAME
+ * canonical destination, for collision-resolution tests (B4).
+ *
+ * Iteration order in the migration follows
+ * `Object.entries(DEPRECATED_KEY_REMAPPINGS)`. The current `setAtPath`
+ * implementation accepts equal values as idempotent no-ops and reports
+ * unequal values via `fieldErrors`.
+ *
+ * Uses canonical `stationTemplateUrls` (not the deprecated alias) so the
+ * fixture introduces no extra deprecation warnings — only the two source
+ * keys passed in are part of the migration sweep.
+ * @param firstKey - First deprecated key (collides on canonical)
+ * @param firstValue - Value for first key
+ * @param secondKey - Second deprecated key (same canonical destination)
+ * @param secondValue - Value for second key
+ * @returns A configuration triggering only the requested collision branch
+ */
+export const buildV0WithDeprecatedKeyCollision = (
+  firstKey: string,
+  firstValue: unknown,
+  secondKey: string,
+  secondValue: unknown
+): Record<string, unknown> => ({
+  [firstKey]: firstValue,
+  [secondKey]: secondValue,
+  stationTemplateUrls: [{ file: 'collision.json', numberOfStations: 1 }],
+})
+
+/**
  * Parametric negative-test fixtures: `[label, value, expectedErrorPath]`.
  * Each entry is expected to fail `ConfigurationSchema.safeParse(value)`.
  * `expectedErrorPath` is the dot-separated Zod error path (empty string means

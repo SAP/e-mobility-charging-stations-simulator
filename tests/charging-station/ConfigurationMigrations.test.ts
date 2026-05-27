@@ -1,6 +1,8 @@
 /**
  * @file Tests for ConfigurationMigrations
- * @description Unit tests for schema version coercion and migration functions
+ * @description Unit tests for schema version coercion, the deprecated-key
+ * sweep (`remapDeprecatedKeys`), and the version-bump migration chain
+ * (`applyConfigurationMigration`).
  */
 
 import assert from 'node:assert/strict'
@@ -11,9 +13,13 @@ import {
   coerceConfigurationVersion,
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
+  remapDeprecatedKeys,
 } from '../../src/charging-station/ConfigurationMigrations.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { buildLegacyConfiguration } from './helpers/ConfigurationFixtures.js'
+import {
+  buildLegacyConfiguration,
+  buildV0WithDeprecatedKeyCollision,
+} from './helpers/ConfigurationFixtures.js'
 
 await describe('ConfigurationMigrations', async () => {
   afterEach(() => {
@@ -98,8 +104,25 @@ await describe('ConfigurationMigrations', async () => {
     })
   })
 
-  await describe('applyConfigurationMigration', async () => {
-    await it('should migrate v0 to v1 remapping all deprecated top-level keys', () => {
+  await describe('remapDeprecatedKeys', async () => {
+    await it('should not mutate the input config (immutability boundary)', () => {
+      const input = buildLegacyConfiguration({ logEnabled: true })
+      const before = JSON.stringify(input)
+      remapDeprecatedKeys(input)
+      const after = JSON.stringify(input)
+      assert.strictEqual(before, after)
+    })
+
+    await it('should be a no-op (empty warnings, empty fieldErrors) for a clean v1 config', () => {
+      const result = remapDeprecatedKeys({
+        $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
+        stationTemplateUrls: [{ file: 'clean.json', numberOfStations: 1 }],
+      })
+      assert.deepStrictEqual(result.warnings, [])
+      assert.deepStrictEqual(result.fieldErrors, [])
+    })
+
+    await it('should remap every legacy top-level key in buildLegacyConfiguration', () => {
       const legacy = buildLegacyConfiguration({
         logEnabled: true,
         logFile: '/logs/combined.log',
@@ -108,9 +131,10 @@ await describe('ConfigurationMigrations', async () => {
         workerProcess: 'workerSet',
       })
 
-      const result = applyConfigurationMigration(0, legacy, 'test.json')
+      const { config: result, fieldErrors, warnings } = remapDeprecatedKeys(legacy)
 
-      assert.strictEqual(result.$schemaVersion, CURRENT_CONFIGURATION_SCHEMA_VERSION)
+      assert.strictEqual(fieldErrors.length, 0)
+      assert.ok(warnings.length > 0)
       assert.strictEqual((result.log as Record<string, unknown>).enabled, true)
       assert.strictEqual((result.log as Record<string, unknown>).file, '/logs/combined.log')
       assert.strictEqual((result.worker as Record<string, unknown>).processType, 'workerSet')
@@ -124,38 +148,168 @@ await describe('ConfigurationMigrations', async () => {
     })
 
     for (const [deprecated, canonical] of Object.entries(DEPRECATED_KEY_REMAPPINGS)) {
-      await it(`should migrate deprecated key '${deprecated}' to '${canonical}'`, () => {
-        const input = buildLegacyConfiguration({ [deprecated]: 'test-value' })
-        const result = applyConfigurationMigration(0, input, 'test.json')
+      await it(`should remap deprecated key '${deprecated}' to ${canonical == null ? 'null (delete-only)' : `'${canonical}'`}`, () => {
+        const sampleValue = deprecated.includes('worker') ? 'workerSet' : 'sample-value'
+        // Build input with the deprecated key. Dotted keys nest into a section.
+        const input: Record<string, unknown> = deprecated.includes('.')
+          ? (() => {
+              const [section, leaf] = deprecated.split('.')
+              return { [section]: { [leaf]: sampleValue } }
+            })()
+          : { [deprecated]: sampleValue }
 
-        assert.strictEqual(result[deprecated], undefined, `'${deprecated}' should be deleted`)
-        if (deprecated === canonical) {
-          // Self-mapping: key is deprecated with no replacement at top level; it is simply removed.
-        } else if (!canonical.includes('.')) {
-          assert.strictEqual(result[canonical], 'test-value', `'${canonical}' should be set`)
+        const { config: result, fieldErrors, warnings } = remapDeprecatedKeys(input)
+
+        assert.strictEqual(fieldErrors.length, 0)
+        assert.deepStrictEqual(warnings, [
+          { canonicalDestination: canonical, sourceKey: deprecated },
+        ])
+
+        // Source key must be physically removed from its location.
+        if (deprecated.includes('.')) {
+          const [section, leaf] = deprecated.split('.')
+          const sectionObj = result[section] as Record<string, unknown> | undefined
+          assert.strictEqual(
+            sectionObj?.[leaf],
+            undefined,
+            `nested source '${deprecated}' must be removed`
+          )
         } else {
-          const [section, key] = canonical.split('.')
+          assert.strictEqual(
+            Object.prototype.hasOwnProperty.call(result, deprecated),
+            false,
+            `top-level source '${deprecated}' must be removed`
+          )
+        }
+
+        // Verify canonical destination semantics.
+        if (canonical == null) {
+          // Delete-only destination: value must not appear anywhere obvious.
+          // Specifically, no top-level key carries the same name as `deprecated`.
+          assert.strictEqual(result[deprecated], undefined)
+        } else if (canonical === deprecated) {
+          // Self-mapping: the key remains absent (table entry should normally
+          // use `null` for this case; tolerated here for forward-compat).
+          assert.strictEqual(result[deprecated], undefined)
+        } else if (canonical.includes('.')) {
+          const [section, leaf] = canonical.split('.')
           const sectionObj = result[section] as Record<string, unknown> | undefined
           assert.ok(sectionObj != null, `section '${section}' should exist`)
-          assert.strictEqual(sectionObj[key], 'test-value', `'${canonical}' should be set`)
+          assert.strictEqual(sectionObj[leaf], sampleValue)
+        } else {
+          assert.strictEqual(result[canonical], sampleValue)
         }
       })
     }
 
-    await it('should not overwrite canonical key when both deprecated and canonical are present', () => {
-      const input = buildLegacyConfiguration({
+    await it('should keep canonical key when both deprecated and canonical are present (no overwrite)', () => {
+      const input = {
         log: { enabled: false },
-        logEnabled: true,
-      })
-      const result = applyConfigurationMigration(0, input, 'test.json')
-
+        logEnabled: false,
+      }
+      const { config: result, fieldErrors } = remapDeprecatedKeys(input)
+      assert.strictEqual(fieldErrors.length, 0)
       assert.strictEqual((result.log as Record<string, unknown>).enabled, false)
       assert.strictEqual(result.logEnabled, undefined)
     })
 
-    await it('should set $schemaVersion to CURRENT_CONFIGURATION_SCHEMA_VERSION after migration', () => {
-      const result = applyConfigurationMigration(0, buildLegacyConfiguration(), 'test.json')
+    await it('B2 — should drop autoReconnectMaxRetries with explicit warning (null destination)', () => {
+      const {
+        config: result,
+        fieldErrors,
+        warnings,
+      } = remapDeprecatedKeys({
+        autoReconnectMaxRetries: 7,
+        stationTemplateURLs: [{ file: 'b2.json', numberOfStations: 1 }],
+      })
+      assert.strictEqual(fieldErrors.length, 0)
+      assert.deepStrictEqual(
+        warnings.find(w => w.sourceKey === 'autoReconnectMaxRetries'),
+        { canonicalDestination: null, sourceKey: 'autoReconnectMaxRetries' }
+      )
+      assert.strictEqual(result.autoReconnectMaxRetries, undefined)
+      assert.strictEqual(
+        Object.prototype.hasOwnProperty.call(result, 'autoReconnectMaxRetries'),
+        false
+      )
+    })
+
+    await it('B4 — should treat equal-value collision as idempotent no-op', () => {
+      const input = buildV0WithDeprecatedKeyCollision('workerPoolMaxSize', 16, 'workerPoolSize', 16)
+      const { config: result, fieldErrors, warnings } = remapDeprecatedKeys(input)
+      assert.strictEqual(fieldErrors.length, 0, 'equal values must not produce a fieldError')
+      assert.strictEqual((result.worker as Record<string, unknown>).poolMaxSize, 16)
+      assert.strictEqual(result.workerPoolMaxSize, undefined)
+      assert.strictEqual(result.workerPoolSize, undefined)
+      assert.strictEqual(warnings.length, 2)
+    })
+
+    await it('B4 — should record fieldError on unequal-value collision and leave conflicting source in place', () => {
+      const input = buildV0WithDeprecatedKeyCollision('workerPoolMaxSize', 8, 'workerPoolSize', 16)
+      const { config: result, fieldErrors } = remapDeprecatedKeys(input)
+      assert.strictEqual(fieldErrors.length, 1)
+      assert.strictEqual(fieldErrors[0].path, 'workerPoolSize')
+      assert.match(fieldErrors[0].message, /worker\.poolMaxSize/)
+      assert.match(fieldErrors[0].message, /conflicts with existing/)
+      // The first writer wins; the conflicting source stays so its name
+      // remains visible to the user via the error path.
+      assert.strictEqual((result.worker as Record<string, unknown>).poolMaxSize, 8)
+    })
+
+    await it('N7 — should record fieldError on non-object intermediate', () => {
+      const input = {
+        log: 'not-an-object',
+        logEnabled: true,
+        stationTemplateURLs: [{ file: 'n7.json', numberOfStations: 1 }],
+      }
+      const { fieldErrors } = remapDeprecatedKeys(input)
+      assert.strictEqual(fieldErrors.length, 1)
+      assert.strictEqual(fieldErrors[0].path, 'logEnabled')
+      assert.match(fieldErrors[0].message, /intermediate 'log' is not an object/)
+    })
+
+    await it('nested — should remap worker.elementStartDelay → worker.elementAddDelay', () => {
+      const {
+        config: result,
+        fieldErrors,
+        warnings,
+      } = remapDeprecatedKeys({
+        stationTemplateURLs: [{ file: 'nested.json', numberOfStations: 1 }],
+        worker: { elementStartDelay: 250 },
+      })
+      assert.strictEqual(fieldErrors.length, 0)
+      assert.deepStrictEqual(
+        warnings.find(w => w.sourceKey === 'worker.elementStartDelay'),
+        { canonicalDestination: 'worker.elementAddDelay', sourceKey: 'worker.elementStartDelay' }
+      )
+      const worker = result.worker as Record<string, unknown>
+      assert.strictEqual(worker.elementAddDelay, 250)
+      assert.strictEqual(worker.elementStartDelay, undefined)
+    })
+
+    await it('nested — should record fieldError on unequal worker.elementStartDelay vs elementAddDelay', () => {
+      const { fieldErrors } = remapDeprecatedKeys({
+        stationTemplateURLs: [{ file: 'nested-conflict.json', numberOfStations: 1 }],
+        worker: { elementAddDelay: 100, elementStartDelay: 250 },
+      })
+      assert.strictEqual(fieldErrors.length, 1)
+      assert.strictEqual(fieldErrors[0].path, 'worker.elementStartDelay')
+    })
+  })
+
+  await describe('applyConfigurationMigration', async () => {
+    await it('should bump $schemaVersion from 0 to CURRENT', () => {
+      const result = applyConfigurationMigration(0, { foo: 'bar' }, 'test.json')
       assert.strictEqual(result.$schemaVersion, CURRENT_CONFIGURATION_SCHEMA_VERSION)
+      assert.strictEqual(result.foo, 'bar')
+    })
+
+    await it('should not mutate the input config (immutability boundary)', () => {
+      const input = { foo: 'bar' }
+      const before = JSON.stringify(input)
+      applyConfigurationMigration(0, input, 'test.json')
+      const after = JSON.stringify(input)
+      assert.strictEqual(before, after)
     })
 
     for (const [label, sourceVersion] of [
@@ -165,20 +319,12 @@ await describe('ConfigurationMigrations', async () => {
     ] as const) {
       await it(`should throw for ${label}`, () => {
         assert.throws(
-          () => applyConfigurationMigration(sourceVersion, buildLegacyConfiguration(), 'test.json'),
+          () => applyConfigurationMigration(sourceVersion, { foo: 'bar' }, 'test.json'),
           {
             message: /No migration defined/,
           }
         )
       })
     }
-
-    await it('should not mutate the input config (immutability boundary)', () => {
-      const input = buildLegacyConfiguration({ logEnabled: true })
-      const before = JSON.stringify(input)
-      applyConfigurationMigration(0, input, 'test.json')
-      const after = JSON.stringify(input)
-      assert.strictEqual(before, after)
-    })
   })
 })

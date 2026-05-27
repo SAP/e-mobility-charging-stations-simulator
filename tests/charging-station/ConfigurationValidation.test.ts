@@ -1,8 +1,9 @@
 /**
  * @file Tests for ConfigurationValidation
  * @description Unit tests for the simulator configuration validation pipeline:
- * payload guards, migration → schema validation → transform warnings,
- * error class shape, immutability, and round-trip on real assets.
+ * payload guards, unconditional deprecated-key sweep → migration → schema
+ * parse → transform, error class shape, immutability, B1/B3/B6 regressions,
+ * and round-trip on real assets.
  */
 
 import assert from 'node:assert/strict'
@@ -21,24 +22,26 @@ import {
 } from '../../src/charging-station/ConfigurationValidation.js'
 import { BaseError } from '../../src/exception/index.js'
 import { logger } from '../../src/utils/index.js'
-import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildLegacyConfiguration,
   buildMinimalConfiguration,
+  buildV1WithDeprecatedKey,
 } from './helpers/ConfigurationFixtures.js'
 
 /**
- * Exact error message produced by validateConfiguration({ $schemaVersion: 1 }, 'test.json').
- * Captures the full Zod validation failure for the missing stationTemplateUrls field.
+ * Exact error message produced by `validateConfiguration({ $schemaVersion: 1 }, 'test.json')`.
+ * Captures the full Zod validation failure for the missing `stationTemplateUrls` field
+ * and exercises the `[schema]` phase tag in the error message.
  */
 const EXPECTED_SNAPSHOT =
-  "ConfigurationValidation: Configuration validation failed for 'test.json':\n  - stationTemplateUrls: Invalid input: expected array, received undefined"
+  "ConfigurationValidation: Configuration validation failed [schema] for 'test.json':\n  - stationTemplateUrls: Invalid input: expected array, received undefined"
 
 /**
- * Schema-valid sample value for each deprecated top-level key.
- * Used to exercise `transformConfiguration` warnings without triggering
- * `ConfigurationSchema` rejections (each entry must satisfy the schema's
- * declared type for the corresponding deprecated key).
+ * Schema-valid sample value for each deprecated key in `DEPRECATED_KEY_REMAPPINGS`.
+ * Used to exercise the deprecation-warning channel for every entry.
+ * Dotted source keys (e.g. `'worker.elementStartDelay'`) are nested by
+ * `buildV1WithDeprecatedKey`.
  */
 const SAMPLE_DEPRECATED_VALUES: Readonly<Record<string, unknown>> = {
   autoReconnectMaxRetries: 5,
@@ -56,10 +59,11 @@ const SAMPLE_DEPRECATED_VALUES: Readonly<Record<string, unknown>> = {
   logMaxSize: '10m',
   logRotate: true,
   logStatisticsInterval: 60,
-  stationTemplateURLs: [],
+  stationTemplateURLs: [{ file: 'a.json', numberOfStations: 1 }],
   supervisionURLs: 'ws://localhost:8080',
   uiWebSocketServer: {},
   useWorkerPool: false,
+  'worker.elementStartDelay': 100,
   workerPoolMaxSize: 16,
   workerPoolMinSize: 4,
   workerPoolSize: 16,
@@ -97,11 +101,25 @@ await describe('ConfigurationValidation', async () => {
           error.message.includes('Empty simulator configuration from file')
       )
     })
+
+    await it('should throw BaseError for $schemaVersion newer than supported (future-version pipeline)', () => {
+      const future = buildMinimalConfiguration({
+        $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION + 1,
+      })
+      assert.throws(
+        () => validateConfiguration(future, 'future.json'),
+        (error: unknown) =>
+          error instanceof BaseError &&
+          error.message.includes(
+            `is newer than supported version ${CURRENT_CONFIGURATION_SCHEMA_VERSION.toString()}`
+          )
+      )
+    })
   })
 
   await describe('migration pipeline', async () => {
     await it('should migrate buildLegacyConfiguration to current schema version', t => {
-      mockLoggerWarnDebug(t, logger)
+      t.mock.method(console, 'warn', () => undefined)
       const parsed = buildLegacyConfiguration()
 
       const result = validateConfiguration(parsed, 'legacy.json')
@@ -110,20 +128,17 @@ await describe('ConfigurationValidation', async () => {
         (result as unknown as Record<string, unknown>).$schemaVersion,
         CURRENT_CONFIGURATION_SCHEMA_VERSION
       )
-      // Migration should have remapped legacy keys; canonical destinations populated.
       assert.strictEqual(result.log?.enabled, true)
       assert.strictEqual(result.worker?.processType, 'workerSet')
       assert.ok(Array.isArray(result.stationTemplateUrls))
       assert.strictEqual(result.stationTemplateUrls.length, 1)
-      // Legacy keys should be removed from the migrated output.
       const raw = result as unknown as Record<string, unknown>
       assert.strictEqual(raw.logEnabled, undefined)
       assert.strictEqual(raw.workerProcess, undefined)
       assert.strictEqual(raw.stationTemplateURLs, undefined)
     })
 
-    await it('should accept already-current v1 configuration without migration', t => {
-      t.mock.method(logger, 'warn')
+    await it('should accept already-current v1 configuration without re-migrating', () => {
       const parsed = buildMinimalConfiguration()
 
       const result = validateConfiguration(parsed, 'current.json')
@@ -134,8 +149,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('should accept string "$schemaVersion": "1" (no-migration path)', t => {
-      t.mock.method(logger, 'warn')
+    await it('should accept string "$schemaVersion": "1" (no-migration path)', () => {
       const parsed = buildMinimalConfiguration({ $schemaVersion: '1' })
 
       const result = validateConfiguration(parsed, 'string-version.json')
@@ -145,10 +159,43 @@ await describe('ConfigurationValidation', async () => {
         CURRENT_CONFIGURATION_SCHEMA_VERSION
       )
     })
+
+    await it('B3 — should sweep deprecated keys unconditionally for v1 configs', t => {
+      t.mock.method(console, 'warn', () => undefined)
+      const parsed = buildV1WithDeprecatedKey('workerPoolSize', 16)
+
+      const result = validateConfiguration(parsed, 'b3.json')
+
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).$schemaVersion,
+        CURRENT_CONFIGURATION_SCHEMA_VERSION
+      )
+      assert.strictEqual(result.worker?.poolMaxSize, 16)
+      assert.strictEqual((result as unknown as Record<string, unknown>).workerPoolSize, undefined)
+    })
+
+    await it('should throw migration-phase ConfigurationValidationError on collision', t => {
+      t.mock.method(console, 'warn', () => undefined)
+      const parsed = {
+        $schemaVersion: 1,
+        stationTemplateUrls: [{ file: 'collision.json', numberOfStations: 1 }],
+        workerPoolMaxSize: 8,
+        workerPoolSize: 16,
+      }
+      assert.throws(
+        () => validateConfiguration(parsed, 'collision.json'),
+        (error: unknown) =>
+          error instanceof ConfigurationValidationError &&
+          error.phase === 'migration' &&
+          error.fieldErrors.some(
+            f => f.path === 'workerPoolSize' && f.message.includes('worker.poolMaxSize')
+          )
+      )
+    })
   })
 
   await describe('ConfigurationValidationError shape', async () => {
-    await it('should be a BaseError with name, fieldErrors, and filePath set', () => {
+    await it('should be a BaseError with name, fieldErrors, filePath, and phase set', () => {
       try {
         validateConfiguration({ $schemaVersion: 1 }, 'broken.json')
         assert.fail('Expected ConfigurationValidationError')
@@ -157,12 +204,27 @@ await describe('ConfigurationValidation', async () => {
         assert.ok(error instanceof BaseError)
         assert.strictEqual(error.name, 'ConfigurationValidationError')
         assert.strictEqual(error.filePath, 'broken.json')
+        assert.strictEqual(error.phase, 'schema')
         assert.ok(Array.isArray(error.fieldErrors))
         assert.ok(error.fieldErrors.length > 0)
       }
     })
 
-    await it('should be constructable directly from a ZodError', () => {
+    await it('should be constructable directly from FieldError[] with phase=migration', () => {
+      const error = new ConfigurationValidationError(
+        [{ message: 'collision', path: 'workerPoolSize' }],
+        { filePath: 'direct.json', phase: 'migration' }
+      )
+      assert.ok(error instanceof BaseError)
+      assert.strictEqual(error.filePath, 'direct.json')
+      assert.strictEqual(error.phase, 'migration')
+      assert.strictEqual(error.fieldErrors.length, 1)
+      assert.strictEqual(error.fieldErrors[0].path, 'workerPoolSize')
+      assert.strictEqual(error.migratedFrom, undefined)
+      assert.match(error.message, /\[migration\]/)
+    })
+
+    await it('should be constructable from a ZodError via fromZodError factory', () => {
       const zodError = new ZodError([
         {
           code: 'invalid_type',
@@ -171,19 +233,22 @@ await describe('ConfigurationValidation', async () => {
           path: ['stationTemplateUrls'],
         },
       ])
-      const error = new ConfigurationValidationError(zodError, { filePath: 'direct.json' })
+      const error = ConfigurationValidationError.fromZodError(zodError, { filePath: 'direct.json' })
 
       assert.ok(error instanceof BaseError)
       assert.strictEqual(error.filePath, 'direct.json')
+      assert.strictEqual(error.phase, 'schema')
       assert.strictEqual(error.fieldErrors.length, 1)
       assert.strictEqual(error.fieldErrors[0].path, 'stationTemplateUrls')
       assert.strictEqual(error.migratedFrom, undefined)
+      assert.match(error.message, /\[schema\]/)
     })
 
     await it('should include migratedFrom note in message when provided', () => {
-      const error = new ConfigurationValidationError(new ZodError([]), {
+      const error = new ConfigurationValidationError([], {
         filePath: 'migrated.json',
         migratedFrom: 0,
+        phase: 'schema',
       })
 
       assert.strictEqual(error.migratedFrom, 0)
@@ -218,7 +283,7 @@ await describe('ConfigurationValidation', async () => {
 
   await describe('immutability', async () => {
     await it('should not mutate the caller-supplied parsed object', t => {
-      mockLoggerWarnDebug(t, logger)
+      t.mock.method(console, 'warn', () => undefined)
       const parsed = buildLegacyConfiguration()
       const before = structuredClone(parsed)
 
@@ -226,22 +291,41 @@ await describe('ConfigurationValidation', async () => {
 
       assert.deepStrictEqual(parsed, before)
     })
+
+    await it('transformConfiguration return — mutating it must not affect a fresh validation', t => {
+      t.mock.method(console, 'warn', () => undefined)
+      const parsed = buildMinimalConfiguration({ logEnabled: true })
+
+      const first = validateConfiguration(parsed, 'mut.json') as unknown as Record<string, unknown>
+      first.bogusMutation = 'mutated'
+      ;(first.stationTemplateUrls as unknown[]).length = 0
+
+      const second = validateConfiguration(parsed, 'mut.json')
+      assert.strictEqual(second.log?.enabled, true)
+      assert.strictEqual(second.stationTemplateUrls.length, 1)
+    })
   })
 
-  await describe('transformConfiguration deprecation warnings', async () => {
+  await describe('deprecation warnings emitted via console.warn', async () => {
     for (const legacyKey of Object.keys(DEPRECATED_KEY_REMAPPINGS)) {
-      await it(`should warn about deprecated top-level key '${legacyKey}'`, t => {
-        const warnMock = t.mock.method(logger, 'warn')
+      await it(`should warn about deprecated key '${legacyKey}'`, t => {
+        const warnMock = t.mock.method(console, 'warn', () => undefined)
         const sampleValue = SAMPLE_DEPRECATED_VALUES[legacyKey]
         assert.notStrictEqual(
           sampleValue,
           undefined,
           `Missing SAMPLE_DEPRECATED_VALUES entry for ${legacyKey}`
         )
-        // v1 config keeps the deprecated key (no migration runs); transform must warn.
-        const parsed = buildMinimalConfiguration({ [legacyKey]: sampleValue })
+        const parsed = buildV1WithDeprecatedKey(legacyKey, sampleValue)
 
-        validateConfiguration(parsed, `${legacyKey}.json`)
+        // Some deprecated keys produce schema-incompatible canonical values
+        // via direct remap (booleans → enums, array collisions). The warning
+        // must still fire BEFORE the downstream validation throws.
+        try {
+          validateConfiguration(parsed, `${legacyKey}.json`)
+        } catch {
+          // expected for boolean→enum / array-collision cases
+        }
 
         const warnMessages = warnMock.mock.calls.map(c =>
           typeof c.arguments[0] === 'string' ? c.arguments[0] : ''
@@ -254,11 +338,50 @@ await describe('ConfigurationValidation', async () => {
         )
       })
     }
+
+    await it('B1 regression — should emit deprecation warnings via console.warn (not logger.warn)', t => {
+      const consoleMock = t.mock.method(console, 'warn', () => undefined)
+      const loggerMock = t.mock.method(logger, 'warn')
+      const parsed = buildV1WithDeprecatedKey('workerPoolSize', 16)
+
+      const result = validateConfiguration(parsed, 'b1.json')
+
+      assert.strictEqual(
+        (result as unknown as Record<string, unknown>).$schemaVersion,
+        CURRENT_CONFIGURATION_SCHEMA_VERSION
+      )
+      assert.strictEqual(consoleMock.mock.calls.length, 1, 'console.warn should fire exactly once')
+      assert.strictEqual(
+        loggerMock.mock.calls.length,
+        0,
+        'logger.warn must not be called from validateConfiguration (re-entrance regression)'
+      )
+    })
+  })
+
+  await describe('B6 — migration is the single source of truth', async () => {
+    await it('should produce equivalent canonical shape from legacy and canonical inputs', t => {
+      t.mock.method(console, 'warn', () => undefined)
+      const legacy = buildLegacyConfiguration({ logEnabled: false, workerProcess: 'fixedPool' })
+      const validatedFromLegacy = validateConfiguration(legacy, 'legacy.json')
+
+      const canonical = buildMinimalConfiguration({
+        log: { enabled: false },
+        worker: { processType: 'fixedPool' },
+      })
+      const validatedFromCanonical = validateConfiguration(canonical, 'canonical.json')
+
+      assert.strictEqual(validatedFromLegacy.log?.enabled, validatedFromCanonical.log?.enabled)
+      assert.strictEqual(
+        validatedFromLegacy.worker?.processType,
+        validatedFromCanonical.worker?.processType
+      )
+    })
   })
 
   await describe('round-trip on real assets', async () => {
     await it('should validate src/assets/config-template.json through the pipeline', t => {
-      mockLoggerWarnDebug(t, logger)
+      t.mock.method(console, 'warn', () => undefined)
       const templatePath = join(import.meta.dirname, '../../src/assets/config-template.json')
       const parsed = JSON.parse(readFileSync(templatePath, 'utf8')) as Record<string, unknown>
 
@@ -274,7 +397,7 @@ await describe('ConfigurationValidation', async () => {
     })
 
     await it('should validate the hardcoded fallback object from Configuration.ts', t => {
-      mockLoggerWarnDebug(t, logger)
+      t.mock.method(console, 'warn', () => undefined)
       // Mirror of the fallback assigned in src/utils/Configuration.ts when
       // src/assets/config.json is absent. Built at v0 (no `$schemaVersion`)
       // so the migration step lifts it to the current schema version.

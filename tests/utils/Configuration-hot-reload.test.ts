@@ -1,22 +1,29 @@
 /**
- * @file Tests for Configuration hot-reload rollback semantics
- * @description Verifies that the private reloadConfiguration() method
- * - captures a pre-clear snapshot of configurationData and configurationSectionCache,
- * - on success: replaces caches and invokes the change callback,
- * - on validation/parse failure: restores caches, logs an error, does NOT invoke the callback,
- * - clears the configurationFileReloading flag in `finally` on both paths.
+ * @file Tests for Configuration hot-reload rollback semantics.
+ * @description Verifies that the private reload loop:
+ * - captures a pre-clear snapshot of `configurationData` and `configurationSectionCache`,
+ * - on success: replaces caches and awaits the change callback,
+ * - on validation/parse failure: restores caches, logs a typed error, does NOT invoke the callback,
+ * - clears the `configurationFileReloading` flag in `finally` on every path,
+ * - drains coalesced events via `configurationFileReloadPending` (N8),
+ * - keeps the file watcher active across failed reloads.
  */
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { type FSWatcher, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ConfigurationData } from '../../src/types/index.js'
 
+import { ConfigurationValidationError } from '../../src/charging-station/ConfigurationValidation.js'
+import { BaseError } from '../../src/exception/index.js'
 import { ConfigurationSection } from '../../src/types/index.js'
 import { Configuration, logger } from '../../src/utils/index.js'
-import { buildMinimalConfiguration } from '../charging-station/helpers/ConfigurationFixtures.js'
+import {
+  buildInvalidJsonString,
+  buildMinimalConfiguration,
+} from '../charging-station/helpers/ConfigurationFixtures.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface ConfigurationInternals {
@@ -24,8 +31,11 @@ interface ConfigurationInternals {
   configurationData: ConfigurationData | undefined
   configurationFile: string | undefined
   configurationFileReloading: boolean
+  configurationFileReloadPending: boolean
+  configurationFileWatcher?: FSWatcher
   configurationSectionCache: Map<ConfigurationSection, unknown>
-  reloadConfiguration: () => void
+  performReload: () => Promise<void>
+  runReloadLoop: () => Promise<void>
 }
 
 const getInternals = (): ConfigurationInternals =>
@@ -38,11 +48,6 @@ const writeConfigFile = (dir: string, contents: unknown): string => {
   writeFileSync(file, typeof contents === 'string' ? contents : JSON.stringify(contents))
   return file
 }
-
-const flushMicrotasks = (): Promise<void> =>
-  new Promise<void>(resolve => {
-    setImmediate(resolve)
-  })
 
 await describe('Configuration hot-reload', async () => {
   afterEach(() => {
@@ -76,8 +81,7 @@ await describe('Configuration hot-reload', async () => {
         return Promise.resolve()
       }
 
-      internals.reloadConfiguration()
-      await flushMicrotasks()
+      await internals.runReloadLoop()
 
       assert.strictEqual(callbackInvocations, 1)
       assert.strictEqual(internals.configurationFileReloading, false)
@@ -125,8 +129,7 @@ await describe('Configuration hot-reload', async () => {
         return Promise.resolve()
       }
 
-      internals.reloadConfiguration()
-      await flushMicrotasks()
+      await internals.runReloadLoop()
 
       assert.strictEqual(callbackInvocations, 0)
       assert.strictEqual(internals.configurationFileReloading, false)
@@ -139,6 +142,13 @@ await describe('Configuration hot-reload', async () => {
         sentinelSection
       )
       assert.ok(errorMock.mock.calls.length >= 1)
+      const errorCall = errorMock.mock.calls[errorMock.mock.calls.length - 1]
+      const errorArg = errorCall.arguments.find(arg => arg instanceof Error)
+      assert.ok(errorArg instanceof BaseError, 'Expected logger.error to receive a BaseError')
+      assert.ok(
+        errorArg instanceof ConfigurationValidationError,
+        'Expected schema-phase failure to surface ConfigurationValidationError'
+      )
     } finally {
       internals.configurationFile = originalFile
       internals.configurationData = originalData
@@ -149,7 +159,149 @@ await describe('Configuration hot-reload', async () => {
     }
   })
 
-  await it('should reset configurationFileReloading to false on both success and failure paths', t => {
+  await it('should restore configurationData on JSON parse error (Gap 7)', async t => {
+    t.mock.method(logger, 'error')
+    const internals = getInternals()
+    const tempDir = createTempConfigDir()
+    const originalFile = internals.configurationFile
+    const originalData = internals.configurationData
+    const originalCallback = internals.configurationChangeCallback
+    const originalCache = new Map(internals.configurationSectionCache)
+    const originalReloading = internals.configurationFileReloading
+
+    try {
+      const previousData = {
+        $schemaVersion: 1,
+        stationTemplateUrls: [{ file: 'previous.json', numberOfStations: 1 }],
+      } as unknown as ConfigurationData
+      const sentinelSection = { sentinel: 'previous-log' }
+      internals.configurationData = previousData
+      internals.configurationSectionCache = new Map<ConfigurationSection, unknown>([
+        [ConfigurationSection.log, sentinelSection],
+      ])
+      internals.configurationChangeCallback = undefined
+
+      const file = join(tempDir, 'malformed.json')
+      writeFileSync(file, buildInvalidJsonString())
+      internals.configurationFile = file
+      internals.configurationFileReloading = true
+
+      await internals.runReloadLoop()
+
+      assert.deepStrictEqual(internals.configurationData, previousData)
+      assert.strictEqual(
+        internals.configurationSectionCache.get(ConfigurationSection.log),
+        sentinelSection
+      )
+      assert.strictEqual(internals.configurationSectionCache.size, 1)
+      assert.strictEqual(internals.configurationFileReloading, false)
+    } finally {
+      internals.configurationFile = originalFile
+      internals.configurationData = originalData
+      internals.configurationSectionCache = originalCache
+      internals.configurationFileReloading = originalReloading
+      internals.configurationChangeCallback = originalCallback
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  await it('should keep the file watcher active after a failed reload', async t => {
+    t.mock.method(logger, 'error')
+    const internals = getInternals()
+    const tempDir = createTempConfigDir()
+    const originalFile = internals.configurationFile
+    const originalData = internals.configurationData
+    const originalCallback = internals.configurationChangeCallback
+    const originalCache = new Map(internals.configurationSectionCache)
+    const originalReloading = internals.configurationFileReloading
+    const originalWatcher = internals.configurationFileWatcher
+
+    try {
+      const file = writeConfigFile(tempDir, buildMinimalConfiguration())
+      internals.configurationFile = file
+      internals.configurationData = buildMinimalConfiguration() as unknown as ConfigurationData
+      internals.configurationSectionCache = new Map()
+      internals.configurationChangeCallback = undefined
+      // Sentinel watcher must survive across the failing reload.
+      const sentinelWatcher = { close: (): void => undefined } as unknown as FSWatcher
+      internals.configurationFileWatcher = sentinelWatcher
+
+      writeFileSync(file, buildInvalidJsonString())
+      internals.configurationFileReloading = true
+      await internals.runReloadLoop()
+
+      assert.strictEqual(
+        internals.configurationFileWatcher,
+        sentinelWatcher,
+        'Watcher must survive a failed reload'
+      )
+    } finally {
+      internals.configurationFile = originalFile
+      internals.configurationData = originalData
+      internals.configurationSectionCache = originalCache
+      internals.configurationFileReloading = originalReloading
+      internals.configurationChangeCallback = originalCallback
+      internals.configurationFileWatcher = originalWatcher
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  await it('N8 — should drain pending reloads and reflect the latest content under rapid double-save', async t => {
+    t.mock.method(logger, 'error')
+    const internals = getInternals()
+    const tempDir = createTempConfigDir()
+    const originalFile = internals.configurationFile
+    const originalData = internals.configurationData
+    const originalCallback = internals.configurationChangeCallback
+    const originalCache = new Map(internals.configurationSectionCache)
+    const originalReloading = internals.configurationFileReloading
+    const originalPending = internals.configurationFileReloadPending
+
+    try {
+      const file = writeConfigFile(tempDir, buildMinimalConfiguration({ persistState: false }))
+      internals.configurationFile = file
+      internals.configurationData = undefined
+      internals.configurationSectionCache = new Map()
+
+      let callbackInvocations = 0
+      internals.configurationChangeCallback = async () => {
+        callbackInvocations += 1
+        // After the FIRST reload sees `persistState: false`, simulate a
+        // second file save that arrives during the in-flight callback.
+        if (callbackInvocations === 1) {
+          writeFileSync(file, JSON.stringify(buildMinimalConfiguration({ persistState: true })))
+          internals.configurationFileReloadPending = true
+        }
+        return Promise.resolve()
+      }
+
+      internals.configurationFileReloading = true
+      await internals.runReloadLoop()
+
+      // Read through a function to defeat TS's narrowing of `configurationData`
+      // to `undefined` (set explicitly above before the reload).
+      const readConfigurationData = (): ConfigurationData | undefined => internals.configurationData
+      const reloadedData = readConfigurationData()
+      assert.strictEqual(callbackInvocations, 2, 'Pending event must trigger one drain reload')
+      assert.strictEqual(
+        reloadedData?.persistState,
+        true,
+        'Latest write must be reflected in configurationData'
+      )
+      assert.strictEqual(internals.configurationFileReloading, false)
+      assert.strictEqual(internals.configurationFileReloadPending, false)
+    } finally {
+      internals.configurationFile = originalFile
+      internals.configurationData = originalData
+      internals.configurationSectionCache = originalCache
+      internals.configurationFileReloading = originalReloading
+      internals.configurationFileReloadPending = originalPending
+      internals.configurationChangeCallback = originalCallback
+      rmSync(tempDir, { force: true, recursive: true })
+    }
+  })
+
+  await it('should reset configurationFileReloading to false on both success and failure paths', async t => {
     t.mock.method(logger, 'error')
     const internals = getInternals()
     const tempDir = createTempConfigDir()
@@ -167,14 +319,14 @@ await describe('Configuration hot-reload', async () => {
 
       internals.configurationFile = validFile
       internals.configurationFileReloading = true
-      internals.reloadConfiguration()
+      await internals.runReloadLoop()
       assert.strictEqual(internals.configurationFileReloading, false, 'flag must reset on success')
 
       const invalidFile = join(tempDir, 'invalid.json')
-      writeFileSync(invalidFile, '{ this is not valid json')
+      writeFileSync(invalidFile, buildInvalidJsonString())
       internals.configurationFile = invalidFile
       internals.configurationFileReloading = true
-      internals.reloadConfiguration()
+      await internals.runReloadLoop()
       assert.strictEqual(internals.configurationFileReloading, false, 'flag must reset on failure')
     } finally {
       internals.configurationFile = originalFile
