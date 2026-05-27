@@ -60,7 +60,7 @@ const SAMPLE_DEPRECATED_VALUES: Readonly<Record<string, unknown>> = {
   workerPoolMaxSize: 16,
   workerPoolMinSize: 4,
   workerPoolSize: 16,
-  workerPoolStrategy: 'workerSet',
+  workerPoolStrategy: 'ROUND_ROBIN',
   workerProcess: 'workerSet',
   workerStartDelay: 500,
 }
@@ -167,7 +167,7 @@ await describe('ConfigurationValidation', async () => {
       assert.strictEqual((result as unknown as Record<string, unknown>).workerPoolSize, undefined)
     })
 
-    await it('should throw migration-phase ConfigurationValidationError on collision', t => {
+    await it('should throw remap-phase ConfigurationValidationError on collision', t => {
       t.mock.method(console, 'warn', () => undefined)
       const parsed = {
         $schemaVersion: 1,
@@ -179,7 +179,7 @@ await describe('ConfigurationValidation', async () => {
         () => validateConfiguration(parsed, 'collision.json'),
         (error: unknown) =>
           error instanceof ConfigurationValidationError &&
-          error.phase === 'migration' &&
+          error.phase === 'remap' &&
           error.fieldErrors.some(
             f => f.path === 'workerPoolSize' && f.message.includes('worker.poolMaxSize')
           )
@@ -203,18 +203,18 @@ await describe('ConfigurationValidation', async () => {
       }
     })
 
-    await it('should be constructable directly from FieldError[] with phase=migration', () => {
+    await it('should be constructable directly from FieldError[] with phase=remap', () => {
       const error = new ConfigurationValidationError(
         [{ message: 'collision', path: 'workerPoolSize' }],
-        { filePath: 'direct.json', phase: 'migration' }
+        { filePath: 'direct.json', phase: 'remap' }
       )
       assert.ok(error instanceof BaseError)
       assert.strictEqual(error.filePath, 'direct.json')
-      assert.strictEqual(error.phase, 'migration')
+      assert.strictEqual(error.phase, 'remap')
       assert.strictEqual(error.fieldErrors.length, 1)
       assert.strictEqual(error.fieldErrors[0].path, 'workerPoolSize')
       assert.strictEqual(error.migratedFrom, undefined)
-      assert.match(error.message, /\[migration\]/)
+      assert.match(error.message, /\[remap\]/)
     })
 
     await it('should be constructable from a ZodError via fromZodError factory', () => {
@@ -285,17 +285,32 @@ await describe('ConfigurationValidation', async () => {
       assert.deepStrictEqual(parsed, before)
     })
 
-    await it('transformConfiguration return — mutating it must not affect a fresh validation', t => {
+    await it('should return a deep clone whose mutation does not leak into a subsequent validation', t => {
       t.mock.method(console, 'warn', () => undefined)
-      const parsed = buildMinimalConfiguration({ logEnabled: true })
+      const parsed = buildMinimalConfiguration({
+        log: { enabled: true },
+        worker: { processType: 'workerSet' },
+      })
 
-      const first = validateConfiguration(parsed, 'mut.json') as unknown as Record<string, unknown>
-      first.bogusMutation = 'mutated'
-      ;(first.stationTemplateUrls as unknown[]).length = 0
-
+      const first = validateConfiguration(parsed, 'mut.json')
       const second = validateConfiguration(parsed, 'mut.json')
-      assert.strictEqual(second.log?.enabled, true)
-      assert.strictEqual(second.stationTemplateUrls.length, 1)
+
+      assert.notStrictEqual(first, second)
+      assert.notStrictEqual(first.log, second.log)
+      assert.notStrictEqual(first.worker, second.worker)
+      assert.notStrictEqual(first.stationTemplateUrls, second.stationTemplateUrls)
+      assert.notStrictEqual(first.stationTemplateUrls[0], second.stationTemplateUrls[0])
+      ;(first as unknown as Record<string, unknown>).bogusMutation = 'mutated'
+      if (first.log != null) {
+        first.log.enabled = false
+      }
+      first.stationTemplateUrls.length = 0
+
+      const third = validateConfiguration(parsed, 'mut.json')
+      assert.strictEqual(third.log?.enabled, true)
+      assert.strictEqual(third.worker?.processType, 'workerSet')
+      assert.strictEqual(third.stationTemplateUrls.length, 1)
+      assert.strictEqual((third as unknown as Record<string, unknown>).bogusMutation, undefined)
     })
   })
 

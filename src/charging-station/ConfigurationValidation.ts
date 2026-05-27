@@ -3,6 +3,7 @@ import type { ZodError } from 'zod'
 import chalk from 'chalk'
 
 import type { ConfigurationData } from '../types/index.js'
+import type { FieldError } from './ConfigurationMigrations.js'
 
 import { BaseError } from '../exception/index.js'
 import { logPrefix } from '../utils/ConfigurationUtils.js'
@@ -17,17 +18,16 @@ import { ConfigurationSchema } from './ConfigurationSchema.js'
 
 const moduleName = 'ConfigurationValidation'
 
-interface FieldError {
-  message: string
-  path: string
-}
-
 /**
  * Phase of the validation pipeline that produced a failure.
- * - `migration`: deprecated-key sweep (collisions, non-object intermediates)
+ * - `remap`: deprecated-key sweep (collisions, non-object intermediates)
  * - `schema`: strict Zod parse against `ConfigurationSchema`
+ *
+ * Schema-version migration-chain failures (`coerceConfigurationVersion`,
+ * `applyConfigurationMigration`) propagate as bare `BaseError`, mirroring
+ * `TemplateValidation`.
  */
-type ValidationPhase = 'migration' | 'schema'
+type ValidationPhase = 'remap' | 'schema'
 
 /**
  * Error thrown when a configuration fails the migration sweep or the strict
@@ -125,7 +125,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
     throw new ConfigurationValidationError(remapErrors, {
       filePath,
       migratedFrom,
-      phase: 'migration',
+      phase: 'remap',
     })
   }
 
@@ -146,7 +146,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
  * @param _filePath - configuration file path (unused)
  * @returns deep clone of the validated configuration
  */
-export const transformConfiguration = (
+const transformConfiguration = (
   validated: ConfigurationData,
   _filePath: string
 ): ConfigurationData => structuredClone(validated)

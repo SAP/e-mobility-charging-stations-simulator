@@ -595,5 +595,22 @@ await describe('ConfigurationSchema', async () => {
         }
       }
     })
+
+    await it('should list every @deprecated nested sub-schema key in DEPRECATED_KEY_REMAPPINGS', () => {
+      const subSchemas: Record<string, ZodObjectLike> = {
+        worker: WorkerConfigurationSchema,
+      }
+      for (const [section, subSchema] of Object.entries(subSchemas)) {
+        for (const [leaf, def] of Object.entries(subSchema.shape)) {
+          if (def.description?.includes('@deprecated') === true) {
+            const dotted = `${section}.${leaf}`
+            assert.ok(
+              dotted in DEPRECATED_KEY_REMAPPINGS,
+              `Sub-schema field '${dotted}' marked @deprecated but missing from DEPRECATED_KEY_REMAPPINGS`
+            )
+          }
+        }
+      }
+    })
   })
 })

@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from 'node:util'
 
+// Direct path: the `exception/index.js` barrel re-exports OCPPError, causing a TDZ cycle.
 import { BaseError } from '../exception/BaseError.js'
 
 const moduleName = 'ConfigurationMigrations'
@@ -40,7 +41,7 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
   workerPoolMaxSize: 'worker.poolMaxSize',
   workerPoolMinSize: 'worker.poolMinSize',
   workerPoolSize: 'worker.poolMaxSize',
-  workerPoolStrategy: 'worker.processType',
+  workerPoolStrategy: null,
   workerProcess: 'worker.processType',
   workerStartDelay: 'worker.startDelay',
 }
@@ -52,6 +53,11 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
  */
 export const CURRENT_CONFIGURATION_SCHEMA_VERSION = 1
 
+export interface FieldError {
+  message: string
+  path: string
+}
+
 export type MigrationFn = (
   config: Record<string, unknown>,
   filePath: string
@@ -61,11 +67,6 @@ export interface RemapDeprecatedKeysResult {
   config: Record<string, unknown>
   fieldErrors: FieldError[]
   warnings: RemapWarning[]
-}
-
-interface FieldError {
-  message: string
-  path: string
 }
 
 interface RemapWarning {
@@ -265,7 +266,7 @@ export const coerceConfigurationVersion = (raw: unknown): number => {
   } else {
     if (typeof raw === 'object') {
       rawStr = JSON.stringify(raw)
-    } else if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+    } else if (typeof raw === 'string' || typeof raw === 'boolean') {
       rawStr = String(raw)
     } else if (typeof raw === 'bigint') {
       rawStr = `${raw.toString()}n`
@@ -310,7 +311,7 @@ export const applyConfigurationMigration = (
       `${moduleName}.applyConfigurationMigration: No migration defined for $schemaVersion ${sourceVersion.toString()} → ${CURRENT_CONFIGURATION_SCHEMA_VERSION.toString()}`
     )
   }
-  let migrated = { ...config }
+  let migrated = structuredClone(config)
   for (let v = sourceVersion; v < CURRENT_CONFIGURATION_SCHEMA_VERSION; v++) {
     migrated = migrationChain[v](migrated, filePath)
     migrated.$schemaVersion = v + 1

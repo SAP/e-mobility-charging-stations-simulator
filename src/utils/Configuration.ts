@@ -161,7 +161,7 @@ export class Configuration {
             validationError instanceof ConfigurationValidationError ||
             validationError instanceof BaseError
           ) {
-            console.error(chalk.red(validationError.message))
+            console.error(`${chalk.green(logPrefix())} ${chalk.red(validationError.message)}`)
             process.exit(1)
           }
           throw validationError
@@ -367,8 +367,11 @@ export class Configuration {
   }
 
   /**
-   * Reload the configuration file. On parse, validation, or callback failure,
-   * restores the pre-reload `configurationData` and section cache snapshot.
+   * Reload the configuration file. On parse or validation failure, restores
+   * the pre-reload `configurationData` and section cache snapshot. Callback
+   * failures are logged via `logger.error` but do not trigger rollback —
+   * the new configuration is already valid; subscriber side-effects are
+   * recoverable on the next reload cycle.
    */
   private static async performReload (): Promise<void> {
     const previousData =
