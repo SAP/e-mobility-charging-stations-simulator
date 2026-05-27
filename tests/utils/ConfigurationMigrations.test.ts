@@ -14,7 +14,7 @@ import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
   remapDeprecatedKeys,
-} from '../../src/charging-station/ConfigurationMigrations.js'
+} from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildLegacyConfiguration,

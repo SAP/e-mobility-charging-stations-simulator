@@ -10,15 +10,15 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ConfigurationData } from '../../src/types/index.js'
 
-import { ConfigurationValidationError } from '../../src/charging-station/ConfigurationValidation.js'
 import { BaseError } from '../../src/exception/index.js'
 import { ConfigurationSection } from '../../src/types/index.js'
+import { ConfigurationValidationError } from '../../src/utils/index.js'
 import { Configuration, logger } from '../../src/utils/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildInvalidJsonString,
   buildMinimalConfiguration,
-} from '../charging-station/helpers/ConfigurationFixtures.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+} from './helpers/ConfigurationFixtures.js'
 
 interface ConfigurationInternals {
   configurationChangeCallback?: () => Promise<void>

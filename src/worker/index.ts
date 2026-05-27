@@ -15,3 +15,4 @@ export {
   WorkerMessageEvents,
   WorkerProcessType,
 } from './WorkerTypes.js'
+export { defaultErrorHandler, defaultExitHandler, randomizeDelay, sleep } from './WorkerUtils.js'

@@ -21,7 +21,7 @@ import {
   handleSendMessageError,
   handleUncaughtException,
   handleUnhandledRejection,
-} from '../../src/utils/ErrorUtils.js'
+} from '../../src/utils/index.js'
 import { logger } from '../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../charging-station/ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../charging-station/helpers/StationHelpers.js'

@@ -10,11 +10,8 @@ import { afterEach, describe, it } from 'node:test'
 import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
-} from '../../src/charging-station/ConfigurationMigrations.js'
-import {
-  ConfigurationSchema,
-  WorkerConfigurationSchema,
-} from '../../src/charging-station/ConfigurationSchema.js'
+} from '../../src/utils/index.js'
+import { ConfigurationSchema, WorkerConfigurationSchema } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   BAD_FIXTURES,

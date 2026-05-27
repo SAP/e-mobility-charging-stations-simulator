@@ -4,11 +4,6 @@ import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../charging-station/ConfigurationMigrations.js'
-import {
-  ConfigurationValidationError,
-  validateConfiguration,
-} from '../charging-station/ConfigurationValidation.js'
 import { BaseError } from '../exception/index.js'
 import {
   ApplicationProtocol,
@@ -31,11 +26,13 @@ import {
   DEFAULT_WORKER_START_DELAY_MS,
   WorkerProcessType,
 } from '../worker/index.js'
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
 import {
   buildPerformanceUriFilePath,
+  configurationLogPrefix,
   getDefaultPerformanceStorageUri,
-  logPrefix,
 } from './ConfigurationUtils.js'
+import { ConfigurationValidationError, validateConfiguration } from './ConfigurationValidation.js'
 import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
 import { logger } from './Logger.js'
@@ -109,7 +106,7 @@ export class Configuration {
       Configuration.configurationFile = configurationFile
     } else {
       console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
+        `${chalk.green(configurationLogPrefix())} ${chalk.red(
           "Configuration file './src/assets/config.json' not found, using default configuration"
         )}`
       )
@@ -161,7 +158,9 @@ export class Configuration {
             validationError instanceof ConfigurationValidationError ||
             validationError instanceof BaseError
           ) {
-            console.error(`${chalk.green(logPrefix())} ${chalk.red(validationError.message)}`)
+            console.error(
+              `${chalk.green(configurationLogPrefix())} ${chalk.red(validationError.message)}`
+            )
             process.exit(1)
           }
           throw validationError
@@ -172,7 +171,7 @@ export class Configuration {
           Configuration.configurationFile,
           FileType.Configuration,
           ensureError(error),
-          logPrefix(),
+          configurationLogPrefix(),
           { consoleOut: true }
         )
       }
@@ -342,13 +341,16 @@ export class Configuration {
         Configuration.configurationFileReloading = true
         const consoleWarnOnce = once(console.warn)
         consoleWarnOnce(
-          `${chalk.green(logPrefix())} ${chalk.yellow(
+          `${chalk.green(configurationLogPrefix())} ${chalk.yellow(
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             `${FileType.Configuration} ${Configuration.configurationFile} file has changed, reload`
           )}`
         )
         Configuration.runReloadLoop().catch((error: unknown) => {
-          logger.error(`${logPrefix()} Configuration reload loop error:`, ensureError(error))
+          logger.error(
+            `${configurationLogPrefix()} Configuration reload loop error:`,
+            ensureError(error)
+          )
         })
       })
     } catch (error) {
@@ -356,7 +358,7 @@ export class Configuration {
         Configuration.configurationFile,
         FileType.Configuration,
         ensureError(error),
-        logPrefix(),
+        configurationLogPrefix(),
         { consoleOut: true }
       )
     }
@@ -396,7 +398,7 @@ export class Configuration {
           await Configuration.configurationChangeCallback()
         } catch (callbackError) {
           logger.error(
-            `${logPrefix()} Configuration change callback error:`,
+            `${configurationLogPrefix()} Configuration change callback error:`,
             ensureError(callbackError)
           )
         }
@@ -404,12 +406,12 @@ export class Configuration {
     } catch (error) {
       if (error instanceof ConfigurationValidationError || error instanceof BaseError) {
         logger.error(
-          `${logPrefix()} Configuration hot-reload failed; rolling back to previous configuration:`,
+          `${configurationLogPrefix()} Configuration hot-reload failed; rolling back to previous configuration:`,
           error
         )
       } else {
         logger.error(
-          `${logPrefix()} Configuration hot-reload failed with unexpected error; rolling back:`,
+          `${configurationLogPrefix()} Configuration hot-reload failed with unexpected error; rolling back:`,
           ensureError(error)
         )
       }

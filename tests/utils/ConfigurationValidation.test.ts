@@ -9,15 +9,12 @@ import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { ZodError } from 'zod'
 
+import { BaseError } from '../../src/exception/index.js'
 import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
-} from '../../src/charging-station/ConfigurationMigrations.js'
-import {
-  ConfigurationValidationError,
-  validateConfiguration,
-} from '../../src/charging-station/ConfigurationValidation.js'
-import { BaseError } from '../../src/exception/index.js'
+} from '../../src/utils/index.js'
+import { ConfigurationValidationError, validateConfiguration } from '../../src/utils/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {

@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
 
 import { ConfigurationSection, type LogConfiguration } from '../../../types/index.js'
-import { Configuration } from '../../../utils/Configuration.js'
+import { Configuration } from '../../../utils/index.js'
 
 const MAX_TAIL_LINES = 5000
 const DEFAULT_TAIL_LINES = 200

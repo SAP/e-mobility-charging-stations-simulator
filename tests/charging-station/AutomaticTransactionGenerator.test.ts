@@ -19,10 +19,10 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
-import { AutomaticTransactionGenerator } from '../../src/charging-station/AutomaticTransactionGenerator.js'
+import { AutomaticTransactionGenerator } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
 import { type StartTransactionResult } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/Constants.js'
+import { Constants } from '../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './helpers/StationHelpers.js'
 

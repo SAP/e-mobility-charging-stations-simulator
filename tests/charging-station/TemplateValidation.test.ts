@@ -7,11 +7,8 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import { ZodError } from 'zod'
 
-import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/TemplateMigrations.js'
-import {
-  TemplateValidationError,
-  validateTemplate,
-} from '../../src/charging-station/TemplateValidation.js'
+import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
+import { TemplateValidationError, validateTemplate } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
 import { logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'

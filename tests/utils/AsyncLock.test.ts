@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
+import { AsyncLock, AsyncLockType } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('AsyncLock', async () => {

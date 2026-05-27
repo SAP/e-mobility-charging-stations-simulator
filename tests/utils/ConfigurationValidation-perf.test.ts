@@ -10,7 +10,7 @@ import { performance } from 'node:perf_hooks'
 import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { validateConfiguration } from '../../src/charging-station/ConfigurationValidation.js'
+import { validateConfiguration } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 /** p99 must stay within Nx of the median (relative threshold absorbs CI noise). */

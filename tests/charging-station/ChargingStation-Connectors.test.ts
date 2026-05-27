@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
-import { resetConnectorStatus } from '../../src/charging-station/Helpers.js'
+import { resetConnectorStatus } from '../../src/charging-station/index.js'
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'

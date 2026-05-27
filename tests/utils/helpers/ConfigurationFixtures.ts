@@ -2,7 +2,7 @@
  * @file Shared configuration fixtures for schema/migration/validation tests.
  */
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/charging-station/ConfigurationMigrations.js'
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/utils/index.js'
 
 /**
  * Build a minimal valid configuration at the current schema version.

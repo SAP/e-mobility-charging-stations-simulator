@@ -7,7 +7,7 @@ import type {
   StorageConfigurationSchema,
   UIServerConfigurationSchema,
   WorkerConfigurationSchema,
-} from '../charging-station/ConfigurationSchema.js'
+} from '../utils/index.js'
 
 export enum ApplicationProtocolVersion {
   VERSION_11 = '1.1',

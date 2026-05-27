@@ -5,7 +5,7 @@ import { StorageType } from '../types/index.js'
 import { Constants } from './Constants.js'
 import { logPrefix as utilsLogPrefix } from './Utils.js'
 
-export const logPrefix = (): string => {
+export const configurationLogPrefix = (): string => {
   return utilsLogPrefix(' Simulator configuration |')
 }
 

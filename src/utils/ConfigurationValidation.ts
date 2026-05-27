@@ -6,9 +6,6 @@ import type { ConfigurationData } from '../types/index.js'
 import type { FieldError } from './ConfigurationMigrations.js'
 
 import { BaseError } from '../exception/index.js'
-import { logPrefix } from '../utils/ConfigurationUtils.js'
-// Direct path: the `utils/index.js` barrel re-exports Configuration, causing a TDZ cycle.
-import { isEmpty } from '../utils/Utils.js'
 import {
   applyConfigurationMigration,
   coerceConfigurationVersion,
@@ -16,6 +13,8 @@ import {
   remapDeprecatedKeys,
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
+import { configurationLogPrefix } from './ConfigurationUtils.js'
+import { isEmpty } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
 
@@ -115,7 +114,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
         : `use '${canonicalDestination}' instead`
     // console.warn: logger.warn would recurse via Configuration → validateConfiguration.
     console.warn(
-      `${chalk.green(logPrefix())} ${chalk.yellow(
+      `${chalk.green(configurationLogPrefix())} ${chalk.yellow(
         `${moduleName}: deprecated configuration key '${sourceKey}' detected in '${filePath}'; ${guidance}`
       )}`
     )

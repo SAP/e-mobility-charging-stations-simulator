@@ -16,7 +16,7 @@ import {
   reconstructTemplateIndexes,
   STATE_FILE_VERSION,
   writeStateFile,
-} from '../../src/charging-station/BootstrapStateUtils.js'
+} from '../../src/charging-station/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('BootstrapStateUtils', async () => {

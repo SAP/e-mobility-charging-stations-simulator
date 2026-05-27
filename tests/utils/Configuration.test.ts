@@ -21,7 +21,6 @@ import type {
   WorkerConfiguration,
 } from '../../src/types/index.js'
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/charging-station/ConfigurationMigrations.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -29,6 +28,7 @@ import {
   StorageType,
   SupervisionUrlDistribution,
 } from '../../src/types/index.js'
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/utils/index.js'
 import { Configuration } from '../../src/utils/index.js'
 import { WorkerProcessType } from '../../src/worker/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'

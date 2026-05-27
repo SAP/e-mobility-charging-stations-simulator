@@ -17,8 +17,8 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
-import { getIdTagsFile } from '../../src/charging-station/Helpers.js'
-import { IdTagsCache } from '../../src/charging-station/IdTagsCache.js'
+import { getIdTagsFile } from '../../src/charging-station/index.js'
+import { IdTagsCache } from '../../src/charging-station/index.js'
 import { IdTagDistribution } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './helpers/StationHelpers.js'

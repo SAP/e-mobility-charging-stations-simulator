@@ -10,7 +10,7 @@ import {
   defaultExitHandler,
   randomizeDelay,
   sleep,
-} from '../../src/worker/WorkerUtils.js'
+} from '../../src/worker/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('WorkerUtils', async () => {
