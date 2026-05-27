@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { average, max, median, min, percentile, std } from '../../src/utils/StatisticUtils.js'
+import { average, max, median, min, percentile, std } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('StatisticUtils', async () => {

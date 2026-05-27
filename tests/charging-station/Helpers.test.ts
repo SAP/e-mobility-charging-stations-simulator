@@ -23,7 +23,7 @@ import {
   resetConnectorStatus,
   setChargingStationOptions,
   validateStationInfo,
-} from '../../src/charging-station/Helpers.js'
+} from '../../src/charging-station/index.js'
 import {
   AvailabilityType,
   type ChargingProfile,

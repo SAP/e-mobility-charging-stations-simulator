@@ -55,7 +55,7 @@ import {
   truncateId,
   validateIdentifierString,
   validateUUID,
-} from '../../src/utils/Utils.js'
+} from '../../src/utils/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Utils', async () => {

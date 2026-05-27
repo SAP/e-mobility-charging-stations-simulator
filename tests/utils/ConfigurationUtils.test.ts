@@ -8,10 +8,9 @@ import { afterEach, describe, it } from 'node:test'
 import { StorageType } from '../../src/types/index.js'
 import {
   buildPerformanceUriFilePath,
-  checkWorkerElementsPerWorker,
+  configurationLogPrefix,
   getDefaultPerformanceStorageUri,
-  logPrefix,
-} from '../../src/utils/ConfigurationUtils.js'
+} from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('ConfigurationUtils', async () => {
@@ -20,7 +19,7 @@ await describe('ConfigurationUtils', async () => {
   })
 
   await it('should return log prefix with simulator configuration', () => {
-    assert.ok(logPrefix().includes(' Simulator configuration |'))
+    assert.ok(configurationLogPrefix().includes(' Simulator configuration |'))
   })
 
   await it('should build file URI path for performance storage', () => {
@@ -44,32 +43,5 @@ await describe('ConfigurationUtils', async () => {
     assert.throws(() => {
       getDefaultPerformanceStorageUri('unsupported' as StorageType)
     }, Error)
-  })
-
-  await it('should validate worker elements per worker configuration', () => {
-    // These calls should not throw exceptions
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker(undefined)
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker('auto')
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker('all')
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker(4)
-    })
-
-    // These calls should throw exceptions
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(0)
-    }, RangeError)
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(-1)
-    }, RangeError)
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(1.5)
-    }, SyntaxError)
   })
 })

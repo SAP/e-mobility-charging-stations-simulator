@@ -8,6 +8,29 @@ export {
   buildEvsesStatus,
 } from './ChargingStationConfigurationUtils.js'
 export { Configuration } from './Configuration.js'
+export {
+  applyConfigurationMigration,
+  coerceConfigurationVersion,
+  CURRENT_CONFIGURATION_SCHEMA_VERSION,
+  DEPRECATED_KEY_REMAPPINGS,
+  type FieldError,
+  remapDeprecatedKeys,
+} from './ConfigurationMigrations.js'
+export {
+  ConfigurationSchema,
+  LogConfigurationSchema,
+  StationTemplateUrlSchema,
+  StorageConfigurationSchema,
+  UIServerAuthenticationSchema,
+  UIServerConfigurationSchema,
+  WorkerConfigurationSchema,
+} from './ConfigurationSchema.js'
+export {
+  buildPerformanceUriFilePath,
+  configurationLogPrefix,
+  getDefaultPerformanceStorageUri,
+} from './ConfigurationUtils.js'
+export { ConfigurationValidationError, validateConfiguration } from './ConfigurationValidation.js'
 export { Constants } from './Constants.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'
 export {
@@ -51,12 +74,15 @@ export {
   formatLogPrefix,
   generateUUID,
   getMessageTypeString,
+  getRandomFloat,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   getWebSocketCloseEventStatusString,
   has,
+  insertAt,
   isArraySorted,
   isAsyncFunction,
+  isCFEnvironment,
   isEmpty,
   isJsonObject,
   isNotEmptyArray,
@@ -67,6 +93,7 @@ export {
   mergeDeepRight,
   once,
   promiseWithTimeout,
+  queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
   sleep,

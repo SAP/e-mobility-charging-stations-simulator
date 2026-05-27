@@ -28,6 +28,7 @@ import {
   StorageType,
   SupervisionUrlDistribution,
 } from '../../src/types/index.js'
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/utils/index.js'
 import { Configuration } from '../../src/utils/index.js'
 import { WorkerProcessType } from '../../src/worker/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -149,6 +150,7 @@ await describe('Configuration', async () => {
     const internals = getConfigurationInternals()
     const originalData = internals.configurationData
     internals.configurationData = {
+      $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
       stationTemplateUrls: [],
     }
 

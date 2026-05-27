@@ -5,37 +5,17 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { WorkerProcessType } from '../../src/worker/WorkerTypes.js'
 import {
-  checkWorkerProcessType,
   defaultErrorHandler,
   defaultExitHandler,
   randomizeDelay,
   sleep,
-} from '../../src/worker/WorkerUtils.js'
+} from '../../src/worker/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('WorkerUtils', async () => {
   afterEach(() => {
     standardCleanup()
-  })
-
-  await it('should validate worker process types correctly', () => {
-    // Valid worker process types should not throw
-    assert.doesNotThrow(() => {
-      checkWorkerProcessType(WorkerProcessType.dynamicPool)
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerProcessType(WorkerProcessType.fixedPool)
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerProcessType(WorkerProcessType.workerSet)
-    })
-
-    // Invalid worker process type should throw
-    assert.throws(() => {
-      checkWorkerProcessType('invalidType' as WorkerProcessType)
-    }, SyntaxError)
   })
 
   await it('should return timeout object after specified delay', async t => {

@@ -10,7 +10,7 @@ import {
   applyMigration,
   coerceVersion,
   CURRENT_SCHEMA_VERSION,
-} from '../../src/charging-station/TemplateMigrations.js'
+} from '../../src/charging-station/index.js'
 import { logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { buildLegacyTemplate } from './helpers/TemplateFixtures.js'

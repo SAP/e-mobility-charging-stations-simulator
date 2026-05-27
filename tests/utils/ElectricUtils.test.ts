@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js'
+import { ACElectricUtils, DCElectricUtils } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const COS_PHI_RESIDENTIAL = 0.85

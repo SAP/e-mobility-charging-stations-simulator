@@ -17,10 +17,10 @@ import type {
   ChargingStationTemplate,
 } from '../../src/types/index.js'
 
-import { Bootstrap } from '../../src/charging-station/Bootstrap.js'
-import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
+import { Bootstrap } from '../../src/charging-station/index.js'
+import { SharedLRUCache } from '../../src/charging-station/index.js'
 import { StandardParametersKey } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/Constants.js'
+import { Constants } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface BootstrapStatic {

@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
-import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
-import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/index.js'
+import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/index.js'
 import { OCPPVersion } from '../../src/types/index.js'
 import {
   setupConnectorWithTransaction,

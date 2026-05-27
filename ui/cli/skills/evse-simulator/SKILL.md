@@ -40,11 +40,13 @@ Precedence: defaults < config file < `--config <path>` < `--server-url <url>`.
 
 ## Global Options
 
-| Option               | Description                  |
-| -------------------- | ---------------------------- |
-| `--json`             | Machine-readable JSON output |
-| `--config <path>`    | Path to config file          |
-| `--server-url <url>` | WebSocket URL override       |
+| Option                | Description                  |
+| --------------------- | ---------------------------- |
+| `--json`              | Machine-readable JSON output |
+| `-C, --config <path>` | Path to configuration file   |
+| `--server-url <url>`  | WebSocket URL override       |
+
+`NO_COLOR` environment variable disables color output (see [no-color.org](https://no-color.org/)).
 
 ## Commands
 
@@ -66,6 +68,9 @@ evse-cli station add -t <template> -n <count>             # Add stations
 evse-cli station add -t <template> -n 2 --auto-start      # Add and auto-start
 evse-cli station add -t <template> -n 1 --supervision-url ws://csms:8180/path
 evse-cli station add -t <template> -n 1 --base-name MY-CS --fixed-name
+evse-cli station add -t <template> -n 1 --name-suffix -EU         # Suffix appended to derived id
+evse-cli station add -t <template> -n 1 --ocpp-strict             # Enable OCPP strict compliance
+evse-cli station add -t <template> -n 1 --persistent-config       # Enable persistent OCPP config
 evse-cli station add -t <template> -n 1 --supervision-user alice --supervision-password s3cret
 evse-cli station delete [hashId...]                       # Delete station(s)
 evse-cli station delete --delete-config [hashId...]       # Delete with config files
@@ -134,6 +139,8 @@ evse-cli ocpp boot-notification -p '{"reason":"PowerUp"}' [hashId...]  # Inline
 evse-cli ocpp boot-notification -p @payload.json [hashId...]           # From file
 cat payload.json | evse-cli ocpp boot-notification -p - [hashId...]    # From stdin
 ```
+
+For typed-option commands (`authorize`, `meter-values`, `status-notification`, `transaction start|stop`), `-p` conflicts with typed options and the two cannot be combined. For `data-transfer`, command options merge with `-p` and typed options take precedence over `-p` fields.
 
 ### Version-aware commands
 

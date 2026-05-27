@@ -19,7 +19,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { FileType } from '../../src/types/index.js'
-import { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from '../../src/utils/FileUtils.js'
+import { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from '../../src/utils/index.js'
 import { logger } from '../../src/utils/index.js'
 import { createLoggerMocks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 

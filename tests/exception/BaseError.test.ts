@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { BaseError } from '../../src/exception/BaseError.js'
+import { BaseError } from '../../src/exception/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('BaseError', async () => {

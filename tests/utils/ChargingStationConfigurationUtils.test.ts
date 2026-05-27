@@ -19,8 +19,8 @@ import {
   buildConnectorsStatus,
   buildEvseEntries,
   buildEvsesStatus,
-} from '../../src/utils/ChargingStationConfigurationUtils.js'
-import { Constants } from '../../src/utils/Constants.js'
+} from '../../src/utils/index.js'
+import { Constants } from '../../src/utils/index.js'
 import {
   cleanupChargingStation,
   createMockChargingStation,

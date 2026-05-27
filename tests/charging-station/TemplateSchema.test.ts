@@ -6,8 +6,8 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/TemplateMigrations.js'
-import { TemplateSchema } from '../../src/charging-station/TemplateSchema.js'
+import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
+import { TemplateSchema } from '../../src/charging-station/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildMinimalTemplate } from './helpers/TemplateFixtures.js'

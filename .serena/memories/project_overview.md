@@ -55,13 +55,20 @@ src/
 
 ## Component Boundaries
 
-- `charging-station/` and `ocpp/` are SEPARATE components with their own barrels
+- `charging-station/` and `ocpp/` are SEPARATE components with their own barrels (files under `src/charging-station/ocpp/` belong to `ocpp/`)
 - `ocpp/1.6/` and `ocpp/2.0/` are separate sub-components of ocpp
 - `ocpp/auth/` is an independent subsystem with its own barrel, interfaces, and strategy pattern
 - `worker/` is **fully standalone** — zero imports from other local modules. Has its own `sleep()`, `secureRandom()`, `mergeDeepRight()`. Uses `new Error()` (not `BaseError`). Portable to other projects
-- `types/` is pure type definitions, depends on nothing except `worker/` (type-only)
-- `utils/` depends on `types/` and `charging-station/` (type-only + 1 runtime: `getMessageTypeString`)
-- `exception/` — `BaseError` has no imports; `OCPPError` imports from `types/` and `ocpp/OCPPConstants`. The barrel creates a transitive dep chain NOT usable by `utils/` (circular)
+- `types/` is pure type definitions; type-only imports from `worker/`, `charging-station/`, and `exception/` are permitted
+- `utils/` depends on `types/`, `charging-station/` (type-only + 1 runtime: `getMessageTypeString`), `exception/` (`BaseError`), and `worker/` (constants/enums)
+- `exception/` — `BaseError` has no imports; `OCPPError` imports `OCPPConstants` via direct file path (TDZ cycle through `ocpp/index.js` re-exports)
+
+## Import Discipline
+
+- **Cross-component imports** use the importee's barrel (`<component>/index.js`); never deep-import internal files
+- **Intra-component imports** use direct relative paths; never the component's own barrel (self-cycle)
+- **Tests** are outside the component they test → use the component's barrel
+- **TDZ exceptions** use direct cross-component file paths with a `// Direct path:` comment: `utils/ConfigurationMigrations.ts` → `exception/BaseError.js`; `exception/OCPPError.ts` → `charging-station/ocpp/OCPPConstants.js`
 
 ## Design Patterns
 

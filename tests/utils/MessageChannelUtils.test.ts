@@ -18,7 +18,7 @@ import {
   buildStartedMessage,
   buildStoppedMessage,
   buildUpdatedMessage,
-} from '../../src/utils/MessageChannelUtils.js'
+} from '../../src/utils/index.js'
 import {
   cleanupChargingStation,
   createMockChargingStation,

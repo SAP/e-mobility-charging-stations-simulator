@@ -2,6 +2,7 @@
 
 import type { ErrorType, IncomingRequestCommand, JsonType, RequestCommand } from '../types/index.js'
 
+// Direct path: the `ocpp/index.js` barrel pulls OCPP20ServiceUtils which transitively imports OCPPError, causing a TDZ cycle.
 import { OCPPConstants } from '../charging-station/ocpp/OCPPConstants.js'
 import { BaseError } from './BaseError.js'
 

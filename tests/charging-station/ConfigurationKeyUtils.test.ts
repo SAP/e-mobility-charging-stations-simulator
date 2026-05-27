@@ -11,7 +11,7 @@ import {
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from '../../src/charging-station/ConfigurationKeyUtils.js'
+} from '../../src/charging-station/index.js'
 import { OCPP20ComponentName, OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'

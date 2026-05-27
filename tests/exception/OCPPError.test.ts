@@ -5,9 +5,9 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { OCPPConstants } from '../../src/charging-station/ocpp/OCPPConstants.js'
-import { BaseError } from '../../src/exception/BaseError.js'
-import { OCPPError } from '../../src/exception/OCPPError.js'
+import { OCPPConstants } from '../../src/charging-station/ocpp/index.js'
+import { BaseError } from '../../src/exception/index.js'
+import { OCPPError } from '../../src/exception/index.js'
 import { ErrorType, RequestCommand } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 

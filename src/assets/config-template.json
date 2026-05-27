@@ -1,4 +1,5 @@
 {
+  "$schemaVersion": 1,
   "supervisionUrls": ["ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"],
   "supervisionUrlDistribution": "round-robin",
   "log": {
