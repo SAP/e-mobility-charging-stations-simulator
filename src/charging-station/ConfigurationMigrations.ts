@@ -1,16 +1,23 @@
+import { isDeepStrictEqual } from 'node:util'
+
 import { BaseError } from '../exception/BaseError.js'
 
 const moduleName = 'ConfigurationMigrations'
 
 /**
- * Deprecated top-level key → canonical destination mapping.
- * Keys with dotted destinations (e.g. `'log.enabled'`) are written into the
- * nested sub-section by the v0→v1 migration step; intermediate objects are
- * created if absent.
- * Used by both `transformConfiguration` (warnings) and the v0→v1 migration step.
+ * Deprecated configuration key → canonical destination mapping.
+ *
+ * - `string` (top-level or dotted path): remap value to that destination.
+ * - `null`: deprecated key with no canonical destination; delete + warn only.
+ *
+ * Source keys may be dotted to express nested deprecations
+ * (e.g. `'worker.elementStartDelay'`). Single source of truth for both the
+ * migration sweep (consumed by `remapDeprecatedKeys`) and the schema's
+ * `@deprecated` `.describe()` strings (sync enforced by
+ * `ConfigurationSchema.test.ts`).
  */
-export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, string>> = {
-  autoReconnectMaxRetries: 'autoReconnectMaxRetries',
+export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> = {
+  autoReconnectMaxRetries: null,
   chargingStationsPerWorker: 'worker.elementsPerWorker',
   distributeStationsToTenantsEqually: 'supervisionUrlDistribution',
   distributeStationToTenantEqually: 'supervisionUrlDistribution',
@@ -29,6 +36,7 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, string>> = {
   supervisionURLs: 'supervisionUrls',
   uiWebSocketServer: 'uiServer',
   useWorkerPool: 'worker.processType',
+  'worker.elementStartDelay': 'worker.elementAddDelay',
   workerPoolMaxSize: 'worker.poolMaxSize',
   workerPoolMinSize: 'worker.poolMinSize',
   workerPoolSize: 'worker.poolMaxSize',
@@ -49,49 +57,181 @@ export type MigrationFn = (
   filePath: string
 ) => Record<string, unknown>
 
+export interface RemapDeprecatedKeysResult {
+  config: Record<string, unknown>
+  fieldErrors: FieldError[]
+  warnings: RemapWarning[]
+}
+
+interface FieldError {
+  message: string
+  path: string
+}
+
+interface RemapWarning {
+  canonicalDestination: null | string
+  sourceKey: string
+}
+
 /**
- * Write a value at a dotted path into `target`, creating intermediate objects as needed.
- * Only writes if the canonical key is not already present (conflict: canonical wins).
- * @param target - object to mutate in place
- * @param path - dotted path (e.g. `'log.enabled'`) where the value is written
- * @param value - value to assign at the leaf if absent
+ * Read the value at a dotted `path`, without traversing arrays.
+ * @param target - source object
+ * @param path - dotted path (e.g. `'worker.elementStartDelay'`)
+ * @returns `{ found, value }` — `found` is true only when every segment
+ * exists as a plain object key down to and including the leaf.
  */
-function setAtPath (target: Record<string, unknown>, path: string, value: unknown): void {
+const getAtPath = (
+  target: Record<string, unknown>,
+  path: string
+): { found: boolean; value: unknown } => {
+  const parts = path.split('.')
+  let cursor: unknown = target
+  for (const part of parts) {
+    if (cursor == null || typeof cursor !== 'object' || Array.isArray(cursor)) {
+      return { found: false, value: undefined }
+    }
+    const obj = cursor as Record<string, unknown>
+    if (!(part in obj)) {
+      return { found: false, value: undefined }
+    }
+    cursor = obj[part]
+  }
+  return { found: true, value: cursor }
+}
+
+/**
+ * Delete the leaf at a dotted `path`. Intermediate non-object segments
+ * cause the deletion to be a no-op (defensive against external mutation).
+ * @param target - object to mutate in place
+ * @param path - dotted path of the leaf to delete
+ */
+const deleteAtPath = (target: Record<string, unknown>, path: string): void => {
+  const parts = path.split('.')
+  let cursor: Record<string, unknown> = target
+  for (let i = 0; i < parts.length - 1; i++) {
+    const next = cursor[parts[i]]
+    if (next == null || typeof next !== 'object' || Array.isArray(next)) {
+      return
+    }
+    cursor = next as Record<string, unknown>
+  }
+  Reflect.deleteProperty(cursor, parts[parts.length - 1])
+}
+
+/**
+ * Write `value` at dotted `path`, creating intermediate objects as needed.
+ *
+ * Reports two failure modes via `fieldErrors` (does not throw):
+ * - non-object intermediate (`{"log":"verbose"}` cannot host `log.level`)
+ * - leaf already populated with a non-equal value (collision)
+ *
+ * Equal-value writes are idempotent no-ops (tolerates copy-paste between
+ * deprecated and canonical aliases).
+ * @param target - object to mutate in place
+ * @param path - dotted destination path
+ * @param value - value to write at the leaf
+ * @param source - originating deprecated key (for error messages)
+ * @param fieldErrors - error accumulator
+ * @returns true on write or idempotent no-op, false when an error is recorded
+ */
+const setAtPath = (
+  target: Record<string, unknown>,
+  path: string,
+  value: unknown,
+  source: string,
+  fieldErrors: FieldError[]
+): boolean => {
   const parts = path.split('.')
   let cursor: Record<string, unknown> = target
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i]
-    if (cursor[part] == null || typeof cursor[part] !== 'object') {
+    const next = cursor[part]
+    if (next == null) {
       cursor[part] = {}
+      cursor = cursor[part] as Record<string, unknown>
+      continue
     }
-    cursor = cursor[part] as Record<string, unknown>
+    if (typeof next !== 'object' || Array.isArray(next)) {
+      fieldErrors.push({
+        message: `cannot migrate deprecated key '${source}' to '${path}': intermediate '${parts
+          .slice(0, i + 1)
+          .join('.')}' is not an object`,
+        path: source,
+      })
+      return false
+    }
+    cursor = next as Record<string, unknown>
   }
   const leaf = parts[parts.length - 1]
-  cursor[leaf] ??= value
+  if (leaf in cursor) {
+    if (!isDeepStrictEqual(cursor[leaf], value)) {
+      fieldErrors.push({
+        message: `deprecated key '${source}' value conflicts with existing '${path}' (canonical key or another deprecated alias resolved here)`,
+        path: source,
+      })
+      return false
+    }
+    return true
+  }
+  cursor[leaf] = value
+  return true
 }
 
 /**
- * v0 → v1: remap all deprecated top-level keys to their canonical destinations.
- * Pure function — returns a new object; `config` is not mutated.
- * Warnings are emitted by `transformConfiguration` (T9); this step only moves data.
- * @param config - source configuration object (v0 shape, possibly with deprecated keys)
- * @param _filePath - configuration file path (unused at this step, kept for `MigrationFn` signature)
- * @returns new configuration object with deprecated keys remapped and `$schemaVersion` set to 1
+ * Apply the deprecated-key remap table to `config`.
+ *
+ * Pure: returns a new object; `config` is not mutated.
+ * Always safe to call — idempotent when no deprecated keys are present.
+ *
+ * - emits one `warning` entry per deprecated key encountered so the caller
+ *   can route them to the appropriate IO channel
+ * - records collision and non-object-intermediate failures as `fieldErrors`
+ *   for the caller to surface as a typed error
+ * - equal-value collisions are no-ops (tolerates copy-paste between
+ *   deprecated and canonical keys)
+ *
+ * Designed to run unconditionally regardless of `$schemaVersion` so that
+ * v1 configurations still containing deprecated keys never silently drop
+ * user values.
+ * @param config - raw parsed configuration object
+ * @returns `{ config, fieldErrors, warnings }`
+ */
+export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDeprecatedKeysResult => {
+  const out = structuredClone(config)
+  const fieldErrors: FieldError[] = []
+  const warnings: RemapWarning[] = []
+
+  for (const [sourceKey, canonicalDestination] of Object.entries(DEPRECATED_KEY_REMAPPINGS)) {
+    const { found, value } = getAtPath(out, sourceKey)
+    if (!found) {
+      continue
+    }
+    warnings.push({ canonicalDestination, sourceKey })
+    if (canonicalDestination != null && canonicalDestination !== sourceKey) {
+      const ok = setAtPath(out, canonicalDestination, value, sourceKey, fieldErrors)
+      if (!ok) {
+        // Leave source key in place so its name is referenced in the error.
+        continue
+      }
+    }
+    deleteAtPath(out, sourceKey)
+  }
+
+  return { config: out, fieldErrors, warnings }
+}
+
+/**
+ * v0 → v1: pure version-bump migration.
+ *
+ * Deprecated-key remapping (the legacy table contents) is now handled
+ * unconditionally upstream by `remapDeprecatedKeys`, regardless of
+ * `$schemaVersion`. This step only advances the version marker.
+ * @param config - source configuration object (already swept of deprecated keys)
+ * @param _filePath - configuration file path (unused at this step)
+ * @returns new configuration object with `$schemaVersion` set to 1
  */
 const migrateV0ToV1: MigrationFn = (config, _filePath) => {
-  let out = structuredClone(config)
-  for (const [legacy, canonical] of Object.entries(DEPRECATED_KEY_REMAPPINGS)) {
-    if (legacy in out) {
-      if (legacy !== canonical) {
-        if (canonical.includes('.')) {
-          setAtPath(out, canonical, out[legacy])
-        } else if (!(canonical in out)) {
-          out[canonical] = out[legacy]
-        }
-      }
-      out = Object.fromEntries(Object.entries(out).filter(([k]) => k !== legacy))
-    }
-  }
+  const out = structuredClone(config)
   out.$schemaVersion = 1
   return out
 }
@@ -163,8 +303,12 @@ export const coerceConfigurationVersion = (raw: unknown): number => {
  * Apply migrations sequentially from the given source version to
  * `CURRENT_CONFIGURATION_SCHEMA_VERSION`, advancing `$schemaVersion` after each hop.
  * Returns a new object; the input `config` is not mutated.
+ *
+ * Note: deprecated-key remapping is performed by `remapDeprecatedKeys`
+ * BEFORE this function is invoked, so the migration steps themselves
+ * are pure version-bump transforms.
  * @param sourceVersion - Source schema version to migrate from
- * @param config - Raw parsed configuration object
+ * @param config - Raw parsed configuration object (already remapped)
  * @param filePath - File path for error messages
  * @returns Migrated configuration object
  */

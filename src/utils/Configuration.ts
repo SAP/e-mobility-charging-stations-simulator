@@ -99,6 +99,7 @@ export class Configuration {
   private static configurationData?: ConfigurationData
   private static configurationFile: string | undefined
   private static configurationFileReloading = false
+  private static configurationFileReloadPending = false
   private static configurationFileWatcher?: FSWatcher
   private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
 
@@ -204,16 +205,6 @@ export class Configuration {
   }
 
   public static getSupervisionUrls (): string | string[] | undefined {
-    if (
-      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
-    ) {
-      const configurationData = Configuration.getConfigurationData()
-      if (configurationData != null) {
-        configurationData.supervisionUrls = configurationData[
-          'supervisionURLs' as keyof ConfigurationData
-        ] as string | string[]
-      }
-    }
     return Configuration.getConfigurationData()?.supervisionUrls
   }
 
@@ -236,30 +227,10 @@ export class Configuration {
 
   private static buildLogSection (): LogConfiguration {
     const configurationData = Configuration.getConfigurationData()
-    const deprecatedLogKeyMap: [keyof ConfigurationData, keyof LogConfiguration][] = [
-      ['logEnabled', 'enabled'],
-      ['logFile', 'file'],
-      ['logErrorFile', 'errorFile'],
-      ['logStatisticsInterval', 'statisticsInterval'],
-      ['logLevel', 'level'],
-      ['logConsole', 'console'],
-      ['logFormat', 'format'],
-      ['logRotate', 'rotate'],
-      ['logMaxFiles', 'maxFiles'],
-      ['logMaxSize', 'maxSize'],
-    ]
-    const deprecatedLogConfiguration: Record<string, unknown> = {}
-    for (const [deprecatedKey, newKey] of deprecatedLogKeyMap) {
-      if (has(deprecatedKey, configurationData)) {
-        deprecatedLogConfiguration[newKey] = configurationData?.[deprecatedKey]
-      }
-    }
-    const logConfiguration: LogConfiguration = {
+    return {
       ...defaultLogConfiguration,
-      ...(deprecatedLogConfiguration as Partial<LogConfiguration>),
       ...(has(ConfigurationSection.log, configurationData) && configurationData?.log),
     }
-    return logConfiguration
   }
 
   private static buildPerformanceStorageSection (): StorageConfiguration {
@@ -320,32 +291,10 @@ export class Configuration {
 
   private static buildWorkerSection (): WorkerConfiguration {
     const configurationData = Configuration.getConfigurationData()
-    const deprecatedWorkerKeyMap: [keyof ConfigurationData, keyof WorkerConfiguration][] = [
-      ['workerProcess', 'processType'],
-      ['workerStartDelay', 'startDelay'],
-      ['chargingStationsPerWorker', 'elementsPerWorker'],
-      ['elementAddDelay', 'elementAddDelay'],
-      ['workerPoolMinSize', 'poolMinSize'],
-      ['workerPoolMaxSize', 'poolMaxSize'],
-    ]
-    const deprecatedWorkerConfiguration: Record<string, unknown> = {}
-    for (const [deprecatedKey, newKey] of deprecatedWorkerKeyMap) {
-      if (has(deprecatedKey, configurationData)) {
-        deprecatedWorkerConfiguration[newKey] = configurationData?.[deprecatedKey]
-      }
-    }
-    if (has('elementStartDelay', configurationData?.worker)) {
-      deprecatedWorkerConfiguration.elementAddDelay = configurationData?.worker?.elementStartDelay
-    }
-    if (configurationData != null) {
-      delete configurationData.workerPoolStrategy
-    }
-    const workerConfiguration: WorkerConfiguration = {
+    return {
       ...defaultWorkerConfiguration,
-      ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
       ...(has(ConfigurationSection.worker, configurationData) && configurationData?.worker),
     }
-    return workerConfiguration
   }
 
   private static cacheConfigurationSection (sectionName: ConfigurationSection): void {
@@ -380,21 +329,27 @@ export class Configuration {
     }
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
-        if (
-          !Configuration.configurationFileReloading &&
-          (filename?.trim().length ?? 0) > 0 &&
-          event === 'change'
-        ) {
-          Configuration.configurationFileReloading = true
-          const consoleWarnOnce = once(console.warn)
-          consoleWarnOnce(
-            `${chalk.green(logPrefix())} ${chalk.yellow(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${FileType.Configuration} ${Configuration.configurationFile} file has changed, reload`
-            )}`
-          )
-          Configuration.reloadConfiguration()
+        if ((filename?.trim().length ?? 0) === 0 || event !== 'change') {
+          return
         }
+        if (Configuration.configurationFileReloading) {
+          // Coalesce events arriving during an in-flight reload into a single
+          // follow-up reload. N rapid edits collapse into ≤2 reloads
+          // (current + one drained), preserving the latest file content.
+          Configuration.configurationFileReloadPending = true
+          return
+        }
+        Configuration.configurationFileReloading = true
+        const consoleWarnOnce = once(console.warn)
+        consoleWarnOnce(
+          `${chalk.green(logPrefix())} ${chalk.yellow(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `${FileType.Configuration} ${Configuration.configurationFile} file has changed, reload`
+          )}`
+        )
+        Configuration.runReloadLoop().catch((error: unknown) => {
+          logger.error(`${logPrefix()} Configuration reload loop error:`, ensureError(error))
+        })
       })
     } catch (error) {
       handleFileException(
@@ -413,17 +368,21 @@ export class Configuration {
 
   /**
    * Reload the configuration file with snapshot-based rollback semantics.
-   * Captures previous data and cache BEFORE clearing them, so any parse or
-   * validation error during reload restores the prior state. The change
-   * callback is only invoked when reload succeeds; the reloading flag is
-   * cleared in `finally` on both paths.
+   *
+   * Captures previous data and cache BEFORE clearing them, so any parse,
+   * validation, or callback error restores the prior state. The change
+   * callback is awaited inside the same try/catch as the reload itself —
+   * a callback failure does not corrupt cached state but logs and
+   * preserves the freshly-loaded configuration (callbacks observe a
+   * successful reload before they fail).
    */
-  private static reloadConfiguration (): void {
+  private static async performReload (): Promise<void> {
     const previousData =
       Configuration.configurationData != null
         ? structuredClone(Configuration.configurationData)
         : undefined
     const previousCache = new Map(Configuration.configurationSectionCache)
+    let reloadSucceeded = false
     try {
       delete Configuration.configurationData
       Configuration.configurationSectionCache.clear()
@@ -434,10 +393,16 @@ export class Configuration {
           Configuration.configurationFile
         )
       }
+      reloadSucceeded = true
       if (Configuration.configurationChangeCallback != null) {
-        Configuration.configurationChangeCallback().catch((error: unknown) => {
-          logger.error(`${logPrefix()} Configuration change callback error:`, ensureError(error))
-        })
+        try {
+          await Configuration.configurationChangeCallback()
+        } catch (callbackError) {
+          logger.error(
+            `${logPrefix()} Configuration change callback error:`,
+            ensureError(callbackError)
+          )
+        }
       }
     } catch (error) {
       if (error instanceof ConfigurationValidationError || error instanceof BaseError) {
@@ -451,8 +416,35 @@ export class Configuration {
           ensureError(error)
         )
       }
-      Configuration.configurationData = previousData
-      Configuration.configurationSectionCache = previousCache
+      if (!reloadSucceeded) {
+        Configuration.configurationData = previousData
+        Configuration.configurationSectionCache = previousCache
+      }
+    }
+  }
+
+  /**
+   * Drive the reload loop until no more pending events remain.
+   *
+   * Each `performReload` invocation owns the reloading lock for its full
+   * lifetime — including the change callback — so subsequent reloads
+   * cannot interleave with an in-flight callback. Events arriving during
+   * a reload set `configurationFileReloadPending`, and the loop drains
+   * them after the current reload completes.
+   *
+   * The lock (`configurationFileReloading`) is released in `finally` so
+   * an unexpected throw cannot leave the watcher dead.
+   */
+  private static async runReloadLoop (): Promise<void> {
+    try {
+      do {
+        Configuration.configurationFileReloadPending = false
+        await Configuration.performReload()
+        // The flag may have been set back to true by an `fs.watch` event
+        // arriving while `performReload` was running. The eslint rule
+        // cannot see across the static-field mutation in that handler.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      } while (Configuration.configurationFileReloadPending)
     } finally {
       Configuration.configurationFileReloading = false
     }

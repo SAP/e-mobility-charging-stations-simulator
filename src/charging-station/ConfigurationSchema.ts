@@ -102,8 +102,8 @@ export const UIServerConfigurationSchema = z
     authentication: UIServerAuthenticationSchema.optional(),
     enabled: z.boolean().optional(),
     options: z.custom<ListenOptions>().optional(),
-    type: z.enum(Object.values(ApplicationProtocol) as [string, ...string[]]).optional(),
-    version: z.enum(Object.values(ApplicationProtocolVersion) as [string, ...string[]]).optional(),
+    type: z.enum(ApplicationProtocol).optional(),
+    version: z.enum(ApplicationProtocolVersion).optional(),
   })
   .strict()
 
@@ -131,14 +131,17 @@ export const StationTemplateUrlSchema = z
 // ---------------------------------------------------------------
 
 /**
- * BaseConfigurationSchema — strict schema for the simulator configuration.
+ * ConfigurationSchema — strict schema for the simulator configuration.
  * Top-level and all sub-sections reject unknown keys (typos must fail at boot).
  *
  * Deprecated top-level keys are accepted as `.optional()` with a `.describe()`
  * marker so existing user configurations continue to parse while
- * `ConfigurationMigration` emits warnings and remaps them to canonical keys.
+ * `remapDeprecatedKeys` emits warnings and remaps them to canonical keys.
+ *
+ * The `@deprecated:` describe markers are kept in sync with
+ * `DEPRECATED_KEY_REMAPPINGS` (single source of truth) by a meta-test.
  */
-const BaseConfigurationSchema = z
+export const ConfigurationSchema = z
   .object({
     $schemaVersion: z.literal(CURRENT_CONFIGURATION_SCHEMA_VERSION),
     autoReconnectMaxRetries: z
@@ -218,10 +221,3 @@ const BaseConfigurationSchema = z
       .describe("@deprecated: use 'worker.startDelay' instead"),
   })
   .strict()
-
-/**
- * ConfigurationSchema — strict schema for the simulator configuration.
- * Equal to `BaseConfigurationSchema`; cross-field rules will be added in a
- * future task via `.superRefine(...)`.
- */
-export const ConfigurationSchema = BaseConfigurationSchema
