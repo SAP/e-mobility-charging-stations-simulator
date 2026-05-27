@@ -52,9 +52,9 @@ export type MigrationFn = (
 /**
  * Write a value at a dotted path into `target`, creating intermediate objects as needed.
  * Only writes if the canonical key is not already present (conflict: canonical wins).
- * @param target
- * @param path
- * @param value
+ * @param target - object to mutate in place
+ * @param path - dotted path (e.g. `'log.enabled'`) where the value is written
+ * @param value - value to assign at the leaf if absent
  */
 function setAtPath (target: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.')
@@ -74,8 +74,9 @@ function setAtPath (target: Record<string, unknown>, path: string, value: unknow
  * v0 → v1: remap all deprecated top-level keys to their canonical destinations.
  * Pure function — returns a new object; `config` is not mutated.
  * Warnings are emitted by `transformConfiguration` (T9); this step only moves data.
- * @param config
- * @param _filePath
+ * @param config - source configuration object (v0 shape, possibly with deprecated keys)
+ * @param _filePath - configuration file path (unused at this step, kept for `MigrationFn` signature)
+ * @returns new configuration object with deprecated keys remapped and `$schemaVersion` set to 1
  */
 const migrateV0ToV1: MigrationFn = (config, _filePath) => {
   let out = structuredClone(config)
