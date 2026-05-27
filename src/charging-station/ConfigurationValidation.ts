@@ -7,7 +7,8 @@ import type { FieldError } from './ConfigurationMigrations.js'
 
 import { BaseError } from '../exception/index.js'
 import { logPrefix } from '../utils/ConfigurationUtils.js'
-import { isEmpty } from '../utils/index.js'
+// Direct path: the `utils/index.js` barrel re-exports Configuration, causing a TDZ cycle.
+import { isEmpty } from '../utils/Utils.js'
 import {
   applyConfigurationMigration,
   coerceConfigurationVersion,

@@ -20,8 +20,8 @@ const moduleName = 'ConfigurationMigrations'
 export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> = {
   autoReconnectMaxRetries: null,
   chargingStationsPerWorker: 'worker.elementsPerWorker',
-  distributeStationsToTenantsEqually: 'supervisionUrlDistribution',
-  distributeStationToTenantEqually: 'supervisionUrlDistribution',
+  distributeStationsToTenantsEqually: null,
+  distributeStationToTenantEqually: null,
   elementAddDelay: 'worker.elementAddDelay',
   logConsole: 'log.console',
   logEnabled: 'log.enabled',
@@ -35,8 +35,8 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
   logStatisticsInterval: 'log.statisticsInterval',
   stationTemplateURLs: 'stationTemplateUrls',
   supervisionURLs: 'supervisionUrls',
-  uiWebSocketServer: 'uiServer',
-  useWorkerPool: 'worker.processType',
+  uiWebSocketServer: null,
+  useWorkerPool: null,
   'worker.elementStartDelay': 'worker.elementAddDelay',
   workerPoolMaxSize: 'worker.poolMaxSize',
   workerPoolMinSize: 'worker.poolMinSize',
@@ -218,16 +218,13 @@ export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDepre
 
 /**
  * v0 → v1: pure version-bump. Deprecated-key remapping happens upstream
- * in `remapDeprecatedKeys`.
+ * in `remapDeprecatedKeys`. `$schemaVersion` is stamped by
+ * `applyConfigurationMigration`.
  * @param config - source configuration object
  * @param _filePath - configuration file path (unused)
- * @returns new configuration object with `$schemaVersion` set to 1
+ * @returns new configuration object
  */
-const migrateV0ToV1: MigrationFn = (config, _filePath) => {
-  const out = structuredClone(config)
-  out.$schemaVersion = 1
-  return out
-}
+const migrateV0ToV1: MigrationFn = (config, _filePath) => structuredClone(config)
 
 /**
  * Sequential migration chain. Index `i` migrates a v`i` configuration to v`i+1`.

@@ -121,7 +121,7 @@ export const StationTemplateUrlSchema = z
       .nonnegative()
       .optional()
       .describe("@deprecated: use 'numberOfStations' instead"),
-    numberOfStations: z.number().int().nonnegative(),
+    numberOfStations: z.number().int().positive(),
     provisionedNumberOfStations: z.number().int().nonnegative().optional(),
   })
   .strict()
