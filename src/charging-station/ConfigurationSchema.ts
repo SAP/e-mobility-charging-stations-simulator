@@ -66,8 +66,7 @@ export const WorkerConfigurationSchema = z
 
 /**
  * StorageConfiguration — performance storage configuration section.
- * Legacy `URI` (uppercase) is accepted for backward compatibility and migrated
- * to canonical `uri`.
+ * Legacy `URI` (uppercase) is accepted but not auto-migrated; canonical key is `uri`.
  */
 export const StorageConfigurationSchema = z
   .object({
@@ -139,7 +138,8 @@ export const StationTemplateUrlSchema = z
  * `remapDeprecatedKeys` emits warnings and remaps them to canonical keys.
  *
  * The `@deprecated:` describe markers are kept in sync with
- * `DEPRECATED_KEY_REMAPPINGS` (single source of truth) by a meta-test.
+ * `DEPRECATED_KEY_REMAPPINGS` (single source of truth) by a meta-test covering
+ * top-level and `worker.*` keys.
  */
 export const ConfigurationSchema = z
   .object({
