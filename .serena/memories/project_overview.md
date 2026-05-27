@@ -55,22 +55,20 @@ src/
 
 ## Component Boundaries
 
-- `charging-station/` and `ocpp/` are SEPARATE components with their own barrels (files under `src/charging-station/ocpp/` belong to the `ocpp/` component, not to `charging-station/`)
+- `charging-station/` and `ocpp/` are SEPARATE components with their own barrels (files under `src/charging-station/ocpp/` belong to `ocpp/`)
 - `ocpp/1.6/` and `ocpp/2.0/` are separate sub-components of ocpp
 - `ocpp/auth/` is an independent subsystem with its own barrel, interfaces, and strategy pattern
 - `worker/` is **fully standalone** — zero imports from other local modules. Has its own `sleep()`, `secureRandom()`, `mergeDeepRight()`. Uses `new Error()` (not `BaseError`). Portable to other projects
-- `types/` is pure type definitions; type-only imports from `worker/`, `charging-station/`, and `exception/` are permitted (runtime-elided, no cycle risk)
-- `utils/` depends on `types/`, `charging-station/` (type-only + 1 runtime: `getMessageTypeString`), `exception/` (`BaseError` runtime), and `worker/` (constants/enums runtime)
-- `exception/`:
-  - `BaseError` has no imports; `OCPPError` imports `OCPPConstants` via direct path `../charging-station/ocpp/OCPPConstants.js` (TDZ-documented exception — barrel `ocpp/index.js` re-exports `OCPP20ServiceUtils` which transitively imports `OCPPError`, causing a cycle)
-  - The `exception/index.js` barrel IS usable from `utils/` for files whose loaded chain doesn't include `ConfigurationSchema.ts` accessing `CURRENT_CONFIGURATION_SCHEMA_VERSION` at module top-level. Only `utils/ConfigurationMigrations.ts` requires the direct path `../exception/BaseError.js` (TDZ-documented exception)
+- `types/` is pure type definitions; type-only imports from `worker/`, `charging-station/`, and `exception/` are permitted
+- `utils/` depends on `types/`, `charging-station/` (type-only + 1 runtime: `getMessageTypeString`), `exception/` (`BaseError`), and `worker/` (constants/enums)
+- `exception/` — `BaseError` has no imports; `OCPPError` imports `OCPPConstants` via direct file path (TDZ cycle through `ocpp/index.js` re-exports)
 
 ## Import Discipline
 
-- **Cross-component imports** MUST go through the importee's barrel (`<component>/index.js`) — never deep-import internal files
-- **Intra-component imports** use direct relative paths (`./Sibling.js`, `../Parent.js`); never the component's own barrel (`./index.js`) — causes self-cycle
-- **Tests** are outside the component they test → MUST import via the component's barrel
-- **Documented exceptions** (TDZ cycles): two files use direct cross-component paths with explanatory comments — `src/utils/ConfigurationMigrations.ts:4` (`exception/BaseError.js`) and `src/exception/OCPPError.ts:5` (`charging-station/ocpp/OCPPConstants.js`). Both have a `// Direct path:` comment justifying the deviation
+- **Cross-component imports** use the importee's barrel (`<component>/index.js`); never deep-import internal files
+- **Intra-component imports** use direct relative paths; never the component's own barrel (self-cycle)
+- **Tests** are outside the component they test → use the component's barrel
+- **TDZ exceptions** use direct cross-component file paths with a `// Direct path:` comment: `utils/ConfigurationMigrations.ts` → `exception/BaseError.js`; `exception/OCPPError.ts` → `charging-station/ocpp/OCPPConstants.js`
 
 ## Design Patterns
 
