@@ -85,12 +85,8 @@ export const buildInvalidJsonString = (): string => '{ this is not valid json'
 
 /**
  * Build a v1 configuration carrying a single deprecated key.
- *
- * Top-level keys are placed at the root; dotted keys
- * (e.g. `'worker.elementStartDelay'`) are placed inside their nested
- * sub-section. Used for B1 regression (no recursive logger access during
- * boot) and the unconditional-sweep B3 path.
- * @param key - Deprecated key name (must be a key of `DEPRECATED_KEY_REMAPPINGS`)
+ * Top-level keys are placed at the root; dotted keys nest into their section.
+ * @param key - Deprecated key name (must be in `DEPRECATED_KEY_REMAPPINGS`)
  * @param value - Schema-valid sample value
  * @returns A minimal v1 config carrying the deprecated key
  */
@@ -103,18 +99,13 @@ export const buildV1WithDeprecatedKey = (key: string, value: unknown): Record<st
 }
 
 /**
- * Build a v0 configuration with TWO deprecated keys mapping to the SAME
- * canonical destination, for collision-resolution tests (B4).
- *
- * Iteration order in the migration follows
- * `Object.entries(DEPRECATED_KEY_REMAPPINGS)`. The current `setAtPath`
- * implementation accepts equal values as idempotent no-ops and reports
- * unequal values via `fieldErrors`.
- *
- * Uses canonical `stationTemplateUrls` (not the deprecated alias) so the
- * fixture introduces no extra deprecation warnings — only the two source
- * keys passed in are part of the migration sweep.
- * @param firstKey - First deprecated key (collides on canonical)
+ * Build a v0 configuration with two deprecated keys that resolve to the
+ * same canonical destination, for collision-resolution tests.
+ * Equal values resolve as idempotent no-ops; unequal values surface via
+ * `fieldErrors`.
+ * Uses canonical `stationTemplateUrls` so the fixture introduces no extra
+ * deprecation warnings — only the two source keys are part of the sweep.
+ * @param firstKey - First deprecated key
  * @param firstValue - Value for first key
  * @param secondKey - Second deprecated key (same canonical destination)
  * @param secondValue - Value for second key

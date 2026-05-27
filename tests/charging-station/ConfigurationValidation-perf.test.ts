@@ -1,10 +1,6 @@
 /**
  * @file Performance tests for ConfigurationValidation
- * @description Validates that the configuration validation pipeline scales
- * predictably across many iterations on the real `config-template.json`
- * asset. Uses a relative p99-vs-median multiplier to absorb CI noise, plus
- * an absolute hard ceiling to catch catastrophic regressions (a stuck
- * thread or O(N²) blow-up).
+ * @description p99 budget (relative to median) plus an absolute ceiling for catastrophic regressions
  */
 
 import assert from 'node:assert/strict'

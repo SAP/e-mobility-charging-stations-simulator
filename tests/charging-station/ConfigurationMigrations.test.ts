@@ -213,7 +213,7 @@ await describe('ConfigurationMigrations', async () => {
       assert.strictEqual(result.logEnabled, undefined)
     })
 
-    await it('B2 — should drop autoReconnectMaxRetries with explicit warning (null destination)', () => {
+    await it('should drop autoReconnectMaxRetries with explicit warning (null destination)', () => {
       const {
         config: result,
         fieldErrors,
@@ -234,7 +234,7 @@ await describe('ConfigurationMigrations', async () => {
       )
     })
 
-    await it('B4 — should treat equal-value collision as idempotent no-op', () => {
+    await it('should treat equal-value collision as idempotent no-op', () => {
       const input = buildV0WithDeprecatedKeyCollision('workerPoolMaxSize', 16, 'workerPoolSize', 16)
       const { config: result, fieldErrors, warnings } = remapDeprecatedKeys(input)
       assert.strictEqual(fieldErrors.length, 0, 'equal values must not produce a fieldError')
@@ -244,7 +244,7 @@ await describe('ConfigurationMigrations', async () => {
       assert.strictEqual(warnings.length, 2)
     })
 
-    await it('B4 — should record fieldError on unequal-value collision and leave conflicting source in place', () => {
+    await it('should record fieldError on unequal-value collision and leave conflicting source in place', () => {
       const input = buildV0WithDeprecatedKeyCollision('workerPoolMaxSize', 8, 'workerPoolSize', 16)
       const { config: result, fieldErrors } = remapDeprecatedKeys(input)
       assert.strictEqual(fieldErrors.length, 1)
@@ -256,7 +256,7 @@ await describe('ConfigurationMigrations', async () => {
       assert.strictEqual((result.worker as Record<string, unknown>).poolMaxSize, 8)
     })
 
-    await it('N7 — should record fieldError on non-object intermediate', () => {
+    await it('should record fieldError on non-object intermediate', () => {
       const input = {
         log: 'not-an-object',
         logEnabled: true,

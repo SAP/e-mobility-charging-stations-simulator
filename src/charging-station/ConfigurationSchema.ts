@@ -41,8 +41,8 @@ export const LogConfigurationSchema = z
 
 /**
  * WorkerConfiguration — worker threads configuration section.
- * `resourceLimits` and `elementStartDelay` are external/deprecated; the schema
- * preserves their structure via `z.custom<T>()` and `.describe('@deprecated…')`.
+ * `resourceLimits` is bridged via `z.custom<ResourceLimits>()`;
+ * `elementStartDelay` is preserved as deprecated alias for `elementAddDelay`.
  */
 export const WorkerConfigurationSchema = z
   .object({
@@ -109,8 +109,8 @@ export const UIServerConfigurationSchema = z
 
 /**
  * StationTemplateUrl — entry of the `stationTemplateUrls` array.
- * Legacy `numberOfStation` (singular) is accepted; `ConfigurationMigration`
- * emits a deprecation warning and the canonical key is `numberOfStations`.
+ * Legacy `numberOfStation` (singular) is accepted but not auto-migrated;
+ * canonical key is `numberOfStations`.
  */
 export const StationTemplateUrlSchema = z
   .object({

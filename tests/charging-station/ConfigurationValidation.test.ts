@@ -1,9 +1,6 @@
 /**
  * @file Tests for ConfigurationValidation
- * @description Unit tests for the simulator configuration validation pipeline:
- * payload guards, unconditional deprecated-key sweep → migration → schema
- * parse → transform, error class shape, immutability, B1/B3/B6 regressions,
- * and round-trip on real assets.
+ * @description Unit tests for the validation pipeline, error class shape, immutability, and asset round-trip
  */
 
 import assert from 'node:assert/strict'
@@ -29,11 +26,7 @@ import {
   buildV1WithDeprecatedKey,
 } from './helpers/ConfigurationFixtures.js'
 
-/**
- * Exact error message produced by `validateConfiguration({ $schemaVersion: 1 }, 'test.json')`.
- * Captures the full Zod validation failure for the missing `stationTemplateUrls` field
- * and exercises the `[schema]` phase tag in the error message.
- */
+/** Expected error message for a v1 config missing `stationTemplateUrls`. */
 const EXPECTED_SNAPSHOT =
   "ConfigurationValidation: Configuration validation failed [schema] for 'test.json':\n  - stationTemplateUrls: Invalid input: expected array, received undefined"
 
@@ -160,7 +153,7 @@ await describe('ConfigurationValidation', async () => {
       )
     })
 
-    await it('B3 — should sweep deprecated keys unconditionally for v1 configs', t => {
+    await it('should sweep deprecated keys unconditionally for v1 configs', t => {
       t.mock.method(console, 'warn', () => undefined)
       const parsed = buildV1WithDeprecatedKey('workerPoolSize', 16)
 
@@ -318,13 +311,11 @@ await describe('ConfigurationValidation', async () => {
         )
         const parsed = buildV1WithDeprecatedKey(legacyKey, sampleValue)
 
-        // Some deprecated keys produce schema-incompatible canonical values
-        // via direct remap (booleans → enums, array collisions). The warning
-        // must still fire BEFORE the downstream validation throws.
+        // Warning must fire before downstream schema validation rejects boolean→enum / array remaps.
         try {
           validateConfiguration(parsed, `${legacyKey}.json`)
         } catch {
-          // expected for boolean→enum / array-collision cases
+          // schema rejection is expected for these cases
         }
 
         const warnMessages = warnMock.mock.calls.map(c =>
@@ -339,7 +330,7 @@ await describe('ConfigurationValidation', async () => {
       })
     }
 
-    await it('B1 regression — should emit deprecation warnings via console.warn (not logger.warn)', t => {
+    await it('should emit deprecation warnings via console.warn, never via logger.warn', t => {
       const consoleMock = t.mock.method(console, 'warn', () => undefined)
       const loggerMock = t.mock.method(logger, 'warn')
       const parsed = buildV1WithDeprecatedKey('workerPoolSize', 16)
@@ -359,7 +350,7 @@ await describe('ConfigurationValidation', async () => {
     })
   })
 
-  await describe('B6 — migration is the single source of truth', async () => {
+  await describe('migration is the single source of truth', async () => {
     await it('should produce equivalent canonical shape from legacy and canonical inputs', t => {
       t.mock.method(console, 'warn', () => undefined)
       const legacy = buildLegacyConfiguration({ logEnabled: false, workerProcess: 'fixedPool' })

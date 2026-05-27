@@ -1,12 +1,6 @@
 /**
- * @file Tests for Configuration hot-reload rollback semantics.
- * @description Verifies that the private reload loop:
- * - captures a pre-clear snapshot of `configurationData` and `configurationSectionCache`,
- * - on success: replaces caches and awaits the change callback,
- * - on validation/parse failure: restores caches, logs a typed error, does NOT invoke the callback,
- * - clears the `configurationFileReloading` flag in `finally` on every path,
- * - drains coalesced events via `configurationFileReloadPending` (N8),
- * - keeps the file watcher active across failed reloads.
+ * @file Tests for Configuration hot-reload rollback semantics
+ * @description Validates snapshot rollback, callback gating, lock release, and event coalescing
  */
 import assert from 'node:assert/strict'
 import { type FSWatcher, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -159,7 +153,7 @@ await describe('Configuration hot-reload', async () => {
     }
   })
 
-  await it('should restore configurationData on JSON parse error (Gap 7)', async t => {
+  await it('should restore configurationData on JSON parse error', async t => {
     t.mock.method(logger, 'error')
     const internals = getInternals()
     const tempDir = createTempConfigDir()
@@ -246,7 +240,7 @@ await describe('Configuration hot-reload', async () => {
     }
   })
 
-  await it('N8 — should drain pending reloads and reflect the latest content under rapid double-save', async t => {
+  await it('should drain pending reloads and reflect the latest content under rapid double-save', async t => {
     t.mock.method(logger, 'error')
     const internals = getInternals()
     const tempDir = createTempConfigDir()

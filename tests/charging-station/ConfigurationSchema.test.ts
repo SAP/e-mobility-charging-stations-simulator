@@ -371,10 +371,8 @@ await describe('ConfigurationSchema', async () => {
     })
   })
 
-  await describe('round-trip on hardcoded fallback (RG-4)', async () => {
-    // Mirrors the in-memory fallback object from src/utils/Configuration.ts:110-123
-    // augmented with the required $schemaVersion. RG-4 guards against drift
-    // between the hardcoded fallback shape and the canonical schema.
+  await describe('round-trip on hardcoded fallback', async () => {
+    // Mirrors the in-memory fallback in Configuration.ts; guards against drift.
     await it('should validate the hardcoded Configuration.ts fallback object', () => {
       const hardcodedFallback = {
         $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
@@ -533,7 +531,7 @@ await describe('ConfigurationSchema', async () => {
     }
   })
 
-  await describe('schema / DEPRECATED_KEY_REMAPPINGS sync (RG-X)', async () => {
+  await describe('schema / DEPRECATED_KEY_REMAPPINGS sync', async () => {
     interface SchemaShapeEntry {
       description?: string
     }

@@ -30,12 +30,8 @@ interface FieldError {
 type ValidationPhase = 'migration' | 'schema'
 
 /**
- * Error thrown when a charging station simulator configuration fails
- * the migration sweep or the strict schema validation.
- *
- * Carries structured field errors plus migration context for diagnostics.
- * Use the `fromZodError` factory when wrapping a Zod failure; the primary
- * constructor accepts pre-built `FieldError[]` for migration-phase errors.
+ * Error thrown when a configuration fails the migration sweep or the strict
+ * schema validation. Carries structured field errors plus migration context.
  */
 export class ConfigurationValidationError extends BaseError {
   public readonly fieldErrors: FieldError[]
@@ -64,12 +60,11 @@ export class ConfigurationValidationError extends BaseError {
   }
 
   /**
-   * Wrap a Zod validation failure as a `ConfigurationValidationError`
-   * with `phase: 'schema'`.
+   * Wrap a Zod validation failure with `phase: 'schema'`.
    * @param zodError - the underlying Zod error
-   * @param context - contextual metadata for the wrapped error
-   * @param context.filePath - configuration file path that failed validation
-   * @param context.migratedFrom - source schema version when migration ran, or undefined
+   * @param context - file path + optional migration source version
+   * @param context.filePath - configuration file path
+   * @param context.migratedFrom - source schema version when migration ran
    * @returns a typed validation error ready to throw
    */
   public static fromZodError (
@@ -85,22 +80,10 @@ export class ConfigurationValidationError extends BaseError {
 }
 
 /**
- * Validate a parsed configuration object through the
+ * Validate a parsed configuration through the
  * remap → migrate → strict-parse → transform pipeline.
- *
- * Pipeline stages:
- *  1. Shape guard (object, non-array, non-empty).
- *  2. `coerceConfigurationVersion` on `$schemaVersion` (rejects future versions).
- *  3. `remapDeprecatedKeys` — UNCONDITIONAL deprecated-key sweep:
- *     emits one `console.warn` per deprecated key encountered, throws a
- *     `ConfigurationValidationError` (phase=`migration`) on collision or
- *     non-object intermediate. Runs regardless of `$schemaVersion` so v1
- *     configs still containing deprecated keys do not silently drop values.
- *  4. `applyConfigurationMigration` — version-bump chain (only if older).
- *  5. `ConfigurationSchema.safeParse` — strict schema parse; throws a
- *     `ConfigurationValidationError` (phase=`schema`) on failure.
- *  6. `transformConfiguration` — pure deep clone (slot for future
- *     cross-field invariants).
+ * Throws `BaseError` for shape failures, `ConfigurationValidationError`
+ * for migration collisions or schema failures.
  * @param parsed - Raw parsed JSON value (any type — guarded internally)
  * @param filePath - Configuration file path (for error messages)
  * @returns Validated and transformed `ConfigurationData`
@@ -124,18 +107,14 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
   parsedRecord.$schemaVersion = version
   const migratedFrom = version < CURRENT_CONFIGURATION_SCHEMA_VERSION ? version : undefined
 
-  // Stage 3 — unconditional deprecated-key sweep.
   const { config: swept, fieldErrors: remapErrors, warnings } = remapDeprecatedKeys(parsedRecord)
   for (const { canonicalDestination, sourceKey } of warnings) {
     const guidance =
       canonicalDestination == null
         ? 'no longer used; remove it from the configuration'
         : `use '${canonicalDestination}' instead`
-    // `console.warn` (not `logger.warn`) avoids a re-entrant call into the
-    // `Configuration` singleton during static initialization. The Logger
-    // proxy resolves its writer lazily via `Configuration.getConfigurationSection('log')`,
-    // which triggers `getConfigurationData()` → `validateConfiguration()` recursion
-    // when this warning fires from inside the boot path.
+    // console.warn (not logger.warn): logger boot path calls back into
+    // Configuration → validateConfiguration → recursion.
     console.warn(
       `${chalk.green(logPrefix())} ${chalk.yellow(
         `${moduleName}: deprecated configuration key '${sourceKey}' detected in '${filePath}'; ${guidance}`
@@ -150,31 +129,21 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
     })
   }
 
-  // Stage 4 — version-bump migration chain (lean post-sweep).
   const migrated =
     migratedFrom != null ? applyConfigurationMigration(version, swept, filePath) : swept
 
-  // Stage 5 — strict schema parse.
   const result = ConfigurationSchema.safeParse(migrated)
   if (!result.success) {
     throw ConfigurationValidationError.fromZodError(result.error, { filePath, migratedFrom })
   }
 
-  // Stage 6 — pure post-validation transform.
   return transformConfiguration(result.data, filePath)
 }
 
 /**
- * Post-validation transform.
- *
- * Currently a structurally identical deep clone of the validated
- * configuration (returns a fresh object on every call so callers can
- * mutate the result without affecting subsequent validations).
- *
- * Cross-field invariants (e.g. `worker.poolMaxSize >= worker.poolMinSize`)
- * can be added here in a future task without changing the public signature.
+ * Post-validation transform: deep clone so callers may mutate the result.
  * @param validated - schema-validated configuration data
- * @param _filePath - configuration file path (unused at this step)
+ * @param _filePath - configuration file path (unused)
  * @returns deep clone of the validated configuration
  */
 export const transformConfiguration = (

@@ -74,11 +74,11 @@ interface RemapWarning {
 }
 
 /**
- * Read the value at a dotted `path`, without traversing arrays.
+ * Read the value at a dotted `path`. Returns `{ found: false }` if any
+ * intermediate segment is non-object, an array, or missing.
  * @param target - source object
  * @param path - dotted path (e.g. `'worker.elementStartDelay'`)
- * @returns `{ found, value }` — `found` is true only when every segment
- * exists as a plain object key down to and including the leaf.
+ * @returns `{ found, value }`
  */
 const getAtPath = (
   target: Record<string, unknown>,
@@ -120,19 +120,14 @@ const deleteAtPath = (target: Record<string, unknown>, path: string): void => {
 
 /**
  * Write `value` at dotted `path`, creating intermediate objects as needed.
- *
- * Reports two failure modes via `fieldErrors` (does not throw):
- * - non-object intermediate (`{"log":"verbose"}` cannot host `log.level`)
- * - leaf already populated with a non-equal value (collision)
- *
- * Equal-value writes are idempotent no-ops (tolerates copy-paste between
- * deprecated and canonical aliases).
+ * Records two failure modes via `fieldErrors`: non-object intermediate, and
+ * leaf collision with a non-equal value. Equal-value writes are no-ops.
  * @param target - object to mutate in place
  * @param path - dotted destination path
  * @param value - value to write at the leaf
  * @param source - originating deprecated key (for error messages)
  * @param fieldErrors - error accumulator
- * @returns true on write or idempotent no-op, false when an error is recorded
+ * @returns true on write or no-op, false when an error is recorded
  */
 const setAtPath = (
   target: Record<string, unknown>,
@@ -221,13 +216,10 @@ export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDepre
 }
 
 /**
- * v0 → v1: pure version-bump migration.
- *
- * Deprecated-key remapping (the legacy table contents) is now handled
- * unconditionally upstream by `remapDeprecatedKeys`, regardless of
- * `$schemaVersion`. This step only advances the version marker.
- * @param config - source configuration object (already swept of deprecated keys)
- * @param _filePath - configuration file path (unused at this step)
+ * v0 → v1: pure version-bump. Deprecated-key remapping happens upstream
+ * in `remapDeprecatedKeys`.
+ * @param config - source configuration object
+ * @param _filePath - configuration file path (unused)
  * @returns new configuration object with `$schemaVersion` set to 1
  */
 const migrateV0ToV1: MigrationFn = (config, _filePath) => {
@@ -303,10 +295,6 @@ export const coerceConfigurationVersion = (raw: unknown): number => {
  * Apply migrations sequentially from the given source version to
  * `CURRENT_CONFIGURATION_SCHEMA_VERSION`, advancing `$schemaVersion` after each hop.
  * Returns a new object; the input `config` is not mutated.
- *
- * Note: deprecated-key remapping is performed by `remapDeprecatedKeys`
- * BEFORE this function is invoked, so the migration steps themselves
- * are pure version-bump transforms.
  * @param sourceVersion - Source schema version to migrate from
  * @param config - Raw parsed configuration object (already remapped)
  * @param filePath - File path for error messages

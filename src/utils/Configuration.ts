@@ -367,14 +367,8 @@ export class Configuration {
   }
 
   /**
-   * Reload the configuration file with snapshot-based rollback semantics.
-   *
-   * Captures previous data and cache BEFORE clearing them, so any parse,
-   * validation, or callback error restores the prior state. The change
-   * callback is awaited inside the same try/catch as the reload itself —
-   * a callback failure does not corrupt cached state but logs and
-   * preserves the freshly-loaded configuration (callbacks observe a
-   * successful reload before they fail).
+   * Reload the configuration file. On parse, validation, or callback failure,
+   * restores the pre-reload `configurationData` and section cache snapshot.
    */
   private static async performReload (): Promise<void> {
     const previousData =
@@ -424,26 +418,15 @@ export class Configuration {
   }
 
   /**
-   * Drive the reload loop until no more pending events remain.
-   *
-   * Each `performReload` invocation owns the reloading lock for its full
-   * lifetime — including the change callback — so subsequent reloads
-   * cannot interleave with an in-flight callback. Events arriving during
-   * a reload set `configurationFileReloadPending`, and the loop drains
-   * them after the current reload completes.
-   *
-   * The lock (`configurationFileReloading`) is released in `finally` so
-   * an unexpected throw cannot leave the watcher dead.
+   * Drive `performReload` until no `configurationFileReloadPending` event
+   * remains. Releases the reloading lock in `finally`.
    */
   private static async runReloadLoop (): Promise<void> {
     try {
       do {
         Configuration.configurationFileReloadPending = false
         await Configuration.performReload()
-        // The flag may have been set back to true by an `fs.watch` event
-        // arriving while `performReload` was running. The eslint rule
-        // cannot see across the static-field mutation in that handler.
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated by fs.watch handler during performReload
       } while (Configuration.configurationFileReloadPending)
     } finally {
       Configuration.configurationFileReloading = false
