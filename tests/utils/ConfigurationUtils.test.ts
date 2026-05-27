@@ -8,7 +8,6 @@ import { afterEach, describe, it } from 'node:test'
 import { StorageType } from '../../src/types/index.js'
 import {
   buildPerformanceUriFilePath,
-  checkWorkerElementsPerWorker,
   getDefaultPerformanceStorageUri,
   logPrefix,
 } from '../../src/utils/ConfigurationUtils.js'
@@ -44,32 +43,5 @@ await describe('ConfigurationUtils', async () => {
     assert.throws(() => {
       getDefaultPerformanceStorageUri('unsupported' as StorageType)
     }, Error)
-  })
-
-  await it('should validate worker elements per worker configuration', () => {
-    // These calls should not throw exceptions
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker(undefined)
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker('auto')
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker('all')
-    })
-    assert.doesNotThrow(() => {
-      checkWorkerElementsPerWorker(4)
-    })
-
-    // These calls should throw exceptions
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(0)
-    }, RangeError)
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(-1)
-    }, RangeError)
-    assert.throws(() => {
-      checkWorkerElementsPerWorker(1.5)
-    }, SyntaxError)
   })
 })

@@ -21,6 +21,7 @@ import type {
   WorkerConfiguration,
 } from '../../src/types/index.js'
 
+import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../src/charging-station/ConfigurationMigrations.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -149,6 +150,7 @@ await describe('Configuration', async () => {
     const internals = getConfigurationInternals()
     const originalData = internals.configurationData
     internals.configurationData = {
+      $schemaVersion: CURRENT_CONFIGURATION_SCHEMA_VERSION,
       stationTemplateUrls: [],
     }
 
