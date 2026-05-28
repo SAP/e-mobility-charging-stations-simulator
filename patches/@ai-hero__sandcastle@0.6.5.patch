@@ -1,8 +1,8 @@
 diff --git a/dist/AgentProvider.d.ts b/dist/AgentProvider.d.ts
-index 6655e1b8ac8eff0a65f4efb4a1ccf3add7a0b77c..a244b356fdfb28d306a38f04d72407cf7f468ca4 100644
+index adeefcd..95ff828 100644
 --- a/dist/AgentProvider.d.ts
 +++ b/dist/AgentProvider.d.ts
-@@ -48,6 +48,8 @@ export interface AgentProvider {
+@@ -68,6 +68,8 @@ export interface AgentProvider {
  export declare const DEFAULT_MODEL = "claude-opus-4-7";
  /** Options for the pi agent provider. */
  export interface PiOptions {
@@ -12,10 +12,10 @@ index 6655e1b8ac8eff0a65f4efb4a1ccf3add7a0b77c..a244b356fdfb28d306a38f04d72407cf
      readonly env?: Record<string, string>;
  }
 diff --git a/dist/AgentProvider.js b/dist/AgentProvider.js
-index 3053443a5163d6248416244a28423cb0e9f96dc4..605f9f08a9facc640916b760a144136cbcfe3b0b 100644
+index 6347b19..dacbb78 100644
 --- a/dist/AgentProvider.js
 +++ b/dist/AgentProvider.js
-@@ -140,8 +140,11 @@ export const pi = (model, options) => ({
+@@ -212,8 +212,11 @@ export const pi = (model, options) => ({
      env: options?.env ?? {},
      captureSessions: false,
      buildPrintCommand({ prompt }) {
