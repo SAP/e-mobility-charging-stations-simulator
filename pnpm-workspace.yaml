@@ -13,8 +13,5 @@ allowBuilds:
   msgpackr-extract: false
   utf-8-validate: false
 
-patchedDependencies:
-  '@ai-hero/sandcastle@0.6.5': patches/@ai-hero__sandcastle@0.6.5.patch
-
 minimumReleaseAgeExclude:
-  - '@ai-hero/sandcastle@0.6.5'
+  - '@ai-hero/sandcastle@0.6.6'

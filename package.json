@@ -102,7 +102,7 @@
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
-    "@ai-hero/sandcastle": "^0.6.5",
+    "@ai-hero/sandcastle": "^0.6.6",
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
     "@cspell/eslint-plugin": "^10.0.0",
