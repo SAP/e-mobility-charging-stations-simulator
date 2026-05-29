@@ -31,6 +31,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 RUN npm install -g \
     @anthropic-ai/claude-code \
     @earendil-works/pi-coding-agent \
+    @openai/codex \
     opencode-ai
 
 # Rename the base image's "node" user to "agent" and align UID/GID.
