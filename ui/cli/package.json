@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.16.0",
-    "pnpm": "11.3.0"
+    "pnpm": "11.5.0"
   },
-  "packageManager": "pnpm@11.3.0",
+  "packageManager": "pnpm@11.5.0",
   "type": "module",
   "bin": {
     "evse-cli": "./dist/cli.js"
@@ -31,7 +31,7 @@
   "dependencies": {
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "ora": "^9.4.0",
     "ui-common": "workspace:*",
     "ws": "^8.21.0"
