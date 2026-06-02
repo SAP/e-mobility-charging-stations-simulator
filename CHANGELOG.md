@@ -1,5 +1,45 @@
 # Changelog
 
+## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.3...simulator@v4.8.0) (2026-06-02)
+
+### ⚠ BREAKING CHANGES
+
+- external log monitors keyed on the literal string "Failed to read charging station template file" must also match "Invalid charging station template payload (not a JSON object)" for JSON-shape errors; file I/O errors retain their previous wording via handleFileException.
+
+### 🚀 Features
+
+- **config:** add Zod-based simulator configuration syntax validation ([#1874](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1874)) ([c1c8233](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c1c823329d8c7241811abc14ce59703ec5197e31))
+- resolve [#1020](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1020) — Persist minimal simulator state and reconstruct template indexes on startup ([#1858](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1858)) ([79a4089](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/79a4089c3cbd329e9356096f8a6608d43b539228))
+- resolve [#314](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/314) — Add charging station template Zod validation with schema versioning ([#1860](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1860)) ([8bb806d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8bb806dc4ae42aafe100009dfd34be4809ebc921))
+- **sandcastle:** make strategy dispatch registry-driven ([#1862](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1862)) ([5d430ad](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5d430ad4b09351c66730e58283efb0a1e9d7cd83))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1864](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1864)) ([4fa2f91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4fa2f910c6f370d6e0ce7b35d13fbcdec230d7ab))
+- **deps:** update all non-major dependencies ([#1869](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1869)) ([2de4de3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2de4de3b6ba9ac729aaec7fe22514d175ea8be92))
+- **deps:** update all non-major dependencies ([#1876](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1876)) ([6ff82fa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6ff82fa5898f71a57b23d0927d3940194f6479de))
+- **deps:** update all non-major dependencies ([#1878](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1878)) ([c360bff](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c360bff78db665f45f5688035f561446b17ee0a5))
+- **deps:** update dependency commander to v15 ([#1879](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1879)) ([dd9b63e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dd9b63ee395805bde9c4bcb8e4ac9b0c5ca92cf0))
+- **deps:** update dependency vue-router to ^5.1.0 ([#1877](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1877)) ([8a3154c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a3154c2fbc02a1751ea1b3552b34a939bb9da24))
+- **sandcastle:** resolve TDZ in strategies/index.ts module init ([829c659](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/829c6599237170f09d37d2124202bf1aa61d0420))
+- **utils:** make file persistence atomic across writers ([#1871](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1871)) ([550824f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/550824fa7da7dd829fb3155321aa924bf9681116))
+
+### ✨ Polish
+
+- **bootstrap:** factorize UI server start/stop logic ([24169fc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/24169fc1b3a4c49986cdab3a595cb6818aae0691))
+- relocate simulator config to src/utils and enforce barrel discipline ([07fb30e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/07fb30ebc3f300f5d8371dcc80e2f4b1a8261f44))
+
+### 📚 Documentation
+
+- align project_overview with empirical component boundaries and import discipline ([28b0b9e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/28b0b9e44ff651caa7c4ab8a854527b0ac15b8f4))
+
+### 🤖 Automation
+
+- **deps:** bump js-cookie in the npm_and_yarn group across 1 directory ([#1868](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1868)) ([8404c38](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8404c3857f6d92ec6bc37819779228a21a9d1f96))
+- **sandcastle:** align task timeout with 10 critic rounds budget ([d49b95e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d49b95e99e45bbdd955d16d9736f8824e059aafe))
+- **sandcastle:** increase idle and validation timeouts for robustness ([0957b35](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0957b35a873b4098a84f6d71178a6947faed6566))
+- **vscode:** align workspace folders with monorepo structure ([348a78d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/348a78d7ca2675e7cce2d07ea0872d7d1334251b))
+
 ## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.2...simulator@v4.7.3) (2026-05-13)
 
 ### 🐞 Bug Fixes

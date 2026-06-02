@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.3...web@v4.8.0) (2026-06-02)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1864](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1864)) ([4fa2f91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4fa2f910c6f370d6e0ce7b35d13fbcdec230d7ab))
+- **deps:** update all non-major dependencies ([#1869](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1869)) ([2de4de3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2de4de3b6ba9ac729aaec7fe22514d175ea8be92))
+- **deps:** update all non-major dependencies ([#1876](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1876)) ([6ff82fa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6ff82fa5898f71a57b23d0927d3940194f6479de))
+- **deps:** update all non-major dependencies ([#1878](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1878)) ([c360bff](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c360bff78db665f45f5688035f561446b17ee0a5))
+- **deps:** update dependency vue-router to ^5.1.0 ([#1877](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1877)) ([8a3154c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a3154c2fbc02a1751ea1b3552b34a939bb9da24))
+
 ## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.2...web@v4.7.3) (2026-05-13)
 
 ### 🐞 Bug Fixes

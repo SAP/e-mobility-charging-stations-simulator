@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.7.3...cli@v4.8.0) (2026-06-02)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1864](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1864)) ([4fa2f91](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4fa2f910c6f370d6e0ce7b35d13fbcdec230d7ab))
+- **deps:** update all non-major dependencies ([#1869](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1869)) ([2de4de3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2de4de3b6ba9ac729aaec7fe22514d175ea8be92))
+- **deps:** update all non-major dependencies ([#1876](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1876)) ([6ff82fa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6ff82fa5898f71a57b23d0927d3940194f6479de))
+- **deps:** update all non-major dependencies ([#1878](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1878)) ([c360bff](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c360bff78db665f45f5688035f561446b17ee0a5))
+- **deps:** update dependency commander to v15 ([#1879](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1879)) ([dd9b63e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dd9b63ee395805bde9c4bcb8e4ac9b0c5ca92cf0))
+
+### 📚 Documentation
+
+- **cli-skill:** align with CLI flags, conflict rules, and NO_COLOR support ([8f1eff1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8f1eff1ba43f07bc07dd270acb7dccf3946ee261))
+
 ## [4.7.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.7.2...cli@v4.7.3) (2026-05-13)
 
 ### 🐞 Bug Fixes
