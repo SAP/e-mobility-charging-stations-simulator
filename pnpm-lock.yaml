@@ -70,8 +70,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@ai-hero/sandcastle':
-        specifier: ^0.6.6
-        version: 0.6.6
+        specifier: ^0.7.0
+        version: 0.7.0
       '@commitlint/cli':
         specifier: ^21.0.2
         version: 21.0.2(@types/node@24.12.4)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
@@ -79,7 +79,7 @@ importers:
         specifier: ^21.0.2
         version: 21.0.2
       '@cspell/eslint-plugin':
-        specifier: ^10.0.0
+        specifier: ^10.0.1
         version: 10.0.1(eslint@9.39.4(jiti@2.6.1))
       '@eslint/js':
         specifier: ^9.39.4
@@ -124,7 +124,7 @@ importers:
         specifier: ^9.1.7
         version: 9.1.7
       lint-staged:
-        specifier: ^17.0.5
+        specifier: ^17.0.6
         version: 17.0.7
       neostandard:
         specifier: ^0.13.0
@@ -250,13 +250,13 @@ importers:
         specifier: ^4.1.7
         version: 4.1.8(@types/node@24.12.4)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(vite@8.0.16(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.4)(yaml@2.9.0))
       vue-tsc:
-        specifier: ^3.3.2
+        specifier: ^3.3.3
         version: 3.3.3(typescript@6.0.3)
 
 packages:
 
-  '@ai-hero/sandcastle@0.6.6':
-    resolution: {integrity: sha512-LeyODPZocHZQdIidNXPRIxzs2Hn7tPyl5GfBGakKV1zH2CIpbc7XGApQhSXpOW7r2zO8m3mqiBKdSd7ifaqWcw==}
+  '@ai-hero/sandcastle@0.7.0':
+    resolution: {integrity: sha512-Rqb9FarzvtzDHqhBoofS7HqI1Tn5J/MuPoj+EVqO6F1jK1+Zzq+kT8Zl1K8Rs9ftLcLS0VKtQoPldn3UsSsGJw==}
     hasBin: true
     peerDependencies:
       '@daytona/sdk': ^0.164.0
@@ -4862,7 +4862,7 @@ packages:
 
 snapshots:
 
-  '@ai-hero/sandcastle@0.6.6':
+  '@ai-hero/sandcastle@0.7.0':
     dependencies:
       '@clack/prompts': 1.5.0
 
