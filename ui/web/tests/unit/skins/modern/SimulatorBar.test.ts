@@ -4,7 +4,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { SKIN_IDS, THEME_IDS } from 'ui-common'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import SimulatorBar from '@/skins/modern/components/SimulatorBar.vue'
 
@@ -65,6 +65,10 @@ function mountBar (props: Record<string, unknown> = {}) {
 }
 
 describe('SimulatorBar', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should show Disconnected pill when simulatorState is undefined', () => {
     const wrapper = mountBar()
     expect(wrapper.text()).toContain('Disconnected')
