@@ -159,18 +159,22 @@ describe('SimulatorBar', () => {
     const wrapper = mountBar()
     const themeSelect = wrapper.find('.modern-bar__select[aria-label="Theme"]')
     expect(themeSelect.exists()).toBe(true)
-    await themeSelect.setValue('dracula')
+    // Pick a theme that differs from the mocked activeThemeId (THEME_IDS[0]).
+    const targetTheme = THEME_IDS[1]
+    await themeSelect.setValue(targetTheme)
     await themeSelect.trigger('change')
-    expect(switchThemeMock).toHaveBeenCalledWith('dracula')
+    expect(switchThemeMock).toHaveBeenCalledWith(targetTheme)
   })
 
   it('should call switchSkin when skin select changes', async () => {
     const wrapper = mountBar()
     const skinSelect = wrapper.find('.modern-bar__select[aria-label="Skin"]')
     expect(skinSelect.exists()).toBe(true)
-    await skinSelect.setValue('classic')
+    // Pick a skin that differs from the mocked activeSkinId ('modern').
+    const targetSkin = SKIN_IDS.find(id => id !== 'modern') ?? SKIN_IDS[0]
+    await skinSelect.setValue(targetSkin)
     await skinSelect.trigger('change')
-    expect(switchSkinMock).toHaveBeenCalledWith('classic')
+    expect(switchSkinMock).toHaveBeenCalledWith(targetSkin)
   })
 
   it('should emit switch-server with selectedIndex when server select changes via trigger', async () => {
