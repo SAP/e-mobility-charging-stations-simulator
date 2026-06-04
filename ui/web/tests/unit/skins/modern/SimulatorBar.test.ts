@@ -10,12 +10,6 @@ import SimulatorBar from '@/skins/modern/components/SimulatorBar.vue'
 
 import { createUIServerConfig } from '../../constants.js'
 
-// Mock useTheme/useSkin to avoid post-teardown console.warn from
-// validateTokenContract() (scheduled via requestAnimationFrame) and from
-// the floating switchSkin() Promise. Vitest 4.x rejects pending RPC at
-// teardown ("Closing rpc while \"onUserConsoleLog\" was pending"), and
-// jsdom does not resolve --color-* CSS variables so the contract check
-// would log ~24 warnings per <select> change.
 const switchThemeMock = vi.fn()
 const switchSkinMock = vi.fn().mockResolvedValue(true)
 
