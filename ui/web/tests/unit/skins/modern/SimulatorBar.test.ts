@@ -3,11 +3,42 @@
  * @description Server switcher, simulator state display, action buttons.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { SKIN_IDS, THEME_IDS } from 'ui-common'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import SimulatorBar from '@/skins/modern/components/SimulatorBar.vue'
 
 import { createUIServerConfig } from '../../constants.js'
+
+const switchThemeMock = vi.fn()
+const switchSkinMock = vi.fn().mockResolvedValue(true)
+
+vi.mock('@/shared/composables/useTheme.js', async importOriginal => {
+  const { readonly, ref } = await import('vue')
+  return {
+    ...(await importOriginal<Record<string, unknown>>()),
+    useTheme: () => ({
+      activeThemeId: readonly(ref(THEME_IDS[0])),
+      availableThemes: THEME_IDS,
+      lastError: readonly(ref(null)),
+      switchTheme: switchThemeMock,
+    }),
+  }
+})
+
+vi.mock('@/shared/composables/useSkin.js', async importOriginal => {
+  const { readonly, ref } = await import('vue')
+  return {
+    ...(await importOriginal<Record<string, unknown>>()),
+    useSkin: () => ({
+      activeSkinId: readonly(ref<(typeof SKIN_IDS)[number]>('modern')),
+      availableSkins: SKIN_IDS.map(id => ({ id, label: id })),
+      isSwitching: readonly(ref(false)),
+      lastError: readonly(ref(null)),
+      switchSkin: switchSkinMock,
+    }),
+  }
+})
 
 const baseServer = createUIServerConfig({ name: 'Alpha' })
 const altServer = createUIServerConfig({ host: 'beta', name: 'Beta' })
@@ -28,6 +59,10 @@ function mountBar (props: Record<string, unknown> = {}) {
 }
 
 describe('SimulatorBar', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should show Disconnected pill when simulatorState is undefined', () => {
     const wrapper = mountBar()
     expect(wrapper.text()).toContain('Disconnected')
@@ -122,14 +157,18 @@ describe('SimulatorBar', () => {
     const wrapper = mountBar()
     const themeSelect = wrapper.find('.modern-bar__select[aria-label="Theme"]')
     expect(themeSelect.exists()).toBe(true)
+    await themeSelect.setValue('dracula')
     await themeSelect.trigger('change')
+    expect(switchThemeMock).toHaveBeenCalledWith('dracula')
   })
 
   it('should call switchSkin when skin select changes', async () => {
     const wrapper = mountBar()
     const skinSelect = wrapper.find('.modern-bar__select[aria-label="Skin"]')
     expect(skinSelect.exists()).toBe(true)
+    await skinSelect.setValue('classic')
     await skinSelect.trigger('change')
+    expect(switchSkinMock).toHaveBeenCalledWith('classic')
   })
 
   it('should emit switch-server with selectedIndex when server select changes via trigger', async () => {
