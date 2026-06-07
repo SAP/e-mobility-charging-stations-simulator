@@ -1,5 +1,6 @@
 import type { Finding } from './types.js'
 
+import { MAX_FINDINGS_PER_CRITIC } from './constants.js'
 import { parseFindingsSafe } from './types.js'
 
 /**
@@ -45,7 +46,10 @@ export function parseFindings (stdout: string, nonce: string): Finding[] | null 
     if (raw.length < 2) continue
     const cleaned = raw.replace(/^```(?:json)?\s*\n?/g, '').replace(/\n?```\s*$/g, '')
     try {
-      return parseFindingsSafe(JSON.parse(cleaned))
+      const parsed = parseFindingsSafe(JSON.parse(cleaned))
+      return parsed.length > MAX_FINDINGS_PER_CRITIC
+        ? parsed.slice(0, MAX_FINDINGS_PER_CRITIC)
+        : parsed
     } catch {
       continue
     }

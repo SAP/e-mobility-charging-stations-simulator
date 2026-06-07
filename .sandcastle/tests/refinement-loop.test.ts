@@ -126,20 +126,20 @@ const setupTempRepo = async (): Promise<{ cleanup: () => Promise<void>; cwd: str
 
 await describe('refinement-loop kernel', async () => {
   await describe('runOneCritic', async () => {
-    await it('parses well-formed stdout under runtime per-slot nonce shape', async () => {
+    await it('should parse well-formed stdout under runtime per-slot nonce shape', async () => {
       const { recorded, sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
       )
       const ctx = ctxFor(sandbox, baseStrategy)
       const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
       assert.ok(findings)
-      assert.equal(findings.length, 1)
-      assert.equal(findings[0].title, 't')
-      assert.equal(recorded.length, 1)
-      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
+      assert.strictEqual(findings.length, 1)
+      assert.strictEqual(findings[0].title, 't')
+      assert.strictEqual(recorded.length, 1)
+      assert.strictEqual(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
     })
 
-    await it('retries with fresh `-r1` nonce on parse failure', async () => {
+    await it('should retry with fresh `-r1` nonce on parse failure', async () => {
       const { recorded, sandbox } = makeFakeSandbox((opts, callIndex) => {
         if (callIndex === 0) return stubResult('garbage no tags')
         return stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
@@ -147,23 +147,44 @@ await describe('refinement-loop kernel', async () => {
       const ctx = ctxFor(sandbox, baseStrategy)
       const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
       assert.ok(findings)
-      assert.equal(findings.length, 1)
-      assert.equal(recorded.length, 2)
-      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
-      assert.equal(recorded[1].promptArgs?.NONCE, 'cafe1234-c0-r1')
+      assert.strictEqual(findings.length, 1)
+      assert.strictEqual(recorded.length, 2)
+      assert.strictEqual(recorded[0].promptArgs?.NONCE, 'cafe1234-c0')
+      assert.strictEqual(recorded[1].promptArgs?.NONCE, 'cafe1234-c0-r1')
     })
 
-    await it('returns null when both attempts fail', async () => {
+    await it('should return null when both attempts fail', async () => {
       const { recorded, sandbox } = makeFakeSandbox(() => stubResult('still no tags'))
       const ctx = ctxFor(sandbox, baseStrategy)
       const findings = await runOneCritic(ctx, 1, 'cafe1234', slot0)
-      assert.equal(findings, null)
-      assert.equal(recorded.length, 2)
+      assert.strictEqual(findings, null)
+      assert.strictEqual(recorded.length, 2)
+    })
+
+    await it('should throw if signal aborts between attempts in runOneCritic', async () => {
+      const ac = new AbortController()
+      const { recorded, sandbox } = makeFakeSandbox((_opts, callIndex) => {
+        if (callIndex === 0) {
+          ac.abort(new Error('aborted-between-attempts'))
+          return stubResult('garbage no tags')
+        }
+        throw new Error('runOneCritic must not schedule the retry after abort')
+      })
+      const ctx: LoopContext = { ...ctxFor(sandbox, baseStrategy), signal: ac.signal }
+      await assert.rejects(
+        () => runOneCritic(ctx, 1, 'cafe1234', slot0),
+        /aborted-between-attempts/
+      )
+      assert.strictEqual(
+        recorded.length,
+        1,
+        'second sandbox.run must NOT be scheduled after mid-run abort'
+      )
     })
   })
 
   await describe('runCritic', async () => {
-    await it('returns merged findings when ≥quorum slots succeed (N=3, 2 valid)', async () => {
+    await it('should return merged findings when ≥quorum slots succeed (N=3, 2 valid)', async () => {
       const strategy: LoopStrategy = {
         ...baseStrategy,
         criticPool: [
@@ -181,13 +202,37 @@ await describe('refinement-loop kernel', async () => {
       })
       const ctx = ctxFor(sandbox, strategy)
       const result = await runCritic(ctx, 1, 'cafe1234')
-      assert.equal(result.validCriticCount, 2)
+      assert.strictEqual(result.validCriticCount, 2)
       assert.ok(result.findings)
-      assert.equal(result.findings.length, 1)
-      assert.equal(result.findings[0].votes, 2)
+      assert.strictEqual(result.findings.length, 1)
+      assert.strictEqual(result.findings[0].votes, 2)
     })
 
-    await it('returns findings:null below quorum (N=3, all parse-fail)', async () => {
+    await it('should reach quorum when one slot throws synchronously (N=3, valid=2)', async () => {
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        criticPool: [
+          { effort: 'medium', model: 'm0' },
+          { effort: 'medium', model: 'm1' },
+          { effort: 'medium', model: 'm2' },
+        ],
+      }
+      const { sandbox } = makeFakeSandbox(opts => {
+        const nonce = String(opts.promptArgs?.NONCE ?? '')
+        if (nonce.startsWith('cafe1234-c0')) {
+          throw new Error('boom: slot 0 sandbox.run failure')
+        }
+        return stubResult(wellFormedStdout(nonce, [baseFinding]))
+      })
+      const ctx = ctxFor(sandbox, strategy)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.strictEqual(result.validCriticCount, 2)
+      assert.ok(result.findings)
+      assert.strictEqual(result.findings.length, 1)
+      assert.strictEqual(result.findings[0].votes, 2)
+    })
+
+    await it('should return findings:null below quorum (N=3, all parse-fail)', async () => {
       const strategy: LoopStrategy = {
         ...baseStrategy,
         criticPool: [
@@ -199,24 +244,24 @@ await describe('refinement-loop kernel', async () => {
       const { sandbox } = makeFakeSandbox(() => stubResult('garbage no tags'))
       const ctx = ctxFor(sandbox, strategy)
       const result = await runCritic(ctx, 1, 'cafe1234')
-      assert.equal(result.findings, null)
-      assert.equal(result.validCriticCount, 0)
+      assert.strictEqual(result.findings, null)
+      assert.strictEqual(result.validCriticCount, 0)
     })
 
-    await it('short-circuits without merge when N=1 (single-critic identity)', async () => {
+    await it('should short-circuit without merge when N=1 (single-critic identity)', async () => {
       const { sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), [baseFinding]))
       )
       const ctx = ctxFor(sandbox, baseStrategy)
       const result = await runCritic(ctx, 1, 'cafe1234')
-      assert.equal(result.validCriticCount, 1)
+      assert.strictEqual(result.validCriticCount, 1)
       assert.ok(result.findings)
-      assert.equal(result.findings.length, 1)
-      assert.equal(result.findings[0].votes, undefined)
-      assert.equal(result.findings[0].voters, undefined)
+      assert.strictEqual(result.findings.length, 1)
+      assert.strictEqual(result.findings[0].votes, undefined)
+      assert.strictEqual(result.findings[0].voters, undefined)
     })
 
-    await it('runs maybeRunArbiter even when N=1 (single-critic with arbiter set)', async () => {
+    await it('should run maybeRunArbiter even when N=1 (single-critic with arbiter set)', async () => {
       const refined: Finding[] = [{ ...baseFinding, title: 'arbiter-refined-singleton' }]
       const strategyWithArbiter: LoopStrategy = {
         ...baseStrategy,
@@ -232,12 +277,62 @@ await describe('refinement-loop kernel', async () => {
       })
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       const result = await runCritic(ctx, 1, 'cafe1234')
-      assert.equal(result.validCriticCount, 1)
+      assert.strictEqual(result.validCriticCount, 1)
       assert.ok(result.findings)
-      assert.equal(result.findings.length, 1)
-      assert.equal(result.findings[0].title, 'arbiter-refined-singleton')
-      assert.equal(recorded.length, 2)
-      assert.equal(String(recorded[1].promptArgs?.NONCE), 'cafe1234-arbiter')
+      assert.strictEqual(result.findings.length, 1)
+      assert.strictEqual(result.findings[0].title, 'arbiter-refined-singleton')
+      assert.strictEqual(recorded.length, 2)
+      assert.strictEqual(String(recorded[1].promptArgs?.NONCE), 'cafe1234-arbiter')
+    })
+
+    await it('should preserve original critic-slot indices in voters[] when middle slot is null', async () => {
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        criticPool: [
+          { effort: 'medium', model: 'm0' },
+          { effort: 'medium', model: 'm1' },
+          { effort: 'medium', model: 'm2' },
+        ],
+      }
+      const { sandbox } = makeFakeSandbox(opts => {
+        const nonce = String(opts.promptArgs?.NONCE ?? '')
+        if (nonce.startsWith('cafe1234-c1')) return stubResult('garbage no tags')
+        return stubResult(wellFormedStdout(nonce, [baseFinding]))
+      })
+      const ctx = ctxFor(sandbox, strategy)
+      const result = await runCritic(ctx, 1, 'cafe1234')
+      assert.strictEqual(result.validCriticCount, 2)
+      assert.ok(result.findings)
+      assert.strictEqual(result.findings.length, 1)
+      assert.deepStrictEqual(
+        result.findings[0].voters,
+        [0, 2],
+        'voters must record ORIGINAL slot indices [0,2], not re-indexed [0,1]'
+      )
+      assert.strictEqual(result.findings[0].votes, 2)
+    })
+
+    await it('should throw on post-allSettled abort detection in runCritic', async () => {
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        criticPool: [
+          { effort: 'medium', model: 'm0' },
+          { effort: 'medium', model: 'm1' },
+          { effort: 'medium', model: 'm2' },
+        ],
+      }
+      const ac = new AbortController()
+      let aborted = false
+      const { sandbox } = makeFakeSandbox(opts => {
+        const nonce = String(opts.promptArgs?.NONCE ?? '')
+        if (nonce.startsWith('cafe1234-c1') && !aborted) {
+          aborted = true
+          ac.abort(new Error('post-allSettled-abort'))
+        }
+        return stubResult(wellFormedStdout(nonce, [baseFinding]))
+      })
+      const ctx: LoopContext = { ...ctxFor(sandbox, strategy), signal: ac.signal }
+      await assert.rejects(() => runCritic(ctx, 1, 'cafe1234'), /post-allSettled-abort/)
     })
   })
 
@@ -247,57 +342,57 @@ await describe('refinement-loop kernel', async () => {
       arbiter: { promptFile: '/tmp/arb.md' },
     }
 
-    await it('triggers and replaces merged when at least one HIGH/CRITICAL finding present', async () => {
+    await it('should trigger and replaces merged when at least one HIGH/CRITICAL finding present', async () => {
       const refined = [{ ...baseFinding, title: 'arbiter-refined' }]
       const { recorded, sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), refined))
       )
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
-      assert.equal(result.length, 1)
-      assert.equal(result[0].title, 'arbiter-refined')
-      assert.equal(recorded.length, 1)
-      assert.equal(recorded[0].promptArgs?.NONCE, 'cafe1234-arbiter')
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].title, 'arbiter-refined')
+      assert.strictEqual(recorded.length, 1)
+      assert.strictEqual(recorded[0].promptArgs?.NONCE, 'cafe1234-arbiter')
     })
 
-    await it('uses AGENT_ARBITER_DEFAULT when strategy.arbiter.agent is unset', async () => {
+    await it('should use AGENT_ARBITER_DEFAULT when strategy.arbiter.agent is unset', async () => {
       const { recorded, sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), []))
       )
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       await maybeRunArbiter(ctx, 1, 'cafe1234', [[criticalFinding]], [criticalFinding])
-      assert.equal(recorded.length, 1)
+      assert.strictEqual(recorded.length, 1)
       assert.ok(recorded[0].agent, 'agent should be supplied (the canonical default)')
     })
 
-    await it('skips when merged contains no HIGH/CRITICAL finding', async () => {
+    await it('should skip when merged contains no HIGH/CRITICAL finding', async () => {
       const lowFinding: Finding = { ...baseFinding, severity: 'LOW' }
       const { recorded, sandbox } = makeFakeSandbox(() => {
         throw new Error('arbiter must not be invoked')
       })
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[lowFinding]], [lowFinding])
-      assert.equal(recorded.length, 0)
-      assert.deepEqual(result, [lowFinding])
+      assert.strictEqual(recorded.length, 0)
+      assert.deepStrictEqual(result, [lowFinding])
     })
 
-    await it('returns merged on parse failure (no exception)', async () => {
+    await it('should return merged on parse failure (no exception)', async () => {
       const { sandbox } = makeFakeSandbox(() => stubResult('garbage no tags'))
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
-      assert.deepEqual(result, [baseFinding])
+      assert.deepStrictEqual(result, [baseFinding])
     })
 
-    await it('returns merged when sandbox.run throws (no exception escapes)', async () => {
+    await it('should return merged when sandbox.run throws (no exception escapes)', async () => {
       const { sandbox } = makeFakeSandbox(() => {
         throw new Error('boom')
       })
       const ctx = ctxFor(sandbox, strategyWithArbiter)
       const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[baseFinding]], [baseFinding])
-      assert.deepEqual(result, [baseFinding])
+      assert.deepStrictEqual(result, [baseFinding])
     })
 
-    await it('skips entirely when strategy.arbiter is undefined', async () => {
+    await it('should skip entirely when strategy.arbiter is undefined', async () => {
       const { recorded, sandbox } = makeFakeSandbox(() => {
         throw new Error('arbiter must not be invoked')
       })
@@ -309,11 +404,11 @@ await describe('refinement-loop kernel', async () => {
         [[criticalFinding]],
         [criticalFinding]
       )
-      assert.equal(recorded.length, 0)
-      assert.deepEqual(result, [criticalFinding])
+      assert.strictEqual(recorded.length, 0)
+      assert.deepStrictEqual(result, [criticalFinding])
     })
 
-    await it('PER_CRITIC_FINDINGS prompt arg never contains literal `null` (post-filter contract)', async () => {
+    await it('should keep PER_CRITIC_FINDINGS prompt arg free of literal `null` (post-filter contract)', async () => {
       const { recorded, sandbox } = makeFakeSandbox(opts =>
         stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), []))
       )
@@ -325,10 +420,26 @@ await describe('refinement-loop kernel', async () => {
         `PER_CRITIC_FINDINGS should not contain "null", got: ${perCriticArg}`
       )
     })
+
+    await it('should keep merged findings when arbiter returns empty array but merged was non-empty', async () => {
+      const { recorded, sandbox } = makeFakeSandbox(opts =>
+        stubResult(wellFormedStdout(String(opts.promptArgs?.NONCE ?? ''), []))
+      )
+      const ctx = ctxFor(sandbox, strategyWithArbiter)
+      const merged = [criticalFinding]
+      const result = await maybeRunArbiter(ctx, 1, 'cafe1234', [[criticalFinding]], merged)
+      assert.strictEqual(recorded.length, 1, 'arbiter must have been invoked')
+      assert.strictEqual(String(recorded[0].promptArgs?.NONCE), 'cafe1234-arbiter')
+      assert.deepStrictEqual(
+        result,
+        [criticalFinding],
+        'empty arbiter output must NOT wipe a non-empty merge'
+      )
+    })
   })
 
   await describe('runRefinementLoop end-to-end', async () => {
-    await it('post-loop retry success clears failureReason and converges', async () => {
+    await it('should clear failureReason and converge on post-loop retry success', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         let validateCalls = 0
@@ -365,9 +476,9 @@ await describe('refinement-loop kernel', async () => {
           maxRounds: 3,
           postLoopValidationRetry: true,
         })
-        assert.equal(result.status, 'converged')
-        assert.equal(result.failureReason, undefined)
-        assert.equal(
+        assert.strictEqual(result.status, 'converged')
+        assert.strictEqual(result.failureReason, undefined)
+        assert.strictEqual(
           result.validationCertified,
           true,
           'post-loop retry validate succeeded → certified=true (path 4)'
@@ -381,7 +492,7 @@ await describe('refinement-loop kernel', async () => {
       }
     })
 
-    await it('mid-loop validate success sets validationCertified=true (path 1)', async () => {
+    await it('should set validationCertified=true on mid-loop validate success (path 1)', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         const strategy: LoopStrategy = {
@@ -416,8 +527,8 @@ await describe('refinement-loop kernel', async () => {
           maxRounds: 3,
           postLoopValidationRetry: true,
         })
-        assert.equal(result.status, 'converged')
-        assert.equal(
+        assert.strictEqual(result.status, 'converged')
+        assert.strictEqual(
           result.validationCertified,
           true,
           'mid-loop validate succeeded → certified=true (path 1)'
@@ -427,7 +538,7 @@ await describe('refinement-loop kernel', async () => {
       }
     })
 
-    await it('finding-based convergence leaves validationCertified=false (path 3)', async () => {
+    await it('should leave validationCertified=false for finding-based convergence (path 3)', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         let validateCalls = 0
@@ -473,8 +584,8 @@ await describe('refinement-loop kernel', async () => {
           maxRounds: 5,
           postLoopValidationRetry: false,
         })
-        assert.equal(result.status, 'converged', 'path 3 reached')
-        assert.equal(
+        assert.strictEqual(result.status, 'converged', 'path 3 reached')
+        assert.strictEqual(
           result.validationCertified,
           false,
           'no successful validate() call → certified=false (path 3)'
@@ -490,7 +601,7 @@ await describe('refinement-loop kernel', async () => {
   })
 
   await describe('computeFindingKey', async () => {
-    await it('cross-path key parity for line-PRESENT empty-file finding (file:"" === file:"global")', async () => {
+    await it('should produce cross-path key parity for line-PRESENT empty-file finding (file:"" === file:"global")', async () => {
       // The temp repo has no `global` file; both lookups hit the ENOENT
       // fallback inside hashContextLines, which hashes `'global:42:fallback'`
       // for both inputs after the `file || 'global'` normalization.
@@ -500,7 +611,7 @@ await describe('refinement-loop kernel', async () => {
         const f2 = { ...baseFinding, file: 'global', line: 42 }
         const k1 = await computeFindingKey(f1, cwd)
         const k2 = await computeFindingKey(f2, cwd)
-        assert.equal(
+        assert.strictEqual(
           k1,
           k2,
           `empty-file and "global"-file findings must produce identical keys; got\n  k1=${k1}\n  k2=${k2}`

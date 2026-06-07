@@ -169,6 +169,17 @@ export async function maybeRunArbiter (
       console.warn(`  #${spec.id} R${String(round)}: arbiter parse failed; keeping merge result.`)
       return merged
     }
+    if (refined.length === 0 && merged.length > 0) {
+      // Defense: arbiter is gated to fire only when at least one HIGH/CRITICAL
+      // finding exists post-merge, so the input is always non-empty when we
+      // reach this point. An empty refined list almost certainly indicates the
+      // LLM failed to echo the input rather than legitimate "all dismissed";
+      // treat it as a soft parse failure so real signal is not silently wiped.
+      console.warn(
+        `  #${spec.id} R${String(round)}: arbiter returned empty findings; keeping merge result.`
+      )
+      return merged
+    }
     return refined
   } catch (err: unknown) {
     if (signal?.aborted === true) throw err
@@ -251,7 +262,11 @@ export async function runCritic (
   }
 
   const threshold = strategy.criticAgreementThreshold
-  const { merged } = mergeCriticFindings(validOutputs, {
+  // Pass UNFILTERED `perCriticOutputs` so merged `voters[]` keep their original
+  // critic-slot indices when middle slots parse-fail. mergeCriticFindings
+  // null-filters internally for vote counting; collapsing nulls here would
+  // re-index the survivors and corrupt the public `voters` schema.
+  const { merged } = mergeCriticFindings(perCriticOutputs, {
     ...(threshold !== undefined && { agreementThreshold: threshold }),
     contextHashes,
   })
@@ -297,6 +312,8 @@ export async function runOneCritic (
   if (findings === null) {
     signal?.throwIfAborted()
     console.warn(`  #${spec.id} R${String(round)} C${String(slot.index)}: parse failed. Retrying.`)
+    // Append `-r1` so the retry findings block cannot collide with a stale tag
+    // from the first attempt if both runs share the same stdout buffer.
     const retryNonce = `${nonce}-r1`
     critic = await sandbox.run({
       agent: agentProvider(slot.model, slot.effort),
@@ -554,7 +571,6 @@ async function checkQualityRatchet (
     return false
   }
 
-  // Validate SHA format before passing to execFileAsync
   if (!isValidSha(beforeSha)) {
     console.warn(`  #${spec.id}: Invalid SHA for rollback, skipping reset.`)
     return true
@@ -618,7 +634,6 @@ async function executeRound (
 ): Promise<RoundResult> {
   const { sandbox, signal, spec, strategy } = ctx
 
-  // Capture SHA before actor runs (for quality ratchet rollback)
   let beforeSha = ''
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {

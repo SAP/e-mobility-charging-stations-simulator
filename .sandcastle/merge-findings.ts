@@ -9,12 +9,17 @@ import {
   CRITIC_FILL_STRATEGY_DEFAULT,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 
 /** Options for {@link mergeCriticFindings}. */
 export interface MergeOpts {
   /**
    * Min vote count to keep a finding. Number or function of validCount.
    * Defaults to `Math.max(1, Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION))`.
+   *
+   * If a function is supplied, the result is clamped to `[1, validCount]`
+   * after `Math.floor`. Non-finite results (NaN, ±Infinity) fall back to
+   * the default `Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)`.
    */
   readonly agreementThreshold?: ((validCount: number) => number) | number
   /**
@@ -25,9 +30,11 @@ export interface MergeOpts {
   readonly contextHashes?: ReadonlyMap<Finding, string>
   /**
    * When true (default), retain below-threshold findings flagged by at least
-   * one voter with severity=CRITICAL AND confidence=HIGH; merged severity is
-   * capped at HIGH and `contested = true` is set. Applies to any minority
-   * signal, not only true singletons.
+   * one voter with severity=CRITICAL AND confidence=HIGH; `contested = true`
+   * is set and merged severity is clamped to `[MEDIUM, HIGH]` when the
+   * escape hatch fires (CRITICAL caps down to HIGH; LOW floors up to MEDIUM;
+   * MEDIUM and HIGH pass through). Applies to any minority signal, not only
+   * true singletons.
    */
   readonly promoteSingletonCritical?: boolean
 }
@@ -74,8 +81,9 @@ export function findingDedupKey (f: Finding, contextHash: string): string {
  *     slots flagging that key.
  *  3. Drop a key whose `votes < threshold`, UNLESS at least one voter
  *     flagged it with severity=CRITICAL AND confidence=HIGH (escape hatch);
- *     kept entries have merged severity capped at HIGH and
- *     `contested = true`.
+ *     kept entries get `contested = true` and merged severity is clamped
+ *     to `[MEDIUM, HIGH]` — CRITICAL caps DOWN to HIGH, LOW floors UP to
+ *     MEDIUM, and MEDIUM/HIGH pass through unchanged.
  *  4. For surviving keys, aggregate:
  *       - severity:   median of voters' severities, ties broken UP the
  *                     ordinal ladder LOW < MEDIUM < HIGH < CRITICAL.
@@ -142,8 +150,7 @@ export function mergeCriticFindings (
 
     const sourceFinding = pickSourceByLowestSlot(group.entries)
     const aggregatedSeverity = medianSeverityTieUp(allFindings)
-    const cappedSeverity =
-      singletonHatch && aggregatedSeverity === 'CRITICAL' ? 'HIGH' : aggregatedSeverity
+    const cappedSeverity = clampEscapeSeverity(singletonHatch, aggregatedSeverity)
     const aggregatedConfidence = medianConfidenceTieUp(allFindings)
     const disagreement = severityDisagreementScore(allFindings)
 
@@ -166,6 +173,8 @@ export function mergeCriticFindings (
   merged.sort((a, b) => {
     const sd = severityRank(b.severity) - severityRank(a.severity)
     if (sd !== 0) return sd
+    // `votes` is always written on merged findings above; the `?? 1` is only
+    // for type-narrowing because the shared `Finding` schema keeps it optional.
     const vd = (b.votes ?? 1) - (a.votes ?? 1)
     if (vd !== 0) return vd
     const fd = a.file.localeCompare(b.file)
@@ -219,8 +228,15 @@ export function normalizeCategory (category: string): string {
  *       - `'round-robin'` (default): cyclic `pool[i % L]`.
  *       - `'random-with-replacement'`: seeded uniform sampling using
  *         `criticEnsembleSeed` (registry validation enforces seed presence).
+ *
+ * Defense-in-depth: throws a {@link SandcastleError} with code
+ * `'strategy_invalid'` when `criticFillStrategy === 'random-with-replacement'`
+ * and `criticEnsembleSeed` is `undefined`. {@link validateLoopStrategyEnsemble}
+ * rejects this combination at registry load; the throw guards strategies that
+ * bypass the registry (direct test invocations, programmatic construction).
  * @param strategy - Strategy declaration.
- * @returns Frozen ordered slot list of length `max(1, resolvedCriticCount)`.
+ * @returns Frozen ordered slot list of length `resolvedCriticCount`, where
+ *   registry validation guarantees `resolvedCriticCount >= 1`.
  */
 export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot[] {
   const pool = strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT
@@ -233,8 +249,13 @@ export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot
     if (i < pool.length) {
       spec = pool[i]
     } else if (fillStrategy === 'random-with-replacement') {
-      const seed = strategy.criticEnsembleSeed ?? 0
-      const idx = deterministicIndex(seed, i, pool.length)
+      if (strategy.criticEnsembleSeed === undefined) {
+        throw new SandcastleError(
+          'strategy_invalid',
+          "criticEnsembleSeed is required when criticFillStrategy === 'random-with-replacement'."
+        )
+      }
+      const idx = deterministicIndex(strategy.criticEnsembleSeed, i, pool.length)
       spec = pool[idx]
     } else {
       spec = pool[i % pool.length]
@@ -243,6 +264,23 @@ export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot
   }
 
   return Object.freeze(resolved)
+}
+
+/**
+ * Clamps merged severity to `[MEDIUM, HIGH]` when the singleton-CRITICAL
+ * escape hatch fires. CRITICAL caps down to HIGH (real but non-unanimous);
+ * LOW floors up to MEDIUM (so an asymmetric-cost dissent is not surfaced as
+ * "contested LOW"); MEDIUM and HIGH pass through unchanged. No-op when the
+ * escape hatch did not fire.
+ * @param escape - True iff the escape hatch fired for this group.
+ * @param severity - Aggregated (median tie-up) severity.
+ * @returns Severity to emit on the merged finding.
+ */
+function clampEscapeSeverity (escape: boolean, severity: Finding['severity']): Finding['severity'] {
+  if (!escape) return severity
+  if (severity === 'CRITICAL') return 'HIGH'
+  if (severity === 'LOW') return 'MEDIUM'
+  return severity
 }
 
 /**
@@ -277,15 +315,20 @@ function deterministicIndex (seed: number, slot: number, range: number): number 
 
 /**
  * @param f - Finding lacking a precomputed context hash.
- * @returns Stable hash derived from `${file}:${line ?? '_'}` (no FS access).
- *   Line-less findings delegate to {@link noLineFallbackHash} so the key
- *   is identical to the one produced by the cross-round dedup path.
+ * @returns Stable hash matching the cross-round `hashContextLines` ENOENT
+ *   fallback shape so cross-critic dedup keys agree with cross-round keys
+ *   when the file is unreadable. Line-less findings delegate to
+ *   {@link noLineFallbackHash}; line-present findings hash
+ *   `${file || 'global'}:${line}:fallback`, mirroring the
+ *   `hashContextLines` catch branch which normalizes empty `file` to
+ *   `'global'` and appends the literal `:fallback`.
  */
 function fallbackHash (f: Finding): string {
   if (f.line == null) return noLineFallbackHash(f.file)
+  const safeFile = f.file || 'global'
   return crypto
     .createHash('sha256')
-    .update(`${f.file}:${String(f.line)}`)
+    .update(`${safeFile}:${String(f.line)}:fallback`)
     .digest('hex')
     .slice(0, HASH_PREFIX_LENGTH)
 }
@@ -326,9 +369,14 @@ function medianTieUp<T, L extends string> (
 }
 
 /**
- * Selects the finding whose voter has the lowest slot index. Deterministic
- * tie-break that does NOT amplify verbosity bias documented in arXiv:2306.05685
- * (Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena, 2023).
+ * Selects the finding whose voter has the lowest slot index — a deterministic,
+ * content-independent tie-break. When slot order is independent of voter
+ * verbosity, this avoids amplifying verbosity bias; otherwise the bias is
+ * preserved, not removed.
+ *
+ * The returned finding's `category` is its raw, un-normalized form (preserved
+ * for human readability in merged PR output). Cross-critic dedup keys are
+ * normalized via {@link normalizeCategory}, so phrasing variants still merge.
  * @param entries - Group entries, each carrying its source slot index.
  * @returns Finding from the lowest-slot voter.
  */
@@ -343,32 +391,34 @@ function pickSourceByLowestSlot (entries: readonly GroupEntry[]): Finding {
 /**
  * @param threshold - User-supplied threshold (number or function), or undefined.
  * @param validCount - Count of non-null per-critic outputs.
- * @returns Effective threshold, clamped to [1, validCount].
+ * @returns Effective threshold, clamped to `[1, validCount]`. Non-finite
+ *   results from a user-supplied function fall back to the default
+ *   `Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)` before clamping.
  */
 function resolveThreshold (
   threshold: ((validCount: number) => number) | number | undefined,
   validCount: number
 ): number {
-  const raw =
+  let raw =
     typeof threshold === 'function'
       ? threshold(validCount)
       : typeof threshold === 'number'
         ? threshold
         : Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)
+  if (!Number.isFinite(raw)) {
+    raw = Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)
+  }
   return Math.max(1, Math.min(validCount, Math.floor(raw)))
 }
 
 /**
  * Severity disagreement score in [0, 1].
  *
- * Computed as population variance of voters' severity ranks divided by the
- * theoretical max-variance for a half/half distribution at the ladder
- * extremes (`((R−1)²) / 4` for an R-level ladder, equal to `9/4 = 2.25`
- * here). Popoviciu's inequality guarantees `variance ≤ (R−1)²/4` for any
- * distribution on `[0, R−1]`, so the ratio is always in `[0, 1]`; the
- * final `Math.min(1, …)` clamp is purely defensive against floating-point
- * round-off. Returns 0 for unanimity, ~1 for the most extreme split (half
- * voters at LOW, half at CRITICAL).
+ * Population variance of voters' severity ranks (LOW=0..CRITICAL=3),
+ * normalized by the theoretical max for a half/half split at the extremes
+ * (`(R−1)² / 4 = 9/4` for the 4-level ladder). The trailing `Math.min(1, …)`
+ * clamp guards against floating-point round-off. Returns 0 for unanimity and
+ * 1 for a half-LOW / half-CRITICAL split.
  * @param findings - Findings sharing the merged key.
  * @returns Disagreement score in [0, 1].
  */

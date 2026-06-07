@@ -18,15 +18,15 @@ const validFinding: Finding = {
 }
 
 await describe('parseFindingsSafe', async () => {
-  await it('returns [] when input is not an array', () => {
-    assert.deepEqual(parseFindingsSafe(null), [])
-    assert.deepEqual(parseFindingsSafe(undefined), [])
-    assert.deepEqual(parseFindingsSafe('a string'), [])
-    assert.deepEqual(parseFindingsSafe({ findings: [] }), [])
-    assert.deepEqual(parseFindingsSafe(42), [])
+  await it('should return [] when input is not an array', () => {
+    assert.deepStrictEqual(parseFindingsSafe(null), [])
+    assert.deepStrictEqual(parseFindingsSafe(undefined), [])
+    assert.deepStrictEqual(parseFindingsSafe('a string'), [])
+    assert.deepStrictEqual(parseFindingsSafe({ findings: [] }), [])
+    assert.deepStrictEqual(parseFindingsSafe(42), [])
   })
 
-  await it('discards entries failing the schema while keeping valid ones', () => {
+  await it('should discard entries failing the schema while keeping valid ones', () => {
     const mixed = [
       validFinding,
       { missing: 'fields', totally: 'invalid' },
@@ -34,13 +34,13 @@ await describe('parseFindingsSafe', async () => {
       { ...validFinding, title: 'second' },
     ]
     const result = parseFindingsSafe(mixed)
-    assert.equal(result.length, 2)
-    assert.equal(result[0]?.title, 't')
-    assert.equal(result[1]?.title, 'second')
+    assert.strictEqual(result.length, 2)
+    assert.strictEqual(result[0]?.title, 't')
+    assert.strictEqual(result[1]?.title, 'second')
   })
 
-  await it('returns [] when every entry is invalid', () => {
+  await it('should return [] when every entry is invalid', () => {
     const allBad = [{ not: 'a' }, { finding: 'either' }, null, 'string']
-    assert.deepEqual(parseFindingsSafe(allBad), [])
+    assert.deepStrictEqual(parseFindingsSafe(allBad), [])
   })
 })

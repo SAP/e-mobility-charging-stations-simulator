@@ -2,18 +2,26 @@ import type { PiOptions, Sandbox } from '@ai-hero/sandcastle'
 
 import { z } from 'zod'
 
+import {
+  MAX_FINDING_CATEGORY_CHARS,
+  MAX_FINDING_DESCRIPTION_CHARS,
+  MAX_FINDING_FILE_CHARS,
+  MAX_FINDING_SUGGESTION_CHARS,
+  MAX_FINDING_TITLE_CHARS,
+} from './constants.js'
+
 /** Zod schema for a single critic finding. */
 const FindingSchema = z.object({
-  category: z.string(),
+  category: z.string().max(MAX_FINDING_CATEGORY_CHARS),
   confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   contested: z.boolean().optional(),
-  description: z.string(),
+  description: z.string().max(MAX_FINDING_DESCRIPTION_CHARS),
   disagreementScore: z.number().min(0).max(1).optional(),
-  file: z.string(),
-  line: z.number().optional(),
+  file: z.string().max(MAX_FINDING_FILE_CHARS),
+  line: z.number().int().nonnegative().optional(),
   severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']),
-  suggestion: z.string().optional(),
-  title: z.string(),
+  suggestion: z.string().max(MAX_FINDING_SUGGESTION_CHARS).optional(),
+  title: z.string().max(MAX_FINDING_TITLE_CHARS),
   voters: z.array(z.number().int().min(0)).readonly().optional(),
   votes: z.number().int().min(1).optional(),
 })

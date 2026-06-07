@@ -15,7 +15,7 @@ const titleOf = (prArgs: readonly string[]): string => prArgs[prArgs.indexOf('--
 const bodyOf = (prArgs: readonly string[]): string => prArgs[prArgs.indexOf('--body') + 1] ?? ''
 
 await describe('buildPrArgs', async () => {
-  await it('uses fix: prefix when labels include bug', () => {
+  await it('should use fix: prefix when labels include bug', () => {
     const { prArgs } = buildPrArgs(
       fakeSpec({ labels: ['bug'], title: 'Crash' }),
       fakeLoopResult(),
@@ -25,7 +25,7 @@ await describe('buildPrArgs', async () => {
     assert.match(titleOf(prArgs), /^fix: resolve #1 — Crash$/)
   })
 
-  await it('uses feat: prefix when labels include enhancement', () => {
+  await it('should use feat: prefix when labels include enhancement', () => {
     const { prArgs } = buildPrArgs(
       fakeSpec({ labels: ['enhancement'], title: 'New thing' }),
       fakeLoopResult(),
@@ -35,7 +35,7 @@ await describe('buildPrArgs', async () => {
     assert.match(titleOf(prArgs), /^feat: /)
   })
 
-  await it('falls back to chore: prefix when labels include neither bug nor enhancement', () => {
+  await it('should fall back to chore: prefix when labels include neither bug nor enhancement', () => {
     const { prArgs } = buildPrArgs(
       fakeSpec({ labels: ['question'], title: 'Cleanup' }),
       fakeLoopResult(),
@@ -45,7 +45,7 @@ await describe('buildPrArgs', async () => {
     assert.match(titleOf(prArgs), /^chore: /)
   })
 
-  await it('strips bracketed prefixes [BUG]/[FEATURE]/[FIX]/[CHORE] from issue title', () => {
+  await it('should strip bracketed prefixes [BUG]/[FEATURE]/[FIX]/[CHORE] from issue title', () => {
     const { prArgs } = buildPrArgs(
       fakeSpec({ title: '[BUG] Memory leak' }),
       fakeLoopResult(),
@@ -56,40 +56,40 @@ await describe('buildPrArgs', async () => {
     assert.ok(!titleOf(prArgs).includes('[BUG]'))
   })
 
-  await it('emits draft PR when status is not converged', () => {
+  await it('should emit draft PR when status is not converged', () => {
     const { isDraft, prArgs } = buildPrArgs(
       fakeSpec(),
       fakeLoopResult({ status: 'exhausted' }),
       true,
       true
     )
-    assert.equal(isDraft, true)
+    assert.strictEqual(isDraft, true)
     assert.ok(prArgs.includes('--draft'))
   })
 
-  await it('emits draft PR when validation failed even if status is converged', () => {
+  await it('should emit draft PR when validation failed even if status is converged', () => {
     const { isDraft, prArgs } = buildPrArgs(
       fakeSpec(),
       fakeLoopResult({ status: 'converged' }),
       false,
       true
     )
-    assert.equal(isDraft, true)
+    assert.strictEqual(isDraft, true)
     assert.ok(prArgs.includes('--draft'))
   })
 
-  await it('emits non-draft PR when converged AND validation passed', () => {
+  await it('should emit non-draft PR when converged AND validation passed', () => {
     const { isDraft, prArgs } = buildPrArgs(
       fakeSpec(),
       fakeLoopResult({ status: 'converged' }),
       true,
       true
     )
-    assert.equal(isDraft, false)
+    assert.strictEqual(isDraft, false)
     assert.ok(!prArgs.includes('--draft'))
   })
 
-  await it("appends '⚠️ Outstanding findings' note with [SEVERITY] file: title for each finding", () => {
+  await it("should append '⚠️ Outstanding findings' note with [SEVERITY] file: title for each finding", () => {
     const finding = fakeFinding({ file: 'src/auth.ts', severity: 'HIGH', title: 'XSS' })
     const result = fakeLoopResult({
       roundHistory: [{ commits: 0, findings: [finding], round: 1, status: 'has_findings' }],

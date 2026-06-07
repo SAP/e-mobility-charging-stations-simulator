@@ -120,6 +120,20 @@ export const MAX_SLUG_CHARS = 40
 
 export const MAX_TITLE_CHARS = 200
 
+// ── Findings (DoS hardening) ─────────────────────────────────────────────────
+
+export const MAX_FINDINGS_PER_CRITIC = 200
+
+export const MAX_FINDING_CATEGORY_CHARS = 200
+
+export const MAX_FINDING_TITLE_CHARS = 500
+
+export const MAX_FINDING_DESCRIPTION_CHARS = 5000
+
+export const MAX_FINDING_SUGGESTION_CHARS = 5000
+
+export const MAX_FINDING_FILE_CHARS = 1000
+
 // ── Validation ───────────────────────────────────────────────────────────────
 
 export const MAX_STDERR_CHARS = 500

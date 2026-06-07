@@ -11,21 +11,21 @@ import { isValidSha } from '../utils.js'
 
 await describe('utils', async () => {
   await describe('isValidSha', async () => {
-    await it('accepts a 40-character lowercase-hex SHA-1', () => {
-      assert.equal(isValidSha('a'.repeat(40)), true)
-      assert.equal(isValidSha('0123456789abcdef0123456789abcdef01234567'), true)
+    await it('should accept a 40-character lowercase-hex SHA-1', () => {
+      assert.strictEqual(isValidSha('a'.repeat(40)), true)
+      assert.strictEqual(isValidSha('0123456789abcdef0123456789abcdef01234567'), true)
     })
 
-    await it('rejects strings of the wrong length (39, 41, empty)', () => {
-      assert.equal(isValidSha('a'.repeat(39)), false)
-      assert.equal(isValidSha('a'.repeat(41)), false)
-      assert.equal(isValidSha(''), false)
+    await it('should reject strings of the wrong length (39, 41, empty)', () => {
+      assert.strictEqual(isValidSha('a'.repeat(39)), false)
+      assert.strictEqual(isValidSha('a'.repeat(41)), false)
+      assert.strictEqual(isValidSha(''), false)
     })
 
-    await it('rejects strings containing uppercase or non-hex characters', () => {
-      assert.equal(isValidSha('A'.repeat(40)), false)
-      assert.equal(isValidSha('g'.repeat(40)), false)
-      assert.equal(isValidSha('0123456789abcdef0123456789abcdef0123456!'), false)
+    await it('should reject strings containing uppercase or non-hex characters', () => {
+      assert.strictEqual(isValidSha('A'.repeat(40)), false)
+      assert.strictEqual(isValidSha('g'.repeat(40)), false)
+      assert.strictEqual(isValidSha('0123456789abcdef0123456789abcdef0123456!'), false)
     })
   })
 })

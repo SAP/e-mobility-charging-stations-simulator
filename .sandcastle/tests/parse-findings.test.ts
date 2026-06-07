@@ -1,12 +1,15 @@
 /**
  * @file Tests for `parseFindings` (nonce-tagged JSON extraction from agent stdout).
  * @description Covers nonce-regex security guard, no-match path, last-non-trivial-match
- * retry, code-fence stripping, and JSON-parse failure fallthrough.
+ * retry, code-fence stripping, JSON-parse failure fallthrough, and DoS bounds
+ * (max findings count, oversize string fields, malformed line numbers).
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
+import { MAX_FINDING_TITLE_CHARS, MAX_FINDINGS_PER_CRITIC } from '../constants.js'
 import { parseFindings } from '../parse-findings.js'
+import { parseFindingsSafe } from '../types.js'
 
 const validFinding = {
   category: 'logic',
@@ -21,62 +24,98 @@ const tag = (nonce: string, body: string): string =>
   `<findings-${nonce}>${body}</findings-${nonce}>`
 
 await describe('parseFindings', async () => {
-  await it('returns null when nonce violates allowed alphabet', () => {
-    assert.equal(parseFindings(tag('XX', '[]'), 'XX'), null)
-    assert.equal(parseFindings(tag('a.b', '[]'), 'a.b'), null)
-    assert.equal(parseFindings(tag('a$b', '[]'), 'a$b'), null)
-    assert.equal(parseFindings(tag('-abc', '[]'), '-abc'), null)
+  await it('should return null when nonce violates allowed alphabet', () => {
+    assert.strictEqual(parseFindings(tag('XX', '[]'), 'XX'), null)
+    assert.strictEqual(parseFindings(tag('a.b', '[]'), 'a.b'), null)
+    assert.strictEqual(parseFindings(tag('a$b', '[]'), 'a$b'), null)
+    assert.strictEqual(parseFindings(tag('-abc', '[]'), '-abc'), null)
     const tooLong = 'a'.repeat(65)
-    assert.equal(parseFindings(tag(tooLong, '[]'), tooLong), null)
+    assert.strictEqual(parseFindings(tag(tooLong, '[]'), tooLong), null)
   })
 
-  await it('parses runtime per-slot nonce shape (`<base>-c<idx>`)', () => {
+  await it('should parse runtime per-slot nonce shape (`<base>-c<idx>`)', () => {
     const nonce = 'cafe1234-c0'
     const stdout = tag(nonce, JSON.stringify([validFinding]))
     const findings = parseFindings(stdout, nonce)
     assert.ok(findings)
-    assert.equal(findings.length, 1)
+    assert.strictEqual(findings.length, 1)
   })
 
-  await it('parses runtime arbiter nonce shape (`<base>-arbiter`)', () => {
+  await it('should parse runtime arbiter nonce shape (`<base>-arbiter`)', () => {
     const nonce = 'cafe1234-arbiter'
     const stdout = tag(nonce, '[]')
-    assert.deepEqual(parseFindings(stdout, nonce), [])
+    assert.deepStrictEqual(parseFindings(stdout, nonce), [])
   })
 
-  await it('returns null when stdout has no findings tags', () => {
-    assert.equal(parseFindings('plain stdout, no tags', 'deadbeef'), null)
-    assert.equal(parseFindings('', 'deadbeef'), null)
-    assert.equal(parseFindings('<findings-other>[]</findings-other>', 'deadbeef'), null)
+  await it('should return null when stdout has no findings tags', () => {
+    assert.strictEqual(parseFindings('plain stdout, no tags', 'deadbeef'), null)
+    assert.strictEqual(parseFindings('', 'deadbeef'), null)
+    assert.strictEqual(parseFindings('<findings-other>[]</findings-other>', 'deadbeef'), null)
   })
 
-  await it('parses a single well-formed JSON findings block', () => {
+  await it('should parse a single well-formed JSON findings block', () => {
     const stdout = `prefix\n${tag('cafe', JSON.stringify([validFinding]))}\nsuffix`
     const findings = parseFindings(stdout, 'cafe')
     assert.ok(findings, 'parse should succeed')
-    assert.equal(findings.length, 1)
-    assert.equal(findings[0].title, 't')
+    assert.strictEqual(findings.length, 1)
+    assert.strictEqual(findings[0].title, 't')
   })
 
-  await it('uses the last non-trivial match when an earlier match is empty', () => {
+  await it('should use the last non-trivial match when an earlier match is empty', () => {
     const empty = tag('beef', '')
     const real = tag('beef', JSON.stringify([validFinding]))
     const stdout = `${empty}\n${real}`
     const findings = parseFindings(stdout, 'beef')
-    assert.equal(findings?.length, 1)
+    assert.strictEqual(findings?.length, 1)
   })
 
-  await it('strips ```json code fences before JSON.parse', () => {
+  await it('should strip ```json code fences before JSON.parse', () => {
     const fenced = '```json\n' + JSON.stringify([validFinding]) + '\n```'
     const stdout = tag('feed', fenced)
     const findings = parseFindings(stdout, 'feed')
     assert.ok(findings, 'parse should succeed')
-    assert.equal(findings.length, 1)
-    assert.equal(findings[0].severity, 'HIGH')
+    assert.strictEqual(findings.length, 1)
+    assert.strictEqual(findings[0].severity, 'HIGH')
   })
 
-  await it('returns null when all matches fail JSON.parse', () => {
+  await it('should return null when all matches fail JSON.parse', () => {
     const stdout = `${tag('1234', 'not json')}\n${tag('1234', 'also not json {[(')}`
-    assert.equal(parseFindings(stdout, '1234'), null)
+    assert.strictEqual(parseFindings(stdout, '1234'), null)
+  })
+
+  await it('should drop findings with title exceeding MAX_FINDING_TITLE_CHARS via parseFindingsSafe', () => {
+    const oversized = { ...validFinding, title: 'x'.repeat(MAX_FINDING_TITLE_CHARS + 1) }
+    const parsed = parseFindingsSafe([oversized, validFinding])
+    assert.strictEqual(parsed.length, 1, 'oversized title dropped, valid one kept')
+    assert.strictEqual(parsed[0]?.title, validFinding.title)
+  })
+
+  await it('should drop findings with NaN/negative/non-integer line via parseFindingsSafe', () => {
+    const data = [
+      { ...validFinding, line: Number.NaN },
+      { ...validFinding, line: -3 },
+      { ...validFinding, line: 1.5 },
+      { ...validFinding, line: Number.POSITIVE_INFINITY },
+      { ...validFinding, line: 5 },
+    ]
+    const parsed = parseFindingsSafe(data)
+    assert.strictEqual(parsed.length, 1, 'all four malformed lines dropped, integer line kept')
+    assert.strictEqual(parsed[0]?.line, 5)
+  })
+
+  await it('should truncate findings array to MAX_FINDINGS_PER_CRITIC', () => {
+    const overflow = Array.from({ length: MAX_FINDINGS_PER_CRITIC + 50 }, (_, i) => ({
+      ...validFinding,
+      title: `t${String(i)}`,
+    }))
+    const stdout = tag('cafe', JSON.stringify(overflow))
+    const findings = parseFindings(stdout, 'cafe')
+    assert.ok(findings)
+    assert.strictEqual(findings.length, MAX_FINDINGS_PER_CRITIC)
+    assert.strictEqual(findings[0]?.title, 't0', 'truncation keeps the prefix')
+    assert.strictEqual(
+      findings[MAX_FINDINGS_PER_CRITIC - 1]?.title,
+      `t${String(MAX_FINDINGS_PER_CRITIC - 1)}`
+    )
   })
 })

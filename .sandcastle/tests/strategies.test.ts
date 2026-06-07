@@ -32,25 +32,25 @@ const validEntry = (key: string): StrategyEntry => ({
 
 await describe('strategies', async () => {
   await describe('validateLoopStrategyEnsemble', async () => {
-    await it('accepts a strategy with no overrides (uses defaults)', () => {
+    await it('should accept a strategy with no overrides (uses defaults)', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble('test', baseStrategy())
       })
     })
 
-    await it('accepts an actor-only override', () => {
+    await it('should accept an actor-only override', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ actor: spec('gpt-x', 'low') }))
       })
     })
 
-    await it('rejects actor.model = blank string', () => {
+    await it('should reject actor.model = blank string', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ actor: spec('  ', 'low') }))
       }, expectFieldError('test.actor.model'))
     })
 
-    await it('rejects actor.effort outside the canonical enum', () => {
+    await it('should reject actor.effort outside the canonical enum', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -59,7 +59,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.actor.effort'))
     })
 
-    await it('accepts criticCount=3 with criticPool length 2 (round-robin)', () => {
+    await it('should accept criticCount=3 with criticPool length 2 (round-robin)', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -68,25 +68,25 @@ await describe('strategies', async () => {
       })
     })
 
-    await it('rejects criticCount=0', () => {
+    await it('should reject criticCount=0', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticCount: 0 }))
       }, expectFieldError('test.criticCount'))
     })
 
-    await it('rejects criticCount=9 (above MAX_CRITIC_COUNT)', () => {
+    await it('should reject criticCount=9 (above MAX_CRITIC_COUNT)', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticCount: 9 }))
       }, expectFieldError('test.criticCount'))
     })
 
-    await it('rejects non-integer criticCount', () => {
+    await it('should reject non-integer criticCount', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticCount: 2.5 }))
       }, expectFieldError('test.criticCount'))
     })
 
-    await it('rejects criticPool entry with blank model', () => {
+    await it('should reject criticPool entry with blank model', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -97,7 +97,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticPool[1].model'))
     })
 
-    await it('rejects criticPool entry with invalid effort', () => {
+    await it('should reject criticPool entry with invalid effort', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -108,20 +108,20 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticPool[0].effort'))
     })
 
-    await it('rejects empty criticPool', () => {
+    await it('should reject empty criticPool', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticPool: asInvalidPool([]) }))
       }, expectFieldError('test.criticPool'))
     })
 
-    await it('rejects criticPool length > MAX_CRITIC_COUNT', () => {
+    await it('should reject criticPool length > MAX_CRITIC_COUNT', () => {
       const oversized = Array.from({ length: 9 }, (_, i) => spec(`m${String(i)}`, 'low'))
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticPool: asInvalidPool(oversized) }))
       }, expectFieldError('test.criticPool'))
     })
 
-    await it('rejects criticCount < criticPool.length (silent truncation guard)', () => {
+    await it('should reject criticCount < criticPool.length (silent truncation guard)', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -133,7 +133,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticCount'))
     })
 
-    await it('rejects criticAgreementThreshold > criticCount', () => {
+    await it('should reject criticAgreementThreshold > criticCount', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -142,7 +142,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticAgreementThreshold'))
     })
 
-    await it('rejects criticAgreementThreshold = 0', () => {
+    await it('should reject criticAgreementThreshold = 0', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -151,7 +151,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticAgreementThreshold'))
     })
 
-    await it('accepts threshold up to resolved slot count when criticCount is unset (validator aligned with resolveCriticSlots)', () => {
+    await it('should accept threshold up to resolved slot count when criticCount is unset (validator aligned with resolveCriticSlots)', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -163,7 +163,7 @@ await describe('strategies', async () => {
       })
     })
 
-    await it('rejects random-with-replacement without seed', () => {
+    await it('should reject random-with-replacement without seed', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -176,7 +176,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.criticEnsembleSeed'))
     })
 
-    await it('accepts random-with-replacement with seed', () => {
+    await it('should accept random-with-replacement with seed', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -190,7 +190,7 @@ await describe('strategies', async () => {
       })
     })
 
-    await it('accepts an arbiter struct with both fields set', () => {
+    await it('should accept an arbiter struct with both fields set', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -201,7 +201,7 @@ await describe('strategies', async () => {
       })
     })
 
-    await it('accepts an arbiter struct with only promptFile (agent inherits AGENT_ARBITER_DEFAULT)', () => {
+    await it('should accept an arbiter struct with only promptFile (agent inherits AGENT_ARBITER_DEFAULT)', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -212,7 +212,7 @@ await describe('strategies', async () => {
       })
     })
 
-    await it('rejects arbiter with blank promptFile', () => {
+    await it('should reject arbiter with blank promptFile', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -223,7 +223,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.arbiter.promptFile'))
     })
 
-    await it('rejects arbiter with whitespace-only promptFile', () => {
+    await it('should reject arbiter with whitespace-only promptFile', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -234,7 +234,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.arbiter.promptFile'))
     })
 
-    await it('rejects arbiter with invalid agent.effort', () => {
+    await it('should reject arbiter with invalid agent.effort', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -248,7 +248,7 @@ await describe('strategies', async () => {
       }, expectFieldError('test.arbiter.agent.effort'))
     })
 
-    await it('rejects arbiter with blank agent.model', () => {
+    await it('should reject arbiter with blank agent.model', () => {
       assert.throws(() => {
         validateLoopStrategyEnsemble(
           'test',
@@ -261,25 +261,25 @@ await describe('strategies', async () => {
   })
 
   await describe('validateRegistryEntries', async () => {
-    await it('accepts a single well-formed entry', () => {
+    await it('should accept a single well-formed entry', () => {
       assert.doesNotThrow(() => {
         validateRegistryEntries([validEntry('implement')])
       })
     })
 
-    await it('rejects key not matching kebab-case pattern (uppercase)', () => {
+    await it('should reject key not matching kebab-case pattern (uppercase)', () => {
       assert.throws(() => {
         validateRegistryEntries([validEntry('Implement')])
       }, expectFieldError('STRATEGY_REGISTRY[0].key'))
     })
 
-    await it('rejects key starting with a digit', () => {
+    await it('should reject key starting with a digit', () => {
       assert.throws(() => {
         validateRegistryEntries([validEntry('1implement')])
       }, expectFieldError('STRATEGY_REGISTRY[0].key'))
     })
 
-    await it('rejects controlTag with angle brackets', () => {
+    await it('should reject controlTag with angle brackets', () => {
       assert.throws(() => {
         validateRegistryEntries([
           {
@@ -291,19 +291,19 @@ await describe('strategies', async () => {
       }, expectFieldError('STRATEGY_REGISTRY[0].controlTags[0]'))
     })
 
-    await it('rejects duplicate keys', () => {
+    await it('should reject duplicate keys', () => {
       assert.throws(() => {
         validateRegistryEntries([validEntry('implement'), validEntry('implement')])
       }, expectFieldError('STRATEGY_REGISTRY[1].key'))
     })
 
-    await it('rejects key that prefix-overlaps an existing key', () => {
+    await it('should reject key that prefix-overlaps an existing key', () => {
       assert.throws(() => {
         validateRegistryEntries([validEntry('a'), validEntry('a-b')])
       }, expectFieldError('STRATEGY_REGISTRY[1].key'))
     })
 
-    await it('propagates ensemble-field errors with their dotted field path', () => {
+    await it('should propagate ensemble-field errors with their dotted field path', () => {
       const badStrategy = baseStrategy({ criticCount: 0 })
       assert.throws(() => {
         validateRegistryEntries([
