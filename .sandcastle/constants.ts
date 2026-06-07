@@ -134,6 +134,8 @@ export const MAX_FINDING_SUGGESTION_CHARS = 5000
 
 export const MAX_FINDING_FILE_CHARS = 1000
 
+export const CRITIC_ESCAPE_CAP_PER_SLOT = 3 as const
+
 // ── Validation ───────────────────────────────────────────────────────────────
 
 export const MAX_STDERR_CHARS = 500

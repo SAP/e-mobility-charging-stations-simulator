@@ -6,6 +6,7 @@ import {
   AGENT_CRITIC_COUNT,
   AGENT_CRITIC_POOL_DEFAULT,
   CRITIC_AGREEMENT_FRACTION,
+  CRITIC_ESCAPE_CAP_PER_SLOT,
   CRITIC_FILL_STRATEGY_DEFAULT,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
@@ -29,12 +30,27 @@ export interface MergeOpts {
    */
   readonly contextHashes?: ReadonlyMap<Finding, string>
   /**
+   * Maximum number of unilateral (single-voter) escape-hatch findings a
+   * single critic slot may contribute per merge call. When a slot's
+   * exclusive-escape count exceeds this cap, ALL of that slot's unilateral
+   * escape groups are dropped (treated as suspected runaway critic).
+   * Multi-voter escape groups (`voters.size >= 2`) and above-threshold
+   * groups are never capped — at-least-two-critic agreement is meaningful
+   * signal regardless of frequency. Defaults to
+   * {@link CRITIC_ESCAPE_CAP_PER_SLOT} (3). Set to `Number.POSITIVE_INFINITY`
+   * or any non-finite / negative value to disable.
+   */
+  readonly escapeCapPerSlot?: number
+  /**
    * When true (default), retain below-threshold findings flagged by at least
-   * one voter with severity=CRITICAL AND confidence=HIGH; `contested = true`
-   * is set and merged severity is clamped to `[MEDIUM, HIGH]` when the
-   * escape hatch fires (CRITICAL caps down to HIGH; LOW floors up to MEDIUM;
-   * MEDIUM and HIGH pass through). Applies to any minority signal, not only
-   * true singletons.
+   * one voter with `severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`;
+   * `contested = true` is set and merged severity is clamped to
+   * `[MEDIUM, HIGH]` when the escape hatch fires (CRITICAL caps down to
+   * HIGH; LOW floors up to MEDIUM; MEDIUM and HIGH pass through). Applies
+   * to any minority signal, not only true singletons. Combined with
+   * {@link MergeOpts.escapeCapPerSlot}, a single critic cannot flood the
+   * merge kernel with unilateral escape findings: above-cap unilateral
+   * contributions from any one slot are dropped wholesale.
    */
   readonly promoteSingletonCritical?: boolean
 }
@@ -80,10 +96,14 @@ export function findingDedupKey (f: Finding, contextHash: string): string {
  *     across all valid critics. `votes(key)` = number of distinct critic
  *     slots flagging that key.
  *  3. Drop a key whose `votes < threshold`, UNLESS at least one voter
- *     flagged it with severity=CRITICAL AND confidence=HIGH (escape hatch);
- *     kept entries get `contested = true` and merged severity is clamped
- *     to `[MEDIUM, HIGH]` — CRITICAL caps DOWN to HIGH, LOW floors UP to
- *     MEDIUM, and MEDIUM/HIGH pass through unchanged.
+ *     flagged it with `severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`
+ *     (escape hatch); kept entries get `contested = true` and merged
+ *     severity is clamped to `[MEDIUM, HIGH]` — CRITICAL caps DOWN to HIGH,
+ *     LOW floors UP to MEDIUM, and MEDIUM/HIGH pass through unchanged.
+ *     A per-slot runaway cap (`escapeCapPerSlot`, default
+ *     {@link CRITIC_ESCAPE_CAP_PER_SLOT}) drops ALL unilateral escape
+ *     contributions from any slot whose exclusive-escape count exceeds the
+ *     cap. Multi-voter escape groups are never capped.
  *  4. For surviving keys, aggregate:
  *       - severity:   median of voters' severities, ties broken UP the
  *                     ordinal ladder LOW < MEDIUM < HIGH < CRITICAL.
@@ -116,6 +136,7 @@ export function mergeCriticFindings (
 
   const threshold = resolveThreshold(opts.agreementThreshold, validCount)
   const promoteSingleton = opts.promoteSingletonCritical ?? true
+  const escapeCap = opts.escapeCapPerSlot ?? CRITIC_ESCAPE_CAP_PER_SLOT
 
   const groups = new Map<string, { entries: GroupEntry[]; voters: Set<number> }>()
   for (const { findings, slot } of validOutputs) {
@@ -135,16 +156,17 @@ export function mergeCriticFindings (
     }
   }
 
+  const droppedRunawayKeys = computeRunawayDrops(groups, threshold, promoteSingleton, escapeCap)
+
   const merged: Finding[] = []
-  for (const group of groups.values()) {
+  for (const [key, group] of groups.entries()) {
+    if (droppedRunawayKeys.has(key)) continue
     const voters = [...group.voters].sort((a, b) => a - b)
     const votes = voters.length
     const aboveThreshold = votes >= threshold
     const allFindings = group.entries.map(e => e.finding)
     const singletonHatch =
-      !aboveThreshold &&
-      promoteSingleton &&
-      allFindings.some(f => f.severity === 'CRITICAL' && f.confidence === 'HIGH')
+      !aboveThreshold && promoteSingleton && allFindings.some(f => isEscapeQualified(f))
 
     if (!aboveThreshold && !singletonHatch) continue
 
@@ -284,6 +306,46 @@ function clampEscapeSeverity (escape: boolean, severity: Finding['severity']): F
 }
 
 /**
+ * Identifies group keys to drop pre-emission because a single critic slot
+ * is the sole voter on more than `cap` below-threshold escape-eligible
+ * groups (suspected runaway critic). Multi-voter escape groups
+ * (`voters.size >= 2`) and above-threshold groups are exempt.
+ *
+ * Pure: deterministic given inputs; iterates `groups` in insertion order.
+ * @param groups - Group map produced by {@link mergeCriticFindings}.
+ * @param threshold - Effective agreement threshold (already clamped).
+ * @param promoteSingleton - Whether the escape hatch is active for this call.
+ * @param cap - Per-slot escape cap; non-finite or negative disables the cap.
+ * @returns Set of group keys to drop pre-emission.
+ */
+function computeRunawayDrops (
+  groups: ReadonlyMap<string, { entries: GroupEntry[]; voters: Set<number> }>,
+  threshold: number,
+  promoteSingleton: boolean,
+  cap: number
+): ReadonlySet<string> {
+  if (!promoteSingleton || !Number.isFinite(cap) || cap < 0) return new Set()
+  const exclusiveEscapesByVoter = new Map<number, string[]>()
+  for (const [key, group] of groups) {
+    if (group.voters.size !== 1) continue
+    if (group.voters.size >= threshold) continue
+    const isEscape = group.entries.some(e => isEscapeQualified(e.finding))
+    if (!isEscape) continue
+    const [loneVoter] = group.voters
+    const list = exclusiveEscapesByVoter.get(loneVoter) ?? []
+    list.push(key)
+    exclusiveEscapesByVoter.set(loneVoter, list)
+  }
+  const drops = new Set<string>()
+  for (const keys of exclusiveEscapesByVoter.values()) {
+    if (keys.length > cap) {
+      for (const k of keys) drops.add(k)
+    }
+  }
+  return drops
+}
+
+/**
  * @param c - Confidence label.
  * @returns Ordinal rank in [0, 2] (LOW=0, MEDIUM=1, HIGH=2).
  */
@@ -331,6 +393,15 @@ function fallbackHash (f: Finding): string {
     .update(`${safeFile}:${String(f.line)}:fallback`)
     .digest('hex')
     .slice(0, HASH_PREFIX_LENGTH)
+}
+
+/**
+ * @param f - Finding to test against the widened escape-hatch predicate.
+ * @returns True iff the finding qualifies a group for the escape hatch
+ *   (`severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`).
+ */
+function isEscapeQualified (f: Finding): boolean {
+  return (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.confidence === 'HIGH'
 }
 
 /**

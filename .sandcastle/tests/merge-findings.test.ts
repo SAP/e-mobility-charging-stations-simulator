@@ -650,4 +650,217 @@ await describe('merge-findings', async () => {
       assert.strictEqual(result.merged[0]?.votes, 2)
     })
   })
+
+  await describe('mergeCriticFindings — escape-hatch widening', async () => {
+    await it('should admit a singleton HIGH+HIGH dissent under the widened escape filter', () => {
+      const h = fakeFinding({ confidence: 'HIGH', severity: 'HIGH', title: 'real-high' })
+      const result = mergeCriticFindings([[h], [], []], { contextHashes: ctxHashesFor(h) })
+      assert.strictEqual(result.merged.length, 1)
+      assert.strictEqual(result.merged[0]?.severity, 'HIGH', 'HIGH passes through clamp unchanged')
+      assert.strictEqual(result.merged[0]?.contested, true)
+      assert.strictEqual(result.merged[0]?.votes, 1)
+    })
+
+    await it('should NOT admit a singleton MEDIUM+HIGH dissent (escape requires severity ≥ HIGH)', () => {
+      const m = fakeFinding({ confidence: 'HIGH', severity: 'MEDIUM' })
+      const result = mergeCriticFindings([[m], [], []], { contextHashes: ctxHashesFor(m) })
+      assert.strictEqual(result.merged.length, 0)
+    })
+
+    await it('should NOT admit a singleton HIGH+MEDIUM dissent (escape requires confidence = HIGH)', () => {
+      const m = fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
+      const result = mergeCriticFindings([[m], [], []], { contextHashes: ctxHashesFor(m) })
+      assert.strictEqual(result.merged.length, 0)
+    })
+  })
+
+  await describe('mergeCriticFindings — per-slot runaway cap', async () => {
+    await it('should drop ALL unilateral escape contributions from a slot exceeding the cap', () => {
+      const phantoms = Array.from({ length: 5 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/p${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+          title: `phantom-${String(i)}`,
+        })
+      )
+      const result = mergeCriticFindings([phantoms, [], []], {
+        contextHashes: ctxHashesFor(...phantoms),
+        escapeCapPerSlot: 3,
+      })
+      assert.strictEqual(
+        result.merged.length,
+        0,
+        '5 unilateral escapes from slot 0 > cap=3 → all dropped'
+      )
+    })
+
+    await it('should keep all unilateral escapes when slot count is at or below the cap', () => {
+      const findings = Array.from({ length: 3 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/p${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+          title: `t-${String(i)}`,
+        })
+      )
+      const result = mergeCriticFindings([findings, [], []], {
+        contextHashes: ctxHashesFor(...findings),
+        escapeCapPerSlot: 3,
+      })
+      assert.strictEqual(result.merged.length, 3, '3 ≤ cap=3 → all admitted')
+      for (const m of result.merged) {
+        assert.strictEqual(m.contested, true)
+        assert.strictEqual(m.severity, 'HIGH', 'CRITICAL clamped down to HIGH')
+      }
+    })
+
+    await it('should resolve Oracle stress scenario: cap phantoms AND surface real HIGH+HIGH dissent', () => {
+      const phantoms = Array.from({ length: 50 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/phantom${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+          title: `phantom-${String(i)}`,
+        })
+      )
+      const real = fakeFinding({
+        confidence: 'HIGH',
+        file: 'src/real.ts',
+        line: 99,
+        severity: 'HIGH',
+        title: 'real-defect',
+      })
+      const result = mergeCriticFindings([phantoms, [], [real]], {
+        contextHashes: ctxHashesFor(...phantoms, real),
+      })
+      assert.strictEqual(result.merged.length, 1, 'phantoms capped, real defect surfaces')
+      assert.strictEqual(result.merged[0]?.title, 'real-defect')
+      assert.strictEqual(result.merged[0]?.severity, 'HIGH')
+      assert.strictEqual(result.merged[0]?.contested, true)
+      assert.deepStrictEqual(result.merged[0]?.voters, [2])
+    })
+
+    await it('should NOT cap multi-voter escape groups (cap applies only to unilateral escapes)', () => {
+      const issues0 = Array.from({ length: 5 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/i${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+          title: `t-${String(i)}`,
+        })
+      )
+      const issues1 = issues0.map(f => ({ ...f }))
+      const result = mergeCriticFindings([issues0, issues1, [], [], []], {
+        agreementThreshold: 3,
+        contextHashes: ctxHashesFor(...issues0, ...issues1),
+        escapeCapPerSlot: 3,
+      })
+      assert.strictEqual(
+        result.merged.length,
+        5,
+        'multi-voter (voters.size=2) groups not subject to per-slot cap'
+      )
+      for (const m of result.merged) {
+        assert.strictEqual(m.votes, 2)
+        assert.strictEqual(m.contested, true)
+      }
+    })
+
+    await it('should disable the cap when escapeCapPerSlot = Number.POSITIVE_INFINITY', () => {
+      const phantoms = Array.from({ length: 10 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/p${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+        })
+      )
+      const result = mergeCriticFindings([phantoms, [], []], {
+        contextHashes: ctxHashesFor(...phantoms),
+        escapeCapPerSlot: Number.POSITIVE_INFINITY,
+      })
+      assert.strictEqual(result.merged.length, 10, 'cap disabled, all admitted')
+    })
+
+    await it('should disable the cap on non-finite or negative cap values (defensive)', () => {
+      const phantoms = Array.from({ length: 5 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/p${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+        })
+      )
+      const ctx = ctxHashesFor(...phantoms)
+      assert.strictEqual(
+        mergeCriticFindings([phantoms, [], []], {
+          contextHashes: ctx,
+          escapeCapPerSlot: Number.NaN,
+        }).merged.length,
+        5,
+        'NaN disables the cap'
+      )
+      assert.strictEqual(
+        mergeCriticFindings([phantoms, [], []], { contextHashes: ctx, escapeCapPerSlot: -1 }).merged
+          .length,
+        5,
+        'negative cap disables'
+      )
+    })
+
+    await it('should be a no-op when promoteSingletonCritical = false (cap path inert without hatch)', () => {
+      const phantoms = Array.from({ length: 5 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/p${String(i)}.ts`,
+          line: i + 1,
+          severity: 'CRITICAL',
+        })
+      )
+      const result = mergeCriticFindings([phantoms, [], []], {
+        contextHashes: ctxHashesFor(...phantoms),
+        escapeCapPerSlot: 1,
+        promoteSingletonCritical: false,
+      })
+      assert.strictEqual(
+        result.merged.length,
+        0,
+        'with hatch disabled all below-threshold findings drop regardless of cap'
+      )
+    })
+
+    await it('should track the cap independently per critic slot', () => {
+      const c0 = Array.from({ length: 4 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/c0-${String(i)}.ts`,
+          line: 1,
+          severity: 'CRITICAL',
+          title: `c0-${String(i)}`,
+        })
+      )
+      const c1 = Array.from({ length: 3 }, (_, i) =>
+        fakeFinding({
+          confidence: 'HIGH',
+          file: `src/c1-${String(i)}.ts`,
+          line: 1,
+          severity: 'CRITICAL',
+          title: `c1-${String(i)}`,
+        })
+      )
+      const result = mergeCriticFindings([c0, c1, []], {
+        contextHashes: ctxHashesFor(...c0, ...c1),
+      })
+      assert.strictEqual(
+        result.merged.length,
+        3,
+        'C0 (4 > cap=3) all dropped; C1 (3 ≤ cap=3) all kept; per-voter counters independent'
+      )
+    })
+  })
 })
