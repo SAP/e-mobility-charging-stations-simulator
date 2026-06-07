@@ -4,6 +4,7 @@
  * `resolveCriticSlots` covering N=1 identity, voting, dedup, singleton-
  * CRITICAL escape, severity median tie-up, and slot-fill.
  */
+// cspell:ignore sqlinjection securityauth
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import { describe, it } from 'node:test'
@@ -421,6 +422,40 @@ await describe('merge-findings', async () => {
       assert.strictEqual(result.merged[0]?.votes, 3)
     })
 
+    await it('should keep the strongest same-slot representative for duplicate same-key findings', () => {
+      const lowFirst = fakeFinding({
+        confidence: 'LOW',
+        description: 'minor lint wording',
+        file: 'src/a.ts',
+        line: 5,
+        severity: 'LOW',
+        title: 'lint',
+      })
+      const highSecond = fakeFinding({
+        confidence: 'HIGH',
+        description: 'real defect',
+        file: 'src/a.ts',
+        line: 5,
+        severity: 'CRITICAL',
+        title: 'rce',
+      })
+      const ctx = new Map<Finding, string>([
+        [highSecond, 'h'],
+        [lowFirst, 'h'],
+      ])
+      const result = mergeCriticFindings([[lowFirst, highSecond], [], []], { contextHashes: ctx })
+      assert.strictEqual(result.validCount, 3)
+      assert.strictEqual(result.merged.length, 1, 'the stronger later finding must not be dropped')
+      assert.strictEqual(result.merged[0]?.title, 'rce')
+      assert.strictEqual(
+        result.merged[0]?.severity,
+        'HIGH',
+        'escape-hatch clamps CRITICAL down to HIGH'
+      )
+      assert.strictEqual(result.merged[0]?.contested, true)
+      assert.deepStrictEqual(result.merged[0]?.voters, [0])
+    })
+
     await it('should return disagreementScore 0 for unanimous severity', () => {
       const findings = Array.from({ length: 3 }, () =>
         fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
@@ -562,22 +597,26 @@ await describe('merge-findings', async () => {
       const s0 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
       const s1 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
       const s2 = fakeFinding({ file: 'src/x.ts', line: 10, title: 'shared' })
-      const indep = fakeFinding({
+      const independentFinding = fakeFinding({
         confidence: 'HIGH',
         file: 'src/y.ts',
         line: 99,
         severity: 'CRITICAL',
       })
-      const inputs: (Finding[] | null)[] = [[s0, indep], [s1], [s2]]
+      const inputs: (Finding[] | null)[] = [[s0, independentFinding], [s1], [s2]]
       const flatCount = inputs.flatMap(o => o ?? []).length
       const result = mergeCriticFindings(inputs, {
-        contextHashes: ctxHashesFor(s0, s1, s2, indep),
+        contextHashes: ctxHashesFor(s0, s1, s2, independentFinding),
       })
       assert.ok(
         result.merged.length <= flatCount,
         `merged.length=${String(result.merged.length)} > flatCount=${String(flatCount)}`
       )
-      assert.strictEqual(result.merged.length, 2, '3 duplicates collapse to 1; indep stays')
+      assert.strictEqual(
+        result.merged.length,
+        2,
+        '3 duplicates collapse to 1; independent finding stays'
+      )
     })
 
     await it('should break sort ties by votes desc before file asc within the same severity tier', () => {

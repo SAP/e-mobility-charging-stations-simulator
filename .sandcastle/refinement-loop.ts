@@ -48,8 +48,11 @@ export type { RefinementLoopOptions } from './loop-control.js'
 
 /** Result of a convergence check. */
 interface ConvergenceResult {
-  /** Best SHA to restore (null = no update). */
-  bestSha: null | string
+  /**
+   * Optional best-SHA override for the caller's tracked best state. Omitted
+   * means "keep the previously tracked best SHA unchanged".
+   */
+  bestSha?: string
   /** Updated last findings. */
   lastFindings: Finding[]
   /** New loop status. */
@@ -426,17 +429,13 @@ export async function runRefinementLoop (
       break
     }
 
-    const convergenceResult = await checkConvergence(
-      cwd,
-      findings,
-      newFindings,
-      nonLowFindings,
-      signal
-    )
+    const convergenceResult = checkConvergence(findings, newFindings, nonLowFindings)
     if (convergenceResult !== null) {
       lastFindings = convergenceResult.lastFindings
       status = convergenceResult.status
-      bestSha = convergenceResult.bestSha
+      if (convergenceResult.bestSha !== undefined) {
+        bestSha = convergenceResult.bestSha
+      }
       break
     }
 
@@ -516,20 +515,16 @@ async function captureHeadSha (cwd: string, signal?: AbortSignal): Promise<null 
 
 /**
  * Checks whether the current round converged (no new findings).
- * @param cwd - Working directory for git operations.
  * @param allFindings - All findings from the critic.
  * @param newFindings - Deduplicated new findings.
  * @param nonLowFindings - Non-LOW-confidence findings.
- * @param signal - Optional abort signal forwarded to git invocations.
  * @returns A ConvergenceResult if the loop should break, or null to continue.
  */
-async function checkConvergence (
-  cwd: string,
+function checkConvergence (
   allFindings: Finding[],
   newFindings: Finding[],
-  nonLowFindings: Finding[],
-  signal?: AbortSignal
-): Promise<ConvergenceResult | null> {
+  nonLowFindings: Finding[]
+): ConvergenceResult | null {
   if (newFindings.length !== 0) return null
 
   // Severity-weighted convergence (OpenHands pattern):
@@ -538,16 +533,15 @@ async function checkConvergence (
     f => (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.confidence !== 'LOW'
   )
   if (criticalPersistent.length > 0) {
-    // Capture current HEAD so post-loop reset is a no-op (code matches findings)
+    // Preserve the caller's previously tracked best SHA so post-loop recovery
+    // still restores the round with the fewest non-LOW findings.
     return {
-      bestSha: await captureHeadSha(cwd, signal),
       lastFindings: criticalPersistent,
       status: 'exhausted',
     }
   }
 
   return {
-    bestSha: null,
     lastFindings: nonLowFindings.length > 0 ? nonLowFindings : [],
     status: 'converged',
   }

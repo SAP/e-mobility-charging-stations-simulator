@@ -132,12 +132,16 @@ export function mergeCriticFindings (
 
   const groups = new Map<string, { entries: GroupEntry[]; voters: Set<number> }>()
   for (const { findings, slot } of validOutputs) {
-    const seenKeysThisSlot = new Set<string>()
+    const bestByKey = new Map<string, Finding>()
     for (const finding of findings) {
       const ctxHash = opts.contextHashes?.get(finding) ?? fallbackHash(finding)
       const key = findingDedupKey(finding, ctxHash)
-      if (seenKeysThisSlot.has(key)) continue
-      seenKeysThisSlot.add(key)
+      const current = bestByKey.get(key)
+      if (current === undefined || shouldReplaceSlotRepresentative(current, finding)) {
+        bestByKey.set(key, finding)
+      }
+    }
+    for (const [key, finding] of bestByKey) {
       let group = groups.get(key)
       if (!group) {
         group = { entries: [], voters: new Set() }
@@ -492,4 +496,24 @@ function severityDisagreementScore (findings: readonly Finding[]): number {
  */
 function severityRank (s: Finding['severity']): SeverityRank {
   return SEVERITY_LADDER.indexOf(s) as SeverityRank
+}
+
+/**
+ * Chooses which of two same-slot findings sharing a dedup key should represent
+ * that slot in the cross-critic merge. Prefer the stronger signal (higher
+ * severity, then higher confidence) so merge output is stable under intra-slot
+ * ordering differences. If both ranks tie, keep the earlier finding for stable
+ * wording.
+ * @param current - The currently selected representative for this slot/key.
+ * @param candidate - The later same-key finding from the same slot.
+ * @returns True iff the candidate should replace the current representative.
+ */
+function shouldReplaceSlotRepresentative (current: Finding, candidate: Finding): boolean {
+  const severityDelta = severityRank(candidate.severity) - severityRank(current.severity)
+  if (severityDelta !== 0) return severityDelta > 0
+
+  const confidenceDelta = confidenceRank(candidate.confidence) - confidenceRank(current.confidence)
+  if (confidenceDelta !== 0) return confidenceDelta > 0
+
+  return false
 }

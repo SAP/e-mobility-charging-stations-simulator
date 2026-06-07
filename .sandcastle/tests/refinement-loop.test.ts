@@ -789,6 +789,79 @@ await describe('refinement-loop kernel', async () => {
         await cleanup()
       }
     })
+
+    await it('should keep the previously tracked best SHA when persistent critical findings repeat with no new keys', async () => {
+      const { cleanup, cwd } = await setupTempRepo()
+      try {
+        const strategy: LoopStrategy = {
+          ...baseStrategy,
+          validate: () => Promise.resolve(false),
+        }
+        const actorShas: string[] = []
+        let criticRound = 0
+        const roundFindings: Finding[][] = [
+          [{ ...baseFinding, file: 'src/r1.ts', severity: 'CRITICAL' }],
+          [
+            { ...baseFinding, file: 'src/r2a.ts', severity: 'CRITICAL' },
+            { ...baseFinding, file: 'src/r2b.ts', severity: 'CRITICAL' },
+          ],
+          [
+            { ...baseFinding, file: 'src/r2a.ts', severity: 'CRITICAL' },
+            { ...baseFinding, file: 'src/r2b.ts', severity: 'CRITICAL' },
+          ],
+        ]
+        const sandbox: SandboxInstance = {
+          branch: 'agent/test',
+          run: (opts: SandboxRunOptions) => {
+            const isActor = String(opts.name).startsWith('Actor')
+            if (isActor) {
+              execFileSync(
+                'git',
+                ['commit', '--allow-empty', '-m', `actor-${String(actorShas.length + 1)}`],
+                { cwd, stdio: 'pipe' }
+              )
+              const sha = execFileSync('git', ['rev-parse', 'HEAD'], {
+                cwd,
+                encoding: 'utf-8',
+              }).trim()
+              actorShas.push(sha)
+              return Promise.resolve({ commits: [{ sha }], iterations: [], stdout: '' })
+            }
+            const nonce = String(opts.promptArgs?.NONCE ?? '')
+            const findings = roundFindings[criticRound++] ?? []
+            return Promise.resolve({
+              commits: [],
+              iterations: [],
+              stdout: wellFormedStdout(nonce, findings),
+            })
+          },
+          worktreePath: cwd,
+        } as unknown as SandboxInstance
+        const result = await runRefinementLoop(baseSpec, sandbox, strategy, {
+          maxRounds: 3,
+          postLoopValidationRetry: false,
+        })
+        const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+          cwd,
+          encoding: 'utf-8',
+        }).trim()
+        assert.strictEqual(result.status, 'exhausted')
+        assert.strictEqual(result.failureReason, undefined)
+        assert.strictEqual(result.roundsCompleted, 3)
+        assert.strictEqual(
+          result.totalCommits,
+          0,
+          'post-loop best-state recount is relative to main in the temp repo fixture'
+        )
+        assert.strictEqual(
+          headSha,
+          actorShas[0],
+          'criticalPersistent no-new-findings exit must preserve the earlier best SHA'
+        )
+      } finally {
+        await cleanup()
+      }
+    })
   })
 
   await describe('computeFindingKey', async () => {
