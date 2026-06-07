@@ -13,6 +13,7 @@ import {
   MAX_PARALLEL,
   SANDBOX_BUILD_HOOKS,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 import { runRefinementLoop } from './refinement-loop.js'
 import { STRATEGY_BY_KEY, STRATEGY_REGISTRY } from './strategies/index.js'
 import { GithubIssueSource } from './task-source.js'
@@ -26,7 +27,11 @@ let tasks: TaskSpec[]
 try {
   tasks = await source.discover()
 } catch (err) {
-  console.error(err instanceof Error ? err.message : String(err))
+  if (err instanceof SandcastleError) {
+    console.error(`[${err.code}] ${err.message}`)
+  } else {
+    console.error(err instanceof Error ? err.message : String(err))
+  }
   process.exit(1)
 }
 
@@ -40,7 +45,8 @@ if (tasks.length === 0) {
       pool.run(async () => {
         const entry = STRATEGY_BY_KEY.get(spec.strategyKey)
         if (!entry) {
-          throw new Error(
+          throw new SandcastleError(
+            'unknown_strategy',
             `Task #${spec.id}: unknown strategy '${spec.strategyKey}' (not in registry).`
           )
         }

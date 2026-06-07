@@ -19,6 +19,7 @@ import {
   MAX_TITLE_CHARS,
   SANDBOX_AUTH_HOOKS,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 import { branchPrefixOf, labelOf, type StrategyEntry } from './strategies/index.js'
 import { TASK_CONFIDENCE_VALUES, TASK_ISSUE_TYPE_VALUES } from './types.js'
 import { agentProvider, execFileAsync, toErrorMessage } from './utils.js'
@@ -77,7 +78,10 @@ export class GithubIssueSource implements TaskSource {
    */
   constructor (config: GithubIssueSourceConfig) {
     if (config.strategies.length === 0) {
-      throw new Error('GithubIssueSource requires at least one strategy.')
+      throw new SandcastleError(
+        'source_no_strategies',
+        'GithubIssueSource requires at least one strategy.'
+      )
     }
     this.dockerImage = config.dockerImage
     this.maxRetries = config.maxRetries ?? 5
@@ -176,7 +180,10 @@ export class GithubIssueSource implements TaskSource {
       return tasks
     }
 
-    throw new Error('Planner failed to produce a valid plan after all retries.')
+    throw new SandcastleError(
+      'planner_exhausted',
+      'Planner failed to produce a valid plan after all retries.'
+    )
   }
 
   /**
@@ -243,7 +250,8 @@ export class GithubIssueSource implements TaskSource {
       )
       rawIssuesJson = stdout
     } catch (err: unknown) {
-      throw new Error(
+      throw new SandcastleError(
+        'source_fetch_failed',
         `Failed to fetch issues with label '${label}': ${toErrorMessage(err)}. Ensure gh is installed and authenticated.`,
         { cause: err }
       )
@@ -252,7 +260,8 @@ export class GithubIssueSource implements TaskSource {
     try {
       return RawIssuesSchema.parse(JSON.parse(rawIssuesJson))
     } catch (err: unknown) {
-      throw new Error(
+      throw new SandcastleError(
+        'source_parse_failed',
         `Failed to parse issues JSON for label '${label}': ${toErrorMessage(err)}. Unexpected format from gh CLI.`,
         { cause: err }
       )
