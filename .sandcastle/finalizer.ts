@@ -151,8 +151,9 @@ export async function pushBranch (
         )
       } catch (rescueErr: unknown) {
         signal?.throwIfAborted()
+        const rescueMsg = toErrorMessage(rescueErr)
         console.error(
-          `  #${spec.id}: Push failed and rescue failed. Commits will be lost on sandbox disposal: ${pushMsg}`
+          `  #${spec.id}: Push failed (${pushMsg}) and rescue failed (${rescueMsg}). Commits will be lost on sandbox disposal.`
         )
       }
       return false

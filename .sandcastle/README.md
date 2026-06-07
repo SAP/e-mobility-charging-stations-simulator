@@ -26,7 +26,7 @@ GitHub issues ──▶ Planner ──▶ TaskSpec ──▶ Sandbox ──▶  
                                                         │                                  │
                                                         │  per round: validate?            │
                                                         │  per round: quality ratchet      │
-                                                        │  on regression: rollback to BEST │
+                                                        │  on regression: rollback to ROUND-START │
                                                         │  on convergence: break           │
                                                         └──────────────────────────────────┘
                                                               up to AGENT_MAX_CRITIC_ROUNDS
@@ -39,12 +39,12 @@ GitHub issues ──▶ Planner ──▶ TaskSpec ──▶ Sandbox ──▶  
 3. **Refinement loop** ([`refinement-loop.ts`](./refinement-loop.ts)) — runs `runRefinementLoop(spec, sandbox, strategy, opts)`. Each round:
    1. **Actor** drafts code: one agent invocation up to `iterationBudget = 50` tool iterations.
    2. **Critic ensemble** reviews the diff in parallel: N slots resolved from `criticPool`, where `N = strategy.criticCount ?? max(AGENT_CRITIC_COUNT, criticPool.length)` (so a strategy that ships only a longer pool gets `N = pool.length`). Up to `MAX_CRITIC_COUNT = 8`. `Promise.allSettled` over all slots; per-slot one parse-retry; quorum `⌈N/2⌉`.
-   3. **Voted merge** ([`mergeCriticFindings`](./merge-findings.ts)) deduplicates findings across critics by `${file}::${normalizeCategory(category)}::${ctxHash(line, ±3)}`; aggregates severity/confidence by median-tie-up; emits `votes`/`voters`/`disagreementScore`.
-   4. **Optional arbiter** (MoA stage-2) synthesizes HIGH/CRITICAL findings when `strategy.arbiter` is set; failure non-fatal.
+   3. **Voted merge** ([`mergeCriticFindings`](./merge-findings.ts)) deduplicates findings across critics by `${file}::${normalizeCategory(category)}::${ctxHash(line, ±3)}`; aggregates severity/confidence by median-tie-up; emits `votes`/`voters`/`disagreementScore` for N≥2 (the N=1 short-circuit returns the sole critic output unchanged).
+   4. **Optional arbiter** (MoA stage-2) runs when `strategy.arbiter` is set and at least one merged finding is HIGH/CRITICAL; it receives the full merged list and failure is non-fatal.
    5. **Per-round validation** (`strategy.validate ?? runValidation`) — defaults to `pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`. On pass with `commits > 0`: converged.
    6. **Quality ratchet**: if non-LOW finding count rose vs. previous round (and round ≥ 3), rollback worktree to `beforeSha`.
    7. **Convergence**: empty new findings AND no persistent CRITICAL/HIGH ⇒ converged.
-   8. **Best-state restore**: track the SHA at the round with fewest non-LOW findings; on non-converged exit, reset to it.
+   8. **Best-state restore**: track the SHA at the round with fewest non-LOW-confidence findings; on non-converged exit, reset to it.
 4. **Post-loop validation retry** (when `postLoopValidationRetry: true`) — if the loop ended non-converged but `totalCommits > 0`, run validation once more; if it passes, mark `converged`; otherwise spend one more actor round.
 5. **Finalization** ([`strategies/implement/strategy.ts`](./strategies/implement/strategy.ts) + [`finalizer.ts`](./finalizer.ts)) — `attemptRebase` onto base; `pushBranch` (force-with-lease on rebase success, rescue branch on failure); `gh pr create` (draft when non-converged or validation failed; full PR otherwise) with severity-tagged outstanding findings.
 
@@ -62,6 +62,7 @@ Current state of the orchestrator (not a per-PR changelog — some modules preda
 | [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                                                                                            | ✗               |
 | [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                                                                                 | ✓               |
 | [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                                                                              | ✗               |
+| [`errors.ts`](./errors.ts)                         | Typed sandcastle error surface (`SandcastleError`) used for strategy/config/runtime failures.                                                                                                   | ✗               |
 | [`validation.ts`](./validation.ts)                 | Default work-quality validation runner (`pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`).                                                                | ✗               |
 | [`strategies/index.ts`](./strategies/index.ts)     | Canonical `STRATEGY_REGISTRY`. Validates every strategy at module load (key pattern, control tags, agent specs, ensemble fields).                                                               | n/a             |
 | [`strategies/implement/`](./strategies/implement/) | Default strategy: actor + critic prompts + finalize (rebase, push, `gh pr create`).                                                                                                             | n/a             |
@@ -70,16 +71,16 @@ Current state of the orchestrator (not a per-PR changelog — some modules preda
 
 ## Core concepts
 
-| Term                | Type            | Meaning                                                                                                                                                                        |
-| ------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`TaskSpec`**      | input           | A single unit of work: id, branch, body, plan metadata. Strategy-agnostic.                                                                                                     |
-| **`LoopStrategy`**  | extension point | Declares `actorPromptFile`, `criticPromptFile`, `buildActorArgs`, `buildCriticArgs`, optional agent overrides, optional `validate`, optional `shouldConverge`.                 |
-| **`AgentSpec`**     | value object    | The canonical `{ model, effort }` pair. Required for actor, every critic-pool entry, arbiter, and planner.                                                                     |
-| **`CriticSlot`**    | resolved        | `AgentSpec` + zero-based `index`. Produced by `resolveCriticSlots(strategy)`.                                                                                                  |
-| **`Finding`**       | output          | A single critic observation: `{file, line?, severity, confidence, category, title, description, suggestion?}` plus post-merge `{votes, voters, disagreementScore, contested}`. |
-| **`RoundSnapshot`** | telemetry       | Per-round record: `{round, commits, findings, status, validCriticCount?}`.                                                                                                     |
-| **`LoopResult`**    | output          | `{baseBranch, status, totalCommits, roundsCompleted, roundHistory, failureReason?}`.                                                                                           |
-| **`StrategyEntry`** | registry record | `{key, strategy, controlTags?}`. Derives label `sandcastle-<key>` and branch prefix `agent/<key>`.                                                                             |
+| Term                | Type            | Meaning                                                                                                                                                                                         |
+| ------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`TaskSpec`**      | input           | A single unit of work: id, branch, body, plan metadata. Strategy-agnostic.                                                                                                                      |
+| **`LoopStrategy`**  | extension point | Declares `actorPromptFile`, `criticPromptFile`, `buildActorArgs`, `buildCriticArgs`, optional agent overrides, optional `validate`, optional `shouldConverge`.                                  |
+| **`AgentSpec`**     | value object    | The canonical `{ model, effort }` pair. Required for actor, every critic-pool entry, arbiter, and planner.                                                                                      |
+| **`CriticSlot`**    | resolved        | `AgentSpec` + zero-based `index`. Produced by `resolveCriticSlots(strategy)`.                                                                                                                   |
+| **`Finding`**       | output          | A single critic observation: `{file, line?, severity, confidence, category, title, description, suggestion?}` plus post-merge `{votes, voters, disagreementScore, contested}`.                  |
+| **`RoundSnapshot`** | telemetry       | Per-round record: `{round, commits, findings, status, validCriticCount?}`.                                                                                                                      |
+| **`LoopResult`**    | output          | `{baseBranch, status, totalCommits, roundsCompleted, roundHistory, validationCertified, failureReason?}`. `validationCertified` is true only when `validate()` succeeded on the converged tree. |
+| **`StrategyEntry`** | registry record | `{key, strategy, controlTags?}`. Derives label `sandcastle-<key>` and branch prefix `agent/<key>`.                                                                                              |
 
 ## Adding a new strategy
 
@@ -121,7 +122,7 @@ When fewer than `⌈N/2⌉` slots return parseable findings, the round is marked
 
 | Mechanism                      | Where                                                            | Trigger                                                                                                                         | Action                                                                                                                                                                                                                                                                                            |
 | ------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Quality ratchet**            | [`refinement-loop.ts:checkQualityRatchet`](./refinement-loop.ts) | Round ≥ 3 AND non-LOW findings rose                                                                                             | `git reset --hard` to `beforeSha`, mark loop `exhausted`                                                                                                                                                                                                                                          |
+| **Quality ratchet**            | [`refinement-loop.ts:checkQualityRatchet`](./refinement-loop.ts) | Round ≥ 3 AND non-LOW-confidence findings rose                                                                                  | `git reset --hard` to `beforeSha`, mark loop `exhausted`                                                                                                                                                                                                                                          |
 | **Best-state restore**         | [`refinement-loop.ts:resetToBestState`](./refinement-loop.ts)    | Loop ends non-converged AND a better intermediate SHA was captured                                                              | Reset worktree to that SHA, recount commits vs. base                                                                                                                                                                                                                                              |
 | **Critic parse retry**         | [`refinement-loop.ts:runOneCritic`](./refinement-loop.ts)        | Per-slot: `parseFindings` returns `null`                                                                                        | One re-invocation with a fresh retry nonce suffix (`-r1`)                                                                                                                                                                                                                                         |
 | **Critic quorum gate**         | [`refinement-loop.ts:runCritic`](./refinement-loop.ts)           | `validCount < ⌈resolvedCriticCount/2⌉`                                                                                          | Round = `critic_errored`, no merge, no rollback                                                                                                                                                                                                                                                   |
@@ -209,7 +210,7 @@ pnpm test:sandcastle:coverage
 pnpm test:sandcastle:debug
 ```
 
-The unit suite exercises `mergeCriticFindings` (voting, dedup, severity median tie-up, singleton-CRITICAL escape, disagreement scoring, slot fill), `parseFindings`, kernel control predicates, the concurrency pool, the finalizer's `buildPrArgs`, and `isValidSha`. See `tests/` for the per-module test files.
+The suite exercises `mergeCriticFindings` (voting, dedup, severity median tie-up, minority-rule escape, per-slot escape cap, disagreement scoring, slot fill), `parseFindings`, `runOneCritic`/`runCritic`/`maybeRunArbiter`, `runRefinementLoop` end-to-end paths, registry validation, typed errors, kernel control predicates, the concurrency pool, the finalizer's `buildPrArgs`, and `isValidSha`. See `tests/` for the per-module test files.
 
 ## Extension constraints
 

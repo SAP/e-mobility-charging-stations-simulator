@@ -17,6 +17,7 @@ import { SandcastleError } from './errors.js'
 import { runRefinementLoop } from './refinement-loop.js'
 import { STRATEGY_BY_KEY, STRATEGY_REGISTRY } from './strategies/index.js'
 import { GithubIssueSource } from './task-source.js'
+import { toErrorMessage } from './utils.js'
 
 const source = new GithubIssueSource({
   dockerImage: DOCKER_IMAGE,
@@ -29,8 +30,16 @@ try {
 } catch (err) {
   if (err instanceof SandcastleError) {
     console.error(`[${err.code}] ${err.message}`)
+    if (err.stack !== undefined) {
+      console.error(err.stack)
+    }
+    if (err.cause instanceof Error) {
+      console.error(err.cause.stack ?? err.cause.message)
+    } else if (err.cause !== undefined) {
+      console.error(toErrorMessage(err.cause))
+    }
   } else {
-    console.error(err instanceof Error ? err.message : String(err))
+    console.error(err instanceof Error ? (err.stack ?? err.message) : String(err))
   }
   process.exit(1)
 }
