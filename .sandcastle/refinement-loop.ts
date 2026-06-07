@@ -170,11 +170,9 @@ export async function maybeRunArbiter (
       return merged
     }
     if (refined.length === 0 && merged.length > 0) {
-      // Defense: arbiter is gated to fire only when at least one HIGH/CRITICAL
-      // finding exists post-merge, so the input is always non-empty when we
-      // reach this point. An empty refined list almost certainly indicates the
-      // LLM failed to echo the input rather than legitimate "all dismissed";
-      // treat it as a soft parse failure so real signal is not silently wiped.
+      // Arbiter only fires when merged contains HIGH/CRITICAL findings, so an
+      // empty refined list almost always indicates the LLM failed to echo
+      // input rather than legitimate dismissal. Treat as soft parse failure.
       console.warn(
         `  #${spec.id} R${String(round)}: arbiter returned empty findings; keeping merge result.`
       )

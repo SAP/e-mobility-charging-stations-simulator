@@ -1,10 +1,6 @@
 import { BaseError } from '../src/exception/index.js'
 
-/**
- * Discriminant codes for {@link SandcastleError}. Each member identifies a
- * distinct failure mode in the orchestrator (task discovery, planning,
- * registry lookup, strategy invariants).
- */
+/** Discriminant codes for {@link SandcastleError}. */
 export type SandcastleErrorCode =
   | 'planner_exhausted'
   | 'source_fetch_failed'
@@ -14,15 +10,9 @@ export type SandcastleErrorCode =
   | 'unknown_strategy'
 
 /**
- * Typed error thrown by the sandcastle orchestrator. Extends {@link BaseError}
- * to inherit the repo-wide error shape: `name = new.target.name` (subclass-
- * aware), `date = new Date()` (timestamp), and prototype-chain restoration via
- * `Object.setPrototypeOf` so `instanceof` survives transpilation/realms.
- *
- * The `code` discriminant lets kernel-boundary catch handlers branch on the
- * failure category without parsing `message`. `cause` is forwarded explicitly
- * because `BaseError`'s constructor signature is `(message?: string)` and
- * does not accept the `ErrorOptions` bag.
+ * Sandcastle orchestrator error. Adds a {@link code} discriminant to
+ * {@link BaseError} so catch-site handlers can branch on the failure
+ * category without parsing `message`.
  */
 export class SandcastleError extends BaseError {
   readonly code: SandcastleErrorCode

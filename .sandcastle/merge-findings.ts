@@ -30,27 +30,19 @@ export interface MergeOpts {
    */
   readonly contextHashes?: ReadonlyMap<Finding, string>
   /**
-   * Maximum number of unilateral (single-voter) escape-hatch findings a
-   * single critic slot may contribute per merge call. When a slot's
-   * exclusive-escape count exceeds this cap, ALL of that slot's unilateral
-   * escape groups are dropped (treated as suspected runaway critic).
-   * Multi-voter escape groups (`voters.size >= 2`) and above-threshold
-   * groups are never capped — at-least-two-critic agreement is meaningful
-   * signal regardless of frequency. Defaults to
-   * {@link CRITIC_ESCAPE_CAP_PER_SLOT} (3). Set to `Number.POSITIVE_INFINITY`
-   * or any non-finite / negative value to disable.
+   * Per-slot cap on unilateral escape-hatch admissions: a slot whose
+   * single-voter escape contributions exceed this cap has ALL of them
+   * dropped (suspected runaway critic). Multi-voter and above-threshold
+   * groups are never capped. Defaults to {@link CRITIC_ESCAPE_CAP_PER_SLOT}.
+   * Non-finite or negative values disable the cap.
    */
   readonly escapeCapPerSlot?: number
   /**
    * When true (default), retain below-threshold findings flagged by at least
    * one voter with `severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`;
    * `contested = true` is set and merged severity is clamped to
-   * `[MEDIUM, HIGH]` when the escape hatch fires (CRITICAL caps down to
-   * HIGH; LOW floors up to MEDIUM; MEDIUM and HIGH pass through). Applies
-   * to any minority signal, not only true singletons. Combined with
-   * {@link MergeOpts.escapeCapPerSlot}, a single critic cannot flood the
-   * merge kernel with unilateral escape findings: above-cap unilateral
-   * contributions from any one slot are dropped wholesale.
+   * `[MEDIUM, HIGH]`. Applies to any minority signal, not only true singletons.
+   * See {@link MergeOpts.escapeCapPerSlot} for runaway-critic protection.
    */
   readonly promoteSingletonCritical?: boolean
 }
@@ -251,14 +243,11 @@ export function normalizeCategory (category: string): string {
  *       - `'random-with-replacement'`: seeded uniform sampling using
  *         `criticEnsembleSeed` (registry validation enforces seed presence).
  *
- * Defense-in-depth: throws a {@link SandcastleError} with code
- * `'strategy_invalid'` when `criticFillStrategy === 'random-with-replacement'`
- * and `criticEnsembleSeed` is `undefined`. {@link validateLoopStrategyEnsemble}
- * rejects this combination at registry load; the throw guards strategies that
- * bypass the registry (direct test invocations, programmatic construction).
+ * Throws a {@link SandcastleError} with code `'strategy_invalid'` when the
+ * random-fill seed is missing — defense-in-depth for callers bypassing
+ * {@link validateLoopStrategyEnsemble}.
  * @param strategy - Strategy declaration.
- * @returns Frozen ordered slot list of length `resolvedCriticCount`, where
- *   registry validation guarantees `resolvedCriticCount >= 1`.
+ * @returns Frozen ordered slot list of length `resolvedCriticCount` (≥ 1).
  */
 export function resolveCriticSlots (strategy: LoopStrategy): readonly CriticSlot[] {
   const pool = strategy.criticPool ?? AGENT_CRITIC_POOL_DEFAULT
@@ -306,16 +295,12 @@ function clampEscapeSeverity (escape: boolean, severity: Finding['severity']): F
 }
 
 /**
- * Identifies group keys to drop pre-emission because a single critic slot
- * is the sole voter on more than `cap` below-threshold escape-eligible
- * groups (suspected runaway critic). Multi-voter escape groups
- * (`voters.size >= 2`) and above-threshold groups are exempt.
- *
- * Pure: deterministic given inputs; iterates `groups` in insertion order.
+ * Returns the keys of below-threshold escape-eligible groups whose lone
+ * voter exceeds the per-slot cap. See {@link MergeOpts.escapeCapPerSlot}.
  * @param groups - Group map produced by {@link mergeCriticFindings}.
  * @param threshold - Effective agreement threshold (already clamped).
- * @param promoteSingleton - Whether the escape hatch is active for this call.
- * @param cap - Per-slot escape cap; non-finite or negative disables the cap.
+ * @param promoteSingleton - Whether the escape hatch is active.
+ * @param cap - Per-slot escape cap; non-finite or negative disables.
  * @returns Set of group keys to drop pre-emission.
  */
 function computeRunawayDrops (
@@ -396,9 +381,8 @@ function fallbackHash (f: Finding): string {
 }
 
 /**
- * @param f - Finding to test against the widened escape-hatch predicate.
- * @returns True iff the finding qualifies a group for the escape hatch
- *   (`severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`).
+ * @param f - Finding to test.
+ * @returns True iff `severity ∈ {HIGH, CRITICAL}` AND `confidence = HIGH`.
  */
 function isEscapeQualified (f: Finding): boolean {
   return (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.confidence === 'HIGH'
