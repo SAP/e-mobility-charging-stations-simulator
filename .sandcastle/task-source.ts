@@ -12,11 +12,17 @@ import {
   AGENT_TASK_TIMEOUT_MS,
   COMPLETION_SIGNAL,
   DOCKER_MOUNTS,
+  EXEC_MAX_BUFFER_BYTES,
   GIT_TIMEOUT_MS,
   GITHUB_MAX_ISSUES_FETCH,
   GITHUB_MAX_PRS_FETCH,
+  MAX_ACCEPTANCE_CRITERIA_ITEMS,
+  MAX_ACCEPTANCE_CRITERION_CHARS,
+  MAX_ROOT_CAUSE_HYPOTHESIS_CHARS,
   MAX_SLUG_CHARS,
   MAX_TITLE_CHARS,
+  PLANNER_MAX_ITERATIONS,
+  PLANNER_MAX_RETRIES,
   SANDBOX_AUTH_HOOKS,
 } from './constants.js'
 import { SandcastleError } from './errors.js'
@@ -84,7 +90,7 @@ export class GithubIssueSource implements TaskSource {
       )
     }
     this.dockerImage = config.dockerImage
-    this.maxRetries = config.maxRetries ?? 5
+    this.maxRetries = config.maxRetries ?? PLANNER_MAX_RETRIES
     this.strategies = config.strategies
 
     this.branchPatterns = this.strategies.map(
@@ -130,7 +136,7 @@ export class GithubIssueSource implements TaskSource {
           completionSignal: COMPLETION_SIGNAL,
           hooks: SANDBOX_AUTH_HOOKS,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
-          maxIterations: 5,
+          maxIterations: PLANNER_MAX_ITERATIONS,
           name: 'Planner',
           promptArgs: {
             ISSUES_JSON: JSON.stringify(
@@ -246,7 +252,7 @@ export class GithubIssueSource implements TaskSource {
           '--label',
           label,
         ],
-        { encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024, timeout: GIT_TIMEOUT_MS }
+        { encoding: 'utf-8', maxBuffer: EXEC_MAX_BUFFER_BYTES, timeout: GIT_TIMEOUT_MS }
       )
       rawIssuesJson = stdout
     } catch (err: unknown) {
@@ -282,7 +288,7 @@ export class GithubIssueSource implements TaskSource {
           '--limit',
           String(GITHUB_MAX_PRS_FETCH),
         ],
-        { encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024, timeout: GIT_TIMEOUT_MS }
+        { encoding: 'utf-8', maxBuffer: EXEC_MAX_BUFFER_BYTES, timeout: GIT_TIMEOUT_MS }
       )
       const prs = z.array(z.object({ headRefName: z.string() })).parse(JSON.parse(stdout))
       const issueNumbers = new Set<number>()
@@ -382,14 +388,14 @@ export class GithubIssueSource implements TaskSource {
       spec.confidence = item.confidence
     }
     if (typeof item.rootCauseHypothesis === 'string' && item.rootCauseHypothesis.length > 0) {
-      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(0, 500)
+      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(0, MAX_ROOT_CAUSE_HYPOTHESIS_CHARS)
     }
     if (Array.isArray(item.acceptanceCriteria)) {
       const criteria = item.acceptanceCriteria
         .filter((c): c is string => typeof c === 'string' && c.length > 0)
-        .map(c => this.sanitizeForPrompt(c).slice(0, 200))
+        .map(c => this.sanitizeForPrompt(c).slice(0, MAX_ACCEPTANCE_CRITERION_CHARS))
       if (criteria.length > 0) {
-        spec.acceptanceCriteria = criteria.slice(0, 5)
+        spec.acceptanceCriteria = criteria.slice(0, MAX_ACCEPTANCE_CRITERIA_ITEMS)
       }
     }
     return spec

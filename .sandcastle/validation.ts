@@ -1,6 +1,6 @@
 import type { TaskSpec } from './types.js'
 
-import { MAX_STDERR_CHARS, VALIDATION_COMMAND, VALIDATION_TIMEOUT_MS } from './constants.js'
+import { EXEC_MAX_BUFFER_BYTES, MAX_STDERR_CHARS, VALIDATION_COMMAND, VALIDATION_TIMEOUT_MS } from './constants.js'
 import { execFileAsync } from './utils.js'
 
 /**
@@ -18,7 +18,7 @@ export async function runValidation (
   try {
     await execFileAsync('sh', ['-c', VALIDATION_COMMAND], {
       cwd,
-      maxBuffer: 8 * 1024 * 1024,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: VALIDATION_TIMEOUT_MS,
     })

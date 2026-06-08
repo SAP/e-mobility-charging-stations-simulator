@@ -1,11 +1,9 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 
-import type { AgentSpec } from './types.js'
+import type { AgentProviderType, AgentSpec } from './types.js'
 
 // ── Agent ────────────────────────────────────────────────────────────────────
-
-export type AgentProviderType = 'opencode' | 'pi'
 
 export const AGENT_PROVIDER = 'pi' as AgentProviderType
 
@@ -135,6 +133,28 @@ export const MAX_FINDING_SUGGESTION_CHARS = 5000
 export const MAX_FINDING_FILE_CHARS = 1000
 
 export const CRITIC_ESCAPE_CAP_PER_SLOT = 3 as const
+
+// ── Planner ──────────────────────────────────────────────────────────────────
+
+export const PLANNER_MAX_RETRIES = 5
+
+export const PLANNER_MAX_ITERATIONS = 5
+
+// ── Critic / Arbiter iteration budget ────────────────────────────────────────
+
+export const CRITIC_MAX_ITERATIONS = 1 as const
+
+// ── Plan field caps ──────────────────────────────────────────────────────────
+
+export const MAX_ACCEPTANCE_CRITERIA_ITEMS = 5
+
+export const MAX_ACCEPTANCE_CRITERION_CHARS = 200
+
+export const MAX_ROOT_CAUSE_HYPOTHESIS_CHARS = 500
+
+// ── Subprocess (child_process buffers) ───────────────────────────────────────
+
+export const EXEC_MAX_BUFFER_BYTES = 8 * 1024 * 1024
 
 // ── Validation ───────────────────────────────────────────────────────────────
 

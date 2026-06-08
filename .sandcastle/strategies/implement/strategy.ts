@@ -1,6 +1,6 @@
 import type { FinalizationConfig, LoopStrategy, TaskSpec } from '../../types.js'
 
-import { GIT_TIMEOUT_MS } from '../../constants.js'
+import { EXEC_MAX_BUFFER_BYTES, GIT_TIMEOUT_MS } from '../../constants.js'
 import { attemptRebase, buildPrArgs, pushBranch } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
 import { runValidation } from '../../validation.js'
@@ -79,7 +79,7 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     try {
       await execFileAsync('gh', prArgs, {
         cwd,
-        maxBuffer: 8 * 1024 * 1024,
+        maxBuffer: EXEC_MAX_BUFFER_BYTES,
         signal,
         timeout: GIT_TIMEOUT_MS,
       })
