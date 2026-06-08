@@ -32,6 +32,14 @@ export const fakeFinding = (overrides: Partial<Finding> = {}): Finding => ({
 })
 
 /**
+ * @param nonce - Per-slot nonce identifier (e.g. `'cafe1234-c0'`).
+ * @param body - JSON-stringified findings array (or any wrapper payload).
+ * @returns Stdout fragment in the runtime nonce-tagged delimiter shape.
+ */
+export const makeTag = (nonce: string, body: string): string =>
+  `<findings-${nonce}>${body}</findings-${nonce}>`
+
+/**
  * @param overrides - Partial LoopStrategy fields.
  * @returns LoopStrategy with required prompt/builder fields stubbed.
  */

@@ -31,6 +31,7 @@ import {
   runOneCritic,
   runRefinementLoop,
 } from '../refinement-loop.js'
+import { makeTag as tag } from './factories.js'
 
 const baseFinding: Finding = {
   category: 'logic',
@@ -46,9 +47,6 @@ const criticalFinding: Finding = {
   severity: 'CRITICAL',
   title: 'critical t',
 }
-
-const tag = (nonce: string, body: string): string =>
-  `<findings-${nonce}>${body}</findings-${nonce}>`
 
 const wellFormedStdout = (nonce: string, findings: Finding[]): string =>
   tag(nonce, JSON.stringify(findings))

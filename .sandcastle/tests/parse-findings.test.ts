@@ -16,6 +16,7 @@ import {
   MAX_FINDINGS_PER_CRITIC,
 } from '../constants.js'
 import { parseFindings, parseFindingsSafe } from '../parse-findings.js'
+import { makeTag as tag } from './factories.js'
 
 const validFinding = {
   category: 'logic',
@@ -25,9 +26,6 @@ const validFinding = {
   severity: 'HIGH' as const,
   title: 't',
 }
-
-const tag = (nonce: string, body: string): string =>
-  `<findings-${nonce}>${body}</findings-${nonce}>`
 
 await describe('parseFindings', async () => {
   await it('should return null when nonce violates allowed alphabet', () => {
