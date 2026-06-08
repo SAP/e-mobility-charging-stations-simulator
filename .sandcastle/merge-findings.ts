@@ -230,7 +230,18 @@ export function noLineFallbackHash (file: string): string {
  * @returns Normalized category.
  */
 export function normalizeCategory (category: string): string {
-  return category.toLowerCase().replace(/[^a-z0-9]/g, '')
+  // NFKC folds compatibility forms (composed/decomposed accents, fullwidth
+  // Latin) so visually-equivalent categories collapse to the same bucket.
+  // cspell:ignore fullwidth
+  const folded = category
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+  if (folded.length > 0) return folded
+  // No alphanumeric content survived (empty, symbols, pure non-Latin).
+  // Hash the raw input so distinct symbol-only categories ('⚠️' vs '!@#')
+  // do not silently merge into a single empty bucket.
+  return `_${crypto.createHash('sha256').update(category).digest('hex').slice(0, HASH_PREFIX_LENGTH)}`
 }
 
 /**
@@ -466,15 +477,24 @@ function resolveThreshold (
   threshold: ((validCount: number) => number) | number | undefined,
   validCount: number
 ): number {
-  let raw =
-    typeof threshold === 'function'
-      ? threshold(validCount)
-      : typeof threshold === 'number'
-        ? threshold
-        : Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)
-  if (!Number.isFinite(raw)) {
-    raw = Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)
+  const fallback = Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)
+  let raw: number
+  if (typeof threshold === 'function') {
+    try {
+      raw = threshold(validCount)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.warn(
+        `mergeCriticFindings: agreementThreshold threw (${msg}); using default ${String(fallback)}.`
+      )
+      raw = fallback
+    }
+  } else if (typeof threshold === 'number') {
+    raw = threshold
+  } else {
+    raw = fallback
   }
+  if (!Number.isFinite(raw)) raw = fallback
   return Math.max(1, Math.min(validCount, Math.floor(raw)))
 }
 
