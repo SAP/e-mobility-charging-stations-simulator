@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
+import { MAX_CRITIC_COUNT } from '../constants.js'
 import {
   type StrategyEntry,
   StrategyValidationError,
@@ -76,7 +77,7 @@ await describe('strategies', async () => {
 
     await it('should reject criticCount=9 (above MAX_CRITIC_COUNT)', () => {
       assert.throws(() => {
-        validateLoopStrategyEnsemble('test', baseStrategy({ criticCount: 9 }))
+        validateLoopStrategyEnsemble('test', baseStrategy({ criticCount: MAX_CRITIC_COUNT + 1 }))
       }, expectFieldError('test.criticCount'))
     })
 
@@ -115,7 +116,9 @@ await describe('strategies', async () => {
     })
 
     await it('should reject criticPool length > MAX_CRITIC_COUNT', () => {
-      const oversized = Array.from({ length: 9 }, (_, i) => spec(`m${String(i)}`, 'low'))
+      const oversized = Array.from({ length: MAX_CRITIC_COUNT + 1 }, (_, i) =>
+        spec(`m${String(i)}`, 'low')
+      )
       assert.throws(() => {
         validateLoopStrategyEnsemble('test', baseStrategy({ criticPool: asInvalidPool(oversized) }))
       }, expectFieldError('test.criticPool'))

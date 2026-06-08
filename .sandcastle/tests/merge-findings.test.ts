@@ -28,6 +28,19 @@ await describe('merge-findings', async () => {
       assert.strictEqual(normalizeCategory('SQLInjection'), 'sqlinjection')
       assert.strictEqual(normalizeCategory('Security/Auth'), 'securityauth')
     })
+
+    await it('should fold composed and decomposed accents to identical key (NFKC, K1)', () => {
+      assert.strictEqual(normalizeCategory('caf\u00e9'), normalizeCategory('cafe\u0301'))
+    })
+
+    await it('should fold fullwidth Latin to ASCII bucket (NFKC, K1)', () => {
+      // cspell:ignore fullwidth
+      assert.strictEqual(normalizeCategory('\uFF33\uFF31\uFF2C'), normalizeCategory('SQL'))
+    })
+
+    await it('should produce distinct buckets for distinct symbol-only inputs (K1)', () => {
+      assert.notStrictEqual(normalizeCategory('!@#'), normalizeCategory(''))
+    })
   })
 
   await describe('findingDedupKey', async () => {
@@ -685,6 +698,24 @@ await describe('merge-findings', async () => {
         result.merged.length,
         1,
         'NaN threshold falls back to default; the 2-vote group survives'
+      )
+      assert.strictEqual(result.merged[0]?.votes, 2)
+    })
+
+    await it('should fall back to default threshold when agreementThreshold callable throws (K2)', () => {
+      const f0 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM', title: 'shared' })
+      const f1 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM', title: 'shared' })
+      const result = mergeCriticFindings([[f0], [f1]], {
+        agreementThreshold: () => {
+          throw new Error('threshold-throw')
+        },
+        contextHashes: ctxHashesFor(f0, f1),
+      })
+      assert.strictEqual(result.validCount, 2)
+      assert.strictEqual(
+        result.merged.length,
+        1,
+        'throw falls back to ceil(2 * 0.5) = 1; the 2-vote group survives'
       )
       assert.strictEqual(result.merged[0]?.votes, 2)
     })
