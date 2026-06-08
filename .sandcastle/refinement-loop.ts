@@ -23,9 +23,11 @@ import {
   COMPLETION_SIGNAL,
   CONTEXT_HASH_RADIUS,
   CRITIC_MAX_ITERATIONS,
+  EMPTY_FILE_SENTINEL,
   EXEC_MAX_BUFFER_BYTES,
   GIT_TIMEOUT_MS,
   HASH_PREFIX_LENGTH,
+  NONCE_BYTES,
 } from './constants.js'
 import { SandcastleError } from './errors.js'
 import {
@@ -97,12 +99,12 @@ interface RatchetContext {
  * Computes a deduplication key for a finding using a context hash of surrounding lines.
  *
  * The key shape `${file}::${normalizeCategory(category)}::${ctxHash}` is
- * intentionally identical to {@link findingDedupKey} (cross-critic merge)
- * so cross-round dedup recognizes the same defect even when critics
- * rephrase its category between rounds (`"sql-injection"` vs `"SQLInjection"`).
- * For findings without `line`, both paths converge on
- * {@link noLineFallbackHash} for the third segment, so a line-less defect
- * dedupes by file+category whether seen across rounds or across critics.
+ * intentionally identical to `findingDedupKey` in the cross-critic merge path,
+ * so cross-round dedup recognizes the same defect even when critics rephrase
+ * its category between rounds (`"sql-injection"` vs `"SQLInjection"`).
+ * For findings without `line`, both paths converge on `noLineFallbackHash`
+ * for the third segment, so a line-less defect dedupes by file+category
+ * whether seen across rounds or across critics.
  * @param f - Finding to compute a key for.
  * @param cwd - Working directory (worktree path) for reading file context.
  * @param fileCache - Optional cache of file contents keyed by resolved path.
@@ -117,7 +119,7 @@ export async function computeFindingKey (
 ): Promise<string> {
   signal?.throwIfAborted()
   const category = normalizeCategory(f.category)
-  const file = f.file || 'global'
+  const file = f.file || EMPTY_FILE_SENTINEL
   if (f.line == null) {
     return `${file}::${category}::${noLineFallbackHash(file)}`
   }
@@ -182,9 +184,7 @@ export async function maybeRunArbiter (
       return merged
     }
     if (refined.length === 0 && merged.length > 0) {
-      // Arbiter only fires when merged contains HIGH/CRITICAL findings, so an
-      // empty refined list almost always indicates the LLM failed to echo
-      // input rather than legitimate dismissal. Treat as soft parse failure.
+      // Treat an empty arbiter result on non-empty merged input as soft parse failure.
       console.warn(
         `  #${spec.id} R${String(round)}: arbiter returned empty findings; keeping merge result.`
       )
@@ -260,24 +260,27 @@ export async function runCritic (
   const cwd = ctx.sandbox.worktreePath
   const fileCache = new Map<string, string>()
   const contextHashes = new Map<Finding, string>()
-  for (const findings of validOutputs) {
-    for (const f of findings) {
-      if (f.line == null) continue
-      const hash = await hashContextLines(
-        { cwd, file: f.file, line: f.line },
-        CONTEXT_HASH_RADIUS,
-        fileCache,
-        ctx.signal
-      )
-      contextHashes.set(f, hash)
-    }
+  const hashEntries = await Promise.all(
+    validOutputs.flatMap(findings =>
+      findings
+        .filter((finding): finding is Finding & { line: number } => finding.line !== undefined)
+        .map(async finding => {
+          const hash = await hashContextLines(
+            { cwd, file: finding.file, line: finding.line },
+            CONTEXT_HASH_RADIUS,
+            fileCache,
+            ctx.signal
+          )
+          return [finding, hash] as const
+        })
+    )
+  )
+  for (const [finding, hash] of hashEntries) {
+    contextHashes.set(finding, hash)
   }
 
   const threshold = strategy.criticAgreementThreshold
-  // Pass UNFILTERED `perCriticOutputs` so merged `voters[]` keep their original
-  // critic-slot indices when middle slots parse-fail. mergeCriticFindings
-  // null-filters internally for vote counting; collapsing nulls here would
-  // re-index the survivors and corrupt the public `voters` schema.
+  // Pass null-bearing per-slot outputs so merged `voters[]` keep original slot indices.
   const { merged } = mergeCriticFindings(perCriticOutputs, {
     ...(threshold !== undefined && { agreementThreshold: threshold }),
     contextHashes,
@@ -344,12 +347,12 @@ export async function runOneCritic (
 }
 
 /**
- * Runs the implement↔critic refinement loop for a given task.
+ * Runs the actor↔critic refinement loop for a task.
  * @param spec - The task specification.
  * @param sandbox - The sandcastle sandbox instance.
  * @param strategy - Strategy config for prompt/arg customization.
- * @param opts - Optional configuration for rounds, budget, and callbacks.
- * @returns The loop result with status, commits, findings, and rounds completed.
+ * @param opts - Optional loop settings for round budget, task budget, post-loop retry, and signal.
+ * @returns Loop result containing status, commit count, round history, and validation certification state.
  */
 export async function runRefinementLoop (
   spec: TaskSpec,
@@ -476,9 +479,7 @@ export async function runRefinementLoop (
         const cwd = sandbox.worktreePath
         const retryFindings = result.findings
         const nonLowRetry = retryFindings.filter(f => f.confidence !== 'LOW')
-        // Same regression contract as the main loop: a retry that increases
-        // non-LOW finding count vs. the pre-retry best state is rolled back
-        // even if validate() passes (validate gates on build/test, not findings).
+        // Stricter than the main loop: retry compares against best-so-far, not just the previous round.
         const regressed = await checkQualityRatchet(
           { beforeSha: result.beforeSha, cwd, round: retryRound, signal, spec },
           nonLowRetry.length,
@@ -543,7 +544,8 @@ async function captureHeadSha (cwd: string, signal?: AbortSignal): Promise<null 
       timeout: GIT_TIMEOUT_MS,
     })
     return stdout.trim()
-  } catch {
+  } catch (err: unknown) {
+    if (signal?.aborted === true) throw err
     return null
   }
 }
@@ -613,8 +615,11 @@ async function checkQualityRatchet (
     console.warn(
       `  #${spec.id} R${String(round)}: Regression detected (${String(previousCount)} → ${String(findingsCount)}). Rolled back.`
     )
-  } catch {
-    console.warn(`  #${spec.id}: Failed to reset to ${beforeSha} after regression.`)
+  } catch (err: unknown) {
+    if (ctx.signal?.aborted === true) throw err
+    console.warn(
+      `  #${spec.id}: Failed to reset to ${beforeSha} after regression: ${toErrorMessage(err)}`
+    )
   }
 
   return true
@@ -667,16 +672,11 @@ async function executeRound (
   const { sandbox, signal, spec, strategy } = ctx
 
   let beforeSha = ''
-  try {
-    const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
-      cwd: sandbox.worktreePath,
-      maxBuffer: EXEC_MAX_BUFFER_BYTES,
-      signal,
-      timeout: GIT_TIMEOUT_MS,
-    })
-    beforeSha = stdout.trim()
-  } catch {
+  const capturedBeforeSha = await captureHeadSha(sandbox.worktreePath, signal)
+  if (capturedBeforeSha === null) {
     console.warn(`  #${spec.id}: Failed to capture HEAD SHA before round ${String(round)}.`)
+  } else {
+    beforeSha = capturedBeforeSha
   }
 
   // Actor
@@ -703,7 +703,7 @@ async function executeRound (
   }
 
   // Critic
-  const nonce = crypto.randomBytes(4).toString('hex')
+  const nonce = crypto.randomBytes(NONCE_BYTES).toString('hex')
   let findings: Finding[] | null
   let validCriticCount: number | undefined
   try {
@@ -735,7 +735,7 @@ async function executeRound (
  * Empty `file` is normalized to `'global'` BEFORE both the filesystem
  * resolution and the hash input, so a finding with `file:''` and a finding
  * with `file:'global'` (same line, same category) produce identical hashes.
- * Mirrors {@link noLineFallbackHash} and `findingDedupKey` (line-less and
+ * Mirrors `noLineFallbackHash` and `findingDedupKey` (line-less and
  * first-segment paths) so the empty-file invariant holds across all dedup
  * paths.
  * @param input - Hash input containing cwd, file, and line.
@@ -751,7 +751,7 @@ async function hashContextLines (
   signal?: AbortSignal
 ): Promise<string> {
   const { cwd, line } = input
-  const file = input.file || 'global'
+  const file = input.file || EMPTY_FILE_SENTINEL
   try {
     signal?.throwIfAborted()
     const fullPath = await realpath(join(cwd, file))
@@ -826,7 +826,8 @@ async function resetToBestState (
       timeout: GIT_TIMEOUT_MS,
     })
     return parseInt(stdout.trim(), 10) || 0
-  } catch {
+  } catch (err: unknown) {
+    if (signal?.aborted === true) throw err
     return currentCommits
   }
 }

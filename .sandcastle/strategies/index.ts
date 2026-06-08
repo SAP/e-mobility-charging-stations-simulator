@@ -22,9 +22,7 @@ export interface StrategyEntry {
 }
 
 /**
- * Validation error carrying the offending field path alongside the message.
- * Tests assert against `field` rather than message wording so wording can
- * change without breaking tests.
+ * Validation error that records the offending strategy field path in `field`.
  */
 export class StrategyValidationError extends Error {
   /** Dotted path of the offending field (e.g. `'test.actor.model'`, `'STRATEGY_REGISTRY[2].key'`). */
@@ -86,10 +84,11 @@ export function labelOf (key: string): string {
 }
 
 /**
- * Fail-fast validator for the actor / critic / arbiter / ensemble fields on
- * a {@link LoopStrategy}. Throws a {@link StrategyValidationError} whose
- * `field` identifies the offending path. Used at module load via
- * {@link indexByKey} and exposed for tests.
+ * Validates actor, critic-pool, arbiter, and ensemble settings on a `LoopStrategy`.
+ * Rejects invalid agent specs, critic counts outside `[1, MAX_CRITIC_COUNT]`,
+ * empty or oversized critic pools, `criticCount < criticPool.length`, numeric
+ * thresholds outside `[1, resolvedCriticCount]`, random fill without an integer
+ * seed, and arbiter declarations lacking a non-empty `promptFile`.
  * @param ctx - Free-form context fragment used as a field-path prefix in error messages.
  * @param strategy - Strategy declaration to validate.
  * @throws {StrategyValidationError} Field-named error when any rule is violated.

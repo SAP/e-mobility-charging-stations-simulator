@@ -24,6 +24,11 @@ function buildPlanContext (spec: TaskSpec): string {
   return parts.join('\n\n')
 }
 
+/**
+ * Default implementation strategy.
+ * Runs the actor↔critic loop for issues labelled `sandcastle-implement`, then
+ * rebases, pushes, and creates a draft or ready PR from the sandbox branch.
+ */
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
   actorPromptFile: './.sandcastle/strategies/implement/actor-prompt.md',
 
@@ -47,7 +52,6 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
 
   finalize: async (spec, loopResult, sandbox, signal) => {
     const cwd = sandbox.worktreePath
-    // See LoopResult.validationCertified JSDoc (types.ts) for when this flag is set.
     let validationPassed =
       loopResult.validationCertified || (await runValidation(cwd, spec, signal))
 

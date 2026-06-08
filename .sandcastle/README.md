@@ -110,7 +110,7 @@ Findings merge with majority voting (default threshold `⌈valid/2⌉`). Escape 
 
 **Voters preservation**: `voters[]` records the ORIGINAL critic-slot indices, not re-indexed survivors. When the middle slot of an N=3 ensemble parse-fails, a finding voted by slots 0 and 2 is emitted with `voters: [0, 2]`, not `[0, 1]`. The kernel passes the unfiltered `perCriticOutputs` (with `null` for failed slots) directly to `mergeCriticFindings`, which null-filters internally for vote counting only.
 
-**Same-slot duplicate handling**: when one critic emits multiple findings sharing the same dedup key, the strongest representative (severity desc, then confidence desc, ties broken by emission order) is used for that slot's vote. Prevents a critic listing a defect at both lint-level and RCE-level from collapsing into the weaker signal.
+**Same-slot duplicate handling**: when one critic emits multiple findings sharing the same dedup key, the strongest representative (severity desc, then confidence desc, ties broken by emission order) is used for that slot's wording and vote. Escape qualification is preserved across same-key duplicates within the slot, so a HIGH/CRITICAL + HIGH-confidence minority signal is not lost during the same-slot reduction.
 
 When fewer than `⌈N/2⌉` slots return parseable findings, the round is marked `critic_errored` and not merged. The quorum assumes crash faults (parse error, timeout, OOM), not byzantine faults.
 

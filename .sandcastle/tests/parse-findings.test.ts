@@ -94,14 +94,14 @@ await describe('parseFindings', async () => {
     assert.strictEqual(parsed[0]?.title, validFinding.title)
   })
 
-  await it('should drop findings with category exceeding MAX_FINDING_CATEGORY_CHARS (Q4e)', () => {
+  await it('should drop findings with category exceeding MAX_FINDING_CATEGORY_CHARS', () => {
     const oversized = { ...validFinding, category: 'x'.repeat(MAX_FINDING_CATEGORY_CHARS + 1) }
     const parsed = parseFindingsSafe([oversized, validFinding])
     assert.strictEqual(parsed.length, 1)
     assert.strictEqual(parsed[0]?.category, validFinding.category)
   })
 
-  await it('should drop findings with description exceeding MAX_FINDING_DESCRIPTION_CHARS (Q4e)', () => {
+  await it('should drop findings with description exceeding MAX_FINDING_DESCRIPTION_CHARS', () => {
     const oversized = {
       ...validFinding,
       description: 'x'.repeat(MAX_FINDING_DESCRIPTION_CHARS + 1),
@@ -111,14 +111,14 @@ await describe('parseFindings', async () => {
     assert.strictEqual(parsed[0]?.description, validFinding.description)
   })
 
-  await it('should drop findings with file exceeding MAX_FINDING_FILE_CHARS (Q4e)', () => {
+  await it('should drop findings with file exceeding MAX_FINDING_FILE_CHARS', () => {
     const oversized = { ...validFinding, file: 'x'.repeat(MAX_FINDING_FILE_CHARS + 1) }
     const parsed = parseFindingsSafe([oversized, validFinding])
     assert.strictEqual(parsed.length, 1)
     assert.strictEqual(parsed[0]?.file, validFinding.file)
   })
 
-  await it('should drop findings with suggestion exceeding MAX_FINDING_SUGGESTION_CHARS (Q4e)', () => {
+  await it('should drop findings with suggestion exceeding MAX_FINDING_SUGGESTION_CHARS', () => {
     const oversized = { ...validFinding, suggestion: 'x'.repeat(MAX_FINDING_SUGGESTION_CHARS + 1) }
     const parsed = parseFindingsSafe([oversized, validFinding])
     assert.strictEqual(parsed.length, 1)
@@ -152,5 +152,25 @@ await describe('parseFindings', async () => {
       findings[MAX_FINDINGS_PER_CRITIC - 1]?.title,
       `t${String(MAX_FINDINGS_PER_CRITIC - 1)}`
     )
+  })
+
+  await it('should preserve HIGH and CRITICAL findings when truncating mixed-severity overflow', () => {
+    const lows = Array.from({ length: MAX_FINDINGS_PER_CRITIC }, (_, i) => ({
+      ...validFinding,
+      confidence: 'LOW' as const,
+      severity: 'LOW' as const,
+      title: `low${String(i)}`,
+    }))
+    const high = { ...validFinding, severity: 'HIGH' as const, title: 'high-keep' }
+    const critical = { ...validFinding, severity: 'CRITICAL' as const, title: 'critical-keep' }
+    const stdout = tag('beef', JSON.stringify([...lows, high, critical]))
+    const findings = parseFindings(stdout, 'beef')
+    assert.ok(findings)
+    assert.strictEqual(findings.length, MAX_FINDINGS_PER_CRITIC)
+    const titles = new Set(findings.map(f => f.title))
+    assert.ok(titles.has('high-keep'))
+    assert.ok(titles.has('critical-keep'))
+    assert.ok(!titles.has('low198'))
+    assert.ok(!titles.has('low199'))
   })
 })

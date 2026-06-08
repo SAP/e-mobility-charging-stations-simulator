@@ -8,6 +8,7 @@ import {
   CRITIC_AGREEMENT_FRACTION,
   CRITIC_ESCAPE_CAP_PER_SLOT,
   CRITIC_FILL_STRATEGY_DEFAULT,
+  EMPTY_FILE_SENTINEL,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
 import { SandcastleError } from './errors.js'
@@ -60,6 +61,7 @@ const CONFIDENCE_LADDER = ['LOW', 'MEDIUM', 'HIGH'] as const
 
 type ConfidenceRank = 0 | 1 | 2
 interface GroupEntry {
+  readonly escapeQualified: boolean
   readonly finding: Finding
   readonly slot: number
 }
@@ -76,7 +78,7 @@ type SeverityRank = 0 | 1 | 2 | 3
  * @returns Deduplication key.
  */
 export function findingDedupKey (f: Finding, contextHash: string): string {
-  return `${f.file || 'global'}::${normalizeCategory(f.category)}::${contextHash}`
+  return `${f.file || EMPTY_FILE_SENTINEL}::${normalizeCategory(f.category)}::${contextHash}`
 }
 
 /**
@@ -135,22 +137,30 @@ export function mergeCriticFindings (
 
   const groups = new Map<string, { entries: GroupEntry[]; voters: Set<number> }>()
   for (const { findings, slot } of validOutputs) {
-    const bestByKey = new Map<string, Finding>()
+    const bestByKey = new Map<string, { escapeQualified: boolean; finding: Finding }>()
     for (const finding of findings) {
       const ctxHash = opts.contextHashes?.get(finding) ?? fallbackHash(finding)
       const key = findingDedupKey(finding, ctxHash)
       const current = bestByKey.get(key)
-      if (current === undefined || shouldReplaceSlotRepresentative(current, finding)) {
-        bestByKey.set(key, finding)
+      const escapeQualified = isEscapeQualified(finding)
+      if (current === undefined) {
+        bestByKey.set(key, { escapeQualified, finding })
+        continue
       }
+      bestByKey.set(key, {
+        escapeQualified: current.escapeQualified || escapeQualified,
+        finding: shouldReplaceSlotRepresentative(current.finding, finding)
+          ? finding
+          : current.finding,
+      })
     }
-    for (const [key, finding] of bestByKey) {
+    for (const [key, entry] of bestByKey) {
       let group = groups.get(key)
       if (!group) {
         group = { entries: [], voters: new Set() }
         groups.set(key, group)
       }
-      group.entries.push({ finding, slot })
+      group.entries.push({ escapeQualified: entry.escapeQualified, finding: entry.finding, slot })
       group.voters.add(slot)
     }
   }
@@ -165,7 +175,7 @@ export function mergeCriticFindings (
     const aboveThreshold = votes >= threshold
     const allFindings = group.entries.map(e => e.finding)
     const singletonHatch =
-      !aboveThreshold && promoteSingleton && allFindings.some(f => isEscapeQualified(f))
+      !aboveThreshold && promoteSingleton && group.entries.some(entry => entry.escapeQualified)
 
     if (!aboveThreshold && !singletonHatch) continue
 
@@ -217,7 +227,7 @@ export function mergeCriticFindings (
  * @returns 16-char SHA-256 hex prefix of `${file || 'global'}:_`.
  */
 export function noLineFallbackHash (file: string): string {
-  const safeFile = file || 'global'
+  const safeFile = file || EMPTY_FILE_SENTINEL
   return crypto
     .createHash('sha256')
     .update(`${safeFile}:_`)
@@ -263,7 +273,7 @@ export function normalizeCategory (category: string): string {
  *
  * Throws a {@link SandcastleError} with code `'strategy_invalid'` when the
  * random-fill seed is missing — defense-in-depth for callers bypassing
- * {@link validateLoopStrategyEnsemble}.
+ * `validateLoopStrategyEnsemble`.
  * @param strategy - Strategy declaration.
  * @returns Frozen ordered slot list of length `resolvedCriticCount` (≥ 1).
  */
@@ -332,7 +342,7 @@ function computeRunawayDrops (
   for (const [key, group] of groups) {
     if (group.voters.size !== 1) continue
     if (group.voters.size >= threshold) continue
-    const isEscape = group.entries.some(e => isEscapeQualified(e.finding))
+    const isEscape = group.entries.some(entry => entry.escapeQualified)
     if (!isEscape) continue
     const loneVoter = group.voters.values().next().value
     if (loneVoter === undefined) continue
@@ -391,7 +401,7 @@ function deterministicIndex (seed: number, slot: number, range: number): number 
  */
 function fallbackHash (f: Finding): string {
   if (f.line == null) return noLineFallbackHash(f.file)
-  const safeFile = f.file || 'global'
+  const safeFile = f.file || EMPTY_FILE_SENTINEL
   return crypto
     .createHash('sha256')
     .update(`${safeFile}:${String(f.line)}:fallback`)
@@ -533,8 +543,9 @@ function severityRank (s: Finding['severity']): SeverityRank {
  * Chooses which of two same-slot findings sharing a dedup key should represent
  * that slot in the cross-critic merge. Prefer the stronger signal (higher
  * severity, then higher confidence) so merge output is stable under intra-slot
- * ordering differences. If both ranks tie, keep the earlier finding for stable
- * wording.
+ * ordering differences. Escape qualification is tracked separately during the
+ * same-slot reduction; this helper only picks the representative wording.
+ * If both ranks tie, keep the earlier finding for stable wording.
  * @param current - The currently selected representative for this slot/key.
  * @param candidate - The later same-key finding from the same slot.
  * @returns True iff the candidate should replace the current representative.

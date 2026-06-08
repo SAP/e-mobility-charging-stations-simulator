@@ -6,14 +6,18 @@ import util from 'node:util'
 
 import { AGENT_PROVIDER } from './constants.js'
 
-/** Async execFile — does not block the event loop. Same error shape as execFileSync. */
+/**
+ * Promisified `node:child_process.execFile`.
+ * Rejects with the underlying ExecException and preserves `stdout` / `stderr`
+ * on the thrown object when node provides them.
+ */
 export const execFileAsync = util.promisify(execFile)
 
 /**
- * Returns a sandcastle agent provider for the given model, selected by AGENT_PROVIDER constant.
- * @param model - The model identifier (e.g., 'github-copilot/claude-sonnet-4.6').
- * @param effort - Reasoning effort level passed as `variant` to opencode or `thinking` to pi.
- * @returns The configured agent provider.
+ * Builds the sandcastle agent provider selected by `AGENT_PROVIDER`.
+ * @param model - Provider-specific model identifier.
+ * @param effort - Reasoning effort mapped to `variant` (opencode) or `thinking` (pi).
+ * @returns Configured sandcastle agent provider.
  */
 export function agentProvider (model: string, effort?: PiOptions['thinking']): AgentProvider {
   switch (AGENT_PROVIDER) {

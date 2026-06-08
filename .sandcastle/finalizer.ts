@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 
 import type { LoopResult, TaskSpec } from './types.js'
 
-import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS } from './constants.js'
+import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS, NONCE_BYTES } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
 
 /**
@@ -30,15 +30,18 @@ export async function attemptRebase (
       timeout: GIT_TIMEOUT_MS,
     })
     return true
-  } catch {
+  } catch (err: unknown) {
+    signal?.throwIfAborted()
+    console.debug(`  rebase onto ${baseBranch} failed: ${toErrorMessage(err)}`)
     try {
       await execFileAsync('git', ['rebase', '--abort'], {
         cwd,
         signal,
         timeout: GIT_TIMEOUT_MS,
       })
-    } catch {
-      /* empty */
+    } catch (abortErr: unknown) {
+      signal?.throwIfAborted()
+      console.debug(`  rebase --abort cleanup failed: ${toErrorMessage(abortErr)}`)
     }
     return false
   }
@@ -136,7 +139,7 @@ export async function pushBranch (
       if (signal?.aborted === true) throw pushErr
       const pushMsg = toErrorMessage(pushErr)
       try {
-        const suffix = crypto.randomBytes(4).toString('hex')
+        const suffix = crypto.randomBytes(NONCE_BYTES).toString('hex')
         await execFileAsync(
           'git',
           ['push', 'origin', `HEAD:refs/heads/rescue/${spec.branch}-${suffix}`],

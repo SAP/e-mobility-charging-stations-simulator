@@ -29,16 +29,16 @@ await describe('merge-findings', async () => {
       assert.strictEqual(normalizeCategory('Security/Auth'), 'securityauth')
     })
 
-    await it('should fold composed and decomposed accents to identical key (NFKC, K1)', () => {
+    await it('should fold composed and decomposed accents to the same key', () => {
       assert.strictEqual(normalizeCategory('caf\u00e9'), normalizeCategory('cafe\u0301'))
     })
 
-    await it('should fold fullwidth Latin to ASCII bucket (NFKC, K1)', () => {
+    await it('should fold fullwidth Latin to the ASCII bucket', () => {
       // cspell:ignore fullwidth
       assert.strictEqual(normalizeCategory('\uFF33\uFF31\uFF2C'), normalizeCategory('SQL'))
     })
 
-    await it('should produce distinct buckets for distinct symbol-only inputs (K1)', () => {
+    await it('should produce distinct buckets for distinct symbol-only inputs', () => {
       assert.notStrictEqual(normalizeCategory('!@#'), normalizeCategory(''))
     })
   })
@@ -469,6 +469,38 @@ await describe('merge-findings', async () => {
       assert.deepStrictEqual(result.merged[0]?.voters, [0])
     })
 
+    await it('should preserve escape-qualified same-slot evidence under duplicate same-key findings', () => {
+      const criticalLow = fakeFinding({
+        confidence: 'LOW',
+        description: 'less certain but more severe wording',
+        file: 'src/a.ts',
+        line: 5,
+        severity: 'CRITICAL',
+        title: 'critical-low',
+      })
+      const highHigh = fakeFinding({
+        confidence: 'HIGH',
+        description: 'high-confidence defect',
+        file: 'src/a.ts',
+        line: 5,
+        severity: 'HIGH',
+        title: 'high-high',
+      })
+      const ctx = new Map<Finding, string>([
+        [criticalLow, 'h'],
+        [highHigh, 'h'],
+      ])
+      const result = mergeCriticFindings([[criticalLow, highHigh], [], []], {
+        contextHashes: ctx,
+      })
+      assert.strictEqual(result.validCount, 3)
+      assert.strictEqual(result.merged.length, 1)
+      assert.strictEqual(result.merged[0]?.severity, 'HIGH')
+      assert.strictEqual(result.merged[0]?.contested, true)
+      assert.deepStrictEqual(result.merged[0]?.voters, [0])
+      assert.strictEqual(result.merged[0]?.votes, 1)
+    })
+
     await it('should return disagreementScore 0 for unanimous severity', () => {
       const findings = Array.from({ length: 3 }, () =>
         fakeFinding({ confidence: 'MEDIUM', severity: 'HIGH' })
@@ -490,7 +522,7 @@ await describe('merge-findings', async () => {
       assert.strictEqual(result.merged[0]?.disagreementScore, 1)
     })
 
-    await it('should pick title/description from lowest-slot voter (M1: no verbosity bias)', () => {
+    await it('should pick title and description from the lowest-slot voter', () => {
       const verbose = fakeFinding({
         confidence: 'MEDIUM',
         description: 'a very long, exhaustive description with extra words to inflate length',
@@ -702,7 +734,7 @@ await describe('merge-findings', async () => {
       assert.strictEqual(result.merged[0]?.votes, 2)
     })
 
-    await it('should fall back to default threshold when agreementThreshold callable throws (K2)', () => {
+    await it('should fall back to the default threshold when agreementThreshold callable throws', () => {
       const f0 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM', title: 'shared' })
       const f1 = fakeFinding({ confidence: 'MEDIUM', severity: 'MEDIUM', title: 'shared' })
       const result = mergeCriticFindings([[f0], [f1]], {
@@ -904,7 +936,7 @@ await describe('merge-findings', async () => {
       )
     })
 
-    await it('should drop ALL unilateral escapes when escapeCapPerSlot = 0 (zero-tolerance, Q4b)', () => {
+    await it('should drop all unilateral escapes when escapeCapPerSlot = 0', () => {
       const phantom = fakeFinding({
         confidence: 'HIGH',
         file: 'src/p.ts',

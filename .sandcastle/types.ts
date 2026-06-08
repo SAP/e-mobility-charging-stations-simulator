@@ -200,8 +200,8 @@ export interface LoopStrategy {
   shouldConverge?: (findings: Finding[], round: number, totalCommits: number) => boolean
   /**
    * Optional mid-loop validation. Return true if work passes. When omitted,
-   * the kernel uses {@link runValidation} (which runs `VALIDATION_COMMAND`
-   * with a 15-min cap). The optional `signal` is forwarded so cooperative
+   * the kernel uses `runValidation`, which executes `VALIDATION_COMMAND` with
+   * a 15-minute cap. The optional `signal` is forwarded so cooperative
    * cancellation reaches in-flight validation child processes when
    * `AGENT_TASK_TIMEOUT_MS` triggers an abort.
    */

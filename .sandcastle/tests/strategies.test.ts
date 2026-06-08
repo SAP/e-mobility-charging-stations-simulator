@@ -193,6 +193,20 @@ await describe('strategies', async () => {
       })
     })
 
+    await it('should accept random-with-replacement with seed = 0', () => {
+      assert.doesNotThrow(() => {
+        validateLoopStrategyEnsemble(
+          'test',
+          baseStrategy({
+            criticCount: 5,
+            criticEnsembleSeed: 0,
+            criticFillStrategy: 'random-with-replacement',
+            criticPool: [spec('a', 'low'), spec('b', 'high')],
+          })
+        )
+      })
+    })
+
     await it('should accept an arbiter struct with both fields set', () => {
       assert.doesNotThrow(() => {
         validateLoopStrategyEnsemble(

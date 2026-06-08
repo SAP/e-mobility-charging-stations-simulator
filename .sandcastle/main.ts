@@ -61,7 +61,12 @@ if (tasks.length === 0) {
         }
         const ac = new AbortController()
         const timer = setTimeout(() => {
-          ac.abort(new Error(`Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`))
+          ac.abort(
+            new SandcastleError(
+              'aborted',
+              `Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`
+            )
+          )
         }, AGENT_TASK_TIMEOUT_MS)
         timer.unref()
 

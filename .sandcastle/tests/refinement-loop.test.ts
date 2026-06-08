@@ -390,6 +390,20 @@ await describe('refinement-loop kernel', async () => {
       assert.deepStrictEqual(result, [baseFinding])
     })
 
+    await it('should rethrow abort errors from the arbiter run', async () => {
+      const ac = new AbortController()
+      const abortErr = new Error('arbiter-abort')
+      const { sandbox } = makeFakeSandbox(() => {
+        ac.abort(abortErr)
+        throw abortErr
+      })
+      const ctx: LoopContext = { ...ctxFor(sandbox, strategyWithArbiter), signal: ac.signal }
+      await assert.rejects(
+        () => maybeRunArbiter(ctx, 1, 'cafe1234', [[criticalFinding]], [criticalFinding]),
+        /arbiter-abort/
+      )
+    })
+
     await it('should skip entirely when strategy.arbiter is undefined', async () => {
       const { recorded, sandbox } = makeFakeSandbox(() => {
         throw new Error('arbiter must not be invoked')
@@ -437,6 +451,39 @@ await describe('refinement-loop kernel', async () => {
   })
 
   await describe('runRefinementLoop end-to-end', async () => {
+    await it('should skip the post-loop retry when totalCommits is 0', async () => {
+      let actorCalls = 0
+      const strategy: LoopStrategy = {
+        ...baseStrategy,
+        validate: () => Promise.resolve(false),
+      }
+      const sandbox: SandboxInstance = {
+        branch: 'agent/test',
+        run: (opts: SandboxRunOptions) => {
+          const isActor = opts.promptFile === baseStrategy.actorPromptFile
+          if (isActor) {
+            actorCalls += 1
+            return Promise.resolve({ commits: [], iterations: [], stdout: '' })
+          }
+          const nonce = String(opts.promptArgs?.NONCE ?? '')
+          return Promise.resolve({
+            commits: [],
+            iterations: [],
+            stdout: wellFormedStdout(nonce, []),
+          })
+        },
+        worktreePath: '/tmp/fake-worktree-does-not-exist',
+      } as unknown as SandboxInstance
+      const result = await runRefinementLoop(baseSpec, sandbox, strategy, {
+        maxRounds: 1,
+        postLoopValidationRetry: true,
+      })
+      assert.strictEqual(actorCalls, 1)
+      assert.strictEqual(result.roundsCompleted, 1)
+      assert.strictEqual(result.roundHistory.length, 1)
+      assert.strictEqual(result.totalCommits, 0)
+    })
+
     await it('should clear failureReason and converge on post-loop retry success', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
@@ -490,7 +537,7 @@ await describe('refinement-loop kernel', async () => {
       }
     })
 
-    await it('should set validationCertified=true on mid-loop validate success (path 1)', async () => {
+    await it('should set validationCertified=true on mid-loop validate success', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         const strategy: LoopStrategy = {
@@ -529,21 +576,20 @@ await describe('refinement-loop kernel', async () => {
         assert.strictEqual(
           result.validationCertified,
           true,
-          'mid-loop validate succeeded → certified=true (path 1)'
+          'mid-loop validate succeeded → certified=true'
         )
       } finally {
         await cleanup()
       }
     })
 
-    await it('should leave validationCertified=false for finding-based convergence (path 3)', async () => {
+    await it('should leave validationCertified=false for finding-based convergence', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         let validateCalls = 0
         const strategy: LoopStrategy = {
           ...baseStrategy,
-          // Always fail validate so path 1 never converges; the loop must converge
-          // via path 3 (no new findings, no persistent CRITICAL/HIGH).
+          // Force convergence through repeated findings rather than validate().
           validate: () => {
             validateCalls += 1
             return Promise.resolve(false)
@@ -568,7 +614,7 @@ await describe('refinement-loop kernel', async () => {
             }
             const nonce = String(opts.promptArgs?.NONCE ?? '')
             // Round 1: emit baseFinding (MEDIUM-confidence non-persistent).
-            // Round 2+: emit nothing → newFindings=0 → checkConvergence path 3 fires.
+            // Later critic passes emit nothing so checkConvergence can fire.
             const findings = criticCallCount++ === 0 ? [baseFinding] : []
             return Promise.resolve({
               commits: [],
@@ -582,11 +628,11 @@ await describe('refinement-loop kernel', async () => {
           maxRounds: 5,
           postLoopValidationRetry: false,
         })
-        assert.strictEqual(result.status, 'converged', 'path 3 reached')
+        assert.strictEqual(result.status, 'converged', 'finding-based convergence reached')
         assert.strictEqual(
           result.validationCertified,
           false,
-          'no successful validate() call → certified=false (path 3)'
+          'no successful validate() call → certified=false'
         )
         assert.ok(
           validateCalls >= 1,
@@ -597,7 +643,7 @@ await describe('refinement-loop kernel', async () => {
       }
     })
 
-    await it('should leave validationCertified=false on strategy shouldConverge convergence (path 2)', async () => {
+    await it('should leave validationCertified=false on strategy.shouldConverge convergence', async () => {
       const { cleanup, cwd } = await setupTempRepo()
       try {
         let validateCalls = 0
@@ -637,7 +683,7 @@ await describe('refinement-loop kernel', async () => {
           maxRounds: 3,
           postLoopValidationRetry: false,
         })
-        assert.strictEqual(result.status, 'converged', 'path 2 reached')
+        assert.strictEqual(result.status, 'converged', 'strategy.shouldConverge path reached')
         assert.strictEqual(
           result.validationCertified,
           false,
