@@ -1,13 +1,12 @@
 /**
  * @file Tests for SandcastleError.
- * @description Locks the typed-error shape: BaseError-derived (name from
+ * @description Locks the typed-error shape: Error-derived (name from
  * `new.target.name`, `date` set, prototype-chain restored), preserves
  * `code`, `message`, and optional `cause`.
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { BaseError } from '../../src/exception/index.js'
 import { SandcastleError } from '../errors.js'
 
 await describe('SandcastleError', async () => {
@@ -37,14 +36,13 @@ await describe('SandcastleError', async () => {
     assert.strictEqual(err.cause, undefined)
   })
 
-  await it('should be instanceof Error and BaseError', () => {
+  await it('should be instanceof Error and SandcastleError', () => {
     const err = new SandcastleError('strategy_invalid', 'invariant')
     assert.ok(err instanceof Error)
-    assert.ok(err instanceof BaseError)
     assert.ok(err instanceof SandcastleError)
   })
 
-  await it('should set date close to current time via BaseError', () => {
+  await it('should set date close to construction time', () => {
     const before = Date.now()
     const err = new SandcastleError('unknown_strategy', 'date check')
     const after = Date.now()

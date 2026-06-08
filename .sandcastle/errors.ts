@@ -1,5 +1,3 @@
-import { BaseError } from '../src/exception/index.js'
-
 /** Discriminant codes for {@link SandcastleError}. */
 export type SandcastleErrorCode =
   | 'aborted'
@@ -13,15 +11,20 @@ export type SandcastleErrorCode =
   | 'unknown_strategy'
 
 /**
- * Sandcastle orchestrator error. Adds a {@link code} discriminant to
- * {@link BaseError} so catch-site handlers can branch on the failure
- * category without parsing `message`.
+ * Sandcastle orchestrator error. Adds a {@link code} discriminant and a
+ * `date` timestamp to {@link Error} so catch-site handlers can branch on
+ * the failure category without parsing `message`. Self-contained:
+ * `.sandcastle/` does not import from `src/`.
  */
-export class SandcastleError extends BaseError {
+export class SandcastleError extends Error {
   readonly code: SandcastleErrorCode
+  readonly date: Date
 
   constructor (code: SandcastleErrorCode, message: string, options?: { cause?: unknown }) {
     super(message)
+    this.name = new.target.name
+    this.date = new Date()
+    Object.setPrototypeOf(this, new.target.prototype)
     this.code = code
     if (options?.cause !== undefined) {
       this.cause = options.cause
