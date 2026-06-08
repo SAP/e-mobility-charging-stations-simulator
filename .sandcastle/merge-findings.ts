@@ -320,7 +320,8 @@ function computeRunawayDrops (
     if (group.voters.size >= threshold) continue
     const isEscape = group.entries.some(e => isEscapeQualified(e.finding))
     if (!isEscape) continue
-    const [loneVoter] = group.voters
+    const loneVoter = group.voters.values().next().value
+    if (loneVoter === undefined) continue
     const list = exclusiveEscapesByVoter.get(loneVoter) ?? []
     list.push(key)
     exclusiveEscapesByVoter.set(loneVoter, list)
@@ -412,16 +413,23 @@ function medianSeverityTieUp (findings: readonly Finding[]): Finding['severity']
  * Median over items mapped to ordinal ranks, with ties broken UP the ladder
  * (toward the more severe / more confident end). For an even count, picks
  * the upper of the two middle elements.
- * @param items - Source items.
+ * @param items - Source items (caller invariant: non-empty).
  * @param toRank - Rank extractor returning the ordinal index.
- * @param ladder - Tuple defining the ordinal ladder (rank → label).
+ * @param ladder - Non-empty tuple defining the ordinal ladder (rank → label).
  * @returns Aggregated label.
+ * @throws {SandcastleError} `invariant_violation` when items is empty.
  */
 function medianTieUp<T, L extends string> (
   items: readonly T[],
   toRank: (t: T) => number,
-  ladder: readonly L[]
+  ladder: readonly [L, ...L[]]
 ): L {
+  if (items.length === 0) {
+    throw new SandcastleError(
+      'invariant_violation',
+      'medianTieUp: items must be non-empty (caller contract).'
+    )
+  }
   const ranks = items.map(toRank).sort((a, b) => a - b)
   const upperMid = ranks[Math.floor(ranks.length / 2)]
   return ladder[upperMid]
