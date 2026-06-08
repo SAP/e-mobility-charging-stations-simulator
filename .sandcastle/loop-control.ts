@@ -68,8 +68,10 @@ export function buildRoundSnapshot (result: RoundResult, round: number): RoundSn
  *  - `> 0` but below quorum → `'critic_quorum_failed'` (mixed parse/error/timeout).
  *
  * Actor-side failure (`commits === 0` after round 1) is mapped to
- * `'actor_error'`; round 1 with zero commits is `'skipped'` and carries no
- * reason because nothing has been attempted yet.
+ * `'actor_error'`. Round 1 with zero commits is `'skipped'`: the actor ran
+ * but produced no commits (e.g. agent declared no work needed), so the loop
+ * exits without a `failureReason` to distinguish "nothing attempted to fix"
+ * from "tried and failed".
  * @param spec - The task specification.
  * @param round - Current round number.
  * @param result - The round result.

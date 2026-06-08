@@ -101,7 +101,10 @@ export function findingDedupKey (f: Finding, contextHash: string): string {
  *                     ordinal ladder LOW < MEDIUM < HIGH < CRITICAL.
  *       - confidence: median of voters' confidences, ties broken UP.
  *       - title / description / suggestion / line: copied from the voter
- *         with the LOWEST critic-slot index (M1 — bias-free, deterministic).
+ *         with the LOWEST critic-slot index (deterministic, content-
+ *         independent). NB: when slot order correlates with critic verbosity,
+ *         the resulting bias is preserved, not removed (see
+ *         `pickSourceByLowestSlot` JSDoc).
  *       - votes / voters: as computed.
  *       - disagreementScore: variance of voters' severity ranks divided by
  *         the theoretical maximum variance (9/4) of the 4-level ordinal
