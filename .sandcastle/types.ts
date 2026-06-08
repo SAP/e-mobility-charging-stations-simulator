@@ -3,6 +3,7 @@ import type { PiOptions, Sandbox } from '@ai-hero/sandcastle'
 import { z } from 'zod'
 
 import {
+  MAX_CRITIC_COUNT,
   MAX_FINDING_CATEGORY_CHARS,
   MAX_FINDING_DESCRIPTION_CHARS,
   MAX_FINDING_FILE_CHARS,
@@ -22,9 +23,22 @@ const FindingSchema = z.object({
   severity: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']),
   suggestion: z.string().max(MAX_FINDING_SUGGESTION_CHARS).optional(),
   title: z.string().max(MAX_FINDING_TITLE_CHARS),
-  voters: z.array(z.number().int().min(0)).readonly().optional(),
-  votes: z.number().int().min(1).optional(),
+  voters: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(0)
+        .max(MAX_CRITIC_COUNT - 1)
+    )
+    .max(MAX_CRITIC_COUNT)
+    .readonly()
+    .optional(),
+  votes: z.number().int().min(1).max(MAX_CRITIC_COUNT).optional(),
 })
+
+/** Agent provider implementation selected at module load. */
+export type AgentProviderType = 'opencode' | 'pi'
 
 /**
  * Canonical (model, reasoning-effort) pair for any agent role (actor, critic
@@ -47,8 +61,7 @@ export interface CriticSlot extends AgentSpec {
 /**
  * Configuration for post-loop finalization (PR creation, push, etc.).
  */
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-export type FinalizationConfig = {
+export interface FinalizationConfig {
   /** Finalizes the task after the loop completes. Returns success indicator. */
   finalize: (
     spec: TaskSpec,
@@ -122,10 +135,9 @@ export type LoopStatus = 'converged' | 'exhausted' | 'failed' | 'skipped'
  * Defaults from `constants.ts` apply when fields are unset:
  *   - `actor` → AGENT_ACTOR_DEFAULT
  *   - `criticPool` → AGENT_CRITIC_POOL_DEFAULT
- *   - `criticCount` → AGENT_CRITIC_COUNT
+ *   - `criticCount` → max(AGENT_CRITIC_COUNT, criticPool.length)
  */
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-export type LoopStrategy = {
+export interface LoopStrategy {
   /** Actor agent spec. Defaults to AGENT_ACTOR_DEFAULT when unset. */
   actor?: AgentSpec
   /** Path to the actor prompt file. */
@@ -151,11 +163,16 @@ export type LoopStrategy = {
    * Agreement threshold (number or function of `validCount`). Defaults to
    * `Math.ceil(validCount * CRITIC_AGREEMENT_FRACTION)` (simple majority).
    * Findings with fewer voters than this threshold are dropped, except for
-   * the singleton CRITICAL+HIGH-confidence escape hatch (see merge spec).
+   * the asymmetric-cost escape hatch: any below-threshold finding flagged
+   * by at least one voter at `severity ∈ {HIGH, CRITICAL}` AND
+   * `confidence = HIGH` is retained (any minority signal, not only true
+   * singletons). See `merge-findings.ts` for the per-slot runaway cap.
    */
   criticAgreementThreshold?: ((validCount: number) => number) | number
   /**
-   * Number of critic slots per round. Defaults to AGENT_CRITIC_COUNT.
+   * Number of critic slots per round. Defaults to
+   * `max(AGENT_CRITIC_COUNT, criticPool.length)` (so a strategy that ships
+   * only a longer pool gets `N = pool.length`).
    * When > `criticPool.length`, slots are filled per `criticFillStrategy`.
    * Capped at MAX_CRITIC_COUNT at registry-load time.
    */

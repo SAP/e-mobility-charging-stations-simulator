@@ -2,6 +2,9 @@ import { BaseError } from '../src/exception/index.js'
 
 /** Discriminant codes for {@link SandcastleError}. */
 export type SandcastleErrorCode =
+  | 'aborted'
+  | 'invariant_violation'
+  | 'path_traversal'
   | 'planner_exhausted'
   | 'source_fetch_failed'
   | 'source_no_strategies'
