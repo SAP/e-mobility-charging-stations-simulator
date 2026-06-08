@@ -388,7 +388,10 @@ export class GithubIssueSource implements TaskSource {
       spec.confidence = item.confidence
     }
     if (typeof item.rootCauseHypothesis === 'string' && item.rootCauseHypothesis.length > 0) {
-      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(0, MAX_ROOT_CAUSE_HYPOTHESIS_CHARS)
+      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(
+        0,
+        MAX_ROOT_CAUSE_HYPOTHESIS_CHARS
+      )
     }
     if (Array.isArray(item.acceptanceCriteria)) {
       const criteria = item.acceptanceCriteria

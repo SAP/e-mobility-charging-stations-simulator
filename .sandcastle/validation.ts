@@ -1,6 +1,11 @@
 import type { TaskSpec } from './types.js'
 
-import { EXEC_MAX_BUFFER_BYTES, MAX_STDERR_CHARS, VALIDATION_COMMAND, VALIDATION_TIMEOUT_MS } from './constants.js'
+import {
+  EXEC_MAX_BUFFER_BYTES,
+  MAX_STDERR_CHARS,
+  VALIDATION_COMMAND,
+  VALIDATION_TIMEOUT_MS,
+} from './constants.js'
 import { execFileAsync } from './utils.js'
 
 /**
