@@ -50,7 +50,7 @@ GitHub issues ──▶ Planner ──▶ TaskSpec ──▶ Sandbox ──▶  
 
 ## Module map
 
-Current state of the orchestrator (not a per-PR changelog — some modules predate this PR):
+Current state of the orchestrator:
 
 | File                                               | Purpose                                                                                                                                                                                         | Strategy-aware? |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
@@ -239,7 +239,7 @@ Load-bearing prior art (each maps directly to a code path):
 - **Practical Byzantine Fault Tolerance** ([Castro & Liskov, OSDI 1999](https://pmg.csail.mit.edu/papers/osdi99.pdf)) — quorum-threshold rationale (CFT, not BFT).
 - **DefectDojo deduplication** ([`dojo/finding/deduplication.py`](https://github.com/DefectDojo/django-DefectDojo/blob/master/dojo/finding/deduplication.py)) — hash-based dedup precedent.
 
-Loose inspiration (mentioned for context, not a tight code-paper mapping):
+Background reading (not load-bearing for the kernel):
 
 - **Self-Consistency** ([Wang et al. 2022, arXiv:2203.11171](https://arxiv.org/abs/2203.11171)) — sampling N reasoning paths from one model. The N-critic ensemble samples from different models; the analogy to `MAX_CRITIC_COUNT = 8` is heuristic, not derived.
 - **LLM-as-a-Judge biases** ([Zheng et al. 2023, arXiv:2306.05685](https://arxiv.org/abs/2306.05685)) — names the bias the lowest-slot tie-break aims to avoid; debiasing is only effective when slot order is independent of verbosity, which the registry order does not guarantee.
