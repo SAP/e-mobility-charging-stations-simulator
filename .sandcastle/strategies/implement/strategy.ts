@@ -47,10 +47,7 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
 
   finalize: async (spec, loopResult, sandbox, signal) => {
     const cwd = sandbox.worktreePath
-    // The kernel exposes `validationCertified=true` only when validate() actually
-    // ran and returned true on the converged SHA. Skipping pre-rebase validate
-    // is safe in that case; for finding-based or shouldConverge paths the kernel
-    // never ran validate, so we must run it here regardless of `status`.
+    // See LoopResult.validationCertified JSDoc (types.ts) for when this flag is set.
     let validationPassed =
       loopResult.validationCertified || (await runValidation(cwd, spec, signal))
 

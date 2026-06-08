@@ -34,7 +34,7 @@ export async function runValidation (
     }
     if (err && typeof err === 'object' && 'killed' in err && (err as { killed: boolean }).killed) {
       const label = spec ? `#${spec.id}` : 'mid-loop'
-      console.warn(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
+      console.error(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
     } else if (spec) {
       const stderr = extractStderr(err)
       console.warn(`  #${spec.id}: Validation failed.${stderr ? `\n${stderr}` : ''}`)
