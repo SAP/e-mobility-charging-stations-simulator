@@ -1,10 +1,10 @@
-# `.sandcastle/` — Actor↔critic refinement loop
+# `.sandcastle/` — Actor-critic refinement loop
 
-> Task-agnostic actor↔critic refinement kernel. A `LoopStrategy` plugs in prompts, agents, and a finalize step; the kernel handles round budgeting, critic voting, deduplication, regression rollback, and post-loop validation.
+> Task-agnostic actor-critic refinement kernel. A `LoopStrategy` plugs in prompts, agents, and a finalize step; the kernel handles round budgeting, critic voting, deduplication, regression rollback, and post-loop validation.
 
 ## What it is
 
-`.sandcastle/` is an internal orchestrator that runs an **iterative actor↔critic loop** over GitHub issues, in a per-task ephemeral Docker sandbox provided by [`@ai-hero/sandcastle`](https://www.npmjs.com/package/@ai-hero/sandcastle).
+`.sandcastle/` is an internal orchestrator that runs an **iterative actor-critic loop** over GitHub issues, in a per-task ephemeral Docker sandbox provided by [`@ai-hero/sandcastle`](https://www.npmjs.com/package/@ai-hero/sandcastle).
 
 The kernel modules ([`refinement-loop.ts`](./refinement-loop.ts), [`merge-findings.ts`](./merge-findings.ts), [`concurrency-pool.ts`](./concurrency-pool.ts), [`finalizer.ts`](./finalizer.ts), [`validation.ts`](./validation.ts)) do not import any strategy. Each strategy declares prompts, prompt-arg builders, and a finalization step (push + PR creation, in the default `implement` strategy).
 
@@ -54,16 +54,16 @@ Current state of the orchestrator (not a per-PR changelog — some modules preda
 
 | File                                               | Purpose                                                                                                                                                                                         | Strategy-aware? |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| [`main.ts`](./main.ts)                             | Entrypoint. Discovers tasks, fans out under `ConcurrencyPool`, dispatches to strategy via `STRATEGY_BY_KEY`.                                                                                    | ✓               |
-| [`refinement-loop.ts`](./refinement-loop.ts)       | Implement↔critic loop kernel: rounds, convergence, ratchet, best-state, post-loop retry.                                                                                                        | ✗               |
-| [`loop-control.ts`](./loop-control.ts)             | Pure predicates extracted from the kernel: early-exit, best-state-reset gating, snapshot building, options resolution.                                                                          | ✗               |
-| [`merge-findings.ts`](./merge-findings.ts)         | Pure module: slot resolution, cross-critic dedup, voted merge with median tie-up, disagreement scoring, and `noLineFallbackHash` (line-less dedup-key parity primitive shared with the kernel). | ✗               |
-| [`parse-findings.ts`](./parse-findings.ts)         | Nonce-tagged JSON extractor with regex-injection guard; handles last-non-trivial-match retry and code-fence stripping.                                                                          | ✗               |
-| [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                                                                                            | ✗               |
-| [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                                                                                 | ✓               |
-| [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                                                                              | ✗               |
-| [`errors.ts`](./errors.ts)                         | Typed sandcastle error surface (`SandcastleError`) used for strategy/config/runtime failures.                                                                                                   | ✗               |
-| [`validation.ts`](./validation.ts)                 | Default work-quality validation runner (`pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`).                                                                | ✗               |
+| [`main.ts`](./main.ts)                             | Entrypoint. Discovers tasks, fans out under `ConcurrencyPool`, dispatches to strategy via `STRATEGY_BY_KEY`.                                                                                    | yes             |
+| [`refinement-loop.ts`](./refinement-loop.ts)       | Implement-critic loop kernel: rounds, convergence, ratchet, best-state, post-loop retry.                                                                                                        | no              |
+| [`loop-control.ts`](./loop-control.ts)             | Pure predicates extracted from the kernel: early-exit, best-state-reset gating, snapshot building, options resolution.                                                                          | no              |
+| [`merge-findings.ts`](./merge-findings.ts)         | Pure module: slot resolution, cross-critic dedup, voted merge with median tie-up, disagreement scoring, and `noLineFallbackHash` (line-less dedup-key parity primitive shared with the kernel). | no              |
+| [`parse-findings.ts`](./parse-findings.ts)         | Nonce-tagged JSON extractor with regex-injection guard; handles last-non-trivial-match retry and code-fence stripping.                                                                          | no              |
+| [`concurrency-pool.ts`](./concurrency-pool.ts)     | O(1) FIFO concurrency limiter (singly-linked queue).                                                                                                                                            | no              |
+| [`task-source.ts`](./task-source.ts)               | GitHub issue discovery, planner agent invocation, branch policy, prompt-injection sanitization.                                                                                                 | yes             |
+| [`finalizer.ts`](./finalizer.ts)                   | `attemptRebase`, `pushBranch` (with rescue branch), `buildPrArgs`.                                                                                                                              | no              |
+| [`errors.ts`](./errors.ts)                         | Typed sandcastle error surface (`SandcastleError`) used for strategy/config/runtime failures.                                                                                                   | no              |
+| [`validation.ts`](./validation.ts)                 | Default work-quality validation runner (`pnpm -r format && pnpm -r typecheck && pnpm -r lint && pnpm -r build && pnpm -r test`).                                                                | no              |
 | [`strategies/index.ts`](./strategies/index.ts)     | Canonical `STRATEGY_REGISTRY`. Validates every strategy at module load (key pattern, control tags, agent specs, ensemble fields).                                                               | n/a             |
 | [`strategies/implement/`](./strategies/implement/) | Default strategy: actor + critic prompts + finalize (rebase, push, `gh pr create`).                                                                                                             | n/a             |
 | [`types.ts`](./types.ts)                           | Shared types: `LoopStrategy`, `AgentSpec`, `CriticSlot`, `Finding`, `RoundSnapshot`, `TaskSpec`.                                                                                                | n/a             |
@@ -230,7 +230,7 @@ Load-bearing prior art (each maps directly to a code path):
 - **Practical Byzantine Fault Tolerance** ([Castro & Liskov, OSDI 1999](https://pmg.csail.mit.edu/papers/osdi99.pdf)) — quorum-threshold rationale (CFT, not BFT).
 - **DefectDojo deduplication** ([`dojo/finding/deduplication.py`](https://github.com/DefectDojo/django-DefectDojo/blob/master/dojo/finding/deduplication.py)) — hash-based dedup precedent.
 
-Loose inspiration (mentioned for context, not a tight code↔paper mapping):
+Loose inspiration (mentioned for context, not a tight code-paper mapping):
 
 - **Self-Consistency** ([Wang et al. 2022, arXiv:2203.11171](https://arxiv.org/abs/2203.11171)) — sampling N reasoning paths from one model. The N-critic ensemble samples from different models; the analogy to `MAX_CRITIC_COUNT = 8` is heuristic, not derived.
 - **LLM-as-a-Judge biases** ([Zheng et al. 2023, arXiv:2306.05685](https://arxiv.org/abs/2306.05685)) — names the bias the lowest-slot tie-break aims to avoid; debiasing is only effective when slot order is independent of verbosity, which the registry order does not guarantee.

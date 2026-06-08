@@ -65,13 +65,13 @@ export function buildPrArgs (
   const lastFindings = loopResult.roundHistory.at(-1)?.findings ?? []
   const outstandingNote =
     lastFindings.length > 0
-      ? `\n\n${converged ? 'ℹ️ Known findings (not addressed):' : '⚠️ Outstanding findings:'}\n${lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
+      ? `\n\n${converged ? 'NOTE: Known findings (not addressed):' : 'WARNING: Outstanding findings:'}\n${lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
       : ''
   const validationNote = !validationPassed
-    ? '\n\n⚠️ Validation did not pass. Manual review required.'
+    ? '\n\nWARNING: Validation did not pass. Manual review required.'
     : ''
   const rebaseNote = !rebaseSucceeded
-    ? `\n\n⚠️ Rebase failed. Branch is not rebased onto ${baseBranch}.`
+    ? `\n\nWARNING: Rebase failed. Branch is not rebased onto ${baseBranch}.`
     : ''
 
   const validationCheck = validationPassed ? '- [x]' : '- [ ]'

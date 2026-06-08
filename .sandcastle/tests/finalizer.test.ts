@@ -89,7 +89,7 @@ await describe('buildPrArgs', async () => {
     assert.ok(!prArgs.includes('--draft'))
   })
 
-  await it("should append '⚠️ Outstanding findings' note with [SEVERITY] file: title for each finding", () => {
+  await it("should append 'WARNING: Outstanding findings' note with [SEVERITY] file: title for each finding", () => {
     const finding = fakeFinding({ file: 'src/auth.ts', severity: 'HIGH', title: 'XSS' })
     const result = fakeLoopResult({
       roundHistory: [{ commits: 0, findings: [finding], round: 1, status: 'has_findings' }],
@@ -97,7 +97,7 @@ await describe('buildPrArgs', async () => {
     })
     const { prArgs } = buildPrArgs(fakeSpec(), result, false, true)
     const body = bodyOf(prArgs)
-    assert.match(body, /⚠️ Outstanding findings/)
+    assert.match(body, /WARNING: Outstanding findings/)
     assert.match(body, /- \[HIGH\] src\/auth\.ts: XSS/)
   })
 })

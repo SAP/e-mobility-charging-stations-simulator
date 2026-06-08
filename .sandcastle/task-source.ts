@@ -180,7 +180,7 @@ export class GithubIssueSource implements TaskSource {
 
       console.log(`Plan: ${String(tasks.length)} issue(s) to work on:`)
       for (const task of tasks) {
-        console.log(`  #${task.id} [${task.strategyKey}]: ${task.title} → ${task.branch}`)
+        console.log(`  #${task.id} [${task.strategyKey}]: ${task.title} -> ${task.branch}`)
       }
 
       return tasks
