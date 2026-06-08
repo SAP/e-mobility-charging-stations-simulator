@@ -904,6 +904,24 @@ await describe('merge-findings', async () => {
       )
     })
 
+    await it('should drop ALL unilateral escapes when escapeCapPerSlot = 0 (zero-tolerance, Q4b)', () => {
+      const phantom = fakeFinding({
+        confidence: 'HIGH',
+        file: 'src/p.ts',
+        line: 1,
+        severity: 'CRITICAL',
+      })
+      const result = mergeCriticFindings([[phantom], [], []], {
+        contextHashes: ctxHashesFor(phantom),
+        escapeCapPerSlot: 0,
+      })
+      assert.strictEqual(
+        result.merged.length,
+        0,
+        'cap=0 drops every unilateral escape (count > 0 always exceeds the cap)'
+      )
+    })
+
     await it('should track the cap independently per critic slot', () => {
       const c0 = Array.from({ length: 4 }, (_, i) =>
         fakeFinding({

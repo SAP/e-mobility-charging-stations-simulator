@@ -7,7 +7,14 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { MAX_FINDING_TITLE_CHARS, MAX_FINDINGS_PER_CRITIC } from '../constants.js'
+import {
+  MAX_FINDING_CATEGORY_CHARS,
+  MAX_FINDING_DESCRIPTION_CHARS,
+  MAX_FINDING_FILE_CHARS,
+  MAX_FINDING_SUGGESTION_CHARS,
+  MAX_FINDING_TITLE_CHARS,
+  MAX_FINDINGS_PER_CRITIC,
+} from '../constants.js'
 import { parseFindings, parseFindingsSafe } from '../parse-findings.js'
 
 const validFinding = {
@@ -86,6 +93,37 @@ await describe('parseFindings', async () => {
     const oversized = { ...validFinding, title: 'x'.repeat(MAX_FINDING_TITLE_CHARS + 1) }
     const parsed = parseFindingsSafe([oversized, validFinding])
     assert.strictEqual(parsed.length, 1, 'oversized title dropped, valid one kept')
+    assert.strictEqual(parsed[0]?.title, validFinding.title)
+  })
+
+  await it('should drop findings with category exceeding MAX_FINDING_CATEGORY_CHARS (Q4e)', () => {
+    const oversized = { ...validFinding, category: 'x'.repeat(MAX_FINDING_CATEGORY_CHARS + 1) }
+    const parsed = parseFindingsSafe([oversized, validFinding])
+    assert.strictEqual(parsed.length, 1)
+    assert.strictEqual(parsed[0]?.category, validFinding.category)
+  })
+
+  await it('should drop findings with description exceeding MAX_FINDING_DESCRIPTION_CHARS (Q4e)', () => {
+    const oversized = {
+      ...validFinding,
+      description: 'x'.repeat(MAX_FINDING_DESCRIPTION_CHARS + 1),
+    }
+    const parsed = parseFindingsSafe([oversized, validFinding])
+    assert.strictEqual(parsed.length, 1)
+    assert.strictEqual(parsed[0]?.description, validFinding.description)
+  })
+
+  await it('should drop findings with file exceeding MAX_FINDING_FILE_CHARS (Q4e)', () => {
+    const oversized = { ...validFinding, file: 'x'.repeat(MAX_FINDING_FILE_CHARS + 1) }
+    const parsed = parseFindingsSafe([oversized, validFinding])
+    assert.strictEqual(parsed.length, 1)
+    assert.strictEqual(parsed[0]?.file, validFinding.file)
+  })
+
+  await it('should drop findings with suggestion exceeding MAX_FINDING_SUGGESTION_CHARS (Q4e)', () => {
+    const oversized = { ...validFinding, suggestion: 'x'.repeat(MAX_FINDING_SUGGESTION_CHARS + 1) }
+    const parsed = parseFindingsSafe([oversized, validFinding])
+    assert.strictEqual(parsed.length, 1)
     assert.strictEqual(parsed[0]?.title, validFinding.title)
   })
 
