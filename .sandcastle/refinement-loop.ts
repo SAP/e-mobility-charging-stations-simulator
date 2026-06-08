@@ -50,14 +50,16 @@ export type { RefinementLoopOptions } from './loop-control.js'
 /** Result of a convergence check. */
 interface ConvergenceResult {
   /**
-   * Optional best-SHA override for the caller's tracked best state. Omitted
-   * means "keep the previously tracked best SHA unchanged".
+   * Best-SHA override for the caller's tracked best state. `null` means
+   * "keep the previously tracked best SHA unchanged"; a string sets it.
+   * Aligned with the kernel-local `let bestSha: null | string` sentinel
+   * so call sites use a single sentinel discipline end-to-end.
    */
-  bestSha?: string
+  readonly bestSha: null | string
   /** Updated last findings. */
-  lastFindings: Finding[]
+  readonly lastFindings: Finding[]
   /** New loop status. */
-  status: LoopStatus
+  readonly status: LoopStatus
 }
 
 /**
@@ -417,8 +419,14 @@ export async function runRefinementLoop (
     }
 
     if (nonLowFindings.length < bestFindingsCount) {
-      bestFindingsCount = nonLowFindings.length
-      bestSha = await captureHeadSha(cwd, signal)
+      // Capture-first: a transient `git rev-parse` failure must not advance
+      // bestFindingsCount, otherwise later equal/higher rounds can no longer
+      // satisfy the strict `<` and best-state restore is disabled silently.
+      const candidateSha = await captureHeadSha(cwd, signal)
+      if (candidateSha !== null) {
+        bestFindingsCount = nonLowFindings.length
+        bestSha = candidateSha
+      }
     }
 
     totalCommits += result.commits
@@ -434,7 +442,7 @@ export async function runRefinementLoop (
     if (convergenceResult !== null) {
       lastFindings = convergenceResult.lastFindings
       status = convergenceResult.status
-      if (convergenceResult.bestSha !== undefined) {
+      if (convergenceResult.bestSha !== null) {
         bestSha = convergenceResult.bestSha
       }
       break
@@ -456,19 +464,36 @@ export async function runRefinementLoop (
       const result = await executeRound(ctx, retryRound, budget, lastFindings)
       roundHistory.push(buildRoundSnapshot(result, retryRound))
       roundsCompleted = retryRound
-      if (result.commits > 0) {
-        totalCommits += result.commits
-        if (result.findings !== null) {
-          const nonLowRetry = result.findings.filter(f => f.confidence !== 'LOW')
+      if (result.commits > 0 && result.findings !== null) {
+        const cwd = sandbox.worktreePath
+        const retryFindings = result.findings
+        const nonLowRetry = retryFindings.filter(f => f.confidence !== 'LOW')
+        // Same regression contract as the main loop: a retry that increases
+        // non-LOW finding count vs. the pre-retry best state is rolled back
+        // even if validate() passes (validate gates on build/test, not findings).
+        const regressed = await checkQualityRatchet(
+          { beforeSha: result.beforeSha, cwd, round: retryRound, signal, spec },
+          nonLowRetry.length,
+          bestFindingsCount
+        )
+        if (regressed) {
+          failureReason = 'quality_regression'
+          status = 'exhausted'
+        } else {
+          totalCommits += result.commits
           if (nonLowRetry.length < bestFindingsCount) {
-            bestFindingsCount = nonLowRetry.length
-            bestSha = await captureHeadSha(sandbox.worktreePath, signal)
+            const candidateSha = await captureHeadSha(cwd, signal)
+            if (candidateSha !== null) {
+              bestFindingsCount = nonLowRetry.length
+              bestSha = candidateSha
+            }
           }
-        }
-        if (await validate(sandbox.worktreePath, spec, signal)) {
-          status = 'converged'
-          validationCertified = true
-          failureReason = undefined
+          const retryNewFindings = await deduplicateFindings(retryFindings, cwd, seenKeys)
+          if (retryNewFindings.length === 0 && (await validate(cwd, spec, signal))) {
+            status = 'converged'
+            validationCertified = true
+            failureReason = undefined
+          }
         }
       }
     }
@@ -528,21 +553,21 @@ function checkConvergence (
 ): ConvergenceResult | null {
   if (newFindings.length !== 0) return null
 
-  // Severity-weighted convergence (OpenHands pattern):
-  // Don't converge if CRITICAL/HIGH findings persist, even if already seen
+  // Severity-weighted convergence: don't converge if CRITICAL/HIGH findings
+  // persist, even if already seen.
   const criticalPersistent = allFindings.filter(
     f => (f.severity === 'CRITICAL' || f.severity === 'HIGH') && f.confidence !== 'LOW'
   )
   if (criticalPersistent.length > 0) {
-    // Preserve the caller's previously tracked best SHA so post-loop recovery
-    // still restores the round with the fewest non-LOW findings.
     return {
+      bestSha: null,
       lastFindings: criticalPersistent,
       status: 'exhausted',
     }
   }
 
   return {
+    bestSha: null,
     lastFindings: nonLowFindings.length > 0 ? nonLowFindings : [],
     status: 'converged',
   }
