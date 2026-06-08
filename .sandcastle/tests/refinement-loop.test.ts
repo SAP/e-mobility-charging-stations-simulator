@@ -450,7 +450,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync(
                 'git',
@@ -502,7 +502,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync('git', ['commit', '--allow-empty', '-m', 'actor-1'], {
                 cwd,
@@ -555,7 +555,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync(
                 'git',
@@ -614,7 +614,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync('git', ['commit', '--allow-empty', '-m', 'actor-1'], {
                 cwd,
@@ -674,7 +674,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync(
                 'git',
@@ -740,7 +740,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync(
                 'git',
@@ -813,7 +813,7 @@ await describe('refinement-loop kernel', async () => {
         const sandbox: SandboxInstance = {
           branch: 'agent/test',
           run: (opts: SandboxRunOptions) => {
-            const isActor = String(opts.name).startsWith('Actor')
+            const isActor = opts.promptFile === baseStrategy.actorPromptFile
             if (isActor) {
               execFileSync(
                 'git',
