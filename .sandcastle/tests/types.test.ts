@@ -6,7 +6,9 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { type Finding, parseFindingsSafe } from '../types.js'
+import type { Finding } from '../types.js'
+
+import { parseFindingsSafe } from '../parse-findings.js'
 
 const validFinding: Finding = {
   category: 'logic',

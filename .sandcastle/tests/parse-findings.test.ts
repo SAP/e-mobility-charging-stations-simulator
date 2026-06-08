@@ -8,8 +8,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { MAX_FINDING_TITLE_CHARS, MAX_FINDINGS_PER_CRITIC } from '../constants.js'
-import { parseFindings } from '../parse-findings.js'
-import { parseFindingsSafe } from '../types.js'
+import { parseFindings, parseFindingsSafe } from '../parse-findings.js'
 
 const validFinding = {
   category: 'logic',

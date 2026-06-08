@@ -12,7 +12,7 @@ import {
 } from './constants.js'
 
 /** Zod schema for a single critic finding. */
-const FindingSchema = z.object({
+export const FindingSchema = z.object({
   category: z.string().max(MAX_FINDING_CATEGORY_CHARS),
   confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   contested: z.boolean().optional(),
@@ -262,16 +262,3 @@ export const TASK_ISSUE_TYPE_VALUES = ['bug-fix', 'feature', 'refactor'] as cons
 export type TaskConfidence = (typeof TASK_CONFIDENCE_VALUES)[number]
 /** Planner-emitted issue classification. */
 export type TaskIssueType = (typeof TASK_ISSUE_TYPE_VALUES)[number]
-
-/**
- * Parses a findings array with partial recovery — invalid entries are discarded.
- * @param data - Raw parsed JSON value to validate as a findings array.
- * @returns Array of valid findings (may be empty).
- */
-export function parseFindingsSafe (data: unknown): Finding[] {
-  if (!Array.isArray(data)) return []
-  return data
-    .map(entry => FindingSchema.safeParse(entry))
-    .filter((r): r is z.ZodSafeParseSuccess<Finding> => r.success)
-    .map(r => r.data)
-}

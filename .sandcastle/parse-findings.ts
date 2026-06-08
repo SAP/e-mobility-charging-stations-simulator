@@ -1,7 +1,9 @@
+import type { ZodSafeParseSuccess } from 'zod'
+
 import type { Finding } from './types.js'
 
 import { MAX_FINDINGS_PER_CRITIC } from './constants.js'
-import { parseFindingsSafe } from './types.js'
+import { FindingSchema } from './types.js'
 
 /** Severity rank for `parseFindings` overflow truncation (lower = kept first). */
 const SEVERITY_ORDER: Readonly<Record<Finding['severity'], number>> = {
@@ -68,4 +70,17 @@ export function parseFindings (stdout: string, nonce: string): Finding[] | null 
     }
   }
   return null
+}
+
+/**
+ * Parses a findings array with partial recovery — invalid entries are discarded.
+ * @param data - Raw parsed JSON value to validate as a findings array.
+ * @returns Array of valid findings (may be empty).
+ */
+export function parseFindingsSafe (data: unknown): Finding[] {
+  if (!Array.isArray(data)) return []
+  return data
+    .map(entry => FindingSchema.safeParse(entry))
+    .filter((r): r is ZodSafeParseSuccess<Finding> => r.success)
+    .map(r => r.data)
 }
