@@ -3,6 +3,14 @@ import type { Finding } from './types.js'
 import { MAX_FINDINGS_PER_CRITIC } from './constants.js'
 import { parseFindingsSafe } from './types.js'
 
+/** Severity rank for `parseFindings` overflow truncation (lower = kept first). */
+const SEVERITY_ORDER: Readonly<Record<Finding['severity'], number>> = {
+  CRITICAL: 0,
+  HIGH: 1,
+  LOW: 3,
+  MEDIUM: 2,
+}
+
 /**
  * Parses findings from agent stdout using nonce-tagged delimiters.
  *
@@ -47,9 +55,14 @@ export function parseFindings (stdout: string, nonce: string): Finding[] | null 
     const cleaned = raw.replace(/^```(?:json)?\s*\n?/g, '').replace(/\n?```\s*$/g, '')
     try {
       const parsed = parseFindingsSafe(JSON.parse(cleaned))
-      return parsed.length > MAX_FINDINGS_PER_CRITIC
-        ? parsed.slice(0, MAX_FINDINGS_PER_CRITIC)
-        : parsed
+      if (parsed.length <= MAX_FINDINGS_PER_CRITIC) return parsed
+      // Stable sort by severity desc preserves cross-critic determinism
+      // (ECMA-2019) while ensuring CRITICAL/HIGH survive the cap when a
+      // critic emits low-severity noise before the real signal.
+      const sorted = [...parsed].sort(
+        (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+      )
+      return sorted.slice(0, MAX_FINDINGS_PER_CRITIC)
     } catch {
       continue
     }
