@@ -23,9 +23,11 @@ import {
   COMPLETION_SIGNAL,
   CONTEXT_HASH_RADIUS,
   CRITIC_MAX_ITERATIONS,
+  EXEC_MAX_BUFFER_BYTES,
   GIT_TIMEOUT_MS,
   HASH_PREFIX_LENGTH,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 import {
   buildRoundSnapshot,
   checkEarlyExit,
@@ -104,13 +106,16 @@ interface RatchetContext {
  * @param f - Finding to compute a key for.
  * @param cwd - Working directory (worktree path) for reading file context.
  * @param fileCache - Optional cache of file contents keyed by resolved path.
+ * @param signal - Optional abort signal forwarded into context-hash I/O.
  * @returns Composite dedup key.
  */
 export async function computeFindingKey (
   f: Finding,
   cwd: string,
-  fileCache?: Map<string, string>
+  fileCache?: Map<string, string>,
+  signal?: AbortSignal
 ): Promise<string> {
+  signal?.throwIfAborted()
   const category = normalizeCategory(f.category)
   const file = f.file || 'global'
   if (f.line == null) {
@@ -119,7 +124,8 @@ export async function computeFindingKey (
   const contextHash = await hashContextLines(
     { cwd, file, line: f.line },
     CONTEXT_HASH_RADIUS,
-    fileCache
+    fileCache,
+    signal
   )
   return `${file}::${category}::${contextHash}`
 }
@@ -220,7 +226,8 @@ export async function runCritic (
   )
 
   if (signal?.aborted === true) {
-    throw signal.reason instanceof Error ? signal.reason : new Error('Aborted')
+    if (signal.reason instanceof Error) throw signal.reason
+    throw new SandcastleError('aborted', 'Critic phase aborted', { cause: signal.reason })
   }
 
   const perCriticOutputs: (Finding[] | null)[] = settlements.map((s, idx) => {
@@ -259,7 +266,8 @@ export async function runCritic (
       const hash = await hashContextLines(
         { cwd, file: f.file, line: f.line },
         CONTEXT_HASH_RADIUS,
-        fileCache
+        fileCache,
+        ctx.signal
       )
       contextHashes.set(f, hash)
     }
@@ -399,7 +407,7 @@ export async function runRefinementLoop (
     }
 
     const cwd = sandbox.worktreePath
-    const newFindings = await deduplicateFindings(findings, cwd, seenKeys)
+    const newFindings = await deduplicateFindings(findings, cwd, seenKeys, signal)
 
     console.log(
       `  #${spec.id}: ${String(findings.length)} findings, ${String(newFindings.length)} new`
@@ -488,7 +496,7 @@ export async function runRefinementLoop (
               bestSha = candidateSha
             }
           }
-          const retryNewFindings = await deduplicateFindings(retryFindings, cwd, seenKeys)
+          const retryNewFindings = await deduplicateFindings(retryFindings, cwd, seenKeys, signal)
           if (retryNewFindings.length === 0 && (await validate(cwd, spec, signal))) {
             status = 'converged'
             validationCertified = true
@@ -530,6 +538,7 @@ async function captureHeadSha (cwd: string, signal?: AbortSignal): Promise<null 
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
       cwd,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: GIT_TIMEOUT_MS,
     })
@@ -597,6 +606,7 @@ async function checkQualityRatchet (
   try {
     await execFileAsync('git', ['reset', '--hard', beforeSha], {
       cwd,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal: ctx.signal,
       timeout: GIT_TIMEOUT_MS,
     })
@@ -615,15 +625,19 @@ async function checkQualityRatchet (
  * @param findings - Raw findings from the critic.
  * @param cwd - Working directory for context hashing.
  * @param seenKeys - Set of previously seen dedup keys (mutated: new keys are added).
+ * @param signal - Optional abort signal propagated through context-hash I/O.
  * @returns Array of new, non-LOW-confidence findings.
  */
 async function deduplicateFindings (
   findings: Finding[],
   cwd: string,
-  seenKeys: Set<string>
+  seenKeys: Set<string>,
+  signal?: AbortSignal
 ): Promise<Finding[]> {
+  signal?.throwIfAborted()
   const fileCache = new Map<string, string>()
-  const keys = await Promise.all(findings.map(f => computeFindingKey(f, cwd, fileCache)))
+  const keys = await Promise.all(findings.map(f => computeFindingKey(f, cwd, fileCache, signal)))
+  signal?.throwIfAborted()
   const newFindings: Finding[] = []
   for (let i = 0; i < findings.length; i++) {
     const f = findings[i]
@@ -656,6 +670,7 @@ async function executeRound (
   try {
     const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
       cwd: sandbox.worktreePath,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: GIT_TIMEOUT_MS,
     })
@@ -726,26 +741,33 @@ async function executeRound (
  * @param input - Hash input containing cwd, file, and line.
  * @param radius - Number of lines above/below to include in the context window.
  * @param fileCache - Optional cache of file contents keyed by resolved path.
+ * @param signal - Optional abort signal forwarded into `realpath`/`readFile`.
  * @returns Truncated SHA-256 hex digest.
  */
 async function hashContextLines (
   input: HashInput,
   radius: number,
-  fileCache?: Map<string, string>
+  fileCache?: Map<string, string>,
+  signal?: AbortSignal
 ): Promise<string> {
   const { cwd, line } = input
   const file = input.file || 'global'
   try {
+    signal?.throwIfAborted()
     const fullPath = await realpath(join(cwd, file))
+    signal?.throwIfAborted()
     if (!fullPath.startsWith((await realpath(cwd)) + sep)) {
-      throw new Error('Path traversal')
+      throw new SandcastleError(
+        'path_traversal',
+        `Path traversal blocked: '${file}' resolves outside worktree.`
+      )
     }
     let raw: string
     const cached = fileCache?.get(fullPath)
     if (cached !== undefined) {
       raw = cached
     } else {
-      raw = await readFile(fullPath, 'utf-8')
+      raw = await readFile(fullPath, { encoding: 'utf-8', signal })
       if (fileCache) fileCache.set(fullPath, raw)
     }
     const lines = raw.split('\n')
@@ -759,7 +781,10 @@ async function hashContextLines (
       .update(`${file}:${String(line)}:${normalized}`)
       .digest('hex')
       .slice(0, HASH_PREFIX_LENGTH)
-  } catch {
+  } catch (err: unknown) {
+    // Re-throw on abort so callers settle eagerly; non-abort errors fall
+    // through to the deterministic fallback hash (preserves dedup parity).
+    if (signal?.aborted === true) throw err
     console.debug(`  hashContextLines: fallback for ${file}:${String(line)}`)
     return crypto
       .createHash('sha256')
@@ -790,11 +815,13 @@ async function resetToBestState (
   try {
     await execFileAsync('git', ['reset', '--hard', bestSha], {
       cwd,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: GIT_TIMEOUT_MS,
     })
     const { stdout } = await execFileAsync('git', ['rev-list', '--count', `${baseBranch}..HEAD`], {
       cwd,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: GIT_TIMEOUT_MS,
     })
