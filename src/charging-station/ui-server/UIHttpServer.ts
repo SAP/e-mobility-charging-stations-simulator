@@ -105,8 +105,19 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
-    // Rate limiting check
-    const clientIp = req.socket.remoteAddress ?? 'unknown'
+    const accessError = this.authorizeAccess(req)
+    if (accessError != null) {
+      res
+        .writeHead(StatusCodes.FORBIDDEN, {
+          'Content-Type': 'text/plain',
+        })
+        .end(`${StatusCodes.FORBIDDEN.toString()} Forbidden`)
+      res.destroy()
+      req.destroy()
+      return
+    }
+
+    const clientIp = this.getRateLimitClientIp(req)
     if (!this.rateLimiter(clientIp)) {
       res
         .writeHead(StatusCodes.TOO_MANY_REQUESTS, {

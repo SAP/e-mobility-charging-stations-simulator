@@ -3,6 +3,8 @@
  * @description Unit tests for HTTP-based UI server and response handling
  */
 
+import type { IncomingMessage } from 'node:http'
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
@@ -16,6 +18,7 @@ import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockBootstrap,
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
   MockServerResponse,
   waitForStreamFlush,
@@ -193,6 +196,45 @@ await describe('UIHttpServer', async () => {
     )
 
     assert.notStrictEqual(serverCustom, undefined)
+  })
+
+  await it('should reject non-loopback plaintext requests before routing', t => {
+    const gatedServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({
+        accessPolicy: {
+          allowedHosts: ['gateway.example.com'],
+          requireTlsForNonLoopback: true,
+        },
+        options: { host: 'localhost', port: 0 },
+        type: ApplicationProtocol.HTTP,
+      })
+    )
+    const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+      listen: (...args: unknown[]) => unknown
+      removeAllListeners: () => void
+    }
+    t.mock.method(httpServer, 'listen', () => httpServer)
+    const req = createMockIncomingMessage({
+      complete: true,
+      headers: { host: 'gateway.example.com' },
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      url: '/ui/ui0.0.1/listChargingStations',
+    })
+    const res = new MockServerResponse()
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      gatedServer.start()
+      httpServer.emit('request', req, res)
+    } finally {
+      httpServer.removeAllListeners()
+      gatedServer.stop()
+    }
+
+    assert.strictEqual(res.statusCode, 403)
+    assert.strictEqual(res.body, '403 Forbidden')
+    assert.strictEqual(res.destroyed, true)
   })
 
   await describe('Gzip compression', async () => {
