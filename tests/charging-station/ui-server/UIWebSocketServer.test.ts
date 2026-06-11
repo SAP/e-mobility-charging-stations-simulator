@@ -3,7 +3,10 @@
  * @description Unit tests for WebSocket-based UI server and response handling
  */
 
+import type { Duplex } from 'node:stream'
+
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
 import { afterEach, describe, it } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
@@ -12,12 +15,28 @@ import { ProcedureName, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
   createMockUIService,
   createMockUIWebSocket,
   MockUIServiceMode,
   TestableUIWebSocketServer,
 } from './UIServerTestUtils.js'
+
+class MockUpgradeSocket extends EventEmitter {
+  public destroyed = false
+  public readonly writes: string[] = []
+
+  public destroy (): this {
+    this.destroyed = true
+    return this
+  }
+
+  public write (chunk: string): boolean {
+    this.writes.push(chunk)
+    return true
+  }
+}
 
 await describe('UIWebSocketServer', async () => {
   afterEach(() => {
@@ -183,5 +202,41 @@ await describe('UIWebSocketServer', async () => {
 
     const server = new TestableUIWebSocketServer(config)
     assert.notStrictEqual(server, undefined)
+  })
+
+  await it('should reject non-loopback plaintext upgrades before WebSocket handling', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: ['gateway.example.com'],
+        requireTlsForNonLoopback: true,
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'gateway.example.com',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    assert.strictEqual(socket.destroyed, true)
+    assert.match(socket.writes.join(''), /403 Forbidden/)
   })
 })

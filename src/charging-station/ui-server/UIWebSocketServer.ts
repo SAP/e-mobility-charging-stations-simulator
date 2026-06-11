@@ -173,6 +173,30 @@ export class UIWebSocketServer extends AbstractUIServer {
       }
     })
     this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+      const connectionHeader = req.headers.connection ?? ''
+      const upgradeHeader = req.headers.upgrade ?? ''
+      if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
+        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
+        socket.destroy()
+        return
+      }
+
+      const accessError = this.authorizeAccess(req)
+      if (accessError != null) {
+        socket.write(`HTTP/1.1 ${StatusCodes.FORBIDDEN.toString()} Forbidden\r\n\r\n`)
+        socket.destroy()
+        return
+      }
+
+      const clientIp = this.getRateLimitClientIp(req)
+      if (!this.rateLimiter(clientIp)) {
+        socket.write(
+          `HTTP/1.1 ${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests\r\n\r\n`
+        )
+        socket.destroy()
+        return
+      }
+
       const onSocketError = (error: Error): void => {
         logger.error(
           `${this.logPrefix(
