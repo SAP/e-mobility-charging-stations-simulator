@@ -255,7 +255,10 @@ const parseSingleForwardedHeader = (
       continue
     }
     const key = part.slice(0, separatorIndex).trim().toLowerCase()
-    const value = part.slice(separatorIndex + 1).trim().replace(/^"|"$/g, '')
+    const value = part
+      .slice(separatorIndex + 1)
+      .trim()
+      .replace(/^"|"$/g, '')
     if (key === '') {
       continue
     }
