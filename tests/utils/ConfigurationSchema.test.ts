@@ -193,6 +193,57 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(result.success)
     })
 
+    await it('should accept valid uiServer access policy', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedHosts: ['gateway.example.com'],
+              allowedOrigins: ['https://gateway.example.com'],
+              allowLoopbackProxy: true,
+              requireTlsForNonLoopback: true,
+              trustedProxies: ['127.0.0.1'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should reject unknown key in uiServer access policy', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              unknownPolicyKey: true,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.accessPolicy')))
+    })
+
+    await it('should reject misplaced access policy under uiServer options', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: {
+              accessPolicy: {
+                requireTlsForNonLoopback: false,
+              },
+              host: 'localhost',
+              port: 8080,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.options')))
+    })
+
     await it('should reject unknown key in worker section', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({ worker: { unknownWorkerKey: true } })
@@ -395,6 +446,13 @@ await describe('ConfigurationSchema', async () => {
         supervisionUrlDistribution: 'round-robin',
         supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
         uiServer: {
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
           enabled: false,
           options: {
             host: 'localhost',

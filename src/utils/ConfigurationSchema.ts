@@ -91,6 +91,25 @@ export const UIServerAuthenticationSchema = z
   })
   .strict()
 
+export const UIServerAccessPolicySchema = z
+  .object({
+    allowedHosts: z.array(z.string().min(1)).optional(),
+    allowedOrigins: z.array(z.url()).optional(),
+    allowLoopbackProxy: z.boolean().optional(),
+    requireTlsForNonLoopback: z.boolean().optional(),
+    trustedProxies: z.array(z.string().min(1)).optional(),
+  })
+  .strict()
+
+const UIServerListenOptionsSchema = z.custom<ListenOptions>(value => {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    !Object.hasOwn(value, 'accessPolicy')
+  )
+}, "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'")
+
 /**
  * UIServerConfiguration — UI server configuration section.
  * `options` is structurally typed as `ListenOptions` from node:net; the schema
@@ -98,9 +117,10 @@ export const UIServerAuthenticationSchema = z
  */
 export const UIServerConfigurationSchema = z
   .object({
+    accessPolicy: UIServerAccessPolicySchema.optional(),
     authentication: UIServerAuthenticationSchema.optional(),
     enabled: z.boolean().optional(),
-    options: z.custom<ListenOptions>().optional(),
+    options: UIServerListenOptionsSchema.optional(),
     type: z.enum(ApplicationProtocol).optional(),
     version: z.enum(ApplicationProtocolVersion).optional(),
   })
