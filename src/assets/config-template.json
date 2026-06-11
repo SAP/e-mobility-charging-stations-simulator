@@ -18,6 +18,13 @@
   "uiServer": {
     "enabled": false,
     "type": "ws",
+    "accessPolicy": {
+      "requireTlsForNonLoopback": true,
+      "trustedProxies": [],
+      "allowLoopbackProxy": false,
+      "allowedHosts": [],
+      "allowedOrigins": []
+    },
     "authentication": {
       "enabled": true,
       "type": "protocol-basic-auth",
