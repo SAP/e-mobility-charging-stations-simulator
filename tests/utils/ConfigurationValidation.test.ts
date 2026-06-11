@@ -399,6 +399,30 @@ await describe('ConfigurationValidation', async () => {
       assert.ok(result.stationTemplateUrls.length > 0)
     })
 
+    await it('should validate docker/config.json through the pipeline', t => {
+      t.mock.method(console, 'warn', () => undefined)
+      const dockerConfigPath = join(import.meta.dirname, '../../docker/config.json')
+      const parsed = JSON.parse(readFileSync(dockerConfigPath, 'utf8')) as Record<string, unknown>
+
+      const result = validateConfiguration(parsed, 'docker/config.json')
+
+      assert.ok(result, 'docker/config.json should validate successfully')
+      const { uiServer } = result
+      if (uiServer == null) {
+        assert.fail('docker/config.json should define uiServer')
+      }
+      const { accessPolicy } = uiServer
+      if (accessPolicy == null) {
+        assert.fail('docker/config.json should define uiServer.accessPolicy')
+      }
+      assert.deepStrictEqual(accessPolicy.allowedHosts, ['localhost', '127.0.0.1', '::1'])
+      assert.strictEqual(accessPolicy.requireTlsForNonLoopback, false)
+
+      const dockerComposePath = join(import.meta.dirname, '../../docker/docker-compose.yml')
+      const dockerCompose = readFileSync(dockerComposePath, 'utf8')
+      assert.match(dockerCompose, /127\.0\.0\.1:8080:8080/)
+    })
+
     await it('should validate the hardcoded fallback object from Configuration.ts', t => {
       t.mock.method(console, 'warn', () => undefined)
       // Mirror of the fallback assigned in src/utils/Configuration.ts when
