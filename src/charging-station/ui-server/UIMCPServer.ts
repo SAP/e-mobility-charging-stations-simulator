@@ -111,7 +111,13 @@ export class UIMCPServer extends AbstractUIServer {
     this.ocppSchemaCache = this.loadOcppSchemas()
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
-      const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+      const accessError = this.authorizeAccess(req)
+      if (accessError != null) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' }).end('403 Forbidden')
+        return
+      }
+
+      const url = new URL(req.url ?? '/', 'http://localhost')
       if (url.pathname !== '/mcp') {
         res.writeHead(404, { 'Content-Type': 'text/plain' }).end('404 Not Found')
         if (!req.complete) {
@@ -120,7 +126,7 @@ export class UIMCPServer extends AbstractUIServer {
         return
       }
 
-      const clientIp = req.socket.remoteAddress ?? 'unknown'
+      const clientIp = this.getRateLimitClientIp(req)
       if (!this.rateLimiter(clientIp)) {
         res.writeHead(429, { 'Content-Type': 'text/plain' }).end('429 Too Many Requests')
         return

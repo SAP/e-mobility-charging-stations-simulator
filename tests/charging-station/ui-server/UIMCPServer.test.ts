@@ -43,7 +43,9 @@ import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID, TEST_UUID_2 } from './UIServer
 import {
   createMockBootstrap,
   createMockChargingStationDataWithVersion,
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
+  MockServerResponse,
 } from './UIServerTestUtils.js'
 
 const TEST_TIMEOUT_MS = 30_000
@@ -181,6 +183,78 @@ await describe('UIMCPServer', async () => {
 
     await it('should create HTTP server', () => {
       assert.notStrictEqual(Reflect.get(server, 'httpServer'), undefined)
+    })
+  })
+
+  await describe('request access gate', async () => {
+    await it('should reject non-loopback malformed host before route parsing', t => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: '[bad' },
+        socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        assert.doesNotThrow(() => {
+          httpServer.emit('request', req, res)
+        })
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.body, '403 Forbidden')
+    })
+
+    await it('should reject malformed allowed host ports before route parsing', t => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: 'localhost:bad' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        assert.doesNotThrow(() => {
+          httpServer.emit('request', req, res)
+        })
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.body, '403 Forbidden')
     })
   })
 
