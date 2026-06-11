@@ -29,7 +29,11 @@ import {
   DEFAULT_RATE_WINDOW_MS,
   isValidCredential,
 } from './UIServerSecurity.js'
-import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
+import {
+  evaluateUIServerAccess,
+  getUIServerAccessClientAddress,
+  getUsernameAndPasswordFromAuthorizationToken,
+} from './UIServerUtils.js'
 
 const CLIENT_NOTIFICATION_DEBOUNCE_MS = 500
 
@@ -202,6 +206,20 @@ export abstract class AbstractUIServer {
       ok = this.isValidProtocolBasicAuth(req, next)
     }
     next(ok ? undefined : new BaseError('Unauthorized'))
+  }
+
+  protected authorizeAccess (req: IncomingMessage): Error | undefined {
+    const decision = evaluateUIServerAccess(req, this.uiServerConfiguration)
+    if (decision.allowed) {
+      return undefined
+    }
+    const reason = decision.reason ?? 'Forbidden'
+    logger.warn(`${this.logPrefix(moduleName, 'authorizeAccess')} UI access denied: ${reason}`)
+    return new BaseError(reason)
+  }
+
+  protected getRateLimitClientIp (req: IncomingMessage): string {
+    return getUIServerAccessClientAddress(req, this.uiServerConfiguration)
   }
 
   protected notifyClients (): void {

@@ -3,6 +3,7 @@
  * @description Test utilities for UI server testing
  */
 import type { IncomingMessage } from 'node:http'
+import type { Duplex } from 'node:stream'
 
 import { EventEmitter } from 'node:events'
 
@@ -60,6 +61,10 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
     this.responseHandlers.set(uuid, ws as never)
   }
 
+  public emitUpgrade (req: IncomingMessage, socket: Duplex, head = Buffer.alloc(0)): void {
+    this.httpServer.emit('upgrade', req, socket, head)
+  }
+
   /**
    * Get the size of response handlers map.
    * @returns Number of response handlers currently registered
@@ -93,6 +98,15 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
   public testRegisterProtocolVersionUIService (version: ProtocolVersion): void {
     this.registerProtocolVersionUIService(version)
   }
+
+  public async waitUntilListening (): Promise<void> {
+    if (this.httpServer.listening) {
+      return
+    }
+    await new Promise<void>(resolve => {
+      this.httpServer.once('listening', resolve)
+    })
+  }
 }
 
 /**
@@ -115,6 +129,13 @@ export const createMockUIServerConfiguration = (
   overrides?: Partial<UIServerConfiguration>
 ): UIServerConfiguration => {
   return {
+    accessPolicy: {
+      allowedHosts: [],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [],
+    },
     enabled: true,
     options: {
       host: 'localhost',
@@ -148,10 +169,16 @@ export const createMockUIServerConfigurationWithAuth = (
 export class MockServerResponse extends EventEmitter {
   public body?: string
   public bodyBuffer?: Buffer
+  public destroyed = false
   public ended = false
   public headers: Record<string, string> = {}
   public statusCode?: number
   private chunks: Buffer[] = []
+
+  public destroy (): this {
+    this.destroyed = true
+    return this
+  }
 
   public end (data?: string): this {
     if (data != null) {
@@ -199,6 +226,7 @@ export const createMockIncomingMessage = (
   overrides?: Partial<IncomingMessage>
 ): IncomingMessage => {
   return {
+    destroy: () => undefined,
     headers: {},
     method: HttpMethod.POST,
     url: '/ui',
