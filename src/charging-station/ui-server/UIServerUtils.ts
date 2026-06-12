@@ -17,21 +17,91 @@ export enum HttpMethod {
   PUT = 'PUT',
 }
 
-const LOOPBACK_HOSTNAMES = new Set(['localhost'])
+const LOOPBACK_HOSTNAME = 'localhost'
 const FORWARDED_HEADER_NAMES = [
   'forwarded',
   'x-forwarded-for',
   'x-forwarded-host',
   'x-forwarded-proto',
-]
+] as const
 const SECURE_FORWARDED_PROTOCOLS = new Set(['https', 'wss'])
 const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::'])
 
-export interface UIServerAccessDecision {
-  readonly allowed: boolean
-  readonly clientAddress: string
-  readonly reason?: string
+/**
+ * Reasons a UI server access decision is denied.
+ *
+ * Decision identity is a closed enum value. The human-readable rendering is
+ * `DENIAL_MESSAGES[reason]`. Tests assert on `reason`; logs and errors format
+ * `message`. Adding a new branch requires extending both the enum and
+ * `DENIAL_MESSAGES`.
+ */
+export enum UIServerAccessDenialReason {
+  AmbiguousForwardedClient = 'ambiguous-forwarded-client',
+  AmbiguousForwardedHeader = 'ambiguous-forwarded-header',
+  AmbiguousForwardedParameter = 'ambiguous-forwarded-parameter',
+  AmbiguousForwardedProtocol = 'ambiguous-forwarded-protocol',
+  DuplicateGatewayHeaders = 'duplicate-gateway-headers',
+  ForwardedFromUntrustedPeer = 'forwarded-from-untrusted-peer',
+  HostNotAllowed = 'host-not-allowed',
+  InvalidForwardedClient = 'invalid-forwarded-client',
+  LoopbackProxyDisabled = 'loopback-proxy-disabled',
+  OriginNotAllowed = 'origin-not-allowed',
+  ProxyTlsRequired = 'proxy-tls-required',
+  TlsRequired = 'tls-required',
 }
+
+const DENIAL_MESSAGES: Readonly<Record<UIServerAccessDenialReason, string>> = {
+  [UIServerAccessDenialReason.AmbiguousForwardedClient]:
+    'Ambiguous forwarded client address headers are not allowed',
+  [UIServerAccessDenialReason.AmbiguousForwardedHeader]:
+    'Ambiguous Forwarded header is not allowed',
+  [UIServerAccessDenialReason.AmbiguousForwardedParameter]:
+    'Ambiguous Forwarded parameter is not allowed',
+  [UIServerAccessDenialReason.AmbiguousForwardedProtocol]:
+    'Ambiguous forwarded protocol headers are not allowed',
+  [UIServerAccessDenialReason.DuplicateGatewayHeaders]:
+    'Duplicate gateway security headers are not allowed',
+  [UIServerAccessDenialReason.ForwardedFromUntrustedPeer]:
+    'Forwarded headers are only accepted from trusted proxies',
+  [UIServerAccessDenialReason.HostNotAllowed]: 'Host header is not allowed',
+  [UIServerAccessDenialReason.InvalidForwardedClient]:
+    'Invalid X-Forwarded-For header is not allowed',
+  [UIServerAccessDenialReason.LoopbackProxyDisabled]:
+    'Loopback proxy forwarding requires accessPolicy.allowLoopbackProxy=true',
+  [UIServerAccessDenialReason.OriginNotAllowed]: 'Origin header is not allowed',
+  [UIServerAccessDenialReason.ProxyTlsRequired]:
+    'Trusted proxy requests must use a secure forwarded protocol',
+  [UIServerAccessDenialReason.TlsRequired]: 'TLS is required for non-loopback UI server access',
+}
+
+/**
+ * Outcome of a UI server access policy evaluation.
+ *
+ * Discriminated by `allowed`. Allowed decisions carry only the resolved
+ * client address; denied decisions carry both an enum reason
+ * (machine-readable, stable across refactors) and a rendered message
+ * (human-readable, derived from {@link DENIAL_MESSAGES}).
+ */
+export type UIServerAccessDecision =
+  | {
+    readonly allowed: false
+    readonly clientAddress: string
+    readonly message: string
+    readonly reason: UIServerAccessDenialReason
+  }
+  | { readonly allowed: true; readonly clientAddress: string }
+
+// Decisions are cached per-request to avoid re-evaluating the policy for both
+// the access gate and rate-limit client identification. WeakMap holds a weak
+// reference to the IncomingMessage; entries are GC-collected when the request
+// is released by the HTTP server.
+const accessDecisionCache = new WeakMap<IncomingMessage, UIServerAccessDecision>()
+
+// Normalized trusted-proxy sets are precomputed on first use per
+// UIServerConfiguration. The schema layer (UIServerAccessPolicySchema)
+// guarantees every entry is a parseable IP literal; entries that fail to
+// normalize at runtime are still discarded defensively.
+const trustedProxiesCache = new WeakMap<UIServerConfiguration, ReadonlySet<string>>()
 
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,
@@ -111,7 +181,7 @@ export const getProtocolAndVersion = (
 }
 
 export const isLoopback = (address: string): boolean => {
-  if (LOOPBACK_HOSTNAMES.has(address.trim().toLowerCase())) {
+  if (address.trim().toLowerCase() === LOOPBACK_HOSTNAME) {
     return true
   }
   const normalizedAddress = normalizeIPAddress(address)
@@ -125,6 +195,29 @@ export const isLoopback = (address: string): boolean => {
   return groups.slice(0, -1).every(group => group === '0') && groups.at(-1) === '1'
 }
 
+/**
+ * Resolve the UI server access decision for the given request.
+ *
+ * The decision is memoized on the request via a {@link WeakMap} so that a
+ * single request consulted at multiple stages (access gate, rate-limit
+ * client identification) is evaluated exactly once.
+ * @param req The incoming HTTP request.
+ * @param uiServerConfiguration The UI server configuration to evaluate against.
+ * @returns The cached or freshly computed {@link UIServerAccessDecision}.
+ */
+export const resolveUIServerAccess = (
+  req: IncomingMessage,
+  uiServerConfiguration: UIServerConfiguration
+): UIServerAccessDecision => {
+  const cached = accessDecisionCache.get(req)
+  if (cached != null) {
+    return cached
+  }
+  const decision = evaluateUIServerAccess(req, uiServerConfiguration)
+  accessDecisionCache.set(req, decision)
+  return decision
+}
+
 export const evaluateUIServerAccess = (
   req: IncomingMessage,
   uiServerConfiguration: UIServerConfiguration
@@ -132,7 +225,7 @@ export const evaluateUIServerAccess = (
   const accessPolicy = uiServerConfiguration.accessPolicy
   const allowLoopbackProxy = accessPolicy?.allowLoopbackProxy ?? false
   const requireTlsForNonLoopback = accessPolicy?.requireTlsForNonLoopback ?? true
-  const trustedProxies = accessPolicy?.trustedProxies ?? []
+  const trustedProxies = getTrustedProxies(uiServerConfiguration)
   const remoteAddress = req.socket.remoteAddress ?? ''
   const remoteAddressIsLoopback = isLoopback(remoteAddress)
   const remoteAddressIsTrustedProxy = isTrustedProxy(remoteAddress, trustedProxies)
@@ -142,7 +235,7 @@ export const evaluateUIServerAccess = (
   const clientAddress = forwardedClientAddress.value ?? remoteAddress
 
   if (hasDuplicateHeaders(req, [...FORWARDED_HEADER_NAMES, 'host', 'origin'])) {
-    return deny(clientAddress, 'Duplicate gateway security headers are not allowed')
+    return deny(clientAddress, UIServerAccessDenialReason.DuplicateGatewayHeaders)
   }
   if (forwardedProtocol.error != null) {
     return deny(clientAddress, forwardedProtocol.error)
@@ -151,45 +244,46 @@ export const evaluateUIServerAccess = (
     return deny(clientAddress, forwardedClientAddress.error)
   }
   if (forwardedHeadersPresent && !remoteAddressIsTrustedProxy) {
-    return deny(clientAddress, 'Forwarded headers are only accepted from trusted proxies')
+    return deny(clientAddress, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
   }
   if (forwardedHeadersPresent && remoteAddressIsLoopback && !allowLoopbackProxy) {
-    return deny(clientAddress, 'Loopback proxy forwarding requires allowLoopbackProxy')
+    return deny(clientAddress, UIServerAccessDenialReason.LoopbackProxyDisabled)
   }
   if (!isHostAllowed(req, uiServerConfiguration, remoteAddressIsTrustedProxy)) {
-    return deny(clientAddress, 'Host header is not allowed')
+    return deny(clientAddress, UIServerAccessDenialReason.HostNotAllowed)
   }
   if (!isOriginAllowed(req, uiServerConfiguration)) {
-    return deny(clientAddress, 'Origin header is not allowed')
+    return deny(clientAddress, UIServerAccessDenialReason.OriginNotAllowed)
   }
 
   const secureForwardedProtocol = isSecureForwardedProtocol(forwardedProtocol.value)
   if (requireTlsForNonLoopback && forwardedHeadersPresent && !secureForwardedProtocol) {
-    return deny(clientAddress, 'Trusted proxy requests must use a secure forwarded protocol')
+    return deny(clientAddress, UIServerAccessDenialReason.ProxyTlsRequired)
   }
   const secure = isDirectTLSRequest(req) || secureForwardedProtocol
   if (requireTlsForNonLoopback && !remoteAddressIsLoopback && !secure) {
-    return deny(clientAddress, 'TLS is required for non-loopback UI server access')
+    return deny(clientAddress, UIServerAccessDenialReason.TlsRequired)
   }
 
   return { allowed: true, clientAddress }
 }
 
-export const getUIServerAccessClientAddress = (
-  req: IncomingMessage,
-  uiServerConfiguration: UIServerConfiguration
-): string => {
-  return evaluateUIServerAccess(req, uiServerConfiguration).clientAddress || 'unknown'
-}
-
-const deny = (clientAddress: string, reason: string): UIServerAccessDecision => {
-  return { allowed: false, clientAddress, reason }
+const deny = (
+  clientAddress: string,
+  reason: UIServerAccessDenialReason
+): UIServerAccessDecision => {
+  return {
+    allowed: false,
+    clientAddress,
+    message: DENIAL_MESSAGES[reason],
+    reason,
+  }
 }
 
 const getForwardedClientAddress = (
   req: IncomingMessage,
   trustedProxy: boolean
-): { error?: string; value?: string } => {
+): { error?: UIServerAccessDenialReason; value?: string } => {
   if (!trustedProxy) {
     return {}
   }
@@ -199,7 +293,7 @@ const getForwardedClientAddress = (
     return { error: forwarded.error }
   }
   if (forwarded.params?.for != null && xForwardedFor != null) {
-    return { error: 'Ambiguous forwarded client address headers are not allowed' }
+    return { error: UIServerAccessDenialReason.AmbiguousForwardedClient }
   }
   const forwardedFor = forwarded.params?.for ?? xForwardedFor
   if (forwardedFor == null) {
@@ -207,30 +301,39 @@ const getForwardedClientAddress = (
   }
   const addresses = splitHeaderList(forwardedFor)
   if (addresses.length === 0) {
-    return {}
+    // Header was present but contained no extractable addresses (e.g. ","):
+    // treat as malformed rather than silently allowed, mirroring the
+    // multi-value rule below.
+    return { error: UIServerAccessDenialReason.InvalidForwardedClient }
   }
+  // Multi-hop X-Forwarded-For chains are intentionally rejected: ambiguity in
+  // trust depth would require a CIDR/hop-count model (see proxy-addr
+  // semantics) that is out of scope for this version. Documented in the
+  // README "UI Protocol" section.
   if (addresses.length !== 1) {
-    return { error: 'Ambiguous X-Forwarded-For header is not allowed' }
+    return { error: UIServerAccessDenialReason.AmbiguousForwardedClient }
   }
   const normalizedAddress = normalizeIPAddress(addresses[0])
   return normalizedAddress != null
     ? { value: normalizedAddress.value }
-    : { error: 'Invalid X-Forwarded-For header is not allowed' }
+    : { error: UIServerAccessDenialReason.InvalidForwardedClient }
 }
 
-const getForwardedProtocol = (req: IncomingMessage): { error?: string; value?: string } => {
+const getForwardedProtocol = (
+  req: IncomingMessage
+): { error?: UIServerAccessDenialReason; value?: string } => {
   const forwarded = parseSingleForwardedHeader(req)
   const xForwardedProtocol = getSingleHeaderValue(req, 'x-forwarded-proto')
   if (forwarded.error != null) {
     return { error: forwarded.error }
   }
   if (forwarded.params?.proto != null && xForwardedProtocol != null) {
-    return { error: 'Ambiguous forwarded protocol headers are not allowed' }
+    return { error: UIServerAccessDenialReason.AmbiguousForwardedProtocol }
   }
   if (xForwardedProtocol != null) {
     const protocols = splitHeaderList(xForwardedProtocol)
     if (protocols.length !== 1) {
-      return { error: 'Ambiguous X-Forwarded-Proto header is not allowed' }
+      return { error: UIServerAccessDenialReason.AmbiguousForwardedProtocol }
     }
     return { value: protocols[0].toLowerCase() }
   }
@@ -239,14 +342,14 @@ const getForwardedProtocol = (req: IncomingMessage): { error?: string; value?: s
 
 const parseSingleForwardedHeader = (
   req: IncomingMessage
-): { error?: string; params?: Record<string, string> } => {
+): { error?: UIServerAccessDenialReason; params?: Record<string, string> } => {
   const forwarded = getSingleHeaderValue(req, 'forwarded')
   if (forwarded == null) {
     return {}
   }
   const entries = splitHeaderList(forwarded)
   if (entries.length !== 1) {
-    return { error: 'Ambiguous Forwarded header is not allowed' }
+    return { error: UIServerAccessDenialReason.AmbiguousForwardedHeader }
   }
   const params: Record<string, string> = {}
   for (const part of entries[0].split(';')) {
@@ -263,7 +366,7 @@ const parseSingleForwardedHeader = (
       continue
     }
     if (Object.hasOwn(params, key)) {
-      return { error: `Ambiguous Forwarded ${key} parameter is not allowed` }
+      return { error: UIServerAccessDenialReason.AmbiguousForwardedParameter }
     }
     params[key] = value
   }
@@ -283,7 +386,7 @@ const getSingleHeaderValue = (req: IncomingMessage, headerName: string): string 
   return values.length === 1 ? values[0] : undefined
 }
 
-const hasDuplicateHeaders = (req: IncomingMessage, headerNames: string[]): boolean => {
+const hasDuplicateHeaders = (req: IncomingMessage, headerNames: readonly string[]): boolean => {
   const distinctHeaders = Reflect.get(req, 'headersDistinct') as
     | IncomingMessage['headersDistinct']
     | undefined
@@ -309,6 +412,12 @@ const hasForwardedHeaders = (req: IncomingMessage): boolean => {
   return FORWARDED_HEADER_NAMES.some(headerName => getHeaderValues(req, headerName).length > 0)
 }
 
+// `isDirectTLSRequest` is currently never true: AbstractUIServer instantiates
+// only plaintext servers (`new http.Server()` for HTTP/1.1,
+// `node:http2.createServer()` for h2c). Kept for forward compatibility with a
+// future `https.createServer` / `http2.createSecureServer` code path.
+// Non-loopback access today is gated by `X-Forwarded-Proto: https` arriving
+// from a trusted proxy (see README "UI Protocol" section).
 const isDirectTLSRequest = (req: IncomingMessage): boolean => {
   return (req.socket as TLSSocket).encrypted
 }
@@ -344,6 +453,11 @@ const isOriginAllowed = (
   if (origin == null) {
     return true
   }
+  // When `accessPolicy.allowedOrigins` is non-empty it is the exclusive
+  // allowlist. When empty, the origin's URL hostname falls back to matching
+  // against `getAllowedHosts(...)` so that browser-facing access stays
+  // implicitly aligned with the explicit Host allowlist (see README
+  // "UI Protocol" section).
   const allowedOrigins = uiServerConfiguration.accessPolicy?.allowedOrigins ?? []
   if (allowedOrigins.length > 0) {
     return allowedOrigins.some(
@@ -369,6 +483,9 @@ const getAllowedHosts = (uiServerConfiguration: UIServerConfiguration): string[]
   if (WILDCARD_HOSTS.has(configuredHost)) {
     return allowedHosts
   }
+  // Loopback listen hosts implicitly allow all loopback aliases so that a
+  // local client using either `localhost`, `127.0.0.1`, or `[::1]` is not
+  // rejected; non-loopback listen hosts only allow the configured host.
   const derivedHosts = isLoopback(configuredHost)
     ? ['localhost', '127.0.0.1', '::1']
     : [configuredHost]
@@ -395,18 +512,32 @@ const isSecureForwardedProtocol = (protocol: string | undefined): boolean => {
   return protocol != null && SECURE_FORWARDED_PROTOCOLS.has(protocol)
 }
 
-const isTrustedProxy = (remoteAddress: string, trustedProxies: string[]): boolean => {
+const getTrustedProxies = (uiServerConfiguration: UIServerConfiguration): ReadonlySet<string> => {
+  const cached = trustedProxiesCache.get(uiServerConfiguration)
+  if (cached != null) {
+    return cached
+  }
+  const trustedProxies = uiServerConfiguration.accessPolicy?.trustedProxies ?? []
+  const normalized = new Set<string>()
+  for (const proxy of trustedProxies) {
+    const normalizedProxy = normalizeIPAddress(proxy)
+    if (normalizedProxy != null) {
+      normalized.add(`${normalizedProxy.family}:${normalizedProxy.value}`)
+    }
+  }
+  trustedProxiesCache.set(uiServerConfiguration, normalized)
+  return normalized
+}
+
+const isTrustedProxy = (remoteAddress: string, trustedProxies: ReadonlySet<string>): boolean => {
+  if (trustedProxies.size === 0) {
+    return false
+  }
   const normalizedRemoteAddress = normalizeIPAddress(remoteAddress)
   if (normalizedRemoteAddress == null) {
     return false
   }
-  return trustedProxies.some(proxy => {
-    const normalizedProxy = normalizeIPAddress(proxy)
-    return (
-      normalizedProxy?.family === normalizedRemoteAddress.family &&
-      normalizedProxy.value === normalizedRemoteAddress.value
-    )
-  })
+  return trustedProxies.has(`${normalizedRemoteAddress.family}:${normalizedRemoteAddress.value}`)
 }
 
 const normalizeHost = (host: string): string | undefined => {
@@ -446,7 +577,7 @@ const normalizeIPAddress = (
   if (host === '') {
     return undefined
   }
-  if (LOOPBACK_HOSTNAMES.has(host)) {
+  if (host === LOOPBACK_HOSTNAME) {
     return { family: 'ipv4', value: '127.0.0.1' }
   }
   const ipv4MappedAddress = parseIPv4MappedAddress(host)

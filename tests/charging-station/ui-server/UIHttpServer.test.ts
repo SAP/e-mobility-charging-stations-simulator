@@ -237,6 +237,51 @@ await describe('UIHttpServer', async () => {
     assert.strictEqual(res.destroyed, true)
   })
 
+  await it('should account denied requests against the rate limiter', t => {
+    const gatedServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({
+        accessPolicy: {
+          allowedHosts: ['gateway.example.com'],
+          requireTlsForNonLoopback: true,
+        },
+        options: { host: 'localhost', port: 0 },
+        type: ApplicationProtocol.HTTP,
+      })
+    )
+    const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+      listen: (...args: unknown[]) => unknown
+      removeAllListeners: () => void
+    }
+    t.mock.method(httpServer, 'listen', () => httpServer)
+    const rateLimiterCalls: string[] = []
+    const originalLimiter = Reflect.get(gatedServer, 'rateLimiter') as (ip: string) => boolean
+    Reflect.set(gatedServer, 'rateLimiter', (ip: string) => {
+      rateLimiterCalls.push(ip)
+      return originalLimiter(ip)
+    })
+    const denyingReq = createMockIncomingMessage({
+      complete: true,
+      headers: { host: 'gateway.example.com' },
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      url: '/ui/ui0.0.1/listChargingStations',
+    })
+    const res = new MockServerResponse()
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      gatedServer.start()
+      httpServer.emit('request', denyingReq, res)
+    } finally {
+      httpServer.removeAllListeners()
+      gatedServer.stop()
+    }
+
+    assert.strictEqual(res.statusCode, 403)
+    assert.strictEqual(rateLimiterCalls.length, 1)
+    assert.strictEqual(rateLimiterCalls[0], '203.0.113.10')
+  })
+
   await describe('Gzip compression', async () => {
     let gzipServer: TestableUIHttpServer
 

@@ -164,14 +164,6 @@ export class UIWebSocketServer extends AbstractUIServer {
         }
       })
     })
-    this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, _head: Buffer) => {
-      const connectionHeader = req.headers.connection ?? ''
-      const upgradeHeader = req.headers.upgrade ?? ''
-      if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
-        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
-        socket.destroy()
-      }
-    })
     this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
@@ -181,18 +173,9 @@ export class UIWebSocketServer extends AbstractUIServer {
         return
       }
 
-      const accessError = this.authorizeAccess(req)
-      if (accessError != null) {
-        socket.write(`HTTP/1.1 ${StatusCodes.FORBIDDEN.toString()} Forbidden\r\n\r\n`)
-        socket.destroy()
-        return
-      }
-
-      const clientIp = this.getRateLimitClientIp(req)
-      if (!this.rateLimiter(clientIp)) {
-        socket.write(
-          `HTTP/1.1 ${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests\r\n\r\n`
-        )
+      const prologue = this.runRequestPrologue(req)
+      if (!prologue.ok) {
+        socket.write(`HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n\r\n`)
         socket.destroy()
         return
       }

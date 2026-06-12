@@ -105,26 +105,14 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
-    const accessError = this.authorizeAccess(req)
-    if (accessError != null) {
+    const prologue = this.runRequestPrologue(req)
+    if (!prologue.ok) {
       res
-        .writeHead(StatusCodes.FORBIDDEN, {
+        .writeHead(prologue.status, {
           'Content-Type': 'text/plain',
+          ...prologue.headers,
         })
-        .end(`${StatusCodes.FORBIDDEN.toString()} Forbidden`)
-      res.destroy()
-      req.destroy()
-      return
-    }
-
-    const clientIp = this.getRateLimitClientIp(req)
-    if (!this.rateLimiter(clientIp)) {
-      res
-        .writeHead(StatusCodes.TOO_MANY_REQUESTS, {
-          'Content-Type': 'text/plain',
-          'Retry-After': '60',
-        })
-        .end(`${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests`)
+        .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
       res.destroy()
       req.destroy()
       return

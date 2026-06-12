@@ -1,6 +1,7 @@
 import type { ListenOptions } from 'node:net'
 import type { ResourceLimits } from 'node:worker_threads'
 
+import { isIP } from 'node:net'
 import { z } from 'zod'
 
 import {
@@ -97,7 +98,14 @@ export const UIServerAccessPolicySchema = z
     allowedOrigins: z.array(z.url()).optional(),
     allowLoopbackProxy: z.boolean().optional(),
     requireTlsForNonLoopback: z.boolean().optional(),
-    trustedProxies: z.array(z.string().min(1)).optional(),
+    trustedProxies: z
+      .array(
+        z.string().refine(value => isIP(value) !== 0, {
+          message:
+            'must be an IPv4 or IPv6 literal (hostnames, brackets, and CIDR ranges are not supported)',
+        })
+      )
+      .optional(),
   })
   .strict()
 

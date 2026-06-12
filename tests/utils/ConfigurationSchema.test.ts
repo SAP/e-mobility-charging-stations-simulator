@@ -244,6 +244,56 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.options')))
     })
 
+    await it('should reject hostnames in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['nginx.internal'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('trustedProxies')))
+    })
+
+    await it('should reject CIDR ranges in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['10.0.0.0/8'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('trustedProxies')))
+    })
+
+    await it('should accept IPv4 and IPv6 literals in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['10.0.0.1', '2001:db8::1', '::ffff:127.0.0.1'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected IP literals to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
     await it('should reject unknown key in worker section', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({ worker: { unknownWorkerKey: true } })

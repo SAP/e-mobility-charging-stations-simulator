@@ -1,5 +1,6 @@
 import type { WebSocket } from 'ws'
 
+import { StatusCodes } from 'http-status-codes'
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
 import { createServer, type Http2Server } from 'node:http2'
 
@@ -30,10 +31,30 @@ import {
   isValidCredential,
 } from './UIServerSecurity.js'
 import {
-  evaluateUIServerAccess,
-  getUIServerAccessClientAddress,
   getUsernameAndPasswordFromAuthorizationToken,
+  resolveUIServerAccess,
+  type UIServerAccessDecision,
 } from './UIServerUtils.js'
+
+/**
+ * Outcome of {@link AbstractUIServer.runRequestPrologue}.
+ *
+ * Discriminated by `ok`. On `ok: true` the caller proceeds to authentication
+ * and protocol handling with the resolved {@link UIServerAccessDecision}
+ * (always `allowed: true`). On `ok: false` the caller renders the rejection
+ * to its native transport response (HTTP body / WebSocket status line).
+ */
+export type UIServerRequestPrologueResult =
+  | {
+    readonly decision: Extract<UIServerAccessDecision, { allowed: true }>
+    readonly ok: true
+  }
+  | {
+    readonly headers?: Readonly<Record<string, string>>
+    readonly ok: false
+    readonly reasonPhrase: string
+    readonly status: StatusCodes
+  }
 
 const CLIENT_NOTIFICATION_DEBOUNCE_MS = 500
 
@@ -208,20 +229,6 @@ export abstract class AbstractUIServer {
     next(ok ? undefined : new BaseError('Unauthorized'))
   }
 
-  protected authorizeAccess (req: IncomingMessage): Error | undefined {
-    const decision = evaluateUIServerAccess(req, this.uiServerConfiguration)
-    if (decision.allowed) {
-      return undefined
-    }
-    const reason = decision.reason ?? 'Forbidden'
-    logger.warn(`${this.logPrefix(moduleName, 'authorizeAccess')} UI access denied: ${reason}`)
-    return new BaseError(reason)
-  }
-
-  protected getRateLimitClientIp (req: IncomingMessage): string {
-    return getUIServerAccessClientAddress(req, this.uiServerConfiguration)
-  }
-
   protected notifyClients (): void {
     // No-op by default — subclasses with push capability override this
   }
@@ -230,6 +237,46 @@ export abstract class AbstractUIServer {
     if (!this.uiServices.has(version)) {
       this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this))
     }
+  }
+
+  /**
+   * Run the access-policy + rate-limit prologue for a request.
+   *
+   * The order is enforced structurally here so transports cannot diverge:
+   * 1. Resolve the access decision (memoized on the request).
+   * 2. Account every request against the rate limiter, including denied
+   *    ones, so a flood of forbidden requests still consumes a budget slot.
+   * 3. Apply the access verdict.
+   *
+   * Authentication is left to each transport because rejection mechanisms
+   * differ (HTTP body vs WebSocket status line vs MCP).
+   * @param req The incoming HTTP request.
+   * @returns A discriminated {@link UIServerRequestPrologueResult}.
+   */
+  protected runRequestPrologue (req: IncomingMessage): UIServerRequestPrologueResult {
+    const decision = resolveUIServerAccess(req, this.uiServerConfiguration)
+    const rateLimitKey = decision.clientAddress.length > 0 ? decision.clientAddress : 'unknown'
+    if (!this.rateLimiter(rateLimitKey)) {
+      return {
+        headers: { 'Retry-After': '60' },
+        ok: false,
+        reasonPhrase: 'Too Many Requests',
+        status: StatusCodes.TOO_MANY_REQUESTS,
+      }
+    }
+    if (!decision.allowed) {
+      logger.warn(
+        `${this.logPrefix(moduleName, 'runRequestPrologue')} UI access denied: ${
+          decision.message
+        } (reason=${decision.reason})`
+      )
+      return {
+        ok: false,
+        reasonPhrase: 'Forbidden',
+        status: StatusCodes.FORBIDDEN,
+      }
+    }
+    return { decision, ok: true }
   }
 
   protected startHttpServer (): void {

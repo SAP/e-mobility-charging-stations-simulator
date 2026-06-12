@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { StatusCodes } from 'http-status-codes'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -111,24 +112,25 @@ export class UIMCPServer extends AbstractUIServer {
     this.ocppSchemaCache = this.loadOcppSchemas()
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
-      const accessError = this.authorizeAccess(req)
-      if (accessError != null) {
-        res.writeHead(403, { 'Content-Type': 'text/plain' }).end('403 Forbidden')
+      const prologue = this.runRequestPrologue(req)
+      if (!prologue.ok) {
+        res
+          .writeHead(prologue.status, {
+            'Content-Type': 'text/plain',
+            ...prologue.headers,
+          })
+          .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
         return
       }
 
       const url = new URL(req.url ?? '/', 'http://localhost')
       if (url.pathname !== '/mcp') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' }).end('404 Not Found')
+        res
+          .writeHead(StatusCodes.NOT_FOUND, { 'Content-Type': 'text/plain' })
+          .end(`${StatusCodes.NOT_FOUND.toString()} Not Found`)
         if (!req.complete) {
           req.destroy()
         }
-        return
-      }
-
-      const clientIp = this.getRateLimitClientIp(req)
-      if (!this.rateLimiter(clientIp)) {
-        res.writeHead(429, { 'Content-Type': 'text/plain' }).end('429 Too Many Requests')
         return
       }
 
@@ -139,11 +141,11 @@ export class UIMCPServer extends AbstractUIServer {
       })
       if (authError != null) {
         res
-          .writeHead(401, {
+          .writeHead(StatusCodes.UNAUTHORIZED, {
             'Content-Type': 'text/plain',
             'WWW-Authenticate': 'Basic realm=users',
           })
-          .end('401 Unauthorized')
+          .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
         return
       }
 
@@ -261,7 +263,7 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
       this.closeTransportSafely(transport)
-      this.sendErrorResponse(res, 500)
+      this.sendErrorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR)
       return
     }
 
@@ -284,14 +286,17 @@ export class UIMCPServer extends AbstractUIServer {
         res.on('close', cleanup)
         await transport.handleRequest(req, res)
       } else {
-        this.sendErrorResponse(res, 405)
+        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED)
         cleanup()
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
       const isBadRequest =
         error instanceof SyntaxError || getErrorMessage(error).includes('Payload too large')
-      this.sendErrorResponse(res, isBadRequest ? 400 : 500)
+      this.sendErrorResponse(
+        res,
+        isBadRequest ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
+      )
     }
   }
 
@@ -472,15 +477,15 @@ export class UIMCPServer extends AbstractUIServer {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'))
   }
 
-  private sendErrorResponse (res: ServerResponse, statusCode: number): void {
+  private sendErrorResponse (res: ServerResponse, statusCode: StatusCodes): void {
     if (res.headersSent) return
-    const messages: Record<number, string> = {
-      400: '400 Bad Request',
-      405: '405 Method Not Allowed',
-      500: '500 Internal Server Error',
+    const messages: Partial<Record<StatusCodes, string>> = {
+      [StatusCodes.BAD_REQUEST]: 'Bad Request',
+      [StatusCodes.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
+      [StatusCodes.METHOD_NOT_ALLOWED]: 'Method Not Allowed',
     }
     res
       .writeHead(statusCode, { 'Content-Type': 'text/plain' })
-      .end(messages[statusCode] ?? `${statusCode.toString()} Error`)
+      .end(`${statusCode.toString()} ${messages[statusCode] ?? 'Error'}`)
   }
 }
