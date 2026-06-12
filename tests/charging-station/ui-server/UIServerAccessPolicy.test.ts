@@ -1,0 +1,584 @@
+/**
+ * @file Tests for UIServerAccessPolicy
+ * @description Unit tests for the UI server gateway access policy:
+ *   per-request decision evaluation, forwarded-header parsing, host/origin
+ *   allowlists, trusted-proxy classification, and the per-request memo cache.
+ */
+
+import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
+
+import assert from 'node:assert/strict'
+import { afterEach, describe, it } from 'node:test'
+
+import {
+  createUIServerAccessCache,
+  resolveUIServerAccess,
+  type UIServerAccessDecision,
+  UIServerAccessDenialReason,
+} from '../../../src/charging-station/ui-server/UIServerAccessPolicy.js'
+import { type UIServerConfiguration } from '../../../src/types/index.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
+
+await describe('UIServerAccessPolicy', async () => {
+  const createAccessPolicyConfiguration = (
+    overrides?: Partial<UIServerConfiguration>
+  ): UIServerConfiguration => createMockUIServerConfiguration(overrides)
+
+  const createAccessPolicyRequest = ({
+    encrypted = false,
+    headers = {},
+    rawHeaders = [],
+    remoteAddress = '127.0.0.1',
+  }: {
+    encrypted?: boolean
+    headers?: IncomingHttpHeaders
+    rawHeaders?: string[]
+    remoteAddress?: string
+  }): IncomingMessage => {
+    return {
+      headers,
+      rawHeaders,
+      socket: { encrypted, remoteAddress } as never,
+    } as unknown as IncomingMessage
+  }
+
+  // Narrows the discriminated union and asserts the enum reason; tests assert
+  // on the machine-readable identity rather than the rendered message.
+  const expectDenied = (
+    decision: UIServerAccessDecision,
+    expectedReason: UIServerAccessDenialReason
+  ): void => {
+    assert.strictEqual(decision.allowed, false)
+    assert.strictEqual(decision.reason, expectedReason)
+    assert.strictEqual(decision.message.length > 0, true)
+  }
+
+  const evaluate = (req: IncomingMessage, config: UIServerConfiguration): UIServerAccessDecision =>
+    resolveUIServerAccess(req, config, createUIServerAccessCache())
+
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  await describe('resolveUIServerAccess', async () => {
+    await it('should allow direct loopback plaintext requests', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({ headers: { host: 'localhost:8080' } }),
+        createAccessPolicyConfiguration()
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should allow direct IPv6 loopback plaintext requests', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: '[::1]:8080' },
+          remoteAddress: '::1',
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should reject direct non-loopback plaintext requests', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'gateway.example.com' },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.TlsRequired)
+    })
+
+    await it('should reject spoofed forwarded proto from direct non-loopback clients', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'gateway.example.com', 'x-forwarded-proto': 'https' },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
+    })
+
+    await it('should allow secure traffic from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.10')
+    })
+
+    await it('should match an IPv4-mapped IPv6 remote against an IPv4 trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.7',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '::ffff:1.2.3.4',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['1.2.3.4'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.7')
+    })
+
+    await it('should match the hexadecimal IPv4-mapped IPv6 form against an IPv4 trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.7',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '::ffff:0102:0304',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['1.2.3.4'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.7')
+    })
+
+    await it('should allow standard Forwarded proto-only traffic from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'proto=https',
+            host: 'gateway.example.com',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '192.0.2.10')
+    })
+
+    await it('should allow standard Forwarded for and proto traffic from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'for=203.0.113.10;proto=https',
+            host: 'gateway.example.com',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.10')
+    })
+
+    await it('should reject plaintext traffic from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': 'http',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ProxyTlsRequired)
+    })
+
+    await it('should reject insecure forwarded protocol over an encrypted proxy connection', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          encrypted: true,
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': 'http',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ProxyTlsRequired)
+    })
+
+    await it('should reject ambiguous forwarded client address lists', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '198.51.100.77, 203.0.113.10',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedClient)
+    })
+
+    await it('should reject loopback proxy forwarding without explicit opt-in', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'localhost:8080',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '127.0.0.1',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['127.0.0.1'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.LoopbackProxyDisabled)
+    })
+
+    await it('should reject duplicate forwarded headers', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'gateway.example.com', 'x-forwarded-proto': 'https' },
+          rawHeaders: [
+            'Host',
+            'gateway.example.com',
+            'X-Forwarded-Proto',
+            'https',
+            'X-Forwarded-Proto',
+            'https',
+          ],
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.DuplicateGatewayHeaders)
+    })
+
+    await it('should reject disallowed host headers', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({ headers: { host: 'attacker.test' } }),
+        createAccessPolicyConfiguration()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.HostNotAllowed)
+    })
+
+    await it('should reject wildcard listen hosts without explicit allowed hosts', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          encrypted: true,
+          headers: { host: 'gateway.example.com' },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          options: { host: '0.0.0.0', port: 8080 },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.HostNotAllowed)
+    })
+
+    await it('should reject disallowed origin headers', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'http://attacker.test' },
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.OriginNotAllowed)
+    })
+
+    await it('should extract IPv6 client address from Forwarded for parameter with port', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'for="[2001:db8::1]:8080";proto=https',
+            host: 'gateway.example.com',
+          },
+          remoteAddress: '2001:db8::100',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['2001:db8::100'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '2001:db8:0:0:0:0:0:1')
+    })
+
+    await it('should still require TLS when a trusted proxy claims a loopback client', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '127.0.0.1',
+            'x-forwarded-proto': 'http',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ProxyTlsRequired)
+    })
+
+    await it('should deny non-loopback access when accessPolicy is undefined', () => {
+      const config = createAccessPolicyConfiguration()
+
+      delete (config as { accessPolicy?: unknown }).accessPolicy
+
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'gateway.example.com' },
+          remoteAddress: '203.0.113.10',
+        }),
+        config
+      )
+      assert.strictEqual(decision.allowed, false)
+    })
+
+    await it('should allow loopback access when accessPolicy is undefined', () => {
+      const config = createAccessPolicyConfiguration()
+
+      delete (config as { accessPolicy?: unknown }).accessPolicy
+
+      const decision = evaluate(
+        createAccessPolicyRequest({ headers: { host: 'localhost:8080' } }),
+        config
+      )
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should allow non-loopback plaintext when requireTlsForNonLoopback is false', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'gateway.example.com' },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: false,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should reject empty-but-present X-Forwarded-For from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': ',',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.InvalidForwardedClient)
+    })
+
+    await it('should reject literal null origin from sandboxed contexts', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'null' },
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.OriginNotAllowed)
+    })
+  })
+
+  await describe('per-request memoization', async () => {
+    await it('should evaluate the policy only once per request', () => {
+      const config = createAccessPolicyConfiguration()
+      const cache = createUIServerAccessCache()
+      const req = createAccessPolicyRequest({ headers: { host: 'localhost:8080' } })
+
+      const first = resolveUIServerAccess(req, config, cache)
+      const second = resolveUIServerAccess(req, config, cache)
+
+      assert.strictEqual(first, second)
+      assert.strictEqual(first.allowed, true)
+    })
+
+    await it('should return distinct decisions for distinct requests', () => {
+      const config = createAccessPolicyConfiguration()
+      const cache = createUIServerAccessCache()
+      const reqA = createAccessPolicyRequest({ headers: { host: 'localhost:8080' } })
+      const reqB = createAccessPolicyRequest({
+        headers: { host: 'attacker.test' },
+        remoteAddress: '127.0.0.1',
+      })
+
+      const decisionA = resolveUIServerAccess(reqA, config, cache)
+      const decisionB = resolveUIServerAccess(reqB, config, cache)
+
+      assert.strictEqual(decisionA.allowed, true)
+      expectDenied(decisionB, UIServerAccessDenialReason.HostNotAllowed)
+    })
+
+    await it('should isolate decisions across distinct caches', () => {
+      const config = createAccessPolicyConfiguration()
+      const cacheA = createUIServerAccessCache()
+      const cacheB = createUIServerAccessCache()
+      const req = createAccessPolicyRequest({ headers: { host: 'localhost:8080' } })
+
+      const decisionA = resolveUIServerAccess(req, config, cacheA)
+      const decisionB = resolveUIServerAccess(req, config, cacheB)
+
+      // Same logical outcome, freshly computed in each cache.
+      assert.strictEqual(decisionA.allowed, true)
+      assert.strictEqual(decisionB.allowed, true)
+      assert.notStrictEqual(decisionA, decisionB)
+    })
+  })
+})

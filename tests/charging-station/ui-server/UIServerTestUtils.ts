@@ -217,6 +217,21 @@ export class MockServerResponse extends EventEmitter {
   }
 }
 
+export class MockUpgradeSocket extends EventEmitter {
+  public destroyed = false
+  public readonly writes: string[] = []
+
+  public destroy (): this {
+    this.destroyed = true
+    return this
+  }
+
+  public write (chunk: string): boolean {
+    this.writes.push(chunk)
+    return true
+  }
+}
+
 /**
  * Create a mock HTTP IncomingMessage for testing.
  * @param overrides - Partial message properties to merge with defaults

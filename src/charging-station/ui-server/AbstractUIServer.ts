@@ -25,16 +25,18 @@ import {
 import { isEmpty, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
+  createUIServerAccessCache,
+  resolveUIServerAccess,
+  type UIServerAccessCache,
+  type UIServerAccessDecision,
+} from './UIServerAccessPolicy.js'
+import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,
   DEFAULT_RATE_WINDOW_MS,
   isValidCredential,
 } from './UIServerSecurity.js'
-import {
-  getUsernameAndPasswordFromAuthorizationToken,
-  resolveUIServerAccess,
-  type UIServerAccessDecision,
-} from './UIServerUtils.js'
+import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 /**
  * Outcome of {@link AbstractUIServer.runRequestPrologue}.
@@ -44,7 +46,7 @@ import {
  * (always `allowed: true`). On `ok: false` the caller renders the rejection
  * to its native transport response (HTTP body / WebSocket status line).
  */
-export type UIServerRequestPrologueResult =
+type UIServerRequestPrologueResult =
   | {
     readonly decision: Extract<UIServerAccessDecision, { allowed: true }>
     readonly ok: true
@@ -58,6 +60,12 @@ export type UIServerRequestPrologueResult =
 
 const CLIENT_NOTIFICATION_DEBOUNCE_MS = 500
 
+// Bound the time a peer may hold a TCP connection without completing the
+// HTTP request line and headers. Both values are well below Node defaults
+// (60 s and 5 min) and prevent slow-loris exposure on rejected upgrades.
+const HTTP_HEADERS_TIMEOUT_MS = 5_000
+const HTTP_REQUEST_TIMEOUT_MS = 30_000
+
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
@@ -69,6 +77,7 @@ export abstract class AbstractUIServer {
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
+  private readonly accessCache: UIServerAccessCache
   private readonly bootstrap: IBootstrap
   private readonly chargingStations: Map<string, ChargingStationData>
   private readonly chargingStationTemplates: Set<string>
@@ -94,9 +103,16 @@ export abstract class AbstractUIServer {
           `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
+    if ('requestTimeout' in this.httpServer) {
+      this.httpServer.requestTimeout = HTTP_REQUEST_TIMEOUT_MS
+    }
+    if ('headersTimeout' in this.httpServer) {
+      this.httpServer.headersTimeout = HTTP_HEADERS_TIMEOUT_MS
+    }
     this.responseHandlers = new Map<UUIDv4, ServerResponse | WebSocket>()
     this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW_MS)
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
+    this.accessCache = createUIServerAccessCache()
   }
 
   public buildProtocolRequest (
@@ -254,7 +270,7 @@ export abstract class AbstractUIServer {
    * @returns A discriminated {@link UIServerRequestPrologueResult}.
    */
   protected runRequestPrologue (req: IncomingMessage): UIServerRequestPrologueResult {
-    const decision = resolveUIServerAccess(req, this.uiServerConfiguration)
+    const decision = resolveUIServerAccess(req, this.uiServerConfiguration, this.accessCache)
     const rateLimitKey = decision.clientAddress.length > 0 ? decision.clientAddress : 'unknown'
     if (!this.rateLimiter(rateLimitKey)) {
       return {

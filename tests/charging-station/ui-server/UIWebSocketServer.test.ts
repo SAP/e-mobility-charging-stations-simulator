@@ -6,7 +6,6 @@
 import type { Duplex } from 'node:stream'
 
 import assert from 'node:assert/strict'
-import { EventEmitter } from 'node:events'
 import { afterEach, describe, it } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
@@ -20,23 +19,9 @@ import {
   createMockUIService,
   createMockUIWebSocket,
   MockUIServiceMode,
+  MockUpgradeSocket,
   TestableUIWebSocketServer,
 } from './UIServerTestUtils.js'
-
-class MockUpgradeSocket extends EventEmitter {
-  public destroyed = false
-  public readonly writes: string[] = []
-
-  public destroy (): this {
-    this.destroyed = true
-    return this
-  }
-
-  public write (chunk: string): boolean {
-    this.writes.push(chunk)
-    return true
-  }
-}
 
 await describe('UIWebSocketServer', async () => {
   afterEach(() => {

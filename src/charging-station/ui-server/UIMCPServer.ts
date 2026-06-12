@@ -258,16 +258,10 @@ export class UIMCPServer extends AbstractUIServer {
   private async handleMcpRequest (req: IncomingMessage, res: ServerResponse): Promise<void> {
     const mcpServer = this.createMcpServer()
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
-    try {
-      await mcpServer.connect(transport)
-    } catch (error: unknown) {
-      logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
-      this.closeTransportSafely(transport)
-      this.sendErrorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR)
-      return
-    }
-
+    let cleanedUp = false
     const cleanup = (): void => {
+      if (cleanedUp) return
+      cleanedUp = true
       this.closeTransportSafely(transport)
       mcpServer.close().catch((error: unknown) => {
         logger.error(
@@ -276,21 +270,30 @@ export class UIMCPServer extends AbstractUIServer {
         )
       })
     }
+    res.on('close', cleanup)
+
+    try {
+      await mcpServer.connect(transport)
+    } catch (error: unknown) {
+      logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
+      cleanup()
+      this.sendErrorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR)
+      return
+    }
 
     try {
       if (req.method === HttpMethod.POST) {
         const body = await this.readRequestBody(req)
-        res.on('close', cleanup)
         await transport.handleRequest(req, res, body)
       } else if (req.method === HttpMethod.GET || req.method === HttpMethod.DELETE) {
-        res.on('close', cleanup)
         await transport.handleRequest(req, res)
       } else {
-        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED)
         cleanup()
+        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED)
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
+      cleanup()
       const isBadRequest =
         error instanceof SyntaxError || getErrorMessage(error).includes('Payload too large')
       this.sendErrorResponse(
