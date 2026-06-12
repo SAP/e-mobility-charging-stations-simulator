@@ -1,8 +1,6 @@
 /**
- * @file UIServerAccessPolicy
- * @description UI server gateway access policy: source classification,
- * forwarded-header parsing, host/origin allowlists, and the per-request
- * decision cache.
+ * UI server gateway access policy: source classification, forwarded-header
+ * parsing, host/origin allowlists, and the per-request decision cache.
  */
 import type { IncomingMessage } from 'node:http'
 
