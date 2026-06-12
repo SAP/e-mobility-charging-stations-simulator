@@ -493,7 +493,7 @@ In the [docker](./docker) folder:
 make
 ```
 
-The bundled Docker Compose configuration publishes the UI server on host loopback only (`127.0.0.1:8080:8080`). Its simulator config binds the UI server to `::` for container networking, allows loopback host headers, and disables `requireTlsForNonLoopback` for this local-only plaintext path because the simulator sees host-to-container traffic as a Docker bridge peer. If you publish the UI through a public host or reverse proxy, keep `requireTlsForNonLoopback` enabled, update `docker/config.json` with the public `uiServer.accessPolicy.allowedHosts`, matching `allowedOrigins` for browser clients, and the immediate trusted proxy addresses in `trustedProxies`. Do not widen the Compose port binding beyond loopback without TLS or a trusted reverse proxy.
+The bundled Docker Compose configuration publishes the UI server on host loopback only (`127.0.0.1:8080:8080`) and disables `requireTlsForNonLoopback` for this local-only plaintext path. To expose the UI through a public host or reverse proxy, keep `requireTlsForNonLoopback` enabled and set `uiServer.accessPolicy.allowedHosts`, `allowedOrigins`, and `trustedProxies` in `docker/config.json` accordingly.
 
 <!-- Or with the optional git submodules:
 
@@ -920,10 +920,6 @@ All kind of OCPP parameters are supported in charging station configuration or c
 ## UI Protocol
 
 Protocol to control the simulator via the UI server. Three transport types are available:
-
-> **Migration note:** the UI server now enforces a default access policy (`uiServer.accessPolicy`). Pre-existing configurations bound to a non-loopback interface in plaintext are rejected by default. Either terminate TLS upstream with a reverse proxy listed in `trustedProxies` that forwards `X-Forwarded-Proto: https`, or set `requireTlsForNonLoopback: false` explicitly when the listener is bound to a private/loopback interface. Configurations bound to `localhost` (the default) are unaffected.
-
-The UI server access policy distinguishes loopback from non-loopback request sources. Direct loopback access can use plaintext. Non-loopback access requires TLS termination by a reverse proxy listed in `uiServer.accessPolicy.trustedProxies` that forwards `https`/`wss`. Direct TLS is not currently supported by this server. Forwarded headers from other peers are rejected, and only single-hop forwarded chains are honored. Configure `allowedHosts` and `allowedOrigins` when exposing the UI through a browser-facing host. On managed reverse-proxy platforms such as Cloud Foundry, set `allowedHosts` and `allowedOrigins` to the public route and list the immediate platform proxy addresses in `trustedProxies`; if those proxy addresses are not stable or knowable, keep the UI server behind a trusted private ingress instead of exposing it directly.
 
 ### MCP Protocol (Model Context Protocol)
 

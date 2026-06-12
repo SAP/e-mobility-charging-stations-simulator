@@ -60,9 +60,6 @@ type UIServerRequestPrologueResult =
 
 const CLIENT_NOTIFICATION_DEBOUNCE_MS = 500
 
-// Bound the time a peer may hold a TCP connection without completing the
-// HTTP request line and headers. Both values are well below Node defaults
-// (60 s and 5 min) and prevent slow-loris exposure on rejected upgrades.
 const HTTP_HEADERS_TIMEOUT_MS = 5_000
 const HTTP_REQUEST_TIMEOUT_MS = 30_000
 
@@ -258,14 +255,13 @@ export abstract class AbstractUIServer {
   /**
    * Run the access-policy + rate-limit prologue for a request.
    *
-   * The order is enforced structurally here so transports cannot diverge:
+   * The order is fixed:
    * 1. Resolve the access decision (memoized on the request).
    * 2. Account every request against the rate limiter, including denied
-   *    ones, so a flood of forbidden requests still consumes a budget slot.
+   *    ones.
    * 3. Apply the access verdict.
    *
-   * Authentication is left to each transport because rejection mechanisms
-   * differ (HTTP body vs WebSocket status line vs MCP).
+   * Authentication is delegated to each transport.
    * @param req The incoming HTTP request.
    * @returns A discriminated {@link UIServerRequestPrologueResult}.
    */

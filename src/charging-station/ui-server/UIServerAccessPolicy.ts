@@ -20,10 +20,8 @@ const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::'])
 /**
  * Reasons a UI server access decision is denied.
  *
- * Decision identity is a closed enum value. The human-readable rendering is
- * `DENIAL_MESSAGES[reason]`. Tests assert on `reason`; logs and errors format
- * `message`. Adding a new branch requires extending both the enum and
- * `DENIAL_MESSAGES`.
+ * The enum value is the machine-readable identity; the rendered text is
+ * `DENIAL_MESSAGES[reason]`.
  */
 export enum UIServerAccessDenialReason {
   AmbiguousForwardedClient = 'ambiguous-forwarded-client',
@@ -78,10 +76,9 @@ export interface UIServerAccessCache {
 /**
  * Outcome of a UI server access policy evaluation.
  *
- * Discriminated by `allowed`. Allowed decisions carry only the resolved
- * client address; denied decisions carry both an enum reason
- * (machine-readable, stable across refactors) and a rendered message
- * (human-readable, derived from {@link DENIAL_MESSAGES}).
+ * Discriminated by `allowed`. Allowed decisions carry the resolved client
+ * address; denied decisions carry the {@link UIServerAccessDenialReason}
+ * and its rendered message.
  */
 export type UIServerAccessDecision =
   | {
@@ -117,9 +114,8 @@ type ForwardedParams = Partial<Record<'by' | 'for' | 'host' | 'proto', string>>
  * Resolve the UI server access decision for the given request.
  *
  * The decision is memoized on the request via the supplied
- * {@link UIServerAccessCache} so a single request consulted at multiple
- * stages (access gate, rate-limit client identification) is evaluated
- * exactly once.
+ * {@link UIServerAccessCache} so a request consulted at multiple stages is
+ * evaluated exactly once.
  * @param req The incoming HTTP request.
  * @param uiServerConfiguration The UI server configuration to evaluate against.
  * @param cache The owning UI server's access cache.

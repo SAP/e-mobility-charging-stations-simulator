@@ -24,8 +24,7 @@ export const isLoopback = (address: string): boolean => {
 
 /**
  * Parse an IP literal (IPv4, IPv6, or IPv4-mapped IPv6) into a normalized
- * `family:value` pair. Bracketed IPv6 hosts and trailing port suffixes are
- * stripped via {@link normalizeHost}.
+ * `family:value` pair.
  * @param address The address to normalize.
  * @returns The normalized IP literal, or `undefined` when not a valid IP.
  */
@@ -54,8 +53,8 @@ export const normalizeIPAddress = (
 }
 
 /**
- * Strip a leading `[…]` IPv6 wrapper and a trailing `:port` suffix, then
- * lowercase the result. Hosts ending in a single trailing dot are accepted.
+ * Strip a bracketed IPv6 wrapper and a trailing `:port` suffix, lowercase
+ * the result, and drop a single trailing dot.
  * @param host The raw `Host` header or address value.
  * @returns The bare host, or `undefined` when the input is malformed.
  */
