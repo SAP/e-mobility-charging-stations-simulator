@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.16.0",
-    "pnpm": "11.5.2"
+    "pnpm": "11.5.3"
   },
-  "packageManager": "pnpm@11.5.2",
+  "packageManager": "pnpm@11.5.3",
   "type": "module",
   "bin": {
     "evse-cli": "./dist/cli.js"
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@types/ws": "^8.18.1",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "esbuild-plugin-clean": "^1.0.1"
   }
 }

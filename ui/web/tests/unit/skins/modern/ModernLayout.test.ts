@@ -364,6 +364,8 @@ describe('ModernLayout', () => {
     await flushPromises()
     // Verify dialog components exist (stubbed to true = rendered when dialog state is set)
     expect(wrapper.findComponent({ name: 'AuthorizeDialog' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'SetSupervisionUrlDialog' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'StartTransactionDialog' }).exists()).toBe(true)
     wrapper.unmount()
   })
 })
