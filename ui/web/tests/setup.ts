@@ -26,6 +26,7 @@ vi.mock('vue-toast-notification', () => ({
   useToast: () => toastMock,
 }))
 
-afterEach(() => {
+afterEach(async () => {
   localStorage.clear()
+  await vi.dynamicImportSettled()
 })
