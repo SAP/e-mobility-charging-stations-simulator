@@ -147,6 +147,52 @@ export const createMockUIServerConfiguration = (
   }
 }
 
+// RFC 5737 / RFC 3849 reserved ranges, safe for tests.
+export const TRUSTED_PROXY_IP = '192.0.2.10'
+export const EXTERNAL_CLIENT_IP = '203.0.113.10'
+export const GATEWAY_HOST = 'gateway.example.com'
+
+/**
+ * Create a configuration that places the request behind a single trusted
+ * proxy reaching `GATEWAY_HOST`. Used by tests that exercise the policy
+ * past the trusted-peer gate.
+ * @param overrides - Partial accessPolicy fields to merge with the defaults
+ * @returns UIServerConfiguration ready for proxy-aware policy tests
+ */
+export const createGatewayConfigWithTrustedProxy = (
+  overrides?: Partial<UIServerConfiguration['accessPolicy']>
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    accessPolicy: {
+      allowedHosts: [GATEWAY_HOST],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [TRUSTED_PROXY_IP],
+      ...overrides,
+    },
+  })
+
+/**
+ * Create a configuration that exposes `GATEWAY_HOST` without any trusted
+ * proxy. Used by tests that exercise the untrusted-peer gate.
+ * @param overrides - Partial accessPolicy fields to merge with the defaults
+ * @returns UIServerConfiguration with no trusted proxies
+ */
+export const createGatewayConfigWithoutTrustedProxies = (
+  overrides?: Partial<UIServerConfiguration['accessPolicy']>
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    accessPolicy: {
+      allowedHosts: [GATEWAY_HOST],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [],
+      ...overrides,
+    },
+  })
+
 /**
  * Create a mock UI server configuration with basic authentication enabled.
  * @param overrides - Partial configuration to merge with auth defaults
