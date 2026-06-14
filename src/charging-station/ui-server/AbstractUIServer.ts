@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws'
 
-import { StatusCodes } from 'http-status-codes'
+import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
 import { createServer, type Http2Server } from 'node:http2'
 
@@ -228,18 +228,17 @@ export abstract class AbstractUIServer {
     this.clearCaches()
   }
 
-  protected authenticate (req: IncomingMessage, next: (err?: Error) => void): void {
+  protected authenticate (req: IncomingMessage): boolean {
     if (this.uiServerConfiguration.authentication?.enabled !== true) {
-      next()
-      return
+      return true
     }
-    let ok = false
     if (this.isBasicAuthEnabled()) {
-      ok = this.isValidBasicAuth(req, next)
-    } else if (this.isProtocolBasicAuthEnabled()) {
-      ok = this.isValidProtocolBasicAuth(req, next)
+      return this.isValidBasicAuth(req)
     }
-    next(ok ? undefined : new BaseError('Unauthorized'))
+    if (this.isProtocolBasicAuthEnabled()) {
+      return this.isValidProtocolBasicAuth(req)
+    }
+    return false
   }
 
   /**
@@ -257,6 +256,18 @@ export abstract class AbstractUIServer {
       : { Connection: 'close' }
   }
 
+  protected getUnauthorizedDenial (): {
+    headers: Readonly<Record<string, string>>
+    reasonPhrase: string
+    status: StatusCodes
+  } {
+    return {
+      headers: { 'WWW-Authenticate': 'Basic realm=users' },
+      reasonPhrase: getReasonPhrase(StatusCodes.UNAUTHORIZED),
+      status: StatusCodes.UNAUTHORIZED,
+    }
+  }
+
   protected notifyClients (): void {
     // No-op by default — subclasses with push capability override this
   }
@@ -265,6 +276,24 @@ export abstract class AbstractUIServer {
     if (!this.uiServices.has(version)) {
       this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this))
     }
+  }
+
+  protected renderDenial (
+    res: ServerResponse,
+    payload: {
+      headers?: Readonly<Record<string, string>>
+      reasonPhrase: string
+      status: StatusCodes
+    }
+  ): void {
+    if (res.headersSent) return
+    res
+      .writeHead(payload.status, {
+        'Content-Type': 'text/plain',
+        ...payload.headers,
+        ...this.getConnectionCloseHeader(),
+      })
+      .end(`${payload.status.toString()} ${payload.reasonPhrase}`)
   }
 
   /**
@@ -287,7 +316,7 @@ export abstract class AbstractUIServer {
       return {
         headers: { 'Retry-After': '60' },
         ok: false,
-        reasonPhrase: 'Too Many Requests',
+        reasonPhrase: getReasonPhrase(StatusCodes.TOO_MANY_REQUESTS),
         status: StatusCodes.TOO_MANY_REQUESTS,
       }
     }
@@ -299,7 +328,7 @@ export abstract class AbstractUIServer {
       )
       return {
         ok: false,
-        reasonPhrase: 'Forbidden',
+        reasonPhrase: getReasonPhrase(StatusCodes.FORBIDDEN),
         status: StatusCodes.FORBIDDEN,
       }
     }
@@ -332,10 +361,9 @@ export abstract class AbstractUIServer {
     )
   }
 
-  private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
+  private isValidBasicAuth (req: IncomingMessage): boolean {
     const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
-      req.headers.authorization?.split(/\s+/).pop() ?? '',
-      next
+      req.headers.authorization?.split(/\s+/).pop() ?? ''
     )
     if (usernameAndPassword == null) {
       return false
@@ -344,7 +372,7 @@ export abstract class AbstractUIServer {
     return this.isValidUsernameAndPassword(username, password)
   }
 
-  private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
+  private isValidProtocolBasicAuth (req: IncomingMessage): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
     if (authorizationProtocol == null || isEmpty(authorizationProtocol)) {
       return false
@@ -354,8 +382,7 @@ export abstract class AbstractUIServer {
         '='
       )}`
         .split('.')
-        .pop() ?? '',
-      next
+        .pop() ?? ''
     )
     if (usernameAndPassword == null) {
       return false

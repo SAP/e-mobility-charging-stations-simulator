@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { StatusCodes } from 'http-status-codes'
+import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -38,7 +38,11 @@ import {
   registerMCPResources,
   registerMCPSchemaResources,
 } from './mcp/index.js'
-import { DEFAULT_MAX_PAYLOAD_SIZE_BYTES } from './UIServerSecurity.js'
+import {
+  DEFAULT_MAX_PAYLOAD_SIZE_BYTES,
+  PayloadTooLargeError,
+  readLimitedBody,
+} from './UIServerSecurity.js'
 import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
@@ -114,49 +118,34 @@ export class UIMCPServer extends AbstractUIServer {
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
-        res
-          .writeHead(prologue.status, {
-            'Content-Type': 'text/plain',
-            ...prologue.headers,
-            ...this.getConnectionCloseHeader(),
-          })
-          .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
+        this.renderDenial(res, prologue)
         return
       }
 
       const url = new URL(req.url ?? '/', 'http://localhost')
+      // Path filter runs before authenticate so unknown paths return 404
+      // without revealing whether authentication would have succeeded.
       if (url.pathname !== '/mcp') {
-        res
-          .writeHead(StatusCodes.NOT_FOUND, {
-            'Content-Type': 'text/plain',
-            ...this.getConnectionCloseHeader(),
-          })
-          .end(`${StatusCodes.NOT_FOUND.toString()} Not Found`)
+        this.renderDenial(res, {
+          reasonPhrase: getReasonPhrase(StatusCodes.NOT_FOUND),
+          status: StatusCodes.NOT_FOUND,
+        })
         if (!req.complete) {
           req.destroy()
         }
         return
       }
 
-      this.authenticate(req, err => {
-        if (err != null) {
-          res
-            .writeHead(StatusCodes.UNAUTHORIZED, {
-              'Content-Type': 'text/plain',
-              'WWW-Authenticate': 'Basic realm=users',
-              ...this.getConnectionCloseHeader(),
-            })
-            .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
-          return
-        }
+      if (!this.authenticate(req)) {
+        this.renderDenial(res, this.getUnauthorizedDenial())
+        return
+      }
 
-        // eslint-disable-next-line promise/no-promise-in-callback
-        this.handleMcpRequest(req, res).catch((error: unknown) => {
-          logger.error(
-            `${this.logPrefix(moduleName, 'start.httpServer.request')} Unhandled MCP request error:`,
-            error
-          )
-        })
+      this.handleMcpRequest(req, res).catch((error: unknown) => {
+        logger.error(
+          `${this.logPrefix(moduleName, 'start.httpServer.request')} Unhandled MCP request error:`,
+          error
+        )
       })
     })
 
@@ -297,8 +286,7 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
       cleanup()
-      const isBadRequest =
-        error instanceof SyntaxError || getErrorMessage(error).includes('Payload too large')
+      const isBadRequest = error instanceof SyntaxError || error instanceof PayloadTooLargeError
       this.sendErrorResponse(
         res,
         isBadRequest ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
@@ -471,30 +459,14 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   private async readRequestBody (req: IncomingMessage): Promise<unknown> {
-    const chunks: Buffer[] = []
-    let received = 0
-    for await (const chunk of req) {
-      received += (chunk as Buffer).length
-      if (received > DEFAULT_MAX_PAYLOAD_SIZE_BYTES) {
-        throw new BaseError('Payload too large')
-      }
-      chunks.push(chunk as Buffer)
-    }
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    const buffer = await readLimitedBody(req, DEFAULT_MAX_PAYLOAD_SIZE_BYTES)
+    return JSON.parse(buffer.toString('utf8'))
   }
 
   private sendErrorResponse (res: ServerResponse, statusCode: StatusCodes): void {
-    if (res.headersSent) return
-    const messages: Partial<Record<StatusCodes, string>> = {
-      [StatusCodes.BAD_REQUEST]: 'Bad Request',
-      [StatusCodes.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
-      [StatusCodes.METHOD_NOT_ALLOWED]: 'Method Not Allowed',
-    }
-    res
-      .writeHead(statusCode, {
-        'Content-Type': 'text/plain',
-        ...this.getConnectionCloseHeader(),
-      })
-      .end(`${statusCode.toString()} ${messages[statusCode] ?? 'Error'}`)
+    this.renderDenial(res, {
+      reasonPhrase: getReasonPhrase(statusCode),
+      status: statusCode,
+    })
   }
 }

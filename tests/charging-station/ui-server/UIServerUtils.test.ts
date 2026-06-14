@@ -20,9 +20,6 @@ import { logger } from '../../../src/utils/index.js'
 import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 await describe('UIServerUtils', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const noop = (): void => {}
-
   afterEach(() => {
     standardCleanup()
   })
@@ -31,55 +28,35 @@ await describe('UIServerUtils', async () => {
     await it('should parse valid credentials', () => {
       // cspell:disable-next-line
       const token = Buffer.from('alice:s3cret').toString('base64')
-      const result = getUsernameAndPasswordFromAuthorizationToken(token, noop)
+      const result = getUsernameAndPasswordFromAuthorizationToken(token)
       // cspell:disable-next-line
       assert.deepStrictEqual(result, ['alice', 's3cret'])
     })
 
     await it('should handle password containing colons', () => {
       const token = Buffer.from('user:pass:with:colons').toString('base64')
-      const result = getUsernameAndPasswordFromAuthorizationToken(token, noop)
+      const result = getUsernameAndPasswordFromAuthorizationToken(token)
       assert.deepStrictEqual(result, ['user', 'pass:with:colons'])
     })
 
     await it('should reject token missing colon separator', () => {
       // cspell:disable-next-line
       const token = Buffer.from('nocolon').toString('base64')
-      let errorMessage: string | undefined
-      const result = getUsernameAndPasswordFromAuthorizationToken(token, err => {
-        errorMessage = err?.message
-      })
-      assert.strictEqual(result, undefined)
-      assert.match(errorMessage ?? '', /missing.*separator/i)
+      assert.strictEqual(getUsernameAndPasswordFromAuthorizationToken(token), undefined)
     })
 
     await it('should reject empty username (RFC 7613 §3.1)', () => {
       const token = Buffer.from(':password').toString('base64')
-      let errorMessage: string | undefined
-      const result = getUsernameAndPasswordFromAuthorizationToken(token, err => {
-        errorMessage = err?.message
-      })
-      assert.strictEqual(result, undefined)
-      assert.match(errorMessage ?? '', /empty username/i)
+      assert.strictEqual(getUsernameAndPasswordFromAuthorizationToken(token), undefined)
     })
 
     await it('should reject empty password (RFC 7613 §4.1)', () => {
       const token = Buffer.from('username:').toString('base64')
-      let errorMessage: string | undefined
-      const result = getUsernameAndPasswordFromAuthorizationToken(token, err => {
-        errorMessage = err?.message
-      })
-      assert.strictEqual(result, undefined)
-      assert.match(errorMessage ?? '', /empty password/i)
+      assert.strictEqual(getUsernameAndPasswordFromAuthorizationToken(token), undefined)
     })
 
     await it('should reject empty token', () => {
-      let errorMessage: string | undefined
-      const result = getUsernameAndPasswordFromAuthorizationToken('', err => {
-        errorMessage = err?.message
-      })
-      assert.strictEqual(result, undefined)
-      assert.match(errorMessage ?? '', /missing.*separator/i)
+      assert.strictEqual(getUsernameAndPasswordFromAuthorizationToken(''), undefined)
     })
   })
 

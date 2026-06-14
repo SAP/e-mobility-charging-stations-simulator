@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 
-import { StatusCodes } from 'http-status-codes'
+import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import type { IBootstrap } from '../IBootstrap.js'
@@ -184,9 +184,15 @@ export class UIWebSocketServer extends AbstractUIServer {
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
       if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
-        socket.write(buildUpgradeRejectionResponse(StatusCodes.BAD_REQUEST, 'Bad Request'), () => {
-          socket.destroy()
-        })
+        socket.write(
+          buildUpgradeRejectionResponse(
+            StatusCodes.BAD_REQUEST,
+            getReasonPhrase(StatusCodes.BAD_REQUEST)
+          ),
+          () => {
+            socket.destroy()
+          }
+        )
         return
       }
 
@@ -211,33 +217,35 @@ export class UIWebSocketServer extends AbstractUIServer {
         )
       }
       socket.on('error', onSocketError)
-      this.authenticate(req, err => {
+      if (!this.authenticate(req)) {
         socket.removeListener('error', onSocketError)
-        if (err != null) {
-          socket.write(
-            buildUpgradeRejectionResponse(StatusCodes.UNAUTHORIZED, 'Unauthorized', {
-              'WWW-Authenticate': 'Basic realm=users',
-            }),
-            () => {
-              socket.destroy()
-            }
-          )
-          return
-        }
-        try {
-          this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-            this.webSocketServer.emit('connection', ws, req)
-          })
-        } catch (error) {
-          logger.error(
-            `${this.logPrefix(
-              moduleName,
-              'start.httpServer.on.upgrade'
-            )} Error at connection upgrade event handling:`,
-            error
-          )
-        }
-      })
+        const unauthorized = this.getUnauthorizedDenial()
+        socket.write(
+          buildUpgradeRejectionResponse(
+            unauthorized.status,
+            unauthorized.reasonPhrase,
+            unauthorized.headers
+          ),
+          () => {
+            socket.destroy()
+          }
+        )
+        return
+      }
+      socket.removeListener('error', onSocketError)
+      try {
+        this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+          this.webSocketServer.emit('connection', ws, req)
+        })
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'start.httpServer.on.upgrade'
+          )} Error at connection upgrade event handling:`,
+          error
+        )
+      }
     })
     this.startHttpServer()
   }
