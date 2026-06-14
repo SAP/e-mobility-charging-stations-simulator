@@ -245,7 +245,11 @@ const getForwardedClientAddress = (
   if (addresses.length !== 1) {
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedClient }
   }
-  const normalizedAddress = normalizeIPAddress(addresses[0])
+  const candidate = addresses[0]
+  if (isHiddenIdentity(candidate)) {
+    return ABSENT
+  }
+  const normalizedAddress = normalizeIPAddress(candidate)
   return normalizedAddress != null
     ? { kind: 'ok', value: normalizedAddress.value }
     : { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedClient }
@@ -294,6 +298,13 @@ const getForwardedHost = (
 const nonEmpty = (value: string | undefined): string | undefined =>
   value == null || value === '' ? undefined : value
 
+// RFC 7239 §6: "unknown" and obfuscated node identifiers ("_" + token chars).
+// Optional ":port" suffix is stripped before comparison.
+const isHiddenIdentity = (value: string): boolean => {
+  const withoutPort = value.replace(/:\d+$/, '')
+  return withoutPort.toLowerCase() === 'unknown' || /^_[A-Za-z0-9._-]+$/.test(withoutPort)
+}
+
 const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<ForwardedParams> => {
   const forwarded = getSingleHeaderValue(req, 'forwarded')
   if (forwarded == null) {
@@ -314,7 +325,7 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
       part
         .slice(separatorIndex + 1)
         .trim()
-        .replace(/^"|"$/g, '')
+        .replace(/^"(.*)"$/, '$1')
     )
     if (key !== 'by' && key !== 'for' && key !== 'host' && key !== 'proto') {
       continue
