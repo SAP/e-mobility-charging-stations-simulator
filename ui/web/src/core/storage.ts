@@ -1,11 +1,12 @@
 import { SHARED_TOGGLE_BUTTON_KEY_PREFIX, TOGGLE_BUTTON_KEY_PREFIX } from './Constants.js'
+import { isDev } from './env.js'
 
 export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
   try {
     const item = localStorage.getItem(key)
     return item != null ? (JSON.parse(item) as T) : defaultValue
   } catch {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       console.debug(`[localStorage] Failed to read key '${key}', using default`)
     }
     return defaultValue
@@ -21,7 +22,7 @@ export const setToLocalStorage = <T>(key: string, value: T): void => {
     // - QuotaExceededError when the origin's storage quota is genuinely exceeded
     // - SecurityError when storage is blocked by user settings or browser policies
     //   (e.g., "Block All Cookies" in Safari, third-party iframe in Chrome, file: URLs)
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       console.debug(`[localStorage] Failed to write key '${key}'`)
     }
   }
@@ -31,7 +32,7 @@ export const deleteFromLocalStorage = (key: string): void => {
   try {
     localStorage.removeItem(key)
   } catch {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       console.debug(`[localStorage] Failed to delete key '${key}'`)
     }
   }
@@ -56,7 +57,7 @@ export const deleteLocalStorageByKeyPattern = (pattern: string): void => {
       deleteFromLocalStorage(key)
     }
   } catch {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       console.debug(`[localStorage] Failed to delete keys matching '${pattern}'`)
     }
   }

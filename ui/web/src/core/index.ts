@@ -12,6 +12,7 @@ export {
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   WH_PER_KWH,
 } from './Constants.js'
+export { isDev } from './env.js'
 export {
   chargingStationsKey,
   configurationKey,

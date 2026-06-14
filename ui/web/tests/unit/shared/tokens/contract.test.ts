@@ -1,12 +1,13 @@
 /**
- * @file Tests for TOKEN_CONTRACT theme compliance
- * @description Ensures every theme CSS file defines all CSS custom properties declared in TOKEN_CONTRACT.
+ * @file Tests for TOKEN_CONTRACT theme compliance and validateTokenContract guard
+ * @description Ensures every theme CSS file defines all CSS custom properties declared in
+ *   TOKEN_CONTRACT, and that validateTokenContract is a no-op under Vitest.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { TOKEN_CONTRACT } from '@/shared/tokens/contract.js'
+import { TOKEN_CONTRACT, validateTokenContract } from '@/shared/tokens/contract.js'
 
 const themesDir = resolve(__dirname, '../../../../src/assets/themes')
 const themeFiles = ['tokyo-night-storm.css', 'catppuccin-latte.css', 'sap-horizon.css']
@@ -20,5 +21,13 @@ describe('TOKEN_CONTRACT', () => {
       const propRegex = new RegExp(`^\\s*${prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:`, 'm')
       expect(css, `Missing ${prop} in ${themeFile} or base.css`).toMatch(propRegex)
     }
+  })
+})
+
+describe('validateTokenContract', () => {
+  it('should be a no-op under Vitest', () => {
+    const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame')
+    validateTokenContract('useTheme', 'tokyo-night-storm')
+    expect(rafSpy).not.toHaveBeenCalled()
   })
 })
