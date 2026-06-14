@@ -175,7 +175,13 @@ export class UIWebSocketServer extends AbstractUIServer {
 
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
-        socket.write(`HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n\r\n`)
+        const headerLines = Object.entries(prologue.headers ?? {})
+          .map(([name, value]) => `${name}: ${value}`)
+          .join('\r\n')
+        const headerBlock = headerLines.length > 0 ? `${headerLines}\r\n` : ''
+        socket.write(
+          `HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n${headerBlock}\r\n`
+        )
         socket.destroy()
         return
       }

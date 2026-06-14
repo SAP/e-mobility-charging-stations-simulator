@@ -224,4 +224,46 @@ await describe('UIWebSocketServer', async () => {
     assert.strictEqual(socket.destroyed, true)
     assert.match(socket.writes.join(''), /403 Forbidden/)
   })
+
+  await it('should include the Retry-After header on rate-limited upgrades', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: [],
+        allowedOrigins: [],
+        allowLoopbackProxy: false,
+        requireTlsForNonLoopback: true,
+        trustedProxies: [],
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    Reflect.set(server, 'rateLimiter', (_ip: string) => false)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'localhost',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    const response = socket.writes.join('')
+    assert.strictEqual(socket.destroyed, true)
+    assert.match(response, /429 Too Many Requests/)
+    assert.match(response, /Retry-After: 60/)
+  })
 })
