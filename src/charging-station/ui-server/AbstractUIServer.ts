@@ -100,7 +100,6 @@ export abstract class AbstractUIServer {
           `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
-    this.httpServer.setTimeout(HTTP_REQUEST_TIMEOUT_MS)
     if ('requestTimeout' in this.httpServer) {
       this.httpServer.requestTimeout = HTTP_REQUEST_TIMEOUT_MS
     }

@@ -301,7 +301,7 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHeader }
   }
   const params: ForwardedParams = {}
-  for (const part of entries[0].split(';')) {
+  for (const part of splitForwardedPairs(entries[0])) {
     const separatorIndex = part.indexOf('=')
     if (separatorIndex === -1) {
       continue
@@ -320,6 +320,33 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
     params[key] = value
   }
   return { kind: 'ok', value: params }
+}
+
+const splitForwardedPairs = (value: string): string[] => {
+  const pairs: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (const char of value) {
+    if (char === '"') {
+      inQuotes = !inQuotes
+      current += char
+      continue
+    }
+    if (char === ';' && !inQuotes) {
+      const trimmed = current.trim()
+      if (trimmed !== '') {
+        pairs.push(trimmed)
+      }
+      current = ''
+      continue
+    }
+    current += char
+  }
+  const trimmed = current.trim()
+  if (trimmed !== '') {
+    pairs.push(trimmed)
+  }
+  return pairs
 }
 
 const getHeaderValues = (req: IncomingMessage, headerName: string): string[] => {

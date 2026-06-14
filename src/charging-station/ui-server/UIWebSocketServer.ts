@@ -40,9 +40,9 @@ const buildUpgradeRejectionResponse = (
   extraHeaders: Readonly<Record<string, string>> = {}
 ): string => {
   const headers: Readonly<Record<string, string>> = {
-    Connection: 'close',
     'Content-Length': '0',
     ...extraHeaders,
+    Connection: 'close',
   }
   const headerLines = Object.entries(headers)
     .map(([name, value]) => `${name}: ${value}`)
