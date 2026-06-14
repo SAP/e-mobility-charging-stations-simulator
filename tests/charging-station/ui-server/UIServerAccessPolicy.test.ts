@@ -395,12 +395,113 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.HostNotAllowed)
     })
 
+    await it('should match X-Forwarded-Host against allowedHosts when the immediate peer is a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'internal-svc',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-host': 'gateway.example.com',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
     await it('should reject disallowed origin headers', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
           headers: { host: 'localhost:8080', origin: 'http://attacker.test' },
         }),
         createAccessPolicyConfiguration()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.OriginNotAllowed)
+    })
+
+    await it('should accept allowedOrigins entries with a trailing slash', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'https://app.example.com' },
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: ['https://app.example.com/'],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should accept allowedOrigins entries with the protocol default port', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'https://app.example.com' },
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: ['https://app.example.com:443'],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should reject origins that differ from allowedOrigins by port', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'https://app.example.com:8081' },
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: ['https://app.example.com:8080'],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.OriginNotAllowed)
+    })
+
+    await it('should reject origins that differ from allowedOrigins by protocol', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: { host: 'localhost:8080', origin: 'http://app.example.com' },
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: ['https://app.example.com'],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
       )
 
       expectDenied(decision, UIServerAccessDenialReason.OriginNotAllowed)

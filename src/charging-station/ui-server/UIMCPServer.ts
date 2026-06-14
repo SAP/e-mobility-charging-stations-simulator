@@ -120,6 +120,8 @@ export class UIMCPServer extends AbstractUIServer {
             ...prologue.headers,
           })
           .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
+        res.destroy()
+        req.destroy()
         return
       }
 

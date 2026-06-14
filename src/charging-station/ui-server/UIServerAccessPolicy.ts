@@ -148,8 +148,13 @@ const evaluateUIServerAccess = (
   const remoteAddressIsLoopback = isLoopback(remoteAddress)
   const remoteAddressIsTrustedProxy = isTrustedProxy(remoteAddress, trustedProxies)
   const forwardedHeadersPresent = hasForwardedHeaders(req)
-  const forwardedProtocol = getForwardedProtocol(req)
-  const forwardedClientAddress = getForwardedClientAddress(req, remoteAddressIsTrustedProxy)
+  const forwarded = parseSingleForwardedHeader(req)
+  const forwardedProtocol = getForwardedProtocol(req, forwarded)
+  const forwardedClientAddress = getForwardedClientAddress(
+    req,
+    remoteAddressIsTrustedProxy,
+    forwarded
+  )
   const clientAddress =
     forwardedClientAddress.kind === 'ok' ? forwardedClientAddress.value : remoteAddress
 
@@ -201,12 +206,12 @@ const deny = (
 
 const getForwardedClientAddress = (
   req: IncomingMessage,
-  trustedProxy: boolean
+  trustedProxy: boolean,
+  forwarded: ParseOutcome<ForwardedParams>
 ): ParseOutcome<string> => {
   if (!trustedProxy) {
     return ABSENT
   }
-  const forwarded = parseSingleForwardedHeader(req)
   if (forwarded.kind === 'error') {
     return forwarded
   }
@@ -239,8 +244,10 @@ const getForwardedClientAddress = (
     : { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedClient }
 }
 
-const getForwardedProtocol = (req: IncomingMessage): ParseOutcome<string> => {
-  const forwarded = parseSingleForwardedHeader(req)
+const getForwardedProtocol = (
+  req: IncomingMessage,
+  forwarded: ParseOutcome<ForwardedParams>
+): ParseOutcome<string> => {
   if (forwarded.kind === 'error') {
     return forwarded
   }
@@ -309,18 +316,17 @@ const hasDuplicateHeaders = (req: IncomingMessage, headerNames: readonly string[
   const distinctHeaders = Reflect.get(req, 'headersDistinct') as
     | IncomingMessage['headersDistinct']
     | undefined
+  const rawHeaders = (Reflect.get(req, 'rawHeaders') as string[] | undefined) ?? []
+  const rawHeaderCounts = new Map<string, number>()
+  for (let index = 0; index < rawHeaders.length; index += 2) {
+    const name = rawHeaders[index].toLowerCase()
+    rawHeaderCounts.set(name, (rawHeaderCounts.get(name) ?? 0) + 1)
+  }
   for (const headerName of headerNames) {
     if ((distinctHeaders?.[headerName]?.length ?? 0) > 1) {
       return true
     }
-    let rawHeaderCount = 0
-    const rawHeaders = (Reflect.get(req, 'rawHeaders') as string[] | undefined) ?? []
-    for (let index = 0; index < rawHeaders.length; index += 2) {
-      if (rawHeaders[index]?.toLowerCase() === headerName) {
-        ++rawHeaderCount
-      }
-    }
-    if (rawHeaderCount > 1) {
+    if ((rawHeaderCounts.get(headerName) ?? 0) > 1) {
       return true
     }
   }
@@ -344,14 +350,12 @@ const isHostAllowed = (
   if (host == null) {
     return false
   }
-  const hostsToCheck = [host]
+  // When the immediate peer is a trusted proxy and `X-Forwarded-Host` is
+  // present, it is the canonical public host (proxies that rewrite `Host`
+  // to an internal upstream name forward the public name here).
   const forwardedHost = getSingleHeaderValue(req, 'x-forwarded-host')
-  if (trustedProxy && forwardedHost != null) {
-    hostsToCheck.push(forwardedHost)
-  }
-  return hostsToCheck.every(hostToCheck =>
-    allowedHosts.some(allowedHost => isSameHost(hostToCheck, allowedHost))
-  )
+  const hostToCheck = trustedProxy && forwardedHost != null ? forwardedHost : host
+  return allowedHosts.some(allowedHost => isSameHost(hostToCheck, allowedHost))
 }
 
 const isOriginAllowed = (
@@ -362,6 +366,12 @@ const isOriginAllowed = (
   if (origin == null) {
     return true
   }
+  let originUrl: URL
+  try {
+    originUrl = new URL(origin)
+  } catch {
+    return false
+  }
   // When `accessPolicy.allowedOrigins` is non-empty it is the exclusive
   // allowlist. When empty, the origin's URL hostname falls back to matching
   // against `getAllowedHosts(...)` so that browser-facing access stays
@@ -369,21 +379,23 @@ const isOriginAllowed = (
   // "UI Protocol" section).
   const allowedOrigins = uiServerConfiguration.accessPolicy?.allowedOrigins ?? []
   if (allowedOrigins.length > 0) {
-    return allowedOrigins.some(
-      allowedOrigin => allowedOrigin.toLowerCase() === origin.toLowerCase()
-    )
-  }
-  let originUrl: URL
-  try {
-    originUrl = new URL(origin)
-  } catch {
-    return false
+    return allowedOrigins.some(allowedOrigin => isSameOrigin(originUrl, allowedOrigin))
   }
   const allowedHosts = getAllowedHosts(uiServerConfiguration)
   return (
     allowedHosts.length > 0 &&
     allowedHosts.some(allowedHost => isSameHost(originUrl.hostname, allowedHost))
   )
+}
+
+const isSameOrigin = (left: URL, right: string): boolean => {
+  let rightUrl: URL
+  try {
+    rightUrl = new URL(right)
+  } catch {
+    return false
+  }
+  return left.protocol === rightUrl.protocol && left.host === rightUrl.host
 }
 
 const getAllowedHosts = (uiServerConfiguration: UIServerConfiguration): string[] => {
