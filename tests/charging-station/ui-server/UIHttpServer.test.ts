@@ -6,6 +6,7 @@
 import type { IncomingMessage } from 'node:http'
 
 import assert from 'node:assert/strict'
+import { once } from 'node:events'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
@@ -15,13 +16,12 @@ import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServ
 import { DEFAULT_COMPRESSION_THRESHOLD_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
+import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockBootstrap,
   createMockIncomingMessage,
   createMockUIServerConfiguration,
   MockServerResponse,
-  waitForStreamFlush,
 } from './UIServerTestUtils.js'
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -332,7 +332,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.strictEqual(res.headers['Content-Encoding'], 'gzip')
       assert.strictEqual(res.headers['Content-Type'], 'application/json')
@@ -347,7 +347,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, payload])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.notStrictEqual(res.bodyBuffer, undefined)
       if (res.bodyBuffer == null) {
@@ -378,7 +378,7 @@ await describe('UIHttpServer', async () => {
 
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.strictEqual(gzipServer.getAcceptsGzip().has(TEST_UUID), false)
     })

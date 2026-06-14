@@ -344,17 +344,6 @@ export const createMockUIService = (
 })
 
 /**
- * Wait for stream operations to flush.
- * @param delayMs - Delay in milliseconds to wait
- * @returns Promise that resolves after the delay
- */
-export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
-  await new Promise(resolve => {
-    setTimeout(resolve, delayMs)
-  })
-}
-
-/**
  * Create mock charging station data with a specific OCPP version.
  * @param hashId - Unique identifier for the charging station
  * @param ocppVersion - OCPP protocol version
