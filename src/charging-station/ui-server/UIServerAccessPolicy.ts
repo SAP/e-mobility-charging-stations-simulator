@@ -36,6 +36,8 @@ export enum UIServerAccessDenialReason {
   ForwardedFromUntrustedPeer = 'forwarded-from-untrusted-peer',
   HostNotAllowed = 'host-not-allowed',
   InvalidForwardedClient = 'invalid-forwarded-client',
+  InvalidForwardedHost = 'invalid-forwarded-host',
+  InvalidForwardedProtocol = 'invalid-forwarded-protocol',
   LoopbackProxyDisabled = 'loopback-proxy-disabled',
   OriginNotAllowed = 'origin-not-allowed',
   ProxyTlsRequired = 'proxy-tls-required',
@@ -60,6 +62,10 @@ const DENIAL_MESSAGES: Readonly<Record<UIServerAccessDenialReason, string>> = {
   [UIServerAccessDenialReason.HostNotAllowed]: 'Host header is not allowed',
   [UIServerAccessDenialReason.InvalidForwardedClient]:
     'Invalid X-Forwarded-For header is not allowed',
+  [UIServerAccessDenialReason.InvalidForwardedHost]:
+    'Invalid X-Forwarded-Host header is not allowed',
+  [UIServerAccessDenialReason.InvalidForwardedProtocol]:
+    'Invalid X-Forwarded-Proto header is not allowed',
   [UIServerAccessDenialReason.LoopbackProxyDisabled]:
     'Loopback proxy forwarding requires accessPolicy.allowLoopbackProxy=true',
   [UIServerAccessDenialReason.OriginNotAllowed]: 'Origin header is not allowed',
@@ -73,6 +79,10 @@ const DENIAL_MESSAGES: Readonly<Record<UIServerAccessDenialReason, string>> = {
  * requests and the normalized trusted-proxy index of the active
  * configuration. Both maps are weakly keyed so entries are released with
  * their owning object.
+ *
+ * Cache invalidation is identity-based: mutating
+ * `accessPolicy.trustedProxies` in place will not refresh the normalized
+ * set. Reload flows must construct a new {@link UIServerConfiguration}.
  */
 export interface UIServerAccessCache {
   readonly decisions: WeakMap<IncomingMessage, UIServerAccessDecision>
@@ -202,11 +212,11 @@ const getForwardedClientAddress = (
   trustedProxy: boolean,
   forwarded: ParseOutcome<ForwardedParams>
 ): ParseOutcome<string> => {
-  if (!trustedProxy) {
-    return ABSENT
-  }
   if (forwarded.kind === 'error') {
     return forwarded
+  }
+  if (!trustedProxy) {
+    return ABSENT
   }
   const picked = pickForwardedValue(
     nonEmpty(getSingleHeaderValue(req, 'x-forwarded-for')),
@@ -255,7 +265,10 @@ const getForwardedProtocol = (
   }
   if (xForwardedProtocol != null) {
     const protocols = splitHeaderList(xForwardedProtocol)
-    if (protocols.length !== 1) {
+    if (protocols.length === 0) {
+      return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedProtocol }
+    }
+    if (protocols.length > 1) {
       return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedProtocol }
     }
     return { kind: 'ok', value: protocols[0].toLowerCase() }
@@ -281,7 +294,10 @@ const getForwardedHost = (
   }
   if (xForwardedHost != null) {
     const hosts = splitHeaderList(xForwardedHost)
-    if (hosts.length !== 1) {
+    if (hosts.length === 0) {
+      return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedHost }
+    }
+    if (hosts.length > 1) {
       return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHost }
     }
     return { kind: 'ok', value: hosts[0] }
@@ -327,12 +343,9 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
       continue
     }
     const key = part.slice(0, separatorIndex).trim().toLowerCase()
-    const value = nonEmpty(
-      part
-        .slice(separatorIndex + 1)
-        .trim()
-        .replace(/^"(.*)"$/, '$1')
-    )
+    const raw = part.slice(separatorIndex + 1).trim()
+    const quoted = /^"(.*)"$/.exec(raw)
+    const value = nonEmpty(quoted != null ? quoted[1].replace(/\\(.)/g, '$1') : raw)
     if (key !== 'by' && key !== 'for' && key !== 'host' && key !== 'proto') {
       continue
     }

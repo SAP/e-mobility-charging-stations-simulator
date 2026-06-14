@@ -248,6 +248,40 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.options')))
     })
 
+    await it('should reject uiServer options as null with object-shape message', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: null,
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i =>
+            i.path.join('.').includes('uiServer.options') && i.message.includes('non-array object')
+        )
+      )
+    })
+
+    await it('should reject uiServer options as array with object-shape message', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: [],
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i =>
+            i.path.join('.').includes('uiServer.options') && i.message.includes('non-array object')
+        )
+      )
+    })
+
     await it('should reject hostnames in trustedProxies', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({

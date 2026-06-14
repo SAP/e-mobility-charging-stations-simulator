@@ -139,14 +139,14 @@ export const UIServerAccessPolicySchema = z
   })
   .strict()
 
-const UIServerListenOptionsSchema = z.custom<ListenOptions>(value => {
-  return (
-    value != null &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    !Object.hasOwn(value, 'accessPolicy')
+const UIServerListenOptionsSchema = z
+  .custom<ListenOptions>(
+    value => value != null && typeof value === 'object' && !Array.isArray(value),
+    { message: 'must be a non-array object' }
   )
-}, "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'")
+  .refine(value => !Object.hasOwn(value as object, 'accessPolicy'), {
+    message: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
+  })
 
 /**
  * UIServerConfiguration — UI server configuration section.

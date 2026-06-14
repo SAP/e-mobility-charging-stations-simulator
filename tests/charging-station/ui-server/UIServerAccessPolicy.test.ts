@@ -334,6 +334,39 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedHost)
     })
 
+    await it('should reject empty X-Forwarded-Proto comma-only lists from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': ',,,',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createGatewayConfigWithTrustedProxy()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.InvalidForwardedProtocol)
+    })
+
+    await it('should reject empty X-Forwarded-Host comma-only lists from a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-host': ',,,',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createGatewayConfigWithTrustedProxy()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.InvalidForwardedHost)
+    })
+
     await it('should reject Forwarded headers with multiple comma-separated entries', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
@@ -1060,6 +1093,31 @@ await describe('UIServerAccessPolicy', async () => {
 
       assert.strictEqual(decision.allowed, true)
       assert.strictEqual(decision.clientAddress, '2001:db8:0:0:0:0:0:1')
+    })
+
+    await it('should unescape RFC 7230 quoted-pair sequences in Forwarded parameter values', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded:
+              'for="203.0.113.10";host="\\g\\a\\t\\e\\w\\a\\y\\.\\e\\x\\a\\m\\p\\l\\e\\.\\c\\o\\m";proto=https',
+            host: 'gateway.example.com',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.10')
     })
 
     await it('should still require TLS when a trusted proxy claims a loopback client', () => {
