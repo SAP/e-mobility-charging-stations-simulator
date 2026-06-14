@@ -34,6 +34,22 @@ import {
 
 const moduleName = 'UIWebSocketServer'
 
+const buildUpgradeRejectionResponse = (
+  status: StatusCodes,
+  reasonPhrase: string,
+  extraHeaders: Readonly<Record<string, string>> = {}
+): string => {
+  const headers: Readonly<Record<string, string>> = {
+    Connection: 'close',
+    'Content-Length': '0',
+    ...extraHeaders,
+  }
+  const headerLines = Object.entries(headers)
+    .map(([name, value]) => `${name}: ${value}`)
+    .join('\r\n')
+  return `HTTP/1.1 ${status.toString()} ${reasonPhrase}\r\n${headerLines}\r\n\r\n`
+}
+
 export class UIWebSocketServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI WebSocket Server'
 
@@ -168,7 +184,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
       if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
-        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`, () => {
+        socket.write(buildUpgradeRejectionResponse(StatusCodes.BAD_REQUEST, 'Bad Request'), () => {
           socket.destroy()
         })
         return
@@ -176,12 +192,8 @@ export class UIWebSocketServer extends AbstractUIServer {
 
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
-        const headerLines = Object.entries(prologue.headers ?? {})
-          .map(([name, value]) => `${name}: ${value}`)
-          .join('\r\n')
-        const headerBlock = headerLines.length > 0 ? `${headerLines}\r\n` : ''
         socket.write(
-          `HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n${headerBlock}\r\n`,
+          buildUpgradeRejectionResponse(prologue.status, prologue.reasonPhrase, prologue.headers),
           () => {
             socket.destroy()
           }
@@ -203,7 +215,9 @@ export class UIWebSocketServer extends AbstractUIServer {
         socket.removeListener('error', onSocketError)
         if (err != null) {
           socket.write(
-            `HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\nWWW-Authenticate: Basic realm=users\r\n\r\n`,
+            buildUpgradeRejectionResponse(StatusCodes.UNAUTHORIZED, 'Unauthorized', {
+              'WWW-Authenticate': 'Basic realm=users',
+            }),
             () => {
               socket.destroy()
             }

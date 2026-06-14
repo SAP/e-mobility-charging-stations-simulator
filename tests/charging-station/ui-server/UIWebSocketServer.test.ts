@@ -223,7 +223,10 @@ await describe('UIWebSocketServer', async () => {
     }
 
     assert.strictEqual(socket.destroyed, true)
-    assert.match(socket.writes.join(''), /403 Forbidden/)
+    const response = socket.writes.join('')
+    assert.match(response, /403 Forbidden/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
   })
 
   await it('should include the Retry-After header on rate-limited upgrades', async () => {
@@ -266,6 +269,8 @@ await describe('UIWebSocketServer', async () => {
     assert.strictEqual(socket.destroyed, true)
     assert.match(response, /429 Too Many Requests/)
     assert.match(response, /Retry-After: 60/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
   })
 
   await it('should advertise WWW-Authenticate on auth-denied upgrades', async () => {
@@ -300,5 +305,7 @@ await describe('UIWebSocketServer', async () => {
     assert.strictEqual(socket.destroyed, true)
     assert.match(response, /401 Unauthorized/)
     assert.match(response, /WWW-Authenticate: Basic realm=users/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
   })
 })

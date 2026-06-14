@@ -26,6 +26,7 @@ const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::'])
 export enum UIServerAccessDenialReason {
   AmbiguousForwardedClient = 'ambiguous-forwarded-client',
   AmbiguousForwardedHeader = 'ambiguous-forwarded-header',
+  AmbiguousForwardedHost = 'ambiguous-forwarded-host',
   AmbiguousForwardedParameter = 'ambiguous-forwarded-parameter',
   AmbiguousForwardedProtocol = 'ambiguous-forwarded-protocol',
   DuplicateGatewayHeaders = 'duplicate-gateway-headers',
@@ -43,6 +44,8 @@ const DENIAL_MESSAGES: Readonly<Record<UIServerAccessDenialReason, string>> = {
     'Ambiguous forwarded client address headers are not allowed',
   [UIServerAccessDenialReason.AmbiguousForwardedHeader]:
     'Ambiguous Forwarded header is not allowed',
+  [UIServerAccessDenialReason.AmbiguousForwardedHost]:
+    'Ambiguous forwarded host headers are not allowed',
   [UIServerAccessDenialReason.AmbiguousForwardedParameter]:
     'Ambiguous Forwarded parameter is not allowed',
   [UIServerAccessDenialReason.AmbiguousForwardedProtocol]:
@@ -155,6 +158,7 @@ const evaluateUIServerAccess = (
     remoteAddressIsTrustedProxy,
     forwarded
   )
+  const forwardedHost = getForwardedHost(req, forwarded)
   const clientAddress =
     forwardedClientAddress.kind === 'ok' ? forwardedClientAddress.value : remoteAddress
 
@@ -167,13 +171,16 @@ const evaluateUIServerAccess = (
   if (forwardedClientAddress.kind === 'error') {
     return deny(clientAddress, forwardedClientAddress.reason)
   }
+  if (forwardedHost.kind === 'error') {
+    return deny(clientAddress, forwardedHost.reason)
+  }
   if (forwardedHeadersPresent && !remoteAddressIsTrustedProxy) {
     return deny(clientAddress, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
   }
   if (forwardedHeadersPresent && remoteAddressIsLoopback && !allowLoopbackProxy) {
     return deny(clientAddress, UIServerAccessDenialReason.LoopbackProxyDisabled)
   }
-  if (!isHostAllowed(req, uiServerConfiguration, remoteAddressIsTrustedProxy)) {
+  if (!isHostAllowed(req, uiServerConfiguration, remoteAddressIsTrustedProxy, forwardedHost)) {
     return deny(clientAddress, UIServerAccessDenialReason.HostNotAllowed)
   }
   if (!isOriginAllowed(req, uiServerConfiguration)) {
@@ -268,6 +275,22 @@ const getForwardedProtocol = (
     : ABSENT
 }
 
+const getForwardedHost = (
+  req: IncomingMessage,
+  forwarded: ParseOutcome<ForwardedParams>
+): ParseOutcome<string> => {
+  if (forwarded.kind === 'error') {
+    return forwarded
+  }
+  const xForwardedHost = getSingleHeaderValue(req, 'x-forwarded-host')
+  const forwardedHostFromForwarded = forwarded.kind === 'ok' ? forwarded.value.host : undefined
+  if (forwardedHostFromForwarded != null && xForwardedHost != null) {
+    return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHost }
+  }
+  const value = forwardedHostFromForwarded ?? xForwardedHost
+  return value != null ? { kind: 'ok', value } : ABSENT
+}
+
 const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<ForwardedParams> => {
   const forwarded = getSingleHeaderValue(req, 'forwarded')
   if (forwarded == null) {
@@ -340,7 +363,8 @@ const hasForwardedHeaders = (req: IncomingMessage): boolean => {
 const isHostAllowed = (
   req: IncomingMessage,
   uiServerConfiguration: UIServerConfiguration,
-  trustedProxy: boolean
+  trustedProxy: boolean,
+  forwardedHost: ParseOutcome<string>
 ): boolean => {
   const allowedHosts = getAllowedHosts(uiServerConfiguration)
   if (allowedHosts.length === 0) {
@@ -350,11 +374,12 @@ const isHostAllowed = (
   if (host == null) {
     return false
   }
-  // When the immediate peer is a trusted proxy and `X-Forwarded-Host` is
-  // present, it is the canonical public host (proxies that rewrite `Host`
+  // When the immediate peer is a trusted proxy and a forwarded host header
+  // is present, it is the canonical public host (proxies that rewrite `Host`
   // to an internal upstream name forward the public name here).
-  const forwardedHost = getSingleHeaderValue(req, 'x-forwarded-host')
-  const hostToCheck = trustedProxy && forwardedHost != null ? forwardedHost : host
+  const trustedForwardedHost =
+    trustedProxy && forwardedHost.kind === 'ok' ? forwardedHost.value : undefined
+  const hostToCheck = trustedForwardedHost ?? host
   return allowedHosts.some(allowedHost => isSameHost(hostToCheck, allowedHost))
 }
 

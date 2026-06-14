@@ -420,6 +420,76 @@ await describe('UIServerAccessPolicy', async () => {
       assert.strictEqual(decision.allowed, true)
     })
 
+    await it('should match Forwarded host parameter against allowedHosts when the immediate peer is a trusted proxy', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'for=203.0.113.10;host=gateway.example.com;proto=https',
+            host: 'internal-svc',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      assert.strictEqual(decision.allowed, true)
+    })
+
+    await it('should reject conflicting Forwarded host and X-Forwarded-Host headers', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'for=203.0.113.10;host=gateway.example.com;proto=https',
+            host: 'internal-svc',
+            'x-forwarded-host': 'attacker.test',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['192.0.2.10'],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedHost)
+    })
+
+    await it('should ignore Forwarded host parameter when the immediate peer is untrusted', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'host=gateway.example.com',
+            host: 'internal-svc',
+          },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
+    })
+
     await it('should reject disallowed origin headers', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
