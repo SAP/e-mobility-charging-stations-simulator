@@ -242,6 +242,21 @@ export abstract class AbstractUIServer {
     next(ok ? undefined : new BaseError('Unauthorized'))
   }
 
+  /**
+   * Connection-close header to attach on denial responses.
+   *
+   * HTTP/2 forbids `Connection` as a connection-specific header; emitting it
+   * triggers a Node `UnsupportedWarning` and the value is dropped. Streams are
+   * closed by `res.end()` instead. HTTP/1.1 responses keep the explicit close
+   * to terminate keep-alive on denial.
+   * @returns Header object spreadable into `writeHead` (empty on HTTP/2).
+   */
+  protected getConnectionCloseHeader (): Record<string, string> {
+    return this.uiServerConfiguration.version === ApplicationProtocolVersion.VERSION_20
+      ? {}
+      : { Connection: 'close' }
+  }
+
   protected notifyClients (): void {
     // No-op by default — subclasses with push capability override this
   }

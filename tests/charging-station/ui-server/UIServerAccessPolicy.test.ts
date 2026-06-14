@@ -490,6 +490,54 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
     })
 
+    await it('should prefer untrusted peer denial over ambiguous forwarded protocol', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'proto=https',
+            host: 'gateway.example.com',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
+    })
+
+    await it('should prefer untrusted peer denial over ambiguous forwarded host', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: 'host=gateway.example.com',
+            host: 'internal-svc',
+            'x-forwarded-host': 'attacker.test',
+          },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
+    })
+
     await it('should reject disallowed origin headers', () => {
       const decision = evaluate(
         createAccessPolicyRequest({

@@ -111,7 +111,7 @@ export class UIHttpServer extends AbstractUIServer {
         .writeHead(prologue.status, {
           'Content-Type': 'text/plain',
           ...prologue.headers,
-          Connection: 'close',
+          ...this.getConnectionCloseHeader(),
         })
         .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
       return
@@ -121,9 +121,9 @@ export class UIHttpServer extends AbstractUIServer {
       if (err != null) {
         res
           .writeHead(StatusCodes.UNAUTHORIZED, {
-            Connection: 'close',
             'Content-Type': 'text/plain',
             'WWW-Authenticate': 'Basic realm=users',
+            ...this.getConnectionCloseHeader(),
           })
           .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
         return

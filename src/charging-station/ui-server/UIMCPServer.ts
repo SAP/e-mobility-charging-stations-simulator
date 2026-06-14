@@ -118,7 +118,7 @@ export class UIMCPServer extends AbstractUIServer {
           .writeHead(prologue.status, {
             'Content-Type': 'text/plain',
             ...prologue.headers,
-            Connection: 'close',
+            ...this.getConnectionCloseHeader(),
           })
           .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
         return
@@ -143,9 +143,9 @@ export class UIMCPServer extends AbstractUIServer {
       if (authError != null) {
         res
           .writeHead(StatusCodes.UNAUTHORIZED, {
-            Connection: 'close',
             'Content-Type': 'text/plain',
             'WWW-Authenticate': 'Basic realm=users',
+            ...this.getConnectionCloseHeader(),
           })
           .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
         return

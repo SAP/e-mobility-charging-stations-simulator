@@ -165,6 +165,11 @@ const evaluateUIServerAccess = (
   if (hasDuplicateHeaders(req, [...FORWARDED_HEADER_NAMES, 'host', 'origin'])) {
     return deny(clientAddress, UIServerAccessDenialReason.DuplicateGatewayHeaders)
   }
+  // Reject untrusted forwarded headers before any ambiguity check so operator
+  // logs reflect the trust violation rather than a parser-level symptom.
+  if (forwardedHeadersPresent && !remoteAddressIsTrustedProxy) {
+    return deny(clientAddress, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
+  }
   if (forwardedProtocol.kind === 'error') {
     return deny(clientAddress, forwardedProtocol.reason)
   }
@@ -173,9 +178,6 @@ const evaluateUIServerAccess = (
   }
   if (forwardedHost.kind === 'error') {
     return deny(clientAddress, forwardedHost.reason)
-  }
-  if (forwardedHeadersPresent && !remoteAddressIsTrustedProxy) {
-    return deny(clientAddress, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
   }
   if (forwardedHeadersPresent && remoteAddressIsLoopback && !allowLoopbackProxy) {
     return deny(clientAddress, UIServerAccessDenialReason.LoopbackProxyDisabled)
