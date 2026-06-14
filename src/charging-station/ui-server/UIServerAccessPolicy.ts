@@ -1,7 +1,3 @@
-/**
- * UI server gateway access policy: source classification, forwarded-header
- * parsing, host/origin allowlists, and the per-request decision cache.
- */
 import type { IncomingMessage } from 'node:http'
 
 import type { UIServerConfiguration } from '../../types/index.js'
@@ -77,11 +73,8 @@ export interface UIServerAccessCache {
 }
 
 /**
- * Outcome of a UI server access policy evaluation.
- *
- * Discriminated by `allowed`. Allowed decisions carry the resolved client
- * address; denied decisions carry the {@link UIServerAccessDenialReason}
- * and its rendered message.
+ * UI server access decision: `allowed: true` carries the resolved client
+ * address; `allowed: false` carries the denial reason and rendered message.
  */
 export type UIServerAccessDecision =
   | {
@@ -97,13 +90,6 @@ export const createUIServerAccessCache = (): UIServerAccessCache => ({
   trustedProxies: new WeakMap<UIServerConfiguration, ReadonlySet<string>>(),
 })
 
-/**
- * Internal helper outcome shared by forwarded-header parsers.
- *
- * Discriminated by `kind`. `'absent'` means the header is not present;
- * `'ok'` carries the parsed value; `'error'` carries a denial reason that
- * propagates to the access decision.
- */
 type ParseOutcome<T> =
   | { readonly kind: 'absent' }
   | { readonly kind: 'error'; readonly reason: UIServerAccessDenialReason }
@@ -113,17 +99,6 @@ const ABSENT: ParseOutcome<never> = { kind: 'absent' }
 
 type ForwardedParams = Partial<Record<'by' | 'for' | 'host' | 'proto', string>>
 
-/**
- * Resolve the UI server access decision for the given request.
- *
- * The decision is memoized on the request via the supplied
- * {@link UIServerAccessCache} so a request consulted at multiple stages is
- * evaluated exactly once.
- * @param req The incoming HTTP request.
- * @param uiServerConfiguration The UI server configuration to evaluate against.
- * @param cache The owning UI server's access cache.
- * @returns The cached or freshly computed {@link UIServerAccessDecision}.
- */
 export const resolveUIServerAccess = (
   req: IncomingMessage,
   uiServerConfiguration: UIServerConfiguration,
@@ -233,9 +208,6 @@ const getForwardedClientAddress = (
   }
   const addresses = splitHeaderList(forwardedFor)
   if (addresses.length === 0) {
-    // Header was present but contained no extractable addresses (e.g. ","):
-    // treat as malformed rather than silently allowed, mirroring the
-    // multi-value rule below.
     return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedClient }
   }
   // Multi-hop X-Forwarded-For chains are intentionally rejected: ambiguity in
@@ -444,11 +416,6 @@ const isOriginAllowed = (
   } catch {
     return false
   }
-  // When `accessPolicy.allowedOrigins` is non-empty it is the exclusive
-  // allowlist. When empty, the origin's URL hostname falls back to matching
-  // against `getAllowedHosts(...)` so that browser-facing access stays
-  // implicitly aligned with the explicit Host allowlist (see README
-  // "UI Protocol" section).
   const allowedOrigins = uiServerConfiguration.accessPolicy?.allowedOrigins ?? []
   if (allowedOrigins.length > 0) {
     return allowedOrigins.some(allowedOrigin => isSameOrigin(originUrl, allowedOrigin))
@@ -476,9 +443,6 @@ const getAllowedHosts = (uiServerConfiguration: UIServerConfiguration): string[]
   if (WILDCARD_HOSTS.has(configuredHost)) {
     return allowedHosts
   }
-  // Loopback listen hosts implicitly allow all loopback aliases so that a
-  // local client using either `localhost`, `127.0.0.1`, or `[::1]` is not
-  // rejected; non-loopback listen hosts only allow the configured host.
   const derivedHosts = isLoopback(configuredHost)
     ? ['localhost', '127.0.0.1', '::1']
     : [configuredHost]

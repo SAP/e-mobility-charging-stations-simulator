@@ -1,8 +1,3 @@
-/**
- * Network primitives shared by the UI server access policy: IP literal
- * normalization (IPv4, IPv6, IPv4-mapped IPv6), loopback classification,
- * host/port parsing, and header list tokenization.
- */
 import { isIP } from 'node:net'
 
 export const LOOPBACK_HOSTNAME = 'localhost'
