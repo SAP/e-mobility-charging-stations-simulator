@@ -165,8 +165,6 @@ const evaluateUIServerAccess = (
   if (hasDuplicateHeaders(req, [...FORWARDED_HEADER_NAMES, 'host', 'origin'])) {
     return deny(clientAddress, UIServerAccessDenialReason.DuplicateGatewayHeaders)
   }
-  // Reject untrusted forwarded headers before any ambiguity check so operator
-  // logs reflect the trust violation rather than a parser-level symptom.
   if (forwardedHeadersPresent && !remoteAddressIsTrustedProxy) {
     return deny(clientAddress, UIServerAccessDenialReason.ForwardedFromUntrustedPeer)
   }
@@ -260,7 +258,7 @@ const getForwardedProtocol = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  const xForwardedProtocol = getSingleHeaderValue(req, 'x-forwarded-proto')
+  const xForwardedProtocol = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-proto'))
   const forwardedProtoFromForwarded = forwarded.kind === 'ok' ? forwarded.value.proto : undefined
   if (forwardedProtoFromForwarded != null && xForwardedProtocol != null) {
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedProtocol }
@@ -284,7 +282,7 @@ const getForwardedHost = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  const xForwardedHost = getSingleHeaderValue(req, 'x-forwarded-host')
+  const xForwardedHost = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-host'))
   const forwardedHostFromForwarded = forwarded.kind === 'ok' ? forwarded.value.host : undefined
   if (forwardedHostFromForwarded != null && xForwardedHost != null) {
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHost }
@@ -292,6 +290,9 @@ const getForwardedHost = (
   const value = forwardedHostFromForwarded ?? xForwardedHost
   return value != null ? { kind: 'ok', value } : ABSENT
 }
+
+const nonEmpty = (value: string | undefined): string | undefined =>
+  value == null || value === '' ? undefined : value
 
 const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<ForwardedParams> => {
   const forwarded = getSingleHeaderValue(req, 'forwarded')
@@ -309,11 +310,16 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
       continue
     }
     const key = part.slice(0, separatorIndex).trim().toLowerCase()
-    const value = part
-      .slice(separatorIndex + 1)
-      .trim()
-      .replace(/^"|"$/g, '')
+    const value = nonEmpty(
+      part
+        .slice(separatorIndex + 1)
+        .trim()
+        .replace(/^"|"$/g, '')
+    )
     if (key !== 'by' && key !== 'for' && key !== 'host' && key !== 'proto') {
+      continue
+    }
+    if (value == null) {
       continue
     }
     if (Object.hasOwn(params, key)) {
