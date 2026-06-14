@@ -38,6 +38,8 @@ const defaultRequestParams: RequestParams = {
   triggerMessage: false,
 }
 
+const moduleName = 'OCPPRequestService'
+
 export abstract class OCPPRequestService {
   private static readonly instances = new Map<
     new (ocppResponseService: OCPPResponseService) => OCPPRequestService,
@@ -407,7 +409,7 @@ export abstract class OCPPRequestService {
             clearTimeout(sendTimeout)
             if (error == null) {
               logger.debug(
-                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${getMessageTypeString(
+                `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: >> Command '${commandName}' sent ${getMessageTypeString(
                   messageType
                 )} payload: ${messageToSend}`
               )
