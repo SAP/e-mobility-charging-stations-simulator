@@ -818,6 +818,21 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.TlsRequired)
     })
 
+    await it('should treat whitespace-only forwarded headers as absent', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'localhost:8080',
+            'x-forwarded-proto': '   ',
+          },
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '127.0.0.1')
+    })
+
     await it('should accept empty forwarded headers from a loopback peer', () => {
       const decision = evaluate(
         createAccessPolicyRequest({

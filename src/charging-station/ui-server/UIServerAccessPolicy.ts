@@ -302,7 +302,7 @@ const pickForwardedValue = (
 }
 
 const nonEmpty = (value: string | undefined): string | undefined =>
-  value == null || value === '' ? undefined : value
+  value == null || value.trim() === '' ? undefined : value
 
 // RFC 7239 §6: "unknown" and obfuscated node identifiers ("_" + token chars).
 // Optional ":port" suffix is stripped before comparison.
@@ -381,7 +381,7 @@ const hasDuplicateHeaders = (req: IncomingMessage, headerNames: readonly string[
 
 const hasForwardedHeaders = (req: IncomingMessage): boolean =>
   FORWARDED_HEADER_NAMES.some(headerName =>
-    getHeaderValues(req, headerName).some(value => value !== '')
+    getHeaderValues(req, headerName).some(value => nonEmpty(value) != null)
   )
 
 const isHostAllowed = (

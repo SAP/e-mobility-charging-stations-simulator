@@ -4,7 +4,7 @@ import type { ResourceLimits } from 'node:worker_threads'
 import { isIP } from 'node:net'
 import { z } from 'zod'
 
-import { normalizeHost } from '../charging-station/ui-server/UIServerNet.js'
+import { isHostLiteralWithoutPort } from '../charging-station/ui-server/UIServerNet.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -105,8 +105,8 @@ export const UIServerAccessPolicySchema = z
   .object({
     allowedHosts: z
       .array(
-        z.string().refine(value => normalizeHost(value) != null, {
-          message: 'must be a valid host (no path, query, or fragment)',
+        z.string().refine(isHostLiteralWithoutPort, {
+          message: 'must be a host literal without port (no path, query, or fragment)',
         })
       )
       .optional(),

@@ -54,7 +54,7 @@ export const normalizeIPAddress = (
  * @returns The bare host, or `undefined` when the input is malformed.
  */
 export const normalizeHost = (host: string): string | undefined => {
-  const trimmedHost = host.trim().toLowerCase().replace(/\.$/, '')
+  const trimmedHost = host.trim().toLowerCase()
   if (trimmedHost === '') {
     return undefined
   }
@@ -69,7 +69,20 @@ export const normalizeHost = (host: string): string | undefined => {
   if (parts.length > 2 || (parts.length === 2 && !isValidPort(parts[1]))) {
     return undefined
   }
-  return HOSTNAME_PATTERN.test(parts[0]) ? parts[0] : undefined
+  const hostPart = parts[0].replace(/\.$/, '')
+  if (hostPart === '') {
+    return undefined
+  }
+  return HOSTNAME_PATTERN.test(hostPart) ? hostPart : undefined
+}
+
+export const isHostLiteralWithoutPort = (value: string): boolean => {
+  const normalized = normalizeHost(value)
+  if (normalized == null) {
+    return false
+  }
+  const stripped = value.trim().toLowerCase().replace(/\.$/, '')
+  return stripped === normalized || stripped === `[${normalized}]`
 }
 
 const HOSTNAME_PATTERN = /^[a-z0-9._-]+$/
