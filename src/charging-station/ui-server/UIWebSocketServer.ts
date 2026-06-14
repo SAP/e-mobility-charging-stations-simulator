@@ -183,6 +183,17 @@ export class UIWebSocketServer extends AbstractUIServer {
       })
     })
     this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+      const onSocketError = (error: Error): void => {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'start.httpServer.on.upgrade'
+          )} Socket error at connection upgrade event handling:`,
+          error
+        )
+      }
+      socket.on('error', onSocketError)
+
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
       if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
@@ -209,18 +220,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         return
       }
 
-      const onSocketError = (error: Error): void => {
-        logger.error(
-          `${this.logPrefix(
-            moduleName,
-            'start.httpServer.on.upgrade'
-          )} Socket error at connection upgrade event handling:`,
-          error
-        )
-      }
-      socket.on('error', onSocketError)
       if (!this.authenticate(req)) {
-        socket.removeListener('error', onSocketError)
         const unauthorized = this.getUnauthorizedDenial()
         socket.write(
           buildUpgradeRejectionResponse(
