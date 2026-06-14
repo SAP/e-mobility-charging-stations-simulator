@@ -402,9 +402,10 @@ const hasDuplicateHeaders = (req: IncomingMessage, headerNames: readonly string[
   return false
 }
 
-const hasForwardedHeaders = (req: IncomingMessage): boolean => {
-  return FORWARDED_HEADER_NAMES.some(headerName => getHeaderValues(req, headerName).length > 0)
-}
+const hasForwardedHeaders = (req: IncomingMessage): boolean =>
+  FORWARDED_HEADER_NAMES.some(headerName =>
+    getHeaderValues(req, headerName).some(value => value !== '')
+  )
 
 const isHostAllowed = (
   req: IncomingMessage,

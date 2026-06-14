@@ -687,6 +687,45 @@ await describe('UIServerAccessPolicy', async () => {
       assert.strictEqual(decision.clientAddress, '203.0.113.10')
     })
 
+    await it('should treat empty forwarded headers as absent for the trusted-peer check', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-proto': '',
+          },
+          remoteAddress: '203.0.113.10',
+        }),
+        createAccessPolicyConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.TlsRequired)
+    })
+
+    await it('should accept empty forwarded headers from a loopback peer', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'localhost:8080',
+            'x-forwarded-proto': '',
+          },
+          remoteAddress: '127.0.0.1',
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '127.0.0.1')
+    })
+
     await it('should treat Forwarded for=unknown as identity hidden and use the trusted proxy address', () => {
       const decision = evaluate(
         createAccessPolicyRequest({

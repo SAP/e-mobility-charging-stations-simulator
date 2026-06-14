@@ -127,7 +127,10 @@ export class UIMCPServer extends AbstractUIServer {
       const url = new URL(req.url ?? '/', 'http://localhost')
       if (url.pathname !== '/mcp') {
         res
-          .writeHead(StatusCodes.NOT_FOUND, { 'Content-Type': 'text/plain' })
+          .writeHead(StatusCodes.NOT_FOUND, {
+            'Content-Type': 'text/plain',
+            ...this.getConnectionCloseHeader(),
+          })
           .end(`${StatusCodes.NOT_FOUND.toString()} Not Found`)
         if (!req.complete) {
           req.destroy()
@@ -488,7 +491,10 @@ export class UIMCPServer extends AbstractUIServer {
       [StatusCodes.METHOD_NOT_ALLOWED]: 'Method Not Allowed',
     }
     res
-      .writeHead(statusCode, { 'Content-Type': 'text/plain' })
+      .writeHead(statusCode, {
+        'Content-Type': 'text/plain',
+        ...this.getConnectionCloseHeader(),
+      })
       .end(`${statusCode.toString()} ${messages[statusCode] ?? 'Error'}`)
   }
 }
