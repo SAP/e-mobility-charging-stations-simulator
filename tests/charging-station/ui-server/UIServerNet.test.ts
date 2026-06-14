@@ -7,7 +7,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { isLoopback, splitHeaderList } from '../../../src/charging-station/ui-server/UIServerNet.js'
+import {
+  isLoopback,
+  normalizeHost,
+  splitHeaderList,
+} from '../../../src/charging-station/ui-server/UIServerNet.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 await describe('UIServerNet', async () => {
@@ -75,6 +79,52 @@ await describe('UIServerNet', async () => {
       assert.deepStrictEqual(splitHeaderList('for="[2001:db8::1]:8080";proto=https'), [
         'for="[2001:db8::1]:8080";proto=https',
       ])
+    })
+  })
+
+  await describe('normalizeHost', async () => {
+    await it('should reject inputs with too many colons', () => {
+      assert.strictEqual(normalizeHost('a:b:c'), undefined)
+    })
+
+    await it('should reject inputs with non-numeric port', () => {
+      assert.strictEqual(normalizeHost('localhost:bad'), undefined)
+    })
+
+    await it('should reject bracketed inputs with non-numeric port', () => {
+      assert.strictEqual(normalizeHost('[::1]:abc'), undefined)
+    })
+
+    await it('should reject inputs with port out of range', () => {
+      assert.strictEqual(normalizeHost('[::1]:99999'), undefined)
+    })
+
+    await it('should reject empty input', () => {
+      assert.strictEqual(normalizeHost(''), undefined)
+      assert.strictEqual(normalizeHost('   '), undefined)
+    })
+
+    await it('should accept hostname with optional port', () => {
+      assert.strictEqual(normalizeHost('gateway.example.com'), 'gateway.example.com')
+      assert.strictEqual(normalizeHost('gateway.example.com:8080'), 'gateway.example.com')
+    })
+
+    await it('should accept IPv4 literal with optional port', () => {
+      assert.strictEqual(normalizeHost('127.0.0.1'), '127.0.0.1')
+      assert.strictEqual(normalizeHost('127.0.0.1:8080'), '127.0.0.1')
+    })
+
+    await it('should accept bracketed IPv6 literal with optional port', () => {
+      assert.strictEqual(normalizeHost('[::1]'), '::1')
+      assert.strictEqual(normalizeHost('[::1]:8080'), '::1')
+    })
+
+    await it('should drop a single trailing dot', () => {
+      assert.strictEqual(normalizeHost('gateway.example.com.'), 'gateway.example.com')
+    })
+
+    await it('should lowercase the result', () => {
+      assert.strictEqual(normalizeHost('Gateway.Example.COM'), 'gateway.example.com')
     })
   })
 })

@@ -70,6 +70,16 @@ await describe('UIServerSecurity', async () => {
       const body = await readLimitedBody(mockRequest(Buffer.alloc(1000)), 1000)
       assert.strictEqual(body.length, 1000)
     })
+
+    await it('should propagate stream errors', async () => {
+      const error = new Error('upstream connection reset')
+      const stream = new Readable({
+        read () {
+          this.destroy(error)
+        },
+      })
+      await assert.rejects(readLimitedBody(stream as unknown as IncomingMessage, 1000), error)
+    })
   })
 
   await describe('CreateRateLimiter', async () => {

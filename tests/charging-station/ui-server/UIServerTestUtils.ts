@@ -147,9 +147,8 @@ export const createMockUIServerConfiguration = (
   }
 }
 
-// RFC 5737 / RFC 3849 reserved ranges, safe for tests.
+// RFC 5737 (IPv4 TEST-NET-1) / RFC 2606 (example.com), safe for tests.
 export const TRUSTED_PROXY_IP = '192.0.2.10'
-export const EXTERNAL_CLIENT_IP = '203.0.113.10'
 export const GATEWAY_HOST = 'gateway.example.com'
 
 /**

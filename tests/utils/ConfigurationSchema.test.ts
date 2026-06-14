@@ -11,7 +11,11 @@ import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
 } from '../../src/utils/index.js'
-import { ConfigurationSchema, WorkerConfigurationSchema } from '../../src/utils/index.js'
+import {
+  ConfigurationSchema,
+  UI_SERVER_ACCESS_POLICY_DEFAULTS,
+  WorkerConfigurationSchema,
+} from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   BAD_FIXTURES,
@@ -292,6 +296,61 @@ await describe('ConfigurationSchema', async () => {
         result.success,
         `Expected IP literals to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
       )
+    })
+
+    await it('should reject malformed allowedHosts entries', () => {
+      for (const malformedHost of ['a:b:c', 'localhost:bad', '[::1]:99999', '[::1]:abc', '']) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowedHosts: [malformedHost],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          !result.success,
+          `Expected '${malformedHost}' to be rejected as allowedHosts entry`
+        )
+        assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedHosts')))
+      }
+    })
+
+    await it('should accept hostnames and IP literals in allowedHosts', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedHosts: [
+                'gateway.example.com',
+                '127.0.0.1',
+                '[::1]',
+                '[::1]:8080',
+                'localhost',
+              ],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected valid hosts to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should expose canonical UI server access policy defaults', () => {
+      assert.deepStrictEqual(UI_SERVER_ACCESS_POLICY_DEFAULTS, {
+        allowedHosts: [],
+        allowedOrigins: [],
+        allowLoopbackProxy: false,
+        requireTlsForNonLoopback: true,
+        trustedProxies: [],
+      })
     })
 
     await it('should accept allowedOrigins entries with no path, query, or fragment', () => {

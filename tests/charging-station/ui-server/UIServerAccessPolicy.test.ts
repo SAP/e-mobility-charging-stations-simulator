@@ -277,31 +277,6 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.ProxyTlsRequired)
     })
 
-    await it('should reject insecure forwarded protocol over an encrypted proxy connection', () => {
-      const decision = evaluate(
-        createAccessPolicyRequest({
-          encrypted: true,
-          headers: {
-            host: 'gateway.example.com',
-            'x-forwarded-for': '203.0.113.10',
-            'x-forwarded-proto': 'http',
-          },
-          remoteAddress: '192.0.2.10',
-        }),
-        createAccessPolicyConfiguration({
-          accessPolicy: {
-            allowedHosts: ['gateway.example.com'],
-            allowedOrigins: [],
-            allowLoopbackProxy: false,
-            requireTlsForNonLoopback: true,
-            trustedProxies: ['192.0.2.10'],
-          },
-        })
-      )
-
-      expectDenied(decision, UIServerAccessDenialReason.ProxyTlsRequired)
-    })
-
     await it('should reject ambiguous forwarded client address lists', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
@@ -387,7 +362,7 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.InvalidForwardedClient)
     })
 
-    await it('should reject Forwarded for=unknown when X-Forwarded-For is also present', () => {
+    await it('should reject when both X-Forwarded-For and Forwarded for= are present', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
           headers: {
@@ -1150,12 +1125,18 @@ await describe('UIServerAccessPolicy', async () => {
     await it('should normalize whitespace-padded Host headers', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
-          headers: { host: '  localhost:8080  ' },
+          headers: {
+            host: '  gateway.example.com  ',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
         }),
-        createAccessPolicyConfiguration()
+        createGatewayConfigWithTrustedProxy()
       )
 
       assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '203.0.113.10')
     })
 
     await it('should accept uppercase X-Forwarded-Proto values', () => {

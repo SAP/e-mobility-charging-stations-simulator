@@ -34,6 +34,8 @@ import {
 
 const moduleName = 'UIWebSocketServer'
 
+// Pre-handshake WS rejections write raw HTTP/1.1 to the Duplex socket;
+// AbstractUIServer.renderDenial targets ServerResponse and is not applicable.
 const buildUpgradeRejectionResponse = (
   status: StatusCodes,
   reasonPhrase: string,
