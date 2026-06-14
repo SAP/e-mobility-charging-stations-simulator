@@ -318,6 +318,84 @@ await describe('UIMCPServer', async () => {
       )
       wildcardServer.stop()
     })
+
+    await it('should warn at startup when bound to non-loopback host with no trusted proxies', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const exposedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+          options: { host: '203.0.113.10', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /non-loopback host '203\.0\.113\.10' with requireTlsForNonLoopback=true and no accessPolicy\.trustedProxies/
+      )
+      exposedServer.stop()
+    })
+
+    await it('should not warn at startup when bound to a loopback host', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const loopbackServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 0)
+      loopbackServer.stop()
+    })
+
+    await it('should log rate-limit denials at warn level', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      ;(gatedServer as unknown as { rateLimiter: () => boolean }).rateLimiter = () => false
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: 'localhost' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        httpServer.emit('request', req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 429)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /UI rate limit exceeded for client '127\.0\.0\.1'/
+      )
+    })
   })
 
   await describe('Tool schema registration', async () => {

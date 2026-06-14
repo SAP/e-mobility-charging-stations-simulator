@@ -30,6 +30,7 @@ import {
   type UIServerAccessCache,
   type UIServerAccessDecision,
 } from './UIServerAccessPolicy.js'
+import { isLoopback } from './UIServerNet.js'
 import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,
@@ -110,7 +111,7 @@ export abstract class AbstractUIServer {
     this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW_MS)
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
     this.accessCache = createUIServerAccessCache()
-    this.warnIfHostAllowlistIsEmpty()
+    this.warnIfMisconfigured()
   }
 
   public buildProtocolRequest (
@@ -314,6 +315,12 @@ export abstract class AbstractUIServer {
     const decision = resolveUIServerAccess(req, this.uiServerConfiguration, this.accessCache)
     const rateLimitKey = decision.clientAddress.length > 0 ? decision.clientAddress : 'unknown'
     if (!this.rateLimiter(rateLimitKey)) {
+      logger.warn(
+        `${this.logPrefix(
+          moduleName,
+          'runRequestPrologue'
+        )} UI rate limit exceeded for client '${rateLimitKey}'`
+      )
       return {
         headers: { 'Retry-After': '60' },
         ok: false,
@@ -406,18 +413,30 @@ export abstract class AbstractUIServer {
     }
   }
 
-  private warnIfHostAllowlistIsEmpty (): void {
+  private warnIfMisconfigured (): void {
     const configuredHost = this.uiServerConfiguration.options?.host ?? ''
-    const allowedHosts = this.uiServerConfiguration.accessPolicy?.allowedHosts ?? []
-    if (
-      (configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::') &&
-      allowedHosts.length === 0
-    ) {
+    const accessPolicy = this.uiServerConfiguration.accessPolicy
+    const allowedHosts = accessPolicy?.allowedHosts ?? []
+    const trustedProxies = accessPolicy?.trustedProxies ?? []
+    const requireTls = accessPolicy?.requireTlsForNonLoopback ?? true
+    const isWildcard =
+      configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
+
+    if (isWildcard && allowedHosts.length === 0) {
       logger.warn(
         `${this.logPrefix(
           moduleName,
           'constructor'
         )} UI server bound to wildcard host '${configuredHost}' with no accessPolicy.allowedHosts; all requests will be denied as host-not-allowed. Configure accessPolicy.allowedHosts or set options.host to a specific address.`
+      )
+      return
+    }
+    if (!isWildcard && !isLoopback(configuredHost) && requireTls && trustedProxies.length === 0) {
+      logger.warn(
+        `${this.logPrefix(
+          moduleName,
+          'constructor'
+        )} UI server bound to non-loopback host '${configuredHost}' with requireTlsForNonLoopback=true and no accessPolicy.trustedProxies; plaintext requests will be denied as tls-required. Configure accessPolicy.trustedProxies to terminate TLS upstream, or set requireTlsForNonLoopback=false on private bindings.`
       )
     }
   }
