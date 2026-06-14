@@ -2,6 +2,7 @@ import type { IncomingMessage } from 'node:http'
 
 import type { UIServerConfiguration } from '../../types/index.js'
 
+import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
 import {
   isLoopback,
   normalizeHost,
@@ -125,8 +126,11 @@ const evaluateUIServerAccess = (
   cache: UIServerAccessCache
 ): UIServerAccessDecision => {
   const accessPolicy = uiServerConfiguration.accessPolicy
-  const allowLoopbackProxy = accessPolicy?.allowLoopbackProxy ?? false
-  const requireTlsForNonLoopback = accessPolicy?.requireTlsForNonLoopback ?? true
+  const allowLoopbackProxy =
+    accessPolicy?.allowLoopbackProxy ?? UI_SERVER_ACCESS_POLICY_DEFAULTS.allowLoopbackProxy
+  const requireTlsForNonLoopback =
+    accessPolicy?.requireTlsForNonLoopback ??
+    UI_SERVER_ACCESS_POLICY_DEFAULTS.requireTlsForNonLoopback
   const trustedProxies = getTrustedProxies(uiServerConfiguration, cache)
   const remoteAddress = req.socket.remoteAddress ?? ''
   const remoteAddressIsLoopback = isLoopback(remoteAddress)
