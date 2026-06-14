@@ -222,7 +222,7 @@ const getForwardedClientAddress = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  const xForwardedFor = getSingleHeaderValue(req, 'x-forwarded-for')
+  const xForwardedFor = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-for'))
   const forwardedForFromForwarded = forwarded.kind === 'ok' ? forwarded.value.for : undefined
   if (forwardedForFromForwarded != null && xForwardedFor != null) {
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedClient }

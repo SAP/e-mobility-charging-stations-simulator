@@ -135,27 +135,25 @@ export class UIMCPServer extends AbstractUIServer {
         return
       }
 
-      let authError: Error | undefined
-      // authenticate() is synchronous — authError is set before the if-check
       this.authenticate(req, err => {
-        authError = err
-      })
-      if (authError != null) {
-        res
-          .writeHead(StatusCodes.UNAUTHORIZED, {
-            'Content-Type': 'text/plain',
-            'WWW-Authenticate': 'Basic realm=users',
-            ...this.getConnectionCloseHeader(),
-          })
-          .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
-        return
-      }
+        if (err != null) {
+          res
+            .writeHead(StatusCodes.UNAUTHORIZED, {
+              'Content-Type': 'text/plain',
+              'WWW-Authenticate': 'Basic realm=users',
+              ...this.getConnectionCloseHeader(),
+            })
+            .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
+          return
+        }
 
-      this.handleMcpRequest(req, res).catch((error: unknown) => {
-        logger.error(
-          `${this.logPrefix(moduleName, 'start.httpServer.request')} Unhandled MCP request error:`,
-          error
-        )
+        // eslint-disable-next-line promise/no-promise-in-callback
+        this.handleMcpRequest(req, res).catch((error: unknown) => {
+          logger.error(
+            `${this.logPrefix(moduleName, 'start.httpServer.request')} Unhandled MCP request error:`,
+            error
+          )
+        })
       })
     })
 
