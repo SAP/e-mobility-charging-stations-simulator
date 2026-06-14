@@ -4,8 +4,9 @@
  */
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 
+import { StatusCodes } from 'http-status-codes'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -103,6 +104,20 @@ class TestableUIMCPServer extends UIMCPServer {
     return (
       Reflect.get(this, 'readRequestBody') as (req: IncomingMessage) => Promise<unknown>
     ).call(this, req)
+  }
+
+  public callSendErrorResponse (
+    res: ServerResponse,
+    statusCode: StatusCodes,
+    headers?: Readonly<Record<string, string>>
+  ): void {
+    ;(
+      Reflect.get(this, 'sendErrorResponse') as (
+        res: ServerResponse,
+        statusCode: StatusCodes,
+        headers?: Readonly<Record<string, string>>
+      ) => void
+    ).call(this, res, statusCode, headers)
   }
 
   public getPendingMcpRequest (uuid: string):
@@ -257,6 +272,51 @@ await describe('UIMCPServer', async () => {
       assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
       assert.strictEqual(res.headers.Connection, 'close')
       assert.strictEqual(res.ended, true)
+    })
+
+    await it('should advertise allowed methods on 405 Method Not Allowed responses', () => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const res = new MockServerResponse()
+
+      gatedServer.callSendErrorResponse(
+        res as unknown as ServerResponse,
+        StatusCodes.METHOD_NOT_ALLOWED,
+        { Allow: 'GET, POST, DELETE' }
+      )
+
+      assert.strictEqual(res.statusCode, 405)
+      assert.strictEqual(res.headers.Allow, 'GET, POST, DELETE')
+      assert.strictEqual(res.ended, true)
+    })
+
+    await it('should warn at startup when bound to wildcard host with empty allowedHosts', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const wildcardServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+          options: { host: '0.0.0.0', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /wildcard host '0\.0\.0\.0' with no accessPolicy\.allowedHosts/
+      )
+      wildcardServer.stop()
     })
   })
 

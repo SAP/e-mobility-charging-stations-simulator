@@ -110,6 +110,7 @@ export abstract class AbstractUIServer {
     this.rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW_MS)
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
     this.accessCache = createUIServerAccessCache()
+    this.warnIfHostAllowlistIsEmpty()
   }
 
   public buildProtocolRequest (
@@ -402,6 +403,22 @@ export abstract class AbstractUIServer {
     if (this.httpServer.listening) {
       this.httpServer.close()
       this.httpServer.removeAllListeners()
+    }
+  }
+
+  private warnIfHostAllowlistIsEmpty (): void {
+    const configuredHost = this.uiServerConfiguration.options?.host ?? ''
+    const allowedHosts = this.uiServerConfiguration.accessPolicy?.allowedHosts ?? []
+    if (
+      (configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::') &&
+      allowedHosts.length === 0
+    ) {
+      logger.warn(
+        `${this.logPrefix(
+          moduleName,
+          'constructor'
+        )} UI server bound to wildcard host '${configuredHost}' with no accessPolicy.allowedHosts; all requests will be denied as host-not-allowed. Configure accessPolicy.allowedHosts or set options.host to a specific address.`
+      )
     }
   }
 }

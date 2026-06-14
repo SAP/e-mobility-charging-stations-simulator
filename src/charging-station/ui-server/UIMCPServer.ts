@@ -281,7 +281,9 @@ export class UIMCPServer extends AbstractUIServer {
         await transport.handleRequest(req, res)
       } else {
         cleanup()
-        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED)
+        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED, {
+          Allow: 'GET, POST, DELETE',
+        })
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
@@ -463,8 +465,13 @@ export class UIMCPServer extends AbstractUIServer {
     return JSON.parse(buffer.toString('utf8'))
   }
 
-  private sendErrorResponse (res: ServerResponse, statusCode: StatusCodes): void {
+  private sendErrorResponse (
+    res: ServerResponse,
+    statusCode: StatusCodes,
+    headers?: Readonly<Record<string, string>>
+  ): void {
     this.renderDenial(res, {
+      headers,
       reasonPhrase: getReasonPhrase(statusCode),
       status: statusCode,
     })

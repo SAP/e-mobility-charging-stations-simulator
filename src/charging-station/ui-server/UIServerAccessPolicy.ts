@@ -312,7 +312,7 @@ const isHiddenIdentity = (value: string): boolean => {
 }
 
 const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<ForwardedParams> => {
-  const forwarded = getSingleHeaderValue(req, 'forwarded')
+  const forwarded = nonEmpty(getSingleHeaderValue(req, 'forwarded'))
   if (forwarded == null) {
     return ABSENT
   }

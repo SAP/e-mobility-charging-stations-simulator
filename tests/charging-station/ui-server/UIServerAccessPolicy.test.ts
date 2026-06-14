@@ -349,6 +349,21 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedHeader)
     })
 
+    await it('should treat an empty Forwarded header as absent', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            forwarded: '',
+            host: 'localhost:8080',
+          },
+        }),
+        createAccessPolicyConfiguration()
+      )
+
+      assert.strictEqual(decision.allowed, true)
+      assert.strictEqual(decision.clientAddress, '127.0.0.1')
+    })
+
     await it('should reject Forwarded entries with duplicate parameters', () => {
       const decision = evaluate(
         createAccessPolicyRequest({
