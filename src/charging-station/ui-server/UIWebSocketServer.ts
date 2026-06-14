@@ -168,8 +168,9 @@ export class UIWebSocketServer extends AbstractUIServer {
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
       if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
-        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
-        socket.destroy()
+        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`, () => {
+          socket.destroy()
+        })
         return
       }
 
@@ -180,9 +181,11 @@ export class UIWebSocketServer extends AbstractUIServer {
           .join('\r\n')
         const headerBlock = headerLines.length > 0 ? `${headerLines}\r\n` : ''
         socket.write(
-          `HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n${headerBlock}\r\n`
+          `HTTP/1.1 ${prologue.status.toString()} ${prologue.reasonPhrase}\r\n${headerBlock}\r\n`,
+          () => {
+            socket.destroy()
+          }
         )
-        socket.destroy()
         return
       }
 
@@ -200,9 +203,11 @@ export class UIWebSocketServer extends AbstractUIServer {
         socket.removeListener('error', onSocketError)
         if (err != null) {
           socket.write(
-            `HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\nWWW-Authenticate: Basic realm=users\r\n\r\n`
+            `HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\nWWW-Authenticate: Basic realm=users\r\n\r\n`,
+            () => {
+              socket.destroy()
+            }
           )
-          socket.destroy()
           return
         }
         try {

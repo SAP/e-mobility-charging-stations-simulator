@@ -95,7 +95,22 @@ export const UIServerAuthenticationSchema = z
 export const UIServerAccessPolicySchema = z
   .object({
     allowedHosts: z.array(z.string().min(1)).optional(),
-    allowedOrigins: z.array(z.url()).optional(),
+    allowedOrigins: z
+      .array(
+        z.url().refine(
+          value => {
+            const url = new URL(value)
+            return (
+              (url.pathname === '/' || url.pathname === '') && url.search === '' && url.hash === ''
+            )
+          },
+          {
+            message:
+              'must be an origin URL without path, query, or fragment (e.g. https://example.com)',
+          }
+        )
+      )
+      .optional(),
     allowLoopbackProxy: z.boolean().optional(),
     requireTlsForNonLoopback: z.boolean().optional(),
     trustedProxies: z

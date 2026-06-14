@@ -258,7 +258,7 @@ await describe('UIMCPServer', async () => {
       assert.strictEqual(res.body, '403 Forbidden')
     })
 
-    await it('should destroy the response and request sockets after denial', t => {
+    await it('should signal Connection: close after denial', t => {
       const gatedServer = new TestableUIMCPServer(
         createMockUIServerConfiguration({
           options: { host: 'localhost', port: 0 },
@@ -271,13 +271,8 @@ await describe('UIMCPServer', async () => {
         removeAllListeners: () => void
       }
       t.mock.method(httpServer, 'listen', () => httpServer)
-      let reqDestroyed = false
       const req = createMockIncomingMessage({
         complete: true,
-        destroy: () => {
-          reqDestroyed = true
-          return undefined as never
-        },
         headers: { host: 'attacker.test' },
         socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
         url: '/mcp',
@@ -293,11 +288,11 @@ await describe('UIMCPServer', async () => {
       }
 
       assert.strictEqual(res.statusCode, 403)
-      assert.strictEqual(res.destroyed, true)
-      assert.strictEqual(reqDestroyed, true)
+      assert.strictEqual(res.ended, true)
+      assert.strictEqual(res.headers.Connection, 'close')
     })
 
-    await it('should destroy the response and request sockets after auth denial', t => {
+    await it('should signal Connection: close after auth denial', t => {
       const gatedServer = new TestableUIMCPServer(
         createMockUIServerConfigurationWithAuth({
           options: { host: 'localhost', port: 0 },
@@ -310,13 +305,8 @@ await describe('UIMCPServer', async () => {
         removeAllListeners: () => void
       }
       t.mock.method(httpServer, 'listen', () => httpServer)
-      let reqDestroyed = false
       const req = createMockIncomingMessage({
         complete: true,
-        destroy: () => {
-          reqDestroyed = true
-          return undefined as never
-        },
         headers: { host: 'localhost' },
         socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
         url: '/mcp',
@@ -333,8 +323,8 @@ await describe('UIMCPServer', async () => {
 
       assert.strictEqual(res.statusCode, 401)
       assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
-      assert.strictEqual(res.destroyed, true)
-      assert.strictEqual(reqDestroyed, true)
+      assert.strictEqual(res.headers.Connection, 'close')
+      assert.strictEqual(res.ended, true)
     })
   })
 

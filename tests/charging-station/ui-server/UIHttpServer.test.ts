@@ -234,7 +234,7 @@ await describe('UIHttpServer', async () => {
 
     assert.strictEqual(res.statusCode, 403)
     assert.strictEqual(res.body, '403 Forbidden')
-    assert.strictEqual(res.destroyed, true)
+    assert.strictEqual(res.headers.Connection, 'close')
   })
 
   await it('should account denied requests against the rate limiter', t => {

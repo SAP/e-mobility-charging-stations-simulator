@@ -294,6 +294,72 @@ await describe('ConfigurationSchema', async () => {
       )
     })
 
+    await it('should accept allowedOrigins entries with no path, query, or fragment', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com', 'https://app.example.com/'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected origin URLs to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject allowedOrigins entries with a path', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com/admin'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
+    })
+
+    await it('should reject allowedOrigins entries with a query string', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com?token=x'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
+    })
+
+    await it('should reject allowedOrigins entries with a fragment', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com#fragment'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
+    })
+
     await it('should reject unknown key in worker section', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({ worker: { unknownWorkerKey: true } })

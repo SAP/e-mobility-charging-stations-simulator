@@ -226,8 +226,9 @@ export class MockUpgradeSocket extends EventEmitter {
     return this
   }
 
-  public write (chunk: string): boolean {
+  public write (chunk: string, callback?: () => void): boolean {
     this.writes.push(chunk)
+    callback?.()
     return true
   }
 }

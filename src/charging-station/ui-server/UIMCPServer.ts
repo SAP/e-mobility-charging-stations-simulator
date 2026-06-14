@@ -118,10 +118,9 @@ export class UIMCPServer extends AbstractUIServer {
           .writeHead(prologue.status, {
             'Content-Type': 'text/plain',
             ...prologue.headers,
+            Connection: 'close',
           })
           .end(`${prologue.status.toString()} ${prologue.reasonPhrase}`)
-        res.destroy()
-        req.destroy()
         return
       }
 
@@ -144,12 +143,11 @@ export class UIMCPServer extends AbstractUIServer {
       if (authError != null) {
         res
           .writeHead(StatusCodes.UNAUTHORIZED, {
+            Connection: 'close',
             'Content-Type': 'text/plain',
             'WWW-Authenticate': 'Basic realm=users',
           })
           .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
-        res.destroy()
-        req.destroy()
         return
       }
 
