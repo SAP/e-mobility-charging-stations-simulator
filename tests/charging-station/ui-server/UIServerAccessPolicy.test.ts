@@ -317,6 +317,23 @@ await describe('UIServerAccessPolicy', async () => {
       expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedProtocol)
     })
 
+    await it('should reject ambiguous X-Forwarded-Host multi-value lists', () => {
+      const decision = evaluate(
+        createAccessPolicyRequest({
+          headers: {
+            host: 'gateway.example.com',
+            'x-forwarded-for': '203.0.113.10',
+            'x-forwarded-host': 'a.example.com, b.example.com',
+            'x-forwarded-proto': 'https',
+          },
+          remoteAddress: '192.0.2.10',
+        }),
+        createGatewayConfigWithTrustedProxy()
+      )
+
+      expectDenied(decision, UIServerAccessDenialReason.AmbiguousForwardedHost)
+    })
+
     await it('should reject Forwarded headers with multiple comma-separated entries', () => {
       const decision = evaluate(
         createAccessPolicyRequest({

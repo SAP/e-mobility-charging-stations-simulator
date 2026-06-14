@@ -270,11 +270,23 @@ const getForwardedHost = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  return pickForwardedValue(
-    nonEmpty(getSingleHeaderValue(req, 'x-forwarded-host')),
+  const xForwardedHost = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-host'))
+  const picked = pickForwardedValue(
+    xForwardedHost,
     forwarded.kind === 'ok' ? forwarded.value.host : undefined,
     UIServerAccessDenialReason.AmbiguousForwardedHost
   )
+  if (picked.kind !== 'ok') {
+    return picked
+  }
+  if (xForwardedHost != null) {
+    const hosts = splitHeaderList(xForwardedHost)
+    if (hosts.length !== 1) {
+      return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHost }
+    }
+    return { kind: 'ok', value: hosts[0] }
+  }
+  return { kind: 'ok', value: picked.value }
 }
 
 const pickForwardedValue = (

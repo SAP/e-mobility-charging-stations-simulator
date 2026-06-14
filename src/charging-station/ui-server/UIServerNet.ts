@@ -69,7 +69,20 @@ export const normalizeHost = (host: string): string | undefined => {
   if (parts.length > 2 || (parts.length === 2 && !isValidPort(parts[1]))) {
     return undefined
   }
-  return parts[0]
+  return HOSTNAME_PATTERN.test(parts[0]) ? parts[0] : undefined
+}
+
+const HOSTNAME_PATTERN = /^[a-z0-9._-]+$/
+
+const isValidPort = (port: string | undefined): boolean => {
+  if (port == null) {
+    return true
+  }
+  if (!/^\d+$/.test(port)) {
+    return false
+  }
+  const parsedPort = Number.parseInt(port, 10)
+  return parsedPort >= 1 && parsedPort <= 65535
 }
 
 /**
@@ -112,17 +125,6 @@ export const splitQuoted = (value: string, delimiter: string): string[] => {
     entries.push(trimmed)
   }
   return entries
-}
-
-const isValidPort = (port: string | undefined): boolean => {
-  if (port == null) {
-    return true
-  }
-  if (!/^\d+$/.test(port)) {
-    return false
-  }
-  const parsedPort = Number.parseInt(port, 10)
-  return parsedPort >= 0 && parsedPort <= 65535
 }
 
 const parseIPv4MappedAddress = (address: string): string | undefined => {

@@ -99,6 +99,17 @@ await describe('UIServerNet', async () => {
       assert.strictEqual(normalizeHost('[::1]:99999'), undefined)
     })
 
+    await it('should reject inputs with port 0 (RFC 6335 reserved)', () => {
+      assert.strictEqual(normalizeHost('localhost:0'), undefined)
+      assert.strictEqual(normalizeHost('[::1]:0'), undefined)
+    })
+
+    await it('should reject inputs with characters outside hostname charset', () => {
+      assert.strictEqual(normalizeHost('a.example.com, b.example.com'), undefined)
+      assert.strictEqual(normalizeHost('foo bar'), undefined)
+      assert.strictEqual(normalizeHost('[bad'), undefined)
+    })
+
     await it('should reject empty input', () => {
       assert.strictEqual(normalizeHost(''), undefined)
       assert.strictEqual(normalizeHost('   '), undefined)

@@ -299,7 +299,17 @@ await describe('ConfigurationSchema', async () => {
     })
 
     await it('should reject malformed allowedHosts entries', () => {
-      for (const malformedHost of ['a:b:c', 'localhost:bad', '[::1]:99999', '[::1]:abc', '']) {
+      for (const malformedHost of [
+        'a:b:c',
+        'localhost:bad',
+        '[::1]:99999',
+        '[::1]:abc',
+        '',
+        'a.example.com, b.example.com',
+        'foo bar',
+        'localhost:0',
+        '[bad',
+      ]) {
         const result = ConfigurationSchema.safeParse(
           buildMinimalConfiguration({
             uiServer: {
