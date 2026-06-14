@@ -26,8 +26,8 @@ export const isLoopback = (address: string): boolean => {
 export const normalizeIPAddress = (
   address: string
 ): undefined | { family: 'ipv4' | 'ipv6'; value: string } => {
-  const host = normalizeHost(address) ?? address.trim().toLowerCase()
-  if (host === '') {
+  const host = normalizeHost(address)
+  if (host == null) {
     return undefined
   }
   if (host === LOOPBACK_HOSTNAME) {
@@ -78,7 +78,16 @@ export const normalizeHost = (host: string): string | undefined => {
  * @param value Raw header value.
  * @returns Trimmed non-empty entries.
  */
-export const splitHeaderList = (value: string): string[] => {
+export const splitHeaderList = (value: string): string[] => splitQuoted(value, ',')
+
+/**
+ * Split a string on `delimiter` while honoring RFC 7230 double-quoted values.
+ * Delimiters inside `"…"` are preserved.
+ * @param value Raw input.
+ * @param delimiter Single-character delimiter.
+ * @returns Trimmed non-empty entries.
+ */
+export const splitQuoted = (value: string, delimiter: string): string[] => {
   const entries: string[] = []
   let current = ''
   let inQuotes = false
@@ -88,7 +97,7 @@ export const splitHeaderList = (value: string): string[] => {
       current += char
       continue
     }
-    if (char === ',' && !inQuotes) {
+    if (char === delimiter && !inQuotes) {
       const trimmed = current.trim()
       if (trimmed !== '') {
         entries.push(trimmed)

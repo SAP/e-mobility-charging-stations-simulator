@@ -2,7 +2,13 @@ import type { IncomingMessage } from 'node:http'
 
 import type { UIServerConfiguration } from '../../types/index.js'
 
-import { isLoopback, normalizeHost, normalizeIPAddress, splitHeaderList } from './UIServerNet.js'
+import {
+  isLoopback,
+  normalizeHost,
+  normalizeIPAddress,
+  splitHeaderList,
+  splitQuoted,
+} from './UIServerNet.js'
 
 const FORWARDED_HEADER_NAMES = [
   'forwarded',
@@ -162,7 +168,8 @@ const evaluateUIServerAccess = (
     return deny(clientAddress, UIServerAccessDenialReason.OriginNotAllowed)
   }
 
-  const forwardedProtocolValue = forwardedProtocol.kind === 'ok' ? forwardedProtocol.value : null
+  const forwardedProtocolValue =
+    forwardedProtocol.kind === 'ok' ? forwardedProtocol.value : undefined
   const secureForwardedProtocol = isSecureForwardedProtocol(forwardedProtocolValue)
   if (requireTlsForNonLoopback && forwardedHeadersPresent && !secureForwardedProtocol) {
     return deny(clientAddress, UIServerAccessDenialReason.ProxyTlsRequired)
@@ -197,16 +204,15 @@ const getForwardedClientAddress = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  const xForwardedFor = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-for'))
-  const forwardedForFromForwarded = forwarded.kind === 'ok' ? forwarded.value.for : undefined
-  if (forwardedForFromForwarded != null && xForwardedFor != null) {
-    return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedClient }
+  const picked = pickForwardedValue(
+    nonEmpty(getSingleHeaderValue(req, 'x-forwarded-for')),
+    forwarded.kind === 'ok' ? forwarded.value.for : undefined,
+    UIServerAccessDenialReason.AmbiguousForwardedClient
+  )
+  if (picked.kind !== 'ok') {
+    return picked
   }
-  const forwardedFor = forwardedForFromForwarded ?? xForwardedFor
-  if (forwardedFor == null) {
-    return ABSENT
-  }
-  const addresses = splitHeaderList(forwardedFor)
+  const addresses = splitHeaderList(picked.value)
   if (addresses.length === 0) {
     return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedClient }
   }
@@ -235,9 +241,13 @@ const getForwardedProtocol = (
     return forwarded
   }
   const xForwardedProtocol = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-proto'))
-  const forwardedProtoFromForwarded = forwarded.kind === 'ok' ? forwarded.value.proto : undefined
-  if (forwardedProtoFromForwarded != null && xForwardedProtocol != null) {
-    return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedProtocol }
+  const picked = pickForwardedValue(
+    xForwardedProtocol,
+    forwarded.kind === 'ok' ? forwarded.value.proto : undefined,
+    UIServerAccessDenialReason.AmbiguousForwardedProtocol
+  )
+  if (picked.kind !== 'ok') {
+    return picked
   }
   if (xForwardedProtocol != null) {
     const protocols = splitHeaderList(xForwardedProtocol)
@@ -246,9 +256,7 @@ const getForwardedProtocol = (
     }
     return { kind: 'ok', value: protocols[0].toLowerCase() }
   }
-  return forwardedProtoFromForwarded != null
-    ? { kind: 'ok', value: forwardedProtoFromForwarded.toLowerCase() }
-    : ABSENT
+  return { kind: 'ok', value: picked.value.toLowerCase() }
 }
 
 const getForwardedHost = (
@@ -258,12 +266,22 @@ const getForwardedHost = (
   if (forwarded.kind === 'error') {
     return forwarded
   }
-  const xForwardedHost = nonEmpty(getSingleHeaderValue(req, 'x-forwarded-host'))
-  const forwardedHostFromForwarded = forwarded.kind === 'ok' ? forwarded.value.host : undefined
-  if (forwardedHostFromForwarded != null && xForwardedHost != null) {
-    return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHost }
+  return pickForwardedValue(
+    nonEmpty(getSingleHeaderValue(req, 'x-forwarded-host')),
+    forwarded.kind === 'ok' ? forwarded.value.host : undefined,
+    UIServerAccessDenialReason.AmbiguousForwardedHost
+  )
+}
+
+const pickForwardedValue = (
+  xValue: string | undefined,
+  forwardedValue: string | undefined,
+  ambiguousReason: UIServerAccessDenialReason
+): ParseOutcome<string> => {
+  if (xValue != null && forwardedValue != null) {
+    return { kind: 'error', reason: ambiguousReason }
   }
-  const value = forwardedHostFromForwarded ?? xForwardedHost
+  const value = forwardedValue ?? xValue
   return value != null ? { kind: 'ok', value } : ABSENT
 }
 
@@ -287,7 +305,7 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
     return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedHeader }
   }
   const params: ForwardedParams = {}
-  for (const part of splitForwardedPairs(entries[0])) {
+  for (const part of splitQuoted(entries[0], ';')) {
     const separatorIndex = part.indexOf('=')
     if (separatorIndex === -1) {
       continue
@@ -313,33 +331,6 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
   return { kind: 'ok', value: params }
 }
 
-const splitForwardedPairs = (value: string): string[] => {
-  const pairs: string[] = []
-  let current = ''
-  let inQuotes = false
-  for (const char of value) {
-    if (char === '"') {
-      inQuotes = !inQuotes
-      current += char
-      continue
-    }
-    if (char === ';' && !inQuotes) {
-      const trimmed = current.trim()
-      if (trimmed !== '') {
-        pairs.push(trimmed)
-      }
-      current = ''
-      continue
-    }
-    current += char
-  }
-  const trimmed = current.trim()
-  if (trimmed !== '') {
-    pairs.push(trimmed)
-  }
-  return pairs
-}
-
 const getHeaderValues = (req: IncomingMessage, headerName: string): string[] => {
   const value = req.headers[headerName]
   if (Array.isArray(value)) {
@@ -354,17 +345,15 @@ const getSingleHeaderValue = (req: IncomingMessage, headerName: string): string 
 }
 
 const hasDuplicateHeaders = (req: IncomingMessage, headerNames: readonly string[]): boolean => {
-  const distinctHeaders = Reflect.get(req, 'headersDistinct') as
-    | IncomingMessage['headersDistinct']
-    | undefined
-  const rawHeaders = (Reflect.get(req, 'rawHeaders') as string[] | undefined) ?? []
+  const distinctHeaders = req.headersDistinct
+  const rawHeaders = req.rawHeaders
   const rawHeaderCounts = new Map<string, number>()
   for (let index = 0; index < rawHeaders.length; index += 2) {
     const name = rawHeaders[index].toLowerCase()
     rawHeaderCounts.set(name, (rawHeaderCounts.get(name) ?? 0) + 1)
   }
   for (const headerName of headerNames) {
-    if ((distinctHeaders?.[headerName]?.length ?? 0) > 1) {
+    if ((distinctHeaders[headerName]?.length ?? 0) > 1) {
       return true
     }
     if ((rawHeaderCounts.get(headerName) ?? 0) > 1) {
@@ -450,22 +439,19 @@ const getAllowedHosts = (uiServerConfiguration: UIServerConfiguration): string[]
 }
 
 const isSameHost = (left: string, right: string): boolean => {
-  const leftHost = normalizeHost(left)
-  const rightHost = normalizeHost(right)
-  if (leftHost == null || rightHost == null) {
-    return false
-  }
-  const leftAddress = normalizeIPAddress(leftHost)
-  const rightAddress = normalizeIPAddress(rightHost)
+  const leftAddress = normalizeIPAddress(left)
+  const rightAddress = normalizeIPAddress(right)
   if (leftAddress != null || rightAddress != null) {
     return (
       leftAddress?.family === rightAddress?.family && leftAddress?.value === rightAddress?.value
     )
   }
-  return leftHost === rightHost
+  const leftHost = normalizeHost(left)
+  const rightHost = normalizeHost(right)
+  return leftHost != null && rightHost != null && leftHost === rightHost
 }
 
-const isSecureForwardedProtocol = (protocol: null | string | undefined): boolean => {
+const isSecureForwardedProtocol = (protocol: string | undefined): boolean => {
   return protocol != null && SECURE_FORWARDED_PROTOCOLS.has(protocol)
 }
 

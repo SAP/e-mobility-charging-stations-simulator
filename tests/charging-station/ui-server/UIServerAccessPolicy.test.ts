@@ -28,16 +28,19 @@ await describe('UIServerAccessPolicy', async () => {
   const createAccessPolicyRequest = ({
     encrypted = false,
     headers = {},
+    headersDistinct = {},
     rawHeaders = [],
     remoteAddress = '127.0.0.1',
   }: {
     encrypted?: boolean
     headers?: IncomingHttpHeaders
+    headersDistinct?: NodeJS.Dict<string[]>
     rawHeaders?: string[]
     remoteAddress?: string
   }): IncomingMessage => {
     return {
       headers,
+      headersDistinct,
       rawHeaders,
       socket: { encrypted, remoteAddress } as never,
     } as unknown as IncomingMessage

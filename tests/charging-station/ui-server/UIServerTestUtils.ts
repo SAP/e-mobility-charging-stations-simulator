@@ -244,7 +244,9 @@ export const createMockIncomingMessage = (
   return {
     destroy: () => undefined,
     headers: {},
+    headersDistinct: {},
     method: HttpMethod.POST,
+    rawHeaders: [],
     url: '/ui',
     ...overrides,
   } as IncomingMessage
