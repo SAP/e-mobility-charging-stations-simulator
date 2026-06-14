@@ -11,7 +11,8 @@ import { afterEach, describe, it } from 'node:test'
 import type { UUIDv4 } from '../../../src/types/index.js'
 
 import { ProcedureName, ResponseStatus } from '../../../src/types/index.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { logger } from '../../../src/utils/Logger.js'
+import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockIncomingMessage,
@@ -307,5 +308,31 @@ await describe('UIWebSocketServer', async () => {
     assert.match(response, /WWW-Authenticate: Basic realm=users/)
     assert.match(response, /Connection: close/)
     assert.match(response, /Content-Length: 0/)
+  })
+
+  await it('should attach an error listener before writing upgrade rejection', async t => {
+    const { errorMock } = createLoggerMocks(t, logger)
+    const config = createMockUIServerConfiguration({
+      options: { host: 'localhost', port: 0 },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: { connection: 'keep-alive', host: 'localhost', upgrade: 'http/1.1' },
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+
+      assert.doesNotThrow(() => socket.emit('error', new Error('connection reset')))
+      assert.ok(errorMock.mock.calls.length >= 1)
+    } finally {
+      server.stop()
+    }
   })
 })
