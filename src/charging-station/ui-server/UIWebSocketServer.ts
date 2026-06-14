@@ -199,7 +199,9 @@ export class UIWebSocketServer extends AbstractUIServer {
       this.authenticate(req, err => {
         socket.removeListener('error', onSocketError)
         if (err != null) {
-          socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\n\r\n`)
+          socket.write(
+            `HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\nWWW-Authenticate: Basic realm=users\r\n\r\n`
+          )
           socket.destroy()
           return
         }

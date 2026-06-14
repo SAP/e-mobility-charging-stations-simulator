@@ -16,6 +16,7 @@ import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockIncomingMessage,
   createMockUIServerConfiguration,
+  createMockUIServerConfigurationWithAuth,
   createMockUIService,
   createMockUIWebSocket,
   MockUIServiceMode,
@@ -265,5 +266,39 @@ await describe('UIWebSocketServer', async () => {
     assert.strictEqual(socket.destroyed, true)
     assert.match(response, /429 Too Many Requests/)
     assert.match(response, /Retry-After: 60/)
+  })
+
+  await it('should advertise WWW-Authenticate on auth-denied upgrades', async () => {
+    const config = createMockUIServerConfigurationWithAuth({
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'localhost',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    const response = socket.writes.join('')
+    assert.strictEqual(socket.destroyed, true)
+    assert.match(response, /401 Unauthorized/)
+    assert.match(response, /WWW-Authenticate: Basic realm=users/)
   })
 })

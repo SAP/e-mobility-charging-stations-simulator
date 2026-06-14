@@ -148,6 +148,8 @@ export class UIMCPServer extends AbstractUIServer {
             'WWW-Authenticate': 'Basic realm=users',
           })
           .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
+        res.destroy()
+        req.destroy()
         return
       }
 

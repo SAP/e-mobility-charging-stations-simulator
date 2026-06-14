@@ -45,6 +45,7 @@ import {
   createMockChargingStationDataWithVersion,
   createMockIncomingMessage,
   createMockUIServerConfiguration,
+  createMockUIServerConfigurationWithAuth,
   MockServerResponse,
 } from './UIServerTestUtils.js'
 
@@ -292,6 +293,46 @@ await describe('UIMCPServer', async () => {
       }
 
       assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.destroyed, true)
+      assert.strictEqual(reqDestroyed, true)
+    })
+
+    await it('should destroy the response and request sockets after auth denial', t => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfigurationWithAuth({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      let reqDestroyed = false
+      const req = createMockIncomingMessage({
+        complete: true,
+        destroy: () => {
+          reqDestroyed = true
+          return undefined as never
+        },
+        headers: { host: 'localhost' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        httpServer.emit('request', req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 401)
+      assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
       assert.strictEqual(res.destroyed, true)
       assert.strictEqual(reqDestroyed, true)
     })
