@@ -132,6 +132,7 @@ await describe('UIServerNet', async () => {
 
     await it('should drop a single trailing dot', () => {
       assert.strictEqual(normalizeHost('gateway.example.com.'), 'gateway.example.com')
+      assert.strictEqual(normalizeHost('localhost.:80'), 'localhost')
     })
 
     await it('should lowercase the result', () => {

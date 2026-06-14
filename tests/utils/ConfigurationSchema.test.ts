@@ -248,6 +248,40 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.options')))
     })
 
+    await it('should reject uiServer options as null with object-shape message', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: null,
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i =>
+            i.path.join('.').includes('uiServer.options') && i.message.includes('non-array object')
+        )
+      )
+    })
+
+    await it('should reject uiServer options as array with object-shape message', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: [],
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i =>
+            i.path.join('.').includes('uiServer.options') && i.message.includes('non-array object')
+        )
+      )
+    })
+
     await it('should reject hostnames in trustedProxies', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({
@@ -329,18 +363,38 @@ await describe('ConfigurationSchema', async () => {
       }
     })
 
+    await it('should reject allowedHosts entries with a port', () => {
+      for (const portBearingHost of [
+        'gateway.example.com:8080',
+        '127.0.0.1:8080',
+        '127.0.0.1:08080',
+        '[::1]:8080',
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowedHosts: [portBearingHost],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          !result.success,
+          `Expected '${portBearingHost}' to be rejected as allowedHosts entry`
+        )
+        assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedHosts')))
+      }
+    })
+
     await it('should accept hostnames and IP literals in allowedHosts', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({
           uiServer: {
             accessPolicy: {
-              allowedHosts: [
-                'gateway.example.com',
-                '127.0.0.1',
-                '[::1]',
-                '[::1]:8080',
-                'localhost',
-              ],
+              allowedHosts: ['gateway.example.com', '127.0.0.1', '[::1]', 'localhost'],
             },
             enabled: true,
             type: 'ws',
