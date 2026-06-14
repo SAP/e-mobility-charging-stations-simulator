@@ -3,7 +3,10 @@
  * @description Unit tests for HTTP-based UI server and response handling
  */
 
+import type { IncomingMessage } from 'node:http'
+
 import assert from 'node:assert/strict'
+import { once } from 'node:events'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
@@ -13,12 +16,12 @@ import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServ
 import { DEFAULT_COMPRESSION_THRESHOLD_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
+import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockBootstrap,
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
   MockServerResponse,
-  waitForStreamFlush,
 } from './UIServerTestUtils.js'
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -195,6 +198,90 @@ await describe('UIHttpServer', async () => {
     assert.notStrictEqual(serverCustom, undefined)
   })
 
+  await it('should reject non-loopback plaintext requests before routing', t => {
+    const gatedServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({
+        accessPolicy: {
+          allowedHosts: ['gateway.example.com'],
+          requireTlsForNonLoopback: true,
+        },
+        options: { host: 'localhost', port: 0 },
+        type: ApplicationProtocol.HTTP,
+      })
+    )
+    const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+      listen: (...args: unknown[]) => unknown
+      removeAllListeners: () => void
+    }
+    t.mock.method(httpServer, 'listen', () => httpServer)
+    const req = createMockIncomingMessage({
+      complete: true,
+      headers: { host: 'gateway.example.com' },
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      url: '/ui/ui0.0.1/listChargingStations',
+    })
+    const res = new MockServerResponse()
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      gatedServer.start()
+      httpServer.emit('request', req, res)
+    } finally {
+      httpServer.removeAllListeners()
+      gatedServer.stop()
+    }
+
+    assert.strictEqual(res.statusCode, 403)
+    assert.strictEqual(res.body, '403 Forbidden')
+    assert.strictEqual(res.headers.Connection, 'close')
+  })
+
+  await it('should account denied requests against the rate limiter', t => {
+    const gatedServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({
+        accessPolicy: {
+          allowedHosts: ['gateway.example.com'],
+          requireTlsForNonLoopback: true,
+        },
+        options: { host: 'localhost', port: 0 },
+        type: ApplicationProtocol.HTTP,
+      })
+    )
+    const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+      listen: (...args: unknown[]) => unknown
+      removeAllListeners: () => void
+    }
+    t.mock.method(httpServer, 'listen', () => httpServer)
+    const rateLimiterCalls: string[] = []
+    const originalLimiter = Reflect.get(gatedServer, 'rateLimiter') as (ip: string) => boolean
+    Reflect.set(gatedServer, 'rateLimiter', (ip: string) => {
+      rateLimiterCalls.push(ip)
+      return originalLimiter(ip)
+    })
+    const denyingReq = createMockIncomingMessage({
+      complete: true,
+      headers: { host: 'gateway.example.com' },
+      socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+      url: '/ui/ui0.0.1/listChargingStations',
+    })
+    const res = new MockServerResponse()
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      gatedServer.start()
+      httpServer.emit('request', denyingReq, res)
+    } finally {
+      httpServer.removeAllListeners()
+      gatedServer.stop()
+    }
+
+    assert.strictEqual(res.statusCode, 403)
+    assert.strictEqual(rateLimiterCalls.length, 1)
+    assert.strictEqual(rateLimiterCalls[0], '203.0.113.10')
+  })
+
   await describe('Gzip compression', async () => {
     let gzipServer: TestableUIHttpServer
 
@@ -245,7 +332,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.strictEqual(res.headers['Content-Encoding'], 'gzip')
       assert.strictEqual(res.headers['Content-Type'], 'application/json')
@@ -260,7 +347,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, payload])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.notStrictEqual(res.bodyBuffer, undefined)
       if (res.bodyBuffer == null) {
@@ -291,7 +378,7 @@ await describe('UIHttpServer', async () => {
 
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+      await once(res, 'finish')
 
       assert.strictEqual(gzipServer.getAcceptsGzip().has(TEST_UUID), false)
     })

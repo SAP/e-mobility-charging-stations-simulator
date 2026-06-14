@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 
-import { StatusCodes } from 'http-status-codes'
+import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import type { IBootstrap } from '../IBootstrap.js'
@@ -33,6 +33,24 @@ import {
 } from './UIServerUtils.js'
 
 const moduleName = 'UIWebSocketServer'
+
+// Pre-handshake WS rejections write raw HTTP/1.1 to the Duplex socket;
+// AbstractUIServer.renderDenial targets ServerResponse and is not applicable.
+const buildUpgradeRejectionResponse = (
+  status: StatusCodes,
+  reasonPhrase: string,
+  extraHeaders: Readonly<Record<string, string>> = {}
+): string => {
+  const headers: Readonly<Record<string, string>> = {
+    'Content-Length': '0',
+    ...extraHeaders,
+    Connection: 'close',
+  }
+  const headerLines = Object.entries(headers)
+    .map(([name, value]) => `${name}: ${value}`)
+    .join('\r\n')
+  return `HTTP/1.1 ${status.toString()} ${reasonPhrase}\r\n${headerLines}\r\n\r\n`
+}
 
 export class UIWebSocketServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI WebSocket Server'
@@ -164,15 +182,33 @@ export class UIWebSocketServer extends AbstractUIServer {
         }
       })
     })
-    this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, _head: Buffer) => {
+    this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
       const connectionHeader = req.headers.connection ?? ''
       const upgradeHeader = req.headers.upgrade ?? ''
       if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
-        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
-        socket.destroy()
+        socket.write(
+          buildUpgradeRejectionResponse(
+            StatusCodes.BAD_REQUEST,
+            getReasonPhrase(StatusCodes.BAD_REQUEST)
+          ),
+          () => {
+            socket.destroy()
+          }
+        )
+        return
       }
-    })
-    this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+
+      const prologue = this.runRequestPrologue(req)
+      if (!prologue.ok) {
+        socket.write(
+          buildUpgradeRejectionResponse(prologue.status, prologue.reasonPhrase, prologue.headers),
+          () => {
+            socket.destroy()
+          }
+        )
+        return
+      }
+
       const onSocketError = (error: Error): void => {
         logger.error(
           `${this.logPrefix(
@@ -183,27 +219,35 @@ export class UIWebSocketServer extends AbstractUIServer {
         )
       }
       socket.on('error', onSocketError)
-      this.authenticate(req, err => {
+      if (!this.authenticate(req)) {
         socket.removeListener('error', onSocketError)
-        if (err != null) {
-          socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\n\r\n`)
-          socket.destroy()
-          return
-        }
-        try {
-          this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-            this.webSocketServer.emit('connection', ws, req)
-          })
-        } catch (error) {
-          logger.error(
-            `${this.logPrefix(
-              moduleName,
-              'start.httpServer.on.upgrade'
-            )} Error at connection upgrade event handling:`,
-            error
-          )
-        }
-      })
+        const unauthorized = this.getUnauthorizedDenial()
+        socket.write(
+          buildUpgradeRejectionResponse(
+            unauthorized.status,
+            unauthorized.reasonPhrase,
+            unauthorized.headers
+          ),
+          () => {
+            socket.destroy()
+          }
+        )
+        return
+      }
+      socket.removeListener('error', onSocketError)
+      try {
+        this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+          this.webSocketServer.emit('connection', ws, req)
+        })
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'start.httpServer.on.upgrade'
+          )} Error at connection upgrade event handling:`,
+          error
+        )
+      }
     })
     this.startHttpServer()
   }

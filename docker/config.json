@@ -18,6 +18,13 @@
     "options": {
       "host": "::"
     },
+    "accessPolicy": {
+      "allowedHosts": ["localhost", "127.0.0.1", "::1"],
+      "allowedOrigins": [],
+      "allowLoopbackProxy": false,
+      "requireTlsForNonLoopback": false,
+      "trustedProxies": []
+    },
     "type": "ws",
     "authentication": {
       "enabled": true,

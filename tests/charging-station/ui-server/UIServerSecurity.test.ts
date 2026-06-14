@@ -3,15 +3,19 @@
  * @description Unit tests for UI server security utilities (rate limiting, validation)
  */
 
+import type { IncomingMessage } from 'node:http'
+
 import assert from 'node:assert/strict'
+import { Readable } from 'node:stream'
 import { afterEach, describe, it } from 'node:test'
 
 import {
-  createBodySizeLimiter,
   createRateLimiter,
   DEFAULT_MAX_STATIONS,
   isValidCredential,
   isValidNumberOfStations,
+  PayloadTooLargeError,
+  readLimitedBody,
 } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { standardCleanup, withMockTimers } from '../../helpers/TestLifecycleHelpers.js'
 
@@ -38,25 +42,43 @@ await describe('UIServerSecurity', async () => {
     })
   })
 
-  await describe('CreateBodySizeLimiter', async () => {
-    let limiter: ReturnType<typeof createBodySizeLimiter>
+  await describe('ReadLimitedBody', async () => {
+    const mockRequest = (...chunks: Buffer[]): IncomingMessage =>
+      Readable.from(chunks) as unknown as IncomingMessage
 
-    await it('should return true when bytes under limit', () => {
-      limiter = createBodySizeLimiter(1000)
-
-      assert.strictEqual(limiter(500), true)
+    await it('should return concatenated body when under limit', async () => {
+      const body = await readLimitedBody(
+        mockRequest(Buffer.from('hello '), Buffer.from('world')),
+        1000
+      )
+      assert.strictEqual(body.toString('utf8'), 'hello world')
     })
 
-    await it('should return false when accumulated bytes exceed limit', () => {
-      limiter = createBodySizeLimiter(1000)
-      limiter(600)
-      assert.strictEqual(limiter(500), false)
+    await it('should return empty buffer for empty body', async () => {
+      const body = await readLimitedBody(mockRequest(), 1000)
+      assert.strictEqual(body.length, 0)
     })
 
-    await it('should return true at exact limit boundary', () => {
-      limiter = createBodySizeLimiter(1000)
+    await it('should throw PayloadTooLargeError when body exceeds limit', async () => {
+      await assert.rejects(
+        readLimitedBody(mockRequest(Buffer.alloc(600), Buffer.alloc(500)), 1000),
+        PayloadTooLargeError
+      )
+    })
 
-      assert.strictEqual(limiter(1000), true)
+    await it('should accept body at exact limit boundary', async () => {
+      const body = await readLimitedBody(mockRequest(Buffer.alloc(1000)), 1000)
+      assert.strictEqual(body.length, 1000)
+    })
+
+    await it('should propagate stream errors', async () => {
+      const error = new Error('upstream connection reset')
+      const stream = new Readable({
+        read () {
+          this.destroy(error)
+        },
+      })
+      await assert.rejects(readLimitedBody(stream as unknown as IncomingMessage, 1000), error)
     })
   })
 

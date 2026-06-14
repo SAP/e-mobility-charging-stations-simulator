@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-import { StatusCodes } from 'http-status-codes'
+import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { createGzip } from 'node:zlib'
 
 import type { IBootstrap } from '../IBootstrap.js'
@@ -22,9 +22,10 @@ import {
 import { generateUUID, getErrorMessage, JSONStringify, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
-  createBodySizeLimiter,
   DEFAULT_COMPRESSION_THRESHOLD_BYTES,
   DEFAULT_MAX_PAYLOAD_SIZE_BYTES,
+  PayloadTooLargeError,
+  readLimitedBody,
 } from './UIServerSecurity.js'
 import { HttpMethod, isProtocolAndVersionSupported } from './UIServerUtils.js'
 
@@ -104,148 +105,117 @@ export class UIHttpServer extends AbstractUIServer {
     this.startHttpServer()
   }
 
-  private requestListener (req: IncomingMessage, res: ServerResponse): void {
-    // Rate limiting check
-    const clientIp = req.socket.remoteAddress ?? 'unknown'
-    if (!this.rateLimiter(clientIp)) {
-      res
-        .writeHead(StatusCodes.TOO_MANY_REQUESTS, {
-          'Content-Type': 'text/plain',
-          'Retry-After': '60',
+  private async handleRequestBody (
+    req: IncomingMessage,
+    res: ServerResponse,
+    uuid: UUIDv4,
+    version: ProtocolVersion,
+    procedureName: ProcedureName
+  ): Promise<void> {
+    const buffer = await readLimitedBody(req, DEFAULT_MAX_PAYLOAD_SIZE_BYTES)
+    let requestPayload: RequestPayload
+    try {
+      requestPayload = JSON.parse(buffer.toString()) as RequestPayload
+    } catch (error) {
+      this.sendResponse(
+        this.buildProtocolResponse(uuid, {
+          errorMessage: getErrorMessage(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          status: ResponseStatus.FAILURE,
         })
-        .end(`${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests`)
-      res.destroy()
-      req.destroy()
+      )
+      return
+    }
+    const service = this.uiServices.get(version)
+    if (service == null || typeof service.requestHandler !== 'function') {
+      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
+      return
+    }
+    const protocolResponse = await service.requestHandler(
+      this.buildProtocolRequest(uuid, procedureName, requestPayload)
+    )
+    if (protocolResponse != null) {
+      this.sendResponse(protocolResponse)
+    } else {
+      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.SUCCESS }))
+    }
+  }
+
+  private requestListener (req: IncomingMessage, res: ServerResponse): void {
+    const prologue = this.runRequestPrologue(req)
+    if (!prologue.ok) {
+      this.renderDenial(res, prologue)
+      return
+    }
+    if (!this.authenticate(req)) {
+      this.renderDenial(res, this.getUnauthorizedDenial())
       return
     }
 
-    this.authenticate(req, err => {
-      if (err != null) {
-        res
-          .writeHead(StatusCodes.UNAUTHORIZED, {
-            'Content-Type': 'text/plain',
-            'WWW-Authenticate': 'Basic realm=users',
-          })
-          .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
-        res.destroy()
-        req.destroy()
-        return
+    const uuid = generateUUID()
+    this.responseHandlers.set(uuid, res)
+    const acceptEncoding = req.headers['accept-encoding'] ?? ''
+    this.acceptsGzip.set(uuid, /\bgzip\b/.test(acceptEncoding))
+    res.on('close', () => {
+      this.responseHandlers.delete(uuid)
+      this.acceptsGzip.delete(uuid)
+    })
+
+    try {
+      // Expected request URL pathname: /ui/:version/:procedureName
+      const rawUrl = req.url ?? ''
+      const { pathname } = new URL(rawUrl, 'http://localhost')
+      const parts = pathname.split('/').filter(Boolean)
+      if (parts.length < 3) {
+        throw new BaseError(
+          `Malformed URL path: '${pathname}' (expected /ui/:version/:procedureName)`
+        )
+      }
+      const [protocol, version, procedureName] = parts as [Protocol, ProtocolVersion, ProcedureName]
+      const fullProtocol = `${protocol}${version}`
+      if (!isProtocolAndVersionSupported(fullProtocol)) {
+        throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
+      }
+      this.registerProtocolVersionUIService(version)
+
+      req.on('error', error => {
+        logger.error(
+          `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
+          error
+        )
+        if (!res.headersSent) {
+          this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
+        } else {
+          this.responseHandlers.delete(uuid)
+        }
+      })
+
+      if (req.method !== HttpMethod.POST) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
       }
 
-      const uuid = generateUUID()
-      this.responseHandlers.set(uuid, res)
-      const acceptEncoding = req.headers['accept-encoding'] ?? ''
-      this.acceptsGzip.set(uuid, /\bgzip\b/.test(acceptEncoding))
-      res.on('close', () => {
-        this.responseHandlers.delete(uuid)
-        this.acceptsGzip.delete(uuid)
-      })
-      try {
-        // Expected request URL pathname: /ui/:version/:procedureName
-        const rawUrl = req.url ?? ''
-        const { pathname } = new URL(rawUrl, 'http://localhost')
-        const parts = pathname.split('/').filter(Boolean)
-        if (parts.length < 3) {
-          throw new BaseError(
-            `Malformed URL path: '${pathname}' (expected /ui/:version/:procedureName)`
-          )
-        }
-        const [protocol, version, procedureName] = parts as [
-          Protocol,
-          ProtocolVersion,
-          ProcedureName
-        ]
-        const fullProtocol = `${protocol}${version}`
-        if (!isProtocolAndVersionSupported(fullProtocol)) {
-          throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
-        }
-        this.registerProtocolVersionUIService(version)
-
-        req.on('error', error => {
-          logger.error(
-            `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
-            error
-          )
-          if (!res.headersSent) {
-            this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
-          } else {
-            this.responseHandlers.delete(uuid)
-          }
-        })
-
-        if (req.method !== HttpMethod.POST) {
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
-        }
-
-        const bodyBuffer: Uint8Array[] = []
-        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE_BYTES)
-        req
-          .on('data', (chunk: Uint8Array) => {
-            if (!checkBodySize(chunk.length)) {
-              res
-                .writeHead(StatusCodes.REQUEST_TOO_LONG, {
-                  'Content-Type': 'text/plain',
-                })
-                .end(`${StatusCodes.REQUEST_TOO_LONG.toString()} Payload Too Large`)
-              res.destroy()
-              req.destroy()
-              return
-            }
-            bodyBuffer.push(chunk)
+      this.handleRequestBody(req, res, uuid, version, procedureName).catch((error: unknown) => {
+        if (error instanceof PayloadTooLargeError) {
+          this.renderDenial(res, {
+            reasonPhrase: getReasonPhrase(StatusCodes.REQUEST_TOO_LONG),
+            status: StatusCodes.REQUEST_TOO_LONG,
           })
-          .on('end', () => {
-            let requestPayload: RequestPayload | undefined
-            try {
-              requestPayload = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload
-            } catch (error) {
-              this.sendResponse(
-                this.buildProtocolResponse(uuid, {
-                  errorMessage: getErrorMessage(error),
-                  errorStack: error instanceof Error ? error.stack : undefined,
-                  status: ResponseStatus.FAILURE,
-                })
-              )
-              return
-            }
-            const service = this.uiServices.get(version)
-            if (service == null || typeof service.requestHandler !== 'function') {
-              this.sendResponse(
-                this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
-              )
-              return
-            }
-            // eslint-disable-next-line promise/no-promise-in-callback
-            service
-              .requestHandler(this.buildProtocolRequest(uuid, procedureName, requestPayload))
-              .then((protocolResponse?: ProtocolResponse) => {
-                if (protocolResponse != null) {
-                  this.sendResponse(protocolResponse)
-                } else {
-                  this.sendResponse(
-                    this.buildProtocolResponse(uuid, { status: ResponseStatus.SUCCESS })
-                  )
-                }
-                return undefined
-              })
-              .catch((error: unknown) => {
-                logger.error(
-                  `${this.logPrefix(moduleName, 'requestListener.service.requestHandler')} UI service request handler error:`,
-                  error
-                )
-                this.sendResponse(
-                  this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
-                )
-              })
-          })
-      } catch (error) {
+          return
+        }
         logger.error(
-          `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
+          `${this.logPrefix(moduleName, 'requestListener.service.requestHandler')} UI service request handler error:`,
           error
         )
         this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
-      }
-    })
+      })
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
+        error
+      )
+      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
+    }
   }
 
   private responseStatusToStatusCode (status: ResponseStatus): StatusCodes {

@@ -12,7 +12,7 @@ import {
 import { logger, logPrefix } from '../../utils/index.js'
 import { UIHttpServer } from './UIHttpServer.js'
 import { UIMCPServer } from './UIMCPServer.js'
-import { isLoopback } from './UIServerUtils.js'
+import { isLoopback } from './UIServerNet.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 const moduleName = 'UIServerFactory'

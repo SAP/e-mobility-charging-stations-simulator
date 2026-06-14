@@ -4,8 +4,9 @@
  */
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 
+import { StatusCodes } from 'http-status-codes'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -25,8 +26,10 @@ import {
 } from '../../../src/charging-station/ui-server/mcp/index.js'
 import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
-import { DEFAULT_MAX_PAYLOAD_SIZE_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
-import { BaseError } from '../../../src/exception/index.js'
+import {
+  DEFAULT_MAX_PAYLOAD_SIZE_BYTES,
+  PayloadTooLargeError,
+} from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import {
   ApplicationProtocol,
   OCPPVersion,
@@ -43,7 +46,10 @@ import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID, TEST_UUID_2 } from './UIServer
 import {
   createMockBootstrap,
   createMockChargingStationDataWithVersion,
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
+  createMockUIServerConfigurationWithAuth,
+  MockServerResponse,
 } from './UIServerTestUtils.js'
 
 const TEST_TIMEOUT_MS = 30_000
@@ -98,6 +104,20 @@ class TestableUIMCPServer extends UIMCPServer {
     return (
       Reflect.get(this, 'readRequestBody') as (req: IncomingMessage) => Promise<unknown>
     ).call(this, req)
+  }
+
+  public callSendErrorResponse (
+    res: ServerResponse,
+    statusCode: StatusCodes,
+    headers?: Readonly<Record<string, string>>
+  ): void {
+    ;(
+      Reflect.get(this, 'sendErrorResponse') as (
+        res: ServerResponse,
+        statusCode: StatusCodes,
+        headers?: Readonly<Record<string, string>>
+      ) => void
+    ).call(this, res, statusCode, headers)
   }
 
   public getPendingMcpRequest (uuid: string):
@@ -181,6 +201,200 @@ await describe('UIMCPServer', async () => {
 
     await it('should create HTTP server', () => {
       assert.notStrictEqual(Reflect.get(server, 'httpServer'), undefined)
+    })
+  })
+
+  await describe('request access gate', async () => {
+    await it('should signal Connection: close after denial', t => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: 'attacker.test' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        httpServer.emit('request', req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.ended, true)
+      assert.strictEqual(res.headers.Connection, 'close')
+    })
+
+    await it('should signal Connection: close after auth denial', t => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfigurationWithAuth({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: 'localhost' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        httpServer.emit('request', req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 401)
+      assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
+      assert.strictEqual(res.headers.Connection, 'close')
+      assert.strictEqual(res.ended, true)
+    })
+
+    await it('should advertise allowed methods on 405 Method Not Allowed responses', () => {
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      const res = new MockServerResponse()
+
+      gatedServer.callSendErrorResponse(
+        res as unknown as ServerResponse,
+        StatusCodes.METHOD_NOT_ALLOWED,
+        { Allow: 'GET, POST, DELETE' }
+      )
+
+      assert.strictEqual(res.statusCode, 405)
+      assert.strictEqual(res.headers.Allow, 'GET, POST, DELETE')
+      assert.strictEqual(res.ended, true)
+    })
+
+    await it('should warn at startup when bound to wildcard host with empty allowedHosts', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const wildcardServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+          options: { host: '0.0.0.0', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /wildcard host '0\.0\.0\.0' with no accessPolicy\.allowedHosts/
+      )
+      wildcardServer.stop()
+    })
+
+    await it('should warn at startup when bound to non-loopback host with no trusted proxies', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const exposedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+          options: { host: '203.0.113.10', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /non-loopback host '203\.0\.113\.10' with requireTlsForNonLoopback=true and no accessPolicy\.trustedProxies/
+      )
+      exposedServer.stop()
+    })
+
+    await it('should not warn at startup when bound to a loopback host', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
+      const loopbackServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+
+      assert.strictEqual(warnMock.mock.calls.length, 0)
+      loopbackServer.stop()
+    })
+
+    await it('should log rate-limit denials at warn level', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+      const gatedServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: 'localhost', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      ;(gatedServer as unknown as { rateLimiter: () => boolean }).rateLimiter = () => false
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        headers: { host: 'localhost' },
+        socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        url: '/mcp',
+      })
+      const res = new MockServerResponse()
+
+      try {
+        gatedServer.start()
+        httpServer.emit('request', req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 429)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      assert.match(
+        warnMock.mock.calls[0].arguments[0] as string,
+        /UI rate limit exceeded for client '127\.0\.0\.1'/
+      )
     })
   })
 
@@ -663,17 +877,13 @@ await describe('UIMCPServer', async () => {
       assert.deepStrictEqual(result, expected)
     })
 
-    await it('should reject with BaseError when payload too large', async () => {
+    await it('should reject with PayloadTooLargeError when payload too large', async () => {
       const oversizedChunk = Buffer.alloc(DEFAULT_MAX_PAYLOAD_SIZE_BYTES + 1)
       const mockReq = Readable.from([oversizedChunk])
 
       await assert.rejects(
         server.callReadRequestBody(mockReq as unknown as IncomingMessage),
-        (error: Error) => {
-          assert.ok(error instanceof BaseError)
-          assert.ok(error.message.includes('Payload too large'))
-          return true
-        }
+        PayloadTooLargeError
       )
     })
 
