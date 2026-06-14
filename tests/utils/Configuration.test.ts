@@ -120,6 +120,14 @@ await describe('Configuration', async () => {
     assert.notStrictEqual(uiServer.options, undefined)
     assert.strictEqual(typeof uiServer.options?.host, 'string')
     assert.strictEqual(typeof uiServer.options?.port, 'number')
+    const accessPolicy = uiServer.accessPolicy
+    assert.notStrictEqual(accessPolicy, undefined)
+    if (accessPolicy == null) {
+      assert.fail('Expected UI server access policy defaults')
+    }
+    assert.strictEqual(accessPolicy.requireTlsForNonLoopback, true)
+    assert.strictEqual(accessPolicy.allowLoopbackProxy, false)
+    assert.deepStrictEqual(accessPolicy.trustedProxies, [])
   })
 
   await it('should return performance storage configuration', () => {

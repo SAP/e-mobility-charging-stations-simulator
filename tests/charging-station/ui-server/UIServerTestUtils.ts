@@ -3,6 +3,7 @@
  * @description Test utilities for UI server testing
  */
 import type { IncomingMessage } from 'node:http'
+import type { Duplex } from 'node:stream'
 
 import { EventEmitter } from 'node:events'
 
@@ -60,6 +61,10 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
     this.responseHandlers.set(uuid, ws as never)
   }
 
+  public emitUpgrade (req: IncomingMessage, socket: Duplex, head = Buffer.alloc(0)): void {
+    this.httpServer.emit('upgrade', req, socket, head)
+  }
+
   /**
    * Get the size of response handlers map.
    * @returns Number of response handlers currently registered
@@ -93,6 +98,15 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
   public testRegisterProtocolVersionUIService (version: ProtocolVersion): void {
     this.registerProtocolVersionUIService(version)
   }
+
+  public async waitUntilListening (): Promise<void> {
+    if (this.httpServer.listening) {
+      return
+    }
+    await new Promise<void>(resolve => {
+      this.httpServer.once('listening', resolve)
+    })
+  }
 }
 
 /**
@@ -115,6 +129,13 @@ export const createMockUIServerConfiguration = (
   overrides?: Partial<UIServerConfiguration>
 ): UIServerConfiguration => {
   return {
+    accessPolicy: {
+      allowedHosts: [],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [],
+    },
     enabled: true,
     options: {
       host: 'localhost',
@@ -125,6 +146,51 @@ export const createMockUIServerConfiguration = (
     ...overrides,
   }
 }
+
+// RFC 5737 (IPv4 TEST-NET-1) / RFC 2606 (example.com), safe for tests.
+export const TRUSTED_PROXY_IP = '192.0.2.10'
+export const GATEWAY_HOST = 'gateway.example.com'
+
+/**
+ * Create a configuration that places the request behind a single trusted
+ * proxy reaching `GATEWAY_HOST`. Used by tests that exercise the policy
+ * past the trusted-peer gate.
+ * @param overrides - Partial accessPolicy fields to merge with the defaults
+ * @returns UIServerConfiguration ready for proxy-aware policy tests
+ */
+export const createGatewayConfigWithTrustedProxy = (
+  overrides?: Partial<UIServerConfiguration['accessPolicy']>
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    accessPolicy: {
+      allowedHosts: [GATEWAY_HOST],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [TRUSTED_PROXY_IP],
+      ...overrides,
+    },
+  })
+
+/**
+ * Create a configuration that exposes `GATEWAY_HOST` without any trusted
+ * proxy. Used by tests that exercise the untrusted-peer gate.
+ * @param overrides - Partial accessPolicy fields to merge with the defaults
+ * @returns UIServerConfiguration with no trusted proxies
+ */
+export const createGatewayConfigWithoutTrustedProxies = (
+  overrides?: Partial<UIServerConfiguration['accessPolicy']>
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    accessPolicy: {
+      allowedHosts: [GATEWAY_HOST],
+      allowedOrigins: [],
+      allowLoopbackProxy: false,
+      requireTlsForNonLoopback: true,
+      trustedProxies: [],
+      ...overrides,
+    },
+  })
 
 /**
  * Create a mock UI server configuration with basic authentication enabled.
@@ -148,10 +214,16 @@ export const createMockUIServerConfigurationWithAuth = (
 export class MockServerResponse extends EventEmitter {
   public body?: string
   public bodyBuffer?: Buffer
+  public destroyed = false
   public ended = false
   public headers: Record<string, string> = {}
   public statusCode?: number
   private chunks: Buffer[] = []
+
+  public destroy (): this {
+    this.destroyed = true
+    return this
+  }
 
   public end (data?: string): this {
     if (data != null) {
@@ -190,6 +262,22 @@ export class MockServerResponse extends EventEmitter {
   }
 }
 
+export class MockUpgradeSocket extends EventEmitter {
+  public destroyed = false
+  public readonly writes: string[] = []
+
+  public destroy (): this {
+    this.destroyed = true
+    return this
+  }
+
+  public write (chunk: string, callback?: () => void): boolean {
+    this.writes.push(chunk)
+    callback?.()
+    return true
+  }
+}
+
 /**
  * Create a mock HTTP IncomingMessage for testing.
  * @param overrides - Partial message properties to merge with defaults
@@ -199,8 +287,11 @@ export const createMockIncomingMessage = (
   overrides?: Partial<IncomingMessage>
 ): IncomingMessage => {
   return {
+    destroy: () => undefined,
     headers: {},
+    headersDistinct: {},
     method: HttpMethod.POST,
+    rawHeaders: [],
     url: '/ui',
     ...overrides,
   } as IncomingMessage
@@ -298,17 +389,6 @@ export const createMockUIService = (
     }
   },
 })
-
-/**
- * Wait for stream operations to flush.
- * @param delayMs - Delay in milliseconds to wait
- * @returns Promise that resolves after the delay
- */
-export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
-  await new Promise(resolve => {
-    setTimeout(resolve, delayMs)
-  })
-}
 
 /**
  * Create mock charging station data with a specific OCPP version.

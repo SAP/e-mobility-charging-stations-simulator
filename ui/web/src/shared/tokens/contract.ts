@@ -7,6 +7,8 @@
  *
  * Every theme file MUST define a value for each token (as `--{token-name}`).
  */
+import { isDev } from '@/core/index.js'
+
 export const TOKEN_CONTRACT = [
   'color-accent',
   'color-bg',
@@ -53,7 +55,9 @@ export type TokenName = (typeof TOKEN_CONTRACT)[number]
  * @param contextId - The skin/theme id that was just applied
  */
 export function validateTokenContract (source: string, contextId: string): void {
-  if (!import.meta.env.DEV || typeof document === 'undefined') return
+  if (!isDev() || typeof document === 'undefined') {
+    return
+  }
   requestAnimationFrame(() => {
     const style = getComputedStyle(document.documentElement)
     for (const token of TOKEN_CONTRACT) {

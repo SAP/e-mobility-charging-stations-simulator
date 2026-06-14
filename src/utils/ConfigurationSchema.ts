@@ -1,8 +1,10 @@
 import type { ListenOptions } from 'node:net'
 import type { ResourceLimits } from 'node:worker_threads'
 
+import { isIP } from 'node:net'
 import { z } from 'zod'
 
+import { normalizeHost } from '../charging-station/ui-server/UIServerNet.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -91,6 +93,61 @@ export const UIServerAuthenticationSchema = z
   })
   .strict()
 
+export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
+  allowedHosts: [],
+  allowedOrigins: [],
+  allowLoopbackProxy: false,
+  requireTlsForNonLoopback: true,
+  trustedProxies: [],
+} as const
+
+export const UIServerAccessPolicySchema = z
+  .object({
+    allowedHosts: z
+      .array(
+        z.string().refine(value => normalizeHost(value) != null, {
+          message: 'must be a valid host (no path, query, or fragment)',
+        })
+      )
+      .optional(),
+    allowedOrigins: z
+      .array(
+        z.url().refine(
+          value => {
+            const url = new URL(value)
+            return (
+              (url.pathname === '/' || url.pathname === '') && url.search === '' && url.hash === ''
+            )
+          },
+          {
+            message:
+              'must be an origin URL without path, query, or fragment (e.g. https://example.com)',
+          }
+        )
+      )
+      .optional(),
+    allowLoopbackProxy: z.boolean().optional(),
+    requireTlsForNonLoopback: z.boolean().optional(),
+    trustedProxies: z
+      .array(
+        z.string().refine(value => isIP(value) !== 0, {
+          message:
+            'must be an IPv4 or IPv6 literal (hostnames, brackets, and CIDR ranges are not supported)',
+        })
+      )
+      .optional(),
+  })
+  .strict()
+
+const UIServerListenOptionsSchema = z.custom<ListenOptions>(value => {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    !Object.hasOwn(value, 'accessPolicy')
+  )
+}, "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'")
+
 /**
  * UIServerConfiguration — UI server configuration section.
  * `options` is structurally typed as `ListenOptions` from node:net; the schema
@@ -98,9 +155,10 @@ export const UIServerAuthenticationSchema = z
  */
 export const UIServerConfigurationSchema = z
   .object({
+    accessPolicy: UIServerAccessPolicySchema.optional(),
     authentication: UIServerAuthenticationSchema.optional(),
     enabled: z.boolean().optional(),
-    options: z.custom<ListenOptions>().optional(),
+    options: UIServerListenOptionsSchema.optional(),
     type: z.enum(ApplicationProtocol).optional(),
     version: z.enum(ApplicationProtocolVersion).optional(),
   })

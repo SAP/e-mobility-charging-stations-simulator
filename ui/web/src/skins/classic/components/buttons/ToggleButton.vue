@@ -13,6 +13,7 @@ import { ref } from 'vue'
 import {
   getFromLocalStorage,
   getLocalStorage,
+  isDev,
   setToLocalStorage,
   SHARED_TOGGLE_BUTTON_KEY_PREFIX,
   TOGGLE_BUTTON_KEY_PREFIX,
@@ -48,7 +49,7 @@ const click = (): void => {
         setToLocalStorage<boolean>(key, false)
       }
     } catch {
-      if (import.meta.env.DEV) {
+      if (isDev()) {
         console.debug('[ToggleButton] Failed to clear shared toggle buttons')
       }
     }

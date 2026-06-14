@@ -1,4 +1,8 @@
+import type { IncomingMessage } from 'node:http'
+
 import { timingSafeEqual } from 'node:crypto'
+
+import { BaseError } from '../../exception/index.js'
 
 interface RateLimitEntry {
   count: number
@@ -11,6 +15,12 @@ export const DEFAULT_RATE_WINDOW_MS = 60000
 export const DEFAULT_MAX_STATIONS = 100
 export const DEFAULT_MAX_TRACKED_IPS = 10000
 export const DEFAULT_COMPRESSION_THRESHOLD_BYTES = 1024
+
+export class PayloadTooLargeError extends BaseError {
+  public constructor (maxBytes: number) {
+    super(`Request body exceeds limit of ${maxBytes.toString()} bytes`)
+  }
+}
 
 export const isValidCredential = (provided: string, expected: string): boolean => {
   try {
@@ -32,13 +42,18 @@ export const isValidCredential = (provided: string, expected: string): boolean =
   }
 }
 
-export const createBodySizeLimiter = (maxBytes: number): ((chunkSize: number) => boolean) => {
-  let accumulatedBytes = 0
-
-  return (chunkSize: number): boolean => {
-    accumulatedBytes += chunkSize
-    return accumulatedBytes <= maxBytes
+export const readLimitedBody = async (req: IncomingMessage, maxBytes: number): Promise<Buffer> => {
+  const chunks: Buffer[] = []
+  let received = 0
+  for await (const chunk of req) {
+    const buffer = chunk as Buffer
+    received += buffer.length
+    if (received > maxBytes) {
+      throw new PayloadTooLargeError(maxBytes)
+    }
+    chunks.push(buffer)
   }
+  return Buffer.concat(chunks)
 }
 
 export const createRateLimiter = (

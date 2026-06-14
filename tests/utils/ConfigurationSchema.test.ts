@@ -11,7 +11,11 @@ import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
 } from '../../src/utils/index.js'
-import { ConfigurationSchema, WorkerConfigurationSchema } from '../../src/utils/index.js'
+import {
+  ConfigurationSchema,
+  UI_SERVER_ACCESS_POLICY_DEFAULTS,
+  WorkerConfigurationSchema,
+} from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   BAD_FIXTURES,
@@ -191,6 +195,238 @@ await describe('ConfigurationSchema', async () => {
         })
       )
       assert.ok(result.success)
+    })
+
+    await it('should accept valid uiServer access policy', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedHosts: ['gateway.example.com'],
+              allowedOrigins: ['https://gateway.example.com'],
+              allowLoopbackProxy: true,
+              requireTlsForNonLoopback: true,
+              trustedProxies: ['127.0.0.1'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(result.success)
+    })
+
+    await it('should reject unknown key in uiServer access policy', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              unknownPolicyKey: true,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.accessPolicy')))
+    })
+
+    await it('should reject misplaced access policy under uiServer options', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            options: {
+              accessPolicy: {
+                requireTlsForNonLoopback: false,
+              },
+              host: 'localhost',
+              port: 8080,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.options')))
+    })
+
+    await it('should reject hostnames in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['nginx.internal'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('trustedProxies')))
+    })
+
+    await it('should reject CIDR ranges in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['10.0.0.0/8'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('trustedProxies')))
+    })
+
+    await it('should accept IPv4 and IPv6 literals in trustedProxies', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              trustedProxies: ['10.0.0.1', '2001:db8::1', '::ffff:127.0.0.1'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected IP literals to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject malformed allowedHosts entries', () => {
+      for (const malformedHost of [
+        'a:b:c',
+        'localhost:bad',
+        '[::1]:99999',
+        '[::1]:abc',
+        '',
+        'a.example.com, b.example.com',
+        'foo bar',
+        'localhost:0',
+        '[bad',
+      ]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowedHosts: [malformedHost],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          !result.success,
+          `Expected '${malformedHost}' to be rejected as allowedHosts entry`
+        )
+        assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedHosts')))
+      }
+    })
+
+    await it('should accept hostnames and IP literals in allowedHosts', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedHosts: [
+                'gateway.example.com',
+                '127.0.0.1',
+                '[::1]',
+                '[::1]:8080',
+                'localhost',
+              ],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected valid hosts to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should expose canonical UI server access policy defaults', () => {
+      assert.deepStrictEqual(UI_SERVER_ACCESS_POLICY_DEFAULTS, {
+        allowedHosts: [],
+        allowedOrigins: [],
+        allowLoopbackProxy: false,
+        requireTlsForNonLoopback: true,
+        trustedProxies: [],
+      })
+    })
+
+    await it('should accept allowedOrigins entries with no path, query, or fragment', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com', 'https://app.example.com/'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(
+        result.success,
+        `Expected origin URLs to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+      )
+    })
+
+    await it('should reject allowedOrigins entries with a path', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com/admin'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
+    })
+
+    await it('should reject allowedOrigins entries with a query string', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com?token=x'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
+    })
+
+    await it('should reject allowedOrigins entries with a fragment', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            accessPolicy: {
+              allowedOrigins: ['https://app.example.com#fragment'],
+            },
+            enabled: true,
+            type: 'ws',
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(result.error.issues.some(i => i.path.join('.').includes('allowedOrigins')))
     })
 
     await it('should reject unknown key in worker section', () => {
@@ -395,6 +631,13 @@ await describe('ConfigurationSchema', async () => {
         supervisionUrlDistribution: 'round-robin',
         supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
         uiServer: {
+          accessPolicy: {
+            allowedHosts: [],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
           enabled: false,
           options: {
             host: 'localhost',

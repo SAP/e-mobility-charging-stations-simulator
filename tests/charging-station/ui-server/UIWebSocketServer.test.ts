@@ -3,6 +3,8 @@
  * @description Unit tests for WebSocket-based UI server and response handling
  */
 
+import type { Duplex } from 'node:stream'
+
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
@@ -12,10 +14,13 @@ import { ProcedureName, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
+  createMockIncomingMessage,
   createMockUIServerConfiguration,
+  createMockUIServerConfigurationWithAuth,
   createMockUIService,
   createMockUIWebSocket,
   MockUIServiceMode,
+  MockUpgradeSocket,
   TestableUIWebSocketServer,
 } from './UIServerTestUtils.js'
 
@@ -183,5 +188,124 @@ await describe('UIWebSocketServer', async () => {
 
     const server = new TestableUIWebSocketServer(config)
     assert.notStrictEqual(server, undefined)
+  })
+
+  await it('should reject non-loopback plaintext upgrades before WebSocket handling', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: ['gateway.example.com'],
+        requireTlsForNonLoopback: true,
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'gateway.example.com',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    assert.strictEqual(socket.destroyed, true)
+    const response = socket.writes.join('')
+    assert.match(response, /403 Forbidden/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
+  })
+
+  await it('should include the Retry-After header on rate-limited upgrades', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: [],
+        allowedOrigins: [],
+        allowLoopbackProxy: false,
+        requireTlsForNonLoopback: true,
+        trustedProxies: [],
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    Reflect.set(server, 'rateLimiter', (_ip: string) => false)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'localhost',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    const response = socket.writes.join('')
+    assert.strictEqual(socket.destroyed, true)
+    assert.match(response, /429 Too Many Requests/)
+    assert.match(response, /Retry-After: 60/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
+  })
+
+  await it('should advertise WWW-Authenticate on auth-denied upgrades', async () => {
+    const config = createMockUIServerConfigurationWithAuth({
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'localhost',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    const response = socket.writes.join('')
+    assert.strictEqual(socket.destroyed, true)
+    assert.match(response, /401 Unauthorized/)
+    assert.match(response, /WWW-Authenticate: Basic realm=users/)
+    assert.match(response, /Connection: close/)
+    assert.match(response, /Content-Length: 0/)
   })
 })

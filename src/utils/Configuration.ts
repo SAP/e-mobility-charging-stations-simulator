@@ -37,6 +37,7 @@ import { Constants } from './Constants.js'
 import { ensureError, handleFileException } from './ErrorUtils.js'
 import { logger } from './Logger.js'
 import {
+  clone,
   convertToInt,
   has,
   isCFEnvironment,
@@ -52,6 +53,13 @@ type ConfigurationSectionType =
   | WorkerConfiguration
 
 const defaultUIServerConfiguration: UIServerConfiguration = {
+  accessPolicy: {
+    allowedHosts: [],
+    allowedOrigins: [],
+    allowLoopbackProxy: false,
+    requireTlsForNonLoopback: true,
+    trustedProxies: [],
+  },
   enabled: false,
   options: {
     host: Constants.DEFAULT_UI_SERVER_HOST,
@@ -272,7 +280,7 @@ export class Configuration {
   }
 
   private static buildUIServerSection (): UIServerConfiguration {
-    let uiServerConfiguration: UIServerConfiguration = defaultUIServerConfiguration
+    let uiServerConfiguration: UIServerConfiguration = clone(defaultUIServerConfiguration)
     if (has(ConfigurationSection.uiServer, Configuration.getConfigurationData())) {
       uiServerConfiguration = mergeDeepRight(
         uiServerConfiguration,

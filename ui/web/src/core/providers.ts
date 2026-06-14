@@ -3,6 +3,7 @@ import type { InjectionKey, Ref } from 'vue'
 
 import { inject } from 'vue'
 
+import { isDev } from './env.js'
 import { UIClient } from './UIClient.js'
 
 export const configurationKey: InjectionKey<Ref<ConfigurationData>> = Symbol('configuration')
@@ -14,7 +15,7 @@ export const uiClientKey: InjectionKey<UIClient> = Symbol('uiClient')
 export const useUIClient = (): UIClient => {
   const injected = inject(uiClientKey, undefined)
   if (injected != null) return injected
-  if (import.meta.env.DEV) {
+  if (isDev()) {
     console.debug('[useUIClient] Accessed outside provide scope — using singleton fallback')
   }
   return UIClient.getInstance()

@@ -13,6 +13,7 @@ import {
   configurationKey,
   DEFAULT_SKIN,
   getFromLocalStorage,
+  isDev,
   LEGACY_UI_SERVER_CONFIG_KEY,
   setToLocalStorage,
   templatesKey,
@@ -40,7 +41,7 @@ import './assets/themes/tokyo-night-storm.css'
 const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {
   app.config.errorHandler = (error, instance, info) => {
     console.error('Error:', error)
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       console.info('Vue instance:', instance)
       console.info('Error info:', info)
     }
