@@ -224,6 +224,21 @@ await describe('payloadBuilders', async () => {
       assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
     })
 
+    await it('should pass errorCode and evseId together for OCPP 1.6 (CLI + Web UI 1.6 path)', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        OCPPVersion.VERSION_16,
+        { errorCode: OCPP16ChargePointErrorCode.NO_ERROR, evseId: 2 }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        evseId: 2,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+      })
+    })
+
     await it('should default to OCPP 1.6 shape when ocppVersion is undefined', () => {
       const result = buildStatusNotificationPayload(
         connectorId,
@@ -232,6 +247,21 @@ await describe('payloadBuilders', async () => {
       )
       assert.deepStrictEqual(result, {
         connectorId,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+      })
+    })
+
+    await it('should fall through to OCPP 1.6 shape with errorCode and evseId when ocppVersion is undefined (Web UI undefined-version path)', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        undefined,
+        { errorCode: OCPP16ChargePointErrorCode.NO_ERROR, evseId: 2 }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        evseId: 2,
         status: OCPP16ChargePointStatus.AVAILABLE,
       })
     })
