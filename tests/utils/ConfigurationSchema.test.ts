@@ -282,6 +282,126 @@ await describe('ConfigurationSchema', async () => {
       )
     })
 
+    await describe('uiServer.options.port', async () => {
+      await it('should reject non-numeric string port "not-a-number"', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 'not-a-number' } },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.options.port'),
+          `Expected error path 'uiServer.options.port' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject negative port (-1)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: -1 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should reject port 65536 (out of range)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 65536 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should reject non-integer port 3.14', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 3.14 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should accept port 8080', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 8080 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 8080 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept port 0 (OS-picked port)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 0 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 0 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept port 65535 (max valid)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 65535 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 65535 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+    })
+
+    await describe('uiServer.options.host', async () => {
+      await it('should reject empty host string', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: '', port: 8080 } },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.options.host'),
+          `Expected error path 'uiServer.options.host' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept host "localhost"', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 8080 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected host 'localhost' to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should reject non-string host', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 1234, port: 8080 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.host'))
+      })
+    })
+
     await it('should reject hostnames in trustedProxies', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({

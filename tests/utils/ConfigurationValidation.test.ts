@@ -488,5 +488,30 @@ await describe('ConfigurationValidation', async () => {
         assert.strictEqual(error.message, EXPECTED_SNAPSHOT)
       }
     })
+
+    await it('should fail-fast with structured uiServer.options.port path on invalid port', () => {
+      const parsed = buildMinimalConfiguration({
+        uiServer: {
+          enabled: true,
+          options: { host: 'localhost', port: 'not-a-number' },
+          type: 'ws',
+        },
+      })
+      try {
+        validateConfiguration(parsed, 'bad-port.json')
+        assert.fail('Expected ConfigurationValidationError')
+      } catch (error) {
+        assert.ok(error instanceof ConfigurationValidationError)
+        assert.strictEqual(error.phase, 'schema')
+        const portErrors = error.fieldErrors.filter(e => e.path === 'uiServer.options.port')
+        assert.strictEqual(
+          portErrors.length,
+          1,
+          `Expected one fieldError on 'uiServer.options.port', got ${JSON.stringify(error.fieldErrors)}`
+        )
+        assert.match(error.message, /uiServer\.options\.port/)
+        assert.match(error.message, /\[schema\]/)
+      }
+    })
   })
 })
