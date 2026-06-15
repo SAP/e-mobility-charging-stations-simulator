@@ -690,7 +690,7 @@ await describe('ConfigurationSchema', async () => {
         )
         assert.ok(!result.success)
         assert.ok(
-          result.error.issues.some(i => i.path.join('.').includes('uiServer.authentication'))
+          result.error.issues.some(i => i.path.join('.').startsWith('uiServer.authentication'))
         )
       })
 
@@ -708,7 +708,7 @@ await describe('ConfigurationSchema', async () => {
         )
         assert.ok(!result.success)
         assert.ok(
-          result.error.issues.some(i => i.path.join('.').includes('uiServer.authentication'))
+          result.error.issues.some(i => i.path.join('.').startsWith('uiServer.authentication'))
         )
       })
 
@@ -1049,7 +1049,7 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(!result.success)
       const paths = result.error.issues.map(i => i.path.join('.'))
       assert.ok(
-        paths.some(p => p.includes('uiServer.authentication')),
+        paths.some(p => p.startsWith('uiServer.authentication')),
         `Expected an issue under 'uiServer.authentication' (unknown-key rejection) in ${JSON.stringify(paths)}`
       )
     })

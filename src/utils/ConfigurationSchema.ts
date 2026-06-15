@@ -85,6 +85,12 @@ export const StorageConfigurationSchema = z
  * at the field level (`min(1)`, RFC 7617 `':'` ban on `username`) and at the
  * object level (both required when `enabled === true`) so misconfigurations
  * fail at boot rather than silently bypassing Basic-Auth at runtime.
+ *
+ * Field-level constraints (`min(1)`, no `':'`) apply unconditionally — the
+ * schema is intentionally stricter than the runtime guard in `UIServerFactory`
+ * so that an `enabled: false` configuration cannot ship a value that becomes
+ * an authentication bypass the moment `enabled` is flipped on (including via
+ * configuration hot-reload). Defense-in-depth runtime checks remain.
  */
 export const UIServerAuthenticationSchema = z
   .object({
@@ -102,6 +108,7 @@ export const UIServerAuthenticationSchema = z
   .strict()
   .refine(value => !(value.enabled && (value.username == null || value.password == null)), {
     message: "'username' and 'password' are required when 'authentication.enabled' is true",
+    path: ['username'],
   })
 
 export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
