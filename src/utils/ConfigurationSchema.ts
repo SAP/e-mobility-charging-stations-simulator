@@ -140,12 +140,12 @@ export const UIServerAccessPolicySchema = z
   .strict()
 
 /**
- * UIServerListenOptionsSchema — bridge schema for `node:net` `ListenOptions`.
- * Validates known primitive fields (port, host, backlog, ...) at boot time so
- * that bad transport-level values (e.g. `port: "not-a-number"`) fail in
- * `ConfigurationSchema.safeParse` rather than later in `Server.listen`.
- * Unknown keys are passed through to preserve the `ListenOptions` extension
- * surface (e.g. `signal: AbortSignal`).
+ * UIServerListenOptionsObjectSchema — typed object layer for `node:net`
+ * `ListenOptions`. Validates known primitive fields (port, host, backlog, ...)
+ * at boot time so that bad transport-level values (e.g. `port: "not-a-number"`)
+ * fail in `ConfigurationSchema.safeParse` rather than later in `Server.listen`.
+ * Unknown keys are passed through (`.loose()`) to preserve the `ListenOptions`
+ * extension surface (e.g. `signal: AbortSignal`).
  */
 const UIServerListenOptionsObjectSchema = z
   .object({
@@ -160,6 +160,11 @@ const UIServerListenOptionsObjectSchema = z
   })
   .loose()
 
+/**
+ * UIServerListenOptionsSchema — composite schema for `uiServer.options`:
+ * non-array object guard → `accessPolicy` misplacement refinement → typed
+ * field validation via `UIServerListenOptionsObjectSchema`.
+ */
 const UIServerListenOptionsSchema = z
   .custom<ListenOptions>(
     value => value != null && typeof value === 'object' && !Array.isArray(value),
@@ -172,8 +177,9 @@ const UIServerListenOptionsSchema = z
 
 /**
  * UIServerConfiguration — UI server configuration section.
- * `options` is structurally typed as `ListenOptions` from node:net; the schema
- * uses `z.custom<ListenOptions>()` to bridge the external surface.
+ * `options` is structurally typed as `ListenOptions` from node:net and
+ * validated by `UIServerListenOptionsSchema` (object guard → `accessPolicy`
+ * refinement → typed field validation).
  */
 export const UIServerConfigurationSchema = z
   .object({
