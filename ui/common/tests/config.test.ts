@@ -118,6 +118,15 @@ await describe('config schema validation', async () => {
       version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
+    const paths = result.error.issues.map(i => i.path.join('.'))
+    assert.ok(
+      paths.includes('authentication.username'),
+      `Expected error path 'authentication.username' in ${JSON.stringify(paths)}`
+    )
+    assert.ok(
+      paths.includes('authentication.password'),
+      `Expected error path 'authentication.password' in ${JSON.stringify(paths)}`
+    )
   })
 
   await it('should reject auth config when enabled with protocol-basic-auth but empty username', () => {
@@ -134,6 +143,96 @@ await describe('config schema validation', async () => {
       version: '0.0.1',
     })
     assert.strictEqual(result.success, false)
+    const paths = result.error.issues.map(i => i.path.join('.'))
+    assert.ok(
+      paths.includes('authentication.username'),
+      `Expected error path 'authentication.username' in ${JSON.stringify(paths)}`
+    )
+  })
+
+  await it('should reject auth config when enabled with protocol-basic-auth but empty password', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        password: '',
+        type: 'protocol-basic-auth',
+        username: 'admin',
+      },
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    assert.strictEqual(result.success, false)
+    const paths = result.error.issues.map(i => i.path.join('.'))
+    assert.ok(
+      paths.includes('authentication.password'),
+      `Expected error path 'authentication.password' in ${JSON.stringify(paths)}`
+    )
+  })
+
+  await it("should reject auth config when username contains ':' (RFC 7617)", () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        password: 'admin',
+        type: 'protocol-basic-auth',
+        username: 'a:b',
+      },
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    assert.strictEqual(result.success, false)
+    const usernameIssues = result.error.issues.filter(
+      i => i.path.join('.') === 'authentication.username'
+    )
+    assert.ok(usernameIssues.length > 0)
+    assert.ok(
+      usernameIssues.some(i => i.message.includes('RFC 7617')),
+      `Expected an issue mentioning 'RFC 7617' in ${JSON.stringify(usernameIssues)}`
+    )
+  })
+
+  await it('should reject auth config when enabled with password but no username', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        password: 'admin',
+        type: 'protocol-basic-auth',
+      },
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    assert.strictEqual(result.success, false)
+    const paths = result.error.issues.map(i => i.path.join('.'))
+    assert.ok(
+      paths.includes('authentication.username'),
+      `Expected error path 'authentication.username' in ${JSON.stringify(paths)}`
+    )
+  })
+
+  await it('should reject auth config when enabled with username but no password', () => {
+    const result = uiServerConfigSchema.safeParse({
+      authentication: {
+        enabled: true,
+        type: 'protocol-basic-auth',
+        username: 'admin',
+      },
+      host: 'localhost',
+      port: 8080,
+      protocol: 'ui',
+      version: '0.0.1',
+    })
+    assert.strictEqual(result.success, false)
+    const paths = result.error.issues.map(i => i.path.join('.'))
+    assert.ok(
+      paths.includes('authentication.password'),
+      `Expected error path 'authentication.password' in ${JSON.stringify(paths)}`
+    )
   })
 
   await it('should accept auth config when enabled with protocol-basic-auth and credentials present', () => {
