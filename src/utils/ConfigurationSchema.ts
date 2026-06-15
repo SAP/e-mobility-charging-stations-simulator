@@ -101,9 +101,22 @@ export const UIServerAuthenticationSchema = z
       .optional(),
   })
   .strict()
-  .refine(value => !(value.enabled && (value.username == null || value.password == null)), {
-    message: "'username' and 'password' are required when 'authentication.enabled' is true",
-    path: ['username'],
+  .superRefine((value, ctx) => {
+    if (!value.enabled) return
+    if (value.username == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'username' is required when 'authentication.enabled' is true",
+        path: ['username'],
+      })
+    }
+    if (value.password == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'password' is required when 'authentication.enabled' is true",
+        path: ['password'],
+      })
+    }
   })
 
 export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
