@@ -81,17 +81,28 @@ export const StorageConfigurationSchema = z
 
 /**
  * UIServerAuthentication — credentials for the UI server.
- * `enabled` and `type` are required; `username`/`password` are optional and
- * depend on the chosen authentication scheme.
+ * `enabled` and `type` are required. `username` and `password` are validated
+ * at the field level (`min(1)`, RFC 7617 `':'` ban on `username`) and at the
+ * object level (both required when `enabled === true`) so misconfigurations
+ * fail at boot rather than silently bypassing Basic-Auth at runtime.
  */
 export const UIServerAuthenticationSchema = z
   .object({
     enabled: z.boolean(),
-    password: z.string().optional(),
+    password: z.string().min(1).optional(),
     type: z.enum(AuthenticationType),
-    username: z.string().optional(),
+    username: z
+      .string()
+      .min(1)
+      .refine(value => !value.includes(':'), {
+        message: "must not contain ':' (RFC 7617)",
+      })
+      .optional(),
   })
   .strict()
+  .refine(value => !(value.enabled && (value.username == null || value.password == null)), {
+    message: "'username' and 'password' are required when 'authentication.enabled' is true",
+  })
 
 export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
   allowedHosts: [],
@@ -138,6 +149,17 @@ export const UIServerAccessPolicySchema = z
       .optional(),
   })
   .strict()
+  .refine(
+    value =>
+      !(
+        value.allowLoopbackProxy === true &&
+        (value.trustedProxies == null || value.trustedProxies.length === 0)
+      ),
+    {
+      message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
+      path: ['allowLoopbackProxy'],
+    }
+  )
 
 /**
  * UIServerListenOptionsObjectSchema — typed object layer for `node:net`
