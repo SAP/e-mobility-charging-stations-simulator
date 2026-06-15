@@ -80,18 +80,44 @@ export const StorageConfigurationSchema = z
   .strict()
 
 /**
- * UIServerAuthentication — credentials for the UI server.
- * `enabled` and `type` are required; `username`/`password` are optional and
- * depend on the chosen authentication scheme.
+ * UIServerAuthentication — credentials for the UI server. `username` is a
+ * non-empty string without `':'` (RFC 7617); `password` is a non-empty
+ * string. Both are required when `enabled` is true. Field-level constraints
+ * fire unconditionally — intentionally stricter than the runtime guard in
+ * `UIServerFactory` so empty placeholders cannot ship under `enabled: false`
+ * and become a Basic-Auth bypass on the next boot with `enabled: true`.
  */
 export const UIServerAuthenticationSchema = z
   .object({
     enabled: z.boolean(),
-    password: z.string().optional(),
+    password: z.string().min(1).optional(),
     type: z.enum(AuthenticationType),
-    username: z.string().optional(),
+    username: z
+      .string()
+      .min(1)
+      .refine(value => !value.includes(':'), {
+        message: "must not contain ':' (RFC 7617)",
+      })
+      .optional(),
   })
   .strict()
+  .superRefine((value, ctx) => {
+    if (!value.enabled) return
+    if (value.username == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'username' is required when 'authentication.enabled' is true",
+        path: ['username'],
+      })
+    }
+    if (value.password == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'password' is required when 'authentication.enabled' is true",
+        path: ['password'],
+      })
+    }
+  })
 
 export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
   allowedHosts: [],
@@ -138,7 +164,44 @@ export const UIServerAccessPolicySchema = z
       .optional(),
   })
   .strict()
+  .refine(
+    value =>
+      !(
+        value.allowLoopbackProxy === true &&
+        (value.trustedProxies == null || value.trustedProxies.length === 0)
+      ),
+    {
+      message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
+      path: ['trustedProxies'],
+    }
+  )
 
+/**
+ * UIServerListenOptionsObjectSchema — typed object layer for `node:net`
+ * `ListenOptions`. Validates known primitive fields (port, host, backlog, ...)
+ * at boot time so that bad transport-level values (e.g. `port: "not-a-number"`)
+ * fail in `ConfigurationSchema.safeParse` rather than later in `Server.listen`.
+ * Unknown keys are passed through (`.loose()`) to preserve the `ListenOptions`
+ * extension surface (e.g. `signal: AbortSignal`).
+ */
+const UIServerListenOptionsObjectSchema = z
+  .object({
+    backlog: z.number().int().nonnegative().optional(),
+    exclusive: z.boolean().optional(),
+    host: z.string().min(1).optional(),
+    ipv6Only: z.boolean().optional(),
+    path: z.string().min(1).optional(),
+    port: z.number().int().min(0).max(65535).optional(),
+    readableAll: z.boolean().optional(),
+    writableAll: z.boolean().optional(),
+  })
+  .loose()
+
+/**
+ * UIServerListenOptionsSchema — composite schema for `uiServer.options`:
+ * non-array object guard → `accessPolicy` misplacement refinement → typed
+ * field validation via `UIServerListenOptionsObjectSchema`.
+ */
 const UIServerListenOptionsSchema = z
   .custom<ListenOptions>(
     value => value != null && typeof value === 'object' && !Array.isArray(value),
@@ -147,11 +210,13 @@ const UIServerListenOptionsSchema = z
   .refine(value => !Object.hasOwn(value as object, 'accessPolicy'), {
     message: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
   })
+  .pipe(UIServerListenOptionsObjectSchema)
 
 /**
  * UIServerConfiguration — UI server configuration section.
- * `options` is structurally typed as `ListenOptions` from node:net; the schema
- * uses `z.custom<ListenOptions>()` to bridge the external surface.
+ * `options` is structurally typed as `ListenOptions` from node:net and
+ * validated by `UIServerListenOptionsSchema` (object guard → `accessPolicy`
+ * refinement → typed field validation).
  */
 export const UIServerConfigurationSchema = z
   .object({

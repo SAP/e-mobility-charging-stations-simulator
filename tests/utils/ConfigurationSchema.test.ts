@@ -282,6 +282,126 @@ await describe('ConfigurationSchema', async () => {
       )
     })
 
+    await describe('uiServer.options.port', async () => {
+      await it('should reject non-numeric string port "not-a-number"', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 'not-a-number' } },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.options.port'),
+          `Expected error path 'uiServer.options.port' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject negative port (-1)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: -1 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should reject port 65536 (out of range)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 65536 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should reject non-integer port 3.14', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 3.14 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.port'))
+      })
+
+      await it('should accept port 8080', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 8080 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 8080 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept port 0 (OS-picked port)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 0 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 0 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept port 65535 (max valid)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 65535 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected port 65535 to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+    })
+
+    await describe('uiServer.options.host', async () => {
+      await it('should reject empty host string', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: '', port: 8080 } },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.options.host'),
+          `Expected error path 'uiServer.options.host' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept host "localhost"', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 'localhost', port: 8080 } },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected host 'localhost' to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should reject non-string host', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: { options: { host: 1234, port: 8080 } },
+          })
+        )
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.join('.') === 'uiServer.options.host'))
+      })
+    })
+
     await it('should reject hostnames in trustedProxies', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({
@@ -488,6 +608,197 @@ await describe('ConfigurationSchema', async () => {
         buildMinimalConfiguration({ worker: { unknownWorkerKey: true } })
       )
       assert.ok(!result.success)
+    })
+
+    await describe('uiServer.authentication credentials', async () => {
+      await it('should reject empty username', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'p',
+                type: 'protocol-basic-auth',
+                username: '',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.username'),
+          `Expected error path 'uiServer.authentication.username' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject empty password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: '',
+                type: 'protocol-basic-auth',
+                username: 'u',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it("should reject username containing ':' (RFC 7617)", () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'p',
+                type: 'protocol-basic-auth',
+                username: 'a:b',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const usernameIssues = result.error.issues.filter(
+          i => i.path.join('.') === 'uiServer.authentication.username'
+        )
+        assert.ok(usernameIssues.length > 0)
+        assert.ok(
+          usernameIssues.some(i => i.message.includes('RFC 7617')),
+          `Expected an issue mentioning 'RFC 7617' in ${JSON.stringify(usernameIssues)}`
+        )
+      })
+
+      await it('should reject authentication enabled without username and password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                type: 'protocol-basic-auth',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.username'),
+          `Expected error path 'uiServer.authentication.username' in ${JSON.stringify(paths)}`
+        )
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject authentication enabled with username but no password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                type: 'protocol-basic-auth',
+                username: 'u',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept authentication disabled without credentials', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: false,
+                type: 'protocol-basic-auth',
+              },
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected disabled auth without credentials to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept real shipped credentials shape (admin/admin)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'admin',
+                type: 'protocol-basic-auth',
+                username: 'admin',
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected admin/admin to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+    })
+
+    await describe('uiServer.accessPolicy allowLoopbackProxy/trustedProxies coupling', async () => {
+      await it('should reject allowLoopbackProxy=true with empty trustedProxies', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowLoopbackProxy: true,
+                trustedProxies: [],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.accessPolicy.trustedProxies'),
+          `Expected error path 'uiServer.accessPolicy.trustedProxies' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept allowLoopbackProxy=false with empty trustedProxies (docker shape)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowLoopbackProxy: false,
+                trustedProxies: [],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected docker-shape accessPolicy to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
     })
   })
 
@@ -734,7 +1045,9 @@ await describe('ConfigurationSchema', async () => {
             authentication: {
               bogusAuthKey: 'x',
               enabled: true,
+              password: 'p',
               type: 'protocol-basic-auth',
+              username: 'u',
             },
             enabled: true,
             type: 'ws',
@@ -742,6 +1055,12 @@ await describe('ConfigurationSchema', async () => {
         })
       )
       assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.code === 'unrecognized_keys' && i.path.join('.') === 'uiServer.authentication'
+        ),
+        `Expected an 'unrecognized_keys' issue at 'uiServer.authentication' in ${JSON.stringify(result.error.issues)}`
+      )
     })
   })
 
