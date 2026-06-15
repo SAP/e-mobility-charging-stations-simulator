@@ -80,17 +80,12 @@ export const StorageConfigurationSchema = z
   .strict()
 
 /**
- * UIServerAuthentication — credentials for the UI server.
- * `enabled` and `type` are required. `username` and `password` are validated
- * at the field level (`min(1)`, RFC 7617 `':'` ban on `username`) and at the
- * object level (both required when `enabled === true`) so misconfigurations
- * fail at boot rather than silently bypassing Basic-Auth at runtime.
- *
- * Field-level constraints (`min(1)`, no `':'`) apply unconditionally — the
- * schema is intentionally stricter than the runtime guard in `UIServerFactory`
- * so that an `enabled: false` configuration cannot ship a value that becomes
- * an authentication bypass the moment `enabled` is flipped on (including via
- * configuration hot-reload). Defense-in-depth runtime checks remain.
+ * UIServerAuthentication — credentials for the UI server. `username` is a
+ * non-empty string without `':'` (RFC 7617); `password` is a non-empty
+ * string. Both are required when `enabled` is true. Field-level constraints
+ * fire unconditionally — intentionally stricter than the runtime guard in
+ * `UIServerFactory` to block dormant Basic-Auth bypasses across hot-reload
+ * toggles of `enabled`.
  */
 export const UIServerAuthenticationSchema = z
   .object({
