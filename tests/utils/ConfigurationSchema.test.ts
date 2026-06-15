@@ -667,8 +667,8 @@ await describe('ConfigurationSchema', async () => {
           })
         )
         assert.ok(!result.success)
-        const usernameIssues = result.error.issues.filter(i =>
-          i.path.join('.').includes('uiServer.authentication.username')
+        const usernameIssues = result.error.issues.filter(
+          i => i.path.join('.') === 'uiServer.authentication.username'
         )
         assert.ok(usernameIssues.length > 0)
         assert.ok(

@@ -19,8 +19,9 @@ export const THEME_IDS = [
  * string without `':'` (RFC 7617); `password` is a non-empty string. Both are
  * required when `enabled` is true and `type === 'protocol-basic-auth'`.
  * Field-level constraints fire unconditionally — intentionally stricter than
- * the runtime auth flow to block dormant Basic-Auth bypasses across hot-reload
- * toggles of `enabled`.
+ * the runtime auth flow so empty placeholders cannot ship under
+ * `enabled: false` and become a Basic-Auth bypass on the next boot with
+ * `enabled: true`.
  */
 export const authenticationConfigSchema = z
   .object({
