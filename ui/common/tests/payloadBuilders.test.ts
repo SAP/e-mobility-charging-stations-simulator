@@ -224,7 +224,7 @@ await describe('payloadBuilders', async () => {
       assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
     })
 
-    await it('should pass errorCode and evseId together for OCPP 1.6 (CLI + Web UI 1.6 path)', () => {
+    await it('should pass errorCode and evseId through for OCPP 1.6 when both are provided', () => {
       const result = buildStatusNotificationPayload(
         connectorId,
         OCPP16ChargePointStatus.AVAILABLE,
@@ -251,7 +251,7 @@ await describe('payloadBuilders', async () => {
       })
     })
 
-    await it('should fall through to OCPP 1.6 shape with errorCode and evseId when ocppVersion is undefined (Web UI undefined-version path)', () => {
+    await it('should default to OCPP 1.6 shape with errorCode and evseId when ocppVersion is undefined', () => {
       const result = buildStatusNotificationPayload(
         connectorId,
         OCPP16ChargePointStatus.AVAILABLE,
