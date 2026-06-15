@@ -139,6 +139,27 @@ export const UIServerAccessPolicySchema = z
   })
   .strict()
 
+/**
+ * UIServerListenOptionsSchema — bridge schema for `node:net` `ListenOptions`.
+ * Validates known primitive fields (port, host, backlog, ...) at boot time so
+ * that bad transport-level values (e.g. `port: "not-a-number"`) fail in
+ * `ConfigurationSchema.safeParse` rather than later in `Server.listen`.
+ * Unknown keys are passed through to preserve the `ListenOptions` extension
+ * surface (e.g. `signal: AbortSignal`).
+ */
+const UIServerListenOptionsObjectSchema = z
+  .object({
+    backlog: z.number().int().nonnegative().optional(),
+    exclusive: z.boolean().optional(),
+    host: z.string().min(1).optional(),
+    ipv6Only: z.boolean().optional(),
+    path: z.string().min(1).optional(),
+    port: z.number().int().min(0).max(65535).optional(),
+    readableAll: z.boolean().optional(),
+    writableAll: z.boolean().optional(),
+  })
+  .loose()
+
 const UIServerListenOptionsSchema = z
   .custom<ListenOptions>(
     value => value != null && typeof value === 'object' && !Array.isArray(value),
@@ -147,6 +168,7 @@ const UIServerListenOptionsSchema = z
   .refine(value => !Object.hasOwn(value as object, 'accessPolicy'), {
     message: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
   })
+  .pipe(UIServerListenOptionsObjectSchema)
 
 /**
  * UIServerConfiguration — UI server configuration section.
