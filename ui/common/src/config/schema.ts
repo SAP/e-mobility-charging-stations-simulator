@@ -14,30 +14,47 @@ export const THEME_IDS = [
   'tokyo-night-storm',
 ] as const
 
+/**
+ * authenticationConfig — Web UI client credentials. `username` is a non-empty
+ * string without `':'` (RFC 7617); `password` is a non-empty string. Both are
+ * required when `enabled` is true and `type === 'protocol-basic-auth'`.
+ * Field-level constraints fire unconditionally — intentionally stricter than
+ * the runtime auth flow so empty placeholders cannot ship under
+ * `enabled: false` and become a Basic-Auth bypass on the next boot with
+ * `enabled: true`.
+ */
 export const authenticationConfigSchema = z
   .object({
     enabled: z.boolean(),
-    password: z.string().optional(),
+    password: z.string().min(1).optional(),
     type: z.enum(AuthenticationType),
     username: z
       .string()
-      .regex(/^[^:]*$/, 'must not contain ":"')
+      .min(1)
+      .refine(value => !value.includes(':'), {
+        message: "must not contain ':' (RFC 7617)",
+      })
       .optional(),
   })
-  .refine(
-    data =>
-      !data.enabled ||
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      data.type !== AuthenticationType.PROTOCOL_BASIC_AUTH ||
-      (data.username != null &&
-        data.username.length > 0 &&
-        data.password != null &&
-        data.password.length > 0),
-    {
-      message:
-        'username and password are required when authentication is enabled with protocol-basic-auth',
+  .superRefine((value, ctx) => {
+    if (!value.enabled) return
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (value.type !== AuthenticationType.PROTOCOL_BASIC_AUTH) return
+    if (value.username == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'username' is required when authentication is enabled with protocol-basic-auth",
+        path: ['username'],
+      })
     }
-  )
+    if (value.password == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'password' is required when authentication is enabled with protocol-basic-auth",
+        path: ['password'],
+      })
+    }
+  })
 
 export const uiServerConfigSchema = z.object({
   authentication: authenticationConfigSchema.optional(),

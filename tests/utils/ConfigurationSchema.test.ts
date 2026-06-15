@@ -609,6 +609,197 @@ await describe('ConfigurationSchema', async () => {
       )
       assert.ok(!result.success)
     })
+
+    await describe('uiServer.authentication credentials', async () => {
+      await it('should reject empty username', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'p',
+                type: 'protocol-basic-auth',
+                username: '',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.username'),
+          `Expected error path 'uiServer.authentication.username' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject empty password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: '',
+                type: 'protocol-basic-auth',
+                username: 'u',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it("should reject username containing ':' (RFC 7617)", () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'p',
+                type: 'protocol-basic-auth',
+                username: 'a:b',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const usernameIssues = result.error.issues.filter(
+          i => i.path.join('.') === 'uiServer.authentication.username'
+        )
+        assert.ok(usernameIssues.length > 0)
+        assert.ok(
+          usernameIssues.some(i => i.message.includes('RFC 7617')),
+          `Expected an issue mentioning 'RFC 7617' in ${JSON.stringify(usernameIssues)}`
+        )
+      })
+
+      await it('should reject authentication enabled without username and password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                type: 'protocol-basic-auth',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.username'),
+          `Expected error path 'uiServer.authentication.username' in ${JSON.stringify(paths)}`
+        )
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should reject authentication enabled with username but no password', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                type: 'protocol-basic-auth',
+                username: 'u',
+              },
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.authentication.password'),
+          `Expected error path 'uiServer.authentication.password' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept authentication disabled without credentials', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: false,
+                type: 'protocol-basic-auth',
+              },
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected disabled auth without credentials to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+
+      await it('should accept real shipped credentials shape (admin/admin)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              authentication: {
+                enabled: true,
+                password: 'admin',
+                type: 'protocol-basic-auth',
+                username: 'admin',
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected admin/admin to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+    })
+
+    await describe('uiServer.accessPolicy allowLoopbackProxy/trustedProxies coupling', async () => {
+      await it('should reject allowLoopbackProxy=true with empty trustedProxies', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowLoopbackProxy: true,
+                trustedProxies: [],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(!result.success)
+        const paths = result.error.issues.map(i => i.path.join('.'))
+        assert.ok(
+          paths.includes('uiServer.accessPolicy.trustedProxies'),
+          `Expected error path 'uiServer.accessPolicy.trustedProxies' in ${JSON.stringify(paths)}`
+        )
+      })
+
+      await it('should accept allowLoopbackProxy=false with empty trustedProxies (docker shape)', () => {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              accessPolicy: {
+                allowLoopbackProxy: false,
+                trustedProxies: [],
+              },
+              enabled: true,
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(
+          result.success,
+          `Expected docker-shape accessPolicy to be accepted: ${result.success ? '' : JSON.stringify(result.error.issues)}`
+        )
+      })
+    })
   })
 
   await describe('mixed-type fields', async () => {
@@ -854,7 +1045,9 @@ await describe('ConfigurationSchema', async () => {
             authentication: {
               bogusAuthKey: 'x',
               enabled: true,
+              password: 'p',
               type: 'protocol-basic-auth',
+              username: 'u',
             },
             enabled: true,
             type: 'ws',
@@ -862,6 +1055,12 @@ await describe('ConfigurationSchema', async () => {
         })
       )
       assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(
+          i => i.code === 'unrecognized_keys' && i.path.join('.') === 'uiServer.authentication'
+        ),
+        `Expected an 'unrecognized_keys' issue at 'uiServer.authentication' in ${JSON.stringify(result.error.issues)}`
+      )
     })
   })
 

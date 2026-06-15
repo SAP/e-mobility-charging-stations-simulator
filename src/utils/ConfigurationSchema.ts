@@ -80,18 +80,44 @@ export const StorageConfigurationSchema = z
   .strict()
 
 /**
- * UIServerAuthentication — credentials for the UI server.
- * `enabled` and `type` are required; `username`/`password` are optional and
- * depend on the chosen authentication scheme.
+ * UIServerAuthentication — credentials for the UI server. `username` is a
+ * non-empty string without `':'` (RFC 7617); `password` is a non-empty
+ * string. Both are required when `enabled` is true. Field-level constraints
+ * fire unconditionally — intentionally stricter than the runtime guard in
+ * `UIServerFactory` so empty placeholders cannot ship under `enabled: false`
+ * and become a Basic-Auth bypass on the next boot with `enabled: true`.
  */
 export const UIServerAuthenticationSchema = z
   .object({
     enabled: z.boolean(),
-    password: z.string().optional(),
+    password: z.string().min(1).optional(),
     type: z.enum(AuthenticationType),
-    username: z.string().optional(),
+    username: z
+      .string()
+      .min(1)
+      .refine(value => !value.includes(':'), {
+        message: "must not contain ':' (RFC 7617)",
+      })
+      .optional(),
   })
   .strict()
+  .superRefine((value, ctx) => {
+    if (!value.enabled) return
+    if (value.username == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'username' is required when 'authentication.enabled' is true",
+        path: ['username'],
+      })
+    }
+    if (value.password == null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: "'password' is required when 'authentication.enabled' is true",
+        path: ['password'],
+      })
+    }
+  })
 
 export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
   allowedHosts: [],
@@ -138,6 +164,17 @@ export const UIServerAccessPolicySchema = z
       .optional(),
   })
   .strict()
+  .refine(
+    value =>
+      !(
+        value.allowLoopbackProxy === true &&
+        (value.trustedProxies == null || value.trustedProxies.length === 0)
+      ),
+    {
+      message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
+      path: ['trustedProxies'],
+    }
+  )
 
 /**
  * UIServerListenOptionsObjectSchema — typed object layer for `node:net`
