@@ -2,6 +2,9 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
 import {
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
   OCPPVersion,
@@ -11,6 +14,7 @@ import {
   buildAuthorizePayload,
   buildIdToken,
   buildStartTransactionPayload,
+  buildStatusNotificationPayload,
   buildStopTransactionPayload,
   isOCPP20x,
 } from '../src/utils/payloadBuilders.js'
@@ -172,6 +176,140 @@ await describe('payloadBuilders', async () => {
         idToken: 'TAG1',
         type: OCPP20IdTokenEnumType.CENTRAL,
       })
+    })
+  })
+
+  await describe('buildStatusNotificationPayload', async () => {
+    const connectorId = 1
+
+    await it('should build OCPP 1.6 payload with status and explicit errorCode', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        OCPPVersion.VERSION_16,
+        { errorCode: OCPP16ChargePointErrorCode.NO_ERROR }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+      })
+    })
+
+    await it('should omit errorCode for OCPP 1.6 when not provided', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        OCPPVersion.VERSION_16
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+      })
+      assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
+    })
+
+    await it('should pass evseId through for OCPP 1.6 without errorCode', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.CHARGING,
+        OCPPVersion.VERSION_16,
+        { evseId: 2 }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        evseId: 2,
+        status: OCPP16ChargePointStatus.CHARGING,
+      })
+      assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
+    })
+
+    await it('should default to OCPP 1.6 shape when ocppVersion is undefined', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP16ChargePointStatus.AVAILABLE,
+        undefined
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+      })
+    })
+
+    await it('should throw for unsupported OCPP version', () => {
+      assert.throws(
+        () =>
+          buildStatusNotificationPayload(
+            connectorId,
+            OCPP16ChargePointStatus.AVAILABLE,
+            '3.0' as unknown as OCPPVersion
+          ),
+        (error: Error) => error.message.includes('Unsupported OCPP version')
+      )
+    })
+
+    await it('should build OCPP 2.0.1 payload with connectorStatus and evseId', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP20ConnectorStatusEnumType.AVAILABLE,
+        OCPPVersion.VERSION_201,
+        { evseId: 1 }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        connectorStatus: OCPP20ConnectorStatusEnumType.AVAILABLE,
+        evseId: 1,
+      })
+      assert.strictEqual((result as Record<string, unknown>).status, undefined)
+      assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
+    })
+
+    await it('should build OCPP 2.0 payload with connectorStatus when evseId omitted', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP20ConnectorStatusEnumType.OCCUPIED,
+        OCPPVersion.VERSION_20
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        connectorStatus: OCPP20ConnectorStatusEnumType.OCCUPIED,
+      })
+    })
+
+    await it('should ignore errorCode option for OCPP 2.0.x (1.6-only field)', () => {
+      const result = buildStatusNotificationPayload(
+        connectorId,
+        OCPP20ConnectorStatusEnumType.FAULTED,
+        OCPPVersion.VERSION_201,
+        { errorCode: OCPP16ChargePointErrorCode.GROUND_FAILURE, evseId: 3 }
+      )
+      assert.deepStrictEqual(result, {
+        connectorId,
+        connectorStatus: OCPP20ConnectorStatusEnumType.FAULTED,
+        evseId: 3,
+      })
+      assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
+    })
+
+    await it('should dispatch shape on ocppVersion (1.6 vs 2.0.x) for the same input', () => {
+      const status16 = OCPP16ChargePointStatus.AVAILABLE
+      const status20 = OCPP20ConnectorStatusEnumType.AVAILABLE
+      const result16 = buildStatusNotificationPayload(connectorId, status16, OCPPVersion.VERSION_16)
+      const result20 = buildStatusNotificationPayload(
+        connectorId,
+        status20,
+        OCPPVersion.VERSION_201,
+        { evseId: 1 }
+      )
+      const flat16 = result16 as Record<string, unknown>
+      const flat20 = result20 as Record<string, unknown>
+      assert.strictEqual(flat16.status, status16)
+      assert.strictEqual(flat16.connectorStatus, undefined)
+      assert.strictEqual(flat16.evseId, undefined)
+      assert.strictEqual(flat20.connectorStatus, status20)
+      assert.strictEqual(flat20.status, undefined)
+      assert.strictEqual(flat20.evseId, 1)
+      assert.notDeepStrictEqual(result16, result20)
     })
   })
 })
