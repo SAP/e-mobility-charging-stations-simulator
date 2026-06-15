@@ -172,7 +172,7 @@ export const UIServerAccessPolicySchema = z
       ),
     {
       message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
-      path: ['allowLoopbackProxy'],
+      path: ['trustedProxies'],
     }
   )
 

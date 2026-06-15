@@ -776,8 +776,8 @@ await describe('ConfigurationSchema', async () => {
         assert.ok(!result.success)
         const paths = result.error.issues.map(i => i.path.join('.'))
         assert.ok(
-          paths.some(p => p.includes('allowLoopbackProxy') || p.includes('trustedProxies')),
-          `Expected error path naming allowLoopbackProxy or trustedProxies in ${JSON.stringify(paths)}`
+          paths.includes('uiServer.accessPolicy.trustedProxies'),
+          `Expected error path 'uiServer.accessPolicy.trustedProxies' in ${JSON.stringify(paths)}`
         )
       })
 
