@@ -229,6 +229,9 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
 
     // Assert: connector is reset / unlocked (cleanupEndedTransaction ran), proving the
     // Ended path is not bypassed by the flag.
+    if (endedConnector == null) {
+      assert.fail('endedConnector should be defined after setupConnectorWithTransaction')
+    }
     assert.strictEqual(endedConnector.transactionStarted, false)
     assert.strictEqual(endedConnector.locked, false)
   })

@@ -72,6 +72,7 @@ export interface ChargingStationTemplate {
   firmwareUpgrade?: FirmwareUpgrade
   firmwareVersion?: string
   firmwareVersionPattern?: string
+  fixedName?: boolean
   /**
    * Force the simulator to continue a station-initiated transaction even when
    * the CSMS rejects the IdToken (response status != Accepted).
