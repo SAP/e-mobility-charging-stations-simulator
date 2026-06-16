@@ -66,6 +66,16 @@ enum exitCodes {
   gracefulShutdownError = 4,
 }
 
+/**
+ * Reason for a `Bootstrap.stop` invocation. Drives state-file persistence:
+ * `user` persists `started:false` to disk; `shutdown` and `reload` do not.
+ *
+ * Coalescing semantics: when multiple callers invoke `stop` concurrently they
+ * all observe the same in-flight transition. The FIRST caller's `reason`
+ * controls persistence; later callers' `reason` values are ignored. A `user`
+ * stop coalescing onto an in-flight `shutdown` or `reload` therefore does not
+ * persist `started:false`.
+ */
 enum StopReason {
   reload = 'reload',
   shutdown = 'shutdown',
@@ -94,10 +104,13 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
 
   private readonly assetsDir: string
   private readonly configurationsDir: string
+  private shuttingDown: boolean
   private started: boolean
   private starting: boolean
+  private startPromise?: Promise<void>
   private readonly stateFilePath: string
   private stopping: boolean
+  private stopPromise?: Promise<void>
   private storage?: Storage
   private readonly templateStatistics: Map<string, TemplateStatistics>
   private readonly uiServer: AbstractUIServer
@@ -148,6 +161,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.started = false
     this.starting = false
     this.stopping = false
+    this.shuttingDown = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
     this.assetsDir = join(dirname(fileURLToPath(import.meta.url)), 'assets')
@@ -240,119 +254,22 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   public async start (): Promise<void> {
-    if (!this.started) {
-      if (!this.starting) {
-        this.starting = true
-        try {
-          this.on(ChargingStationWorkerMessageEvents.added, this.workerEventAdded)
-          this.on(ChargingStationWorkerMessageEvents.deleted, this.workerEventDeleted)
-          this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted)
-          this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped)
-          this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated)
-          this.on(
-            ChargingStationWorkerMessageEvents.performanceStatistics,
-            this.workerEventPerformanceStatistics
-          )
-          // eslint-disable-next-line @typescript-eslint/unbound-method
-          if (isAsyncFunction(this.workerImplementation?.start)) {
-            await this.workerImplementation.start()
-          } else {
-            ;(this.workerImplementation?.start as () => void)()
-          }
-          const performanceStorageConfiguration =
-            Configuration.getConfigurationSection<StorageConfiguration>(
-              ConfigurationSection.performanceStorage
-            )
-          if (performanceStorageConfiguration.enabled === true) {
-            const storageType = performanceStorageConfiguration.type
-            const storageUri = performanceStorageConfiguration.uri
-            if (storageType != null && storageUri != null) {
-              this.storage = StorageFactory.getStorage(storageType, storageUri, this.logPrefix())
-              await this.storage.open()
-            }
-          }
-          this.startUIServer()
-          // Start ChargingStation object instance in worker thread
-          for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
-            const nbStations = stationTemplateUrl.numberOfStations
-            const sequentialAdd =
-              (Configuration.getConfigurationSection<WorkerConfiguration>(
-                ConfigurationSection.worker
-              ).elementAddDelay ?? 0) > 0
-            if (sequentialAdd) {
-              for (let index = 1; index <= nbStations; index++) {
-                try {
-                  await this.addChargingStation(index, stationTemplateUrl.file)
-                } catch (error) {
-                  logger.error(
-                    `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
-                    error
-                  )
-                }
-              }
-            } else {
-              const results = await Promise.allSettled(
-                Array.from({ length: nbStations }, (_, i) =>
-                  this.addChargingStation(i + 1, stationTemplateUrl.file)
-                )
-              )
-              for (const result of results) {
-                if (result.status === 'rejected') {
-                  logger.error(
-                    `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
-                    result.reason
-                  )
-                }
-              }
-            }
-          }
-          const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
-            ConfigurationSection.worker
-          )
-          logger.info(
-            `${this.logPrefix()} ${moduleName}.start: Charging stations simulator ${this.version} started with ${this.numberOfConfiguredChargingStations.toString()} configured and ${this.numberOfProvisionedChargingStations.toString()} provisioned charging station(s) from ${this.numberOfChargingStationTemplates.toString()} charging station template(s) and ${
-              Configuration.workerDynamicPoolInUse()
-                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  `${workerConfiguration.poolMinSize?.toString()}/`
-                : ''
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }${this.workerImplementation?.size.toString()}${
-              Configuration.workerPoolInUse()
-                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  `/${workerConfiguration.poolMaxSize?.toString()}`
-                : ''
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
-              this.workerImplementation?.maxElementsPerWorker != null
-                ? ` (${this.workerImplementation.maxElementsPerWorker.toString()} charging station(s) per worker)`
-                : ''
-            }`
-          )
-          Configuration.workerDynamicPoolInUse() &&
-            logger.warn(
-              `${this.logPrefix()} ${moduleName}.start: Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using fixed pool or worker set mode instead`
-            )
-          logger.info(
-            `${this.logPrefix()} ${moduleName}.start: Worker set/pool information:`,
-            this.workerImplementation?.info
-          )
-          this.started = true
-          if (this.persistStateEnabled) {
-            await writeStateFile(this.stateFilePath, true, this.logPrefix)
-          }
-        } finally {
-          this.starting = false
-        }
-      } else {
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.start: Cannot start an already starting charging stations simulator`
-        )
-      }
-    } else {
-      logger.error(
+    if (this.started) {
+      logger.warn(
         `${this.logPrefix()} ${moduleName}.start: Cannot start an already started charging stations simulator`
       )
+      return
     }
+    if (this.startPromise != null) {
+      logger.debug(
+        `${this.logPrefix()} ${moduleName}.start: Awaiting an already in-flight start of the charging stations simulator`
+      )
+      return this.startPromise
+    }
+    this.startPromise = this.doStart().finally(() => {
+      this.startPromise = undefined
+    })
+    return this.startPromise
   }
 
   public startUIServer (): void {
@@ -370,44 +287,180 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     this.uiServerStarted = true
   }
 
+  /**
+   * Stops the simulator. Idempotent and concurrency-safe.
+   *
+   * If a stop is already in flight, returns the same `Promise<void>` to all
+   * callers. The FIRST caller's `reason` controls the in-flight transition's
+   * persistence semantics; later callers' `reason` values are ignored. See
+   * the {@link StopReason} doc-comment for the coalescing contract.
+   *
+   * If the simulator is already stopped and `reason === StopReason.user`,
+   * reconciles a stale `started:true` state file by writing `started:false`.
+   * For `reason !== StopReason.user` the no-op branch returns silently
+   * without touching the state file; a stale `started:true` is then
+   * reconciled only by the next `stop(user)` or successful `start()`.
+   * @param reason - Stop reason; defaults to {@link StopReason.user}.
+   * @returns A `Promise<void>` that resolves when the stop transition finishes.
+   */
   public async stop (reason: StopReason = StopReason.user): Promise<void> {
-    if (this.started) {
-      if (!this.stopping) {
-        this.stopping = true
-        try {
-          await this.uiServer.sendInternalRequest(
-            this.uiServer.buildProtocolRequest(
-              generateUUID(),
-              ProcedureName.STOP_CHARGING_STATION,
-              Constants.EMPTY_FROZEN_OBJECT
-            )
-          )
-          await this.waitChargingStationsStopped()
-          await this.workerImplementation?.stop()
-          this.removeAllListeners()
-          this.uiServer.clearCaches()
-          await this.storage?.close()
-          delete this.storage
-          this.started = false
-          if (this.persistStateEnabled && reason === StopReason.user) {
-            await writeStateFile(this.stateFilePath, false, this.logPrefix)
-          }
-        } finally {
-          this.stopping = false
-        }
-      } else {
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.stop: Cannot stop an already stopping charging stations simulator`
-        )
-      }
-    } else {
-      logger.error(
+    if (!this.started) {
+      logger.warn(
         `${this.logPrefix()} ${moduleName}.stop: Cannot stop an already stopped charging stations simulator`
       )
+      if (this.persistStateEnabled && reason === StopReason.user) {
+        const stateFile = readStateFile(this.stateFilePath, this.logPrefix)
+        if (stateFile?.started === true) {
+          await writeStateFile(this.stateFilePath, false, this.logPrefix)
+        }
+      }
+      return
+    }
+    if (this.stopPromise != null) {
+      logger.debug(
+        `${this.logPrefix()} ${moduleName}.stop: Awaiting an already in-flight stop of the charging stations simulator`
+      )
+      return this.stopPromise
+    }
+    this.stopPromise = this.doStop(reason).finally(() => {
+      this.stopPromise = undefined
+    })
+    return this.stopPromise
+  }
+
+  private async doStart (): Promise<void> {
+    this.starting = true
+    try {
+      this.on(ChargingStationWorkerMessageEvents.added, this.workerEventAdded)
+      this.on(ChargingStationWorkerMessageEvents.deleted, this.workerEventDeleted)
+      this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted)
+      this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped)
+      this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated)
+      this.on(
+        ChargingStationWorkerMessageEvents.performanceStatistics,
+        this.workerEventPerformanceStatistics
+      )
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      if (isAsyncFunction(this.workerImplementation?.start)) {
+        await this.workerImplementation.start()
+      } else {
+        ;(this.workerImplementation?.start as () => void)()
+      }
+      const performanceStorageConfiguration =
+        Configuration.getConfigurationSection<StorageConfiguration>(
+          ConfigurationSection.performanceStorage
+        )
+      if (performanceStorageConfiguration.enabled === true) {
+        const storageType = performanceStorageConfiguration.type
+        const storageUri = performanceStorageConfiguration.uri
+        if (storageType != null && storageUri != null) {
+          this.storage = StorageFactory.getStorage(storageType, storageUri, this.logPrefix())
+          await this.storage.open()
+        }
+      }
+      this.startUIServer()
+      // Start ChargingStation object instance in worker thread
+      for (const stationTemplateUrl of Configuration.getStationTemplateUrls() ?? []) {
+        const nbStations = stationTemplateUrl.numberOfStations
+        const sequentialAdd =
+          (Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+            .elementAddDelay ?? 0) > 0
+        if (sequentialAdd) {
+          for (let index = 1; index <= nbStations; index++) {
+            try {
+              await this.addChargingStation(index, stationTemplateUrl.file)
+            } catch (error) {
+              logger.error(
+                `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
+                error
+              )
+            }
+          }
+        } else {
+          const results = await Promise.allSettled(
+            Array.from({ length: nbStations }, (_, i) =>
+              this.addChargingStation(i + 1, stationTemplateUrl.file)
+            )
+          )
+          for (const result of results) {
+            if (result.status === 'rejected') {
+              logger.error(
+                `${this.logPrefix()} ${moduleName}.start: Error at starting charging station with template file ${stationTemplateUrl.file}:`,
+                result.reason
+              )
+            }
+          }
+        }
+      }
+      const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+        ConfigurationSection.worker
+      )
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.start: Charging stations simulator ${this.version} started with ${this.numberOfConfiguredChargingStations.toString()} configured and ${this.numberOfProvisionedChargingStations.toString()} provisioned charging station(s) from ${this.numberOfChargingStationTemplates.toString()} charging station template(s) and ${
+          Configuration.workerDynamicPoolInUse()
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `${workerConfiguration.poolMinSize?.toString()}/`
+            : ''
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        }${this.workerImplementation?.size.toString()}${
+          Configuration.workerPoolInUse()
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `/${workerConfiguration.poolMaxSize?.toString()}`
+            : ''
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
+          this.workerImplementation?.maxElementsPerWorker != null
+            ? ` (${this.workerImplementation.maxElementsPerWorker.toString()} charging station(s) per worker)`
+            : ''
+        }`
+      )
+      Configuration.workerDynamicPoolInUse() &&
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.start: Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using fixed pool or worker set mode instead`
+        )
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.start: Worker set/pool information:`,
+        this.workerImplementation?.info
+      )
+      this.started = true
+      if (this.persistStateEnabled) {
+        await writeStateFile(this.stateFilePath, true, this.logPrefix)
+      }
+    } finally {
+      this.starting = false
+    }
+  }
+
+  private async doStop (reason: StopReason): Promise<void> {
+    this.stopping = true
+    try {
+      await this.uiServer.sendInternalRequest(
+        this.uiServer.buildProtocolRequest(
+          generateUUID(),
+          ProcedureName.STOP_CHARGING_STATION,
+          Constants.EMPTY_FROZEN_OBJECT
+        )
+      )
+      await this.waitChargingStationsStopped()
+      await this.workerImplementation?.stop()
+      this.removeAllListeners()
+      this.uiServer.clearCaches()
+      await this.storage?.close()
+      delete this.storage
+      this.started = false
+      if (this.persistStateEnabled && reason === StopReason.user) {
+        await writeStateFile(this.stateFilePath, false, this.logPrefix)
+      }
+    } finally {
+      this.stopping = false
     }
   }
 
   private gracefulShutdown (): void {
+    if (this.shuttingDown) {
+      return
+    }
+    this.shuttingDown = true
     this.stop(StopReason.shutdown)
       .then(() => {
         logger.info(`${this.logPrefix()} ${moduleName}.gracefulShutdown: Graceful shutdown`)
