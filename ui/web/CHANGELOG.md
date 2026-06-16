@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.9.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.8.0...web@v4.9.0) (2026-06-16)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1883](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1883)) ([ad0af48](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ad0af48961e446298a2442391f4551dc83121bc6))
+- **deps:** update all non-major dependencies ([#1892](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1892)) ([9bdd22f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9bdd22feb5a657f32c94f9f91a18ecbab487a563))
+- **deps:** update all non-major dependencies ([#1896](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1896)) ([ef750a0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ef750a0caa9b16abdd686f83e0f620abc115c7ca))
+- **ui-web:** skip dev-only diagnostics under Vitest ([#1897](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1897)) ([18c3847](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/18c3847df54a099e645e24561a5b55c295dba4ca))
+
+### 🧪 Tests
+
+- remove uneeded comment ([6e02e21](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6e02e217df36125fd5e9731d75ad6499b2fbcec0))
+- **ui-web:** drain dynamic imports globally for async components ([#1893](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1893)) ([0eb8954](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0eb89546c237200c00b3a607fba348d894b0b356))
+- **ui-web:** mock useTheme/useSkin in SimulatorBar.test.ts to fix vitest 4.x teardown RPC leak ([#1884](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1884)) ([5790cab](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5790cab94b1b64c3f4e453860ce86436e69fff2f))
+
 ## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.7.3...web@v4.8.0) (2026-06-02)
 
 ### 🐞 Bug Fixes

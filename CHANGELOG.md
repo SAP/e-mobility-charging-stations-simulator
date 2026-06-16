@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.9.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.8.0...simulator@v4.9.0) (2026-06-16)
+
+### 🚀 Features
+
+- **ui-server:** add source-aware gateway access policy ([#1891](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1891)) ([72bb3f0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72bb3f08a9545d1d8eec1aeb9444f73b7ed1ae6c))
+
+### 🐞 Bug Fixes
+
+- **bootstrap:** make start/stop idempotent and signal handler re-entrant safe ([#1905](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1905)) ([85c1fb0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/85c1fb034ee9659418cccbe4dc47679ae0edbd74))
+- **config:** enforce Zod simulator-config validation at boot ([#1874](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1874)) ([#1903](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1903)) ([2251594](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/225159487916788c59a9276f474826ccdcb372e1))
+- **config:** tighten Zod validation on uiServer.options.port ([#1874](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1874)) ([#1901](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1901)) ([19afcb2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/19afcb2852ccff5e18d11b8522d77f7c5ff80976))
+- **deps:** update all non-major dependencies ([#1883](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1883)) ([ad0af48](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ad0af48961e446298a2442391f4551dc83121bc6))
+- **deps:** update all non-major dependencies ([#1892](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1892)) ([9bdd22f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9bdd22feb5a657f32c94f9f91a18ecbab487a563))
+- **deps:** update all non-major dependencies ([#1896](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1896)) ([ef750a0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ef750a0caa9b16abdd686f83e0f620abc115c7ca))
+- **ui-server:** post-[#1891](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1891) access policy and WS upgrade hardening ([#1898](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1898)) ([bf4bc1b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bf4bc1b519edc264e29d56100778f32cf3240fc7))
+
+### ✨ Polish
+
+- **simulator:** harmonize OCPP sent-message log prefix ([2608d62](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2608d623fe685f47323f85b7c9a6dea975307c80))
+
+### 🤖 Automation
+
+- **deps-dev:** bump esbuild ([#1894](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1894)) ([0df4e34](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0df4e3445098ce51d7148d4ee375fb4de2c920bb))
+
 ## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.7.3...simulator@v4.8.0) (2026-06-02)
 
 ### ⚠ BREAKING CHANGES
