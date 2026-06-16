@@ -424,7 +424,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
           const isIdTokenAccepted =
             payload.idTokenInfo == null ||
-            payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
+            payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted ||
+            chargingStation.stationInfo?.forceTransactionOnInvalidIdToken === true
           if (isIdTokenAccepted) {
             connectorStatus.locked = true
           }
@@ -467,8 +468,20 @@ export class OCPP20ResponseService extends OCPPResponseService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken info status: ${payload.idTokenInfo.status}`
       )
-      // E05.FR.09/FR.10 + E06.FR.04: Deauthorize transaction when idToken is not accepted by CSMS
-      if (payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted) {
+      // E05.FR.09/FR.10 + E06.FR.04: Deauthorize transaction when idToken is not accepted by CSMS.
+      // Override: when station template has forceTransactionOnInvalidIdToken=true AND eventType=Started,
+      // skip the spec-mandated deauthorization to allow testing edge-case CS implementations that
+      // ignore CSMS rejection. Mid-transaction revocation (Updated/Ended event types) ALWAYS still
+      // triggers deauthorization regardless of the flag — the flag only relaxes the start path.
+      const forceTransactionOnInvalidIdToken =
+        chargingStation.stationInfo?.forceTransactionOnInvalidIdToken === true
+      const overrideRejection =
+        forceTransactionOnInvalidIdToken &&
+        requestPayload.eventType === OCPP20TransactionEventEnumType.Started
+      if (
+        payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
+        !overrideRejection
+      ) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', de-authorizing transaction per E05.FR.09/E05.FR.10/E06.FR.04`
         )
@@ -494,6 +507,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot de-authorize`
           )
         }
+      } else if (
+        overrideRejection &&
+        payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: forceTransactionOnInvalidIdToken=true; proceeding with transaction ${requestPayload.transactionInfo.transactionId} on Started event despite non-Accepted idTokenInfo status '${payload.idTokenInfo.status}'. NON-SPEC-COMPLIANT — testing only.`
+        )
       }
       // C10.FR.01/04/05: Update auth cache with idTokenInfo from response
       if (requestPayload.idToken != null) {

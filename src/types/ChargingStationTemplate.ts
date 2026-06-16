@@ -72,7 +72,19 @@ export interface ChargingStationTemplate {
   firmwareUpgrade?: FirmwareUpgrade
   firmwareVersion?: string
   firmwareVersionPattern?: string
-  fixedName?: boolean
+  /**
+   * Force the simulator to continue a station-initiated transaction even when
+   * the CSMS rejects the IdToken (response status != Accepted).
+   *
+   * NON-SPEC-COMPLIANT TEST OVERRIDE. When enabled, violates
+   * OCPP 2.0.1 E05.FR.09, E05.FR.10, E06.FR.04. Intended for testing
+   * edge-cases only — do NOT enable on production charging stations.
+   * Default `false` preserves spec-compliant behavior. Scope in
+   * OCPP 2.0.1 is limited to `eventType === Started`; mid-transaction
+   * revocation (Updated/Ended event types) still triggers deauthorization
+   * regardless of this flag.
+   */
+  forceTransactionOnInvalidIdToken?: boolean
   iccid?: string
   idTagsFile?: string
   imsi?: string
