@@ -2,17 +2,15 @@
 
 ## [4.9.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.8.0...ui-common@v4.9.0) (2026-06-16)
 
-
 ### 🐞 Bug Fixes
 
-* **config:** enforce Zod simulator-config validation at boot ([#1874](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1874)) ([#1903](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1903)) ([2251594](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/225159487916788c59a9276f474826ccdcb372e1))
-* **deps:** update all non-major dependencies ([#1892](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1892)) ([9bdd22f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9bdd22feb5a657f32c94f9f91a18ecbab487a563))
-
+- **config:** enforce Zod simulator-config validation at boot ([#1874](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1874)) ([#1903](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1903)) ([2251594](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/225159487916788c59a9276f474826ccdcb372e1))
+- **deps:** update all non-major dependencies ([#1892](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1892)) ([9bdd22f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9bdd22feb5a657f32c94f9f91a18ecbab487a563))
 
 ### 🧪 Tests
 
-* **ui-common:** cover buildStatusNotificationPayload 1.6/2.0.x branches ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([#1902](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1902)) ([8fc0b49](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8fc0b49a0e46c7fd21a4db9cd347326d36547787))
-* **ui-common:** cover buildStatusNotificationPayload 1.6/2.0.x branches ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([#1904](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1904)) ([f9e8ddf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f9e8ddfabec327b1ef2d0b76652fed9b1f334408))
+- **ui-common:** cover buildStatusNotificationPayload 1.6/2.0.x branches ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([#1902](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1902)) ([8fc0b49](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8fc0b49a0e46c7fd21a4db9cd347326d36547787))
+- **ui-common:** cover buildStatusNotificationPayload 1.6/2.0.x branches ([#1834](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1834)) ([#1904](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1904)) ([f9e8ddf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f9e8ddfabec327b1ef2d0b76652fed9b1f334408))
 
 ## [4.8.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.7.3...ui-common@v4.8.0) (2026-06-02)
 
