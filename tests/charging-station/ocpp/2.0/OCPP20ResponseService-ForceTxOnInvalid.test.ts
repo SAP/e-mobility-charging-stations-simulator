@@ -126,6 +126,11 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
 
   // 2.0-T2 — Force-tx on Invalid `Started`: deauth NOT called, connector
   // locked, MV update + ended pumps started.
+  // TODO Phase 6 (golden set): add a fake-timer fence to verify the MV pump
+  // actually emits a TransactionEvent(Updated) over the wire — the helper-
+  // call assertion below stubs the pump and therefore does not catch a
+  // wire-level regression where startUpdatedMeterValues is invoked but the
+  // interval is bound to the wrong connector. Phase 6 closes this gap.
   await it('does NOT deauthorize on Invalid Started when the flag is true', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(
@@ -337,6 +342,9 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
 
   // 2.0-T7 — Status-enum parity: every non-Accepted status follows the override
   // path on Started when the flag is true (deauth NOT called, MV pumps run).
+  // ConcurrentTx is omitted: per OCPP 2.0.1 it is not a rejection of the IdToken
+  // itself but a signal that another transaction is already running, handled in
+  // a different code path that is outside this issue's scope.
   for (const status of [
     OCPP20AuthorizationStatusEnumType.Blocked,
     OCPP20AuthorizationStatusEnumType.Expired,
