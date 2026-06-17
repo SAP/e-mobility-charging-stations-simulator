@@ -250,7 +250,7 @@ importers:
         specifier: ^4.1.8
         version: 4.1.9(@types/node@24.13.2)(@vitest/coverage-v8@4.1.9)(jsdom@29.1.1)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4)(yaml@2.9.0))
       vue-tsc:
-        specifier: ^3.3.4
+        specifier: ^3.3.5
         version: 3.3.5(typescript@6.0.3)
 
 packages:
