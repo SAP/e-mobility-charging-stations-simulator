@@ -401,7 +401,30 @@ export class OCPP16ResponseService extends OCPPResponseService {
       payload.transactionId = convertToInt(payload.transactionId)
     }
 
-    if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
+    const idTokenAccepted = payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
+    const forceTransactionOnInvalidIdToken =
+      chargingStation.stationInfo?.forceTransactionOnInvalidIdToken === true
+    if (!idTokenAccepted) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${truncateId(
+          requestPayload.idTag
+        )}'${
+          OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `, reservationId '${requestPayload.reservationId?.toString()}'`
+            : ''
+        }`
+      )
+      if (forceTransactionOnInvalidIdToken) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Forcing transaction id ${payload.transactionId.toString()} on connector id ${connectorId.toString()} despite idTagInfo status '${payload.idTagInfo.status}' per forceTransactionOnInvalidIdToken=true`
+        )
+      }
+    }
+    if (idTokenAccepted || forceTransactionOnInvalidIdToken) {
       connectorStatus.transactionStarted = true
       connectorStatus.transactionStart = requestPayload.timestamp
       connectorStatus.transactionId = payload.transactionId
@@ -482,19 +505,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
           : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
       )
     } else {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          chargingStation.stationInfo?.chargingStationId
-        }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${truncateId(
-          requestPayload.idTag
-        )}'${
-          OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `, reservationId '${requestPayload.reservationId?.toString()}'`
-            : ''
-        }`
-      )
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
     }
     OCPP16ServiceUtils.updateAuthorizationCache(
