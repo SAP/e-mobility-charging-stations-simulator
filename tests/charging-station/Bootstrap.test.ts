@@ -31,7 +31,6 @@ interface BootstrapInternal {
   starting: boolean
   startPromise?: Promise<void>
   stateFilePath: string
-  stopping: boolean
   stopPromise?: Promise<void>
   storage?: { close: () => Promise<void> }
   templateStatistics: Map<string, unknown>
@@ -66,7 +65,6 @@ const buildLifecycleTestInstance = (stateFilePath: string): BootstrapInternal =>
   EventEmitter.call(instance as unknown as EventEmitter)
   instance.started = false
   instance.starting = false
-  instance.stopping = false
   instance.startPromise = undefined
   instance.stopPromise = undefined
   instance.shuttingDown = false
@@ -338,7 +336,7 @@ await describe('Bootstrap lifecycle state machine', async () => {
       assert.ok(warnMock.mock.calls.length >= 1, 'idempotent stop guard must log at warn level')
     })
 
-    await it('Bootstrap.stop while stopping logs at debug', async () => {
+    await it('Bootstrap.stop while another stop is in flight logs at debug', async () => {
       const errorMock = mock.method(logger, 'error', () => undefined)
       const debugMock = mock.method(logger, 'debug', () => undefined)
       const bootstrap = buildLifecycleTestInstance(stateFilePath)
