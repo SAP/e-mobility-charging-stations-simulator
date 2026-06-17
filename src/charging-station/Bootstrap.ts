@@ -109,7 +109,6 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   private starting: boolean
   private startPromise?: Promise<void>
   private readonly stateFilePath: string
-  private stopping: boolean
   private stopPromise?: Promise<void>
   private storage?: Storage
   private readonly templateStatistics: Map<string, TemplateStatistics>
@@ -160,7 +159,6 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
     handleUncaughtException()
     this.started = false
     this.starting = false
-    this.stopping = false
     this.shuttingDown = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
@@ -432,27 +430,22 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private async doStop (reason: StopReason): Promise<void> {
-    this.stopping = true
-    try {
-      await this.uiServer.sendInternalRequest(
-        this.uiServer.buildProtocolRequest(
-          generateUUID(),
-          ProcedureName.STOP_CHARGING_STATION,
-          Constants.EMPTY_FROZEN_OBJECT
-        )
+    await this.uiServer.sendInternalRequest(
+      this.uiServer.buildProtocolRequest(
+        generateUUID(),
+        ProcedureName.STOP_CHARGING_STATION,
+        Constants.EMPTY_FROZEN_OBJECT
       )
-      await this.waitChargingStationsStopped()
-      await this.workerImplementation?.stop()
-      this.removeAllListeners()
-      this.uiServer.clearCaches()
-      await this.storage?.close()
-      delete this.storage
-      this.started = false
-      if (this.persistStateEnabled && reason === StopReason.user) {
-        await writeStateFile(this.stateFilePath, false, this.logPrefix)
-      }
-    } finally {
-      this.stopping = false
+    )
+    await this.waitChargingStationsStopped()
+    await this.workerImplementation?.stop()
+    this.removeAllListeners()
+    this.uiServer.clearCaches()
+    await this.storage?.close()
+    delete this.storage
+    this.started = false
+    if (this.persistStateEnabled && reason === StopReason.user) {
+      await writeStateFile(this.stateFilePath, false, this.logPrefix)
     }
   }
 
