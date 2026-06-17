@@ -506,7 +506,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
       } else if (overrideRejection) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Forcing transaction ${requestPayload.transactionInfo.transactionId} on Started despite idTokenInfo status '${payload.idTokenInfo.status}' per forceTransactionOnInvalidIdToken=true`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Forcing transaction ${requestPayload.transactionInfo.transactionId} on eventType=Started despite idTokenInfo status '${payload.idTokenInfo.status}' per forceTransactionOnInvalidIdToken=true`
         )
       }
       // C10.FR.01/04/05: Update auth cache with idTokenInfo from response
