@@ -73,6 +73,17 @@ export interface ChargingStationTemplate {
   firmwareVersion?: string
   firmwareVersionPattern?: string
   fixedName?: boolean
+  /**
+   * Continue station-initiated transactions when CSMS rejects the IdToken
+   * (`idTagInfo.status` != Accepted in 1.6; `idTokenInfo.status` != Accepted
+   * on `eventType=Started` in 2.0.1; mid-tx revocation on `Updated`/`Ended`
+   * still tears down). Default `false`; when `true`, violates OCPP 2.0.1
+   * E05.FR.09 / E05.FR.10 / E06.FR.04. Independent of `ocppStrictCompliance`
+   * (operates on response handling, not schema validation). Distinct from
+   * OCPP variables `StopTransactionOnInvalidId` / `StopTxOnInvalidId`
+   * (mid-tx stop control); this flag overrides the start-time gate only.
+   */
+  forceTransactionOnInvalidIdToken?: boolean
   iccid?: string
   idTagsFile?: string
   imsi?: string

@@ -190,6 +190,7 @@ const BaseTemplateSchema = z.looseObject({
   firmwareVersion: z.string().optional(),
   firmwareVersionPattern: z.string().optional(),
   fixedName: z.boolean().optional(),
+  forceTransactionOnInvalidIdToken: z.boolean().optional(),
   iccid: z.string().optional(),
   idTagsFile: z.string().optional(),
   imsi: z.string().optional(),
