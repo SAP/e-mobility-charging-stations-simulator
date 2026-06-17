@@ -69,7 +69,12 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 1.6-T2 — Force-tx on Invalid: transaction continues as if Accepted.
-  await it('continues the transaction when CSMS replies Invalid and the flag is true', async () => {
+  // TODO Phase 6 (golden set): add a fake-timer fence to verify the MV pump
+  // actually emits a MeterValues request over the wire — the helper-call
+  // assertion below stubs the pump and therefore does not catch a wire-level
+  // regression where startUpdatedMeterValues is invoked but the interval is
+  // bound to the wrong connector. Phase 6 closes this gap.
+  await it('should continue the transaction when CSMS replies Invalid and the flag is true', async () => {
     // Arrange
     const connectorId = 1
     const transactionId = 4242
@@ -115,7 +120,7 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 1.6-T3 — Override marker present in warn-level log.
-  await it('emits a warn log line containing the override marker', async () => {
+  await it('should emit a warn log line containing the override marker', async () => {
     // Arrange
     const warnMock = mock.method(logger, 'warn', () => undefined)
     const connectorId = 1
@@ -149,7 +154,7 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 1.6-T4 — Authorization cache update is NOT relaxed by the flag.
-  await it('still updates the authorization cache with the CSMS-supplied idTagInfo', async () => {
+  await it('should still update the authorization cache with the CSMS-supplied idTagInfo', async () => {
     // Arrange
     const updateAuthMock = mock.method(
       OCPP16ServiceUtils,
@@ -186,7 +191,7 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
 
   // 1.6-T5 — Pre-Start local-state guards are NOT relaxed.
   // The remote-start guard at :315-329 must still abort even when the flag is true.
-  await it('still aborts on the pre-Start unauthorized-remote-start guard regardless of the flag', async () => {
+  await it('should still abort on the pre-Start unauthorized-remote-start guard regardless of the flag', async () => {
     // Arrange — drive the guard at OCPP16ResponseService.ts:315-329:
     // transactionRemoteStarted=true, AuthorizeRemoteTxRequests=true,
     // remoteAuthorization=true, idTagAuthorized=false, idTagLocalAuthorized=false.
@@ -214,7 +219,10 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
       timestamp: new Date(),
     }
     const responsePayload: OCPP16StartTransactionResponse = {
-      idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+      // INVALID + flag=true exercises the regression: without the pre-Start
+      // guard the override would skip the abort path. The guard MUST still
+      // win. ACCEPTED would not exercise the flag-vs-guard interaction.
+      idTagInfo: { status: OCPP16AuthorizationStatus.INVALID },
       transactionId: 22,
     }
 
@@ -231,4 +239,45 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
     assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(connectorStatus.transactionIdTag, undefined)
   })
+
+  // 1.6-T6 — Status-enum parity: every non-Accepted, non-ConcurrentTx status
+  // follows the override path on StartTransaction when the flag is true.
+  // ConcurrentTx is excluded because OCPP 1.6 routes it through a different
+  // code path (concurrent transaction detection), outside this issue's scope.
+  for (const status of Object.values(OCPP16AuthorizationStatus).filter(
+    s => s !== OCPP16AuthorizationStatus.ACCEPTED && s !== OCPP16AuthorizationStatus.CONCURRENT_TX
+  )) {
+    await it(`should continue the transaction for status=${status} when the flag is true`, async () => {
+      const startUpdatedMeterValuesMock = mock.method(
+        OCPP16ServiceUtils,
+        'startUpdatedMeterValues',
+        () => undefined
+      )
+      const connectorId = 1
+      const requestPayload: OCPP16StartTransactionRequest = {
+        connectorId,
+        idTag: TEST_ID_TAG,
+        meterStart: 0,
+        timestamp: new Date(),
+      }
+      const responsePayload: OCPP16StartTransactionResponse = {
+        idTagInfo: { status },
+        transactionId: 4242,
+      }
+
+      await responseService.responseHandler(
+        station,
+        OCPP16RequestCommand.START_TRANSACTION,
+        responsePayload,
+        requestPayload
+      )
+
+      const connectorStatus = station.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        assert.fail('Expected connector to be defined')
+      }
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(startUpdatedMeterValuesMock.mock.calls.length, 1)
+    })
+  }
 })

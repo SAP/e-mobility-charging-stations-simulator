@@ -420,7 +420,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
       if (forceTransactionOnInvalidIdToken) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: forceTransactionOnInvalidIdToken=true; proceeding with transaction id ${payload.transactionId.toString()} despite non-Accepted idTagInfo status '${payload.idTagInfo.status}'. NON-SPEC-COMPLIANT — testing only.`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Forcing transaction id ${payload.transactionId.toString()} on connector id ${connectorId.toString()} despite idTagInfo status '${payload.idTagInfo.status}' per forceTransactionOnInvalidIdToken=true`
         )
       }
     }

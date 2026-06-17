@@ -32,6 +32,7 @@ import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20AuthorizationStatusEnumType,
+  OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -43,6 +44,7 @@ import {
 } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
+  TEST_ID_TAG,
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
@@ -60,14 +62,20 @@ interface TestableOCPP20ResponseService {
  * transaction id. Used as the request-payload twin in handler dispatch.
  * @param transactionId - The transaction UUID embedded in transactionInfo
  * @param eventType - The TransactionEvent type (Started/Updated/Ended)
+ * @param idToken - Optional idToken to attach; required to exercise the auth-cache
+ *   update path at OCPP20ResponseService.ts (C10.FR.01/04/05)
+ * @param idToken.idToken
+ * @param idToken.type
  * @returns A minimal OCPP20TransactionEventRequest
  */
 function buildTransactionEventRequest (
   transactionId: UUIDv4,
-  eventType: OCPP20TransactionEventEnumType
+  eventType: OCPP20TransactionEventEnumType,
+  idToken?: { idToken: string; type: OCPP20IdTokenEnumType }
 ): OCPP20TransactionEventRequest {
   return {
     eventType,
+    ...(idToken != null ? { idToken } : {}),
     meterValue: [],
     seqNo: 0,
     timestamp: new Date(),
@@ -131,7 +139,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   // call assertion below stubs the pump and therefore does not catch a
   // wire-level regression where startUpdatedMeterValues is invoked but the
   // interval is bound to the wrong connector. Phase 6 closes this gap.
-  await it('does NOT deauthorize on Invalid Started when the flag is true', async () => {
+  await it('should not deauthorize on Invalid Started when the flag is true', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
@@ -169,7 +177,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 2.0-T3 — Mid-transaction revocation (Updated) STILL aborts.
-  await it('still de-authorizes on Invalid Updated when the flag is true', async () => {
+  await it('should still de-authorize on Invalid Updated when the flag is true', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
@@ -194,7 +202,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 2.0-T4 — Mid-transaction revocation (Ended) STILL tears down (regardless of flag).
-  await it('cleans up on Invalid Ended even when the flag is true (mid-tx tear-down preserved)', async () => {
+  await it('should clean up on Invalid Ended even when the flag is true (mid-tx tear-down preserved)', async () => {
     // Arrange — In OCPP 2.0.1, the Ended branch runs cleanupEndedTransaction BEFORE the
     // deauth gate. With the flag on, we cannot bypass mid-transaction tear-down: the
     // case Ended in the switch always cleans up. Asserting on connector cleanup is the
@@ -219,6 +227,11 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       endedConnector.transactionId = TEST_TRANSACTION_UUID
     }
     const endedTestable = createTestableResponseService(new OCPP20ResponseService())
+    const mockDeauthEnded = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      async () => Promise.resolve({} as OCPP20TransactionEventResponse)
+    )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
         status: OCPP20AuthorizationStatusEnumType.Invalid,
@@ -232,17 +245,20 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     // Act
     await endedTestable.handleResponseTransactionEvent(endedStation, payload, requestPayload)
 
-    // Assert: connector is reset / unlocked (cleanupEndedTransaction ran), proving the
-    // Ended path is not bypassed by the flag.
+    // Asserts cleanup ran AND deauth was a no-op (cleanupEndedTransaction
+    // clears transactionId before the gate, so the connector lookup fails).
+    // `=== 0` locks the cleanup-then-gate ordering: any regression that
+    // reorders or preserves transactionId on Ended flips this to 1.
     if (endedConnector == null) {
       assert.fail('endedConnector should be defined after setupConnectorWithTransaction')
     }
     assert.strictEqual(endedConnector.transactionStarted, false)
     assert.strictEqual(endedConnector.locked, false)
+    assert.strictEqual(mockDeauthEnded.mock.calls.length, 0)
   })
 
   // 2.0-T5 — Override marker present in warn-level log on Started override path.
-  await it('emits a warn log line containing the override marker', async () => {
+  await it('should emit a warn log line containing the override marker', async () => {
     // Arrange
     mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
       Promise.resolve({} as OCPP20TransactionEventResponse)
@@ -278,19 +294,20 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 2.0-T6 — `idTokenInfo == null` is treated as Accepted under both flag values.
-  await it('treats null idTokenInfo as Accepted regardless of the flag', async () => {
-    // Arrange — flag-on station already; the flag-off station is built ad-hoc.
+  // Split into two `it()` blocks (flag-on / flag-off) so each runs against a
+  // freshly-mocked station; avoids the mid-test cleanup+remock pattern.
+  // Both branches additionally assert that the override-marker warn-log is
+  // NOT emitted on null payload (locks the invariant against the A6 regression
+  // where someone "fixes" the override-marker `else if` to also fire on null).
+  await it('should treat null idTokenInfo as Accepted when the flag is true', async () => {
     const mockDeauthOn = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
       async () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
-    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => {
-      /* noop */
-    })
-    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => {
-      /* noop */
-    })
+    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const warnMockOn = mock.method(logger, 'warn', () => undefined)
 
     const payload: OCPP20TransactionEventResponse = {}
     const requestPayload = buildTransactionEventRequest(
@@ -298,13 +315,19 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       OCPP20TransactionEventEnumType.Started
     )
 
-    // Act — flag ON
     await testable.handleResponseTransactionEvent(station, payload, requestPayload)
-    // Assert — no deauth.
-    assert.strictEqual(mockDeauthOn.mock.calls.length, 0)
 
-    // Arrange — flag OFF (separate station + service to reset deauth mock state).
-    standardCleanup()
+    assert.strictEqual(mockDeauthOn.mock.calls.length, 0)
+    const overrideMarkerCallsOn = warnMockOn.mock.calls.filter(call => {
+      const firstArg: unknown = call.arguments[0]
+      return (
+        typeof firstArg === 'string' && firstArg.includes('forceTransactionOnInvalidIdToken=true')
+      )
+    })
+    assert.strictEqual(overrideMarkerCallsOn.length, 0)
+  })
+
+  await it('should treat null idTokenInfo as Accepted when the flag is false', async () => {
     const { station: flagOffStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
@@ -326,18 +349,27 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       'requestDeauthorizeTransaction',
       async () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
-    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => {
-      /* noop */
-    })
-    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => {
-      /* noop */
-    })
+    mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const warnMockOff = mock.method(logger, 'warn', () => undefined)
     const flagOffTestable = createTestableResponseService(new OCPP20ResponseService())
 
-    // Act — flag OFF
+    const payload: OCPP20TransactionEventResponse = {}
+    const requestPayload = buildTransactionEventRequest(
+      TEST_TRANSACTION_UUID,
+      OCPP20TransactionEventEnumType.Started
+    )
+
     await flagOffTestable.handleResponseTransactionEvent(flagOffStation, payload, requestPayload)
-    // Assert — still no deauth (idTokenInfo absence == Accepted convention).
+
     assert.strictEqual(mockDeauthOff.mock.calls.length, 0)
+    const overrideMarkerCallsOff = warnMockOff.mock.calls.filter(call => {
+      const firstArg: unknown = call.arguments[0]
+      return (
+        typeof firstArg === 'string' && firstArg.includes('forceTransactionOnInvalidIdToken=true')
+      )
+    })
+    assert.strictEqual(overrideMarkerCallsOff.length, 0)
   })
 
   // 2.0-T7 — Status-enum parity: every non-Accepted status follows the override
@@ -345,17 +377,13 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   // ConcurrentTx is omitted: per OCPP 2.0.1 it is not a rejection of the IdToken
   // itself but a signal that another transaction is already running, handled in
   // a different code path that is outside this issue's scope.
-  for (const status of [
-    OCPP20AuthorizationStatusEnumType.Blocked,
-    OCPP20AuthorizationStatusEnumType.Expired,
-    OCPP20AuthorizationStatusEnumType.Invalid,
-    OCPP20AuthorizationStatusEnumType.NoCredit,
-    OCPP20AuthorizationStatusEnumType.NotAllowedTypeEVSE,
-    OCPP20AuthorizationStatusEnumType.NotAtThisLocation,
-    OCPP20AuthorizationStatusEnumType.NotAtThisTime,
-    OCPP20AuthorizationStatusEnumType.Unknown,
-  ]) {
-    await it(`overrides Started for status=${status} when the flag is true`, async () => {
+  // `Object.values(enum)` derivation makes future enum additions auto-covered.
+  for (const status of Object.values(OCPP20AuthorizationStatusEnumType).filter(
+    s =>
+      s !== OCPP20AuthorizationStatusEnumType.Accepted &&
+      s !== OCPP20AuthorizationStatusEnumType.ConcurrentTx
+  )) {
+    await it(`should override Started for status=${status} when the flag is true`, async () => {
       // Arrange
       const mockDeauthTransaction = mock.method(
         OCPP20ServiceUtils,
@@ -385,6 +413,60 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
       assert.strictEqual(mockStartUpdated.mock.calls.length, 1)
       assert.strictEqual(mockStartEnded.mock.calls.length, 1)
+    })
+  }
+
+  // 2.0-T8 — Auth-cache update invariant (C10.FR.01/04/05): the cache is
+  // written with the CSMS-supplied idTokenInfo regardless of whether the
+  // override path was taken. Mocks `OCPP20ServiceUtils.updateAuthorizationCache`
+  // and asserts call-count = 1 with the right idToken + idTokenInfo for both
+  // flag states.
+  for (const flagState of [true, false] as const) {
+    await it(`should update the authorization cache regardless of the flag (flag=${String(flagState)})`, async () => {
+      const { station: cacheStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        stationInfo: {
+          forceTransactionOnInvalidIdToken: flagState,
+          ocppStrictCompliance: false,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      setupConnectorWithTransaction(cacheStation, 1, { transactionId: 100 })
+      const cacheConnector = cacheStation.getConnectorStatus(1)
+      if (cacheConnector != null) {
+        cacheConnector.transactionId = TEST_TRANSACTION_UUID
+      }
+      const cacheTestable = createTestableResponseService(new OCPP20ResponseService())
+      mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
+        Promise.resolve({} as OCPP20TransactionEventResponse)
+      )
+      mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+      mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+      const updateAuthMock = mock.method(
+        OCPP20ServiceUtils,
+        'updateAuthorizationCache',
+        () => undefined
+      )
+      const idToken = { idToken: TEST_ID_TAG, type: OCPP20IdTokenEnumType.ISO14443 }
+      const payload: OCPP20TransactionEventResponse = {
+        idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Invalid },
+      }
+      const requestPayload = buildTransactionEventRequest(
+        TEST_TRANSACTION_UUID,
+        OCPP20TransactionEventEnumType.Started,
+        idToken
+      )
+
+      await cacheTestable.handleResponseTransactionEvent(cacheStation, payload, requestPayload)
+
+      assert.strictEqual(updateAuthMock.mock.calls.length, 1)
+      assert.deepStrictEqual(updateAuthMock.mock.calls[0].arguments[1], idToken)
+      assert.deepStrictEqual(updateAuthMock.mock.calls[0].arguments[2], {
+        status: OCPP20AuthorizationStatusEnumType.Invalid,
+      })
     })
   }
 })

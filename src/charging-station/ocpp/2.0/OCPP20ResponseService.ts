@@ -468,11 +468,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken info status: ${payload.idTokenInfo.status}`
       )
-      // E05.FR.09/FR.10 + E06.FR.04: Deauthorize transaction when idToken is not accepted by CSMS.
-      // Override: when station template has forceTransactionOnInvalidIdToken=true AND eventType=Started,
-      // skip the spec-mandated deauthorization to allow testing edge-case CS implementations that
-      // ignore CSMS rejection. Mid-transaction revocation (Updated/Ended event types) ALWAYS still
-      // triggers deauthorization regardless of the flag — the flag only relaxes the start path.
+      // E05.FR.09/FR.10 + E06.FR.04: Deauthorize when idToken not Accepted by CSMS.
+      // Override gate documented on `ChargingStationTemplate.forceTransactionOnInvalidIdToken`.
       const forceTransactionOnInvalidIdToken =
         chargingStation.stationInfo?.forceTransactionOnInvalidIdToken === true
       const overrideRejection =
@@ -507,12 +504,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot de-authorize`
           )
         }
-      } else if (
-        overrideRejection &&
-        payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted
-      ) {
+      } else if (overrideRejection) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: forceTransactionOnInvalidIdToken=true; proceeding with transaction ${requestPayload.transactionInfo.transactionId} on Started event despite non-Accepted idTokenInfo status '${payload.idTokenInfo.status}'. NON-SPEC-COMPLIANT — testing only.`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Forcing transaction ${requestPayload.transactionInfo.transactionId} on Started despite idTokenInfo status '${payload.idTokenInfo.status}' per forceTransactionOnInvalidIdToken=true`
         )
       }
       // C10.FR.01/04/05: Update auth cache with idTokenInfo from response
