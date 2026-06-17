@@ -64,8 +64,8 @@ interface TestableOCPP20ResponseService {
  * @param eventType - The TransactionEvent type (Started/Updated/Ended)
  * @param idToken - Optional idToken to attach; required to exercise the auth-cache
  *   update path at OCPP20ResponseService.ts (C10.FR.01/04/05)
- * @param idToken.idToken
- * @param idToken.type
+ * @param idToken.idToken - OCPP IdToken value (e.g. an RFID tag string)
+ * @param idToken.type - OCPP 2.0.1 IdToken type (e.g. `ISO14443`, `ISO15693`, `Central`)
  * @returns A minimal OCPP20TransactionEventRequest
  */
 function buildTransactionEventRequest (
@@ -295,7 +295,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
 
   // 2.0-T6 — `idTokenInfo == null` is treated as Accepted under both flag values.
   // Split into two `it()` blocks (flag-on / flag-off) so each runs against a
-  // freshly-mocked station; avoids the mid-test cleanup+remock pattern.
+  // freshly-mocked station; avoids the mid-test cleanup+re-mock pattern.
   // Both branches additionally assert that the override-marker warn-log is
   // NOT emitted on null payload (locks the invariant against the A6 regression
   // where someone "fixes" the override-marker `else if` to also fire on null).
