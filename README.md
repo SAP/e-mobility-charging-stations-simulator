@@ -1373,6 +1373,7 @@ Opt-in `/metrics` endpoint exposed on the HTTP UI server (`uiServer.type=http`) 
     },
     "metrics": {
       "enabled": true,
+      "softSampleCap": 5000,
     },
   },
 }
@@ -1398,7 +1399,7 @@ Prometheus' `basic_auth` scrape configuration interoperates with `uiServer.authe
 
 #### Privacy and cardinality
 
-PII fields (`idTag`, `chargePointSerialNumber`, `chargeBoxSerialNumber`, `meterSerialNumber`, `iccid`, `imsi`, `supervisionUrl`, `supervisionUser`, `supervisionPassword`, OCPP `customData`) are excluded from both label keys and label values. `transactionId` is exposed as a numeric gauge value only and is never used as a label. A soft warning is logged when the total scrape sample count exceeds `METRICS_SOFT_SAMPLE_CAP` (5000); the response is still served unchanged.
+PII fields (`idTag`, `chargePointSerialNumber`, `chargeBoxSerialNumber`, `meterSerialNumber`, `iccid`, `imsi`, `supervisionUrl`, `supervisionUser`, `supervisionPassword`, OCPP `customData`) are excluded from both label keys and label values. `transactionId` is exposed as a numeric gauge value only and is never used as a label. A soft warning is logged when the total scrape sample count exceeds the soft sample cap (configurable via `uiServer.metrics.softSampleCap`, default 5000); the response is still served unchanged.
 
 #### Prometheus scrape configuration
 
