@@ -431,7 +431,7 @@ export abstract class AbstractUIServer {
         `${this.logPrefix(
           moduleName,
           'constructor'
-        )} metrics.enabled=true is only honoured when uiServer.type='http'; current type='${
+        )} metrics.enabled=true is only honored when uiServer.type='http'; current type='${
           this.uiServerConfiguration.type ?? 'undefined'
         }' — the /metrics endpoint will NOT be served.`
       )

@@ -214,7 +214,7 @@ const UIServerListenOptionsSchema = z
 
 /**
  * UIServerMetricsConfiguration — opt-in Prometheus /metrics endpoint
- * served by `UIHttpServer`. Honoured only when the parent UI server is
+ * served by `UIHttpServer`. Honored only when the parent UI server is
  * running on the HTTP transport (Prometheus is HTTP-only by spec).
  *
  * `softSampleCap` (optional, default `METRICS_SOFT_SAMPLE_CAP` = 5000)
