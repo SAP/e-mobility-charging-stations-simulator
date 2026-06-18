@@ -1382,9 +1382,12 @@ Opt-in `/metrics` endpoint exposed on the HTTP UI server (`uiServer.type=http`) 
 #### Sample output
 
 ```text
-# HELP simulator_charging_stations_configured_total Configured charging stations per template.
+# HELP simulator_charging_stations_configured_total Number of charging stations configured across all templates.
 # TYPE simulator_charging_stations_configured_total gauge
-simulator_charging_stations_configured_total{template="test-template"} 5
+simulator_charging_stations_configured_total 5
+# HELP simulator_template_configured Per-template 'configured' charging stations counter.
+# TYPE simulator_template_configured gauge
+simulator_template_configured{template="test-template"} 5
 # HELP simulator_station_started Charging station started flag (1=started, 0=stopped).
 # TYPE simulator_station_started gauge
 simulator_station_started{hash_id="2f1a8c0e9d4b7a32"} 1
