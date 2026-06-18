@@ -756,7 +756,7 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private isMetricsRequest (req: IncomingMessage): boolean {
-    if (req.method !== HttpMethod.GET) {
+    if (req.method !== HttpMethod.GET && req.method !== 'HEAD') {
       return false
     }
     const rawUrl = req.url ?? ''
