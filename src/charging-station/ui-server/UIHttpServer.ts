@@ -967,8 +967,11 @@ const addPerStationInfoLabel = (
 }
 
 const iterateConnectors = function * (data: ChargingStationData): Generator<ConnectorEntry> {
-  for (const entry of data.connectors) {
-    yield entry
+  if (data.connectors.length > 0) {
+    for (const entry of data.connectors) {
+      yield entry
+    }
+    return
   }
   for (const evse of data.evses) {
     for (const [connectorId, connectorStatus] of evse.evseStatus.connectors) {
