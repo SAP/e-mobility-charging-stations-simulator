@@ -48,6 +48,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
   - [MCP Protocol](#mcp-protocol-model-context-protocol)
   - [WebSocket Protocol](#websocket-protocol)
   - [HTTP Protocol (deprecated)](#http-protocol-deprecated)
+  - [Metrics endpoint (Prometheus)](#metrics-endpoint-prometheus)
 - [Support, Feedback, Contributing](#support-feedback-contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Licensing](#licensing)
@@ -1351,6 +1352,67 @@ Examples:
 > **Deprecated**: Use `"type": "mcp"` for HTTP-based access to the simulator.
 
 To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
+
+### Metrics endpoint (Prometheus)
+
+Opt-in `/metrics` endpoint exposed on the HTTP UI server (`uiServer.type=http`) that emits gauges in the [Prometheus text exposition format 0.0.4](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format) (`Content-Type: text/plain; version=0.0.4; charset=utf-8`). The endpoint inherits the UI server access policy, per-client rate limit and authentication: there is no separate metrics-only access path.
+
+#### Configuration
+
+```jsonc
+{
+  "uiServer": {
+    "enabled": true,
+    "type": "http",
+    "options": { "host": "127.0.0.1", "port": 8080 },
+    "authentication": {
+      "enabled": true,
+      "type": "basic-auth",
+      "username": "admin",
+      "password": "<secret>",
+    },
+    "metrics": {
+      "enabled": true,
+    },
+  },
+}
+```
+
+#### Sample output
+
+```text
+# HELP simulator_charging_stations_configured_total Configured charging stations per template.
+# TYPE simulator_charging_stations_configured_total gauge
+simulator_charging_stations_configured_total{template="test-template"} 5
+# HELP simulator_station_started Charging station started flag (1=started, 0=stopped).
+# TYPE simulator_station_started gauge
+simulator_station_started{hash_id="2f1a8c0e9d4b7a32"} 1
+# HELP simulator_connector_status_info Connector status one-hot (value=1 for the active status).
+# TYPE simulator_connector_status_info gauge
+simulator_connector_status_info{hash_id="2f1a8c0e9d4b7a32",connector_id="1",status="Available"} 1
+```
+
+#### Compatibility
+
+Prometheus' `basic_auth` scrape configuration interoperates with `uiServer.authentication.type=basic-auth` only. The simulator's `protocol-basic-auth` mode (credentials passed via the `Sec-WebSocket-Protocol` header) is not compatible with HTTP scrapers and is rejected for the metrics endpoint. The simulator emits a warning at server construction when `metrics.enabled=true` and `uiServer.type` is not `http` (the metrics endpoint is only mounted on the HTTP transport).
+
+#### Privacy and cardinality
+
+PII fields (`idTag`, `chargePointSerialNumber`, `chargeBoxSerialNumber`, `meterSerialNumber`, `iccid`, `imsi`, `supervisionUrl`, `supervisionUser`, `supervisionPassword`, OCPP `customData`) are excluded from both label keys and label values. `transactionId` is exposed as a numeric gauge value only and is never used as a label. A soft warning is logged when the total scrape sample count exceeds `METRICS_SOFT_SAMPLE_CAP` (5000); the response is still served unchanged.
+
+#### Prometheus scrape configuration
+
+```yaml
+scrape_configs:
+  - job_name: ocpp-simulator
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['127.0.0.1:8080']
+    basic_auth:
+      username: admin
+      password: <secret>
+```
 
 ## Support, Feedback, Contributing
 

@@ -9,6 +9,7 @@ import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import { BaseError } from '../../exception/index.js'
 import {
+  ApplicationProtocol,
   ApplicationProtocolVersion,
   AuthenticationType,
   type ChargingStationData,
@@ -421,6 +422,20 @@ export abstract class AbstractUIServer {
     const requireTls = accessPolicy?.requireTlsForNonLoopback ?? true
     const isWildcard =
       configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
+
+    if (
+      this.uiServerConfiguration.metrics?.enabled === true &&
+      this.uiServerConfiguration.type !== ApplicationProtocol.HTTP
+    ) {
+      logger.warn(
+        `${this.logPrefix(
+          moduleName,
+          'constructor'
+        )} metrics.enabled=true is only honoured when uiServer.type='http'; current type='${
+          this.uiServerConfiguration.type ?? 'undefined'
+        }' — the /metrics endpoint will NOT be served.`
+      )
+    }
 
     if (isWildcard && allowedHosts.length === 0) {
       logger.warn(

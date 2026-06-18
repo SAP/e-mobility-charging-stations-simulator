@@ -213,6 +213,17 @@ const UIServerListenOptionsSchema = z
   .pipe(UIServerListenOptionsObjectSchema)
 
 /**
+ * UIServerMetricsConfiguration — opt-in Prometheus /metrics endpoint
+ * served by `UIHttpServer`. Honoured only when the parent UI server is
+ * running on the HTTP transport (Prometheus is HTTP-only by spec).
+ */
+export const UIServerMetricsConfigurationSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+  })
+  .strict()
+
+/**
  * UIServerConfiguration — UI server configuration section.
  * `options` is structurally typed as `ListenOptions` from node:net and
  * validated by `UIServerListenOptionsSchema` (object guard → `accessPolicy`
@@ -223,6 +234,7 @@ export const UIServerConfigurationSchema = z
     accessPolicy: UIServerAccessPolicySchema.optional(),
     authentication: UIServerAuthenticationSchema.optional(),
     enabled: z.boolean().optional(),
+    metrics: UIServerMetricsConfigurationSchema.optional(),
     options: UIServerListenOptionsSchema.optional(),
     type: z.enum(ApplicationProtocol).optional(),
     version: z.enum(ApplicationProtocolVersion).optional(),

@@ -6,6 +6,7 @@ import type {
   StationTemplateUrlSchema,
   StorageConfigurationSchema,
   UIServerConfigurationSchema,
+  UIServerMetricsConfigurationSchema,
   WorkerConfigurationSchema,
 } from '../utils/index.js'
 
@@ -33,4 +34,5 @@ export type LogConfiguration = z.infer<typeof LogConfigurationSchema>
 export type StationTemplateUrl = z.infer<typeof StationTemplateUrlSchema>
 export type StorageConfiguration = z.infer<typeof StorageConfigurationSchema>
 export type UIServerConfiguration = z.infer<typeof UIServerConfigurationSchema>
+export type UIServerMetricsConfiguration = z.infer<typeof UIServerMetricsConfigurationSchema>
 export type WorkerConfiguration = z.infer<typeof WorkerConfigurationSchema>
