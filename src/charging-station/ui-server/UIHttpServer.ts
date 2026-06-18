@@ -60,9 +60,6 @@ export class UIHttpServer extends AbstractUIServer {
   ) {
     super(uiServerConfiguration, bootstrap)
     this.acceptsGzip = new Map<UUIDv4, boolean>()
-    if (this.uiServerConfiguration.metrics?.enabled === true) {
-      this.metricsRegistry = this.buildMetricsRegistry()
-    }
   }
 
   public sendRequest (request: ProtocolRequest): void {
@@ -120,6 +117,12 @@ export class UIHttpServer extends AbstractUIServer {
    */
   public start (): void {
     this.httpServer.on('request', this.requestListener.bind(this))
+    if (
+      this.uiServerConfiguration.metrics?.enabled === true &&
+      this.metricsRegistry === undefined
+    ) {
+      this.metricsRegistry = this.buildMetricsRegistry()
+    }
     this.startHttpServer()
   }
 
