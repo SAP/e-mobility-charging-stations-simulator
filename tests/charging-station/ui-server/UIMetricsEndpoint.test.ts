@@ -523,6 +523,71 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
+  await it('should omit simulator_station_ws_state line when wsState is undefined', async t => {
+    server.addStation(buildStationData('station-Mws', { wsState: undefined }))
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.ok(
+      !/simulator_station_ws_state\{[^}]*hash_id="station-Mws"[^}]*\}/.test(body),
+      'simulator_station_ws_state line must be absent when wsState is undefined'
+    )
+    assert.match(body, /simulator_station_started\{[^}]*hash_id="station-Mws"[^}]*\}\s+1/)
+  })
+
+  await it('should serve per-connector metrics in EVSE-mode (OCPP 2.0.x) station', async t => {
+    server.addStation(
+      buildStationData('station-Mevse', {
+        connectors: [],
+        evses: [
+          {
+            evseId: 1,
+            evseStatus: {
+              availability: OCPP16AvailabilityType.Operative,
+              connectors: new Map([
+                [
+                  1,
+                  {
+                    availability: OCPP16AvailabilityType.Operative,
+                    MeterValues: [],
+                    status: ConnectorStatusEnum.Available,
+                  },
+                ],
+              ]),
+              MeterValues: [],
+            },
+          },
+        ] as ChargingStationData['evses'],
+      })
+    )
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.match(
+      body,
+      /simulator_station_connectors_total\{[^}]*hash_id="station-Mevse"[^}]*\}\s+1/
+    )
+    const statusLine = body
+      .split('\n')
+      .find(
+        l =>
+          l.startsWith('simulator_connector_status_info{') &&
+          l.includes('hash_id="station-Mevse"') &&
+          l.endsWith(' 1')
+      )
+    assert.ok(statusLine != null, 'simulator_connector_status_info value line not found')
+    assert.match(statusLine, /connector_id="1"/)
+    assert.match(statusLine, /status="Available"/)
+  })
+
   await it('T17: warnIfMisconfigured fires when metrics.enabled=true && type=ws', t => {
     const warnSpy = t.mock.method(logger, 'warn', () => undefined)
     const wsServer = new UIWebSocketServer(
