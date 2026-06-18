@@ -53,6 +53,7 @@ export class UIHttpServer extends AbstractUIServer {
   private readonly acceptsGzip: Map<UUIDv4, boolean>
   private metricsRegistry?: Registry
   private metricsSampleCount = 0
+  private metricsScrapeChain: Promise<void> = Promise.resolve()
 
   public constructor (
     protected override readonly uiServerConfiguration: UIServerConfiguration,
@@ -128,7 +129,10 @@ export class UIHttpServer extends AbstractUIServer {
 
   public override stop (): void {
     if (this.metricsRegistry !== undefined) {
-      this.metricsRegistry.clear()
+      const registry = this.metricsRegistry
+      this.metricsScrapeChain = this.metricsScrapeChain.finally(() => {
+        registry.clear()
+      })
       this.metricsRegistry = undefined
     }
     super.stop()
@@ -690,20 +694,29 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private async handleMetricsRequest (res: ServerResponse, registry: Registry): Promise<void> {
-    this.metricsSampleCount = 0
-    const body = await registry.metrics()
-    if (this.metricsSampleCount > METRICS_SOFT_SAMPLE_CAP) {
-      logger.warn(
-        `${this.logPrefix(moduleName, 'handleMetricsRequest')} ` +
-          `Prometheus scrape produced ${this.metricsSampleCount.toString()} samples ` +
-          `(soft cap ${METRICS_SOFT_SAMPLE_CAP.toString()})`
-      )
-    }
-    res
-      .writeHead(StatusCodes.OK, {
-        'Content-Type': registry.contentType,
+    this.metricsScrapeChain = this.metricsScrapeChain
+      .catch(() => undefined)
+      .then(async () => {
+        this.metricsSampleCount = 0
+        const body = await registry.metrics()
+        const cap = this.uiServerConfiguration.metrics?.softSampleCap ?? METRICS_SOFT_SAMPLE_CAP
+        if (this.metricsSampleCount > cap) {
+          logger.warn(
+            `${this.logPrefix(moduleName, 'handleMetricsRequest')} ` +
+              `Prometheus scrape produced ${this.metricsSampleCount.toString()} samples ` +
+              `(soft cap ${cap.toString()})`
+          )
+        }
+        if (!res.headersSent && !res.writableEnded) {
+          res
+            .writeHead(StatusCodes.OK, {
+              'Content-Type': registry.contentType,
+            })
+            .end(body)
+        }
+        return undefined
       })
-      .end(body)
+    return this.metricsScrapeChain
   }
 
   private async handleRequestBody (
