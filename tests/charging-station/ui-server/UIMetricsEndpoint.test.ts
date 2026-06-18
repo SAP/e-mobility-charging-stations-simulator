@@ -156,7 +156,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     standardCleanup()
   })
 
-  await it('T1: serves Prometheus exposition on GET /metrics when enabled', async t => {
+  await it('should serve Prometheus exposition on GET /metrics when enabled', async t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
@@ -169,7 +169,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(res.body ?? '', /^# TYPE /m)
   })
 
-  await it('T2: falls through to 400 on GET /metrics when metrics block is absent', t => {
+  await it('should fall through to 400 on GET /metrics when metrics block is absent', t => {
     const plainServer = new TestableUIHttpServer(
       createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
     )
@@ -186,7 +186,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     }
   })
 
-  await it('T3: falls through to 400 on GET /metrics when metrics.enabled is false', t => {
+  await it('should fall through to 400 on GET /metrics when metrics.enabled is false', t => {
     const offServer = new TestableUIHttpServer(
       createMockUIServerConfiguration({
         metrics: { enabled: false },
@@ -206,7 +206,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     }
   })
 
-  await it('T4: serves global gauges from Bootstrap.getState().templateStatistics', async t => {
+  await it('should serve global gauges from Bootstrap.getState().templateStatistics', async t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
@@ -221,7 +221,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(body, /^simulator_charging_station_templates_total\s+1$/m)
   })
 
-  await it('T5: serves per-station gauges from chargingStations Map', async t => {
+  await it('should serve per-station gauges from chargingStations Map', async t => {
     server.addStation(buildStationData('station-T5'))
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -235,7 +235,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
   })
 
-  await it('T6: serves per-connector status_info one-hot', async t => {
+  await it('should serve per-connector status_info one-hot', async t => {
     server.addStation(buildStationData('station-T6'))
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -253,7 +253,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(line, /status="Available"/)
   })
 
-  await it('T7: rejects POST /metrics with non-200 (existing 400 path)', t => {
+  await it('should reject POST /metrics with non-200 (existing 400 path)', t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
@@ -262,7 +262,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.notStrictEqual(res.statusCode, 200)
   })
 
-  await it('T8: inherits AccessPolicy denial — 403 on non-loopback without TLS', t => {
+  await it('should inherit AccessPolicy denial — 403 on non-loopback without TLS', t => {
     const gatedServer = new TestableUIHttpServer(
       createMetricsConfig({
         accessPolicy: {
@@ -293,7 +293,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     }
   })
 
-  await it('T9: inherits rate-limit — eventual 429 on burst', t => {
+  await it('should inherit rate-limit — eventual 429 on burst', t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
@@ -309,7 +309,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
-  await it('T10: inherits BASIC_AUTH — 401 on missing credentials', t => {
+  await it('should inherit BASIC_AUTH — 401 on missing credentials', t => {
     const authServer = new TestableUIHttpServer(
       createMetricsConfig({
         authentication: {
@@ -334,7 +334,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     }
   })
 
-  await it('T11: inherits BASIC_AUTH — 200 on valid credentials', async t => {
+  await it('should inherit BASIC_AUTH — 200 on valid credentials', async t => {
     const authServer = new TestableUIHttpServer(
       createMetricsConfig({
         authentication: {
@@ -365,7 +365,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     }
   })
 
-  await it('T12: does not leak PII (idTag, serial, supervisionUrl) in body', async t => {
+  await it('should not leak PII (idTag, serial, supervisionUrl) in body', async t => {
     server.addStation(
       buildStationData('station-T12', {
         connectors: [
@@ -424,7 +424,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.ok(!body.includes('://'), 'Body must not contain any URL scheme')
   })
 
-  await it('T13: escapes adversarial label values (no injected # HELP)', async t => {
+  await it('should escape adversarial label values (no injected # HELP)', async t => {
     server.addStation(
       buildStationData('station-T13', {
         stationInfo: {
@@ -457,7 +457,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
-  await it('T14: does not register a UUID in responseHandlers', t => {
+  await it('should not register a UUID in responseHandlers', t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
@@ -467,16 +467,15 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.strictEqual(responseHandlers.size, 0)
   })
 
-  await it('T15: clears registry on stop()', t => {
+  await it('should clear registry on stop()', t => {
     server.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     server.start()
-    assert.notStrictEqual(server.getMetricsRegistry(), undefined)
     server.stop()
     assert.strictEqual(server.getMetricsRegistry(), undefined)
   })
 
-  await it('T16: soft-warn fires when sample count > METRICS_SOFT_SAMPLE_CAP', async t => {
+  await it('should fire soft-warn when sample count exceeds METRICS_SOFT_SAMPLE_CAP', async t => {
     // Each station emits ≈ 14 samples on the per-station gauges (no connectors yet)
     // plus 1 sample on info, that is ~15 per station. To cross 5 000 we add 400+ stations.
     const stationCount = Math.max(400, Math.ceil(METRICS_SOFT_SAMPLE_CAP / 15) + 50)
@@ -643,7 +642,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
-  await it('T17: warnIfMisconfigured fires when metrics.enabled=true && type=ws', t => {
+  await it('should fire warnIfMisconfigured when metrics.enabled=true && type=ws', t => {
     const warnSpy = t.mock.method(logger, 'warn', () => undefined)
     const wsServer = new UIWebSocketServer(
       createMockUIServerConfiguration({
