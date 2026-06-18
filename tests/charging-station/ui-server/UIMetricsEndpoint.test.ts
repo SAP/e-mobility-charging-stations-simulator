@@ -588,6 +588,83 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(statusLine, /status="Available"/)
   })
 
+  await it('should detect off-by-one at soft-cap boundary (strict-greater-than semantics)', async t => {
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+
+    // Phase 1: probe — very high cap, count actual samples produced (no warn expected).
+    const probeServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: 1_000_000 } })
+    )
+    enrichBootstrap(probeServer)
+    for (let i = 0; i < 5; i++) {
+      probeServer.addStation(buildStationData(`station-Mboundary-probe-${i.toString()}`))
+    }
+    probeServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    probeServer.start()
+    const probeRes = new MockServerResponse()
+    probeServer.emitRequest(buildMetricsRequest(), probeRes)
+    await once(probeRes, 'finish')
+    const probedSampleCount = (probeRes.body ?? '')
+      .split('\n')
+      .filter(line => line.length > 0 && !line.startsWith('#')).length
+    probeServer.stop()
+    warnSpy.mock.resetCalls()
+    assert.ok(probedSampleCount > 0, 'probe scrape produced no samples')
+
+    // Phase 2: cap === probedSampleCount → NO warn (count IS NOT > cap, strict).
+    const exactServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: probedSampleCount } })
+    )
+    enrichBootstrap(exactServer)
+    for (let i = 0; i < 5; i++) {
+      exactServer.addStation(buildStationData(`station-Mboundary-exact-${i.toString()}`))
+    }
+    exactServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    exactServer.start()
+    const exactRes = new MockServerResponse()
+    exactServer.emitRequest(buildMetricsRequest(), exactRes)
+    await once(exactRes, 'finish')
+    const exactSoftCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    exactServer.stop()
+    assert.strictEqual(
+      exactSoftCapCalls,
+      0,
+      `Expected 0 'soft cap' warns at exact boundary (count=cap=${probedSampleCount.toString()}); got ${exactSoftCapCalls.toString()} — would fail if '>' becomes '>='`
+    )
+    warnSpy.mock.resetCalls()
+
+    // Phase 3: cap === probedSampleCount - 1 → WARN (count IS > cap).
+    const belowServer = new TestableUIHttpServer(
+      createMetricsConfig({
+        metrics: { enabled: true, softSampleCap: probedSampleCount - 1 },
+      })
+    )
+    enrichBootstrap(belowServer)
+    for (let i = 0; i < 5; i++) {
+      belowServer.addStation(buildStationData(`station-Mboundary-below-${i.toString()}`))
+    }
+    belowServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    belowServer.start()
+    const belowRes = new MockServerResponse()
+    belowServer.emitRequest(buildMetricsRequest(), belowRes)
+    await once(belowRes, 'finish')
+    const belowSoftCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    belowServer.stop()
+    assert.ok(
+      belowSoftCapCalls >= 1,
+      `Expected ≥1 'soft cap' warn when cap=${(probedSampleCount - 1).toString()} < count=${probedSampleCount.toString()}; got ${belowSoftCapCalls.toString()}`
+    )
+  })
+
   await it('T17: warnIfMisconfigured fires when metrics.enabled=true && type=ws', t => {
     const warnSpy = t.mock.method(logger, 'warn', () => undefined)
     const wsServer = new UIWebSocketServer(
