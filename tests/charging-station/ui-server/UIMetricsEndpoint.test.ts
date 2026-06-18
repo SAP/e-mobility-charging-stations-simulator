@@ -294,41 +294,19 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
   })
 
   await it('T9: inherits rate-limit — eventual 429 on burst', t => {
-    const gatedServer = new TestableUIHttpServer(
-      createMetricsConfig({
-        accessPolicy: {
-          allowedHosts: ['gateway.example.com'],
-          allowedOrigins: [],
-          allowLoopbackProxy: false,
-          requireTlsForNonLoopback: true,
-          trustedProxies: [],
-        },
-      })
-    )
-    enrichBootstrap(gatedServer)
-    gatedServer.mockListen(t)
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      gatedServer.start()
-      const statuses: (number | undefined)[] = []
-      for (let i = 0; i < 200; i++) {
-        const res = new MockServerResponse()
-        gatedServer.emitRequest(
-          buildMetricsRequest({
-            headers: { host: 'gateway.example.com' },
-            socket: { encrypted: false, remoteAddress: '203.0.113.42' } as never,
-          }),
-          res
-        )
-        statuses.push(res.statusCode)
-      }
-      assert.ok(
-        statuses.some(s => s === 429),
-        `Expected at least one 429 in burst; saw ${JSON.stringify(statuses.slice(0, 5))}…`
-      )
-    } finally {
-      gatedServer.stop()
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const statuses: (number | undefined)[] = []
+    for (let i = 0; i < 200; i++) {
+      const res = new MockServerResponse()
+      server.emitRequest(buildMetricsRequest(), res)
+      statuses.push(res.statusCode)
     }
+    assert.ok(
+      statuses.some(s => s === 429),
+      `Expected at least one 429 in burst on allowed /metrics path; saw ${JSON.stringify(statuses.slice(0, 5))}…`
+    )
   })
 
   await it('T10: inherits BASIC_AUTH — 401 on missing credentials', t => {
