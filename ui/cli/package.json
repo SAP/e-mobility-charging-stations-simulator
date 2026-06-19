@@ -7,10 +7,10 @@
     "pnpm": ">=10.9.0"
   },
   "volta": {
-    "node": "24.16.0",
-    "pnpm": "11.6.0"
+    "node": "24.17.0",
+    "pnpm": "11.7.0"
   },
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.7.0",
   "type": "module",
   "bin": {
     "evse-cli": "./dist/cli.js"
