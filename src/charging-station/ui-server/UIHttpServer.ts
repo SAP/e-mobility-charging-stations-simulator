@@ -45,12 +45,14 @@ export const METRICS_SOFT_SAMPLE_CAP = 5_000
 const METRICS_PATHNAME = '/metrics'
 
 /**
- * Subset of {@link AbstractUIServer} consumed by the metrics gauge helpers.
- * Restricting helpers to this projection keeps them decoupled from the
- * concrete UI server class and from `this`-rebound contexts inside
- * `collect()` callbacks.
+ * Subset of {@link AbstractUIServer} consumed by the metrics gauge helpers
+ * and by the inline `simulator_ui_server_known_stations_total` gauge in
+ * {@link UIHttpServer.buildMetricsRegistry}. Restricting access to this
+ * projection keeps the metrics surface decoupled from the concrete UI
+ * server class and from `this`-rebound contexts inside `collect()`
+ * callbacks.
  */
-interface IChargingStationDataProvider {
+interface ChargingStationDataProvider {
   getChargingStationsCount(): number
   listChargingStationData(): ChargingStationData[]
 }
@@ -185,7 +187,7 @@ export class UIHttpServer extends AbstractUIServer {
   private buildMetricsRegistry (): Registry {
     const registry = new Registry()
     const bootstrap = this.getBootstrap()
-    const provider: IChargingStationDataProvider = {
+    const provider: ChargingStationDataProvider = {
       getChargingStationsCount: this.getChargingStationsCount.bind(this),
       listChargingStationData: this.listChargingStationData.bind(this),
     }
@@ -354,13 +356,7 @@ export class UIHttpServer extends AbstractUIServer {
       provider,
       'simulator_station_connectors_total',
       'Number of connectors of the charging station.',
-      data => {
-        let count = 0
-        for (const _ of iterateConnectors(data)) {
-          count++
-        }
-        return count
-      }
+      countConnectors
     )
 
     addPerStationNumeric(
@@ -408,7 +404,7 @@ export class UIHttpServer extends AbstractUIServer {
       data => Math.floor(data.timestamp / 1000)
     )
 
-    addPerStationInfoLabel(
+    addPerStationStatusInfo(
       registry,
       accountSamples,
       provider,
@@ -435,7 +431,7 @@ export class UIHttpServer extends AbstractUIServer {
       data => data.automaticTransactionGenerator?.automaticTransactionGenerator?.enable === true
     )
 
-    addPerStationInfoLabel(
+    addPerStationStatusInfo(
       registry,
       accountSamples,
       provider,
@@ -444,7 +440,7 @@ export class UIHttpServer extends AbstractUIServer {
       data => data.stationInfo.diagnosticsStatus
     )
 
-    addPerStationInfoLabel(
+    addPerStationStatusInfo(
       registry,
       accountSamples,
       provider,
@@ -635,7 +631,7 @@ export class UIHttpServer extends AbstractUIServer {
    * the inner async work runs in a `.then()` continuation and rejections
    * propagate to the returned promise, which the listener-side `.catch()`
    * converts to HTTP 500.
-   * @param res Response stream.
+   * @param res HTTP response to end with the exposition body.
    * @param registry Source Prometheus registry.
    * @returns The chained scrape promise.
    */
@@ -839,7 +835,7 @@ const stringLabel = (value: string | undefined): string => value ?? ''
 const addPerStationNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => number | undefined
@@ -864,7 +860,7 @@ const addPerStationNumeric = (
 const addPerStationBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => boolean
@@ -883,10 +879,10 @@ const addPerStationBoolean = (
   })
 }
 
-const addPerStationInfoLabel = (
+const addPerStationStatusInfo = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => string | undefined
@@ -909,15 +905,26 @@ const addPerStationInfoLabel = (
 }
 
 /**
- * Iterate connectors using the OCPP-version-driven either-or rule shared
- * with `simulator_station_connectors_total`:
- * - When `data.connectors` is non-empty, the station is in OCPP 1.6
- *   connector-mode; EVSE entries are ignored.
- * - Otherwise (OCPP 2.0.x EVSE-mode), connectors are sourced from
- *   `data.evses[*].evseStatus.connectors`.
- *
- * The two sources are NEVER summed: `buildConnectorEntries` guarantees
- * `data.connectors` is empty when `data.evses` is populated.
+ * OCPP-version-driven either-or rule used by both {@link iterateConnectors}
+ * and {@link countConnectors}: a station is either in OCPP 1.6 connector-mode
+ * (`data.connectors` populated, `data.evses` empty) or in OCPP 2.0.x EVSE-mode
+ * (the reverse). The two sources are NEVER summed: `buildConnectorEntries`
+ * guarantees `data.connectors` is empty when `data.evses` is populated.
+ * @param data Charging station snapshot.
+ * @returns Connector count under the active mode.
+ */
+const countConnectors = (data: ChargingStationData): number =>
+  data.connectors.length > 0
+    ? data.connectors.length
+    : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.size, 0)
+
+/**
+ * Iterate connectors under the same OCPP-version-driven either-or rule as
+ * {@link countConnectors}: yields entries from `data.connectors` (OCPP 1.6
+ * connector-mode) when non-empty, otherwise from
+ * `data.evses[*].evseStatus.connectors` (OCPP 2.0.x EVSE-mode). The two
+ * sources are never summed (see {@link countConnectors} for the invariant
+ * source).
  * @param data Charging station snapshot.
  * @yields {ConnectorEntry} A connector entry under the active mode.
  */
@@ -935,10 +942,13 @@ const iterateConnectors = function * (data: ChargingStationData): Generator<Conn
   }
 }
 
+// `labelName` stays a runtime literal union (catches typos at call sites)
+// rather than a `Gauge<L>` generic: TS cannot narrow the dynamic computed
+// property `[labelName]: v` without an `as` cast (forbidden by AGENTS.md).
 const addConnectorOneHot = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   labelName: 'availability' | 'connector_type' | 'error_code' | 'status',
@@ -970,7 +980,7 @@ const addConnectorOneHot = (
 const addConnectorBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => boolean
@@ -997,7 +1007,7 @@ const addConnectorBoolean = (
 const addConnectorNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => number | undefined
@@ -1027,7 +1037,7 @@ const addConnectorNumeric = (
 const addConnectorNumericFromEntry = (
   registry: Registry,
   account: (n: number) => void,
-  server: IChargingStationDataProvider,
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (entry: ConnectorEntry) => number | undefined
