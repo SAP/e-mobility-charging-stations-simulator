@@ -905,11 +905,11 @@ const addPerStationStatusInfo = (
 }
 
 /**
- * OCPP-version-driven either-or rule used by both {@link iterateConnectors}
- * and {@link countConnectors}: a station is either in OCPP 1.6 connector-mode
- * (`data.connectors` populated, `data.evses` empty) or in OCPP 2.0.x EVSE-mode
- * (the reverse). The two sources are NEVER summed: `buildConnectorEntries`
- * guarantees `data.connectors` is empty when `data.evses` is populated.
+ * OCPP-version-driven either-or rule, also used by {@link iterateConnectors}:
+ * a station is either in OCPP 1.6 connector-mode (`data.connectors` populated,
+ * `data.evses` empty) or in OCPP 2.0.x EVSE-mode (the reverse). The two
+ * sources are NEVER summed: `buildConnectorEntries` guarantees
+ * `data.connectors` is empty when `data.evses` is populated.
  * @param data Charging station snapshot.
  * @returns Connector count under the active mode.
  */
@@ -923,8 +923,7 @@ const countConnectors = (data: ChargingStationData): number =>
  * {@link countConnectors}: yields entries from `data.connectors` (OCPP 1.6
  * connector-mode) when non-empty, otherwise from
  * `data.evses[*].evseStatus.connectors` (OCPP 2.0.x EVSE-mode). The two
- * sources are never summed (see {@link countConnectors} for the invariant
- * source).
+ * sources are never summed.
  * @param data Charging station snapshot.
  * @yields {ConnectorEntry} A connector entry under the active mode.
  */
@@ -942,30 +941,31 @@ const iterateConnectors = function * (data: ChargingStationData): Generator<Conn
   }
 }
 
-// `labelName` stays a runtime literal union (catches typos at call sites)
-// rather than a `Gauge<L>` generic: TS cannot narrow the dynamic computed
-// property `[labelName]: v` without an `as` cast (forbidden by AGENTS.md).
+type ConnectorOneHotLabel = 'availability' | 'connector_type' | 'error_code' | 'status'
+
 const addConnectorOneHot = (
   registry: Registry,
   account: (n: number) => void,
   server: ChargingStationDataProvider,
   name: string,
   help: string,
-  labelName: 'availability' | 'connector_type' | 'error_code' | 'status',
+  labelName: ConnectorOneHotLabel,
   pick: (cs: ConnectorStatus) => string | undefined
 ): void => {
-  defineGauge(registry, {
-    collect (this: Gauge) {
+  defineGauge<'connector_id' | 'hash_id' | ConnectorOneHotLabel>(registry, {
+    collect (this: Gauge<'connector_id' | 'hash_id' | ConnectorOneHotLabel>) {
       this.reset()
       for (const data of server.listChargingStationData()) {
         for (const entry of iterateConnectors(data)) {
           const v = pick(entry.connectorStatus)
           if (typeof v === 'string') {
-            this.labels({
-              connector_id: entry.connectorId.toString(),
-              hash_id: data.stationInfo.hashId,
-              [labelName]: v,
-            }).set(1)
+            const labels: Partial<
+              Record<'connector_id' | 'hash_id' | ConnectorOneHotLabel, string>
+            > = {}
+            labels.hash_id = data.stationInfo.hashId
+            labels.connector_id = entry.connectorId.toString()
+            labels[labelName] = v
+            this.labels(labels).set(1)
             account(1)
           }
         }
