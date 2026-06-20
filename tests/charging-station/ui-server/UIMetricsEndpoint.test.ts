@@ -516,7 +516,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
 
   await it('should serve per-connector metrics in EVSE-mode (OCPP 2.0.x) station', async t => {
     server.addStation(
-      buildStationData('station-Mevse', {
+      buildStationData('station-T18', {
         connectors: [],
         evses: [
           {
@@ -546,16 +546,13 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.emitRequest(buildMetricsRequest(), res)
     await once(res, 'finish')
     const body = res.body ?? ''
-    assert.match(
-      body,
-      /simulator_station_connectors_total\{[^}]*hash_id="station-Mevse"[^}]*\}\s+1/
-    )
+    assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-T18"[^}]*\}\s+1/)
     const statusLine = body
       .split('\n')
       .find(
         l =>
           l.startsWith('simulator_connector_status_info{') &&
-          l.includes('hash_id="station-Mevse"') &&
+          l.includes('hash_id="station-T18"') &&
           l.endsWith(' 1')
       )
     assert.ok(statusLine != null, 'simulator_connector_status_info value line not found')
@@ -572,7 +569,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
     enrichBootstrap(probeServer)
     for (let i = 0; i < 5; i++) {
-      probeServer.addStation(buildStationData(`station-Mboundary-probe-${i.toString()}`))
+      probeServer.addStation(buildStationData(`station-T19-probe-${i.toString()}`))
     }
     probeServer.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -593,7 +590,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
     enrichBootstrap(exactServer)
     for (let i = 0; i < 5; i++) {
-      exactServer.addStation(buildStationData(`station-Mboundary-exact-${i.toString()}`))
+      exactServer.addStation(buildStationData(`station-T19-exact-${i.toString()}`))
     }
     exactServer.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -621,7 +618,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
     enrichBootstrap(belowServer)
     for (let i = 0; i < 5; i++) {
-      belowServer.addStation(buildStationData(`station-Mboundary-below-${i.toString()}`))
+      belowServer.addStation(buildStationData(`station-T19-below-${i.toString()}`))
     }
     belowServer.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -653,7 +650,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
     enrichBootstrap(probeServer)
     for (let i = 0; i < 5; i++) {
-      probeServer.addStation(buildStationData(`station-Mconcurrent-probe-${i.toString()}`))
+      probeServer.addStation(buildStationData(`station-T20-probe-${i.toString()}`))
     }
     probeServer.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -673,7 +670,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
     enrichBootstrap(concurrentServer)
     for (let i = 0; i < 5; i++) {
-      concurrentServer.addStation(buildStationData(`station-Mconcurrent-${i.toString()}`))
+      concurrentServer.addStation(buildStationData(`station-T20-${i.toString()}`))
     }
     concurrentServer.mockListen(t)
     // eslint-disable-next-line @typescript-eslint/no-deprecated
