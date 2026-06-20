@@ -6,6 +6,7 @@ import { isEmpty, logger, logPrefix } from '../../utils/index.js'
 export enum HttpMethod {
   DELETE = 'DELETE',
   GET = 'GET',
+  HEAD = 'HEAD',
   PATCH = 'PATCH',
   POST = 'POST',
   PUT = 'PUT',

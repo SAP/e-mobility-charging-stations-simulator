@@ -1,0 +1,740 @@
+/**
+ * @file Tests for the Prometheus /metrics endpoint on UIHttpServer (issue #851)
+ * @description End-to-end behavior, security inheritance, PII reject-list, exposition-format escaping and the cardinality soft cap warning.
+ */
+
+import type { IncomingMessage } from 'node:http'
+import type { mock } from 'node:test'
+
+import assert from 'node:assert/strict'
+import { once } from 'node:events'
+import { afterEach, beforeEach, describe, it } from 'node:test'
+
+import type {
+  ChargingStationData,
+  TemplateStatistics,
+  UIServerConfiguration,
+} from '../../../src/types/index.js'
+
+import { AbstractUIServer } from '../../../src/charging-station/ui-server/AbstractUIServer.js'
+import {
+  METRICS_SOFT_SAMPLE_CAP,
+  UIHttpServer,
+} from '../../../src/charging-station/ui-server/UIHttpServer.js'
+import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
+import {
+  ApplicationProtocol,
+  AuthenticationType,
+  ConnectorStatusEnum,
+  OCPP16AvailabilityType,
+  OCPPVersion,
+} from '../../../src/types/index.js'
+import { logger } from '../../../src/utils/index.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import {
+  createMockBootstrap,
+  createMockIncomingMessage,
+  createMockUIServerConfiguration,
+  MockServerResponse,
+} from './UIServerTestUtils.js'
+
+// eslint-disable-next-line @typescript-eslint/no-deprecated
+class TestableUIHttpServer extends UIHttpServer {
+  public constructor (config: UIServerConfiguration) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    super(config, createMockBootstrap())
+  }
+
+  public addStation (data: ChargingStationData): void {
+    this.setChargingStationData(data.stationInfo.hashId, data)
+  }
+
+  public emitRequest (req: IncomingMessage, res: MockServerResponse): void {
+    const httpServer = Reflect.get(this, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+      listen: (...args: unknown[]) => unknown
+      removeAllListeners: () => void
+    }
+    httpServer.emit('request', req, res)
+  }
+
+  public getMetricsRegistry (): unknown {
+    return Reflect.get(this, 'metricsRegistry')
+  }
+
+  public mockListen (t: { mock: { method: typeof mock.method } }): void {
+    const httpServer = Reflect.get(this, 'httpServer') as object
+    t.mock.method(httpServer as never, 'listen' as never, ((): unknown => httpServer) as never)
+  }
+}
+
+const createMetricsConfig = (
+  overrides: Partial<UIServerConfiguration> = {}
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    metrics: { enabled: true },
+    options: { host: '127.0.0.1', port: 0 },
+    type: ApplicationProtocol.HTTP,
+    ...overrides,
+  })
+
+const buildStationData = (
+  hashId: string,
+  overrides: Partial<ChargingStationData> = {}
+): ChargingStationData =>
+  ({
+    connectors: [
+      {
+        connectorId: 1,
+        connectorStatus: {
+          availability: OCPP16AvailabilityType.Operative,
+          status: ConnectorStatusEnum.Available,
+          transactionStarted: false,
+        },
+        evseId: 1,
+      },
+    ],
+    evses: [],
+    ocppConfiguration: { configurationKey: [] },
+    started: true,
+    stationInfo: {
+      chargePointModel: 'TestModel',
+      chargePointVendor: 'TestVendor',
+      chargingStationId: hashId,
+      hashId,
+      maximumAmperage: 32,
+      maximumPower: 22000,
+      ocppVersion: OCPPVersion.VERSION_16,
+      templateIndex: 0,
+      templateName: 'test-template',
+    },
+    supervisionUrl: 'ws://test.example.com/OCPP16',
+    timestamp: 1_700_000_000_000,
+    wsState: 1,
+    ...overrides,
+  }) as ChargingStationData
+
+const enrichBootstrap = (server: TestableUIHttpServer, version = '4.9.0'): void => {
+  const bootstrap = server.getBootstrap()
+  const templateStats: TemplateStatistics = {
+    added: 1,
+    configured: 5,
+    indexes: new Set([0]),
+    provisioned: 2,
+    started: 1,
+  }
+  Reflect.set(bootstrap, 'getState', () => ({
+    configuration: undefined,
+    started: true,
+    templateStatistics: new Map<string, TemplateStatistics>([['test-template', templateStats]]),
+    version,
+  }))
+}
+
+const buildMetricsRequest = (overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
+  createMockIncomingMessage({
+    complete: true,
+    headers: { host: 'localhost' },
+    method: 'GET',
+    socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+    url: '/metrics',
+    ...overrides,
+  })
+
+await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
+  let server: TestableUIHttpServer
+
+  beforeEach(() => {
+    server = new TestableUIHttpServer(createMetricsConfig())
+    enrichBootstrap(server)
+  })
+
+  afterEach(() => {
+    server.stop()
+    standardCleanup()
+  })
+
+  await it('should serve Prometheus exposition on GET /metrics when enabled', async t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    assert.strictEqual(res.statusCode, 200)
+    assert.match(res.headers['Content-Type'] ?? '', /^text\/plain;\s*version=0\.0\.4/)
+    assert.match(res.body ?? '', /^# HELP /m)
+    assert.match(res.body ?? '', /^# TYPE /m)
+  })
+
+  await it('should fall through to 400 on GET /metrics when metrics block is absent', t => {
+    const plainServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+    )
+    enrichBootstrap(plainServer)
+    plainServer.mockListen(t)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      plainServer.start()
+      const res = new MockServerResponse()
+      plainServer.emitRequest(buildMetricsRequest(), res)
+      assert.strictEqual(res.statusCode, 400)
+    } finally {
+      plainServer.stop()
+    }
+  })
+
+  await it('should fall through to 400 on GET /metrics when metrics.enabled is false', t => {
+    const offServer = new TestableUIHttpServer(
+      createMockUIServerConfiguration({
+        metrics: { enabled: false },
+        type: ApplicationProtocol.HTTP,
+      })
+    )
+    enrichBootstrap(offServer)
+    offServer.mockListen(t)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      offServer.start()
+      const res = new MockServerResponse()
+      offServer.emitRequest(buildMetricsRequest(), res)
+      assert.strictEqual(res.statusCode, 400)
+    } finally {
+      offServer.stop()
+    }
+  })
+
+  await it('should serve global gauges from Bootstrap.getState().templateStatistics', async t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.match(body, /^simulator_charging_stations_configured_total\s+5$/m)
+    assert.match(body, /^simulator_charging_stations_provisioned_total\s+2$/m)
+    assert.match(body, /^simulator_charging_stations_added_total\s+1$/m)
+    assert.match(body, /^simulator_charging_stations_started_total\s+1$/m)
+    assert.match(body, /^simulator_charging_station_templates_total\s+1$/m)
+  })
+
+  await it('should serve per-station gauges from chargingStations Map', async t => {
+    server.addStation(buildStationData('station-T5'))
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.match(body, /simulator_station_started\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
+    assert.match(body, /simulator_station_ws_state\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
+    assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
+  })
+
+  await it('should serve per-connector status_info one-hot', async t => {
+    server.addStation(buildStationData('station-T6'))
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    const line = body
+      .split('\n')
+      .find(l => l.startsWith('simulator_connector_status_info{') && l.endsWith(' 1'))
+    assert.ok(line != null, 'simulator_connector_status_info value line not found')
+    assert.match(line, /hash_id="station-T6"/)
+    assert.match(line, /connector_id="1"/)
+    assert.match(line, /status="Available"/)
+  })
+
+  await it('should reject POST /metrics with non-200 (existing 400 path)', t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest({ method: 'POST' }), res)
+    assert.notStrictEqual(res.statusCode, 200)
+  })
+
+  await it('should inherit AccessPolicy denial — 403 on non-loopback without TLS', t => {
+    const gatedServer = new TestableUIHttpServer(
+      createMetricsConfig({
+        accessPolicy: {
+          allowedHosts: ['gateway.example.com'],
+          allowedOrigins: [],
+          allowLoopbackProxy: false,
+          requireTlsForNonLoopback: true,
+          trustedProxies: [],
+        },
+      })
+    )
+    enrichBootstrap(gatedServer)
+    gatedServer.mockListen(t)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      gatedServer.start()
+      const res = new MockServerResponse()
+      gatedServer.emitRequest(
+        buildMetricsRequest({
+          headers: { host: 'gateway.example.com' },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }),
+        res
+      )
+      assert.strictEqual(res.statusCode, 403)
+    } finally {
+      gatedServer.stop()
+    }
+  })
+
+  await it('should inherit rate-limit — eventual 429 on burst', t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const statuses: (number | undefined)[] = []
+    for (let i = 0; i < 200; i++) {
+      const res = new MockServerResponse()
+      server.emitRequest(buildMetricsRequest(), res)
+      statuses.push(res.statusCode)
+    }
+    assert.ok(
+      statuses.some(s => s === 429),
+      `Expected at least one 429 in burst on allowed /metrics path; saw ${JSON.stringify(statuses.slice(0, 5))}…`
+    )
+  })
+
+  await it('should inherit BASIC_AUTH — 401 on missing credentials', t => {
+    const authServer = new TestableUIHttpServer(
+      createMetricsConfig({
+        authentication: {
+          enabled: true,
+          password: 'pw',
+          type: AuthenticationType.BASIC_AUTH,
+          username: 'user',
+        },
+      })
+    )
+    enrichBootstrap(authServer)
+    authServer.mockListen(t)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      authServer.start()
+      const res = new MockServerResponse()
+      authServer.emitRequest(buildMetricsRequest(), res)
+      assert.strictEqual(res.statusCode, 401)
+      assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
+    } finally {
+      authServer.stop()
+    }
+  })
+
+  await it('should inherit BASIC_AUTH — 200 on valid credentials', async t => {
+    const authServer = new TestableUIHttpServer(
+      createMetricsConfig({
+        authentication: {
+          enabled: true,
+          password: 'pw',
+          type: AuthenticationType.BASIC_AUTH,
+          username: 'user',
+        },
+      })
+    )
+    enrichBootstrap(authServer)
+    authServer.mockListen(t)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      authServer.start()
+      const credentials = Buffer.from('user:pw').toString('base64')
+      const res = new MockServerResponse()
+      authServer.emitRequest(
+        buildMetricsRequest({
+          headers: { authorization: `Basic ${credentials}`, host: 'localhost' },
+        }),
+        res
+      )
+      await once(res, 'finish')
+      assert.strictEqual(res.statusCode, 200)
+    } finally {
+      authServer.stop()
+    }
+  })
+
+  await it('should not leak PII (idTag, serial, supervisionUrl) in body', async t => {
+    server.addStation(
+      buildStationData('station-T12', {
+        connectors: [
+          {
+            connectorId: 1,
+            connectorStatus: {
+              authorizeIdTag: 'SECRET-IDTAG-12345',
+              availability: OCPP16AvailabilityType.Operative,
+              localAuthorizeIdTag: 'SECRET-LOCAL-IDTAG',
+              MeterValues: [],
+              status: ConnectorStatusEnum.Available,
+              transactionIdTag: 'SECRET-TX-IDTAG',
+            },
+            evseId: 1,
+          },
+        ],
+        stationInfo: {
+          baseName: 'test',
+          chargeBoxSerialNumber: 'SECRET-SERIAL-1',
+          chargePointModel: 'TestModel',
+          chargePointSerialNumber: 'SECRET-CP-SERIAL',
+          chargePointVendor: 'TestVendor',
+          chargingStationId: 'station-T12',
+          hashId: 'station-T12',
+          iccid: 'SECRET-ICCID',
+          imsi: 'SECRET-IMSI',
+          meterSerialNumber: 'SECRET-METER',
+          ocppVersion: OCPPVersion.VERSION_16,
+          templateIndex: 0,
+          templateName: 'test-template',
+        },
+        supervisionUrl: 'ws://user:password@evil.example.com/OCPP',
+      })
+    )
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    for (const secret of [
+      'SECRET-IDTAG-12345',
+      'SECRET-LOCAL-IDTAG',
+      'SECRET-TX-IDTAG',
+      'SECRET-SERIAL-1',
+      'SECRET-CP-SERIAL',
+      'SECRET-METER',
+      'SECRET-ICCID',
+      'SECRET-IMSI',
+      'user:password',
+      'evil.example.com',
+    ]) {
+      assert.ok(!body.includes(secret), `Body must not contain '${secret}'`)
+    }
+    assert.ok(!body.includes('://'), 'Body must not contain any URL scheme')
+  })
+
+  await it('should escape adversarial label values (no injected # HELP)', async t => {
+    server.addStation(
+      buildStationData('station-T13', {
+        stationInfo: {
+          baseName: 'test',
+          chargePointModel: 'TestModel',
+          chargePointVendor: 'TestVendor',
+          chargingStationId:
+            'evil"\n# HELP fake_metric injected\n# TYPE fake_metric gauge\nfake_metric 999\n',
+          hashId: 'station-T13',
+          ocppVersion: OCPPVersion.VERSION_16,
+          templateIndex: 0,
+          templateName: 'test-template',
+        },
+      })
+    )
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.ok(
+      !/^fake_metric\b/m.test(body),
+      'Adversarial label injection produced a fake metric line'
+    )
+    assert.ok(
+      !/^# HELP fake_metric/m.test(body),
+      'Adversarial label injection produced a fake HELP line'
+    )
+  })
+
+  await it('should not register a UUID in responseHandlers', t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    const responseHandlers = Reflect.get(server, 'responseHandlers') as Map<string, unknown>
+    assert.strictEqual(responseHandlers.size, 0)
+  })
+
+  await it('should clear registry on stop()', t => {
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    server.stop()
+    assert.strictEqual(server.getMetricsRegistry(), undefined)
+  })
+
+  await it('should fire soft-warn when sample count exceeds METRICS_SOFT_SAMPLE_CAP', async t => {
+    // Each station emits ≈ 14 samples on the per-station gauges (no connectors yet)
+    // plus 1 sample on info, that is ~15 per station. To cross 5 000 we add 400+ stations.
+    const stationCount = Math.max(400, Math.ceil(METRICS_SOFT_SAMPLE_CAP / 15) + 50)
+    for (let i = 0; i < stationCount; i++) {
+      server.addStation(buildStationData(`station-T16-${i.toString()}`))
+    }
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    assert.strictEqual(res.statusCode, 200)
+    const matchingCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    })
+    assert.ok(
+      matchingCalls.length >= 1,
+      `Expected at least one logger.warn 'soft cap' call after ${stationCount.toString()} stations; got ${warnSpy.mock.calls.length.toString()} warn calls total`
+    )
+  })
+
+  await it('should omit simulator_station_ws_state line when wsState is undefined', async t => {
+    server.addStation(buildStationData('station-Mws', { wsState: undefined }))
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.ok(
+      !/simulator_station_ws_state\{[^}]*hash_id="station-Mws"[^}]*\}/.test(body),
+      'simulator_station_ws_state line must be absent when wsState is undefined'
+    )
+    assert.match(body, /simulator_station_started\{[^}]*hash_id="station-Mws"[^}]*\}\s+1/)
+  })
+
+  await it('should serve per-connector metrics in EVSE-mode (OCPP 2.0.x) station', async t => {
+    server.addStation(
+      buildStationData('station-T18', {
+        connectors: [],
+        evses: [
+          {
+            evseId: 1,
+            evseStatus: {
+              availability: OCPP16AvailabilityType.Operative,
+              connectors: new Map([
+                [
+                  1,
+                  {
+                    availability: OCPP16AvailabilityType.Operative,
+                    MeterValues: [],
+                    status: ConnectorStatusEnum.Available,
+                  },
+                ],
+              ]),
+              MeterValues: [],
+            },
+          },
+        ] as ChargingStationData['evses'],
+      })
+    )
+    server.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await once(res, 'finish')
+    const body = res.body ?? ''
+    assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-T18"[^}]*\}\s+1/)
+    const statusLine = body
+      .split('\n')
+      .find(
+        l =>
+          l.startsWith('simulator_connector_status_info{') &&
+          l.includes('hash_id="station-T18"') &&
+          l.endsWith(' 1')
+      )
+    assert.ok(statusLine != null, 'simulator_connector_status_info value line not found')
+    assert.match(statusLine, /connector_id="1"/)
+    assert.match(statusLine, /status="Available"/)
+  })
+
+  await it('should detect off-by-one at soft cap boundary (strict-greater-than semantics)', async t => {
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+
+    // Phase 1: probe — very high cap, count actual samples produced (no warn expected).
+    const probeServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: 1_000_000 } })
+    )
+    enrichBootstrap(probeServer)
+    for (let i = 0; i < 5; i++) {
+      probeServer.addStation(buildStationData(`station-T19-probe-${i.toString()}`))
+    }
+    probeServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    probeServer.start()
+    const probeRes = new MockServerResponse()
+    probeServer.emitRequest(buildMetricsRequest(), probeRes)
+    await once(probeRes, 'finish')
+    const probedSampleCount = (probeRes.body ?? '')
+      .split('\n')
+      .filter(line => line.length > 0 && !line.startsWith('#')).length
+    probeServer.stop()
+    warnSpy.mock.resetCalls()
+    assert.ok(probedSampleCount > 0, 'probe scrape produced no samples')
+
+    // Phase 2: cap === probedSampleCount → NO warn (count IS NOT > cap, strict).
+    const exactServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: probedSampleCount } })
+    )
+    enrichBootstrap(exactServer)
+    for (let i = 0; i < 5; i++) {
+      exactServer.addStation(buildStationData(`station-T19-exact-${i.toString()}`))
+    }
+    exactServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    exactServer.start()
+    const exactRes = new MockServerResponse()
+    exactServer.emitRequest(buildMetricsRequest(), exactRes)
+    await once(exactRes, 'finish')
+    const exactSoftCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    exactServer.stop()
+    assert.strictEqual(
+      exactSoftCapCalls,
+      0,
+      `Expected 0 'soft cap' warns at exact boundary (count=cap=${probedSampleCount.toString()}); got ${exactSoftCapCalls.toString()} — would fail if '>' becomes '>='`
+    )
+    warnSpy.mock.resetCalls()
+
+    // Phase 3: cap === probedSampleCount - 1 → WARN (count IS > cap).
+    const belowServer = new TestableUIHttpServer(
+      createMetricsConfig({
+        metrics: { enabled: true, softSampleCap: probedSampleCount - 1 },
+      })
+    )
+    enrichBootstrap(belowServer)
+    for (let i = 0; i < 5; i++) {
+      belowServer.addStation(buildStationData(`station-T19-below-${i.toString()}`))
+    }
+    belowServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    belowServer.start()
+    const belowRes = new MockServerResponse()
+    belowServer.emitRequest(buildMetricsRequest(), belowRes)
+    await once(belowRes, 'finish')
+    const belowSoftCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    belowServer.stop()
+    assert.ok(
+      belowSoftCapCalls >= 1,
+      `Expected ≥1 'soft cap' warn when cap=${(probedSampleCount - 1).toString()} < count=${probedSampleCount.toString()}; got ${belowSoftCapCalls.toString()}`
+    )
+  })
+
+  await it('should serialize concurrent /metrics scrapes (no shared-counter race)', async t => {
+    // R1+R2 lock: two simultaneous GET /metrics must each produce a complete,
+    // well-formed body and a coherent sample count. Without `metricsScrapeChain`
+    // serialization, both scrapes' `collect()` callbacks would interleave on
+    // `metricsSampleCount`, racing the soft cap check and corrupting the
+    // exposition body. Configure the cap to the per-scrape sample count so an
+    // honest serialized run produces ZERO warns; a broken (concurrent) run
+    // would either spuriously warn (counter doubled) or truncate.
+    const probeServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: 1_000_000 } })
+    )
+    enrichBootstrap(probeServer)
+    for (let i = 0; i < 5; i++) {
+      probeServer.addStation(buildStationData(`station-T20-probe-${i.toString()}`))
+    }
+    probeServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    probeServer.start()
+    const probeRes = new MockServerResponse()
+    probeServer.emitRequest(buildMetricsRequest(), probeRes)
+    await once(probeRes, 'finish')
+    const probedSampleCount = (probeRes.body ?? '')
+      .split('\n')
+      .filter(line => line.length > 0 && !line.startsWith('#')).length
+    probeServer.stop()
+    assert.ok(probedSampleCount > 0, 'probe scrape produced no samples')
+
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+    const concurrentServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: probedSampleCount } })
+    )
+    enrichBootstrap(concurrentServer)
+    for (let i = 0; i < 5; i++) {
+      concurrentServer.addStation(buildStationData(`station-T20-${i.toString()}`))
+    }
+    concurrentServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    concurrentServer.start()
+
+    const resA = new MockServerResponse()
+    const resB = new MockServerResponse()
+    concurrentServer.emitRequest(buildMetricsRequest(), resA)
+    concurrentServer.emitRequest(buildMetricsRequest(), resB)
+    await Promise.all([once(resA, 'finish'), once(resB, 'finish')])
+    concurrentServer.stop()
+
+    assert.strictEqual(resA.statusCode, 200)
+    assert.strictEqual(resB.statusCode, 200)
+    const bodyA = resA.body ?? ''
+    const bodyB = resB.body ?? ''
+    const sampleLines = (body: string): number =>
+      body.split('\n').filter(line => line.length > 0 && !line.startsWith('#')).length
+    assert.strictEqual(
+      sampleLines(bodyA),
+      probedSampleCount,
+      `scrape A must emit exactly ${probedSampleCount.toString()} sample lines (no truncation, no double-count); got ${sampleLines(bodyA).toString()}`
+    )
+    assert.strictEqual(
+      sampleLines(bodyB),
+      probedSampleCount,
+      `scrape B must emit exactly ${probedSampleCount.toString()} sample lines (no truncation, no double-count); got ${sampleLines(bodyB).toString()}`
+    )
+    const softCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    assert.strictEqual(
+      softCapCalls,
+      0,
+      `Expected 0 'soft cap' warns under serialized concurrent scrapes (cap=count=${probedSampleCount.toString()}); got ${softCapCalls.toString()} — would fail if metricsScrapeChain serialization were removed`
+    )
+  })
+
+  await it('should fire warnIfMisconfigured when metrics.enabled=true && type=ws', t => {
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+    const wsServer = new UIWebSocketServer(
+      createMockUIServerConfiguration({
+        metrics: { enabled: true },
+        options: { host: 'localhost', port: 0 },
+        type: ApplicationProtocol.WS,
+      }),
+      createMockBootstrap()
+    )
+    try {
+      const matchingCalls = warnSpy.mock.calls.filter(call => {
+        const message: unknown = call.arguments[0]
+        return (
+          typeof message === 'string' && message.includes('metrics') && message.includes('http')
+        )
+      })
+      assert.ok(
+        matchingCalls.length >= 1,
+        `Expected logger.warn about metrics.enabled on non-HTTP transport; saw ${warnSpy.mock.calls.length.toString()} total`
+      )
+    } finally {
+      wsServer.stop()
+      // satisfy AbstractUIServer reference (no-op outside this scope)
+      void AbstractUIServer
+    }
+  })
+})
