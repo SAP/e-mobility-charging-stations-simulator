@@ -642,6 +642,71 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
+  await it('should serialize concurrent /metrics scrapes (no shared-counter race)', async t => {
+    // R1+R2 lock: two simultaneous GET /metrics must each produce a complete,
+    // well-formed body and a coherent sample count. Without `metricsScrapeChain`
+    // serialization, both scrapes' `collect()` callbacks would interleave on
+    // `metricsSampleCount`, racing the soft-cap check and corrupting the
+    // exposition body. Configure the cap to the per-scrape sample count so an
+    // honest serialized run produces ZERO warns; a broken (concurrent) run
+    // would either spuriously warn (counter doubled) or truncate.
+    const probeServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: 1_000_000 } })
+    )
+    enrichBootstrap(probeServer)
+    for (let i = 0; i < 5; i++) {
+      probeServer.addStation(buildStationData(`station-Mconcurrent-probe-${i.toString()}`))
+    }
+    probeServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    probeServer.start()
+    const probeRes = new MockServerResponse()
+    probeServer.emitRequest(buildMetricsRequest(), probeRes)
+    await once(probeRes, 'finish')
+    const probedSampleCount = (probeRes.body ?? '')
+      .split('\n')
+      .filter(line => line.length > 0 && !line.startsWith('#')).length
+    probeServer.stop()
+    assert.ok(probedSampleCount > 0, 'probe scrape produced no samples')
+
+    const warnSpy = t.mock.method(logger, 'warn', () => undefined)
+    const concurrentServer = new TestableUIHttpServer(
+      createMetricsConfig({ metrics: { enabled: true, softSampleCap: probedSampleCount } })
+    )
+    enrichBootstrap(concurrentServer)
+    for (let i = 0; i < 5; i++) {
+      concurrentServer.addStation(buildStationData(`station-Mconcurrent-${i.toString()}`))
+    }
+    concurrentServer.mockListen(t)
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    concurrentServer.start()
+
+    const resA = new MockServerResponse()
+    const resB = new MockServerResponse()
+    concurrentServer.emitRequest(buildMetricsRequest(), resA)
+    concurrentServer.emitRequest(buildMetricsRequest(), resB)
+    await Promise.all([once(resA, 'finish'), once(resB, 'finish')])
+    concurrentServer.stop()
+
+    assert.strictEqual(resA.statusCode, 200)
+    assert.strictEqual(resB.statusCode, 200)
+    const bodyA = resA.body ?? ''
+    const bodyB = resB.body ?? ''
+    assert.ok(bodyA.length > 0, 'scrape A body must not be empty')
+    assert.ok(bodyB.length > 0, 'scrape B body must not be empty')
+    // Coherent state: both scrapes collect the same registry → same lines.
+    assert.strictEqual(bodyA, bodyB, 'concurrent scrape bodies must be identical')
+    const softCapCalls = warnSpy.mock.calls.filter(call => {
+      const message: unknown = call.arguments[0]
+      return typeof message === 'string' && message.includes('soft cap')
+    }).length
+    assert.strictEqual(
+      softCapCalls,
+      0,
+      `Expected 0 'soft cap' warns under serialized concurrent scrapes (cap=count=${probedSampleCount.toString()}); got ${softCapCalls.toString()} — would fail if metricsScrapeChain serialization were removed`
+    )
+  })
+
   await it('should fire warnIfMisconfigured when metrics.enabled=true && type=ws', t => {
     const warnSpy = t.mock.method(logger, 'warn', () => undefined)
     const wsServer = new UIWebSocketServer(
