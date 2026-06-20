@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { createGzip } from 'node:zlib'
-import { Gauge, Registry } from 'prom-client'
+import { Gauge, type GaugeConfiguration, Registry } from 'prom-client'
 
 import type { ChargingStationData, ConnectorEntry, ConnectorStatus } from '../../types/index.js'
 import type { IBootstrap } from '../IBootstrap.js'
@@ -45,6 +45,13 @@ export const METRICS_SOFT_SAMPLE_CAP = 5_000
 const METRICS_PATHNAME = '/metrics'
 
 /**
+ * Subset of {@link AbstractUIServer} consumed by the metrics gauge helpers.
+ * Restricting helpers to the `listChargingStationData` projection keeps them
+ * decoupled from `this`-rebound contexts inside `collect()` callbacks.
+ */
+type ChargingStationDataProvider = Pick<AbstractUIServer, 'listChargingStationData'>
+
+/**
  * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
  */
 export class UIHttpServer extends AbstractUIServer {
@@ -52,6 +59,16 @@ export class UIHttpServer extends AbstractUIServer {
 
   private readonly acceptsGzip: Map<UUIDv4, boolean>
   private metricsRegistry?: Registry
+  /**
+   * Per-scrape sample counter. Reset to 0 at the start of each scrape and
+   * read after `Registry.metrics()` resolves. Mutated by the `accountSamples`
+   * closure captured by every `collect()` callback in {@link buildMetricsRegistry}.
+   * **Invariant**: concurrency safety relies on {@link metricsScrapeChain}:
+   * every scrape (`reset → await Registry.metrics() → read`) runs as a single
+   * link in a serial promise chain, so no two scrapes interleave their counter
+   * mutations. Removing the chain or making any `collect()` callback `async`
+   * (and thus potentially concurrent within a scrape) breaks this invariant.
+   */
   private metricsSampleCount = 0
   private metricsScrapeChain: Promise<void> = Promise.resolve()
 
@@ -127,12 +144,24 @@ export class UIHttpServer extends AbstractUIServer {
     this.startHttpServer()
   }
 
+  /**
+   * Stop the HTTP UI server and release any Prometheus registry held by
+   * {@link metricsRegistry}.
+   * **Invariant**: the registry clear is sequenced AFTER any in-flight scrape
+   * via `metricsScrapeChain.finally`. Calling `registry.clear()` synchronously
+   * would race a running `collect()` callback's `this.reset()`. The terminal
+   * `.catch(() => undefined)` guarantees the chain field always points to a
+   * handled promise (no `UnhandledPromiseRejection` if the last in-flight
+   * scrape rejected and no further scrape is queued).
+   */
   public override stop (): void {
     if (this.metricsRegistry !== undefined) {
       const registry = this.metricsRegistry
-      this.metricsScrapeChain = this.metricsScrapeChain.finally(() => {
-        registry.clear()
-      })
+      this.metricsScrapeChain = this.metricsScrapeChain
+        .finally(() => {
+          registry.clear()
+        })
+        .catch(() => undefined)
       this.metricsRegistry = undefined
     }
     super.stop()
@@ -143,163 +172,105 @@ export class UIHttpServer extends AbstractUIServer {
    * the simulator. Each gauge declares an explicit source field via its
    * `collect()` callback; there is no generic property iteration so adding
    * a new field on `ChargingStationData` does NOT silently expose it
-   * (PII whitelist invariant).
+   * (PII allowlist invariant).
+   * **Invariant**: all `collect()` callbacks registered here are SYNCHRONOUS.
+   * An async `collect` would let `prom-client` interleave them within a single
+   * `Registry.metrics()` call, racing on {@link metricsSampleCount}.
    * @returns The populated registry; `Registry.metrics()` renders the body.
    */
   private buildMetricsRegistry (): Registry {
     const registry = new Registry()
+    const bootstrap = this.getBootstrap()
+    // `self` captures the UIHttpServer instance for `collect()` callbacks
+    // where `this` is rebound to the Gauge by prom-client.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this
     const accountSamples = (n: number): void => {
       this.metricsSampleCount += n
     }
 
-    // ──────────────── GLOBAL ────────────────
+    /** Global gauges. */
 
     defineGauge(registry, {
-      collect: () => {
-        const state = this.getBootstrap().getState()
-        const g = registry.getSingleMetric('simulator_info') as Gauge | undefined
-        if (g != null) {
-          g.reset()
-          g.labels({ version: state.version }).set(1)
-          accountSamples(1)
-        }
+      collect (this: Gauge<'version'>) {
+        this.reset()
+        this.labels({ version: bootstrap.getState().version }).set(1)
+        accountSamples(1)
       },
       help: 'Simulator process information.',
-      labelNames: ['version'],
+      labelNames: ['version'] as const,
       name: 'simulator_info',
-      registers: [registry],
     })
 
     defineGauge(registry, {
-      collect: () => {
-        const state = this.getBootstrap().getState()
-        const g = registry.getSingleMetric('simulator_started') as Gauge | undefined
-        if (g != null) {
-          g.reset()
-          g.set(state.started ? 1 : 0)
-          accountSamples(1)
-        }
+      collect (this: Gauge) {
+        this.reset()
+        this.set(bootstrap.getState().started ? 1 : 0)
+        accountSamples(1)
       },
       help: '1 when the simulator is started, 0 otherwise.',
       name: 'simulator_started',
-      registers: [registry],
     })
 
     defineGauge(registry, {
-      collect: () => {
-        const state = this.getBootstrap().getState()
-        const g = registry.getSingleMetric('simulator_charging_station_templates_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(state.templateStatistics.size)
-          accountSamples(1)
-        }
+      collect (this: Gauge) {
+        this.reset()
+        this.set(bootstrap.getState().templateStatistics.size)
+        accountSamples(1)
       },
       help: 'Number of charging station templates configured.',
       name: 'simulator_charging_station_templates_total',
-      registers: [registry],
     })
 
-    defineGauge(registry, {
-      collect: () => {
-        const stats = this.getBootstrap().getState().templateStatistics
-        let total = 0
-        for (const t of stats.values()) {
-          total += t.configured
-        }
-        const g = registry.getSingleMetric('simulator_charging_stations_configured_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(total)
+    // Aggregate counters across templates. Tuple shape: [metric name, key, help].
+    // HELP text is preserved verbatim per public-API stability (Prometheus
+    // exposition is observable to operators).
+    const stationAggregates = [
+      [
+        'simulator_charging_stations_configured_total',
+        'configured',
+        'Number of charging stations configured across all templates.',
+      ],
+      [
+        'simulator_charging_stations_provisioned_total',
+        'provisioned',
+        'Number of charging stations provisioned across all templates.',
+      ],
+      [
+        'simulator_charging_stations_added_total',
+        'added',
+        'Number of charging stations added in the current process.',
+      ],
+      [
+        'simulator_charging_stations_started_total',
+        'started',
+        'Number of charging stations currently started.',
+      ],
+    ] as const
+    for (const [name, key, help] of stationAggregates) {
+      defineGauge(registry, {
+        collect (this: Gauge) {
+          let total = 0
+          for (const t of bootstrap.getState().templateStatistics.values()) {
+            total += t[key]
+          }
+          this.reset()
+          this.set(total)
           accountSamples(1)
-        }
-      },
-      help: 'Number of charging stations configured across all templates.',
-      name: 'simulator_charging_stations_configured_total',
-      registers: [registry],
-    })
+        },
+        help,
+        name,
+      })
+    }
 
     defineGauge(registry, {
-      collect: () => {
-        const stats = this.getBootstrap().getState().templateStatistics
-        let total = 0
-        for (const t of stats.values()) {
-          total += t.provisioned
-        }
-        const g = registry.getSingleMetric('simulator_charging_stations_provisioned_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(total)
-          accountSamples(1)
-        }
-      },
-      help: 'Number of charging stations provisioned across all templates.',
-      name: 'simulator_charging_stations_provisioned_total',
-      registers: [registry],
-    })
-
-    defineGauge(registry, {
-      collect: () => {
-        const stats = this.getBootstrap().getState().templateStatistics
-        let total = 0
-        for (const t of stats.values()) {
-          total += t.added
-        }
-        const g = registry.getSingleMetric('simulator_charging_stations_added_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(total)
-          accountSamples(1)
-        }
-      },
-      help: 'Number of charging stations added in the current process.',
-      name: 'simulator_charging_stations_added_total',
-      registers: [registry],
-    })
-
-    defineGauge(registry, {
-      collect: () => {
-        const stats = this.getBootstrap().getState().templateStatistics
-        let total = 0
-        for (const t of stats.values()) {
-          total += t.started
-        }
-        const g = registry.getSingleMetric('simulator_charging_stations_started_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(total)
-          accountSamples(1)
-        }
-      },
-      help: 'Number of charging stations currently started.',
-      name: 'simulator_charging_stations_started_total',
-      registers: [registry],
-    })
-
-    defineGauge(registry, {
-      collect: () => {
-        const g = registry.getSingleMetric('simulator_ui_server_known_stations_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          g.set(this.getChargingStationsCount())
-          accountSamples(1)
-        }
+      collect (this: Gauge) {
+        this.reset()
+        this.set(self.getChargingStationsCount())
+        accountSamples(1)
       },
       help: 'Number of charging station snapshots cached on the UI server.',
       name: 'simulator_ui_server_known_stations_total',
-      registers: [registry],
     })
 
     for (const [name, key] of [
@@ -309,42 +280,38 @@ export class UIHttpServer extends AbstractUIServer {
       ['simulator_template_started', 'started'],
     ] as const) {
       defineGauge(registry, {
-        collect: () => {
-          const stats = this.getBootstrap().getState().templateStatistics
-          const g = registry.getSingleMetric(name) as Gauge | undefined
-          if (g != null) {
-            g.reset()
-            for (const [templateName, t] of stats) {
-              g.labels({ template: templateName }).set(t[key])
-              accountSamples(1)
-            }
+        collect (this: Gauge<'template'>) {
+          this.reset()
+          for (const [templateName, t] of bootstrap.getState().templateStatistics) {
+            this.labels({ template: templateName }).set(t[key])
+            accountSamples(1)
           }
         },
         help: `Per-template '${key}' charging stations counter.`,
-        labelNames: ['template'],
+        labelNames: ['template'] as const,
         name,
-        registers: [registry],
       })
     }
 
-    // ──────────────── PER-CHARGE-STATION ────────────────
+    /** Per charging station gauges. */
 
     defineGauge(registry, {
-      collect: () => {
-        const g = registry.getSingleMetric('simulator_station_info') as Gauge | undefined
-        if (g != null) {
-          g.reset()
-          for (const data of this.listChargingStationData()) {
-            g.labels({
-              current_out_type: stringLabel(data.stationInfo.currentOutType),
-              firmware_version: stringLabel(data.stationInfo.firmwareVersion),
-              hash_id: data.stationInfo.hashId,
-              model: stringLabel(data.stationInfo.chargePointModel),
-              ocpp_version: stringLabel(data.stationInfo.ocppVersion),
-              vendor: stringLabel(data.stationInfo.chargePointVendor),
-            }).set(1)
-            accountSamples(1)
-          }
+      collect (
+        this: Gauge<
+          'current_out_type' | 'firmware_version' | 'hash_id' | 'model' | 'ocpp_version' | 'vendor'
+        >
+      ) {
+        this.reset()
+        for (const data of self.listChargingStationData()) {
+          this.labels({
+            current_out_type: stringLabel(data.stationInfo.currentOutType),
+            firmware_version: stringLabel(data.stationInfo.firmwareVersion),
+            hash_id: data.stationInfo.hashId,
+            model: stringLabel(data.stationInfo.chargePointModel),
+            ocpp_version: stringLabel(data.stationInfo.ocppVersion),
+            vendor: stringLabel(data.stationInfo.chargePointVendor),
+          }).set(1)
+          accountSamples(1)
         }
       },
       help: 'Static information for the charging station (vendor / model / firmware / ocpp).',
@@ -355,9 +322,8 @@ export class UIHttpServer extends AbstractUIServer {
         'firmware_version',
         'ocpp_version',
         'current_out_type',
-      ],
+      ] as const,
       name: 'simulator_station_info',
-      registers: [registry],
     })
 
     addPerStationBoolean(
@@ -370,47 +336,37 @@ export class UIHttpServer extends AbstractUIServer {
     )
 
     defineGauge(registry, {
-      collect: () => {
-        const g = registry.getSingleMetric('simulator_station_ws_state') as Gauge | undefined
-        if (g != null) {
-          g.reset()
-          for (const data of this.listChargingStationData()) {
-            if (data.wsState !== undefined) {
-              g.labels({ hash_id: data.stationInfo.hashId }).set(data.wsState)
-              accountSamples(1)
-            }
-          }
-        }
-      },
-      help: 'WebSocket readyState (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED).',
-      labelNames: ['hash_id'],
-      name: 'simulator_station_ws_state',
-      registers: [registry],
-    })
-
-    defineGauge(registry, {
-      collect: () => {
-        const g = registry.getSingleMetric('simulator_station_connectors_total') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          for (const data of this.listChargingStationData()) {
-            const direct = data.connectors.length
-            let fromEvses = 0
-            for (const evse of data.evses) {
-              fromEvses += evse.evseStatus.connectors.size
-            }
-            const count = direct > 0 ? direct : fromEvses
-            g.labels({ hash_id: data.stationInfo.hashId }).set(count)
+      collect (this: Gauge<'hash_id'>) {
+        this.reset()
+        for (const data of self.listChargingStationData()) {
+          if (data.wsState !== undefined) {
+            this.labels({ hash_id: data.stationInfo.hashId }).set(data.wsState)
             accountSamples(1)
           }
         }
       },
+      help: 'WebSocket readyState (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED).',
+      labelNames: ['hash_id'] as const,
+      name: 'simulator_station_ws_state',
+    })
+
+    defineGauge(registry, {
+      collect (this: Gauge<'hash_id'>) {
+        this.reset()
+        for (const data of self.listChargingStationData()) {
+          const direct = data.connectors.length
+          let fromEvses = 0
+          for (const evse of data.evses) {
+            fromEvses += evse.evseStatus.connectors.size
+          }
+          const count = direct > 0 ? direct : fromEvses
+          this.labels({ hash_id: data.stationInfo.hashId }).set(count)
+          accountSamples(1)
+        }
+      },
       help: 'Number of connectors of the charging station.',
-      labelNames: ['hash_id'],
+      labelNames: ['hash_id'] as const,
       name: 'simulator_station_connectors_total',
-      registers: [registry],
     })
 
     addPerStationNumeric(
@@ -459,25 +415,19 @@ export class UIHttpServer extends AbstractUIServer {
     )
 
     defineGauge(registry, {
-      collect: () => {
-        const g = registry.getSingleMetric('simulator_station_boot_status_info') as
-          | Gauge
-          | undefined
-        if (g != null) {
-          g.reset()
-          for (const data of this.listChargingStationData()) {
-            const status = data.bootNotificationResponse?.status
-            if (typeof status === 'string') {
-              g.labels({ hash_id: data.stationInfo.hashId, status }).set(1)
-              accountSamples(1)
-            }
+      collect (this: Gauge<'hash_id' | 'status'>) {
+        this.reset()
+        for (const data of self.listChargingStationData()) {
+          const status = data.bootNotificationResponse?.status
+          if (typeof status === 'string') {
+            this.labels({ hash_id: data.stationInfo.hashId, status }).set(1)
+            accountSamples(1)
           }
         }
       },
       help: 'BootNotification status (one-hot).',
-      labelNames: ['hash_id', 'status'],
+      labelNames: ['hash_id', 'status'] as const,
       name: 'simulator_station_boot_status_info',
-      registers: [registry],
     })
 
     addPerStationNumeric(
@@ -527,7 +477,7 @@ export class UIHttpServer extends AbstractUIServer {
       data => data.ocppConfiguration.configurationKey?.length ?? 0
     )
 
-    // ──────────────── PER-CONNECTOR ────────────────
+    /** Per connector gauges. */
 
     addConnectorOneHot(
       registry,
@@ -693,7 +643,18 @@ export class UIHttpServer extends AbstractUIServer {
     return registry
   }
 
-  private async handleMetricsRequest (res: ServerResponse, registry: Registry): Promise<void> {
+  /**
+   * Schedule a `/metrics` scrape onto {@link metricsScrapeChain} so concurrent
+   * scrape requests serialize through a single FIFO chain (preserves the
+   * {@link metricsSampleCount} invariant). The function itself is synchronous —
+   * the inner async work runs in a `.then()` continuation and rejections
+   * propagate to the returned promise, which the listener-side `.catch()`
+   * converts to HTTP 500.
+   * @param res The HTTP response to write the exposition body to.
+   * @param registry The Prometheus registry the scrape reads from.
+   * @returns A promise resolving when the scrape link completes (success or failure).
+   */
+  private handleMetricsRequest (res: ServerResponse, registry: Registry): Promise<void> {
     this.metricsScrapeChain = this.metricsScrapeChain
       .catch(() => undefined)
       .then(async () => {
@@ -714,6 +675,7 @@ export class UIHttpServer extends AbstractUIServer {
             })
             .end(body)
         }
+        // Explicit return required by `promise/always-return` lint rule.
         return undefined
       })
     return this.metricsScrapeChain
@@ -756,7 +718,7 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private isMetricsRequest (req: IncomingMessage): boolean {
-    if (req.method !== HttpMethod.GET && req.method !== 'HEAD') {
+    if (req.method !== HttpMethod.GET && req.method !== HttpMethod.HEAD) {
       return false
     }
     const rawUrl = req.url ?? ''
@@ -871,90 +833,88 @@ export class UIHttpServer extends AbstractUIServer {
   }
 }
 
-const defineGauge = (registry: Registry, options: ConstructorParameters<typeof Gauge>[0]): void => {
-  // eslint-disable-next-line no-new -- prom-client Gauge auto-registers via `registers: [registry]`; we hold no reference because the registry owns lifecycle.
-  new Gauge(options)
-}
+/**
+ * Construct and register a Prometheus `Gauge` whose `labelNames` are narrowed
+ * to a string-literal union via `as const`. The returned reference is owned
+ * by `registry` (lifecycle managed by `Registry.clear()`); callers may ignore
+ * it because each gauge's `collect()` callback receives the gauge as its
+ * `this` binding.
+ * @param registry The destination registry; auto-injected into `registers`.
+ * @param config Gauge configuration WITHOUT `registers` (injected here to
+ * prevent registry drift).
+ * @returns The constructed `Gauge<L>` so a non-arrow `collect (this: Gauge<L>)`
+ * can be type-checked end-to-end.
+ */
+const defineGauge = <L extends string = never>(
+  registry: Registry,
+  config: Omit<GaugeConfiguration<L>, 'registers'>
+): Gauge<L> => new Gauge<L>({ ...config, registers: [registry] })
 
 const stringLabel = (value: string | undefined): string => value ?? ''
 
 const addPerStationNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => number | undefined
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge<'hash_id'>) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         const v = pick(data)
         if (typeof v === 'number') {
-          g.labels({ hash_id: data.stationInfo.hashId }).set(v)
+          this.labels({ hash_id: data.stationInfo.hashId }).set(v)
           account(1)
         }
       }
     },
     help,
-    labelNames: ['hash_id'],
+    labelNames: ['hash_id'] as const,
     name,
-    registers: [registry],
   })
 }
 
 const addPerStationBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => boolean
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge<'hash_id'>) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
-        g.labels({ hash_id: data.stationInfo.hashId }).set(pick(data) ? 1 : 0)
+        this.labels({ hash_id: data.stationInfo.hashId }).set(pick(data) ? 1 : 0)
         account(1)
       }
     },
     help,
-    labelNames: ['hash_id'],
+    labelNames: ['hash_id'] as const,
     name,
-    registers: [registry],
   })
 }
 
 const addPerStationInfoLabel = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   labelName: string,
   pick: (data: ChargingStationData) => string | undefined
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         const v = pick(data)
         if (typeof v === 'string') {
-          g.labels({ hash_id: data.stationInfo.hashId, [labelName]: v }).set(1)
+          this.labels({ hash_id: data.stationInfo.hashId, [labelName]: v }).set(1)
           account(1)
         }
       }
@@ -962,10 +922,22 @@ const addPerStationInfoLabel = (
     help,
     labelNames: ['hash_id', labelName],
     name,
-    registers: [registry],
   })
 }
 
+/**
+ * Iterate connectors using the OCPP-version-driven either-or rule shared
+ * with `simulator_station_connectors_total`:
+ * - When `data.connectors` is non-empty, the station is in OCPP 1.6
+ *   connector-mode; EVSE entries are ignored.
+ * - Otherwise (OCPP 2.0.x EVSE-mode), connectors are sourced from
+ *   `data.evses[*].evseStatus.connectors`.
+ *
+ * The two sources are NEVER summed: `buildConnectorEntries` guarantees
+ * `data.connectors` is empty when `data.evses` is populated.
+ * @param data The charging station data snapshot to iterate.
+ * @yields {ConnectorEntry} A connector entry for each connector under the active mode.
+ */
 const iterateConnectors = function * (data: ChargingStationData): Generator<ConnectorEntry> {
   if (data.connectors.length > 0) {
     for (const entry of data.connectors) {
@@ -983,24 +955,20 @@ const iterateConnectors = function * (data: ChargingStationData): Generator<Conn
 const addConnectorOneHot = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   labelName: string,
   pick: (cs: ConnectorStatus) => string | undefined
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         for (const entry of iterateConnectors(data)) {
           const v = pick(entry.connectorStatus)
           if (typeof v === 'string') {
-            g.labels({
+            this.labels({
               connector_id: entry.connectorId.toString(),
               hash_id: data.stationInfo.hashId,
               [labelName]: v,
@@ -1013,28 +981,23 @@ const addConnectorOneHot = (
     help,
     labelNames: ['hash_id', 'connector_id', labelName],
     name,
-    registers: [registry],
   })
 }
 
 const addConnectorBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => boolean
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge<'connector_id' | 'hash_id'>) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         for (const entry of iterateConnectors(data)) {
-          g.labels({
+          this.labels({
             connector_id: entry.connectorId.toString(),
             hash_id: data.stationInfo.hashId,
           }).set(pick(entry.connectorStatus) ? 1 : 0)
@@ -1043,32 +1006,27 @@ const addConnectorBoolean = (
       }
     },
     help,
-    labelNames: ['hash_id', 'connector_id'],
+    labelNames: ['hash_id', 'connector_id'] as const,
     name,
-    registers: [registry],
   })
 }
 
 const addConnectorNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => number | undefined
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge<'connector_id' | 'hash_id'>) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         for (const entry of iterateConnectors(data)) {
           const v = pick(entry.connectorStatus)
           if (typeof v === 'number') {
-            g.labels({
+            this.labels({
               connector_id: entry.connectorId.toString(),
               hash_id: data.stationInfo.hashId,
             }).set(v)
@@ -1078,32 +1036,27 @@ const addConnectorNumeric = (
       }
     },
     help,
-    labelNames: ['hash_id', 'connector_id'],
+    labelNames: ['hash_id', 'connector_id'] as const,
     name,
-    registers: [registry],
   })
 }
 
 const addConnectorNumericFromEntry = (
   registry: Registry,
   account: (n: number) => void,
-  server: { listChargingStationData(): ChargingStationData[] },
+  server: ChargingStationDataProvider,
   name: string,
   help: string,
   pick: (entry: ConnectorEntry) => number | undefined
 ): void => {
   defineGauge(registry, {
-    collect: () => {
-      const g = registry.getSingleMetric(name) as Gauge | undefined
-      if (g == null) {
-        return
-      }
-      g.reset()
+    collect (this: Gauge<'connector_id' | 'hash_id'>) {
+      this.reset()
       for (const data of server.listChargingStationData()) {
         for (const entry of iterateConnectors(data)) {
           const v = pick(entry)
           if (typeof v === 'number') {
-            g.labels({
+            this.labels({
               connector_id: entry.connectorId.toString(),
               hash_id: data.stationInfo.hashId,
             }).set(v)
@@ -1113,8 +1066,7 @@ const addConnectorNumericFromEntry = (
       }
     },
     help,
-    labelNames: ['hash_id', 'connector_id'],
+    labelNames: ['hash_id', 'connector_id'] as const,
     name,
-    registers: [registry],
   })
 }
