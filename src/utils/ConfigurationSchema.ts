@@ -213,6 +213,22 @@ const UIServerListenOptionsSchema = z
   .pipe(UIServerListenOptionsObjectSchema)
 
 /**
+ * UIServerMetricsConfiguration — opt-in Prometheus /metrics endpoint
+ * served by `UIHttpServer`. Honored only when the parent UI server is
+ * running on the HTTP transport (Prometheus is HTTP-only by spec).
+ *
+ * `softSampleCap` (optional, default `METRICS_SOFT_SAMPLE_CAP` = 5000)
+ * is the soft cardinality cap above which a single `logger.warn` is
+ * emitted per scrape; the response is still served in full.
+ */
+export const UIServerMetricsConfigurationSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    softSampleCap: z.number().int().positive().optional(),
+  })
+  .strict()
+
+/**
  * UIServerConfiguration — UI server configuration section.
  * `options` is structurally typed as `ListenOptions` from node:net and
  * validated by `UIServerListenOptionsSchema` (object guard → `accessPolicy`
@@ -223,6 +239,7 @@ export const UIServerConfigurationSchema = z
     accessPolicy: UIServerAccessPolicySchema.optional(),
     authentication: UIServerAuthenticationSchema.optional(),
     enabled: z.boolean().optional(),
+    metrics: UIServerMetricsConfigurationSchema.optional(),
     options: UIServerListenOptionsSchema.optional(),
     type: z.enum(ApplicationProtocol).optional(),
     version: z.enum(ApplicationProtocolVersion).optional(),

@@ -25,6 +25,7 @@ export {
   UIServerAccessPolicySchema,
   UIServerAuthenticationSchema,
   UIServerConfigurationSchema,
+  UIServerMetricsConfigurationSchema,
   WorkerConfigurationSchema,
 } from './ConfigurationSchema.js'
 export {
