@@ -69,11 +69,11 @@ export class UIHttpServer extends AbstractUIServer {
    * Per-scrape sample counter. Reset to 0 at the start of each scrape and
    * read after `Registry.metrics()` resolves. Mutated by the `accountSamples`
    * closure captured by every `collect()` callback in {@link buildMetricsRegistry}.
-   * **Invariant**: concurrency safety relies on {@link metricsScrapeChain}:
-   * every scrape (`reset → await Registry.metrics() → read`) runs as a single
-   * link in a serial promise chain, so no two scrapes interleave their counter
+   * Concurrency safety relies on {@link metricsScrapeChain}: every scrape
+   * (`reset → await Registry.metrics() → read`) runs as a single link in a
+   * serial promise chain, so no two scrapes interleave their counter
    * mutations. Removing the chain or making any `collect()` callback `async`
-   * (and thus potentially concurrent within a scrape) breaks this invariant.
+   * breaks this guarantee.
    */
   private metricsSampleCount = 0
   private metricsScrapeChain: Promise<void> = Promise.resolve()
@@ -152,13 +152,13 @@ export class UIHttpServer extends AbstractUIServer {
 
   /**
    * Stop the HTTP UI server and release any Prometheus registry held by
-   * {@link metricsRegistry}.
-   * **Invariant**: the registry clear is sequenced AFTER any in-flight scrape
-   * via `metricsScrapeChain.finally`. Calling `registry.clear()` synchronously
-   * would race a running `collect()` callback's `this.reset()`. The terminal
-   * `.catch(() => undefined)` guarantees the chain field always points to a
-   * handled promise (no `UnhandledPromiseRejection` if the last in-flight
-   * scrape rejected and no further scrape is queued).
+   * {@link metricsRegistry}. The registry clear is sequenced AFTER any
+   * in-flight scrape via `metricsScrapeChain.finally`; calling
+   * `registry.clear()` synchronously would race a running `collect()`
+   * callback's `this.reset()`. The terminal `.catch(() => undefined)`
+   * guarantees the chain field always points to a handled promise (no
+   * `UnhandledPromiseRejection` if the last in-flight scrape rejected and
+   * no further scrape is queued).
    */
   public override stop (): void {
     if (this.metricsRegistry !== undefined) {
@@ -178,10 +178,10 @@ export class UIHttpServer extends AbstractUIServer {
    * the simulator. Each gauge declares an explicit source field via its
    * `collect()` callback; there is no generic property iteration so adding
    * a new field on `ChargingStationData` does NOT silently expose it
-   * (PII allowlist invariant).
-   * **Invariant**: all `collect()` callbacks registered here are SYNCHRONOUS.
-   * An async `collect` would let `prom-client` interleave them within a single
-   * `Registry.metrics()` call, racing on {@link metricsSampleCount}.
+   * (PII allowlist invariant). All `collect()` callbacks registered here
+   * are synchronous; an async `collect` would let `prom-client` interleave
+   * them within a single `Registry.metrics()` call, racing on
+   * {@link metricsSampleCount}.
    * @returns The populated registry; `Registry.metrics()` renders the body.
    */
   private buildMetricsRegistry (): Registry {
@@ -905,11 +905,11 @@ const addPerStationStatusInfo = (
 }
 
 /**
- * OCPP-version-driven either-or rule, also used by {@link iterateConnectors}:
- * a station is either in OCPP 1.6 connector-mode (`data.connectors` populated,
- * `data.evses` empty) or in OCPP 2.0.x EVSE-mode (the reverse). The two
- * sources are NEVER summed: `buildConnectorEntries` guarantees
- * `data.connectors` is empty when `data.evses` is populated.
+ * Connector count under the OCPP 1.6 (`data.connectors`) vs OCPP 2.0.x
+ * (`data.evses[*].evseStatus.connectors`) source split. The two sources
+ * are mutually exclusive: `buildConnectorEntries` guarantees
+ * `data.connectors` is empty when `data.evses` is populated; never sum
+ * them. Also used by {@link iterateConnectors}.
  * @param data Charging station snapshot.
  * @returns Connector count under the active mode.
  */
@@ -919,11 +919,10 @@ const countConnectors = (data: ChargingStationData): number =>
     : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.size, 0)
 
 /**
- * Iterate connectors under the same OCPP-version-driven either-or rule as
- * {@link countConnectors}: yields entries from `data.connectors` (OCPP 1.6
- * connector-mode) when non-empty, otherwise from
- * `data.evses[*].evseStatus.connectors` (OCPP 2.0.x EVSE-mode). The two
- * sources are never summed.
+ * Iterate connectors under the same OCPP 1.6 vs OCPP 2.0.x source split as
+ * {@link countConnectors}: yields entries from `data.connectors` when
+ * non-empty, otherwise from `data.evses[*].evseStatus.connectors`. The two
+ * sources are mutually exclusive; never sum them.
  * @param data Charging station snapshot.
  * @yields {ConnectorEntry} A connector entry under the active mode.
  */
