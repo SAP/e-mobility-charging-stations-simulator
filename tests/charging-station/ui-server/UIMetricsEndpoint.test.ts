@@ -1,8 +1,6 @@
 /**
  * @file Tests for the Prometheus /metrics endpoint on UIHttpServer (issue #851)
- * @description End-to-end behavior, security inheritance (access policy,
- *   rate limit, authentication), PII reject-list, exposition-format escaping
- *   and the cardinality soft-cap warning.
+ * @description End-to-end behavior, security inheritance, PII reject-list, exposition-format escaping and the cardinality soft cap warning.
  */
 
 import type { IncomingMessage } from 'node:http'
@@ -565,7 +563,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.match(statusLine, /status="Available"/)
   })
 
-  await it('should detect off-by-one at soft-cap boundary (strict-greater-than semantics)', async t => {
+  await it('should detect off-by-one at soft cap boundary (strict-greater-than semantics)', async t => {
     const warnSpy = t.mock.method(logger, 'warn', () => undefined)
 
     // Phase 1: probe — very high cap, count actual samples produced (no warn expected).
@@ -646,7 +644,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     // R1+R2 lock: two simultaneous GET /metrics must each produce a complete,
     // well-formed body and a coherent sample count. Without `metricsScrapeChain`
     // serialization, both scrapes' `collect()` callbacks would interleave on
-    // `metricsSampleCount`, racing the soft-cap check and corrupting the
+    // `metricsSampleCount`, racing the soft cap check and corrupting the
     // exposition body. Configure the cap to the per-scrape sample count so an
     // honest serialized run produces ZERO warns; a broken (concurrent) run
     // would either spuriously warn (counter doubled) or truncate.
