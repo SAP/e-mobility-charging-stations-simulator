@@ -46,10 +46,14 @@ const METRICS_PATHNAME = '/metrics'
 
 /**
  * Subset of {@link AbstractUIServer} consumed by the metrics gauge helpers.
- * Restricting helpers to the `listChargingStationData` projection keeps them
- * decoupled from `this`-rebound contexts inside `collect()` callbacks.
+ * Restricting helpers to this projection keeps them decoupled from the
+ * concrete UI server class and from `this`-rebound contexts inside
+ * `collect()` callbacks.
  */
-type ChargingStationDataProvider = Pick<AbstractUIServer, 'listChargingStationData'>
+interface IChargingStationDataProvider {
+  getChargingStationsCount(): number
+  listChargingStationData(): ChargingStationData[]
+}
 
 /**
  * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
@@ -181,10 +185,10 @@ export class UIHttpServer extends AbstractUIServer {
   private buildMetricsRegistry (): Registry {
     const registry = new Registry()
     const bootstrap = this.getBootstrap()
-    // `self` captures the UIHttpServer instance for `collect()` callbacks
-    // where `this` is rebound to the Gauge by prom-client.
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this
+    const provider: IChargingStationDataProvider = {
+      getChargingStationsCount: this.getChargingStationsCount.bind(this),
+      listChargingStationData: this.listChargingStationData.bind(this),
+    }
     const accountSamples = (n: number): void => {
       this.metricsSampleCount += n
     }
@@ -266,7 +270,7 @@ export class UIHttpServer extends AbstractUIServer {
     defineGauge(registry, {
       collect (this: Gauge) {
         this.reset()
-        this.set(self.getChargingStationsCount())
+        this.set(provider.getChargingStationsCount())
         accountSamples(1)
       },
       help: 'Number of charging station snapshots cached on the UI server.',
@@ -302,7 +306,7 @@ export class UIHttpServer extends AbstractUIServer {
         >
       ) {
         this.reset()
-        for (const data of self.listChargingStationData()) {
+        for (const data of provider.listChargingStationData()) {
           this.labels({
             current_out_type: stringLabel(data.stationInfo.currentOutType),
             firmware_version: stringLabel(data.stationInfo.firmwareVersion),
@@ -329,50 +333,40 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_started',
       '1 when the charging station is started, 0 otherwise.',
       data => data.started
     )
 
-    defineGauge(registry, {
-      collect (this: Gauge<'hash_id'>) {
-        this.reset()
-        for (const data of self.listChargingStationData()) {
-          if (data.wsState !== undefined) {
-            this.labels({ hash_id: data.stationInfo.hashId }).set(data.wsState)
-            accountSamples(1)
-          }
-        }
-      },
-      help: 'WebSocket readyState (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED).',
-      labelNames: ['hash_id'] as const,
-      name: 'simulator_station_ws_state',
-    })
-
-    defineGauge(registry, {
-      collect (this: Gauge<'hash_id'>) {
-        this.reset()
-        for (const data of self.listChargingStationData()) {
-          const direct = data.connectors.length
-          let fromEvses = 0
-          for (const evse of data.evses) {
-            fromEvses += evse.evseStatus.connectors.size
-          }
-          const count = direct > 0 ? direct : fromEvses
-          this.labels({ hash_id: data.stationInfo.hashId }).set(count)
-          accountSamples(1)
-        }
-      },
-      help: 'Number of connectors of the charging station.',
-      labelNames: ['hash_id'] as const,
-      name: 'simulator_station_connectors_total',
-    })
+    addPerStationNumeric(
+      registry,
+      accountSamples,
+      provider,
+      'simulator_station_ws_state',
+      'WebSocket readyState (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED).',
+      data => data.wsState
+    )
 
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
+      'simulator_station_connectors_total',
+      'Number of connectors of the charging station.',
+      data => {
+        let count = 0
+        for (const _ of iterateConnectors(data)) {
+          count++
+        }
+        return count
+      }
+    )
+
+    addPerStationNumeric(
+      registry,
+      accountSamples,
+      provider,
       'simulator_station_evses_total',
       'Number of EVSEs of the charging station.',
       data => data.evses.length
@@ -381,7 +375,7 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_max_power_watts',
       'Maximum power of the charging station, in Watts.',
       data => data.stationInfo.maximumPower
@@ -390,7 +384,7 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_max_amperage_amperes',
       'Maximum amperage of the charging station, in Amperes.',
       data => data.stationInfo.maximumAmperage
@@ -399,7 +393,7 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_voltage_out_volts',
       'Voltage output of the charging station, in Volts.',
       data => data.stationInfo.voltageOut
@@ -408,32 +402,25 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_data_timestamp_seconds',
       'Unix epoch (seconds) at which the charging station snapshot was emitted.',
       data => Math.floor(data.timestamp / 1000)
     )
 
-    defineGauge(registry, {
-      collect (this: Gauge<'hash_id' | 'status'>) {
-        this.reset()
-        for (const data of self.listChargingStationData()) {
-          const status = data.bootNotificationResponse?.status
-          if (typeof status === 'string') {
-            this.labels({ hash_id: data.stationInfo.hashId, status }).set(1)
-            accountSamples(1)
-          }
-        }
-      },
-      help: 'BootNotification status (one-hot).',
-      labelNames: ['hash_id', 'status'] as const,
-      name: 'simulator_station_boot_status_info',
-    })
+    addPerStationInfoLabel(
+      registry,
+      accountSamples,
+      provider,
+      'simulator_station_boot_status_info',
+      'BootNotification status (one-hot).',
+      data => data.bootNotificationResponse?.status
+    )
 
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_boot_heartbeat_interval_seconds',
       'BootNotification heartbeat interval, in seconds.',
       data => data.bootNotificationResponse?.interval
@@ -442,7 +429,7 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_atg_enabled',
       '1 when the ATG is enabled in configuration, 0 otherwise.',
       data => data.automaticTransactionGenerator?.automaticTransactionGenerator?.enable === true
@@ -451,27 +438,25 @@ export class UIHttpServer extends AbstractUIServer {
     addPerStationInfoLabel(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_diagnostics_status_info',
       'Most recent DiagnosticsStatusNotification status (one-hot).',
-      'status',
       data => data.stationInfo.diagnosticsStatus
     )
 
     addPerStationInfoLabel(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_firmware_status_info',
       'Most recent FirmwareStatusNotification status (one-hot).',
-      'status',
       data => data.stationInfo.firmwareStatus
     )
 
     addPerStationNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_station_ocpp_config_keys_total',
       'Number of OCPP configuration keys advertised by the charging station.',
       data => data.ocppConfiguration.configurationKey?.length ?? 0
@@ -482,7 +467,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorOneHot(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_status_info',
       'Connector status (one-hot).',
       'status',
@@ -491,7 +476,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorOneHot(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_boot_status_info',
       'Connector boot status (one-hot).',
       'status',
@@ -500,7 +485,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorOneHot(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_availability_info',
       'Connector availability (one-hot).',
       'availability',
@@ -509,7 +494,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorOneHot(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_error_code_info',
       'Connector OCPP error code (one-hot).',
       'error_code',
@@ -518,7 +503,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorOneHot(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_type_info',
       'Connector physical type (one-hot).',
       'connector_type',
@@ -528,7 +513,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_locked',
       '1 when the connector is locked, 0 otherwise.',
       cs => cs.locked === true
@@ -536,7 +521,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_started',
       '1 when a transaction is currently started on the connector.',
       cs => cs.transactionStarted === true
@@ -544,7 +529,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_pending',
       '1 when a transaction is pending on the connector.',
       cs => cs.transactionPending === true
@@ -552,7 +537,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_remote_started',
       '1 when the current transaction was remote-started.',
       cs => cs.transactionRemoteStarted === true
@@ -560,7 +545,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorBoolean(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_reservation_active',
       '1 when an active reservation is set on the connector.',
       cs => cs.reservation != null
@@ -569,7 +554,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_seq_no',
       'Last transaction event sequence number sent on the connector.',
       cs => cs.transactionSeqNo
@@ -577,7 +562,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_event_queue_size',
       'Number of pending transaction events queued on the connector.',
       cs => cs.transactionEventQueue?.length ?? 0
@@ -585,7 +570,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_id',
       'Numeric transaction id of the active transaction on the connector. NEVER used as a label (cardinality).',
       cs => (typeof cs.transactionId === 'number' ? cs.transactionId : undefined)
@@ -593,7 +578,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_start_seconds',
       'Unix epoch (seconds) at which the active transaction started on the connector.',
       cs =>
@@ -602,7 +587,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_transaction_energy_active_import_register_wh',
       'Active energy imported during the current transaction, in Wh.',
       cs => cs.transactionEnergyActiveImportRegisterValue
@@ -610,7 +595,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_energy_active_import_register_wh',
       'Cumulative active energy imported by the connector meter, in Wh.',
       cs => cs.energyActiveImportRegisterValue
@@ -618,7 +603,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_max_power_watts',
       'Maximum power of the connector, in Watts.',
       cs => cs.maximumPower
@@ -626,7 +611,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumeric(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_charging_profiles_total',
       'Number of charging profiles installed on the connector.',
       cs => cs.chargingProfiles?.length ?? 0
@@ -634,7 +619,7 @@ export class UIHttpServer extends AbstractUIServer {
     addConnectorNumericFromEntry(
       registry,
       accountSamples,
-      this,
+      provider,
       'simulator_connector_evse_id',
       'EVSE id the connector belongs to.',
       entry => entry.evseId
@@ -650,9 +635,9 @@ export class UIHttpServer extends AbstractUIServer {
    * the inner async work runs in a `.then()` continuation and rejections
    * propagate to the returned promise, which the listener-side `.catch()`
    * converts to HTTP 500.
-   * @param res The HTTP response to write the exposition body to.
-   * @param registry The Prometheus registry the scrape reads from.
-   * @returns A promise resolving when the scrape link completes (success or failure).
+   * @param res Response stream.
+   * @param registry Source Prometheus registry.
+   * @returns The chained scrape promise.
    */
   private handleMetricsRequest (res: ServerResponse, registry: Registry): Promise<void> {
     this.metricsScrapeChain = this.metricsScrapeChain
@@ -675,7 +660,6 @@ export class UIHttpServer extends AbstractUIServer {
             })
             .end(body)
         }
-        // Explicit return required by `promise/always-return` lint rule.
         return undefined
       })
     return this.metricsScrapeChain
@@ -838,12 +822,12 @@ export class UIHttpServer extends AbstractUIServer {
  * to a string-literal union via `as const`. The returned reference is owned
  * by `registry` (lifecycle managed by `Registry.clear()`); callers may ignore
  * it because each gauge's `collect()` callback receives the gauge as its
- * `this` binding.
- * @param registry The destination registry; auto-injected into `registers`.
- * @param config Gauge configuration WITHOUT `registers` (injected here to
- * prevent registry drift).
- * @returns The constructed `Gauge<L>` so a non-arrow `collect (this: Gauge<L>)`
- * can be type-checked end-to-end.
+ * `this` binding. The `L = never` default (stricter than `prom-client`'s own
+ * `Gauge<T extends string = string>`) forbids passing `labelNames` for
+ * unlabeled gauges, catching mismatches at compile time.
+ * @param registry Destination registry; auto-injected into `registers`.
+ * @param config Gauge configuration WITHOUT `registers`.
+ * @returns The constructed `Gauge<L>`.
  */
 const defineGauge = <L extends string = never>(
   registry: Registry,
@@ -855,7 +839,7 @@ const stringLabel = (value: string | undefined): string => value ?? ''
 const addPerStationNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => number | undefined
@@ -880,7 +864,7 @@ const addPerStationNumeric = (
 const addPerStationBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
   pick: (data: ChargingStationData) => boolean
@@ -902,25 +886,24 @@ const addPerStationBoolean = (
 const addPerStationInfoLabel = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
-  labelName: string,
   pick: (data: ChargingStationData) => string | undefined
 ): void => {
   defineGauge(registry, {
-    collect (this: Gauge) {
+    collect (this: Gauge<'hash_id' | 'status'>) {
       this.reset()
       for (const data of server.listChargingStationData()) {
         const v = pick(data)
         if (typeof v === 'string') {
-          this.labels({ hash_id: data.stationInfo.hashId, [labelName]: v }).set(1)
+          this.labels({ hash_id: data.stationInfo.hashId, status: v }).set(1)
           account(1)
         }
       }
     },
     help,
-    labelNames: ['hash_id', labelName],
+    labelNames: ['hash_id', 'status'] as const,
     name,
   })
 }
@@ -935,8 +918,8 @@ const addPerStationInfoLabel = (
  *
  * The two sources are NEVER summed: `buildConnectorEntries` guarantees
  * `data.connectors` is empty when `data.evses` is populated.
- * @param data The charging station data snapshot to iterate.
- * @yields {ConnectorEntry} A connector entry for each connector under the active mode.
+ * @param data Charging station snapshot.
+ * @yields {ConnectorEntry} A connector entry under the active mode.
  */
 const iterateConnectors = function * (data: ChargingStationData): Generator<ConnectorEntry> {
   if (data.connectors.length > 0) {
@@ -955,10 +938,10 @@ const iterateConnectors = function * (data: ChargingStationData): Generator<Conn
 const addConnectorOneHot = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
-  labelName: string,
+  labelName: 'availability' | 'connector_type' | 'error_code' | 'status',
   pick: (cs: ConnectorStatus) => string | undefined
 ): void => {
   defineGauge(registry, {
@@ -987,7 +970,7 @@ const addConnectorOneHot = (
 const addConnectorBoolean = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => boolean
@@ -1014,7 +997,7 @@ const addConnectorBoolean = (
 const addConnectorNumeric = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
   pick: (cs: ConnectorStatus) => number | undefined
@@ -1044,7 +1027,7 @@ const addConnectorNumeric = (
 const addConnectorNumericFromEntry = (
   registry: Registry,
   account: (n: number) => void,
-  server: ChargingStationDataProvider,
+  server: IChargingStationDataProvider,
   name: string,
   help: string,
   pick: (entry: ConnectorEntry) => number | undefined
