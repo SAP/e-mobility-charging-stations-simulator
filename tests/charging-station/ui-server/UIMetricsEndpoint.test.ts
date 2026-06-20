@@ -692,10 +692,18 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.strictEqual(resB.statusCode, 200)
     const bodyA = resA.body ?? ''
     const bodyB = resB.body ?? ''
-    assert.ok(bodyA.length > 0, 'scrape A body must not be empty')
-    assert.ok(bodyB.length > 0, 'scrape B body must not be empty')
-    // Coherent state: both scrapes collect the same registry → same lines.
-    assert.strictEqual(bodyA, bodyB, 'concurrent scrape bodies must be identical')
+    const sampleLines = (body: string): number =>
+      body.split('\n').filter(line => line.length > 0 && !line.startsWith('#')).length
+    assert.strictEqual(
+      sampleLines(bodyA),
+      probedSampleCount,
+      `scrape A must emit exactly ${probedSampleCount.toString()} sample lines (no truncation, no double-count); got ${sampleLines(bodyA).toString()}`
+    )
+    assert.strictEqual(
+      sampleLines(bodyB),
+      probedSampleCount,
+      `scrape B must emit exactly ${probedSampleCount.toString()} sample lines (no truncation, no double-count); got ${sampleLines(bodyB).toString()}`
+    )
     const softCapCalls = warnSpy.mock.calls.filter(call => {
       const message: unknown = call.arguments[0]
       return typeof message === 'string' && message.includes('soft cap')
