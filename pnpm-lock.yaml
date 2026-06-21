@@ -73,8 +73,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@ai-hero/sandcastle':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.0
+        version: 0.10.0
       '@commitlint/cli':
         specifier: ^21.0.2
         version: 21.0.2(@types/node@24.13.2)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
@@ -115,7 +115,7 @@ importers:
         specifier: ^9.39.4
         version: 9.39.4(jiti@2.6.1)
       eslint-plugin-jsdoc:
-        specifier: ^63.0.5
+        specifier: ^63.0.6
         version: 63.0.6(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-perfectionist:
         specifier: ^5.9.1
@@ -258,8 +258,8 @@ importers:
 
 packages:
 
-  '@ai-hero/sandcastle@0.9.0':
-    resolution: {integrity: sha512-VCimBu4F6w5PjXQ/d2UIYq7CZ+BG7GsJw8oh0p25aJKHbzKecwrRYAUAbL94i23fRKI2Z0NKnSsOCy69/rkHPA==}
+  '@ai-hero/sandcastle@0.10.0':
+    resolution: {integrity: sha512-7iUX90cF/RWP80OfcOf/1fkJyoPRAJo4ICyttpWWokKoFGGnuQ82lvxKpU3IEiWPbwT/g8O2PotTzgiimtQT7g==}
     hasBin: true
     peerDependencies:
       '@daytona/sdk': ^0.164.0
@@ -4900,7 +4900,7 @@ packages:
 
 snapshots:
 
-  '@ai-hero/sandcastle@0.9.0':
+  '@ai-hero/sandcastle@0.10.0':
     dependencies:
       '@clack/prompts': 1.5.1
 
