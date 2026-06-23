@@ -214,8 +214,11 @@ const UIServerListenOptionsSchema = z
 
 /**
  * UIServerMetricsConfiguration — opt-in Prometheus /metrics endpoint
- * served by `UIHttpServer`. Honored only when the parent UI server is
- * running on the HTTP transport (Prometheus is HTTP-only by spec).
+ * served by every UI transport (`http`, `ws`, `mcp`). On `ws` and `mcp`
+ * the endpoint co-mounts on the same listener as the primary transport
+ * (the underlying `Http2Server | Server` allocated by `AbstractUIServer`)
+ * and inherits its `accessPolicy`, rate-limit, and `authentication`
+ * (issue #1917).
  *
  * `softSampleCap` (optional, default `METRICS_SOFT_SAMPLE_CAP` = 5000)
  * is the soft cardinality cap above which a single `logger.warn` is

@@ -224,7 +224,6 @@ await describe('UIHttpServer', async () => {
     const res = new MockServerResponse()
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       gatedServer.start()
       httpServer.emit('request', req, res)
     } finally {
@@ -269,7 +268,6 @@ await describe('UIHttpServer', async () => {
     const res = new MockServerResponse()
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       gatedServer.start()
       httpServer.emit('request', denyingReq, res)
     } finally {

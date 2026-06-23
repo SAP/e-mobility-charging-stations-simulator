@@ -10,13 +10,14 @@ import { StatusCodes } from 'http-status-codes'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, type mock } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import type {
   ProtocolResponse,
   RequestPayload,
   ResponsePayload,
+  TemplateStatistics,
   UIServerConfiguration,
 } from '../../../src/types/index.js'
 
@@ -32,6 +33,7 @@ import {
 } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import {
   ApplicationProtocol,
+  AuthenticationType,
   OCPPVersion,
   ProcedureName,
   ResponseStatus,
@@ -44,11 +46,14 @@ import {
 } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import {
+  awaitFinish,
   createMockBootstrap,
   createMockChargingStationDataWithVersion,
   createMockIncomingMessage,
   createMockUIServerConfiguration,
   createMockUIServerConfigurationWithAuth,
+  drainResponses,
+  extractGaugeValue,
   MockServerResponse,
 } from './UIServerTestUtils.js'
 
@@ -120,6 +125,13 @@ class TestableUIMCPServer extends UIMCPServer {
     ).call(this, res, statusCode, headers)
   }
 
+  public emitRequest (req: IncomingMessage, res: MockServerResponse): void {
+    const httpServer = Reflect.get(this, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+    }
+    httpServer.emit('request', req, res)
+  }
+
   public getPendingMcpRequest (uuid: string):
     | undefined
     | {
@@ -154,6 +166,11 @@ class TestableUIMCPServer extends UIMCPServer {
     return (Reflect.get(this, 'pendingMcpRequests') as Map<string, unknown>).size
   }
 
+  public mockListen (t: { mock: { method: typeof mock.method } }): void {
+    const httpServer = Reflect.get(this, 'httpServer') as object
+    t.mock.method(httpServer as never, 'listen' as never, ((): unknown => httpServer) as never)
+  }
+
   protected override getSchemaBaseDir (): string {
     return join(
       dirname(fileURLToPath(import.meta.url)),
@@ -170,6 +187,43 @@ class TestableUIMCPServer extends UIMCPServer {
 
 const createMcpServerConfig = () =>
   createMockUIServerConfiguration({ type: ApplicationProtocol.MCP })
+
+const createMcpMetricsConfig = (
+  overrides: Partial<UIServerConfiguration> = {}
+): UIServerConfiguration =>
+  createMockUIServerConfiguration({
+    metrics: { enabled: true },
+    options: { host: '127.0.0.1', port: 0 },
+    type: ApplicationProtocol.MCP,
+    ...overrides,
+  })
+
+const buildMcpMetricsRequest = (overrides: Partial<IncomingMessage> = {}): IncomingMessage =>
+  createMockIncomingMessage({
+    complete: true,
+    headers: { host: 'localhost' },
+    method: 'GET',
+    socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+    url: '/metrics',
+    ...overrides,
+  })
+
+const enrichBootstrapForMetrics = (server: TestableUIMCPServer, version = '4.9.0'): void => {
+  const bootstrap = server.getBootstrap()
+  const templateStats: TemplateStatistics = {
+    added: 1,
+    configured: 5,
+    indexes: new Set([0]),
+    provisioned: 2,
+    started: 1,
+  }
+  Reflect.set(bootstrap, 'getState', () => ({
+    configuration: undefined,
+    started: true,
+    templateStatistics: new Map<string, TemplateStatistics>([['test-template', templateStats]]),
+    version,
+  }))
+}
 
 /**
  * Assert that a CallToolResult is an error containing the expected substring.
@@ -929,6 +983,302 @@ await describe('UIMCPServer', async () => {
           entry.ocpp16 != null || entry.ocpp20 != null,
           'Cached entry should have at least one schema'
         )
+      }
+    })
+  })
+
+  await describe('metrics endpoint when uiServer.type=mcp (issue #1917)', async () => {
+    await it('should serve Prometheus exposition on GET /metrics when enabled', async t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest(), res)
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+        assert.match(res.headers['Content-Type'] ?? '', /^text\/plain;\s*version=0\.0\.4/)
+        assert.strictEqual(
+          extractGaugeValue(res.body ?? '', 'simulator_started'),
+          1,
+          'simulator_started must be 1 from the enrichBootstrapForMetrics fixture'
+        )
+        assert.match(res.body ?? '', /^# HELP simulator_started /m)
+        assert.match(res.body ?? '', /^# TYPE simulator_started gauge$/m)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should return 404 on GET /metrics when metrics.enabled=false (default)', t => {
+      const mcpServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          options: { host: '127.0.0.1', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest(), res)
+        assert.strictEqual(res.statusCode, 404)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should return 404 on POST /metrics (transport-method parity with HTTP/WS)', t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest({ method: 'POST' }), res)
+        assert.strictEqual(res.statusCode, 404)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should still return 404 on unknown paths after /metrics is enabled', t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(
+          buildMcpMetricsRequest({
+            method: 'GET',
+            url: '/unknown',
+          }),
+          res
+        )
+        assert.strictEqual(res.statusCode, 404)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should inherit AccessPolicy denial — 403 on non-loopback without TLS', t => {
+      const mcpServer = new TestableUIMCPServer(
+        createMcpMetricsConfig({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: [],
+          },
+        })
+      )
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(
+          buildMcpMetricsRequest({
+            headers: { host: 'gateway.example.com' },
+            socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+          }),
+          res
+        )
+        assert.strictEqual(res.statusCode, 403)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should return 401 without credentials when authentication is enabled', t => {
+      const mcpServer = new TestableUIMCPServer(
+        createMcpMetricsConfig({
+          authentication: {
+            enabled: true,
+            password: 'pw',
+            type: AuthenticationType.BASIC_AUTH,
+            username: 'user',
+          },
+        })
+      )
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest(), res)
+        assert.strictEqual(res.statusCode, 401)
+        assert.strictEqual(res.headers['WWW-Authenticate'], 'Basic realm=users')
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should return 200 with valid Basic Auth credentials', async t => {
+      const mcpServer = new TestableUIMCPServer(
+        createMcpMetricsConfig({
+          authentication: {
+            enabled: true,
+            password: 'pw',
+            type: AuthenticationType.BASIC_AUTH,
+            username: 'user',
+          },
+        })
+      )
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const credentials = Buffer.from('user:pw').toString('base64')
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(
+          buildMcpMetricsRequest({
+            headers: { authorization: `Basic ${credentials}`, host: 'localhost' },
+          }),
+          res
+        )
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should return 404 (not 401) on GET /metrics when metrics.enabled=false and authentication.enabled=true', t => {
+      const mcpServer = new TestableUIMCPServer(
+        createMockUIServerConfiguration({
+          authentication: {
+            enabled: true,
+            password: 'pw',
+            type: AuthenticationType.BASIC_AUTH,
+            username: 'user',
+          },
+          options: { host: '127.0.0.1', port: 0 },
+          type: ApplicationProtocol.MCP,
+        })
+      )
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest(), res)
+        assert.strictEqual(res.statusCode, 404)
+        assert.strictEqual(res.headers['WWW-Authenticate'], undefined)
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should respond 200 with empty body on HEAD /metrics per RFC 9110 §9.3.2', async t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest({ method: 'HEAD' }), res)
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+        assert.match(res.headers['Content-Type'] ?? '', /^text\/plain;\s*version=0\.0\.4/)
+        assert.strictEqual(res.body, undefined, 'HEAD response body must be empty')
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should emit explicit Content-Length on both HEAD and GET /metrics (RFC 9110 §9.3.2 parity)', async t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        const getRes = new MockServerResponse()
+        const headRes = new MockServerResponse()
+        mcpServer.emitRequest(buildMcpMetricsRequest(), getRes)
+        mcpServer.emitRequest(buildMcpMetricsRequest({ method: 'HEAD' }), headRes)
+        await drainResponses([getRes, headRes])
+        const getLen = Number(getRes.headers['Content-Length'])
+        const headLen = Number(headRes.headers['Content-Length'])
+        assert.strictEqual(
+          getLen,
+          Buffer.byteLength(getRes.body ?? '', 'utf8'),
+          'GET Content-Length must equal body byte length'
+        )
+        assert.strictEqual(
+          headLen,
+          getLen,
+          'HEAD Content-Length must equal GET length (RFC 9110 §9.3.2)'
+        )
+        assert.strictEqual(headRes.body, undefined, 'HEAD body must be empty')
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should NOT call req.destroy() on the 404 fallback when req.httpVersionMajor >= 2 (HTTP/2 stream lifecycle)', t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        let destroyCount = 0
+        const req = buildMcpMetricsRequest({ complete: false, url: '/unknown' })
+        ;(
+          req as IncomingMessage & {
+            destroy: () => IncomingMessage
+            httpVersionMajor: number
+          }
+        ).destroy = () => {
+          destroyCount++
+          return req
+        }
+        ;(req as IncomingMessage & { httpVersionMajor: number }).httpVersionMajor = 2
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(req, res)
+        assert.strictEqual(res.statusCode, 404, 'response still rendered first')
+        assert.strictEqual(
+          destroyCount,
+          0,
+          'HTTP/2 streams must not be destroyed by renderNotFoundAndDestroy (stream lifecycle is owned by the Http2Stream)'
+        )
+      } finally {
+        mcpServer.stop()
+      }
+    })
+
+    await it('should NOT call req.destroy() on the 404 fallback when req.httpVersionMajor === 3 (HTTP/3 future-proofing)', t => {
+      const mcpServer = new TestableUIMCPServer(createMcpMetricsConfig())
+      enrichBootstrapForMetrics(mcpServer)
+      mcpServer.mockListen(t)
+      try {
+        mcpServer.start()
+        let destroyCount = 0
+        const req = buildMcpMetricsRequest({ complete: false, url: '/unknown' })
+        ;(
+          req as IncomingMessage & {
+            destroy: () => IncomingMessage
+            httpVersionMajor: number
+          }
+        ).destroy = () => {
+          destroyCount++
+          return req
+        }
+        ;(req as IncomingMessage & { httpVersionMajor: number }).httpVersionMajor = 3
+        const res = new MockServerResponse()
+        mcpServer.emitRequest(req, res)
+        assert.strictEqual(res.statusCode, 404)
+        assert.strictEqual(
+          destroyCount,
+          0,
+          'destroyHttp1SocketIfPending must short-circuit on httpVersionMajor >= 2 (locks the `>= 2` semantic against a future `=== 2` regression)'
+        )
+      } finally {
+        mcpServer.stop()
       }
     })
   })

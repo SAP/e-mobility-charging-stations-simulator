@@ -4,8 +4,9 @@
  */
 import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
+import type { mock } from 'node:test'
 
-import { EventEmitter } from 'node:events'
+import { EventEmitter, once } from 'node:events'
 
 import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
 import type {
@@ -61,6 +62,14 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
     this.responseHandlers.set(uuid, ws as never)
   }
 
+  public addStation (data: ChargingStationData): void {
+    this.setChargingStationData(data.stationInfo.hashId, data)
+  }
+
+  public emitRequest (req: IncomingMessage, res: MockServerResponse): void {
+    this.httpServer.emit('request', req, res)
+  }
+
   public emitUpgrade (req: IncomingMessage, socket: Duplex, head = Buffer.alloc(0)): void {
     this.httpServer.emit('upgrade', req, socket, head)
   }
@@ -80,6 +89,15 @@ export class TestableUIWebSocketServer extends UIWebSocketServer {
    */
   public getUIService (version: ProtocolVersion) {
     return this.uiServices.get(version)
+  }
+
+  public getWebSocketServer (): object {
+    return Reflect.get(this, 'webSocketServer')
+  }
+
+  public mockListen (t: { mock: { method: typeof mock.method } }): void {
+    const httpServer = Reflect.get(this, 'httpServer') as object
+    t.mock.method(httpServer as never, 'listen' as never, ((): unknown => httpServer) as never)
   }
 
   /**
@@ -217,7 +235,9 @@ export class MockServerResponse extends EventEmitter {
   public destroyed = false
   public ended = false
   public headers: Record<string, string> = {}
+  public headersSent = false
   public statusCode?: number
+  public writableEnded = false
   private chunks: Buffer[] = []
 
   public destroy (): this {
@@ -233,6 +253,7 @@ export class MockServerResponse extends EventEmitter {
       this.body = this.bodyBuffer.toString('binary')
     }
     this.ended = true
+    this.writableEnded = true
     this.emit('finish')
     return this
   }
@@ -258,6 +279,7 @@ export class MockServerResponse extends EventEmitter {
     if (headers != null) {
       this.headers = headers
     }
+    this.headersSent = true
     return this
   }
 }
@@ -332,6 +354,101 @@ export const createProtocolRequest = (
   payload: RequestPayload = {}
 ): ProtocolRequest => {
   return [uuid, procedureName, payload]
+}
+
+/**
+ * Bounded multi-response drain. Awaits every `'finish'` event with a
+ * timeout to prevent microtask leaks into the next test's logger mocks,
+ * then flushes the trailing scrape-chain microtasks: `runMetricsScrape`
+ * ends the response inside a `.then()` continuation on
+ * `metricsScrapeChain`; the chain resolution lands one microtask later.
+ * Two `setImmediate` hops guarantee both the continuation and the chain
+ * settlement run before the next test installs its logger mocks.
+ *
+ * The default 5000 ms timeout is sufficient for ≤200 in-flight scrapes
+ * serialized through `metricsScrapeChain`; override at the call site for
+ * larger bursts.
+ *
+ * Throws a diagnostic error naming the pending count when the timeout
+ * fires, so a leaked async scrape is identifiable without grepping the
+ * suite output.
+ * @param responses - Responses whose `'finish'` events must drain
+ * @param opts - Drain options
+ * @param opts.timeoutMs - Upper bound in milliseconds (default 5000)
+ */
+export const drainResponses = async (
+  responses: readonly MockServerResponse[],
+  opts: { timeoutMs?: number } = {}
+): Promise<void> => {
+  const { timeoutMs = 5_000 } = opts
+  const settle = responses.map(r => (r.writableEnded ? Promise.resolve() : once(r, 'finish')))
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timerPromise = new Promise<'timeout'>(resolve => {
+    timer = setTimeout(() => {
+      resolve('timeout')
+    }, timeoutMs)
+    timer.unref()
+  })
+  try {
+    const outcome = await Promise.race([
+      Promise.allSettled(settle).then(() => 'ok' as const),
+      timerPromise,
+    ])
+    if (outcome === 'timeout') {
+      const pending = responses.filter(r => !r.writableEnded).length
+      throw new Error(
+        `drainResponses: ${pending.toString()}/${responses.length.toString()} response(s) did not finish in ${timeoutMs.toString()}ms`
+      )
+    }
+    await new Promise<void>(resolve => {
+      setImmediate(resolve)
+    })
+    await new Promise<void>(resolve => {
+      setImmediate(resolve)
+    })
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
+  }
+}
+
+/**
+ * Single-response wait with timeout. Replaces bare `await once(res, 'finish')`
+ * call sites that would otherwise hang the whole suite if the scrape promise
+ * rejects.
+ * @param res - Response to await
+ * @param opts - Wait options
+ * @param opts.timeoutMs - Upper bound in milliseconds (default 5000)
+ */
+export const awaitFinish = async (
+  res: MockServerResponse,
+  opts: { timeoutMs?: number } = {}
+): Promise<void> => {
+  await drainResponses([res], opts)
+}
+
+/**
+ * Extract a single gauge value from a Prometheus exposition body. Returns
+ * `undefined` if the gauge is missing or malformed so assertion failures
+ * carry an informative message.
+ * @param body - Raw exposition text
+ * @param name - Gauge metric name (e.g. `'simulator_started'`)
+ * @param labels - Optional label map to disambiguate label sets
+ * @returns The parsed gauge value, or `undefined` if absent or malformed
+ */
+export const extractGaugeValue = (
+  body: string,
+  name: string,
+  labels?: Readonly<Record<string, string>>
+): number | undefined => {
+  const labelExpr =
+    labels === undefined || Object.keys(labels).length === 0
+      ? ''
+      : `\\{${Object.entries(labels)
+          .map(([k, v]) => `${k}="${v.replace(/[\\"]/g, '\\$&')}"`)
+          .join(',')}\\}`
+  const re = new RegExp(`^${name}${labelExpr}\\s+([-0-9.eE+]+)$`, 'm')
+  const m = re.exec(body)
+  return m === null ? undefined : Number(m[1])
 }
 
 /**

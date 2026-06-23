@@ -109,7 +109,16 @@ export class UIMCPServer extends AbstractUIServer {
     }
   }
 
-  public start (): void {
+  public override stop (): void {
+    for (const [uuid, pending] of [...this.pendingMcpRequests]) {
+      clearTimeout(pending.timeout)
+      this.pendingMcpRequests.delete(uuid)
+      pending.reject(new BaseError('Server stopping'))
+    }
+    super.stop()
+  }
+
+  protected attachTransport (): void {
     const version = ProtocolVersion['0.0.1']
     this.registerProtocolVersionUIService(version)
     this.service = this.uiServices.get(version)
@@ -121,18 +130,12 @@ export class UIMCPServer extends AbstractUIServer {
         this.renderDenial(res, prologue)
         return
       }
-
+      if (this.tryServeMetrics(req, res)) {
+        return
+      }
       const url = new URL(req.url ?? '/', 'http://localhost')
-      // Path filter runs before authenticate so unknown paths return 404
-      // without revealing whether authentication would have succeeded.
       if (url.pathname !== '/mcp') {
-        this.renderDenial(res, {
-          reasonPhrase: getReasonPhrase(StatusCodes.NOT_FOUND),
-          status: StatusCodes.NOT_FOUND,
-        })
-        if (!req.complete) {
-          req.destroy()
-        }
+        this.renderNotFoundAndDestroy(req, res)
         return
       }
 
@@ -148,17 +151,6 @@ export class UIMCPServer extends AbstractUIServer {
         )
       })
     })
-
-    this.startHttpServer()
-  }
-
-  public override stop (): void {
-    for (const [uuid, pending] of [...this.pendingMcpRequests]) {
-      clearTimeout(pending.timeout)
-      this.pendingMcpRequests.delete(uuid)
-      pending.reject(new BaseError('Server stopping'))
-    }
-    super.stop()
   }
 
   protected getSchemaBaseDir (): string {
