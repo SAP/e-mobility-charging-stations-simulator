@@ -1,4 +1,4 @@
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Duplex } from 'node:stream'
 
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
@@ -124,7 +124,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  public start (): void {
+  protected attachTransport (): void {
     this.webSocketServer.on('connection', (ws: WebSocket, _req: IncomingMessage): void => {
       const protocol = ws.protocol
       const protocolAndVersion = getProtocolAndVersion(protocol)
@@ -181,6 +181,17 @@ export class UIWebSocketServer extends AbstractUIServer {
           if (responseHandlerWs === ws) this.responseHandlers.delete(responseId)
         }
       })
+    })
+    this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse): void => {
+      const prologue = this.runRequestPrologue(req)
+      if (!prologue.ok) {
+        this.renderDenial(res, prologue)
+        return
+      }
+      if (this.tryServeMetrics(req, res)) {
+        return
+      }
+      this.renderNotFoundAndDestroy(req, res)
     })
     this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
       const onSocketError = (error: Error): void => {
@@ -249,7 +260,17 @@ export class UIWebSocketServer extends AbstractUIServer {
         )
       }
     })
-    this.startHttpServer()
+  }
+
+  /**
+   * Symmetric inverse of {@link attachTransport}. The `connection` listener
+   * is registered on the constructor-scoped `webSocketServer` emitter, which
+   * outlives `httpServer` and is therefore NOT swept by `stopHttpServer()`'s
+   * `removeAllListeners()`. Strip it here so a `stop()` → `start()` cycle
+   * does not accumulate duplicate dispatchers.
+   */
+  protected override detachTransport (): void {
+    this.webSocketServer.removeAllListeners('connection')
   }
 
   protected override notifyClients (): void {
