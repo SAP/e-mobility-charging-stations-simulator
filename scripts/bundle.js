@@ -29,6 +29,7 @@ await build({
     'mongodb',
     'node:*',
     'poolifier',
+    'prom-client',
     'tar',
     'winston',
     'winston/*',
