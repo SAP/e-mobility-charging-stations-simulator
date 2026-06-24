@@ -458,6 +458,8 @@ export {
   type ResponsePayload,
   ResponseStatus,
   ServerNotification,
+  type UIRequestContext,
+  UIRequestOrigin,
 } from './UIProtocol.js'
 export type { UUIDv4 } from './UUID.js'
 export {
