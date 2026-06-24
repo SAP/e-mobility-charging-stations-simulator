@@ -6,9 +6,11 @@ import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { mock } from 'node:test'
 
+import assert from 'node:assert/strict'
 import { EventEmitter, once } from 'node:events'
 
 import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
+import type { BroadcastChannelResponseLogContext } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import type {
   ChargingStationData,
   ProcedureName,
@@ -529,3 +531,39 @@ export const createMockChargingStationDataWithVersion = (
       templateName: 'test-template',
     },
   })
+
+interface LogMock {
+  readonly mock: {
+    readonly calls: readonly { readonly arguments: readonly unknown[] }[]
+  }
+}
+
+/**
+ * Assert that exactly one of the two `logger` levels was invoked with a
+ * message matching `pattern` and, optionally, a structured second argument
+ * deep-equal to `contextShape`.
+ * @param mocks - Tracked `logger.debug` and `logger.warn` mocks.
+ * @param mocks.debug - Mock tracking `logger.debug` invocations.
+ * @param mocks.warn - Mock tracking `logger.warn` invocations.
+ * @param level - Expected level for the single invocation.
+ * @param pattern - Regular expression the message must match.
+ * @param contextShape - Optional deep-equal shape for the second log argument.
+ */
+export const expectSingleLog = (
+  mocks: { readonly debug: LogMock; readonly warn: LogMock },
+  level: 'debug' | 'warn',
+  pattern: RegExp,
+  contextShape?: BroadcastChannelResponseLogContext
+): void => {
+  const [hit, miss] = level === 'debug' ? [mocks.debug, mocks.warn] : [mocks.warn, mocks.debug]
+  assert.strictEqual(miss.mock.calls.length, 0)
+  assert.strictEqual(hit.mock.calls.length, 1)
+  const [message, context] = hit.mock.calls[0]?.arguments ?? []
+  if (typeof message !== 'string') {
+    assert.fail(`Expected ${level} log message to be a string`)
+  }
+  assert.match(message, pattern)
+  if (contextShape != null) {
+    assert.deepStrictEqual(context, contextShape)
+  }
+}

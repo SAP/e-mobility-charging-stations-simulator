@@ -8,7 +8,13 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { AbstractUIService } from '../../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 
-import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
+import {
+  BroadcastChannelProcedureName,
+  ProcedureName,
+  ProtocolVersion,
+  ResponseStatus,
+  UIRequestOrigin,
+} from '../../../../src/types/index.js'
 import { logger } from '../../../../src/utils/Logger.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
@@ -16,6 +22,7 @@ import {
   createMockChargingStationData,
   createMockUIServerConfiguration,
   createProtocolRequest,
+  expectSingleLog,
   TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
 
@@ -179,8 +186,10 @@ await describe('AbstractUIService', async () => {
   })
 
   await it('should log internal successful broadcast responses without response handler at debug', async t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { server, service } = createServiceContext()
 
     try {
@@ -190,21 +199,23 @@ await describe('AbstractUIService', async () => {
         status: ResponseStatus.SUCCESS,
       })
 
-      assert.strictEqual(warnMock.mock.calls.length, 0)
-      assert.strictEqual(debugMock.mock.calls.length, 1)
-      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
-      if (typeof debugMessage !== 'string') {
-        assert.fail('Expected debug log message to be a string')
-      }
-      assert.match(debugMessage, /Broadcast response completed without response handler/)
+      expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        origin: UIRequestOrigin.INTERNAL,
+        procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
     } finally {
       service.stop()
     }
   })
 
   await it('should warn on internal failed broadcast responses without response handler', async t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { server, service } = createServiceContext()
 
     try {
@@ -214,21 +225,28 @@ await describe('AbstractUIService', async () => {
         status: ResponseStatus.FAILURE,
       })
 
-      assert.strictEqual(debugMock.mock.calls.length, 0)
-      assert.strictEqual(warnMock.mock.calls.length, 1)
-      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
-      if (typeof warnMessage !== 'string') {
-        assert.fail('Expected warning log message to be a string')
-      }
-      assert.match(warnMessage, /Failed broadcast response completed without response handler/)
+      expectSingleLog(
+        mocks,
+        'warn',
+        /Failed broadcast response completed without response handler/,
+        {
+          hashIdsFailed: [TEST_HASH_ID],
+          origin: UIRequestOrigin.INTERNAL,
+          procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+          status: ResponseStatus.FAILURE,
+          uuid: TEST_UUID,
+        }
+      )
     } finally {
       service.stop()
     }
   })
 
   await it('should log transport successful broadcast responses without response handler at debug', async t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { service } = createServiceContext()
 
     try {
@@ -238,21 +256,23 @@ await describe('AbstractUIService', async () => {
         status: ResponseStatus.SUCCESS,
       })
 
-      assert.strictEqual(warnMock.mock.calls.length, 0)
-      assert.strictEqual(debugMock.mock.calls.length, 1)
-      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
-      if (typeof debugMessage !== 'string') {
-        assert.fail('Expected debug log message to be a string')
-      }
-      assert.match(debugMessage, /Broadcast response completed without response handler/)
+      expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        origin: UIRequestOrigin.TRANSPORT,
+        procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
     } finally {
       service.stop()
     }
   })
 
   await it('should warn on transport failed broadcast responses without response handler', async t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { service } = createServiceContext()
 
     try {
@@ -262,41 +282,47 @@ await describe('AbstractUIService', async () => {
         status: ResponseStatus.FAILURE,
       })
 
-      assert.strictEqual(debugMock.mock.calls.length, 0)
-      assert.strictEqual(warnMock.mock.calls.length, 1)
-      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
-      if (typeof warnMessage !== 'string') {
-        assert.fail('Expected warning log message to be a string')
-      }
-      assert.match(warnMessage, /Failed broadcast response completed without response handler/)
+      expectSingleLog(
+        mocks,
+        'warn',
+        /Failed broadcast response completed without response handler/,
+        {
+          hashIdsFailed: [TEST_HASH_ID],
+          origin: UIRequestOrigin.TRANSPORT,
+          procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+          status: ResponseStatus.FAILURE,
+          uuid: TEST_UUID,
+        }
+      )
     } finally {
       service.stop()
     }
   })
 
   await it('should warn on untracked broadcast responses while service is active', t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { service } = createServiceContext()
 
     try {
       service.sendResponse(TEST_UUID, { status: ResponseStatus.SUCCESS })
 
-      assert.strictEqual(debugMock.mock.calls.length, 0)
-      assert.strictEqual(warnMock.mock.calls.length, 1)
-      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
-      if (typeof warnMessage !== 'string') {
-        assert.fail('Expected warning log message to be a string')
-      }
-      assert.match(warnMessage, /Dropping untracked broadcast response/)
+      expectSingleLog(mocks, 'warn', /Dropping untracked broadcast response/, {
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
     } finally {
       service.stop()
     }
   })
 
   await it('should log late broadcast responses after service stop at debug', async t => {
-    const warnMock = t.mock.method(logger, 'warn', () => undefined)
-    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
     const { service } = createServiceContext()
 
     try {
@@ -307,13 +333,33 @@ await describe('AbstractUIService', async () => {
         status: ResponseStatus.SUCCESS,
       })
 
-      assert.strictEqual(warnMock.mock.calls.length, 0)
-      assert.strictEqual(debugMock.mock.calls.length, 1)
-      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
-      if (typeof debugMessage !== 'string') {
-        assert.fail('Expected debug log message to be a string')
+      expectSingleLog(mocks, 'debug', /Dropping late broadcast response/, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should rollback expected responses when broadcast dispatch throws', async t => {
+    const { service } = createServiceContext()
+    const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as object
+    t.mock.method(channel as never, 'sendRequest' as never, (): never => {
+      throw new Error('dispatch failed')
+    })
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {})
+      )
+
+      assert.notStrictEqual(response, undefined)
+      if (response != null) {
+        assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
       }
-      assert.match(debugMessage, /Dropping late broadcast response/)
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
     } finally {
       service.stop()
     }
