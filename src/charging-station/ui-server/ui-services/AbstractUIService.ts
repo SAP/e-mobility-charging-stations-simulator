@@ -11,12 +11,15 @@ import {
   type JsonType,
   ProcedureName,
   type ProtocolRequest,
+  type ProtocolRequestHandler,
   type ProtocolResponse,
   type ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
   type StorageConfiguration,
+  type UIRequestContext,
+  UIRequestOrigin,
   type UUIDv4,
 } from '../../../types/index.js'
 import {
@@ -51,19 +54,6 @@ interface BroadcastResponseLogContext {
   readonly status: ResponseStatus
   readonly uuid: UUIDv4
 }
-
-interface UIRequestContext {
-  readonly origin: UIRequestOrigin
-}
-
-type UIRequestOrigin = 'internal' | 'transport'
-
-type UIServiceProtocolRequestHandler = (
-  uuid?: UUIDv4,
-  procedureName?: ProcedureName,
-  payload?: RequestPayload,
-  context?: UIRequestContext
-) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export abstract class AbstractUIService {
   protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping = new Map<
@@ -124,7 +114,7 @@ export abstract class AbstractUIService {
     [ProcedureName.UNLOCK_CONNECTOR, BroadcastChannelProcedureName.UNLOCK_CONNECTOR],
   ])
 
-  protected readonly requestHandlers: Map<ProcedureName, UIServiceProtocolRequestHandler>
+  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
   private active = true
   private readonly broadcastChannelRequests: Map<UUIDv4, BroadcastChannelRequestContext>
 
@@ -135,7 +125,7 @@ export abstract class AbstractUIService {
   constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.uiServer = uiServer
     this.version = version
-    this.requestHandlers = new Map<ProcedureName, UIServiceProtocolRequestHandler>([
+    this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.ADD_CHARGING_STATIONS, this.handleAddChargingStations.bind(this)],
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.LIST_TEMPLATES, this.handleListTemplates.bind(this)],
@@ -162,7 +152,7 @@ export abstract class AbstractUIService {
 
   public async requestHandler (
     request: ProtocolRequest,
-    context: UIRequestContext = { origin: 'transport' }
+    context: UIRequestContext = { origin: UIRequestOrigin.TRANSPORT }
   ): Promise<ProtocolResponse | undefined> {
     let uuid: undefined | UUIDv4
     let command: ProcedureName | undefined
@@ -241,7 +231,7 @@ export abstract class AbstractUIService {
     uuid?: UUIDv4,
     procedureName?: ProcedureName,
     payload?: RequestPayload,
-    context: UIRequestContext = { origin: 'transport' }
+    context: UIRequestContext = { origin: UIRequestOrigin.TRANSPORT }
   ): undefined {
     if (uuid == null || procedureName == null || payload == null) {
       throw new BaseError('Invalid protocol request')

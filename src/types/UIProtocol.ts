@@ -71,6 +71,11 @@ export enum ServerNotification {
   REFRESH = 'refresh',
 }
 
+export enum UIRequestOrigin {
+  INTERNAL = 'internal',
+  TRANSPORT = 'transport',
+}
+
 export type ProtocolNotification = [ServerNotification]
 
 export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
@@ -78,7 +83,8 @@ export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 export type ProtocolRequestHandler = (
   uuid?: UUIDv4,
   procedureName?: ProcedureName,
-  payload?: RequestPayload
+  payload?: RequestPayload,
+  context?: UIRequestContext
 ) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export type ProtocolResponse = [UUIDv4, ResponsePayload]
@@ -93,4 +99,8 @@ export interface ResponsePayload extends JsonObject {
   hashIdsSucceeded?: string[]
   responsesFailed?: BroadcastChannelResponsePayload[]
   status: ResponseStatus
+}
+
+export interface UIRequestContext {
+  readonly origin: UIRequestOrigin
 }

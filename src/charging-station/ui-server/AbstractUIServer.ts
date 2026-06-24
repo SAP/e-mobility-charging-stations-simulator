@@ -22,6 +22,7 @@ import {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
+  UIRequestOrigin,
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
@@ -300,7 +301,7 @@ export abstract class AbstractUIServer {
     this.registerProtocolVersionUIService(protocolVersion)
     return await (this.uiServices
       .get(protocolVersion)
-      ?.requestHandler(request, { origin: 'internal' }) as Promise<ProtocolResponse>)
+      ?.requestHandler(request, { origin: UIRequestOrigin.INTERNAL }) as Promise<ProtocolResponse>)
   }
 
   public abstract sendRequest (request: ProtocolRequest): void
