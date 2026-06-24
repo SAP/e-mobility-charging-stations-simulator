@@ -300,7 +300,7 @@ export abstract class AbstractUIServer {
     this.registerProtocolVersionUIService(protocolVersion)
     return await (this.uiServices
       .get(protocolVersion)
-      ?.requestHandler(request) as Promise<ProtocolResponse>)
+      ?.requestHandler(request, { origin: 'internal' }) as Promise<ProtocolResponse>)
   }
 
   public abstract sendRequest (request: ProtocolRequest): void
