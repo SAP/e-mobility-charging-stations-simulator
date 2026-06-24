@@ -196,10 +196,6 @@ But the modifications to test have to be done to the files in the build target d
 - **dynamicPool** (experimental):
   Dynamically sized worker pool executing a fixed total number of simulated charging stations
 
-#### Migration notes
-
-- `uiServer.metrics.enabled=true` now exposes `/metrics` on the listener of the configured `uiServer.type` (`http`, `ws` or `mcp`), inheriting that listener's `accessPolicy` and `authentication`. Operators previously relying on the silent disable when `type='ws'` or `type='mcp'` must set `metrics.enabled=false` (or remove the block) if they do not want the endpoint, and verify firewall posture on the UI server port. `HEAD /metrics` (e.g. `curl -I`) returns identical headers to `GET`, including `Content-Length` measured in UTF-8 bytes of the GET body.
-
 ### Charging station template configuration
 
 **src/assets/station-templates/\<name\>.json**:
