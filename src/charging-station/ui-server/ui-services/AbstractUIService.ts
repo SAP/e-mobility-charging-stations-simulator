@@ -11,7 +11,6 @@ import {
   type JsonType,
   ProcedureName,
   type ProtocolRequest,
-  type ProtocolRequestHandler,
   type ProtocolResponse,
   type ProtocolVersion,
   type RequestPayload,
@@ -24,7 +23,6 @@ import {
   Configuration,
   ensureError,
   getErrorMessage,
-  isAsyncFunction,
   isNotEmptyArray,
   logger,
 } from '../../../utils/index.js'
@@ -38,6 +36,34 @@ interface AddChargingStationsRequestPayload extends RequestPayload {
   options?: ChargingStationOptions
   template: string
 }
+
+interface BroadcastChannelRequestContext {
+  readonly expectedResponses: number
+  readonly origin: UIRequestOrigin
+  readonly procedureName: BroadcastChannelProcedureName
+}
+
+interface BroadcastResponseLogContext {
+  readonly hashIdsFailed?: string[]
+  readonly hashIdsSucceeded?: string[]
+  readonly origin?: UIRequestOrigin
+  readonly procedureName?: BroadcastChannelProcedureName
+  readonly status: ResponseStatus
+  readonly uuid: UUIDv4
+}
+
+interface UIRequestContext {
+  readonly origin: UIRequestOrigin
+}
+
+type UIRequestOrigin = 'internal' | 'transport'
+
+type UIServiceProtocolRequestHandler = (
+  uuid?: UUIDv4,
+  procedureName?: ProcedureName,
+  payload?: RequestPayload,
+  context?: UIRequestContext
+) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export abstract class AbstractUIService {
   protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping = new Map<
@@ -98,8 +124,9 @@ export abstract class AbstractUIService {
     [ProcedureName.UNLOCK_CONNECTOR, BroadcastChannelProcedureName.UNLOCK_CONNECTOR],
   ])
 
-  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
-  private readonly broadcastChannelRequests: Map<UUIDv4, number>
+  protected readonly requestHandlers: Map<ProcedureName, UIServiceProtocolRequestHandler>
+  private active = true
+  private readonly broadcastChannelRequests: Map<UUIDv4, BroadcastChannelRequestContext>
 
   private readonly uiServer: AbstractUIServer
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
@@ -108,7 +135,7 @@ export abstract class AbstractUIService {
   constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.uiServer = uiServer
     this.version = version
-    this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
+    this.requestHandlers = new Map<ProcedureName, UIServiceProtocolRequestHandler>([
       [ProcedureName.ADD_CHARGING_STATIONS, this.handleAddChargingStations.bind(this)],
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.LIST_TEMPLATES, this.handleListTemplates.bind(this)],
@@ -118,7 +145,7 @@ export abstract class AbstractUIService {
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ])
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
-    this.broadcastChannelRequests = new Map<UUIDv4, number>()
+    this.broadcastChannelRequests = new Map<UUIDv4, BroadcastChannelRequestContext>()
   }
 
   public deleteBroadcastChannelRequest (uuid: UUIDv4): void {
@@ -126,14 +153,17 @@ export abstract class AbstractUIService {
   }
 
   public getBroadcastChannelExpectedResponses (uuid: UUIDv4): number {
-    return this.broadcastChannelRequests.get(uuid) ?? 0
+    return this.broadcastChannelRequests.get(uuid)?.expectedResponses ?? 0
   }
 
   public logPrefix = (modName: string, methodName: string): string => {
     return this.uiServer.logPrefix(modName, methodName, this.version)
   }
 
-  public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
+  public async requestHandler (
+    request: ProtocolRequest,
+    context: UIRequestContext = { origin: 'transport' }
+  ): Promise<ProtocolResponse | undefined> {
     let uuid: undefined | UUIDv4
     let command: ProcedureName | undefined
     let requestPayload: RequestPayload | undefined
@@ -156,17 +186,7 @@ export abstract class AbstractUIService {
       if (requestHandler == null) {
         throw new BaseError(`'${command}' request handler not found`)
       }
-      if (isAsyncFunction(requestHandler)) {
-        responsePayload = await requestHandler(uuid, command, requestPayload)
-      } else {
-        responsePayload = (
-          requestHandler as (
-            uuid?: string,
-            procedureName?: ProcedureName,
-            payload?: RequestPayload
-          ) => ResponsePayload | undefined
-        )(uuid, command, requestPayload)
-      }
+      responsePayload = await requestHandler(uuid, command, requestPayload, context)
     } catch (error) {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)
@@ -206,30 +226,54 @@ export abstract class AbstractUIService {
   public sendResponse (uuid: UUIDv4, responsePayload: ResponsePayload): void {
     if (this.uiServer.hasResponseHandler(uuid)) {
       this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
-    } else {
-      logger.warn(`${this.logPrefix(moduleName, 'sendResponse')} Response handler not found:`, {
-        responsePayload,
-        uuid,
-      })
+      return
     }
+    this.logBroadcastResponseWithoutHandler(uuid, responsePayload)
   }
 
   public stop (): void {
+    this.active = false
     this.broadcastChannelRequests.clear()
     this.uiServiceWorkerBroadcastChannel.close()
   }
 
   protected handleProtocolRequest (
-    uuid: UUIDv4,
-    procedureName: ProcedureName,
-    payload: RequestPayload
-  ): void {
+    uuid?: UUIDv4,
+    procedureName?: ProcedureName,
+    payload?: RequestPayload,
+    context: UIRequestContext = { origin: 'transport' }
+  ): undefined {
+    if (uuid == null || procedureName == null || payload == null) {
+      throw new BaseError('Invalid protocol request')
+    }
     const broadCastChannelProcedureName =
       AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)
     if (broadCastChannelProcedureName == null) {
       throw new BaseError(`No broadcast channel mapping for procedure '${procedureName}'`)
     }
-    this.sendBroadcastChannelRequest(uuid, broadCastChannelProcedureName, payload)
+    this.sendBroadcastChannelRequest(uuid, broadCastChannelProcedureName, payload, context)
+    return undefined
+  }
+
+  private buildBroadcastResponseLogContext (
+    uuid: UUIDv4,
+    responsePayload: ResponsePayload,
+    requestContext?: BroadcastChannelRequestContext
+  ): BroadcastResponseLogContext {
+    return {
+      ...(responsePayload.hashIdsFailed != null && {
+        hashIdsFailed: responsePayload.hashIdsFailed,
+      }),
+      ...(responsePayload.hashIdsSucceeded != null && {
+        hashIdsSucceeded: responsePayload.hashIdsSucceeded,
+      }),
+      ...(requestContext != null && {
+        origin: requestContext.origin,
+        procedureName: requestContext.procedureName,
+      }),
+      status: responsePayload.status,
+      uuid,
+    }
   }
 
   private async handleAddChargingStations (
@@ -386,10 +430,41 @@ export abstract class AbstractUIService {
     }
   }
 
+  private logBroadcastResponseWithoutHandler (uuid: UUIDv4, responsePayload: ResponsePayload): void {
+    const requestContext = this.broadcastChannelRequests.get(uuid)
+    const logContext = this.buildBroadcastResponseLogContext(uuid, responsePayload, requestContext)
+    if (requestContext == null) {
+      if (this.active) {
+        logger.warn(
+          `${this.logPrefix(moduleName, 'sendResponse')} Dropping untracked broadcast response:`,
+          logContext
+        )
+      } else {
+        logger.debug(
+          `${this.logPrefix(moduleName, 'sendResponse')} Dropping late broadcast response after UI service stop:`,
+          logContext
+        )
+      }
+      return
+    }
+    if (responsePayload.status === ResponseStatus.SUCCESS) {
+      logger.debug(
+        `${this.logPrefix(moduleName, 'sendResponse')} Broadcast response completed without transport handler:`,
+        logContext
+      )
+      return
+    }
+    logger.warn(
+      `${this.logPrefix(moduleName, 'sendResponse')} Failed broadcast response completed without transport handler:`,
+      logContext
+    )
+  }
+
   private sendBroadcastChannelRequest (
     uuid: UUIDv4,
     procedureName: BroadcastChannelProcedureName,
-    payload: BroadcastChannelRequestPayload
+    payload: BroadcastChannelRequestPayload,
+    context: UIRequestContext
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
@@ -417,7 +492,16 @@ export abstract class AbstractUIService {
         'hashIds array in the request payload does not contain any valid charging station hashId'
       )
     }
-    this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
-    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses)
+    this.broadcastChannelRequests.set(uuid, {
+      expectedResponses: expectedNumberOfResponses,
+      origin: context.origin,
+      procedureName,
+    })
+    try {
+      this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
+    } catch (error) {
+      this.broadcastChannelRequests.delete(uuid)
+      throw error
+    }
   }
 }

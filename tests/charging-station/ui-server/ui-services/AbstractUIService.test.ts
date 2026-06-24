@@ -6,7 +6,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import type { AbstractUIService } from '../../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
+
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
+import { logger } from '../../../../src/utils/Logger.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
 import {
@@ -15,6 +18,33 @@ import {
   createProtocolRequest,
   TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
+
+const createServiceContext = (): {
+  readonly server: TestableUIWebSocketServer
+  readonly service: AbstractUIService
+} => {
+  const config = createMockUIServerConfiguration()
+  const server = new TestableUIWebSocketServer(config)
+  server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
+  server.setChargingStationData(TEST_HASH_ID, createMockChargingStationData(TEST_HASH_ID))
+  const service = server.getUIService(ProtocolVersion['0.0.1'])
+  if (service == null) {
+    assert.fail('Expected UI service to be registered')
+  }
+  return { server, service }
+}
+
+const registerInternalStopRequest = async (server: TestableUIWebSocketServer): Promise<void> => {
+  await server.sendInternalRequest(
+    server.buildProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {})
+  )
+}
+
+const registerTransportStopRequest = async (service: AbstractUIService): Promise<void> => {
+  await service.requestHandler(
+    createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {})
+  )
+}
 
 await describe('AbstractUIService', async () => {
   afterEach(() => {
@@ -146,6 +176,143 @@ await describe('AbstractUIService', async () => {
       service.stop()
       assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
     }
+  })
+
+  await it('should log internal successful broadcast responses without transport handler at debug', async t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { server, service } = createServiceContext()
+
+    try {
+      await registerInternalStopRequest(server)
+      service.sendResponse(TEST_UUID, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        status: ResponseStatus.SUCCESS,
+      })
+
+      assert.strictEqual(warnMock.mock.calls.length, 0)
+      assert.strictEqual(debugMock.mock.calls.length, 1)
+      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
+      if (typeof debugMessage !== 'string') {
+        assert.fail('Expected debug log message to be a string')
+      }
+      assert.match(debugMessage, /Broadcast response completed without transport handler/)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should warn on internal failed broadcast responses without transport handler', async t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { server, service } = createServiceContext()
+
+    try {
+      await registerInternalStopRequest(server)
+      service.sendResponse(TEST_UUID, {
+        hashIdsFailed: [TEST_HASH_ID],
+        status: ResponseStatus.FAILURE,
+      })
+
+      assert.strictEqual(debugMock.mock.calls.length, 0)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
+      if (typeof warnMessage !== 'string') {
+        assert.fail('Expected warning log message to be a string')
+      }
+      assert.match(warnMessage, /Failed broadcast response completed without transport handler/)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should log transport successful broadcast responses without transport handler at debug', async t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { service } = createServiceContext()
+
+    try {
+      await registerTransportStopRequest(service)
+      service.sendResponse(TEST_UUID, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        status: ResponseStatus.SUCCESS,
+      })
+
+      assert.strictEqual(warnMock.mock.calls.length, 0)
+      assert.strictEqual(debugMock.mock.calls.length, 1)
+      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
+      if (typeof debugMessage !== 'string') {
+        assert.fail('Expected debug log message to be a string')
+      }
+      assert.match(debugMessage, /Broadcast response completed without transport handler/)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should warn on transport failed broadcast responses without transport handler', async t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { service } = createServiceContext()
+
+    try {
+      await registerTransportStopRequest(service)
+      service.sendResponse(TEST_UUID, {
+        hashIdsFailed: [TEST_HASH_ID],
+        status: ResponseStatus.FAILURE,
+      })
+
+      assert.strictEqual(debugMock.mock.calls.length, 0)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
+      if (typeof warnMessage !== 'string') {
+        assert.fail('Expected warning log message to be a string')
+      }
+      assert.match(warnMessage, /Failed broadcast response completed without transport handler/)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should warn on untracked broadcast responses while service is active', t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { service } = createServiceContext()
+
+    try {
+      service.sendResponse(TEST_UUID, { status: ResponseStatus.SUCCESS })
+
+      assert.strictEqual(debugMock.mock.calls.length, 0)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
+      const warnMessage = warnMock.mock.calls[0]?.arguments[0]
+      if (typeof warnMessage !== 'string') {
+        assert.fail('Expected warning log message to be a string')
+      }
+      assert.match(warnMessage, /Dropping untracked broadcast response/)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should log late broadcast responses after service stop at debug', async t => {
+    const warnMock = t.mock.method(logger, 'warn', () => undefined)
+    const debugMock = t.mock.method(logger, 'debug', () => undefined)
+    const { service } = createServiceContext()
+
+    await registerTransportStopRequest(service)
+    service.stop()
+    service.sendResponse(TEST_UUID, {
+      hashIdsSucceeded: [TEST_HASH_ID],
+      status: ResponseStatus.SUCCESS,
+    })
+
+    assert.strictEqual(warnMock.mock.calls.length, 0)
+    assert.strictEqual(debugMock.mock.calls.length, 1)
+    const debugMessage = debugMock.mock.calls[0]?.arguments[0]
+    if (typeof debugMessage !== 'string') {
+      assert.fail('Expected debug log message to be a string')
+    }
+    assert.match(debugMessage, /Dropping late broadcast response/)
   })
 
   await it('should return failure response when request handler throws', async () => {
