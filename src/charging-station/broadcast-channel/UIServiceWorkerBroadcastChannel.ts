@@ -111,9 +111,12 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     }
     const responses = this.responses.get(uuid)
     if (responses != null && responses.responsesReceived >= responses.responsesExpected) {
-      this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
-      this.responses.delete(uuid)
-      this.uiService.deleteBroadcastChannelRequest(uuid)
+      try {
+        this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
+      } finally {
+        this.responses.delete(uuid)
+        this.uiService.deleteBroadcastChannelRequest(uuid)
+      }
     }
   }
 }
