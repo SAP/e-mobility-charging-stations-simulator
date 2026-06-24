@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import type { UIServiceWorkerBroadcastChannel } from '../../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIService } from '../../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 
 import {
@@ -299,7 +300,7 @@ await describe('AbstractUIService', async () => {
     }
   })
 
-  await it('should warn on untracked broadcast responses while service is active', t => {
+  await it('should warn on untracked broadcast responses before service stop', t => {
     const mocks = {
       debug: t.mock.method(logger, 'debug', () => undefined),
       warn: t.mock.method(logger, 'warn', () => undefined),
@@ -345,8 +346,11 @@ await describe('AbstractUIService', async () => {
 
   await it('should rollback expected responses when broadcast dispatch throws', async t => {
     const { service } = createServiceContext()
-    const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as object
-    t.mock.method(channel as never, 'sendRequest' as never, (): never => {
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+    t.mock.method(channel, 'sendRequest', () => {
       throw new Error('dispatch failed')
     })
 

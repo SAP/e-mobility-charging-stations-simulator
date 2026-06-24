@@ -34,6 +34,12 @@ import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecuri
 
 const moduleName = 'AbstractUIService'
 
+/**
+ * Structured payload of the `logger.{debug,warn}` calls emitted by
+ * {@link AbstractUIService.logBroadcastResponseWithoutHandler}. Fields are
+ * optional when the corresponding context is unavailable (untracked or
+ * late responses, payload without hashIds).
+ */
 export interface BroadcastChannelResponseLogContext {
   readonly hashIdsFailed?: string[]
   readonly hashIdsSucceeded?: string[]
