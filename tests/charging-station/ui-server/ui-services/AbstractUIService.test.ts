@@ -299,20 +299,24 @@ await describe('AbstractUIService', async () => {
     const debugMock = t.mock.method(logger, 'debug', () => undefined)
     const { service } = createServiceContext()
 
-    await registerTransportStopRequest(service)
-    service.stop()
-    service.sendResponse(TEST_UUID, {
-      hashIdsSucceeded: [TEST_HASH_ID],
-      status: ResponseStatus.SUCCESS,
-    })
+    try {
+      await registerTransportStopRequest(service)
+      service.stop()
+      service.sendResponse(TEST_UUID, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        status: ResponseStatus.SUCCESS,
+      })
 
-    assert.strictEqual(warnMock.mock.calls.length, 0)
-    assert.strictEqual(debugMock.mock.calls.length, 1)
-    const debugMessage = debugMock.mock.calls[0]?.arguments[0]
-    if (typeof debugMessage !== 'string') {
-      assert.fail('Expected debug log message to be a string')
+      assert.strictEqual(warnMock.mock.calls.length, 0)
+      assert.strictEqual(debugMock.mock.calls.length, 1)
+      const debugMessage = debugMock.mock.calls[0]?.arguments[0]
+      if (typeof debugMessage !== 'string') {
+        assert.fail('Expected debug log message to be a string')
+      }
+      assert.match(debugMessage, /Dropping late broadcast response/)
+    } finally {
+      service.stop()
     }
-    assert.match(debugMessage, /Dropping late broadcast response/)
   })
 
   await it('should return failure response when request handler throws', async () => {
