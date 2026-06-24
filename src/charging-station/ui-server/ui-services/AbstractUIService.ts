@@ -34,6 +34,15 @@ import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecuri
 
 const moduleName = 'AbstractUIService'
 
+export interface BroadcastChannelResponseLogContext {
+  readonly hashIdsFailed?: string[]
+  readonly hashIdsSucceeded?: string[]
+  readonly origin?: UIRequestOrigin
+  readonly procedureName?: BroadcastChannelProcedureName
+  readonly status: ResponseStatus
+  readonly uuid: UUIDv4
+}
+
 interface AddChargingStationsRequestPayload extends RequestPayload {
   numberOfStations: number
   options?: ChargingStationOptions
@@ -44,15 +53,6 @@ interface BroadcastChannelRequestContext {
   readonly expectedResponses: number
   readonly origin: UIRequestOrigin
   readonly procedureName: BroadcastChannelProcedureName
-}
-
-interface BroadcastResponseLogContext {
-  readonly hashIdsFailed?: string[]
-  readonly hashIdsSucceeded?: string[]
-  readonly origin?: UIRequestOrigin
-  readonly procedureName?: BroadcastChannelProcedureName
-  readonly status: ResponseStatus
-  readonly uuid: UUIDv4
 }
 
 export abstract class AbstractUIService {
@@ -228,14 +228,11 @@ export abstract class AbstractUIService {
   }
 
   protected handleProtocolRequest (
-    uuid?: UUIDv4,
-    procedureName?: ProcedureName,
-    payload?: RequestPayload,
+    uuid: UUIDv4,
+    procedureName: ProcedureName,
+    payload: RequestPayload,
     context: UIRequestContext = { origin: UIRequestOrigin.TRANSPORT }
   ): undefined {
-    if (uuid == null || procedureName == null || payload == null) {
-      throw new BaseError('Invalid protocol request')
-    }
     const broadCastChannelProcedureName =
       AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)
     if (broadCastChannelProcedureName == null) {
@@ -249,7 +246,7 @@ export abstract class AbstractUIService {
     uuid: UUIDv4,
     responsePayload: ResponsePayload,
     requestContext?: BroadcastChannelRequestContext
-  ): BroadcastResponseLogContext {
+  ): BroadcastChannelResponseLogContext {
     return {
       ...(responsePayload.hashIdsFailed != null && {
         hashIdsFailed: responsePayload.hashIdsFailed,
@@ -439,13 +436,13 @@ export abstract class AbstractUIService {
     }
     if (responsePayload.status === ResponseStatus.SUCCESS) {
       logger.debug(
-        `${this.logPrefix(moduleName, 'sendResponse')} Broadcast response completed without transport handler:`,
+        `${this.logPrefix(moduleName, 'sendResponse')} Broadcast response completed without response handler:`,
         logContext
       )
       return
     }
     logger.warn(
-      `${this.logPrefix(moduleName, 'sendResponse')} Failed broadcast response completed without transport handler:`,
+      `${this.logPrefix(moduleName, 'sendResponse')} Failed broadcast response completed without response handler:`,
       logContext
     )
   }

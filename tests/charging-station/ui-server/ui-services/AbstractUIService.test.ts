@@ -178,7 +178,7 @@ await describe('AbstractUIService', async () => {
     }
   })
 
-  await it('should log internal successful broadcast responses without transport handler at debug', async t => {
+  await it('should log internal successful broadcast responses without response handler at debug', async t => {
     const warnMock = t.mock.method(logger, 'warn', () => undefined)
     const debugMock = t.mock.method(logger, 'debug', () => undefined)
     const { server, service } = createServiceContext()
@@ -196,13 +196,13 @@ await describe('AbstractUIService', async () => {
       if (typeof debugMessage !== 'string') {
         assert.fail('Expected debug log message to be a string')
       }
-      assert.match(debugMessage, /Broadcast response completed without transport handler/)
+      assert.match(debugMessage, /Broadcast response completed without response handler/)
     } finally {
       service.stop()
     }
   })
 
-  await it('should warn on internal failed broadcast responses without transport handler', async t => {
+  await it('should warn on internal failed broadcast responses without response handler', async t => {
     const warnMock = t.mock.method(logger, 'warn', () => undefined)
     const debugMock = t.mock.method(logger, 'debug', () => undefined)
     const { server, service } = createServiceContext()
@@ -220,13 +220,13 @@ await describe('AbstractUIService', async () => {
       if (typeof warnMessage !== 'string') {
         assert.fail('Expected warning log message to be a string')
       }
-      assert.match(warnMessage, /Failed broadcast response completed without transport handler/)
+      assert.match(warnMessage, /Failed broadcast response completed without response handler/)
     } finally {
       service.stop()
     }
   })
 
-  await it('should log transport successful broadcast responses without transport handler at debug', async t => {
+  await it('should log transport successful broadcast responses without response handler at debug', async t => {
     const warnMock = t.mock.method(logger, 'warn', () => undefined)
     const debugMock = t.mock.method(logger, 'debug', () => undefined)
     const { service } = createServiceContext()
@@ -244,13 +244,13 @@ await describe('AbstractUIService', async () => {
       if (typeof debugMessage !== 'string') {
         assert.fail('Expected debug log message to be a string')
       }
-      assert.match(debugMessage, /Broadcast response completed without transport handler/)
+      assert.match(debugMessage, /Broadcast response completed without response handler/)
     } finally {
       service.stop()
     }
   })
 
-  await it('should warn on transport failed broadcast responses without transport handler', async t => {
+  await it('should warn on transport failed broadcast responses without response handler', async t => {
     const warnMock = t.mock.method(logger, 'warn', () => undefined)
     const debugMock = t.mock.method(logger, 'debug', () => undefined)
     const { service } = createServiceContext()
@@ -268,7 +268,7 @@ await describe('AbstractUIService', async () => {
       if (typeof warnMessage !== 'string') {
         assert.fail('Expected warning log message to be a string')
       }
-      assert.match(warnMessage, /Failed broadcast response completed without transport handler/)
+      assert.match(warnMessage, /Failed broadcast response completed without response handler/)
     } finally {
       service.stop()
     }

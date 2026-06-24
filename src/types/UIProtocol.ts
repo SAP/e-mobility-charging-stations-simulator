@@ -81,11 +81,11 @@ export type ProtocolNotification = [ServerNotification]
 export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
 export type ProtocolRequestHandler = (
-  uuid?: UUIDv4,
-  procedureName?: ProcedureName,
-  payload?: RequestPayload,
+  uuid: UUIDv4,
+  procedureName: ProcedureName,
+  payload: RequestPayload,
   context?: UIRequestContext
-) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
+) => Promise<ResponsePayload | undefined> | ResponsePayload | undefined
 
 export type ProtocolResponse = [UUIDv4, ResponsePayload]
 
