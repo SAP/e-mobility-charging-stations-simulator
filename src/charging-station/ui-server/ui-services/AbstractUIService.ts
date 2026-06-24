@@ -115,8 +115,8 @@ export abstract class AbstractUIService {
   ])
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
-  private active = true
   private readonly broadcastChannelRequests: Map<UUIDv4, BroadcastChannelRequestContext>
+  private stopped = false
 
   private readonly uiServer: AbstractUIServer
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
@@ -222,7 +222,7 @@ export abstract class AbstractUIService {
   }
 
   public stop (): void {
-    this.active = false
+    this.stopped = true
     this.broadcastChannelRequests.clear()
     this.uiServiceWorkerBroadcastChannel.close()
   }
@@ -421,14 +421,14 @@ export abstract class AbstractUIService {
     const requestContext = this.broadcastChannelRequests.get(uuid)
     const logContext = this.buildBroadcastResponseLogContext(uuid, responsePayload, requestContext)
     if (requestContext == null) {
-      if (this.active) {
-        logger.warn(
-          `${this.logPrefix(moduleName, 'sendResponse')} Dropping untracked broadcast response:`,
+      if (this.stopped) {
+        logger.debug(
+          `${this.logPrefix(moduleName, 'sendResponse')} Dropping late broadcast response after UI service stop:`,
           logContext
         )
       } else {
-        logger.debug(
-          `${this.logPrefix(moduleName, 'sendResponse')} Dropping late broadcast response after UI service stop:`,
+        logger.warn(
+          `${this.logPrefix(moduleName, 'sendResponse')} Dropping untracked broadcast response:`,
           logContext
         )
       }
@@ -484,6 +484,7 @@ export abstract class AbstractUIService {
       origin: context.origin,
       procedureName,
     })
+    // Rollback expected-response accounting if dispatch to the worker channel throws.
     try {
       this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
     } catch (error) {

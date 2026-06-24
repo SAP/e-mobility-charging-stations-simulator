@@ -111,6 +111,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     }
     const responses = this.responses.get(uuid)
     if (responses != null && responses.responsesReceived >= responses.responsesExpected) {
+      // Always release aggregation state, even if downstream sendResponse throws.
       try {
         this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
       } finally {
