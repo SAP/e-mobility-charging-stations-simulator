@@ -71,15 +71,32 @@ export enum ServerNotification {
   REFRESH = 'refresh',
 }
 
+/**
+ * Origin of a UI service request. Drives broadcast-response classification:
+ * `INTERNAL` requests originate from `AbstractUIServer.sendInternalRequest`
+ * (e.g. `Bootstrap.doStop`) and have no transport-side response handler.
+ * `TRANSPORT` requests originate from a UI client (WebSocket/HTTP/MCP).
+ */
+export enum UIRequestOrigin {
+  INTERNAL = 'internal',
+  TRANSPORT = 'transport',
+}
+
 export type ProtocolNotification = [ServerNotification]
 
 export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
+/**
+ * Signature of any UI service request handler stored in the dispatch map.
+ * Sync or async; may return a payload or nothing. The optional `context`
+ * carries the request origin so broadcast handlers can classify late responses.
+ */
 export type ProtocolRequestHandler = (
-  uuid?: UUIDv4,
-  procedureName?: ProcedureName,
-  payload?: RequestPayload
-) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
+  uuid: UUIDv4,
+  procedureName: ProcedureName,
+  payload: RequestPayload,
+  context?: UIRequestContext
+) => Promise<ResponsePayload | undefined> | ResponsePayload | undefined
 
 export type ProtocolResponse = [UUIDv4, ResponsePayload]
 
@@ -93,4 +110,12 @@ export interface ResponsePayload extends JsonObject {
   hashIdsSucceeded?: string[]
   responsesFailed?: BroadcastChannelResponsePayload[]
   status: ResponseStatus
+}
+
+/**
+ * Context carried alongside a UI protocol request. Currently records only the
+ * request origin; additive fields are non-breaking.
+ */
+export interface UIRequestContext {
+  readonly origin: UIRequestOrigin
 }
