@@ -1,5 +1,32 @@
 # Changelog
 
+## [4.10.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.9.0...simulator@v4.10.0) (2026-06-26)
+
+
+### 🚀 Features
+
+* **simulator:** add forceTransactionOnInvalidIdToken template flag ([#1907](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1907)) ([e12ddd9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e12ddd9945822e2e028c13f7fb079634219c5fe5))
+* **ui-server:** add opt-in Prometheus /metrics endpoint (closes [#851](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/851)) ([#1912](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1912)) ([016fc93](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/016fc93279bfcfb07ef0dab0985e4c6451a39ac2))
+* **ui-server:** expose Prometheus /metrics on ws and mcp transports ([#1921](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1921)) ([b56748a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b56748a3f5e53e5513124f96939b54b425e5af22)), closes [#1917](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1917)
+
+
+### 🐞 Bug Fixes
+
+* **build:** externalize prom-client from bundle ([1b052e1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1b052e1a4219bbeb0beb3c5b11821795fe7fb006))
+* **deps:** update all non-major dependencies ([#1915](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1915)) ([77a1317](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/77a1317990d9bd8c71cebff8a7f0938aa11d4483))
+* **deps:** update all non-major dependencies ([#1925](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1925)) ([31056d5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/31056d5138f27c51f5fc331ded546446a99c4394))
+* **ui-server:** classify broadcast responses without handlers ([#1924](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1924)) ([84fad82](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/84fad8272fe91b8ec3d9ad2162139ab8d87b2f92))
+
+
+### ✨ Polish
+
+* **bootstrap:** remove redundant stopping flag ([#1909](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1909)) ([11aac65](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11aac65d02feddb039641053484bca92b0921146))
+
+
+### 📚 Documentation
+
+* **readme:** remove uiServer.metrics migration notes ([329a6d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/329a6d073c69eff84892da92ec1e7f811debfc2c))
+
 ## [4.9.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.8.0...simulator@v4.9.0) (2026-06-16)
 
 ### 🚀 Features
