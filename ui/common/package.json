@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.18.0",
-    "pnpm": "11.8.0"
+    "pnpm": "11.9.0"
   },
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.9.0",
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
