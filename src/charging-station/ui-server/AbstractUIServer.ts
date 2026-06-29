@@ -665,7 +665,9 @@ export abstract class AbstractUIServer {
    */
   protected runRequestPrologue (req: IncomingMessage): UIServerRequestPrologueResult {
     const decision = resolveUIServerAccess(req, this.uiServerConfiguration, this.accessCache)
-    const rateLimitKey = decision.clientAddress.length > 0 ? decision.clientAddress : 'unknown'
+    const rateLimitKey = isNotEmptyString(decision.clientAddress)
+      ? decision.clientAddress
+      : 'unknown'
     if (!this.rateLimiter(rateLimitKey)) {
       logger.warn(
         `${this.logPrefix(
@@ -1314,7 +1316,7 @@ export abstract class AbstractUIServer {
     const isWildcard =
       configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
 
-    if (isWildcard && allowedHosts.length === 0) {
+    if (isWildcard && isEmpty(allowedHosts)) {
       logger.warn(
         `${this.logPrefix(
           moduleName,
@@ -1323,7 +1325,7 @@ export abstract class AbstractUIServer {
       )
       return
     }
-    if (!isWildcard && !isLoopback(configuredHost) && requireTls && trustedProxies.length === 0) {
+    if (!isWildcard && !isLoopback(configuredHost) && requireTls && isEmpty(trustedProxies)) {
       logger.warn(
         `${this.logPrefix(
           moduleName,

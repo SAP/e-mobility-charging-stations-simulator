@@ -6,7 +6,7 @@ import {
   type SampledValue,
   SigningMethodEnumType,
 } from '../../types/index.js'
-import { getErrorMessage, logger } from '../../utils/index.js'
+import { getErrorMessage, isNotEmptyString, logger } from '../../utils/index.js'
 
 export interface SampledValueSigningConfig extends SigningConfig {
   enabled: boolean
@@ -73,7 +73,7 @@ export const validateSigningPrerequisites = (
   publicKeyHex: string | undefined,
   configuredSigningMethod: SigningMethodEnumType | undefined
 ): SigningPrerequisiteResult | SigningPrerequisiteSuccess => {
-  if (publicKeyHex == null || publicKeyHex.length === 0) {
+  if (!isNotEmptyString(publicKeyHex)) {
     return { enabled: false, reason: 'Public key is not configured' }
   }
 

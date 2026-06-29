@@ -5,6 +5,8 @@ import { statSync } from 'node:fs'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
+import { isNotEmptyString } from '../utils/index.js'
+
 export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
   public abstract readonly emitter: EventEmitterAsyncResource | undefined
   public abstract readonly info: PoolInfo | SetInfo
@@ -26,7 +28,7 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
     if (typeof workerScript !== 'string') {
       throw new TypeError('Worker script must be a string')
     }
-    if (workerScript.trim().length === 0) {
+    if (!isNotEmptyString(workerScript)) {
       throw new Error('Worker script is an empty string')
     }
     const workerScriptStatistics = statSync(workerScript, { throwIfNoEntry: false })

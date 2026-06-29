@@ -3,6 +3,7 @@ import type { IncomingMessage } from 'node:http'
 import type { UIServerConfiguration } from '../../types/index.js'
 
 import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
+import { isEmpty } from '../../utils/index.js'
 import {
   isLoopback,
   normalizeHost,
@@ -227,7 +228,7 @@ const getForwardedClientAddress = (
     return picked
   }
   const addresses = splitHeaderList(picked.value)
-  if (addresses.length === 0) {
+  if (isEmpty(addresses)) {
     return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedClient }
   }
   // Multi-hop X-Forwarded-For chains are intentionally rejected: ambiguity in
@@ -265,7 +266,7 @@ const getForwardedProtocol = (
   }
   if (xForwardedProtocol != null) {
     const protocols = splitHeaderList(xForwardedProtocol)
-    if (protocols.length === 0) {
+    if (isEmpty(protocols)) {
       return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedProtocol }
     }
     if (protocols.length > 1) {
@@ -294,7 +295,7 @@ const getForwardedHost = (
   }
   if (xForwardedHost != null) {
     const hosts = splitHeaderList(xForwardedHost)
-    if (hosts.length === 0) {
+    if (isEmpty(hosts)) {
       return { kind: 'error', reason: UIServerAccessDenialReason.InvalidForwardedHost }
     }
     if (hosts.length > 1) {
@@ -404,7 +405,7 @@ const isHostAllowed = (
   forwardedHost: ParseOutcome<string>
 ): boolean => {
   const allowedHosts = getAllowedHosts(uiServerConfiguration)
-  if (allowedHosts.length === 0) {
+  if (isEmpty(allowedHosts)) {
     return false
   }
   const host = getSingleHeaderValue(req, 'host')
@@ -505,7 +506,7 @@ const getTrustedProxies = (
 }
 
 const isTrustedProxy = (remoteAddress: string, trustedProxies: ReadonlySet<string>): boolean => {
-  if (trustedProxies.size === 0) {
+  if (isEmpty(trustedProxies)) {
     return false
   }
   const normalizedRemoteAddress = normalizeIPAddress(remoteAddress)
