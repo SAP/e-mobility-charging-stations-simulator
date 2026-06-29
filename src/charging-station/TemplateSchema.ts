@@ -264,14 +264,14 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
       path: ['Connectors'],
     })
   }
-  // Validate Evses topology (OCPP 2.0.1 §7.2 constraints)
+  // Validate Evses topology (OCPP 2.0.1 part 1 §7.1 EVSE numbering)
   if (hasEvses && template.Evses != null) {
     for (const [evseKey, evse] of Object.entries(template.Evses)) {
       const evseId = convertToIntOrNaN(evseKey)
       if (!Number.isInteger(evseId) || evseId < 0) {
         ctx.addIssue({
           code: 'custom',
-          message: `EVSE key '${evseKey}' is not a valid non-negative integer (OCPP 2.0.1 §7.2)`,
+          message: `EVSE key '${evseKey}' is not a valid non-negative integer (OCPP 2.0.1 part 1 §7.1)`,
           path: ['Evses', evseKey],
         })
         continue

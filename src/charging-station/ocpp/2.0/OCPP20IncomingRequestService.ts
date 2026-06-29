@@ -132,6 +132,7 @@ import {
   UnlockStatusEnumType,
   UpdateFirmwareStatusEnumType,
   UploadLogStatusEnumType,
+  type UUIDv4,
 } from '../../../types/index.js'
 import {
   convertToDate,
@@ -228,19 +229,23 @@ const buildStationInfoReportData = (
   return reportData
 }
 
-// transactionId is intentionally omitted on rejections. Per OCPP 2.0.1 part 2 §F01.FR.13, the
-// Charging Station SHALL return transactionId in RequestStartTransactionResponse only when a
-// transaction was already created on the station but not yet authorized (cable-plugin-first);
-// fabricating a UUID on a pure rejection misleads CSMS that map remoteStartId → transactionId.
+// OCPP 2.0.1 part 2 §F01.FR.13 creates a positive obligation: when a transaction was created
+// on the Charging Station but not yet authorized (cable-plugin-first), the existing transactionId
+// SHALL be echoed in RequestStartTransactionResponse. On pure rejections the spec is silent and
+// the schema does not require transactionId; fabricating a UUID would mislead CSMS that map
+// remoteStartId → transactionId. Callers pass the existing connectorStatus.transactionId only
+// when the F01.FR.13 precondition holds.
 const buildRejectedResponse = (
+  reasonCode: ReasonCodeEnumType,
   additionalInfo: string,
-  reasonCode: ReasonCodeEnumType
+  transactionId?: UUIDv4
 ): OCPP20RequestStartTransactionResponse => ({
   status: RequestStartStopStatusEnumType.Rejected,
   statusInfo: {
     additionalInfo,
     reasonCode,
   },
+  ...(transactionId != null ? { transactionId } : {}),
 })
 
 interface OCPP20StationState {
@@ -2554,6 +2559,24 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
+    // OCPP 2.0.1 part 2 §F01.FR.13: when a transaction was created on the station but not yet
+    // authorized (transactionPending), the existing transactionId SHALL be echoed back. The
+    // appendix distinguishes TxStarted (cable-plugin-first, not yet authorized) from TxInProgress
+    // (authorized and running) — use TxStarted here to match the precondition.
+    if (
+      connectorStatus.transactionPending === true &&
+      typeof connectorStatus.transactionId === 'string'
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} has a pending transaction not yet authorized`
+      )
+      return buildRejectedResponse(
+        ReasonCodeEnumType.TxStarted,
+        `Connector ${connectorId.toString()} has a pending transaction not yet authorized`,
+        connectorStatus.transactionId as UUIDv4
+      )
+    }
+
     if (
       connectorStatus.transactionStarted === true ||
       connectorStatus.transactionPending === true ||
@@ -2563,8 +2586,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
       )
       return buildRejectedResponse(
-        `Connector ${connectorId.toString()} already has an active or pending transaction`,
-        ReasonCodeEnumType.TxInProgress
+        ReasonCodeEnumType.TxInProgress,
+        `Connector ${connectorId.toString()} already has an active or pending transaction`
       )
     }
 
@@ -2592,8 +2615,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken with MasterPassGroupId group cannot start a transaction`
         )
         return buildRejectedResponse(
-          'MasterPassGroupId tokens cannot start transactions',
-          ReasonCodeEnumType.InvalidIdToken
+          ReasonCodeEnumType.InvalidIdToken,
+          'MasterPassGroupId tokens cannot start transactions'
         )
       }
 
@@ -2611,8 +2634,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           ensureError(error)
         )
         return buildRejectedResponse(
-          'Authorization error occurred',
-          ReasonCodeEnumType.InternalError
+          ReasonCodeEnumType.InternalError,
+          'Authorization error occurred'
         )
       }
     } else {
@@ -2623,8 +2646,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (!isAuthorized) {
       return buildRejectedResponse(
-        `IdToken '${truncateId(idToken.idToken)}' is not authorized`,
-        ReasonCodeEnumType.InvalidIdToken
+        ReasonCodeEnumType.InvalidIdToken,
+        `IdToken '${truncateId(idToken.idToken)}' is not authorized`
       )
     }
 
@@ -2644,14 +2667,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           ensureError(error)
         )
         return buildRejectedResponse(
-          'Group authorization error occurred',
-          ReasonCodeEnumType.InternalError
+          ReasonCodeEnumType.InternalError,
+          'Group authorization error occurred'
         )
       }
       if (!isGroupAuthorized) {
         return buildRejectedResponse(
-          `GroupIdToken '${truncateId(groupIdToken.idToken)}' is not authorized`,
-          ReasonCodeEnumType.InvalidIdToken
+          ReasonCodeEnumType.InvalidIdToken,
+          `GroupIdToken '${truncateId(groupIdToken.idToken)}' is not authorized`
         )
       }
     }
@@ -2665,8 +2688,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile must have purpose TxProfile for RequestStartTransaction, got ${chargingProfile.chargingProfilePurpose}`
         )
         return buildRejectedResponse(
-          'ChargingProfile must have purpose TxProfile',
-          ReasonCodeEnumType.InvalidProfile
+          ReasonCodeEnumType.InvalidProfile,
+          'ChargingProfile must have purpose TxProfile'
         )
       }
 
@@ -2676,8 +2699,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile transactionId must not be set for RequestStartTransaction`
         )
         return buildRejectedResponse(
-          'ChargingProfile transactionId must not be set',
-          ReasonCodeEnumType.InvalidValue
+          ReasonCodeEnumType.InvalidProfile,
+          'ChargingProfile transactionId must not be set'
         )
       }
       let isValidProfile = false
@@ -2693,15 +2716,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           ensureError(error)
         )
         return buildRejectedResponse(
-          'Charging profile validation error',
-          ReasonCodeEnumType.InternalError
+          ReasonCodeEnumType.InternalError,
+          'Charging profile validation error'
         )
       }
       if (!isValidProfile) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Invalid charging profile`
         )
-        return buildRejectedResponse('Invalid charging profile', ReasonCodeEnumType.InvalidProfile)
+        return buildRejectedResponse(ReasonCodeEnumType.InvalidProfile, 'Invalid charging profile')
       }
     }
 
@@ -2746,7 +2769,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
         ensureError(error)
       )
-      return buildRejectedResponse('Error starting transaction', ReasonCodeEnumType.InternalError)
+      return buildRejectedResponse(ReasonCodeEnumType.InternalError, 'Error starting transaction')
     }
   }
 

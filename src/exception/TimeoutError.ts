@@ -3,4 +3,6 @@
 import { BaseError } from './BaseError.js'
 
 /** Sentinel error used by `promiseWithTimeout` call sites to discriminate timeout from upstream errors via `instanceof`. */
-export class TimeoutError extends BaseError {}
+export class TimeoutError extends BaseError {
+  public override readonly name = 'TimeoutError' as const
+}
