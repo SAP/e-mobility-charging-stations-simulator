@@ -7,6 +7,10 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type {
+  LocalAuthListManager,
+  OCPPAuthService,
+} from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
@@ -29,7 +33,31 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { createMockAuthService, createTestAuthConfig } from '../auth/helpers/MockFactories.js'
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
+
+/**
+ * Inject a mock auth service for LocalAuthList request handling tests.
+ * @param station - Charging station under test
+ * @param manager - Local auth list manager exposed by the mock service
+ * @param localAuthListEnabled - Whether LocalAuthList is enabled in auth configuration
+ * @returns Mock auth service instance cached for the station
+ */
+function setupMockAuthService (
+  station: ChargingStation,
+  manager: LocalAuthListManager | undefined,
+  localAuthListEnabled = true
+): OCPPAuthService {
+  const authService = createMockAuthService({
+    getConfiguration: () => createTestAuthConfig({ localAuthListEnabled }),
+    getLocalAuthListManager: () => manager,
+  })
+  OCPPAuthServiceFactory.setInstanceForTesting(
+    station.stationInfo?.chargingStationId ?? 'unknown',
+    authService
+  )
+  return authService
+}
 
 await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   let station: ChargingStation
@@ -68,6 +96,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
   afterEach(() => {
     Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
+    OCPPAuthServiceFactory.clearAllInstances()
     standardCleanup()
   })
 
@@ -78,13 +107,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   await describe('GetLocalListVersion', async () => {
     await it('should return version 0 for empty list', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestGetLocalListVersion(station)
 
@@ -93,13 +116,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return version 0 when local auth list disabled', () => {
       setLocalAuthListEnabled(false)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: false }),
-        getLocalAuthListManager: () => undefined,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, undefined, false)
 
       const response = testableService.handleRequestGetLocalListVersion(station)
 
@@ -107,13 +124,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     })
 
     await it('should return version 0 when manager is undefined', () => {
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => undefined,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, undefined)
 
       const response = testableService.handleRequestGetLocalListVersion(station)
 
@@ -123,13 +134,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should return correct version after SendLocalList', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestGetLocalListVersion(station)
 
@@ -156,13 +161,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   await describe('SendLocalList', async () => {
     await it('should accept Full update and replace list', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -191,13 +190,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should accept Differential update with complex IdToken types', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'EXISTING_001', status: 'Accepted' }], 1)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -221,13 +214,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return Failed when disabled (with statusInfo)', () => {
       setLocalAuthListEnabled(false)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: false }),
-        getLocalAuthListManager: () => undefined,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, undefined, false)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [],
@@ -241,13 +228,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     })
 
     await it('should return Failed when manager is undefined', () => {
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => undefined,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, undefined)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [],
@@ -268,13 +249,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
         ],
         1
       )
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [],
@@ -316,13 +291,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
         ],
         1
       )
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -347,13 +316,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should preserve idTokenType metadata in entries', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -375,13 +338,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should handle Full update with undefined localAuthorizationList', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'OLD_TOKEN', status: 'Accepted' }], 1)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         updateType: OCPP20UpdateEnumType.Full,
@@ -399,13 +356,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should convert cacheExpiryDateTime to Date', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const expiryDate = new Date('2027-01-01T00:00:00.000Z')
 
@@ -431,13 +382,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should return VersionMismatch for differential update with version < current', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -456,13 +401,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should return VersionMismatch for differential update with version equal to current', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
@@ -480,13 +419,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return Failed with versionNumber <= 0', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [],
@@ -499,13 +432,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
 
     await it('should return Failed with negative versionNumber', () => {
       const manager = new InMemoryLocalAuthListManager()
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [],
@@ -519,13 +446,7 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     await it('should accept Full update regardless of version (no VersionMismatch)', () => {
       const manager = new InMemoryLocalAuthListManager()
       manager.setEntries([{ identifier: 'TOKEN_001', status: 'Accepted' }], 5)
-      const mockAuthService = {
-        getConfiguration: () => ({ localAuthListEnabled: true }),
-        getLocalAuthListManager: () => manager,
-      }
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      setupMockAuthService(station, manager)
 
       const response = testableService.handleRequestSendLocalList(station, {
         localAuthorizationList: [
