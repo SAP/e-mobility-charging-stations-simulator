@@ -516,7 +516,7 @@ export class OCPP20ServiceUtils {
         return convertToInt(value)
       } catch {
         logger.warn(
-          `${moduleName}.readVariableAsInteger: Cannot convert '${value}' to integer for ${componentName}.${variableName}, using default ${defaultValue.toString()}`
+          `${moduleName}.readVariableAsInteger: Cannot convert '${value}' to integer for ${buildConfigKey(componentName, variableName)}, using default ${defaultValue.toString()}`
         )
         return defaultValue
       }

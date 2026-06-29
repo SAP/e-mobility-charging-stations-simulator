@@ -3,7 +3,7 @@ import type { IncomingMessage } from 'node:http'
 import type { UIServerConfiguration } from '../../types/index.js'
 
 import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
-import { has, isEmpty } from '../../utils/index.js'
+import { has, isEmpty, isNotEmptyArray } from '../../utils/index.js'
 import {
   isLoopback,
   normalizeHost,
@@ -436,12 +436,12 @@ const isOriginAllowed = (
     return false
   }
   const allowedOrigins = uiServerConfiguration.accessPolicy?.allowedOrigins ?? []
-  if (allowedOrigins.length > 0) {
+  if (isNotEmptyArray(allowedOrigins)) {
     return allowedOrigins.some(allowedOrigin => isSameOrigin(originUrl, allowedOrigin))
   }
   const allowedHosts = getAllowedHosts(uiServerConfiguration)
   return (
-    allowedHosts.length > 0 &&
+    isNotEmptyArray(allowedHosts) &&
     allowedHosts.some(allowedHost => isSameHost(originUrl.hostname, allowedHost))
   )
 }

@@ -26,7 +26,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { isEmpty, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
+import { isEmpty, isNotEmptyArray, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createUIServerAccessCache,
@@ -1437,7 +1437,7 @@ const addPerStationStatusInfo = (
  * @returns Connector count under the active mode.
  */
 const countConnectors = (data: ChargingStationData): number =>
-  data.connectors.length > 0
+  isNotEmptyArray(data.connectors)
     ? data.connectors.length
     : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.size, 0)
 
@@ -1450,7 +1450,7 @@ const countConnectors = (data: ChargingStationData): number =>
  * @yields {ConnectorEntry} A connector entry under the active mode.
  */
 const iterateConnectors = function * (data: ChargingStationData): Generator<ConnectorEntry> {
-  if (data.connectors.length > 0) {
+  if (isNotEmptyArray(data.connectors)) {
     for (const entry of data.connectors) {
       yield entry
     }
