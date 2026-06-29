@@ -6,7 +6,6 @@
 import type { IncomingMessage } from 'node:http'
 
 import assert from 'node:assert/strict'
-import { once } from 'node:events'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
@@ -18,6 +17,7 @@ import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
+  awaitFinish,
   createMockBootstrap,
   createMockIncomingMessage,
   createMockUIServerConfiguration,
@@ -33,6 +33,13 @@ class TestableUIHttpServer extends UIHttpServer {
 
   public addResponseHandler (uuid: UUIDv4, res: MockServerResponse): void {
     this.responseHandlers.set(uuid, res as never)
+  }
+
+  public emitRequest (req: IncomingMessage, res: MockServerResponse): void {
+    const httpServer = Reflect.get(this, 'httpServer') as {
+      emit: (eventName: string, req: IncomingMessage, res: MockServerResponse) => boolean
+    }
+    httpServer.emit('request', req, res)
   }
 
   public getAcceptsGzip (): Map<UUIDv4, boolean> {
@@ -225,7 +232,7 @@ await describe('UIHttpServer', async () => {
 
     try {
       gatedServer.start()
-      httpServer.emit('request', req, res)
+      gatedServer.emitRequest(req, res)
     } finally {
       httpServer.removeAllListeners()
       gatedServer.stop()
@@ -269,7 +276,7 @@ await describe('UIHttpServer', async () => {
 
     try {
       gatedServer.start()
-      httpServer.emit('request', denyingReq, res)
+      gatedServer.emitRequest(denyingReq, res)
     } finally {
       httpServer.removeAllListeners()
       gatedServer.stop()
@@ -330,7 +337,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await once(res, 'finish')
+      await awaitFinish(res)
 
       assert.strictEqual(res.headers['Content-Encoding'], 'gzip')
       assert.strictEqual(res.headers['Content-Type'], 'application/json')
@@ -345,7 +352,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, payload])
 
-      await once(res, 'finish')
+      await awaitFinish(res)
 
       assert.notStrictEqual(res.bodyBuffer, undefined)
       if (res.bodyBuffer == null) {
@@ -376,7 +383,7 @@ await describe('UIHttpServer', async () => {
 
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      await once(res, 'finish')
+      await awaitFinish(res)
 
       assert.strictEqual(gzipServer.getAcceptsGzip().has(TEST_UUID), false)
     })
