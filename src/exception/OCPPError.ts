@@ -10,6 +10,7 @@ export class OCPPError extends BaseError {
   code: ErrorType
   command: IncomingRequestCommand | RequestCommand
   details?: JsonType
+  public override readonly name = 'OCPPError' as const
 
   constructor (
     code: ErrorType,

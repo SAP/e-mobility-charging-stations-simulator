@@ -52,6 +52,7 @@ import {
 } from '../../../types/index.js'
 import {
   clampToSafeTimerValue,
+  convertToBoolean,
   convertToDate,
   convertToInt,
   isNotEmptyArray,
@@ -163,8 +164,7 @@ export class OCPP16ServiceUtils {
     }
     if (
       OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignStartedReadings)
-        ?.value === 'true'
+      OCPP16ServiceUtils.isSigningStartedReadingsEnabled(chargingStation)
     ) {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
@@ -673,9 +673,32 @@ export class OCPP16ServiceUtils {
    * @returns Whether signed meter value generation is enabled (SampledDataSignReadings=true)
    */
   public static isSigningEnabled (chargingStation: ChargingStation): boolean {
-    return (
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)
-        ?.value === 'true'
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)?.value
+    )
+  }
+
+  /**
+   * @param chargingStation - Target charging station
+   * @returns Whether signing of meter values at transaction start is enabled
+   *   (SampledDataSignStartedReadings=true)
+   */
+  public static isSigningStartedReadingsEnabled (chargingStation: ChargingStation): boolean {
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignStartedReadings)
+        ?.value
+    )
+  }
+
+  /**
+   * @param chargingStation - Target charging station
+   * @returns Whether signing of meter values during transaction updates is enabled
+   *   (SampledDataSignUpdatedReadings=true)
+   */
+  public static isSigningUpdatedReadingsEnabled (chargingStation: ChargingStation): boolean {
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignUpdatedReadings)
+        ?.value
     )
   }
 
@@ -811,10 +834,7 @@ export class OCPP16ServiceUtils {
       const meterValue = buildMeterValue(chargingStation, transactionId, interval)
       if (
         OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-        getConfigurationKey(
-          chargingStation,
-          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings
-        )?.value === 'true'
+        OCPP16ServiceUtils.isSigningUpdatedReadingsEnabled(chargingStation)
       ) {
         const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           connectorStatus.transactionId

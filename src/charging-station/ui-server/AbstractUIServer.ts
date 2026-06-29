@@ -26,7 +26,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { isEmpty, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
+import { isEmpty, isNotEmptyArray, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createUIServerAccessCache,
@@ -665,7 +665,9 @@ export abstract class AbstractUIServer {
    */
   protected runRequestPrologue (req: IncomingMessage): UIServerRequestPrologueResult {
     const decision = resolveUIServerAccess(req, this.uiServerConfiguration, this.accessCache)
-    const rateLimitKey = decision.clientAddress.length > 0 ? decision.clientAddress : 'unknown'
+    const rateLimitKey = isNotEmptyString(decision.clientAddress)
+      ? decision.clientAddress
+      : 'unknown'
     if (!this.rateLimiter(rateLimitKey)) {
       logger.warn(
         `${this.logPrefix(
@@ -1314,7 +1316,7 @@ export abstract class AbstractUIServer {
     const isWildcard =
       configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
 
-    if (isWildcard && allowedHosts.length === 0) {
+    if (isWildcard && isEmpty(allowedHosts)) {
       logger.warn(
         `${this.logPrefix(
           moduleName,
@@ -1323,7 +1325,7 @@ export abstract class AbstractUIServer {
       )
       return
     }
-    if (!isWildcard && !isLoopback(configuredHost) && requireTls && trustedProxies.length === 0) {
+    if (!isWildcard && !isLoopback(configuredHost) && requireTls && isEmpty(trustedProxies)) {
       logger.warn(
         `${this.logPrefix(
           moduleName,
@@ -1435,7 +1437,7 @@ const addPerStationStatusInfo = (
  * @returns Connector count under the active mode.
  */
 const countConnectors = (data: ChargingStationData): number =>
-  data.connectors.length > 0
+  isNotEmptyArray(data.connectors)
     ? data.connectors.length
     : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.size, 0)
 
@@ -1448,7 +1450,7 @@ const countConnectors = (data: ChargingStationData): number =>
  * @yields {ConnectorEntry} A connector entry under the active mode.
  */
 const iterateConnectors = function * (data: ChargingStationData): Generator<ConnectorEntry> {
-  if (data.connectors.length > 0) {
+  if (isNotEmptyArray(data.connectors)) {
     for (const entry of data.connectors) {
       yield entry
     }

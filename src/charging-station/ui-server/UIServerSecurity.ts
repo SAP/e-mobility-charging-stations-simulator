@@ -17,6 +17,8 @@ export const DEFAULT_MAX_TRACKED_IPS = 10000
 export const DEFAULT_COMPRESSION_THRESHOLD_BYTES = 1024
 
 export class PayloadTooLargeError extends BaseError {
+  public override readonly name = 'PayloadTooLargeError' as const
+
   public constructor (maxBytes: number) {
     super(`Request body exceeds limit of ${maxBytes.toString()} bytes`)
   }

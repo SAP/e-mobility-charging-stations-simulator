@@ -132,11 +132,14 @@ import {
   UnlockStatusEnumType,
   UpdateFirmwareStatusEnumType,
   UploadLogStatusEnumType,
+  type UUIDv4,
 } from '../../../types/index.js'
 import {
   convertToDate,
   convertToIntOrNaN,
+  ensureError,
   generateUUID,
+  handleIncomingRequestError,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
@@ -225,6 +228,22 @@ const buildStationInfoReportData = (
   }
   return reportData
 }
+
+// OCPP 2.0.1 part 2 §F01.FR.13: when a transaction exists on the Charging Station but is not yet
+// authorized (cable-plugin-first), echo its transactionId in RequestStartTransactionResponse.
+// Otherwise omit — fabricating a UUID misleads CSMS that map remoteStartId → transactionId.
+const buildRejectedResponse = (
+  reasonCode: ReasonCodeEnumType,
+  additionalInfo: string,
+  transactionId?: UUIDv4
+): OCPP20RequestStartTransactionResponse => ({
+  status: RequestStartStopStatusEnumType.Rejected,
+  statusInfo: {
+    additionalInfo,
+    reasonCode,
+  },
+  ...(transactionId != null && { transactionId }),
+})
 
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
@@ -813,11 +832,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP20Constants.OCPP_RESPONSE_ACCEPTED
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Error clearing cache:`,
-        error
+      const errorResponse: OCPP20ClearCacheResponse = OCPP20Constants.OCPP_RESPONSE_REJECTED
+      return (
+        handleIncomingRequestError<OCPP20ClearCacheResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.CLEAR_CACHE,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
       )
-      return OCPP20Constants.OCPP_RESPONSE_REJECTED
     }
   }
 
@@ -849,11 +872,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return { versionNumber: version }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLocalListVersion: Error getting version:`,
-        error
+      const errorResponse: OCPP20GetLocalListVersionResponse = { versionNumber: 0 }
+      return (
+        handleIncomingRequestError<OCPP20GetLocalListVersionResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.GET_LOCAL_LIST_VERSION,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
       )
-      return { versionNumber: 0 }
     }
   }
 
@@ -959,11 +986,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSendLocalList: Error updating local auth list:`,
-        error
+      const errorResponse: OCPP20SendLocalListResponse =
+        OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+      return (
+        handleIncomingRequestError<OCPP20SendLocalListResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.SEND_LOCAL_LIST,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
       )
-      return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
     }
   }
 
@@ -1581,17 +1613,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: GenericStatus.Accepted,
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain storage failed`,
-        error
-      )
-      return {
+      const errorResponse: OCPP20CertificateSignedResponse = {
         status: GenericStatus.Rejected,
         statusInfo: {
           additionalInfo: 'Failed to store certificate chain due to a storage error',
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20CertificateSignedResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -1847,17 +1883,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deletion failed`,
-        error
-      )
-      return {
+      const errorResponse: OCPP20DeleteCertificateResponse = {
         status: DeleteCertificateStatusEnumType.Failed,
         statusInfo: {
           additionalInfo: 'Certificate deletion failed due to an unexpected error',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20DeleteCertificateResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -1952,17 +1992,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           : GetInstalledCertificateStatusEnumType.NotFound,
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Failed to retrieve certificates`,
-        error
-      )
-      return {
+      const errorResponse: OCPP20GetInstalledCertificateIdsResponse = {
         status: GetInstalledCertificateStatusEnumType.NotFound,
         statusInfo: {
           additionalInfo: 'Failed to retrieve installed certificates due to an unexpected error',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20GetInstalledCertificateIdsResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -2107,17 +2151,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: InstallCertificateStatusEnumType.Accepted,
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate storage failed for type ${certificateType}`,
-        error
-      )
-      return {
+      const errorResponse: OCPP20InstallCertificateResponse = {
         status: InstallCertificateStatusEnumType.Failed,
         statusInfo: {
           additionalInfo: 'Failed to store certificate due to a storage error',
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20InstallCertificateResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -2327,18 +2375,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Error handling reset request:`,
-        error
-      )
-
-      return {
+      const errorResponse: OCPP20ResetResponse = {
         status: ResetStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'Internal error occurred while processing reset request',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20ResetResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.RESET,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -2462,13 +2513,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: No available EVSE for remote start`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'No available EVSE found for remote start',
-            reasonCode: ReasonCodeEnumType.NotFound,
-          },
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.NotFound,
+          'No available EVSE found for remote start'
+        )
       }
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Auto-selected EVSE ${resolvedEvseId.toString()}`
@@ -2505,6 +2553,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
+    // OCPP 2.0.1 part 2 §F01.FR.13: when a transaction was created on the station but not yet
+    // authorized (transactionPending), the existing transactionId SHALL be echoed back. The
+    // appendix distinguishes TxStarted (cable-plugin-first, not yet authorized) from TxInProgress
+    // (authorized and running) — use TxStarted here to match the precondition.
+    if (
+      connectorStatus.transactionPending === true &&
+      typeof connectorStatus.transactionId === 'string'
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} has a pending transaction not yet authorized`
+      )
+      return buildRejectedResponse(
+        ReasonCodeEnumType.TxStarted,
+        `Connector ${connectorId.toString()} has a pending transaction not yet authorized`,
+        // safe: OCPP 2.0 paths always store generateUUID() output here (see line ~2740)
+        connectorStatus.transactionId as UUIDv4
+      )
+    }
+
     if (
       connectorStatus.transactionStarted === true ||
       connectorStatus.transactionPending === true ||
@@ -2513,14 +2580,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
       )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: `Connector ${connectorId.toString()} already has an active or pending transaction`,
-          reasonCode: ReasonCodeEnumType.TxInProgress,
-        },
-        transactionId: generateUUID(),
-      }
+      return buildRejectedResponse(
+        ReasonCodeEnumType.TxInProgress,
+        `Connector ${connectorId.toString()} already has an active or pending transaction`
+      )
     }
 
     const shouldAuthorizeRemoteStart = OCPP20ServiceUtils.readVariableAsBoolean(
@@ -2546,14 +2609,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken with MasterPassGroupId group cannot start a transaction`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'MasterPassGroupId tokens cannot start transactions',
-            reasonCode: ReasonCodeEnumType.InvalidIdToken,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InvalidIdToken,
+          'MasterPassGroupId tokens cannot start transactions'
+        )
       }
 
       try {
@@ -2567,16 +2626,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for '${truncateId(idToken.idToken)}':`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Authorization error occurred',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InternalError,
+          'Authorization error occurred'
+        )
       }
     } else {
       logger.info(
@@ -2585,14 +2640,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     if (!isAuthorized) {
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: `IdToken '${truncateId(idToken.idToken)}' is not authorized`,
-          reasonCode: ReasonCodeEnumType.InvalidIdToken,
-        },
-        transactionId: generateUUID(),
-      }
+      return buildRejectedResponse(
+        ReasonCodeEnumType.InvalidIdToken,
+        `IdToken '${truncateId(idToken.idToken)}' is not authorized`
+      )
     }
 
     if (groupIdToken != null) {
@@ -2608,26 +2659,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for '${truncateId(groupIdToken.idToken)}':`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Group authorization error occurred',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InternalError,
+          'Group authorization error occurred'
+        )
       }
       if (!isGroupAuthorized) {
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: `GroupIdToken '${truncateId(groupIdToken.idToken)}' is not authorized`,
-            reasonCode: ReasonCodeEnumType.InvalidIdToken,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InvalidIdToken,
+          `GroupIdToken '${truncateId(groupIdToken.idToken)}' is not authorized`
+        )
       }
     }
 
@@ -2639,14 +2682,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile must have purpose TxProfile for RequestStartTransaction, got ${chargingProfile.chargingProfilePurpose}`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'ChargingProfile must have purpose TxProfile',
-            reasonCode: ReasonCodeEnumType.InvalidProfile,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InvalidProfile,
+          'ChargingProfile must have purpose TxProfile'
+        )
       }
 
       // OCPP 2.0.1 §2.10: transactionId MUST NOT be set in RequestStartTransaction
@@ -2654,14 +2693,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile transactionId must not be set for RequestStartTransaction`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'ChargingProfile transactionId must not be set',
-            reasonCode: ReasonCodeEnumType.InvalidValue,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InvalidProfile,
+          'ChargingProfile transactionId must not be set'
+        )
       }
       let isValidProfile = false
       try {
@@ -2673,29 +2708,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Charging profile validation error',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.InternalError,
+          'Charging profile validation error'
+        )
       }
       if (!isValidProfile) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Invalid charging profile`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Invalid charging profile',
-            reasonCode: ReasonCodeEnumType.InvalidProfile,
-          },
-          transactionId: generateUUID(),
-        }
+        return buildRejectedResponse(ReasonCodeEnumType.InvalidProfile, 'Invalid charging profile')
       }
     }
 
@@ -2738,16 +2762,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, resolvedEvseId)
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
-        error
+        ensureError(error)
       )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'Error starting transaction',
-          reasonCode: ReasonCodeEnumType.InternalError,
-        },
-        transactionId: generateUUID(),
-      }
+      return buildRejectedResponse(ReasonCodeEnumType.InternalError, 'Error starting transaction')
     }
   }
 
@@ -2862,18 +2879,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
       }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error handling trigger message request:`,
-        error
-      )
-
-      return {
+      const errorResponse: OCPP20TriggerMessageResponse = {
         status: TriggerMessageStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'Internal error occurred while processing trigger message request',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20TriggerMessageResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 
@@ -2947,18 +2967,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.unlockConnector(connectorId)
       return { status: UnlockStatusEnumType.Unlocked }
     } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Error handling unlock connector request:`,
-        error
-      )
-
-      return {
+      const errorResponse: OCPP20UnlockConnectorResponse = {
         status: UnlockStatusEnumType.UnlockFailed,
         statusInfo: {
           additionalInfo: 'Internal error occurred while processing unlock connector request',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+      return (
+        handleIncomingRequestError<OCPP20UnlockConnectorResponse>(
+          chargingStation,
+          OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
+          ensureError(error),
+          { errorResponse }
+        ) ?? errorResponse
+      )
     }
   }
 

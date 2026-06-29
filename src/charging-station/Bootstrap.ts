@@ -13,7 +13,7 @@ import type { IBootstrap } from './IBootstrap.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
-import { BaseError } from '../exception/index.js'
+import { BaseError, TimeoutError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
@@ -24,6 +24,7 @@ import {
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
   ConfigurationSection,
+  MapStringifyFormat,
   ProcedureName,
   type SimulatorState,
   type Statistics,
@@ -35,15 +36,18 @@ import {
 import {
   Configuration,
   Constants,
+  convertToBoolean,
   formatDurationMilliSeconds,
   generateUUID,
   handleUncaughtException,
   handleUnhandledRejection,
   isAsyncFunction,
   isNotEmptyArray,
+  JSONStringify,
   logger,
   logPrefix,
   once,
+  promiseWithTimeout,
 } from '../utils/index.js'
 import {
   DEFAULT_ELEMENTS_PER_WORKER,
@@ -133,7 +137,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private get persistStateEnabled (): boolean {
-    if (env[Constants.ENV_SIMULATOR_COLD_START] === 'true') {
+    if (convertToBoolean(env[Constants.ENV_SIMULATOR_COLD_START])) {
       return false
     }
     if (!Configuration.getPersistState()) {
@@ -643,11 +647,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker message event: '${event as string}' received with data: ${JSON.stringify(
-              data,
-              undefined,
-              2
-            )}`
+            `Unknown charging station worker message event: '${event as string}' received with data: ${JSONStringify(data, 2, MapStringifyFormat.object)}`
           )
       }
     } catch (error) {
@@ -699,30 +699,29 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private async waitChargingStationsStopped (): Promise<string> {
-    return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
-      const waitTimeout = setTimeout(() => {
-        const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
-          Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS
-        )} reached at stopping charging stations`
-        logger.warn(
-          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutMessage}`
-        )
-        reject(new BaseError(timeoutMessage))
-      }, Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)
-      waitChargingStationEvents(
-        this,
-        ChargingStationWorkerMessageEvents.stopped,
-        this.numberOfStartedChargingStations
+    const timeoutError = new TimeoutError(
+      `Timeout ${formatDurationMilliSeconds(Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)} reached at stopping charging stations`
+    )
+    try {
+      await promiseWithTimeout(
+        waitChargingStationEvents(
+          this,
+          ChargingStationWorkerMessageEvents.stopped,
+          this.numberOfStartedChargingStations
+        ),
+        Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS,
+        timeoutError
       )
-        .then(events => {
-          resolve('Charging stations stopped')
-          return events
-        })
-        .finally(() => {
-          clearTimeout(waitTimeout)
-        })
-        .catch(reject)
-    })
+      return 'Charging stations stopped'
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${error.message}`
+        )
+      }
+      // Non-TimeoutError errors propagate without logging (handled by the caller).
+      throw error
+    }
   }
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
