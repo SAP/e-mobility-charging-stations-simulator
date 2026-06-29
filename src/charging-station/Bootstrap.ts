@@ -46,6 +46,7 @@ import {
   logger,
   logPrefix,
   once,
+  promiseWithTimeout,
 } from '../utils/index.js'
 import {
   DEFAULT_ELEMENTS_PER_WORKER,
@@ -697,30 +698,28 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private async waitChargingStationsStopped (): Promise<string> {
-    return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
-      const waitTimeout = setTimeout(() => {
-        const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
-          Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS
-        )} reached at stopping charging stations`
-        logger.warn(
-          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutMessage}`
-        )
-        reject(new BaseError(timeoutMessage))
-      }, Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)
-      waitChargingStationEvents(
-        this,
-        ChargingStationWorkerMessageEvents.stopped,
-        this.numberOfStartedChargingStations
+    const timeoutError = new BaseError(
+      `Timeout ${formatDurationMilliSeconds(Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)} reached at stopping charging stations`
+    )
+    try {
+      await promiseWithTimeout(
+        waitChargingStationEvents(
+          this,
+          ChargingStationWorkerMessageEvents.stopped,
+          this.numberOfStartedChargingStations
+        ),
+        Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS,
+        timeoutError
       )
-        .then(events => {
-          resolve('Charging stations stopped')
-          return events
-        })
-        .finally(() => {
-          clearTimeout(waitTimeout)
-        })
-        .catch(reject)
-    })
+      return 'Charging stations stopped'
+    } catch (error) {
+      if (error === timeoutError) {
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutError.message}`
+        )
+      }
+      throw error
+    }
   }
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
