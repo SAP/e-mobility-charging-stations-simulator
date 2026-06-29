@@ -8,19 +8,13 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type {
-  OCPP20TransactionEventRequest,
-  OCPP20TransactionEventResponse,
-  UUIDv4,
-} from '../../../../src/types/index.js'
+import type { OCPP20TransactionEventResponse, UUIDv4 } from '../../../../src/types/index.js'
 
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20MessageFormatEnumType,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -33,46 +27,11 @@ import {
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-
-interface TestableOCPP20ResponseService {
-  handleResponseTransactionEvent: (
-    chargingStation: ChargingStation,
-    payload: OCPP20TransactionEventResponse,
-    requestPayload: OCPP20TransactionEventRequest
-  ) => Promise<void>
-}
-
-/**
- * Builds a minimal OCPP20TransactionEventRequest for use as requestPayload in tests.
- * @param transactionId - The transaction UUID to embed in transactionInfo
- * @returns A minimal OCPP20TransactionEventRequest
- */
-function buildTransactionEventRequest (transactionId: UUIDv4): OCPP20TransactionEventRequest {
-  return {
-    eventType: OCPP20TransactionEventEnumType.Updated,
-    meterValue: [],
-    seqNo: 0,
-    timestamp: new Date(),
-    transactionInfo: {
-      transactionId,
-    },
-    triggerReason: OCPP20TriggerReasonEnumType.Authorized,
-  }
-}
-
-/**
- * Creates a testable wrapper around OCPP20ResponseService.
- * @param service - The OCPP20ResponseService instance to wrap
- * @returns A typed interface exposing private handler methods
- */
-function createTestableResponseService (
-  service: OCPP20ResponseService
-): TestableOCPP20ResponseService {
-  const serviceImpl = service as unknown as TestableOCPP20ResponseService
-  return {
-    handleResponseTransactionEvent: serviceImpl.handleResponseTransactionEvent.bind(service),
-  }
-}
+import {
+  buildTransactionEventRequest,
+  createTestableOCPP20ResponseService,
+  type TestableOCPP20ResponseService,
+} from './OCPP20ResponseServiceTestUtils.js'
 
 await describe('D01 - TransactionEvent Response', async () => {
   let station: ChargingStation
@@ -98,7 +57,7 @@ await describe('D01 - TransactionEvent Response', async () => {
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
     }
     const responseService = new OCPP20ResponseService()
-    testable = createTestableResponseService(responseService)
+    testable = createTestableOCPP20ResponseService(responseService)
   })
 
   afterEach(() => {
@@ -308,7 +267,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Invalid,
       },
     }
-    const multiTestable = createTestableResponseService(new OCPP20ResponseService())
+    const multiTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
 
     // Act — reject EVSE 1's transaction only
     await multiTestable.handleResponseTransactionEvent(

@@ -22,11 +22,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type {
-  OCPP20TransactionEventRequest,
-  OCPP20TransactionEventResponse,
-  UUIDv4,
-} from '../../../../src/types/index.js'
+import type { OCPP20TransactionEventResponse } from '../../../../src/types/index.js'
 
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -34,7 +30,6 @@ import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, logger } from '../../../../src/utils/index.js'
@@ -48,59 +43,11 @@ import {
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-
-interface TestableOCPP20ResponseService {
-  handleResponseTransactionEvent: (
-    chargingStation: ChargingStation,
-    payload: OCPP20TransactionEventResponse,
-    requestPayload: OCPP20TransactionEventRequest
-  ) => Promise<void>
-}
-
-/**
- * Builds a minimal OCPP20TransactionEventRequest with the given event type and
- * transaction id. Used as the request-payload twin in handler dispatch.
- * @param transactionId - The transaction UUID embedded in transactionInfo
- * @param eventType - The TransactionEvent type (Started/Updated/Ended)
- * @param idToken - Optional idToken to attach; required to exercise the auth-cache
- *   update path at OCPP20ResponseService.ts (C10.FR.01/04/05)
- * @param idToken.idToken - OCPP IdToken value (e.g. an RFID tag string)
- * @param idToken.type - OCPP 2.0.1 IdToken type (e.g. `ISO14443`, `ISO15693`, `Central`)
- * @returns A minimal OCPP20TransactionEventRequest
- */
-function buildTransactionEventRequest (
-  transactionId: UUIDv4,
-  eventType: OCPP20TransactionEventEnumType,
-  idToken?: { idToken: string; type: OCPP20IdTokenEnumType }
-): OCPP20TransactionEventRequest {
-  return {
-    eventType,
-    ...(idToken != null ? { idToken } : {}),
-    meterValue: [],
-    seqNo: 0,
-    timestamp: new Date(),
-    transactionInfo: {
-      transactionId,
-    },
-    triggerReason: OCPP20TriggerReasonEnumType.Authorized,
-  }
-}
-
-/**
- * Wraps an OCPP20ResponseService instance so its private
- * `handleResponseTransactionEvent` is reachable by tests via a typed cast.
- * Mirrors the helper in `OCPP20ResponseService-TransactionEvent.test.ts`.
- * @param service - The OCPP20ResponseService instance to wrap
- * @returns A typed interface exposing the private handler
- */
-function createTestableResponseService (
-  service: OCPP20ResponseService
-): TestableOCPP20ResponseService {
-  const serviceImpl = service as unknown as TestableOCPP20ResponseService
-  return {
-    handleResponseTransactionEvent: serviceImpl.handleResponseTransactionEvent.bind(service),
-  }
-}
+import {
+  buildTransactionEventRequest,
+  createTestableOCPP20ResponseService,
+  type TestableOCPP20ResponseService,
+} from './OCPP20ResponseServiceTestUtils.js'
 
 await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issue #1826)', async () => {
   let station: ChargingStation
@@ -125,7 +72,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
     }
     const responseService = new OCPP20ResponseService()
-    testable = createTestableResponseService(responseService)
+    testable = createTestableOCPP20ResponseService(responseService)
   })
 
   afterEach(() => {
@@ -226,7 +173,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     if (endedConnector != null) {
       endedConnector.transactionId = TEST_TRANSACTION_UUID
     }
-    const endedTestable = createTestableResponseService(new OCPP20ResponseService())
+    const endedTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
     const mockDeauthEnded = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
@@ -352,7 +299,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
     mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
     const warnMockOff = mock.method(logger, 'warn', () => undefined)
-    const flagOffTestable = createTestableResponseService(new OCPP20ResponseService())
+    const flagOffTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
 
     const payload: OCPP20TransactionEventResponse = {}
     const requestPayload = buildTransactionEventRequest(
@@ -439,7 +386,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       if (cacheConnector != null) {
         cacheConnector.transactionId = TEST_TRANSACTION_UUID
       }
-      const cacheTestable = createTestableResponseService(new OCPP20ResponseService())
+      const cacheTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
       mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
         Promise.resolve({} as OCPP20TransactionEventResponse)
       )
