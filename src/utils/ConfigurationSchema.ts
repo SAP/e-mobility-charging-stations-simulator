@@ -14,6 +14,7 @@ import {
 } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'
 import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
+import { has } from './Utils.js'
 
 // ---------------------------------------------------------------
 // Sub-schemas
@@ -207,7 +208,7 @@ const UIServerListenOptionsSchema = z
     value => value != null && typeof value === 'object' && !Array.isArray(value),
     { message: 'must be a non-array object' }
   )
-  .refine(value => !Object.hasOwn(value as object, 'accessPolicy'), {
+  .refine(value => !has('accessPolicy', value), {
     message: "'accessPolicy' must be configured under 'uiServer', not 'uiServer.options'",
   })
   .pipe(UIServerListenOptionsObjectSchema)

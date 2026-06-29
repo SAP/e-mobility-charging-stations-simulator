@@ -3,7 +3,7 @@ import type { IncomingMessage } from 'node:http'
 import type { UIServerConfiguration } from '../../types/index.js'
 
 import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
-import { isEmpty } from '../../utils/index.js'
+import { has, isEmpty } from '../../utils/index.js'
 import {
   isLoopback,
   normalizeHost,
@@ -353,7 +353,7 @@ const parseSingleForwardedHeader = (req: IncomingMessage): ParseOutcome<Forwarde
     if (value == null) {
       continue
     }
-    if (Object.hasOwn(params, key)) {
+    if (has(key, params)) {
       return { kind: 'error', reason: UIServerAccessDenialReason.AmbiguousForwardedParameter }
     }
     params[key] = value

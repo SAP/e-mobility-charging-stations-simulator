@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { convertToInt } from '../utils/index.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -265,7 +266,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   // Validate Evses topology (OCPP 2.0.1 §7.2 constraints)
   if (hasEvses && template.Evses != null) {
     for (const [evseKey, evse] of Object.entries(template.Evses)) {
-      const evseId = Number(evseKey)
+      const evseId = convertToInt(evseKey)
       const connectorIds = Object.keys(evse.Connectors).map(Number)
       if (evseId === 0) {
         for (const connectorId of connectorIds) {
