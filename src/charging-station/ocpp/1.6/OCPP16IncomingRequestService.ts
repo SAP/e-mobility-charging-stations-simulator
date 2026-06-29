@@ -782,7 +782,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16StandardParametersKey.WebSocketPingInterval,
       ])
       if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
-        const numValue = convertToInt(value)
+        // NB: `Number(value)` is used here intentionally — the rejection check
+        // below relies on `NaN` (returned by `Number()` for invalid input) to
+        // fail `Number.isInteger`. `convertToInt` returns `0` for null/undefined,
+        // throws on `''`/'abc', and silently truncates floats (e.g. '1.5' → 1),
+        // which would all bypass the rejection path.
+        const numValue = Number(value)
         if (!Number.isInteger(numValue) || numValue < 0) {
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
         }
