@@ -713,6 +713,9 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       )
       return 'Charging stations stopped'
     } catch (error) {
+      // Identity check: promiseWithTimeout rejects with the same Error instance
+      // passed in as timeoutError; downstream errors from waitChargingStationEvents
+      // bypass this branch and propagate unlogged (matches the original behaviour).
       if (error === timeoutError) {
         logger.warn(
           `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutError.message}`

@@ -815,13 +815,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP20Constants.OCPP_RESPONSE_ACCEPTED
     } catch (error) {
+      const errorResponse: OCPP20ClearCacheResponse = OCPP20Constants.OCPP_RESPONSE_REJECTED
       return (
         handleIncomingRequestError<OCPP20ClearCacheResponse>(
           chargingStation,
           OCPP20IncomingRequestCommand.CLEAR_CACHE,
           ensureError(error),
-          { errorResponse: OCPP20Constants.OCPP_RESPONSE_REJECTED }
-        ) ?? OCPP20Constants.OCPP_RESPONSE_REJECTED
+          { errorResponse }
+        ) ?? errorResponse
       )
     }
   }
@@ -968,13 +969,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED
     } catch (error) {
+      const errorResponse: OCPP20SendLocalListResponse =
+        OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
       return (
         handleIncomingRequestError<OCPP20SendLocalListResponse>(
           chargingStation,
           OCPP20IncomingRequestCommand.SEND_LOCAL_LIST,
           ensureError(error),
-          { errorResponse: OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED }
-        ) ?? OCPP20Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
+          { errorResponse }
+        ) ?? errorResponse
       )
     }
   }
