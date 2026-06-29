@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 
-import { OCPPVersion } from '../../../types/index.js'
+import { MapStringifyFormat, OCPPVersion } from '../../../types/index.js'
+import { JSONStringify } from '../../../utils/index.js'
 
 export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServer): void => {
   server.registerResource(
@@ -19,7 +20,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
       contents: [
         {
           mimeType: 'application/json',
-          text: JSON.stringify(uiServer.listChargingStationData(), null, 2),
+          text: JSONStringify(uiServer.listChargingStationData(), 2, MapStringifyFormat.object),
           uri: 'station://list',
         },
       ],
@@ -41,7 +42,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
             mimeType: 'application/json',
             text:
               data != null
-                ? JSON.stringify(data, null, 2)
+                ? JSONStringify(data, 2, MapStringifyFormat.object)
                 : JSON.stringify({ error: `Station '${hashId as string}' not found` }),
             uri: uri.href,
           },
@@ -61,7 +62,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
       contents: [
         {
           mimeType: 'application/json',
-          text: JSON.stringify(uiServer.getChargingStationTemplates(), null, 2),
+          text: JSONStringify(uiServer.getChargingStationTemplates(), 2),
           uri: 'template://list',
         },
       ],
@@ -116,7 +117,7 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
             contents: [
               {
                 mimeType: 'application/json',
-                text: JSON.stringify({ commands, count: commands.length, version }, null, 2),
+                text: JSONStringify({ commands, count: commands.length, version }, 2),
                 uri: `schema://ocpp/${version}`,
               },
             ],

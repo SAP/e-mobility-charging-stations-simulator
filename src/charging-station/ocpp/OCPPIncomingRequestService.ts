@@ -11,7 +11,7 @@ import {
   type JsonType,
   type OCPPVersion,
 } from '../../types/index.js'
-import { isAsyncFunction, logger } from '../../utils/index.js'
+import { isAsyncFunction, JSONStringify, logger } from '../../utils/index.js'
 import { type Ajv, createAjv, validatePayload } from './OCPPServiceUtils.js'
 
 export abstract class OCPPIncomingRequestService extends EventEmitter {
@@ -67,11 +67,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     ) {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is in pending state on the ${this.csmsName}`,
+        `${commandName} cannot be issued to handle request PDU ${JSONStringify(commandPayload, 2)} while the charging station is in pending state on the ${this.csmsName}`,
         commandName,
         commandPayload
       )
@@ -114,11 +110,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
-            commandPayload,
-            undefined,
-            2
-          )}`,
+          `${commandName} is not implemented to handle request PDU ${JSONStringify(commandPayload, 2)}`,
           commandName,
           commandPayload
         )
@@ -126,11 +118,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is not registered on the ${this.csmsName}`,
+        `${commandName} cannot be issued to handle request PDU ${JSONStringify(commandPayload, 2)} while the charging station is not registered on the ${this.csmsName}`,
         commandName,
         commandPayload
       )

@@ -13,6 +13,7 @@ import {
   ensureError,
   formatLogPrefix,
   handleFileException,
+  JSONStringify,
   logger,
 } from '../utils/index.js'
 
@@ -147,7 +148,7 @@ export const writeStateFile = async (
     }
     atomicWriteFileSync(
       stateFilePath,
-      JSON.stringify(stateData, undefined, 2),
+      JSONStringify(stateData, 2),
       FileType.SimulatorState,
       logPrefixFn?.() ?? '',
       { errorParams: { throwError: false } }

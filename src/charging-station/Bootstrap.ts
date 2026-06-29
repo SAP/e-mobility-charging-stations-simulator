@@ -42,6 +42,7 @@ import {
   handleUnhandledRejection,
   isAsyncFunction,
   isNotEmptyArray,
+  JSONStringify,
   logger,
   logPrefix,
   once,
@@ -644,11 +645,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker message event: '${event as string}' received with data: ${JSON.stringify(
-              data,
-              undefined,
-              2
-            )}`
+            `Unknown charging station worker message event: '${event as string}' received with data: ${JSONStringify(data, 2)}`
           )
       }
     } catch (error) {

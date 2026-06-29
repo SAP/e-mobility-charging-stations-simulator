@@ -55,6 +55,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  JSONStringify,
   logger,
   logPrefix,
   max,
@@ -197,7 +198,7 @@ export const validatePayload = <T extends JsonType>(
     ajvErrorsToErrorType(validate.errors),
     `${context.charAt(0).toUpperCase()}${context.slice(1)} PDU is invalid`,
     commandName,
-    JSON.stringify(validate.errors, undefined, 2)
+    JSONStringify(validate.errors, 2)
   )
 }
 
