@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
-// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts
-// which can interact with Zod schema initialization order.
+// Direct path: avoid potential TDZ cycle via the `utils/index.js` barrel re-exporting Zod-using ConfigurationSchema.ts.
 import { convertToInt } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 

@@ -82,6 +82,13 @@ const SOC_MAXIMUM_VALUE = 100
 const UNIT_DIVIDER_KILO = 1000
 const MS_PER_HOUR = 3_600_000
 
+const isOCPP20FlagEnabled = (
+  chargingStation: ChargingStation,
+  component: OCPP20ComponentName,
+  variable: string
+): boolean =>
+  convertToBoolean(getConfigurationKey(chargingStation, buildConfigKey(component, variable))?.value)
+
 export type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -934,38 +941,29 @@ export const buildMeterValue = (
         )
       }
       {
-        const signReadings = convertToBoolean(
-          getConfigurationKey(
-            chargingStation,
-            buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.SignReadings)
-          )?.value
+        const signReadings = isOCPP20FlagEnabled(
+          chargingStation,
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.SignReadings
         )
 
         if (signReadings) {
           let signingEnabledForContext = true
           if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
-            signingEnabledForContext = convertToBoolean(
-              getConfigurationKey(
-                chargingStation,
-                buildConfigKey(
-                  OCPP20ComponentName.SampledDataCtrlr,
-                  VendorParametersKey.SignStartedReadings
-                )
-              )?.value
+            signingEnabledForContext = isOCPP20FlagEnabled(
+              chargingStation,
+              OCPP20ComponentName.SampledDataCtrlr,
+              VendorParametersKey.SignStartedReadings
             )
           } else if (
             context == null ||
             context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
             context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           ) {
-            signingEnabledForContext = convertToBoolean(
-              getConfigurationKey(
-                chargingStation,
-                buildConfigKey(
-                  OCPP20ComponentName.SampledDataCtrlr,
-                  VendorParametersKey.SignUpdatedReadings
-                )
-              )?.value
+            signingEnabledForContext = isOCPP20FlagEnabled(
+              chargingStation,
+              OCPP20ComponentName.SampledDataCtrlr,
+              VendorParametersKey.SignUpdatedReadings
             )
           }
 

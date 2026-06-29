@@ -164,12 +164,7 @@ export class OCPP16ServiceUtils {
     }
     if (
       OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-      convertToBoolean(
-        getConfigurationKey(
-          chargingStation,
-          OCPP16VendorParametersKey.SampledDataSignStartedReadings
-        )?.value
-      )
+      OCPP16ServiceUtils.isSigningStartedReadingsEnabled(chargingStation)
     ) {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
@@ -684,6 +679,30 @@ export class OCPP16ServiceUtils {
   }
 
   /**
+   * @param chargingStation - Target charging station
+   * @returns Whether signing of transaction-started readings is enabled
+   *   (SampledDataSignStartedReadings=true)
+   */
+  public static isSigningStartedReadingsEnabled (chargingStation: ChargingStation): boolean {
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignStartedReadings)
+        ?.value
+    )
+  }
+
+  /**
+   * @param chargingStation - Target charging station
+   * @returns Whether signing of transaction-updated readings is enabled
+   *   (SampledDataSignUpdatedReadings=true)
+   */
+  public static isSigningUpdatedReadingsEnabled (chargingStation: ChargingStation): boolean {
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignUpdatedReadings)
+        ?.value
+    )
+  }
+
+  /**
    * Stops a transaction remotely on the given connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier with the active transaction
@@ -815,12 +834,7 @@ export class OCPP16ServiceUtils {
       const meterValue = buildMeterValue(chargingStation, transactionId, interval)
       if (
         OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-        convertToBoolean(
-          getConfigurationKey(
-            chargingStation,
-            OCPP16VendorParametersKey.SampledDataSignUpdatedReadings
-          )?.value
-        )
+        OCPP16ServiceUtils.isSigningUpdatedReadingsEnabled(chargingStation)
       ) {
         const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           connectorStatus.transactionId

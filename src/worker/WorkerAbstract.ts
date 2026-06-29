@@ -5,11 +5,6 @@ import { statSync } from 'node:fs'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
-// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts
-// which itself imports from `worker/index.js` — using the barrel triggers a
-// TDZ cycle that breaks Zod enum initialization at module load.
-import { isNotEmptyString } from '../utils/Utils.js'
-
 export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
   public abstract readonly emitter: EventEmitterAsyncResource | undefined
   public abstract readonly info: PoolInfo | SetInfo
@@ -31,7 +26,7 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
     if (typeof workerScript !== 'string') {
       throw new TypeError('Worker script must be a string')
     }
-    if (!isNotEmptyString(workerScript)) {
+    if (workerScript.trim().length === 0) {
       throw new Error('Worker script is an empty string')
     }
     const workerScriptStatistics = statSync(workerScript, { throwIfNoEntry: false })

@@ -1,8 +1,6 @@
 import { isIP } from 'node:net'
 
-// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts
-// which itself imports from this module — using the barrel triggers a TDZ
-// cycle (`Cannot access 'isHostLiteralWithoutPort' before initialization`).
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which imports from this module, causing a TDZ cycle.
 import { convertToInt } from '../../utils/Utils.js'
 
 export const LOOPBACK_HOSTNAME = 'localhost'
