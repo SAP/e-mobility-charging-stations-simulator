@@ -2599,7 +2599,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           idToken.type
         )
       } catch (error) {
-        const errorResponse: OCPP20RequestStartTransactionResponse = {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for '${truncateId(idToken.idToken)}':`,
+          error
+        )
+        return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
             additionalInfo: 'Authorization error occurred',
@@ -2607,14 +2611,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           },
           transactionId: generateUUID(),
         }
-        return (
-          handleIncomingRequestError<OCPP20RequestStartTransactionResponse>(
-            chargingStation,
-            OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-            ensureError(error),
-            { errorResponse }
-          ) ?? errorResponse
-        )
       }
     } else {
       logger.info(
@@ -2644,7 +2640,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           groupIdToken.type
         )
       } catch (error) {
-        const errorResponse: OCPP20RequestStartTransactionResponse = {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for '${truncateId(groupIdToken.idToken)}':`,
+          error
+        )
+        return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
             additionalInfo: 'Group authorization error occurred',
@@ -2652,14 +2652,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           },
           transactionId: generateUUID(),
         }
-        return (
-          handleIncomingRequestError<OCPP20RequestStartTransactionResponse>(
-            chargingStation,
-            OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-            ensureError(error),
-            { errorResponse }
-          ) ?? errorResponse
-        )
       }
       if (!isGroupAuthorized) {
         return {
@@ -2713,7 +2705,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           resolvedEvseId
         )
       } catch (error) {
-        const errorResponse: OCPP20RequestStartTransactionResponse = {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
+          error
+        )
+        return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
             additionalInfo: 'Charging profile validation error',
@@ -2721,14 +2717,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           },
           transactionId: generateUUID(),
         }
-        return (
-          handleIncomingRequestError<OCPP20RequestStartTransactionResponse>(
-            chargingStation,
-            OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-            ensureError(error),
-            { errorResponse }
-          ) ?? errorResponse
-        )
       }
       if (!isValidProfile) {
         logger.warn(
@@ -2782,7 +2770,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     } catch (error) {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, resolvedEvseId)
-      const errorResponse: OCPP20RequestStartTransactionResponse = {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
+        error
+      )
+      return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'Error starting transaction',
@@ -2790,14 +2782,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
         transactionId: generateUUID(),
       }
-      return (
-        handleIncomingRequestError<OCPP20RequestStartTransactionResponse>(
-          chargingStation,
-          OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-          ensureError(error),
-          { errorResponse }
-        ) ?? errorResponse
-      )
     }
   }
 

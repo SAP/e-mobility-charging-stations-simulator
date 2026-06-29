@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-// Direct path: avoid potential TDZ cycle via the `utils/index.js` barrel re-exporting Zod-using ConfigurationSchema.ts.
-import { convertToInt } from '../utils/Utils.js'
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
+import { convertToIntOrNaN } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -267,7 +267,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   // Validate Evses topology (OCPP 2.0.1 §7.2 constraints)
   if (hasEvses && template.Evses != null) {
     for (const [evseKey, evse] of Object.entries(template.Evses)) {
-      const evseId = convertToInt(evseKey)
+      const evseId = convertToIntOrNaN(evseKey)
       const connectorIds = Object.keys(evse.Connectors).map(Number)
       if (evseId === 0) {
         for (const connectorId of connectorIds) {

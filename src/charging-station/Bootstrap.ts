@@ -14,6 +14,13 @@ import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError } from '../exception/index.js'
+
+/**
+ * Internal sentinel error used by `waitChargingStationsStopped` to distinguish
+ * the timeout case from upstream errors of `waitChargingStationEvents`. The
+ * `instanceof` check survives any future wrapping in `promiseWithTimeout`.
+ */
+class TimeoutError extends BaseError {}
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
@@ -24,6 +31,7 @@ import {
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
   ConfigurationSection,
+  MapStringifyFormat,
   ProcedureName,
   type SimulatorState,
   type Statistics,
@@ -646,7 +654,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker message event: '${event as string}' received with data: ${JSONStringify(data, 2)}`
+            `Unknown charging station worker message event: '${event as string}' received with data: ${JSONStringify(data, 2, MapStringifyFormat.object)}`
           )
       }
     } catch (error) {
@@ -698,7 +706,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private async waitChargingStationsStopped (): Promise<string> {
-    const timeoutError = new BaseError(
+    const timeoutError = new TimeoutError(
       `Timeout ${formatDurationMilliSeconds(Constants.STOP_CHARGING_STATIONS_TIMEOUT_MS)} reached at stopping charging stations`
     )
     try {
@@ -713,10 +721,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       )
       return 'Charging stations stopped'
     } catch (error) {
-      // Identity check: promiseWithTimeout rejects with the same Error instance
-      // passed in as timeoutError; downstream errors from waitChargingStationEvents
-      // bypass this branch and propagate unlogged (matches the original behaviour).
-      if (error === timeoutError) {
+      // TimeoutError-only log: subclass discriminator survives future wrapping
+      // in promiseWithTimeout; downstream errors from waitChargingStationEvents
+      // propagate unlogged (matches the original behaviour).
+      if (error instanceof TimeoutError) {
         logger.warn(
           `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutError.message}`
         )

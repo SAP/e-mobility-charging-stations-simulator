@@ -6,7 +6,13 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { BootReasonEnumType, SigningMethodEnumType } from '../../types/index.js'
+import type {
+  BootReasonEnumType,
+  OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
+  OCPP20VendorVariableName,
+  SigningMethodEnumType,
+} from '../../types/index.js'
 
 import {
   buildConfigKey,
@@ -86,7 +92,7 @@ const MS_PER_HOUR = 3_600_000
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
   component: OCPP20ComponentName,
-  variable: string
+  variable: OCPP20OptionalVariableName | OCPP20RequiredVariableName | OCPP20VendorVariableName
 ): boolean =>
   convertToBoolean(getConfigurationKey(chargingStation, buildConfigKey(component, variable))?.value)
 

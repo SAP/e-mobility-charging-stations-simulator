@@ -680,7 +680,7 @@ export class OCPP16ServiceUtils {
 
   /**
    * @param chargingStation - Target charging station
-   * @returns Whether signing of transaction-started readings is enabled
+   * @returns Whether signing of meter values at transaction start is enabled
    *   (SampledDataSignStartedReadings=true)
    */
   public static isSigningStartedReadingsEnabled (chargingStation: ChargingStation): boolean {
@@ -692,7 +692,7 @@ export class OCPP16ServiceUtils {
 
   /**
    * @param chargingStation - Target charging station
-   * @returns Whether signing of transaction-updated readings is enabled
+   * @returns Whether signing of meter values during transaction updates is enabled
    *   (SampledDataSignUpdatedReadings=true)
    */
   public static isSigningUpdatedReadingsEnabled (chargingStation: ChargingStation): boolean {

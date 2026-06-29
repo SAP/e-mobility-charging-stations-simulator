@@ -698,15 +698,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED
     } catch (error) {
+      const errorResponse: GenericResponse =
+        OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED
       return (
         handleIncomingRequestError<GenericResponse>(
           chargingStation,
           OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
           ensureError(error),
-          {
-            errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED,
-          }
-        ) ?? OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED
+          { errorResponse }
+        ) ?? errorResponse
       )
     }
   }
@@ -942,13 +942,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
     } catch (error) {
+      const errorResponse: OCPP16DataTransferResponse =
+        OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED
       return (
         handleIncomingRequestError<OCPP16DataTransferResponse>(
           chargingStation,
           OCPP16IncomingRequestCommand.DATA_TRANSFER,
           ensureError(error),
-          { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
-        ) ?? OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED
+          { errorResponse }
+        ) ?? errorResponse
       )
     }
   }
@@ -1193,13 +1195,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
         }
         ftpClient?.close()
+        const errorResponse: GetDiagnosticsResponse = OCPP16Constants.OCPP_RESPONSE_EMPTY
         return (
           handleIncomingRequestError<GetDiagnosticsResponse>(
             chargingStation,
             OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
             ensureError(error),
-            { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY }
-          ) ?? OCPP16Constants.OCPP_RESPONSE_EMPTY
+            { errorResponse }
+          ) ?? errorResponse
         )
       }
     } else {
@@ -1451,13 +1454,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (errorConnectorStatus != null) {
         errorConnectorStatus.status = OCPP16ChargePointStatus.Available
       }
+      const errorResponse: OCPP16ReserveNowResponse =
+        OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED
       return (
         handleIncomingRequestError<OCPP16ReserveNowResponse>(
           chargingStation,
           OCPP16IncomingRequestCommand.RESERVE_NOW,
           ensureError(error),
-          { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
-        ) ?? OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED
+          { errorResponse }
+        ) ?? errorResponse
       )
     }
   }
