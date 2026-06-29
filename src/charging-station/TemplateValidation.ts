@@ -3,7 +3,7 @@ import type { ZodError } from 'zod'
 import type { ChargingStationTemplate } from '../types/index.js'
 
 import { BaseError } from '../exception/index.js'
-import { clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
+import { assertIsJsonObject, clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
 import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { TemplateSchema } from './TemplateSchema.js'
@@ -47,11 +47,12 @@ export class TemplateValidationError extends BaseError {
  * @returns Validated and transformed ChargingStationTemplate
  */
 export const validateTemplate = (parsed: unknown, filePath: string): ChargingStationTemplate => {
-  if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new BaseError(
+  assertIsJsonObject(
+    parsed,
+    new BaseError(
       `${moduleName}.validateTemplate: Invalid charging station template payload (not a JSON object) in template file ${filePath}`
     )
-  }
+  )
   if (isEmpty(parsed)) {
     throw new BaseError(
       `${moduleName}.validateTemplate: Empty charging station information from template file ${filePath}`

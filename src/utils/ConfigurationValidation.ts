@@ -14,7 +14,7 @@ import {
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
-import { clone, isEmpty } from './Utils.js'
+import { assertIsJsonObject, clone, isEmpty } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
 
@@ -89,11 +89,12 @@ export class ConfigurationValidationError extends BaseError {
  * @returns Validated and transformed `ConfigurationData`
  */
 export const validateConfiguration = (parsed: unknown, filePath: string): ConfigurationData => {
-  if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new BaseError(
+  assertIsJsonObject(
+    parsed,
+    new BaseError(
       `${moduleName}.validateConfiguration: Invalid simulator configuration payload (not a JSON object) ${filePath}`
     )
-  }
+  )
   if (isEmpty(parsed)) {
     throw new BaseError(
       `${moduleName}.validateConfiguration: Empty simulator configuration from file ${filePath}`
