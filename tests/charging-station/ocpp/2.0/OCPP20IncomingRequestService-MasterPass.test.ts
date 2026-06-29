@@ -20,6 +20,7 @@ import {
   OCPP20IdTokenEnumType,
   OCPP20OptionalVariableName,
   OCPPVersion,
+  ReasonCodeEnumType,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -110,6 +111,8 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidIdToken)
   })
 
   await it('C12.FR.09 - should be no-op when MasterPassGroupId not configured', async () => {

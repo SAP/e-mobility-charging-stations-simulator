@@ -229,12 +229,9 @@ const buildStationInfoReportData = (
   return reportData
 }
 
-// OCPP 2.0.1 part 2 §F01.FR.13 creates a positive obligation: when a transaction was created
-// on the Charging Station but not yet authorized (cable-plugin-first), the existing transactionId
-// SHALL be echoed in RequestStartTransactionResponse. On pure rejections the spec is silent and
-// the schema does not require transactionId; fabricating a UUID would mislead CSMS that map
-// remoteStartId → transactionId. Callers pass the existing connectorStatus.transactionId only
-// when the F01.FR.13 precondition holds.
+// OCPP 2.0.1 part 2 §F01.FR.13: when a transaction exists on the Charging Station but is not yet
+// authorized (cable-plugin-first), echo its transactionId in RequestStartTransactionResponse.
+// Otherwise omit — fabricating a UUID misleads CSMS that map remoteStartId → transactionId.
 const buildRejectedResponse = (
   reasonCode: ReasonCodeEnumType,
   additionalInfo: string,
@@ -245,7 +242,7 @@ const buildRejectedResponse = (
     additionalInfo,
     reasonCode,
   },
-  ...(transactionId != null ? { transactionId } : {}),
+  ...(transactionId != null && { transactionId }),
 })
 
 interface OCPP20StationState {
@@ -2573,6 +2570,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return buildRejectedResponse(
         ReasonCodeEnumType.TxStarted,
         `Connector ${connectorId.toString()} has a pending transaction not yet authorized`,
+        // safe: OCPP 2.0 paths always store generateUUID() output here (see line ~2740)
         connectorStatus.transactionId as UUIDv4
       )
     }

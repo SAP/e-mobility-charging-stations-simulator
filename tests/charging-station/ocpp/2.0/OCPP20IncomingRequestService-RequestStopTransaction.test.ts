@@ -28,6 +28,7 @@ import {
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
+  ReasonCodeEnumType,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -136,6 +137,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
     })
 
     // FR: F03.FR.08
@@ -146,6 +148,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
     })
 
     // FR: F03.FR.08
@@ -156,6 +159,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
     })
 
     // FR: F03.FR.02

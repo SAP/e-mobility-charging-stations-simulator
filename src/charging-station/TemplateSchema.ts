@@ -282,7 +282,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
           if (connectorId !== 0) {
             ctx.addIssue({
               code: 'custom',
-              message: `EVSE 0 has invalid connector id ${connectorId.toString()}, only connector id 0 is allowed (OCPP 2.0.1 §7.2)`,
+              message: `EVSE 0 has invalid connector id ${connectorId.toString()}, only connector id 0 is allowed (OCPP 2.0.1 part 1 §7.2)`,
               path: ['Evses', evseKey, 'Connectors', connectorId.toString()],
             })
           }
@@ -292,7 +292,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
           if (connectorId < 1) {
             ctx.addIssue({
               code: 'custom',
-              message: `EVSE ${evseId.toString()} has invalid connector id ${connectorId.toString()}, connector ids must start at 1 (OCPP 2.0.1 §7.2)`,
+              message: `EVSE ${evseId.toString()} has invalid connector id ${connectorId.toString()}, connector ids must start at 1 (OCPP 2.0.1 part 1 §7.2)`,
               path: ['Evses', evseKey, 'Connectors', connectorId.toString()],
             })
           }

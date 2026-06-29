@@ -281,7 +281,7 @@ export class AuthenticationError extends Error {
   public readonly code: AuthErrorCode
   public readonly context?: AuthContext
   public readonly identifier?: string
-  public override name = 'AuthenticationError'
+  public override readonly name = 'AuthenticationError' as const
 
   public readonly ocppVersion?: OCPPVersion
 

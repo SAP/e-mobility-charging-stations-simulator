@@ -18,6 +18,7 @@ export class TemplateValidationError extends BaseError {
   public readonly fieldErrors: { message: string; path: string }[]
   public readonly filePath: string
   public readonly migratedFrom?: number
+  public override readonly name = 'TemplateValidationError' as const
 
   public constructor (zodError: ZodError, context: { filePath: string; migratedFrom?: number }) {
     const fieldErrors = zodError.issues.map(issue => ({

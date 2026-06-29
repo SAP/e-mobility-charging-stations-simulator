@@ -37,6 +37,7 @@ export class ConfigurationValidationError extends BaseError {
   public readonly fieldErrors: FieldError[]
   public readonly filePath: string
   public readonly migratedFrom?: number
+  public override readonly name = 'ConfigurationValidationError' as const
   public readonly phase: ValidationPhase
 
   public constructor (

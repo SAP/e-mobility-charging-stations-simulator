@@ -139,9 +139,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidIdToken)
   })
 
-  // G03.FR.03 — Reject when auth returns BLOCKED for groupIdToken
   await it('should reject RequestStartTransaction when groupIdToken auth returns BLOCKED', async () => {
     // Arrange: Primary token accepted, group token blocked
     let callCount = 0
@@ -189,9 +189,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidIdToken)
   })
 
-  // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
   await it('should store remoteStartId and idToken in connector status for TransactionEvent', async () => {
     const { station: spyChargingStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -346,6 +346,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidProfile)
   })
 
   // OCPP 2.0.1 §2.10: transactionId MUST NOT be present at RequestStartTransaction time
@@ -388,6 +389,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidProfile)
   })
 
   // FR: F01.FR.07
@@ -438,11 +440,33 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
-    // OCPP 2.0.1 part 2 §F01.FR.13: when a transaction was created on the station but not yet
-    // authorized (transactionPending), the existing transactionId SHALL be echoed back with
-    // reasonCode TxStarted (cable-plugin-first), not fabricated and not undefined.
+    // §F01.FR.13: echo pending transactionId
     assert.strictEqual(response.transactionId, pendingTransactionId)
     assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxStarted)
+  })
+
+  await it('should reject RequestStartTransaction with TxInProgress (no transactionId echo) when connector is locked without pending transaction', async () => {
+    const connectorStatus = mockStation.getConnectorStatus(1)
+    if (connectorStatus == null) {
+      assert.fail('Connector 1 missing on mock station')
+    }
+    connectorStatus.locked = true
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      idToken: {
+        idToken: 'LOCKED_CONNECTOR_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 102,
+    }
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxInProgress)
   })
 
   await it('should reject RequestStartTransaction when authorization throws an error', async () => {
@@ -469,6 +493,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
   })
 
   // FR: F01.FR.02 — TC_F_03_CS
@@ -577,6 +602,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Assert
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
     assert.strictEqual(response.transactionId, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
   })
 
   await describe('REQUEST_START_TRANSACTION event listener', async () => {
