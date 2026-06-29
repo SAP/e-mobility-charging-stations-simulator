@@ -16,7 +16,6 @@ import { env } from 'node:process'
 
 import {
   type JsonObject,
-  type JsonType,
   MapStringifyFormat,
   MessageType,
   type TimestampedData,
@@ -465,18 +464,11 @@ export const secureRandom = (): number => {
   return getRandomValues(new Uint32Array(1))[0] / 0x100000000
 }
 
-export const JSONStringify = <
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  T extends
-    | JsonType
-    | Map<string, Record<string, unknown>>
-    | Record<string, unknown>[]
-    | Set<Record<string, unknown>>
->(
-    object: T,
-    space?: number | string,
-    mapFormat?: MapStringifyFormat
-  ): string => {
+export const JSONStringify = (
+  object: unknown,
+  space?: number | string,
+  mapFormat?: MapStringifyFormat
+): string => {
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {

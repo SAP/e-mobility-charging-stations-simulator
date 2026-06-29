@@ -6,7 +6,13 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { BootReasonEnumType, SigningMethodEnumType } from '../../types/index.js'
+import type {
+  BootReasonEnumType,
+  OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
+  OCPP20VendorVariableName,
+  SigningMethodEnumType,
+} from '../../types/index.js'
 
 import {
   buildConfigKey,
@@ -46,6 +52,7 @@ import {
   ACElectricUtils,
   clone,
   Constants,
+  convertToBoolean,
   convertToFloat,
   convertToInt,
   DCElectricUtils,
@@ -54,6 +61,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  JSONStringify,
   logger,
   logPrefix,
   max,
@@ -80,6 +88,13 @@ const moduleName = 'OCPPServiceUtils'
 const SOC_MAXIMUM_VALUE = 100
 const UNIT_DIVIDER_KILO = 1000
 const MS_PER_HOUR = 3_600_000
+
+const isOCPP20FlagEnabled = (
+  chargingStation: ChargingStation,
+  component: OCPP20ComponentName,
+  variable: OCPP20OptionalVariableName | OCPP20RequiredVariableName | OCPP20VendorVariableName
+): boolean =>
+  convertToBoolean(getConfigurationKey(chargingStation, buildConfigKey(component, variable))?.value)
 
 export type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -189,7 +204,7 @@ export const validatePayload = <T extends JsonType>(
     ajvErrorsToErrorType(validate.errors),
     `${context.charAt(0).toUpperCase()}${context.slice(1)} PDU is invalid`,
     commandName,
-    JSON.stringify(validate.errors, undefined, 2)
+    JSONStringify(validate.errors, 2)
   )
 }
 
@@ -933,36 +948,30 @@ export const buildMeterValue = (
         )
       }
       {
-        const signReadings =
-          getConfigurationKey(
-            chargingStation,
-            buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.SignReadings)
-          )?.value === 'true'
+        const signReadings = isOCPP20FlagEnabled(
+          chargingStation,
+          OCPP20ComponentName.SampledDataCtrlr,
+          StandardParametersKey.SignReadings
+        )
 
         if (signReadings) {
           let signingEnabledForContext = true
           if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
-            signingEnabledForContext =
-              getConfigurationKey(
-                chargingStation,
-                buildConfigKey(
-                  OCPP20ComponentName.SampledDataCtrlr,
-                  VendorParametersKey.SignStartedReadings
-                )
-              )?.value === 'true'
+            signingEnabledForContext = isOCPP20FlagEnabled(
+              chargingStation,
+              OCPP20ComponentName.SampledDataCtrlr,
+              VendorParametersKey.SignStartedReadings
+            )
           } else if (
             context == null ||
             context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
             context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           ) {
-            signingEnabledForContext =
-              getConfigurationKey(
-                chargingStation,
-                buildConfigKey(
-                  OCPP20ComponentName.SampledDataCtrlr,
-                  VendorParametersKey.SignUpdatedReadings
-                )
-              )?.value === 'true'
+            signingEnabledForContext = isOCPP20FlagEnabled(
+              chargingStation,
+              OCPP20ComponentName.SampledDataCtrlr,
+              VendorParametersKey.SignUpdatedReadings
+            )
           }
 
           if (signingEnabledForContext) {

@@ -41,6 +41,7 @@ import {
   type HeartbeatResponse,
   type IncomingRequest,
   type IncomingRequestCommand,
+  MapStringifyFormat,
   MessageType,
   MeterValueMeasurand,
   OCPPVersion,
@@ -97,6 +98,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  JSONStringify,
   logger,
   logPrefix,
   mergeDeepRight,
@@ -2592,7 +2594,7 @@ export class ChargingStation extends EventEmitter {
             const beginId = PerformanceStatistics.beginMeasure(measureId)
             atomicWriteFileSync(
               this.configurationFile,
-              JSON.stringify(configurationData, undefined, 2),
+              JSONStringify(configurationData, 2, MapStringifyFormat.object),
               FileType.ChargingStationConfiguration,
               this.logPrefix()
             )

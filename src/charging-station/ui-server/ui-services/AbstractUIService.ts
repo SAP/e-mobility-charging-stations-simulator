@@ -27,6 +27,7 @@ import {
   ensureError,
   getErrorMessage,
   isNotEmptyArray,
+  JSONStringify,
   logger,
 } from '../../../utils/index.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
@@ -169,11 +170,7 @@ export abstract class AbstractUIService {
 
       if (!this.requestHandlers.has(command)) {
         throw new BaseError(
-          `'${command}' is not implemented to handle message payload ${JSON.stringify(
-            requestPayload,
-            undefined,
-            2
-          )}`
+          `'${command}' is not implemented to handle message payload ${JSONStringify(requestPayload, 2)}`
         )
       }
 

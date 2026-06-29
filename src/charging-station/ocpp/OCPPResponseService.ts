@@ -11,7 +11,7 @@ import {
   type RequestCommand,
   type ResponseHandler,
 } from '../../types/index.js'
-import { Constants, isAsyncFunction, logger } from '../../utils/index.js'
+import { Constants, isAsyncFunction, JSONStringify, logger } from '../../utils/index.js'
 import { type Ajv, createAjv, validatePayload } from './OCPPServiceUtils.js'
 
 export abstract class OCPPResponseService {
@@ -97,11 +97,7 @@ export abstract class OCPPResponseService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
-            payload,
-            undefined,
-            2
-          )}`,
+          `${commandName} is not implemented to handle response PDU ${JSONStringify(payload, 2)}`,
           commandName,
           payload
         )
@@ -109,11 +105,7 @@ export abstract class OCPPResponseService {
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
-          payload,
-          undefined,
-          2
-        )} while the charging station is not registered on the ${this.csmsName}`,
+        `${commandName} cannot be issued to handle response PDU ${JSONStringify(payload, 2)} while the charging station is not registered on the ${this.csmsName}`,
         commandName,
         payload
       )

@@ -232,7 +232,7 @@ await describe('TemplateSchema', async () => {
     })
   })
 
-  await describe('Evses validation (OCPP 2.0.1 §7.2)', async () => {
+  await describe('Evses topology validation (OCPP 2.0.1 part 1 §7.1 EVSE numbering, §7.2 connector numbering)', async () => {
     await it('should reject EVSE 0 with non-zero connector id', () => {
       const result = TemplateSchema.safeParse(
         buildMinimalTemplate({ Evses: { 0: { Connectors: { 1: {} } } } })

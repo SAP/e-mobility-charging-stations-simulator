@@ -14,7 +14,7 @@ import {
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
-import { isEmpty } from './Utils.js'
+import { assertIsJsonObject, clone, isEmpty } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
 
@@ -37,6 +37,7 @@ export class ConfigurationValidationError extends BaseError {
   public readonly fieldErrors: FieldError[]
   public readonly filePath: string
   public readonly migratedFrom?: number
+  public override readonly name = 'ConfigurationValidationError' as const
   public readonly phase: ValidationPhase
 
   public constructor (
@@ -89,18 +90,19 @@ export class ConfigurationValidationError extends BaseError {
  * @returns Validated and transformed `ConfigurationData`
  */
 export const validateConfiguration = (parsed: unknown, filePath: string): ConfigurationData => {
-  if (parsed == null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new BaseError(
+  assertIsJsonObject(
+    parsed,
+    new BaseError(
       `${moduleName}.validateConfiguration: Invalid simulator configuration payload (not a JSON object) ${filePath}`
     )
-  }
+  )
   if (isEmpty(parsed)) {
     throw new BaseError(
       `${moduleName}.validateConfiguration: Empty simulator configuration from file ${filePath}`
     )
   }
   // Defensive clone: $schemaVersion is rewritten below.
-  const parsedRecord = structuredClone(parsed) as Record<string, unknown>
+  const parsedRecord = clone(parsed) as Record<string, unknown>
 
   const version = coerceConfigurationVersion(parsedRecord.$schemaVersion)
   parsedRecord.$schemaVersion = version
@@ -147,4 +149,4 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
 const transformConfiguration = (
   validated: ConfigurationData,
   _filePath: string
-): ConfigurationData => structuredClone(validated)
+): ConfigurationData => clone(validated)

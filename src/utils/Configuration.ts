@@ -289,8 +289,8 @@ export class Configuration {
     }
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
-      if (uiServerConfiguration.options != null) {
-        uiServerConfiguration.options.port = convertToInt(env.PORT ?? '')
+      if (uiServerConfiguration.options != null && isNotEmptyString(env.PORT)) {
+        uiServerConfiguration.options.port = convertToInt(env.PORT)
       }
     }
     return uiServerConfiguration
@@ -385,9 +385,7 @@ export class Configuration {
    */
   private static async performReload (): Promise<void> {
     const previousData =
-      Configuration.configurationData != null
-        ? structuredClone(Configuration.configurationData)
-        : undefined
+      Configuration.configurationData != null ? clone(Configuration.configurationData) : undefined
     const previousCache = new Map(Configuration.configurationSectionCache)
     let reloadSucceeded = false
     try {

@@ -1,5 +1,8 @@
 import { isIP } from 'node:net'
 
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which imports from this module, causing a TDZ cycle.
+import { convertToInt } from '../../utils/Utils.js'
+
 export const LOOPBACK_HOSTNAME = 'localhost'
 
 export const isLoopback = (address: string): boolean => {
@@ -94,7 +97,7 @@ const isValidPort = (port: string | undefined): boolean => {
   if (!/^\d+$/.test(port)) {
     return false
   }
-  const parsedPort = Number.parseInt(port, 10)
+  const parsedPort = convertToInt(port)
   return parsedPort >= 1 && parsedPort <= 65535
 }
 

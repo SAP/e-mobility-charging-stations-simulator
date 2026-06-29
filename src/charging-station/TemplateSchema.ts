@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts which uses Zod enums, causing a TDZ cycle.
+import { convertToIntOrNaN } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------
@@ -262,17 +264,25 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
       path: ['Connectors'],
     })
   }
-  // Validate Evses topology (OCPP 2.0.1 §7.2 constraints)
+  // Validate Evses topology (OCPP 2.0.1 part 1 §7.1 EVSE numbering)
   if (hasEvses && template.Evses != null) {
     for (const [evseKey, evse] of Object.entries(template.Evses)) {
-      const evseId = Number(evseKey)
+      const evseId = convertToIntOrNaN(evseKey)
+      if (!Number.isInteger(evseId) || evseId < 0) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `EVSE key '${evseKey}' is not a valid non-negative integer (OCPP 2.0.1 part 1 §7.1)`,
+          path: ['Evses', evseKey],
+        })
+        continue
+      }
       const connectorIds = Object.keys(evse.Connectors).map(Number)
       if (evseId === 0) {
         for (const connectorId of connectorIds) {
           if (connectorId !== 0) {
             ctx.addIssue({
               code: 'custom',
-              message: `EVSE 0 has invalid connector id ${connectorId.toString()}, only connector id 0 is allowed (OCPP 2.0.1 §7.2)`,
+              message: `EVSE 0 has invalid connector id ${connectorId.toString()}, only connector id 0 is allowed (OCPP 2.0.1 part 1 §7.2)`,
               path: ['Evses', evseKey, 'Connectors', connectorId.toString()],
             })
           }
@@ -282,7 +292,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
           if (connectorId < 1) {
             ctx.addIssue({
               code: 'custom',
-              message: `EVSE ${evseId.toString()} has invalid connector id ${connectorId.toString()}, connector ids must start at 1 (OCPP 2.0.1 §7.2)`,
+              message: `EVSE ${evseId.toString()} has invalid connector id ${connectorId.toString()}, connector ids must start at 1 (OCPP 2.0.1 part 1 §7.2)`,
               path: ['Evses', evseKey, 'Connectors', connectorId.toString()],
             })
           }
