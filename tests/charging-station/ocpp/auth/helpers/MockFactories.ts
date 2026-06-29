@@ -364,11 +364,11 @@ export const getTestAuthCache = (authService: OCPPAuthService): AuthCache => {
 // ============================================================================
 
 /**
- * Register a mock OCPPAuthService in the factory cache for the given station.
+ * Inject a mock OCPPAuthService into the factory cache for the given station.
  * Centralizes the station-id lookup and `setInstanceForTesting` plumbing used
  * by OCPP 2.0 IncomingRequest tests (ClearCache, LocalAuthList, ...).
  * @param station - Charging station under test (station-id read from stationInfo).
- * @param service - Mock auth service to register.
+ * @param service - Mock auth service to inject.
  * @returns The injected service for chaining.
  */
 export const injectMockAuthService = (

@@ -7,10 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type {
-  LocalAuthListManager,
-  OCPPAuthService,
-} from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import type { LocalAuthListManager } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
@@ -42,18 +39,17 @@ import {
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 /**
- * Inject a mock auth service for LocalAuthList request handling tests.
+ * Configure and inject a mock auth service for LocalAuthList request handling tests.
  * @param station - Charging station under test
  * @param manager - Local auth list manager exposed by the mock service
  * @param localAuthListEnabled - Whether LocalAuthList is enabled in auth configuration
- * @returns Mock auth service instance cached for the station
  */
 function setupMockAuthService (
   station: ChargingStation,
   manager: LocalAuthListManager | undefined,
   localAuthListEnabled = true
-): OCPPAuthService {
-  return injectMockAuthService(
+): void {
+  injectMockAuthService(
     station,
     createMockAuthService({
       getConfiguration: () => createTestAuthConfig({ localAuthListEnabled }),

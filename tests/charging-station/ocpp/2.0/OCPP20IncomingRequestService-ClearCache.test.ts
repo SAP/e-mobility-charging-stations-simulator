@@ -24,7 +24,7 @@ import {
 } from '../auth/helpers/MockFactories.js'
 
 /**
- * Inject a mock auth service for the current station.
+ * Configure and inject a mock auth service for the current station.
  * @param station - Charging station under test
  * @param authorizationCacheEnabled - Whether the mock auth cache is enabled
  * @param clearCache - Mock cache clearing implementation
