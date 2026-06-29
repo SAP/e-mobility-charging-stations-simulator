@@ -228,6 +228,15 @@ const buildStationInfoReportData = (
   return reportData
 }
 
+const rejectedInternalError = (additionalInfo: string): OCPP20RequestStartTransactionResponse => ({
+  status: RequestStartStopStatusEnumType.Rejected,
+  statusInfo: {
+    additionalInfo,
+    reasonCode: ReasonCodeEnumType.InternalError,
+  },
+  transactionId: generateUUID(),
+})
+
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
@@ -2601,16 +2610,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for '${truncateId(idToken.idToken)}':`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Authorization error occurred',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return rejectedInternalError('Authorization error occurred')
       }
     } else {
       logger.info(
@@ -2642,16 +2644,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for '${truncateId(groupIdToken.idToken)}':`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Group authorization error occurred',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return rejectedInternalError('Group authorization error occurred')
       }
       if (!isGroupAuthorized) {
         return {
@@ -2707,16 +2702,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
-          error
+          ensureError(error)
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Charging profile validation error',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          transactionId: generateUUID(),
-        }
+        return rejectedInternalError('Charging profile validation error')
       }
       if (!isValidProfile) {
         logger.warn(
@@ -2772,16 +2760,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, resolvedEvseId)
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
-        error
+        ensureError(error)
       )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'Error starting transaction',
-          reasonCode: ReasonCodeEnumType.InternalError,
-        },
-        transactionId: generateUUID(),
-      }
+      return rejectedInternalError('Error starting transaction')
     }
   }
 

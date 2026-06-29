@@ -13,14 +13,7 @@ import type { IBootstrap } from './IBootstrap.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
-import { BaseError } from '../exception/index.js'
-
-/**
- * Internal sentinel error used by `waitChargingStationsStopped` to distinguish
- * the timeout case from upstream errors of `waitChargingStationEvents`. The
- * `instanceof` check survives any future wrapping in `promiseWithTimeout`.
- */
-class TimeoutError extends BaseError {}
+import { BaseError, TimeoutError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
@@ -721,12 +714,10 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       )
       return 'Charging stations stopped'
     } catch (error) {
-      // TimeoutError-only log: subclass discriminator survives future wrapping
-      // in promiseWithTimeout; downstream errors from waitChargingStationEvents
-      // propagate unlogged (matches the original behaviour).
+      // Downstream errors from waitChargingStationEvents propagate without logging (matches original behavior).
       if (error instanceof TimeoutError) {
         logger.warn(
-          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${timeoutError.message}`
+          `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${error.message}`
         )
       }
       throw error

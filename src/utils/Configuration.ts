@@ -289,8 +289,8 @@ export class Configuration {
     }
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
-      if (uiServerConfiguration.options != null) {
-        uiServerConfiguration.options.port = convertToInt(env.PORT ?? '')
+      if (uiServerConfiguration.options != null && isNotEmptyString(env.PORT)) {
+        uiServerConfiguration.options.port = convertToInt(env.PORT)
       }
     }
     return uiServerConfiguration
