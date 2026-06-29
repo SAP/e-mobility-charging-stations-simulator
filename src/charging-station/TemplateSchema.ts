@@ -268,7 +268,7 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   if (hasEvses && template.Evses != null) {
     for (const [evseKey, evse] of Object.entries(template.Evses)) {
       const evseId = convertToIntOrNaN(evseKey)
-      if (Number.isNaN(evseId)) {
+      if (!Number.isInteger(evseId) || evseId < 0) {
         ctx.addIssue({
           code: 'custom',
           message: `EVSE key '${evseKey}' is not a valid non-negative integer (OCPP 2.0.1 §7.2)`,

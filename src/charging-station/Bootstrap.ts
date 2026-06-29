@@ -714,12 +714,12 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
       )
       return 'Charging stations stopped'
     } catch (error) {
-      // Downstream errors from waitChargingStationEvents propagate without logging (matches original behavior).
       if (error instanceof TimeoutError) {
         logger.warn(
           `${this.logPrefix()} ${moduleName}.waitChargingStationsStopped: ${error.message}`
         )
       }
+      // Non-TimeoutError errors propagate without logging (handled by the caller).
       throw error
     }
   }

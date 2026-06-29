@@ -431,7 +431,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
-    assert.notStrictEqual(response.transactionId, undefined)
+    // OCPP 2.0.1 §E07: transactionId MUST NOT be fabricated on rejection responses
+    assert.strictEqual(response.transactionId, undefined)
   })
 
   await it('should reject RequestStartTransaction when authorization throws an error', async () => {
