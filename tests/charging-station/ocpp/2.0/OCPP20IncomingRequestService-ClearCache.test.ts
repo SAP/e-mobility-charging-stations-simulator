@@ -46,11 +46,6 @@ function setupMockAuthService (
 }
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
-  afterEach(() => {
-    OCPPAuthServiceFactory.clearAllInstances()
-    standardCleanup()
-  })
-
   let station: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
@@ -69,6 +64,11 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     station = mockStation
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
+  })
+
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+    standardCleanup()
   })
 
   // FR: C11.FR.01 - CS SHALL attempt to clear its Authorization Cache
