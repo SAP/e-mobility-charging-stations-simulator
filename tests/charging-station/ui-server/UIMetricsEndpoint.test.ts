@@ -8,7 +8,6 @@ import type { mock } from 'node:test'
 import type { Registry } from 'prom-client'
 
 import assert from 'node:assert/strict'
-import { once } from 'node:events'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -37,9 +36,11 @@ import {
 import { logger } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import {
+  awaitFinish,
   createMockBootstrap,
   createMockIncomingMessage,
   createMockUIServerConfiguration,
+  drainResponses,
   MockServerResponse,
 } from './UIServerTestUtils.js'
 
@@ -184,7 +185,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     assert.strictEqual(res.statusCode, 200)
     assert.match(res.headers['Content-Type'] ?? '', /^text\/plain;\s*version=0\.0\.4/)
     assert.match(res.body ?? '', /^# HELP /m)
@@ -232,7 +233,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     assert.match(body, /^simulator_charging_stations_configured_total\s+5$/m)
     assert.match(body, /^simulator_charging_stations_provisioned_total\s+2$/m)
@@ -248,7 +249,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     assert.match(body, /simulator_station_started\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
     assert.match(body, /simulator_station_ws_state\{[^}]*hash_id="station-T5"[^}]*\}\s+1/)
@@ -262,7 +263,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     const line = body
       .split('\n')
@@ -375,7 +376,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
         }),
         res
       )
-      await once(res, 'finish')
+      await awaitFinish(res)
       assert.strictEqual(res.statusCode, 200)
     } finally {
       authServer.stop()
@@ -422,7 +423,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     for (const secret of [
       'SECRET-IDTAG-12345',
@@ -462,7 +463,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     assert.ok(
       !/^fake_metric\b/m.test(body),
@@ -505,7 +506,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     assert.strictEqual(res.statusCode, 200)
     const matchingCalls = warnSpy.mock.calls.filter(call => {
       const message: unknown = call.arguments[0]
@@ -524,7 +525,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     assert.ok(
       !/simulator_station_ws_state\{[^}]*hash_id="station-Mws"[^}]*\}/.test(body),
@@ -563,7 +564,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     server.start()
     const res = new MockServerResponse()
     server.emitRequest(buildMetricsRequest(), res)
-    await once(res, 'finish')
+    await awaitFinish(res)
     const body = res.body ?? ''
     assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-T18"[^}]*\}\s+1/)
     const statusLine = body
@@ -595,7 +596,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     probeServer.start()
     const probeRes = new MockServerResponse()
     probeServer.emitRequest(buildMetricsRequest(), probeRes)
-    await once(probeRes, 'finish')
+    await awaitFinish(probeRes)
     const probedSampleCount = (probeRes.body ?? '')
       .split('\n')
       .filter(line => line.length > 0 && !line.startsWith('#')).length
@@ -616,7 +617,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     exactServer.start()
     const exactRes = new MockServerResponse()
     exactServer.emitRequest(buildMetricsRequest(), exactRes)
-    await once(exactRes, 'finish')
+    await awaitFinish(exactRes)
     const exactSoftCapCalls = warnSpy.mock.calls.filter(call => {
       const message: unknown = call.arguments[0]
       return typeof message === 'string' && message.includes(METRICS_SOFT_CAP_WARN_PREFIX)
@@ -644,7 +645,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     belowServer.start()
     const belowRes = new MockServerResponse()
     belowServer.emitRequest(buildMetricsRequest(), belowRes)
-    await once(belowRes, 'finish')
+    await awaitFinish(belowRes)
     const belowSoftCapCalls = warnSpy.mock.calls.filter(call => {
       const message: unknown = call.arguments[0]
       return typeof message === 'string' && message.includes(METRICS_SOFT_CAP_WARN_PREFIX)
@@ -676,7 +677,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     probeServer.start()
     const probeRes = new MockServerResponse()
     probeServer.emitRequest(buildMetricsRequest(), probeRes)
-    await once(probeRes, 'finish')
+    await awaitFinish(probeRes)
     const probedSampleCount = (probeRes.body ?? '')
       .split('\n')
       .filter(line => line.length > 0 && !line.startsWith('#')).length
@@ -699,7 +700,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     const resB = new MockServerResponse()
     concurrentServer.emitRequest(buildMetricsRequest(), resA)
     concurrentServer.emitRequest(buildMetricsRequest(), resB)
-    await Promise.all([once(resA, 'finish'), once(resB, 'finish')])
+    await drainResponses([resA, resB])
     concurrentServer.stop()
 
     assert.strictEqual(resA.statusCode, 200)
@@ -842,7 +843,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       server.start()
       const res = new MockServerResponse()
       server.emitRequest(buildMetricsRequest(), res)
-      await once(res, 'finish')
+      await awaitFinish(res)
       const body = res.body ?? ''
       assert.ok(body.includes('1.0.0-✓'), 'non-ASCII version must propagate into exposition body')
       const checkMarkOccurrences = (body.match(/✓/gu) ?? []).length
@@ -1345,7 +1346,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       const chain0 = getChain()
       const r1 = new MockServerResponse()
       server.emitRequest(buildMetricsRequest(), r1)
-      await once(r1, 'finish')
+      await awaitFinish(r1)
       const chainAfterScrape1 = getChain()
       assert.notStrictEqual(
         chainAfterScrape1,
@@ -1368,7 +1369,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       )
       const r2 = new MockServerResponse()
       server.emitRequest(buildMetricsRequest(), r2)
-      await once(r2, 'finish')
+      await awaitFinish(r2)
       const chainAfterScrape2 = getChain()
       const all = [chain0, chainAfterScrape1, chainAfterStop, chain1, chainAfterScrape2]
       assert.strictEqual(
@@ -1390,7 +1391,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       localServer.start()
       const r1 = new MockServerResponse()
       localServer.emitRequest(buildMetricsRequest(), r1)
-      await once(r1, 'finish')
+      await awaitFinish(r1)
       const registry = localServer.getMetricsRegistry()
       assert.ok(registry !== undefined, 'precondition: registry present before stop()')
       let clearCalls = 0
@@ -1441,7 +1442,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       }
       const res = new MockServerResponse()
       localServer.emitRequest(buildMetricsRequest(), res)
-      await once(res, 'finish')
+      await awaitFinish(res)
       const rejectedChain = Reflect.get(localServer, 'metricsScrapeChain') as Promise<void>
       let rejected = false
       await rejectedChain.catch(() => {
@@ -1495,7 +1496,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
         setImmediate(resolve)
       })
       releaseGate()
-      await once(res, 'finish')
+      await awaitFinish(res)
       const scrapeWarns = warnSpy.mock.calls.filter(
         c =>
           typeof c.arguments[0] === 'string' &&
@@ -1524,7 +1525,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       localServer.start()
       const res = new MockServerResponse()
       localServer.emitRequest(buildMetricsRequest(), res)
-      await once(res, 'finish')
+      await awaitFinish(res)
       assert.strictEqual(res.statusCode, 200)
       const sampleCount = (res.body ?? '')
         .split('\n')
@@ -1568,7 +1569,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       localServer.start()
       const res = new MockServerResponse()
       localServer.emitRequest(buildMetricsRequest(), res)
-      await once(res, 'finish')
+      await awaitFinish(res)
       assert.strictEqual(res.statusCode, 200)
       const scrapeWarns = warnSpy.mock.calls.filter(
         c =>
@@ -1616,7 +1617,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
         'precondition: stop() nulled this.metricsRegistry mid-flight'
       )
       releaseGate()
-      await once(res, 'finish')
+      await awaitFinish(res)
       assert.strictEqual(
         res.statusCode,
         200,
