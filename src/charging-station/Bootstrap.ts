@@ -35,6 +35,7 @@ import {
 import {
   Configuration,
   Constants,
+  convertToBoolean,
   formatDurationMilliSeconds,
   generateUUID,
   handleUncaughtException,
@@ -133,7 +134,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private get persistStateEnabled (): boolean {
-    if (env[Constants.ENV_SIMULATOR_COLD_START] === 'true') {
+    if (convertToBoolean(env[Constants.ENV_SIMULATOR_COLD_START])) {
       return false
     }
     if (!Configuration.getPersistState()) {

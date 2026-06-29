@@ -52,6 +52,7 @@ import {
 } from '../../../types/index.js'
 import {
   clampToSafeTimerValue,
+  convertToBoolean,
   convertToDate,
   convertToInt,
   isNotEmptyArray,
@@ -163,8 +164,12 @@ export class OCPP16ServiceUtils {
     }
     if (
       OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignStartedReadings)
-        ?.value === 'true'
+      convertToBoolean(
+        getConfigurationKey(
+          chargingStation,
+          OCPP16VendorParametersKey.SampledDataSignStartedReadings
+        )?.value
+      )
     ) {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       const transactionId = connectorStatus?.transactionId ?? 0
@@ -673,9 +678,8 @@ export class OCPP16ServiceUtils {
    * @returns Whether signed meter value generation is enabled (SampledDataSignReadings=true)
    */
   public static isSigningEnabled (chargingStation: ChargingStation): boolean {
-    return (
-      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)
-        ?.value === 'true'
+    return convertToBoolean(
+      getConfigurationKey(chargingStation, OCPP16VendorParametersKey.SampledDataSignReadings)?.value
     )
   }
 
@@ -811,10 +815,12 @@ export class OCPP16ServiceUtils {
       const meterValue = buildMeterValue(chargingStation, transactionId, interval)
       if (
         OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-        getConfigurationKey(
-          chargingStation,
-          OCPP16VendorParametersKey.SampledDataSignUpdatedReadings
-        )?.value === 'true'
+        convertToBoolean(
+          getConfigurationKey(
+            chargingStation,
+            OCPP16VendorParametersKey.SampledDataSignUpdatedReadings
+          )?.value
+        )
       ) {
         const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           connectorStatus.transactionId

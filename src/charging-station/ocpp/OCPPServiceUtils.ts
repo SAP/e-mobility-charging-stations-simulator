@@ -46,6 +46,7 @@ import {
   ACElectricUtils,
   clone,
   Constants,
+  convertToBoolean,
   convertToFloat,
   convertToInt,
   DCElectricUtils,
@@ -933,36 +934,39 @@ export const buildMeterValue = (
         )
       }
       {
-        const signReadings =
+        const signReadings = convertToBoolean(
           getConfigurationKey(
             chargingStation,
             buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, StandardParametersKey.SignReadings)
-          )?.value === 'true'
+          )?.value
+        )
 
         if (signReadings) {
           let signingEnabledForContext = true
           if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
-            signingEnabledForContext =
+            signingEnabledForContext = convertToBoolean(
               getConfigurationKey(
                 chargingStation,
                 buildConfigKey(
                   OCPP20ComponentName.SampledDataCtrlr,
                   VendorParametersKey.SignStartedReadings
                 )
-              )?.value === 'true'
+              )?.value
+            )
           } else if (
             context == null ||
             context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
             context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           ) {
-            signingEnabledForContext =
+            signingEnabledForContext = convertToBoolean(
               getConfigurationKey(
                 chargingStation,
                 buildConfigKey(
                   OCPP20ComponentName.SampledDataCtrlr,
                   VendorParametersKey.SignUpdatedReadings
                 )
-              )?.value === 'true'
+              )?.value
+            )
           }
 
           if (signingEnabledForContext) {
