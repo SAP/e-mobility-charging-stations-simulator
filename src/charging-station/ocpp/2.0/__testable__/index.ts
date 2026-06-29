@@ -321,6 +321,11 @@ export {
 } from './OCPP20RequestServiceTestable.js'
 
 export {
+  createTestableResponseService,
+  type TestableOCPP20ResponseService,
+} from './OCPP20ResponseServiceTestable.js'
+
+export {
   createTestableVariableManager,
   type TestableOCPP20VariableManager,
 } from './OCPP20VariableManagerTestable.js'

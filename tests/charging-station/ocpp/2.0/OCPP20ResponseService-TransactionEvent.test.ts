@@ -10,6 +10,10 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP20TransactionEventResponse, UUIDv4 } from '../../../../src/types/index.js'
 
+import {
+  createTestableResponseService,
+  type TestableOCPP20ResponseService,
+} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -27,11 +31,7 @@ import {
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-import {
-  buildTransactionEventRequest,
-  createTestableOCPP20ResponseService,
-  type TestableOCPP20ResponseService,
-} from './OCPP20ResponseServiceTestUtils.js'
+import { buildTransactionEventRequest } from './OCPP20ResponseServiceTestUtils.js'
 
 await describe('D01 - TransactionEvent Response', async () => {
   let station: ChargingStation
@@ -57,7 +57,7 @@ await describe('D01 - TransactionEvent Response', async () => {
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
     }
     const responseService = new OCPP20ResponseService()
-    testable = createTestableOCPP20ResponseService(responseService)
+    testable = createTestableResponseService(responseService)
   })
 
   afterEach(() => {
@@ -267,7 +267,7 @@ await describe('D01 - TransactionEvent Response', async () => {
         status: OCPP20AuthorizationStatusEnumType.Invalid,
       },
     }
-    const multiTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
+    const multiTestable = createTestableResponseService(new OCPP20ResponseService())
 
     // Act — reject EVSE 1's transaction only
     await multiTestable.handleResponseTransactionEvent(

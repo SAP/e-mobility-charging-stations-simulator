@@ -24,6 +24,10 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP20TransactionEventResponse } from '../../../../src/types/index.js'
 
+import {
+  createTestableResponseService,
+  type TestableOCPP20ResponseService,
+} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -43,11 +47,7 @@ import {
   TEST_TRANSACTION_UUID,
 } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-import {
-  buildTransactionEventRequest,
-  createTestableOCPP20ResponseService,
-  type TestableOCPP20ResponseService,
-} from './OCPP20ResponseServiceTestUtils.js'
+import { buildTransactionEventRequest } from './OCPP20ResponseServiceTestUtils.js'
 
 await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issue #1826)', async () => {
   let station: ChargingStation
@@ -72,7 +72,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       connectorStatus.transactionId = TEST_TRANSACTION_UUID
     }
     const responseService = new OCPP20ResponseService()
-    testable = createTestableOCPP20ResponseService(responseService)
+    testable = createTestableResponseService(responseService)
   })
 
   afterEach(() => {
@@ -173,7 +173,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     if (endedConnector != null) {
       endedConnector.transactionId = TEST_TRANSACTION_UUID
     }
-    const endedTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
+    const endedTestable = createTestableResponseService(new OCPP20ResponseService())
     const mockDeauthEnded = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
@@ -299,7 +299,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
     mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
     const warnMockOff = mock.method(logger, 'warn', () => undefined)
-    const flagOffTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
+    const flagOffTestable = createTestableResponseService(new OCPP20ResponseService())
 
     const payload: OCPP20TransactionEventResponse = {}
     const requestPayload = buildTransactionEventRequest(
@@ -386,7 +386,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
       if (cacheConnector != null) {
         cacheConnector.transactionId = TEST_TRANSACTION_UUID
       }
-      const cacheTestable = createTestableOCPP20ResponseService(new OCPP20ResponseService())
+      const cacheTestable = createTestableResponseService(new OCPP20ResponseService())
       mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
         Promise.resolve({} as OCPP20TransactionEventResponse)
       )
