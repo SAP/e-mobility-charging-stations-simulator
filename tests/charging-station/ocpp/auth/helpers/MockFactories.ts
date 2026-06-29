@@ -14,6 +14,7 @@ import type {
 import type { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import type { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 
+import { OCPPAuthServiceFactory } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   type AuthConfiguration,
   AuthContext,
@@ -356,4 +357,54 @@ export const getTestAuthCache = (authService: OCPPAuthService): AuthCache => {
   const cache = localStrategy?.getAuthCache()
   assert.ok(cache != null, 'Auth cache must be available for test')
   return cache
+}
+
+// ============================================================================
+// Factory Injection Helpers
+// ============================================================================
+
+/**
+ * Register a mock OCPPAuthService in the factory cache for the given station.
+ * Centralizes the station-id lookup and `setInstanceForTesting` plumbing used
+ * by OCPP 2.0 IncomingRequest tests (ClearCache, LocalAuthList, ...).
+ * @param station - Charging station under test (station-id read from stationInfo).
+ * @param service - Mock auth service to register.
+ * @returns The injected service for chaining.
+ */
+export const injectMockAuthService = (
+  station: ChargingStation,
+  service: OCPPAuthService
+): OCPPAuthService => {
+  OCPPAuthServiceFactory.setInstanceForTesting(
+    station.stationInfo?.chargingStationId ?? 'unknown',
+    service
+  )
+  return service
+}
+
+/**
+ * Replace `OCPPAuthServiceFactory.getInstance` with a throwing function for the
+ * duration of `fn`, then restore the original. Used by tests that must exercise
+ * handler code paths surviving a factory failure (factory unavailable, no
+ * Authorization Cache support, ...). Required because `setInstanceForTesting`
+ * only injects a returned instance — it cannot make `getInstance` itself throw.
+ * @param errorMessage - Error message thrown by the patched `getInstance`.
+ * @param fn - Synchronous or asynchronous function executed while patched.
+ * @returns The value returned by `fn`.
+ */
+export const withThrowingAuthServiceFactory = async <T>(
+  errorMessage: string,
+  fn: () => Promise<T> | T
+): Promise<T> => {
+  const original = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
+  Object.assign(OCPPAuthServiceFactory, {
+    getInstance: (): never => {
+      throw new Error(errorMessage)
+    },
+  })
+  try {
+    return await fn()
+  } finally {
+    Object.assign(OCPPAuthServiceFactory, { getInstance: original })
+  }
 }

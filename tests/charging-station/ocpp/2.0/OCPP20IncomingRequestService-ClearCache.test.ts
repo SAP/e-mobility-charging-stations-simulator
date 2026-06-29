@@ -16,7 +16,12 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-import { createMockAuthService, createTestAuthConfig } from '../auth/helpers/MockFactories.js'
+import {
+  createMockAuthService,
+  createTestAuthConfig,
+  injectMockAuthService,
+  withThrowingAuthServiceFactory,
+} from '../auth/helpers/MockFactories.js'
 
 /**
  * Inject a mock auth service for the current station.
@@ -31,8 +36,8 @@ function setupMockAuthService (
     /* empty */
   }
 ): void {
-  OCPPAuthServiceFactory.setInstanceForTesting(
-    station.stationInfo?.chargingStationId ?? 'unknown',
+  injectMockAuthService(
+    station,
     createMockAuthService({
       clearCache,
       getConfiguration: () => createTestAuthConfig({ authorizationCacheEnabled }),
@@ -161,23 +166,13 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   // C11.FR.05: IF the CS does not support an Authorization Cache → Rejected
   await describe('C11.FR.05 - No Authorization Cache Support', async () => {
     await it('should return Rejected when authService factory fails (no cache support)', async () => {
-      // Mock factory to throw error (simulates no Authorization Cache support)
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): never => {
-          throw new Error('Authorization Cache not supported')
-        },
-      })
+      const response = await withThrowingAuthServiceFactory(
+        'Authorization Cache not supported',
+        () => testableService.handleRequestClearCache(station)
+      )
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
-
-        // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
-        assert.strictEqual(response.status, GenericStatus.Rejected)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
   })
 })

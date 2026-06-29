@@ -33,7 +33,12 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
-import { createMockAuthService, createTestAuthConfig } from '../auth/helpers/MockFactories.js'
+import {
+  createMockAuthService,
+  createTestAuthConfig,
+  injectMockAuthService,
+  withThrowingAuthServiceFactory,
+} from '../auth/helpers/MockFactories.js'
 import { upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 /**
@@ -48,21 +53,18 @@ function setupMockAuthService (
   manager: LocalAuthListManager | undefined,
   localAuthListEnabled = true
 ): OCPPAuthService {
-  const authService = createMockAuthService({
-    getConfiguration: () => createTestAuthConfig({ localAuthListEnabled }),
-    getLocalAuthListManager: () => manager,
-  })
-  OCPPAuthServiceFactory.setInstanceForTesting(
-    station.stationInfo?.chargingStationId ?? 'unknown',
-    authService
+  return injectMockAuthService(
+    station,
+    createMockAuthService({
+      getConfiguration: () => createTestAuthConfig({ localAuthListEnabled }),
+      getLocalAuthListManager: () => manager,
+    })
   )
-  return authService
 }
 
 await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
   let station: ChargingStation
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
-  let originalGetInstance: typeof OCPPAuthServiceFactory.getInstance
 
   /**
    * Toggle the LocalAuthListCtrlr.Enabled configuration key on the mock station.
@@ -90,12 +92,10 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
     station = mockStation
     const incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
-    originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
     setLocalAuthListEnabled(true)
   })
 
   afterEach(() => {
-    Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
     OCPPAuthServiceFactory.clearAllInstances()
     standardCleanup()
   })
@@ -141,14 +141,10 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
       assert.strictEqual(response.versionNumber, 5)
     })
 
-    await it('should return version 0 when auth service throws', () => {
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): never => {
-          throw new Error('Auth service unavailable')
-        },
-      })
-
-      const response = testableService.handleRequestGetLocalListVersion(station)
+    await it('should return version 0 when auth service throws', async () => {
+      const response = await withThrowingAuthServiceFactory('Auth service unavailable', () =>
+        testableService.handleRequestGetLocalListVersion(station)
+      )
 
       assert.strictEqual(response.versionNumber, 0)
     })
@@ -266,18 +262,14 @@ await describe('OCPP20IncomingRequestService — LocalAuthList', async () => {
       assert.strictEqual(version, 2)
     })
 
-    await it('should return Failed when auth service throws', () => {
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): never => {
-          throw new Error('Auth service unavailable')
-        },
-      })
-
-      const response = testableService.handleRequestSendLocalList(station, {
-        localAuthorizationList: [],
-        updateType: OCPP20UpdateEnumType.Full,
-        versionNumber: 1,
-      })
+    await it('should return Failed when auth service throws', async () => {
+      const response = await withThrowingAuthServiceFactory('Auth service unavailable', () =>
+        testableService.handleRequestSendLocalList(station, {
+          localAuthorizationList: [],
+          updateType: OCPP20UpdateEnumType.Full,
+          versionNumber: 1,
+        })
+      )
 
       assert.strictEqual(response.status, OCPP20SendLocalListStatusEnumType.Failed)
     })
