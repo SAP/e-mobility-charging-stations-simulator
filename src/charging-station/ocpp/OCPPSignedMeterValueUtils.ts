@@ -6,7 +6,7 @@ import {
   type SampledValue,
   SigningMethodEnumType,
 } from '../../types/index.js'
-import { logger } from '../../utils/index.js'
+import { getErrorMessage, logger } from '../../utils/index.js'
 
 export interface SampledValueSigningConfig extends SigningConfig {
   enabled: boolean
@@ -53,7 +53,7 @@ export const deriveSigningMethodFromPublicKeyHex = (
     return namedCurve != null ? NODE_CURVE_TO_SIGNING_METHOD.get(namedCurve) : undefined
   } catch (error) {
     logger.debug(
-      `deriveSigningMethodFromPublicKeyHex: failed to parse public key: ${(error as Error).message}`
+      `deriveSigningMethodFromPublicKeyHex: failed to parse public key: ${getErrorMessage(error)}`
     )
     return undefined
   }

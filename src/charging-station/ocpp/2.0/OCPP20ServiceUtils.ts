@@ -47,6 +47,7 @@ import {
   convertToIntOrNaN,
   formatDurationMilliSeconds,
   generateUUID,
+  getErrorMessage,
   isNotEmptyArray,
   logger,
   sleep,
@@ -176,7 +177,7 @@ export class OCPP20ServiceUtils {
       return isNotEmptyArray(startedMeterValue.sampledValue) ? [startedMeterValue] : []
     } catch (error) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionStartedMeterValues: ${(error as Error).message}`
+        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionStartedMeterValues: ${getErrorMessage(error)}`
       )
       return []
     }
@@ -1178,7 +1179,7 @@ export class OCPP20ServiceUtils {
       }
     } catch (error) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${(error as Error).message}`
+        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEndedMeterValues: ${getErrorMessage(error)}`
       )
     }
     const meterValues: OCPP20MeterValue[] = [
