@@ -385,9 +385,7 @@ export class Configuration {
    */
   private static async performReload (): Promise<void> {
     const previousData =
-      Configuration.configurationData != null
-        ? structuredClone(Configuration.configurationData)
-        : undefined
+      Configuration.configurationData != null ? clone(Configuration.configurationData) : undefined
     const previousCache = new Map(Configuration.configurationSectionCache)
     let reloadSucceeded = false
     try {

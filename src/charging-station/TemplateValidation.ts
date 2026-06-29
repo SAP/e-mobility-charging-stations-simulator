@@ -3,7 +3,7 @@ import type { ZodError } from 'zod'
 import type { ChargingStationTemplate } from '../types/index.js'
 
 import { BaseError } from '../exception/index.js'
-import { isEmpty, isNotEmptyString, logger } from '../utils/index.js'
+import { clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
 import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { TemplateSchema } from './TemplateSchema.js'
@@ -59,7 +59,7 @@ export const validateTemplate = (parsed: unknown, filePath: string): ChargingSta
   }
   // Clone before mutating $schemaVersion below and inside applyMigration,
   // so the caller's parsed JSON stays untouched.
-  const parsedRecord = structuredClone(parsed) as Record<string, unknown>
+  const parsedRecord = clone(parsed) as Record<string, unknown>
 
   const version = coerceVersion(parsedRecord.$schemaVersion)
   parsedRecord.$schemaVersion = version

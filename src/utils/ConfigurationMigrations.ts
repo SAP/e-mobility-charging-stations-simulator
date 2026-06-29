@@ -2,6 +2,7 @@ import { isDeepStrictEqual } from 'node:util'
 
 // Direct path: the `exception/index.js` barrel re-exports OCPPError, causing a TDZ cycle.
 import { BaseError } from '../exception/BaseError.js'
+import { clone } from './Utils.js'
 
 const moduleName = 'ConfigurationMigrations'
 
@@ -193,7 +194,7 @@ const setAtPath = (
  * @returns `{ config, fieldErrors, warnings }`
  */
 export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDeprecatedKeysResult => {
-  const out = structuredClone(config)
+  const out = clone(config)
   const fieldErrors: FieldError[] = []
   const warnings: RemapWarning[] = []
 
@@ -224,7 +225,7 @@ export const remapDeprecatedKeys = (config: Record<string, unknown>): RemapDepre
  * @param _filePath - configuration file path (unused)
  * @returns new configuration object
  */
-const migrateV0ToV1: MigrationFn = (config, _filePath) => structuredClone(config)
+const migrateV0ToV1: MigrationFn = (config, _filePath) => clone(config)
 
 /**
  * Sequential migration chain. Index `i` migrates a v`i` configuration to v`i+1`.
@@ -308,7 +309,7 @@ export const applyConfigurationMigration = (
       `${moduleName}.applyConfigurationMigration: No migration defined for $schemaVersion ${sourceVersion.toString()} → ${CURRENT_CONFIGURATION_SCHEMA_VERSION.toString()}`
     )
   }
-  let migrated = structuredClone(config)
+  let migrated = clone(config)
   for (let v = sourceVersion; v < CURRENT_CONFIGURATION_SCHEMA_VERSION; v++) {
     migrated = migrationChain[v](migrated, filePath)
     migrated.$schemaVersion = v + 1

@@ -14,7 +14,7 @@ import {
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
-import { isEmpty } from './Utils.js'
+import { clone, isEmpty } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
 
@@ -100,7 +100,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
     )
   }
   // Defensive clone: $schemaVersion is rewritten below.
-  const parsedRecord = structuredClone(parsed) as Record<string, unknown>
+  const parsedRecord = clone(parsed) as Record<string, unknown>
 
   const version = coerceConfigurationVersion(parsedRecord.$schemaVersion)
   parsedRecord.$schemaVersion = version
@@ -147,4 +147,4 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
 const transformConfiguration = (
   validated: ConfigurationData,
   _filePath: string
-): ConfigurationData => structuredClone(validated)
+): ConfigurationData => clone(validated)
