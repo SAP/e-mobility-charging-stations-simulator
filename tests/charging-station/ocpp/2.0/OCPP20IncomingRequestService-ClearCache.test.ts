@@ -16,12 +16,36 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import {
+  createMockAuthService,
+  createTestAuthConfig,
+  injectMockAuthService,
+  withThrowingAuthServiceFactory,
+} from '../auth/helpers/MockFactories.js'
+
+/**
+ * Configure and inject a mock auth service for the current station.
+ * @param station - Charging station under test
+ * @param authorizationCacheEnabled - Whether the mock auth cache is enabled
+ * @param clearCache - Mock cache clearing implementation
+ */
+function setupMockAuthService (
+  station: ChargingStation,
+  authorizationCacheEnabled: boolean,
+  clearCache: () => void = () => {
+    /* empty */
+  }
+): void {
+  injectMockAuthService(
+    station,
+    createMockAuthService({
+      clearCache,
+      getConfiguration: () => createTestAuthConfig({ authorizationCacheEnabled }),
+    })
+  )
+}
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
-  afterEach(() => {
-    standardCleanup()
-  })
-
   let station: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
@@ -40,6 +64,11 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     station = mockStation
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
+  })
+
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+    standardCleanup()
   })
 
   // FR: C11.FR.01 - CS SHALL attempt to clear its Authorization Cache
@@ -66,30 +95,13 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   // CLR-001: Verify Authorization Cache is cleared (not IdTagsCache)
   await describe('CLR-001 - ClearCache clears Authorization Cache', async () => {
     await it('should call authService.clearCache() on ClearCache request', async () => {
-      // Create a mock auth service to verify clearCache is called
       const clearCacheMock = mock.fn()
-      const mockAuthService = {
-        clearCache: clearCacheMock,
-        getConfiguration: () => ({
-          authorizationCacheEnabled: true,
-        }),
-      }
+      setupMockAuthService(station, true, clearCacheMock)
 
-      // Mock the factory to return our mock auth service
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      const response = await testableService.handleRequestClearCache(station)
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
-
-        assert.strictEqual(clearCacheMock.mock.callCount(), 1)
-        assert.strictEqual(response.status, GenericStatus.Accepted)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      assert.strictEqual(clearCacheMock.mock.callCount(), 1)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
     })
 
     await it('should not call idTagsCache.deleteIdTags() on ClearCache request', async () => {
@@ -114,133 +126,53 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   // CLR-002: Verify AuthCacheEnabled check per C11.FR.04
   await describe('CLR-002 - AuthCacheEnabled Check (C11.FR.04)', async () => {
     await it('should return Rejected when AuthCacheEnabled is false', async () => {
-      // Create a mock auth service with cache disabled
-      const mockAuthService = {
-        clearCache: (): void => {
-          throw new Error('clearCache should not be called when cache is disabled')
-        },
-        getConfiguration: () => ({
-          authorizationCacheEnabled: false,
-        }),
-      }
-
-      // Mock the factory to return our mock auth service
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
+      setupMockAuthService(station, false, () => {
+        throw new Error('clearCache should not be called when cache is disabled')
       })
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
+      const response = await testableService.handleRequestClearCache(station)
 
-        assert.strictEqual(response.status, GenericStatus.Rejected)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should return Accepted when AuthCacheEnabled is true and clear succeeds', async () => {
-      // Create a mock auth service with cache enabled
-      const mockAuthService = {
-        clearCache: (): void => {
-          /* empty */
-        },
-        getConfiguration: () => ({
-          authorizationCacheEnabled: true,
-        }),
-      }
+      setupMockAuthService(station, true)
 
-      // Mock the factory to return our mock auth service
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      const response = await testableService.handleRequestClearCache(station)
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
-
-        assert.strictEqual(response.status, GenericStatus.Accepted)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      assert.strictEqual(response.status, GenericStatus.Accepted)
     })
 
     await it('should return Rejected when clearCache throws an error', async () => {
-      // Create a mock auth service that throws on clearCache
-      const mockAuthService = {
-        clearCache: (): void => {
-          throw new Error('Cache clear failed')
-        },
-        getConfiguration: () => ({
-          authorizationCacheEnabled: true,
-        }),
-      }
-
-      // Mock the factory to return our mock auth service
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
+      setupMockAuthService(station, true, () => {
+        throw new Error('Cache clear failed')
       })
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
+      const response = await testableService.handleRequestClearCache(station)
 
-        assert.strictEqual(response.status, GenericStatus.Rejected)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should not attempt to clear cache when AuthCacheEnabled is false', async () => {
       const clearCacheMock = mock.fn()
-      const mockAuthService = {
-        clearCache: clearCacheMock,
-        getConfiguration: () => ({
-          authorizationCacheEnabled: false,
-        }),
-      }
+      setupMockAuthService(station, false, clearCacheMock)
 
-      // Mock the factory to return our mock auth service
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): typeof mockAuthService => mockAuthService,
-      })
+      await testableService.handleRequestClearCache(station)
 
-      try {
-        await testableService.handleRequestClearCache(station)
-
-        // clearCache should NOT be called when cache is disabled
-        assert.strictEqual(clearCacheMock.mock.callCount(), 0)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      assert.strictEqual(clearCacheMock.mock.callCount(), 0)
     })
   })
 
   // C11.FR.05: IF the CS does not support an Authorization Cache → Rejected
   await describe('C11.FR.05 - No Authorization Cache Support', async () => {
     await it('should return Rejected when authService factory fails (no cache support)', async () => {
-      // Mock factory to throw error (simulates no Authorization Cache support)
-      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      Object.assign(OCPPAuthServiceFactory, {
-        getInstance: (): never => {
-          throw new Error('Authorization Cache not supported')
-        },
-      })
+      const response = await withThrowingAuthServiceFactory(
+        'Authorization Cache not supported',
+        () => testableService.handleRequestClearCache(station)
+      )
 
-      try {
-        const response = await testableService.handleRequestClearCache(station)
-
-        // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
-        assert.strictEqual(response.status, GenericStatus.Rejected)
-      } finally {
-        // Restore original factory method
-        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
-      }
+      // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
   })
 })
