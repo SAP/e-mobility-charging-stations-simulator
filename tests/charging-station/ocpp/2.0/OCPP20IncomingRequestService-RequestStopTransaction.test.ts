@@ -130,7 +130,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     })
 
     // FR: F03.FR.08
-    await it('should reject stop transaction for non-existent transaction ID', () => {
+    await it('should reject stop transaction for invalid transaction ID format - non-UUID string', () => {
       const response = testableService.handleRequestStopTransaction(mockStation, {
         transactionId: 'non-existent-transaction-id' as UUIDv4,
       })
@@ -138,6 +138,17 @@ await describe('F03 - Remote Stop Transaction', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
       assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+    })
+
+    // FR: F03.FR.08
+    await it('should reject stop transaction for valid UUID with no matching transaction', () => {
+      const response = testableService.handleRequestStopTransaction(mockStation, {
+        transactionId: '00000000-0000-4000-8000-000000000000',
+      })
+
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
     })
 
     // FR: F03.FR.08

@@ -2513,13 +2513,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: No available EVSE for remote start`
         )
-        return {
-          status: RequestStartStopStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'No available EVSE found for remote start',
-            reasonCode: ReasonCodeEnumType.NotFound,
-          },
-        }
+        return buildRejectedResponse(
+          ReasonCodeEnumType.NotFound,
+          'No available EVSE found for remote start'
+        )
       }
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Auto-selected EVSE ${resolvedEvseId.toString()}`
