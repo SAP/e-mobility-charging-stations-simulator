@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
-import { convertToInt } from '../utils/index.js'
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts
+// which can interact with Zod schema initialization order.
+import { convertToInt } from '../utils/Utils.js'
 import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 
 // ---------------------------------------------------------------

@@ -5,7 +5,10 @@ import { statSync } from 'node:fs'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
-import { isNotEmptyString } from '../utils/index.js'
+// Direct path: the `utils/index.js` barrel re-exports ConfigurationSchema.ts
+// which itself imports from `worker/index.js` — using the barrel triggers a
+// TDZ cycle that breaks Zod enum initialization at module load.
+import { isNotEmptyString } from '../utils/Utils.js'
 
 export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
   public abstract readonly emitter: EventEmitterAsyncResource | undefined
