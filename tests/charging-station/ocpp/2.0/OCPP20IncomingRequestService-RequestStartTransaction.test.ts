@@ -431,7 +431,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
-    // OCPP 2.0.1 §E07: transactionId MUST NOT be fabricated on rejection responses
+    // OCPP 2.0.1 §F01.FR.13: transactionId is returned only when a transaction was created
+    // on the Charging Station but not yet authorized (cable-plugin-first); not on rejections.
     assert.strictEqual(response.transactionId, undefined)
   })
 

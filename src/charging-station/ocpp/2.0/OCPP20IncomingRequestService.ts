@@ -228,8 +228,9 @@ const buildStationInfoReportData = (
   return reportData
 }
 
-// transactionId is intentionally omitted per OCPP 2.0.1 §E07 — that field signals a transaction
-// that was already started by the Charging Station before the request arrived (e.g. cable-first);
+// transactionId is intentionally omitted on rejections. Per OCPP 2.0.1 part 2 §F01.FR.13, the
+// Charging Station SHALL return transactionId in RequestStartTransactionResponse only when a
+// transaction was already created on the station but not yet authorized (cable-plugin-first);
 // fabricating a UUID on a pure rejection misleads CSMS that map remoteStartId → transactionId.
 const buildRejectedResponse = (
   additionalInfo: string,
