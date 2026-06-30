@@ -1155,8 +1155,7 @@ export class OCPP20ServiceUtils {
     const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
       []) as OCPP20MeterValue[]
     const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
-      | OCPP20MeterValue
-      | undefined
+      OCPP20MeterValue | undefined
 
     try {
       const measurandsKey = buildConfigKey(

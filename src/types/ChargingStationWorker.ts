@@ -82,5 +82,4 @@ export const ChargingStationWorkerMessageEvents = {
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ChargingStationWorkerMessageEvents =
-  | ChargingStationEvents
-  | ChargingStationMessageEvents
+  ChargingStationEvents | ChargingStationMessageEvents

@@ -190,8 +190,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         }
 
         const certificateType = (commandParams as JsonObject | undefined)?.certificateType as
-          | CertificateSigningUseEnumType
-          | undefined
+          CertificateSigningUseEnumType | undefined
 
         const requestPayload: OCPP20SignCertificateRequest = {
           csr,

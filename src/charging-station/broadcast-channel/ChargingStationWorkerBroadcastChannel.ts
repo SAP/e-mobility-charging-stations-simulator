@@ -349,9 +349,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         if (
           (
             commandResponse as
-              | OCPP16AuthorizeResponse
-              | StartTransactionResponse
-              | StopTransactionResponse
+              OCPP16AuthorizeResponse | StartTransactionResponse | StopTransactionResponse
           ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
           return ResponseStatus.SUCCESS

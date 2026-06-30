@@ -426,12 +426,10 @@ export class ChargingStation extends EventEmitter {
    * @returns The ATG configuration or undefined if not available
    */
   public getAutomaticTransactionGeneratorConfiguration ():
-    | AutomaticTransactionGeneratorConfiguration
-    | undefined {
+    AutomaticTransactionGeneratorConfiguration | undefined {
     if (this.automaticTransactionGeneratorConfiguration == null) {
       let automaticTransactionGeneratorConfiguration:
-        | AutomaticTransactionGeneratorConfiguration
-        | undefined
+        AutomaticTransactionGeneratorConfiguration | undefined
       const stationTemplate = this.getTemplateFromFile()
       const stationConfiguration = this.getConfigurationFromFile()
       if (

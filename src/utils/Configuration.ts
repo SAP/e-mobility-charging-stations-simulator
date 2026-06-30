@@ -47,10 +47,7 @@ import {
 } from './Utils.js'
 
 type ConfigurationSectionType =
-  | LogConfiguration
-  | StorageConfiguration
-  | UIServerConfiguration
-  | WorkerConfiguration
+  LogConfiguration | StorageConfiguration | UIServerConfiguration | WorkerConfiguration
 
 const defaultUIServerConfiguration: UIServerConfiguration = {
   accessPolicy: {

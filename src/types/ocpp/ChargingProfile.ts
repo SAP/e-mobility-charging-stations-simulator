@@ -29,8 +29,7 @@ export const ChargingProfilePurposeType = {
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ChargingProfilePurposeType =
-  | OCPP16ChargingProfilePurposeType
-  | OCPP20ChargingProfilePurposeEnumType
+  OCPP16ChargingProfilePurposeType | OCPP20ChargingProfilePurposeEnumType
 
 export const ChargingProfileKindType = {
   ...OCPP16ChargingProfileKindType,
@@ -38,8 +37,7 @@ export const ChargingProfileKindType = {
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ChargingProfileKindType =
-  | OCPP16ChargingProfileKindType
-  | OCPP20ChargingProfileKindEnumType
+  OCPP16ChargingProfileKindType | OCPP20ChargingProfileKindEnumType
 
 export const RecurrencyKindType = {
   ...OCPP16RecurrencyKindType,

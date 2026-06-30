@@ -973,13 +973,13 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `state`: {  
-   `version`: string,  
-   `configuration`: ConfigurationData,  
-   `started`: boolean,  
-   `templateStatistics`: Record<string, TemplateStatistics>  
-   }  
+  `status`: 'success' | 'failure',  
+  `state`: {  
+  `version`: string,  
+  `configuration`: ConfigurationData,  
+  `started`: boolean,  
+  `templateStatistics`: Record<string, TemplateStatistics>  
+  }  
   }
 
 ###### Start Simulator
@@ -990,7 +990,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+  `status`: 'success' | 'failure'  
   }
 
 ###### Stop Simulator
@@ -1001,7 +1001,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+  `status`: 'success' | 'failure'  
   }
 
 ###### List Charging Station Templates
@@ -1012,8 +1012,8 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `templates`: string[]  
+  `status`: 'success' | 'failure',  
+  `templates`: string[]  
   }
 
 ###### Add Charging Stations
@@ -1021,29 +1021,29 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'addChargingStations'  
   `PDU`: {  
-   `template`: string,  
-   `numberOfStations`: number,  
-   `options?`: {  
-   `autoRegister?`: boolean,  
-   `autoStart?`: boolean,  
-   `baseName?`: string,  
-   `enableStatistics?`: boolean,  
-   `fixedName?`: boolean,  
-   `nameSuffix?`: string,  
-   `ocppStrictCompliance?`: boolean,  
-   `persistentConfiguration?`: boolean,  
-   `stopTransactionsOnStopped?`: boolean,  
-   `supervisionPassword?`: string,  
-   `supervisionUrls?`: string | string[],  
-   `supervisionUser?`: string  
-   }  
+  `template`: string,  
+  `numberOfStations`: number,  
+  `options?`: {  
+  `autoRegister?`: boolean,  
+  `autoStart?`: boolean,  
+  `baseName?`: string,  
+  `enableStatistics?`: boolean,  
+  `fixedName?`: boolean,  
+  `nameSuffix?`: string,  
+  `ocppStrictCompliance?`: boolean,  
+  `persistentConfiguration?`: boolean,  
+  `stopTransactionsOnStopped?`: boolean,  
+  `supervisionPassword?`: string,  
+  `supervisionUrls?`: string | string[],  
+  `supervisionUser?`: string  
+  }  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array (optional),  
-   `hashIdsFailed`: charging station unique identifier strings array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array (optional),  
+  `hashIdsFailed`: charging station unique identifier strings array (optional)  
   }
 
 ###### Delete Charging Stations
@@ -1051,16 +1051,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'deleteChargingStations'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `deleteConfiguration?`: boolean  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `deleteConfiguration?`: boolean  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Set Charging Station Supervision URL
@@ -1068,19 +1068,19 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'setSupervisionUrl'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `url`: string,  
-   `supervisionUser?`: string,  
-   `supervisionPassword?`: string  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `url`: string,  
+  `supervisionUser?`: string,  
+  `supervisionPassword?`: string  
   }  
   `url` is required. `supervisionUser` and `supervisionPassword` are each optional and independent: a string (including `""`, which clears the field) updates the value; omitting the field preserves the existing value. Changes take effect on the next WebSocket (re)connect.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Performance Statistics
@@ -1091,8 +1091,8 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `performanceStatistics`: Statistics[]  
+  `status`: 'success' | 'failure',  
+  `performanceStatistics`: Statistics[]  
   }
 
 ###### List Charging Stations
@@ -1103,8 +1103,8 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `chargingStations`: ChargingStationData[]  
+  `status`: 'success' | 'failure',  
+  `chargingStations`: ChargingStationData[]  
   }
 
 ###### Start Charging Station
@@ -1112,15 +1112,15 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startChargingStation'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Charging Station
@@ -1128,15 +1128,15 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopChargingStation'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Open Connection
@@ -1144,15 +1144,15 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'openConnection'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Close Connection
@@ -1160,15 +1160,15 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'closeConnection'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Start Automatic Transaction Generator
@@ -1176,16 +1176,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startAutomaticTransactionGenerator'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `connectorIds`: connector id integer array (optional, default: all connectors)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Automatic Transaction Generator
@@ -1193,16 +1193,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopAutomaticTransactionGenerator'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `connectorIds`: connector id integer array (optional, default: all connectors)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Lock Connector
@@ -1210,16 +1210,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'lockConnector'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `connectorId`: connector id integer  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `connectorId`: connector id integer  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Unlock Connector
@@ -1227,16 +1227,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'unlockConnector'  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `connectorId`: connector id integer  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `connectorId`: connector id integer  
   }
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### OCPP commands trigger
@@ -1244,16 +1244,16 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'commandName' (the OCPP command name in camel case)  
   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   ...`commandPayload`  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  ...`commandPayload`  
   } (the OCPP command payload with some optional fields added to target the simulated charging stations)
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 Available OCPP command procedure names:
@@ -1266,84 +1266,84 @@ Examples:
 
 - **Authorize**
 - Request:  
-   `ProcedureName`: 'authorize'  
-   `PDU`: {  
-   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-   `idTag`: RFID tag string  
-   }
+  `ProcedureName`: 'authorize'  
+  `PDU`: {  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `idTag`: RFID tag string  
+  }
 
 - Response:  
-   `PDU`: {  
-   `status`: 'success' | 'failure',  
-   `hashIdsSucceeded`: charging station unique identifier strings array,  
-   `hashIdsFailed`: charging station unique identifier strings array (optional),  
-   `responsesFailed`: failed responses payload array (optional)  
-   }
+  `PDU`: {  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
+  }
 
 - **Start Transaction**
   - Request:  
     `ProcedureName`: 'startTransaction'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-     `connectorId`: connector id integer,  
-     `idTag`: RFID tag string  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId`: connector id integer,  
+    `idTag`: RFID tag string  
     }
 
   - Response:  
     `PDU`: {  
-     `status`: 'success' | 'failure',  
-     `hashIdsSucceeded`: charging station unique identifier strings array,  
-     `hashIdsFailed`: charging station unique identifier strings array (optional),  
-     `responsesFailed`: failed responses payload array (optional)  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Stop Transaction**
   - Request:  
     `ProcedureName`: 'stopTransaction'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-     `transactionId`: transaction id integer  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `transactionId`: transaction id integer  
     }
 
   - Response:  
     `PDU`: {  
-     `status`: 'success' | 'failure',  
-     `hashIdsSucceeded`: charging station unique identifier strings array,  
-     `hashIdsFailed`: charging station unique identifier strings array (optional),  
-     `responsesFailed`: failed responses payload array (optional)  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Status Notification**
   - Request:  
     `ProcedureName`: 'statusNotification'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-     `connectorId`: connector id integer,  
-     `errorCode`: connector error code,  
-     `status`: connector status  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId`: connector id integer,  
+    `errorCode`: connector error code,  
+    `status`: connector status  
     }
 
   - Response:  
     `PDU`: {  
-     `status`: 'success' | 'failure',  
-     `hashIdsSucceeded`: charging station unique identifier strings array,  
-     `hashIdsFailed`: charging station unique identifier strings array (optional),  
-     `responsesFailed`: failed responses payload array (optional)  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Heartbeat**
   - Request:  
     `ProcedureName`: 'heartbeat'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
     }
 
   - Response:  
     `PDU`: {  
-     `status`: 'success' | 'failure',  
-     `hashIdsSucceeded`: charging station unique identifier strings array,  
-     `hashIdsFailed`: charging station unique identifier strings array (optional),  
-     `responsesFailed`: failed responses payload array (optional)  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
     }
 
 ### HTTP Protocol (deprecated)
