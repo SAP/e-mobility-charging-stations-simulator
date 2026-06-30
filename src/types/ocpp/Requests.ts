@@ -52,8 +52,7 @@ export type DiagnosticsStatusNotificationRequest = OCPP16DiagnosticsStatusNotifi
 export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) => void
 
 export type FirmwareStatusNotificationRequest =
-  | OCPP16FirmwareStatusNotificationRequest
-  | OCPP20FirmwareStatusNotificationRequest
+  OCPP16FirmwareStatusNotificationRequest | OCPP20FirmwareStatusNotificationRequest
 
 // eslint-disable-next-line @typescript-eslint/no-duplicate-type-constituents
 export type HeartbeatRequest = OCPP16HeartbeatRequest | OCPP20HeartbeatRequest
@@ -100,8 +99,7 @@ export type MeterValuesRequest = OCPP16MeterValuesRequest | OCPP20MeterValuesReq
 export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void
 
 export type StatusNotificationRequest =
-  | OCPP16StatusNotificationRequest
-  | OCPP20StatusNotificationRequest
+  OCPP16StatusNotificationRequest | OCPP20StatusNotificationRequest
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,

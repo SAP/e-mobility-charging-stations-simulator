@@ -11,8 +11,7 @@ import { type WorkerDataError, type WorkerMessage, WorkerMessageEvents } from '.
 import { ChargingStation } from './ChargingStation.js'
 
 export let chargingStationWorker:
-  | object
-  | ThreadWorker<ChargingStationWorkerData, ChargingStationInfo>
+  object | ThreadWorker<ChargingStationWorkerData, ChargingStationInfo>
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<
     ChargingStationWorkerData,

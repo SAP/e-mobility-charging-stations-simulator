@@ -162,8 +162,7 @@ export class OCPPConstants {
   static readonly OCPP_WEBSOCKET_TIMEOUT_MS = 60000
 
   static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
-    | IncomingRequestCommand
-    | RequestCommand
+    IncomingRequestCommand | RequestCommand
 
   protected constructor () {
     // This is intentional

@@ -536,10 +536,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         switch (requestedMessage) {
           case MessageTriggerEnumType.BootNotification:
             chargingStation.ocppRequestService
-              .requestHandler<
-                OCPP20BootNotificationRequest,
-                OCPP20BootNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+              .requestHandler<OCPP20BootNotificationRequest, OCPP20BootNotificationResponse>(
+                chargingStation,
+                OCPP20RequestCommand.BOOT_NOTIFICATION,
+                chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest,
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
@@ -551,16 +553,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus }, { skipBufferingOnError: true, triggerMessage: true })
+              >(
+                chargingStation,
+                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+                { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           }
           case MessageTriggerEnumType.Heartbeat:
             chargingStation.ocppRequestService
-              .requestHandler<
-                OCPP20HeartbeatRequest,
-                OCPP20HeartbeatResponse
-              >(chargingStation, OCPP20RequestCommand.HEARTBEAT, OCPP20Constants.OCPP_RESPONSE_EMPTY as OCPP20HeartbeatRequest, { skipBufferingOnError: true, triggerMessage: true })
+              .requestHandler<OCPP20HeartbeatRequest, OCPP20HeartbeatResponse>(
+                chargingStation,
+                OCPP20RequestCommand.HEARTBEAT,
+                OCPP20Constants.OCPP_RESPONSE_EMPTY as OCPP20HeartbeatRequest,
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.LogStatusNotification:
@@ -568,7 +577,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20LogStatusNotificationRequest,
                 OCPP20LogStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, { status: UploadLogStatusEnumType.Idle }, { skipBufferingOnError: true, triggerMessage: true })
+              >(
+                chargingStation,
+                OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+                { status: UploadLogStatusEnumType.Idle },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.MeterValues: {
@@ -3894,10 +3908,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )) {
       const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<
-          OCPP20StatusNotificationRequest,
-          OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+          chargingStation,
+          OCPP20RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            connectorStatus: resolvedStatus,
+            evseId,
+          } as unknown as OCPP20StatusNotificationRequest,
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
         .catch(errorHandler)
     }
   }
@@ -3912,10 +3932,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
       const resolvedStatus = connectorStatus?.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<
-          OCPP20StatusNotificationRequest,
-          OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, connectorStatus: resolvedStatus, evseId: evse.id } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+          chargingStation,
+          OCPP20RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: evse.connectorId,
+            connectorStatus: resolvedStatus,
+            evseId: evse.id,
+          } as unknown as OCPP20StatusNotificationRequest,
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)

@@ -352,8 +352,7 @@ export const createMockLocalAuthListManager = (
 
 export const getTestAuthCache = (authService: OCPPAuthService): AuthCache => {
   const localStrategy = (authService as OCPPAuthServiceImpl).getStrategy('local') as
-    | LocalAuthStrategy
-    | undefined
+    LocalAuthStrategy | undefined
   const cache = localStrategy?.getAuthCache()
   assert.ok(cache != null, 'Auth cache must be available for test')
   return cache
