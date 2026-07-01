@@ -118,9 +118,8 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
   })
 
   await it('should destroy the coherent session even when the station stops during delay (regression: M3)', async t => {
-    const sessionsMap = (
-      station as unknown as { coherentSessions: Map<number | string, unknown> }
-    ).coherentSessions
+    const sessionsMap = (station as unknown as { coherentSessions: Map<number | string, unknown> })
+      .coherentSessions
     sessionsMap.set('tx-1', { transactionId: 'tx-1' })
     assert.ok(
       station.getCoherentSession('tx-1') != null,
