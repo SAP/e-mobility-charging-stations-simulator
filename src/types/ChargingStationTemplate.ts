@@ -129,7 +129,7 @@ export interface ChargingStationTemplate {
   /**
    * Optional deterministic seed for coherent MeterValues generation.
    * When set together with `coherentMeterValues=true`, the physics-based
-   * generator produces byte-identical MeterValues sequences for identical
+   * generator produces reproducible MeterValues sequences for identical
    * inputs (same seed + same transactionId + same interval). Ignored when
    * `coherentMeterValues` is `false` or absent.
    */

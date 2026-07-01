@@ -447,6 +447,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
             )
             const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
             OCPP20ServiceUtils.startEndedMeterValues(chargingStation, connectorId, txEndedInterval)
+            // Create coherent MeterValues session after transactionId is known.
+            // No-op when the feature flag or the EV profile file is not
+            // configured (see ChargingStation.createCoherentSession).
+            chargingStation.createCoherentSession(
+              requestPayload.transactionInfo.transactionId,
+              connectorId
+            )
           }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} STARTED on connector ${String(connectorId)}`

@@ -6,43 +6,45 @@
  *   emitted measurand is derived from a single physics chain
  *   (V → P → I → ΔE → SoC) rather than sampled independently.
  *
- * Invariants (enforced by construction; see `/tmp/issue-40/golden/run-invariants.ts`):
- * - AC: `P = V × I × phases`; DC: `P = V × I` (recomputed from rounded emitted V/I).
- * - `ΔE = P × Δt / 3_600_000` and `E(t+1) ≥ E(t)`.
- * - `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
- * - `P ≤ min(EVSE_max, EV_acceptance(SoC), profileLimit)`.
+ * Invariants (enforced by construction):
+ * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted power is
+ *   recomputed from the rounded emitted current and voltage so V·I·phases
+ *   equals the emitted P within `ROUNDING_SCALE` precision.
+ * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
+ *   SoC monotone non-decreasing during charging and saturates at 100 %.
+ * - **INV-3**: `ΔE = P × Δt / 3_600_000` and `E(t+1) ≥ E(t)`. Energy
+ *   register is monotone non-decreasing and integrates the clamped power
+ *   exactly over the sample interval.
+ * - `P ≤ min(EVSE_max, EV_acceptance(SoC))`.
  * - `SoC ≥ 100 ⇒ P = 0, I = 0, ΔE = 0`.
  *
  * The generator owns the connector energy register update: it advances the
- * register exactly once per sample, unconditionally (Phase 2 merged
- * finding #1). This is required so `meterStop` is correct even when
- * `Energy.Active.Import.Register` is not in the configured MeterValues.
+ * register exactly once per sample, unconditionally, so `meterStop` is
+ * correct even when `Energy.Active.Import.Register` is not in the
+ * configured MeterValues.
  */
 
 import type {
-  ConnectorStatus,
   MeterValue,
   MeterValueContext,
   MeterValuePhase,
   SampledValue,
   SampledValueTemplate,
 } from '../../types/index.js'
+import type { ConnectorStatus } from '../../types/index.js'
 import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 
 import { CurrentType, MeterValueMeasurand, MeterValueUnit, Voltage } from '../../types/index.js'
-import { ACElectricUtils, DCElectricUtils, logger, roundTo } from '../../utils/index.js'
+import { logger, roundTo } from '../../utils/index.js'
 import { interpolateChargingCurve, selectEvProfile } from './EvProfiles.js'
-import { deriveSeed, mulberry32 } from './prng.js'
+import { deriveSeed, hashLabel, mulberry32 } from './Prng.js'
 
 const moduleName = 'CoherentMeterValuesGenerator'
 
 const MS_PER_HOUR = 3_600_000
 const UNIT_DIVIDER_KILO = 1000
-const SOC_ROUNDING_SCALE = 2
-const VOLTAGE_ROUNDING_SCALE = 2
-const CURRENT_ROUNDING_SCALE = 2
-const POWER_ROUNDING_SCALE = 2
-const ENERGY_ROUNDING_SCALE = 2
+/** Decimal places used for all physics-quantity rounding (V, A, W, Wh, SoC). */
+const ROUNDING_SCALE = 2
 const DEFAULT_RAMP_UP_DURATION_MS = 5000
 /** Symmetric ±% noise applied to nominal voltage, seed-derived. */
 const VOLTAGE_NOISE_PERCENT = 0.01
@@ -61,10 +63,55 @@ export type BuildVersionedSampledValue = (
 ) => SampledValue
 
 /**
+ * Runtime-only per-session state. Kept in a module-scope WeakMap keyed by
+ * the {@link CoherentSession} object (rather than by transactionId) so
+ * runtime state is scoped to the session's identity — no cross-station
+ * coupling when two stations happen to share a transactionId — and is
+ * auto-collected when the session becomes unreachable.
+ */
+interface SessionRuntime {
+  voltagePrng?: () => number
+}
+
+const sessionRuntimes = new WeakMap<CoherentSession, SessionRuntime>()
+
+/**
+ * Retrieves the runtime bag for a session, creating it on first access.
+ * Not exported: only the generator reads or writes runtime state.
+ * @param session - Coherent session.
+ * @returns Live runtime bag (mutated in place).
+ */
+const getSessionRuntime = (session: CoherentSession): SessionRuntime => {
+  let runtime = sessionRuntimes.get(session)
+  if (runtime == null) {
+    runtime = {}
+    sessionRuntimes.set(session, runtime)
+  }
+  return runtime
+}
+
+/**
+ * Disposes runtime state for a session. Call from every session-teardown
+ * path (stop/reset/disconnect) to release cached PRNG state eagerly.
+ * The WeakMap makes eager disposal optional — unreachable sessions are
+ * collected automatically — but eager disposal preserves determinism
+ * across sequential transactions that reuse the same session identity.
+ * Idempotent.
+ * @param session - Coherent session (or `undefined` when the caller has
+ *   no session at hand).
+ * @returns `true` when runtime was removed, `false` otherwise.
+ */
+export const disposeCoherentSessionRuntime = (session: CoherentSession | undefined): boolean => {
+  if (session == null) {
+    return false
+  }
+  return sessionRuntimes.delete(session)
+}
+
+/**
  * Deterministic per-transaction stream splitter. Combines the station
  * `randomSeed` (or a stable fallback), the transactionId, and a label so
- * that adding a new consumer never shifts an existing stream's sequence
- * (splitting rationale — see design doc §Determinism).
+ * that adding a new consumer never shifts an existing stream's sequence.
  * @param rootSeed - Root 32-bit seed for the station.
  * @param transactionId - Transaction identifier.
  * @param label - Stream label (`'VOLTAGE_NOISE'`, `'POWER_NOISE'`, ...).
@@ -151,7 +198,6 @@ export interface CoherentSample {
  * Options for {@link computeCoherentSample}.
  */
 export interface ComputeSampleOptions {
-  chargingProfileLimitW?: number
   intervalMs: number
   nowMs: number
   rootSeed: number
@@ -166,16 +212,21 @@ export interface ComputeSampleOptions {
  * {@link advanceEnergyRegister} once per emitted sample so the semantics
  * match the OCPP energy meter model.
  *
- * Physics is deliberately expressed in the same order as the golden set
- * so both produce identical outputs for identical inputs:
+ * Physics chain (INV-1/INV-2/INV-3 hold by construction):
  * 1. `rampFactor = min(1, elapsed / rampUp)` — immutable session start.
  * 2. `V` — nominal ± small seed-derived noise.
  * 3. `evAcceptanceW = curve(SoC) × profile.maxPowerW`.
- * 4. `powerW = rampFactor × min(EVSE_max, evAcceptance, profileLimit) × socCap`.
- * 5. `I = ACElectricUtils.amperagePerPhaseFromPower / DCElectricUtils.amperage`.
- * 6. `reportedPowerW = powerTotal(V_round, I_round)` — recomputed for algebraic
- *    consistency (INV-1 holds within ±1 W after rounding).
- * 7. `ΔE = reportedPowerW × Δt / 3.6e6`; `ΔSoC = ΔE / capacity × 100`.
+ * 4. `powerW = rampFactor × min(EVSE_max, evAcceptance) × socCap`.
+ *    EVSE cap already folds in charging profiles via
+ *    {@link ICoherentContext.getConnectorMaximumAvailablePower}.
+ * 5. `powerW` is then clamped to remaining battery capacity so a sample
+ *    crossing 100 % SoC never over-charges the register.
+ * 6. `currentAExact = powerW / (V_round · phases)` — exact fraction
+ *    (phases=1 for DC). Emitted current is rounded to `ROUNDING_SCALE`.
+ * 7. Emitted `powerW = round(V_round × currentA_round × phases)`;
+ *    INV-1 holds within `ROUNDING_SCALE` (≤0.005 W) regardless of V or phases.
+ * 8. `ΔE = powerW × Δt / 3.6e6` (exact, uses clamped powerW);
+ *    `ΔSoC = ΔE / capacity × 100`.
  * @param context - Charging-station context.
  * @param connectorStatus - Connector status.
  * @param options - Per-sample parameters (interval, seed material, ...).
@@ -213,6 +264,22 @@ export const computeCoherentSample = (
     }
   }
 
+  // A zero-length interval integrates to zero energy regardless of power.
+  // Guarding here prevents NaN propagation via
+  //   maxPowerFromCapacityW = remainingWh · 3.6e6 / intervalMs
+  // when SoC has already saturated (remainingWh = 0 ⇒ 0/0 = NaN), which
+  // would otherwise permanently poison session.socPercent.
+  if (options.intervalMs <= 0) {
+    return {
+      currentA: 0,
+      deltaEnergyWh: 0,
+      energyRegisterWh: connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0,
+      powerW: 0,
+      socPercent: roundTo(session.socPercent, ROUNDING_SCALE),
+      voltageV: roundTo(context.getVoltageOut(), ROUNDING_SCALE),
+    }
+  }
+
   const currentType = context.stationInfo?.currentOutType ?? CurrentType.AC
   const numberOfPhases = currentType === CurrentType.AC ? context.getNumberOfPhases() : 1
 
@@ -220,17 +287,19 @@ export const computeCoherentSample = (
   const rampFactor =
     session.rampUpDurationMs > 0 ? Math.min(1, elapsedMs / session.rampUpDurationMs) : 1
 
-  // Voltage: nominal ± small seed-derived noise.
+  // Voltage: nominal ± small seed-derived noise. The voltage PRNG lives on
+  // module-scope runtime state (not on the serializable session) so its
+  // stream advances across samples; constructing a new PRNG per sample
+  // would restart from the same seed each draw and produce a stalled
+  // (non-advancing) sequence.
   const voltageNominal = context.getVoltageOut()
   let voltageV = voltageNominal
   if (options.voltageNoise !== false) {
-    // Cache the PRNG on the session so state advances across samples.
-    // Fix Phase 4 M1: prior code constructed the PRNG per sample which
-    // restarted from the same seed each draw, producing a stalled sequence.
-    session.voltagePrng ??= createStreamPrng(options.rootSeed, transactionId, 'VOLTAGE_NOISE')
-    voltageV = fluctuate(voltageNominal, VOLTAGE_NOISE_PERCENT, session.voltagePrng)
+    const runtime = getSessionRuntime(session)
+    runtime.voltagePrng ??= createStreamPrng(options.rootSeed, transactionId, 'VOLTAGE_NOISE')
+    voltageV = fluctuate(voltageNominal, VOLTAGE_NOISE_PERCENT, runtime.voltagePrng)
   }
-  const roundedVoltage = roundTo(voltageV, VOLTAGE_ROUNDING_SCALE)
+  const roundedVoltage = roundTo(voltageV, ROUNDING_SCALE)
 
   // EV acceptance from the curve at running SoC.
   const acceptanceFraction = interpolateChargingCurve(
@@ -241,16 +310,15 @@ export const computeCoherentSample = (
 
   // EVSE cap (already includes hardware/charging-profile clamps via ChargingStation).
   const evseLimitW = context.getConnectorMaximumAvailablePower(session.connectorId)
-  const profileLimitW = options.chargingProfileLimitW ?? Number.POSITIVE_INFINITY
 
   const socCap = session.socPercent >= 100 ? 0 : 1
-  const targetPowerW = rampFactor * Math.min(evseLimitW, evAcceptanceW, profileLimitW) * socCap
+  const targetPowerW = rampFactor * Math.min(evseLimitW, evAcceptanceW) * socCap
   let powerW = Math.max(0, targetPowerW)
 
   // Clamp powerW to whatever the remaining battery capacity accepts over
   // this interval so a sample that crosses 100 % SoC cannot over-charge the
-  // register. INV-3 (P × Δt / 3.6e6 = ΔE) is preserved because everything
-  // downstream is recomputed from the clamped power. Fix Phase 4 M2.
+  // register. INV-3 (ΔE = P × Δt / 3.6e6) is preserved because ΔE is
+  // computed from the clamped power below.
   const remainingWh = Math.max(
     0,
     ((100 - session.socPercent) / 100) * session.profile.batteryCapacityWh
@@ -258,31 +326,32 @@ export const computeCoherentSample = (
   const maxPowerFromCapacityW = (remainingWh * MS_PER_HOUR) / options.intervalMs
   powerW = Math.min(powerW, maxPowerFromCapacityW)
 
-  // Current from existing electric utilities. reportedPowerW is derived from
-  // the (possibly clamped) powerW so V·I = P holds within rounding
-  // tolerance (CURRENT_ROUNDING_SCALE=2 keeps this ≤0.1 W on realistic V).
-  let currentA: number
-  let reportedPowerW: number
-  if (currentType === CurrentType.AC) {
-    currentA = ACElectricUtils.amperagePerPhaseFromPower(numberOfPhases, powerW, roundedVoltage)
-    reportedPowerW = ACElectricUtils.powerTotal(numberOfPhases, roundedVoltage, currentA)
-  } else {
-    currentA = DCElectricUtils.amperage(powerW, roundedVoltage)
-    reportedPowerW = DCElectricUtils.power(roundedVoltage, currentA)
-  }
-  // Float-round can push reportedPowerW back over maxPowerFromCapacityW —
-  // floor it. At CURRENT_ROUNDING_SCALE=2, V·I still reconstructs
-  // reportedPowerW within ≤0.1 W on typical mains, so INV-1 tolerance (±1 W)
-  // is preserved.
-  reportedPowerW = Math.min(reportedPowerW, maxPowerFromCapacityW)
-  const roundedCurrent = roundTo(currentA, CURRENT_ROUNDING_SCALE)
-  const roundedPower = roundTo(reportedPowerW, POWER_ROUNDING_SCALE)
+  // Physics: derive per-phase current as an exact fraction so
+  //   V_round · currentAExact · phases = powerW
+  // holds identically. `numberOfPhases` is 1 for DC (line above) so a
+  // single branch covers both currents.
+  //
+  // Fix B1: the prior path used `ACElectricUtils.amperagePerPhaseFromPower`
+  // (which rounds to integer amps), which could inflate V·I·phases above
+  // the capacity-clamped powerW by up to V·phases·0.5 W after re-clamp,
+  // breaking INV-1.
+  const divisor = roundedVoltage * numberOfPhases
+  const currentAExact = divisor > 0 ? powerW / divisor : 0
 
-  const deltaEnergyWh = (reportedPowerW * options.intervalMs) / MS_PER_HOUR
+  // Emission: round current to `ROUNDING_SCALE`, then derive emitted power
+  // from the rounded current so INV-1 (P = V·I·phases) holds within
+  // `ROUNDING_SCALE` (≤0.005 W) regardless of V or phases.
+  const roundedCurrent = roundTo(currentAExact, ROUNDING_SCALE)
+  const roundedPower = roundTo(roundedVoltage * roundedCurrent * numberOfPhases, ROUNDING_SCALE)
+
+  // Energy accounting uses the clamped (pre-rounding) `powerW` so INV-3
+  // (ΔE = P × Δt / 3.6e6) holds within floating-point ε and the capacity
+  // budget is respected exactly.
+  const deltaEnergyWh = (powerW * options.intervalMs) / MS_PER_HOUR
   const preRegisterWh = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
   const projectedRegisterWh = preRegisterWh + deltaEnergyWh
 
-  // Advance SoC with saturation at 100 %.
+  // INV-2: SoC(t+1) ≥ SoC(t); ΔSoC = ΔE / batteryCapacityWh × 100. Saturates at 100 %.
   const deltaSocPercent = (deltaEnergyWh / session.profile.batteryCapacityWh) * 100
   session.socPercent = Math.min(100, session.socPercent + deltaSocPercent)
 
@@ -291,7 +360,7 @@ export const computeCoherentSample = (
     deltaEnergyWh,
     energyRegisterWh: projectedRegisterWh,
     powerW: roundedPower,
-    socPercent: roundTo(session.socPercent, SOC_ROUNDING_SCALE),
+    socPercent: roundTo(session.socPercent, ROUNDING_SCALE),
     voltageV: roundedVoltage,
   }
 }
@@ -322,9 +391,14 @@ const findTemplate = (
 }
 
 /**
- * Resolves the SampledValueTemplate array for a given connector, mirroring
- * the EVSE-vs-connector lookup rules in
- * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}.
+ * Returns the SampledValueTemplate array configured on the given connector.
+ *
+ * Returns the connector-level `MeterValues` templates only. Unlike
+ * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does NOT
+ * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
+ * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
+ * EVSE-level template inheritance to the coherent path requires extending
+ * the context interface and is tracked as a follow-up.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
@@ -371,13 +445,13 @@ export const buildCoherentMeterValue = (
   }
 
   const sample = computeCoherentSample(context, connectorStatus, options)
-  // Own the register update: happens once per sample, unconditionally
-  // (Phase 2 merged finding #1).
+  // Own the register update: happens once per sample, unconditionally, so
+  // meterStop is correct even when Energy.Active.Import.Register is not in
+  // the configured MeterValues.
   advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
 
   const templates = resolveTemplates(context, session.connectorId)
   const sampledValue: SampledValue[] = []
-
   const socTemplate = findTemplate(templates, MeterValueMeasurand.STATE_OF_CHARGE)
   if (socTemplate != null) {
     sampledValue.push(buildVersionedSampledValue(socTemplate, sample.socPercent, mvContext))
@@ -394,7 +468,7 @@ export const buildCoherentMeterValue = (
     sampledValue.push(
       buildVersionedSampledValue(
         powerTemplate,
-        roundTo(sample.powerW / unitDivider, POWER_ROUNDING_SCALE),
+        roundTo(sample.powerW / unitDivider, ROUNDING_SCALE),
         mvContext
       )
     )
@@ -413,20 +487,27 @@ export const buildCoherentMeterValue = (
     sampledValue.push(
       buildVersionedSampledValue(
         energyTemplate,
-        roundTo(registerWh / unitDivider, ENERGY_ROUNDING_SCALE),
+        roundTo(registerWh / unitDivider, ROUNDING_SCALE),
         mvContext
       )
     )
   }
 
+  // MeterValue = OCPP16MeterValue | OCPP20MeterValue is a discriminated
+  // union that diverges on the SampledValue.context enum. Coherent path
+  // produces version-appropriate SampledValues via the injected
+  // buildVersionedSampledValue callback, but the compile-time union of
+  // SampledValue[] cannot be narrowed here — a boundary cast is required.
   return { sampledValue, timestamp: new Date() } as MeterValue
 }
 
 /**
- * Public defaults exposed for tests and integration.
+ * Module-level tunable constants exposed for tests and external integration. All
+ * values match the constants defined at the top of this module.
  */
 export const CoherentMeterValuesDefaults = {
   DEFAULT_RAMP_UP_DURATION_MS,
+  ROUNDING_SCALE,
   VOLTAGE_NOISE_PERCENT,
 } as const
 
@@ -446,8 +527,8 @@ export interface CreateSessionOptions {
  * Builds a {@link CoherentSession} deterministically from the profile pool
  * and per-transaction seed material. Weight-based profile selection uses a
  * dedicated `'PROFILE_PICK'` stream and initial SoC uses `'INITIAL_SOC'`,
- * so adding one consumer does not shift any other stream (Phase 2 design
- * §Determinism).
+ * so adding one consumer does not shift any other stream's sequence
+ * (stream-splitting via FNV-1a label hashing — see `deriveSeed` in `Prng.ts`).
  *
  * The nominal AC voltage is treated as phase voltage (line-to-neutral) per
  * {@link ../../utils/ElectricUtils.ACElectricUtils}. If the station is AC
@@ -509,11 +590,5 @@ export const resolveRootSeed = (
   if (stationInfo?.randomSeed != null && Number.isFinite(stationInfo.randomSeed)) {
     return stationInfo.randomSeed >>> 0
   }
-  const source = stationInfo?.hashId ?? ''
-  let hash = 0x811c9dc5
-  for (let i = 0; i < source.length; i++) {
-    hash ^= source.charCodeAt(i)
-    hash = Math.imul(hash, 0x01000193) >>> 0
-  }
-  return hash >>> 0
+  return hashLabel(stationInfo?.hashId ?? '')
 }

@@ -69,8 +69,7 @@ const finalizeTransactionConnectorStatus = (
   const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
   // resetConnectorStatus deletes transactionId (Helpers.ts:508). Destroy the
   // coherent session using requestPayload.transactionId, which is always
-  // present in the StopTransaction request and unaffected by the reset
-  // (Phase 2 merged finding #2).
+  // present in the StopTransaction request and unaffected by the reset.
   resetConnectorStatus(connectorStatus)
   chargingStation.destroyCoherentSession(requestPayload.transactionId)
   if (connectorStatus != null) {
@@ -538,7 +537,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
       // Destroy any lingering coherent session on this transaction so the
       // Map does not leak entries when the connector-side state has already
-      // been reset (Phase 2 merged finding #4).
+      // been reset.
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
       return
     }
@@ -578,7 +577,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // Destroy the coherent session BEFORE sleeping so an intervening
       // stop cannot leak it. `destroyCoherentSession` is idempotent so a
       // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
-      // is a no-op. Fix Phase 4 M3-OCPP16.
+      // is a no-op.
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {

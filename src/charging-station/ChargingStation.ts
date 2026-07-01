@@ -132,6 +132,7 @@ import {
   getConnectorChargingProfilesLimit,
   getDefaultConnectorMaximumPower,
   getDefaultVoltageOut,
+  getEvProfilesFile,
   getHashId,
   getIdTagsFile,
   getMaxNumberOfConnectors,
@@ -150,8 +151,8 @@ import { IdTagsCache } from './IdTagsCache.js'
 import {
   type CoherentSession,
   createCoherentSession,
+  disposeCoherentSessionRuntime,
   type EvProfilesFile,
-  getEvProfilesFile,
   loadEvProfilesFile,
   resolveRootSeed,
 } from './meter-values/index.js'
@@ -444,7 +445,8 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Removes the coherent session for a transaction. Idempotent — safe to
-   * call from every reset/stop/disconnect path.
+   * call from every reset/stop/disconnect path. Also disposes the module-scope
+   * per-session runtime state (voltage-noise PRNG closure).
    * @param transactionId - Transaction identifier.
    * @returns `true` when a session was removed, `false` otherwise.
    */
@@ -452,6 +454,7 @@ export class ChargingStation extends EventEmitter {
     if (transactionId == null) {
       return false
     }
+    disposeCoherentSessionRuntime(this.coherentSessions.get(transactionId))
     return this.coherentSessions.delete(transactionId)
   }
 
@@ -796,6 +799,16 @@ export class ChargingStation extends EventEmitter {
 
   public inAcceptedState (): boolean {
     return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
+  }
+
+  /**
+   * Injects a pre-built coherent session directly into the session store.
+   * Intended for testing only — production code uses {@link createCoherentSession}.
+   * @param transactionId - Transaction identifier.
+   * @param session - Pre-built session.
+   */
+  public injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+    this.coherentSessions.set(transactionId, session)
   }
 
   public inPendingState (): boolean {
@@ -1286,6 +1299,13 @@ export class ChargingStation extends EventEmitter {
           this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
           this.emitChargingStationEvent(ChargingStationEvents.stopped)
         } finally {
+          // Drop any coherent sessions still tracked at shutdown so a
+          // subsequent restart cannot resurrect stale state or leak
+          // module-scope runtime PRNG closures.
+          for (const session of this.coherentSessions.values()) {
+            disposeCoherentSessionRuntime(session)
+          }
+          this.coherentSessions.clear()
           this.stopping = false
         }
       } else {

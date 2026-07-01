@@ -5,9 +5,10 @@
  *   - flag on + session → coherent path emits coherent SampledValues.
  *   - flag on + no session → falls back to legacy path.
  *
- * Covers the boundary described in Phase 2 merged finding #5: the gate
- * runs AFTER the versioned SampledValue dispatcher is constructed and
- * BEFORE the legacy random measurand generation.
+ * Covers the strategy gate boundary: the gate runs AFTER the versioned
+ * SampledValue dispatcher is constructed and BEFORE the legacy random
+ * measurand generation, so the coherent path can emit versioned
+ * SampledValues without duplicating the dispatcher logic.
  */
 
 import assert from 'node:assert/strict'
@@ -19,9 +20,11 @@ import type { SampledValueTemplate } from '../../../src/types/index.js'
 import { addConfigurationKey } from '../../../src/charging-station/index.js'
 import { buildMeterValue } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  CurrentType,
   MeterValueMeasurand,
   OCPPVersion,
   StandardParametersKey,
+  Voltage,
 } from '../../../src/types/index.js'
 import { Constants } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
@@ -146,11 +149,9 @@ await describe('coherent strategy dispatch', async () => {
 
     await it('should route through the coherent path when a session is injected directly', () => {
       const now = Date.now()
-      // Directly inject a session using the internal map — the strategy gate
-      // consults `getCoherentSession(transactionId)`.
       const session: CoherentSession = {
         connectorId: 1,
-        currentType: 'AC' as CoherentSession['currentType'],
+        currentType: CurrentType.AC,
         numberOfPhases: 1,
         profile: {
           batteryCapacityWh: 40000,
@@ -165,12 +166,9 @@ await describe('coherent strategy dispatch', async () => {
         sessionStartMs: now,
         socPercent: 30,
         transactionId: TEST_TRANSACTION_ID,
-        voltageOutNominal: 230,
+        voltageOutNominal: Voltage.VOLTAGE_230,
       }
-      const sessionsMap = (
-        station as unknown as { coherentSessions: Map<number | string, unknown> }
-      ).coherentSessions
-      sessionsMap.set(TEST_TRANSACTION_ID, session)
+      station.injectCoherentSession(TEST_TRANSACTION_ID, session)
 
       addConfigurationKey(station, StandardParametersKey.MeterValuesSampledData, 'SoC')
       const registerBefore = station.getConnectorStatus(1)?.energyActiveImportRegisterValue ?? -1

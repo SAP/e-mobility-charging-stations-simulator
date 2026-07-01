@@ -2,13 +2,14 @@
 
 /**
  * @file Deterministic seeded PRNG for coherent MeterValues.
- * @description Mulberry32 with a SplitMix32-derived stream-splitting scheme.
- *   Golden-set aligned: `/tmp/issue-40/golden/run-invariants.ts` uses the
- *   same algorithm. No runtime dependency; kept intentionally under ~50 LOC.
+ * @description Mulberry32 core PRNG with FNV-1a label hashing for
+ *   independent per-stream seed derivation. No runtime dependency;
+ *   kept intentionally under ~50 LOC.
  *
- * Stream splitting: `deriveSeed(rootSeed, label)` mixes a stable 32-bit hash
- * of the label into the root seed so adding one consumer (e.g. a new
- * `POWER_NOISE` stream) does not shift any other stream's sequence.
+ * Stream splitting: `deriveSeed(rootSeed, label)` XORs a stable FNV-1a
+ * 32-bit hash of the label into the root seed so adding one consumer
+ * (e.g. a new `POWER_NOISE` stream) does not shift any other stream's
+ * sequence.
  */
 
 /**
@@ -47,6 +48,14 @@ export const hashLabel = (label: string): number => {
  * Derive a per-stream seed from a root seed and a stable label.
  * The XOR mix keeps `deriveSeed(root, 'A') !== deriveSeed(root, 'B')`
  * as long as `hashLabel('A') !== hashLabel('B')`.
+ *
+ * Known limitation (deferred): XOR is commutative, so nested derivations
+ * `deriveSeed(deriveSeed(root, tx), label)` collide when
+ * `hashLabel(tx1) ^ hashLabel(label1) === hashLabel(tx2) ^ hashLabel(label2)`.
+ * Birthday bound ≈ 2^16 (txId, label) pairs — well beyond simulator scale.
+ * A non-commutative mix (see {@link mixSeed}) would shift every existing
+ * stream and diverge from deterministic tests; do not change without
+ * regenerating the golden set.
  * @param rootSeed - Root 32-bit seed.
  * @param label - Stable stream label.
  * @returns Derived 32-bit unsigned seed.
@@ -56,7 +65,7 @@ export const deriveSeed = (rootSeed: number, label: string): number => {
 }
 
 /**
- * FNV-1a mix used to fold non-numeric material (e.g. transaction id) into a
+ * FNV-1a mix used to fold non-numeric material (e.g. transactionId) into a
  * seed. Deterministic and stable across Node runtimes.
  * @param base - Base 32-bit unsigned seed.
  * @param material - Additional stable material to mix in.

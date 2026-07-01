@@ -16,7 +16,7 @@ import {
   deriveSeed,
   hashLabel,
   mulberry32,
-} from '../../../src/charging-station/meter-values/prng.js'
+} from '../../../src/charging-station/meter-values/Prng.js'
 
 await describe('coherent PRNG', async () => {
   await describe('mulberry32', async () => {

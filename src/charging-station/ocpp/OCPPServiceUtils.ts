@@ -70,6 +70,7 @@ import {
 } from '../../utils/index.js'
 import {
   buildCoherentMeterValue,
+  type BuildVersionedSampledValue,
   isCoherentModeActive,
   resolveRootSeed,
 } from '../meter-values/index.js'
@@ -900,20 +901,8 @@ export const buildEmptyMeterValue = (): MeterValue => ({
   timestamp: new Date(),
 })
 
-/**
- * Signature of the versioned SampledValue builder returned by
- * {@link createVersionedSampledValueDispatcher}. Callers use it to construct
- * OCPP 1.6 or OCPP 2.0 SampledValues without knowing the OCPP version.
- */
-type BuildVersionedSampledValueFn = (
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-) => SampledValue
-
 interface VersionedSampledValueDispatch {
-  buildVersionedSampledValue: BuildVersionedSampledValueFn
+  buildVersionedSampledValue: BuildVersionedSampledValue
   connectorId: number
   evseId: number | undefined
   signingConfig: SampledValueSigningConfig | undefined
@@ -929,7 +918,7 @@ interface VersionedSampledValueDispatch {
 /**
  * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
  * used by {@link buildMeterValue}. Extracted verbatim from the original
- * `buildMeterValue` switch so behavior is byte-identical.
+ * `buildMeterValue` switch so behavior is preserved exactly.
  * @param chargingStation - Target charging station.
  * @param transactionId - Active transaction identifier.
  * @param context - Optional MeterValue reading context (drives signing
@@ -943,7 +932,7 @@ const createVersionedSampledValueDispatcher = (
 ): VersionedSampledValueDispatch => {
   const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
   let evseId: number | undefined
-  let buildVersionedSampledValue: BuildVersionedSampledValueFn
+  let buildVersionedSampledValue: BuildVersionedSampledValue
   let signingConfig: SampledValueSigningConfig | undefined
   const signingState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
@@ -1093,10 +1082,9 @@ export const buildMeterValue = (
     createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
   // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
   // is available (so the coherent path can emit versioned SampledValues) and
-  // BEFORE any legacy random measurand generation runs (Phase 2 merged
-  // finding #5). When coherent mode is not active for this station or no
-  // session exists for the transaction, this is a no-op and the legacy
-  // code path is unchanged (byte-identical outputs).
+  // BEFORE any legacy random measurand generation runs. When coherent mode
+  // is not active for this station or no session exists for the transaction,
+  // this is a no-op and the legacy code path is unchanged.
   if (isCoherentModeActive(chargingStation, transactionId)) {
     const rootSeed = resolveRootSeed(chargingStation.stationInfo)
     return buildCoherentMeterValue(

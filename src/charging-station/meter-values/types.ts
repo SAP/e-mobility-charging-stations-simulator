@@ -9,7 +9,7 @@
  *   severs the type dependency on ChargingStation.ts and prevents a future
  *   `meter-values → ChargingStation → meter-values` cycle if
  *   `--no-trackTypeOnlyDependencies` is ever removed from the circular-deps
- *   audit (Phase 2 merged finding #3).
+ *   audit.
  */
 
 import { z } from 'zod'
@@ -82,24 +82,20 @@ export const EvProfilesFileSchema = z.object({
  * A per-transaction coherent session. Created after StartTransaction is
  * accepted (or forced), destroyed at every reset/stop/disconnect path.
  * `sessionStartMs` is immutable so SetChargingProfile cannot reset the ramp.
+ * All non-mutable fields are `readonly` to enforce write-once semantics
+ * outside {@link createCoherentSession}; only `socPercent` is mutated
+ * (once per sample, monotone non-decreasing per INV-2).
  */
 export interface CoherentSession {
-  connectorId: number
-  currentType: CurrentType
-  numberOfPhases: number
-  profile: EvProfile
-  rampUpDurationMs: number
+  readonly connectorId: number
+  readonly currentType: CurrentType
+  readonly numberOfPhases: number
+  readonly profile: EvProfile
+  readonly rampUpDurationMs: number
   readonly sessionStartMs: number
   socPercent: number
-  transactionId: number | string
-  voltageOutNominal: Voltage
-  /**
-   * Cached voltage-noise PRNG. Lazily initialized on first sample and
-   * reused across samples so the PRNG state advances (fixes Phase 4 M1:
-   * per-sample construction produced a stalled sequence starting from
-   * the same seed each draw).
-   */
-  voltagePrng?: () => number
+  readonly transactionId: number | string
+  readonly voltageOutNominal: Voltage
 }
 
 /**

@@ -8,11 +8,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ChargingStation, CoherentSession } from '../../../../src/charging-station/index.js'
 import type { ConnectorStatus } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
+import { CurrentType, OCPPVersion, Voltage } from '../../../../src/types/index.js'
 import {
   flushMicrotasks,
   standardCleanup,
@@ -118,9 +118,26 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
   })
 
   await it('should destroy the coherent session even when the station stops during delay (regression: M3)', async t => {
-    const sessionsMap = (station as unknown as { coherentSessions: Map<number | string, unknown> })
-      .coherentSessions
-    sessionsMap.set('tx-1', { transactionId: 'tx-1' })
+    const stubSession: CoherentSession = {
+      connectorId: 1,
+      currentType: CurrentType.AC,
+      numberOfPhases: 1,
+      profile: {
+        batteryCapacityWh: 1,
+        chargingCurve: [{ powerFraction: 0, socPercent: 0 }],
+        id: 'stub',
+        initialSocPercentMax: 0,
+        initialSocPercentMin: 0,
+        maxPowerW: 1,
+        weight: 1,
+      },
+      rampUpDurationMs: 0,
+      sessionStartMs: 0,
+      socPercent: 0,
+      transactionId: 'tx-1',
+      voltageOutNominal: Voltage.VOLTAGE_230,
+    }
+    station.injectCoherentSession('tx-1', stubSession)
     assert.ok(
       station.getCoherentSession('tx-1') != null,
       'session should exist before cleanupEndedTransaction'

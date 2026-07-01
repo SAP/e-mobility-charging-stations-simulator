@@ -25,9 +25,12 @@ import {
   buildCoherentMeterValue,
   computeCoherentSample,
   createCoherentSession,
+  disposeCoherentSessionRuntime,
   resolveRootSeed,
 } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import { hashLabel } from '../../../src/charging-station/meter-values/Prng.js'
 import {
+  AvailabilityType,
   CurrentType,
   MeterValueMeasurand,
   MeterValueUnit,
@@ -90,7 +93,7 @@ const buildContext = (
   }
 
   const connectorStatus: ConnectorStatus = {
-    availability: 'Operative' as ConnectorStatus['availability'],
+    availability: AvailabilityType.Operative,
     energyActiveImportRegisterValue: 0,
     MeterValues: [],
     transactionEnergyActiveImportRegisterValue: 0,
@@ -116,14 +119,13 @@ const templatesFor = (
   energyUnit: MeterValueUnit = MeterValueUnit.WATT_HOUR
 ): SampledValueTemplate[] => {
   return measurands.map(measurand => {
-    const template: SampledValueTemplate = { measurand } as SampledValueTemplate
-    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      ;(template as unknown as { unit: MeterValueUnit }).unit = energyUnit
-    }
-    if (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT) {
-      ;(template as unknown as { unit: MeterValueUnit }).unit = MeterValueUnit.WATT
-    }
-    return template
+    const unit =
+      measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        ? energyUnit
+        : measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          ? MeterValueUnit.WATT
+          : undefined
+    return (unit != null ? { measurand, unit } : { measurand }) as SampledValueTemplate
   })
 }
 
@@ -542,7 +544,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
   })
 
   await describe('determinism', async () => {
-    await it('should produce byte-identical sequences for identical seed + transactionId', () => {
+    await it('should produce identical sequences for identical seed + transactionId', () => {
       const runOnce = (): number[] => {
         const { connectorStatus, context, sessions } = buildContext()
         const session = createSessionOrFail(context, {
@@ -568,6 +570,205 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const a = runOnce()
       const b = runOnce()
       assert.deepStrictEqual(a, b)
+    })
+  })
+
+  await describe('INV-1 in capacity-clamp branch (regression: B1)', async () => {
+    await it('should keep V·I·phases coherent with reported P after AC 3-phase clamp', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [flatProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      session.socPercent = 99.8
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 60000,
+        nowMs: 60000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const viPhases = sample.voltageV * sample.currentA * 3
+      assert.ok(
+        Math.abs(sample.powerW - viPhases) <= 0.01,
+        `B1 AC3 clamp: |P - V·I·phases|=${Math.abs(sample.powerW - viPhases).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+      )
+      const remainingWh = ((100 - 99.8) / 100) * flatProfile.batteryCapacityWh
+      assert.ok(
+        sample.deltaEnergyWh <= remainingWh + 1e-6,
+        `B1 AC3 clamp: ΔE=${sample.deltaEnergyWh.toString()} > remainingWh=${remainingWh.toString()}`
+      )
+    })
+
+    await it('should keep V·I coherent with reported P after DC clamp', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.DC,
+        evseMaxPowerW: 50000,
+        voltageOut: 400,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [flatProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      session.socPercent = 99.9
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 60000,
+        nowMs: 60000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const vi = sample.voltageV * sample.currentA
+      assert.ok(
+        Math.abs(sample.powerW - vi) <= 0.01,
+        `B1 DC clamp: |P - V·I|=${Math.abs(sample.powerW - vi).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+      )
+    })
+  })
+
+  await describe('intervalMs=0 defensive guard (regression: M7)', async () => {
+    await it('should not contaminate socPercent or deltaEnergyWh with NaN at saturated SoC', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      session.socPercent = 100
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 0,
+        nowMs: 0,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.ok(!Number.isNaN(sample.powerW), 'powerW must not be NaN')
+      assert.ok(!Number.isNaN(sample.currentA), 'currentA must not be NaN')
+      assert.ok(!Number.isNaN(sample.deltaEnergyWh), 'deltaEnergyWh must not be NaN')
+      assert.ok(!Number.isNaN(sample.socPercent), 'sample.socPercent must not be NaN')
+      assert.ok(!Number.isNaN(session.socPercent), 'session.socPercent must not be NaN')
+      assert.strictEqual(sample.deltaEnergyWh, 0)
+      // Second call to confirm session state stays healthy.
+      const next = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 30000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.ok(!Number.isNaN(next.powerW))
+      assert.ok(!Number.isNaN(session.socPercent))
+      assert.strictEqual(session.socPercent, 100)
+    })
+
+    await it('should short-circuit on intervalMs=0 with non-saturated SoC', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const socBefore = session.socPercent
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 0,
+        nowMs: 0,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.strictEqual(sample.deltaEnergyWh, 0)
+      assert.strictEqual(sample.powerW, 0)
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+  })
+
+  await describe('runtime PRNG isolation from session (regression: M2)', async () => {
+    await it('should not expose voltagePrng on CoherentSession', () => {
+      const { context } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      assert.ok(
+        !Object.prototype.hasOwnProperty.call(session, 'voltagePrng'),
+        'CoherentSession must not carry voltagePrng (moved to module-scope runtime state)'
+      )
+    })
+
+    await it('should restart voltage-noise stream after dispose', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const v1 = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 30000,
+        rootSeed: 42,
+      }).voltageV
+      const v2 = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 60000,
+        rootSeed: 42,
+      }).voltageV
+      // Dispose and re-run: v3 must equal v1 (fresh PRNG from same seed).
+      assert.ok(disposeCoherentSessionRuntime(session))
+      const v3 = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 90000,
+        rootSeed: 42,
+      }).voltageV
+      assert.strictEqual(v3, v1, 'dispose must clear cached PRNG state')
+      assert.notStrictEqual(v2, v3, 'without dispose, v2 would differ from a fresh draw')
+    })
+  })
+
+  await describe('resolveRootSeed DRY dedup (regression: M1)', async () => {
+    await it('should match hashLabel for the hashId path', () => {
+      assert.strictEqual(resolveRootSeed({ hashId: 'abc' }), hashLabel('abc'))
+      assert.strictEqual(resolveRootSeed({ hashId: '' }), hashLabel(''))
+      assert.strictEqual(resolveRootSeed({ hashId: 'CS-1234' }), hashLabel('CS-1234'))
     })
   })
 })

@@ -9,30 +9,14 @@
  */
 
 import { readFileSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 
-import type { ChargingStationInfo } from '../../types/index.js'
 import type { EvProfile, EvProfilesFile } from './types.js'
 
-import { logger } from '../../utils/index.js'
+import { getErrorMessage, logger } from '../../utils/index.js'
 import { EvProfilesFileSchema } from './types.js'
 
 const moduleName = 'EvProfiles'
-
-/**
- * Resolves the absolute path of `stationInfo.evProfilesFile` to the
- * `assets/` directory next to the built module (same convention as
- * `getIdTagsFile`).
- * @param stationInfo - Charging station info containing the `evProfilesFile` reference.
- * @returns Absolute path or `undefined` if not configured.
- */
-export const getEvProfilesFile = (stationInfo: ChargingStationInfo): string | undefined => {
-  return stationInfo.evProfilesFile != null
-    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.evProfilesFile))
-    : undefined
-}
 
 /**
  * Loads, parses, validates, and normalizes an EV profile file. Sorting the
@@ -72,7 +56,7 @@ export const loadEvProfilesFile = (
       )
     } else {
       logger.warn(
-        `${logPrefix} ${moduleName}.loadEvProfilesFile: EV profile file '${filePath}' could not be loaded: ${(error as Error).message}`
+        `${logPrefix} ${moduleName}.loadEvProfilesFile: EV profile file '${filePath}' could not be loaded: ${getErrorMessage(error)}`
       )
     }
     return undefined

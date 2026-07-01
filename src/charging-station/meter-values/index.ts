@@ -6,31 +6,22 @@
  *   OCPP simulator. Opt-in via the template flag `coherentMeterValues`;
  *   when disabled or absent, legacy random measurand generation is used
  *   unchanged (see `../ocpp/OCPPServiceUtils.ts`).
+ *
+ *   Internal helpers (PRNG primitives, `computeCoherentSample`,
+ *   `advanceEnergyRegister`, `createStreamPrng`, curve helpers, Zod
+ *   schemas, ...) are intentionally NOT re-exported. Test suites import
+ *   them directly from sub-modules.
  */
 
 export {
-  advanceEnergyRegister,
   buildCoherentMeterValue,
-  CoherentMeterValuesDefaults,
-  computeCoherentSample,
   createCoherentSession,
-  createStreamPrng,
+  disposeCoherentSessionRuntime,
   isCoherentModeActive,
   resolveRootSeed,
 } from './CoherentMeterValuesGenerator.js'
-export type {
-  BuildVersionedSampledValue,
-  CoherentSample,
-  ComputeSampleOptions,
-  CreateSessionOptions,
-} from './CoherentMeterValuesGenerator.js'
-export {
-  getEvProfilesFile,
-  interpolateChargingCurve,
-  loadEvProfilesFile,
-  selectEvProfile,
-} from './EvProfiles.js'
-export { deriveSeed, hashLabel, mixSeed, mulberry32 } from './prng.js'
+export type { BuildVersionedSampledValue } from './CoherentMeterValuesGenerator.js'
+export { loadEvProfilesFile } from './EvProfiles.js'
 export type {
   ChargingCurvePoint,
   CoherentSession,
@@ -38,4 +29,3 @@ export type {
   EvProfilesFile,
   ICoherentContext,
 } from './types.js'
-export { ChargingCurvePointSchema, EvProfileSchema, EvProfilesFileSchema } from './types.js'

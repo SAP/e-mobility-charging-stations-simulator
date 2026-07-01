@@ -201,8 +201,7 @@ export class OCPP20ServiceUtils {
       return
     }
     // Snapshot transactionId BEFORE any mutation below deletes it, so the
-    // coherent session (if any) can still be destroyed after the reset
-    // (Phase 2 merged finding #2).
+    // coherent session (if any) can still be destroyed after the reset.
     const txId = connectorStatus.transactionId
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
@@ -210,7 +209,7 @@ export class OCPP20ServiceUtils {
       delete connectorStatus.transactionId
       // Destroy the coherent session BEFORE sleeping so an intervening
       // stop cannot leak it. `destroyCoherentSession` is idempotent so the
-      // post-sleep call remains valid. Fix Phase 4 M3-OCPP20.
+      // post-sleep call remains valid.
       chargingStation.destroyCoherentSession(txId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {

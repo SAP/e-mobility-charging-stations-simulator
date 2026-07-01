@@ -3,10 +3,10 @@
  * @description Simulates StartTransaction → 3 MeterValues samples → StopTransaction
  *   with `coherentMeterValues: true`, a directly-injected coherent session
  *   (bypasses on-disk profile file loading in tests), and a fixed seed.
- *   Asserts per-sample invariants, `meterStop == last coherent register`,
- *   and fixed-seed determinism.
  *
- * Covers the acceptance criteria in `/tmp/issue-40/scope.md` §Success criterion.
+ * Covers: per-sample INV-1/INV-2/INV-3 invariants, `meterStop == last coherent
+ * register`, and fixed-seed determinism across a full StartTransaction →
+ * MeterValues → StopTransaction cycle.
  */
 
 import assert from 'node:assert/strict'
@@ -27,11 +27,13 @@ import { addConfigurationKey } from '../../../../src/charging-station/index.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { buildMeterValue } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  CurrentType,
   MeterValueMeasurand,
   OCPP16AuthorizationStatus,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   StandardParametersKey,
+  Voltage,
 } from '../../../../src/types/index.js'
 import {
   flushMicrotasks,
@@ -49,7 +51,7 @@ const TRANSACTION_ID = 4242
 const injectSession = (station: ChargingStation, startMs: number): CoherentSession => {
   const session: CoherentSession = {
     connectorId: CONNECTOR_ID,
-    currentType: 'AC' as CoherentSession['currentType'],
+    currentType: CurrentType.AC,
     numberOfPhases: 3,
     profile: {
       batteryCapacityWh: 40000,
@@ -68,14 +70,9 @@ const injectSession = (station: ChargingStation, startMs: number): CoherentSessi
     sessionStartMs: startMs,
     socPercent: 30,
     transactionId: TRANSACTION_ID,
-    voltageOutNominal: 230,
+    voltageOutNominal: Voltage.VOLTAGE_230,
   }
-  const sessionsMap = (
-    station as unknown as {
-      coherentSessions: Map<number | string, CoherentSession>
-    }
-  ).coherentSessions
-  sessionsMap.set(TRANSACTION_ID, session)
+  station.injectCoherentSession(TRANSACTION_ID, session)
   return session
 }
 
@@ -153,18 +150,19 @@ const runTransaction = async (
   // loading which is validated elsewhere in EvProfiles.test.ts).
   injectSession(station, startMs)
 
-  // Emit 3 samples. Use an internal nowMs progression via Date.now() mock.
+  // Emit 3 samples. Scope `Date.now` per iteration via node:test mock so
+  // the mock is atomically restored on each loop cycle even if the buildMeterValue
+  // call throws, avoiding global mutation leaks under concurrent runners.
   const meterValues: MeterValue[] = []
-  const originalNow = Date.now
-  try {
-    for (let i = 0; i < 3; i++) {
-      const nowMs = startMs + INTERVAL_MS * (i + 1)
-      Date.now = () => nowMs
+  for (let i = 0; i < 3; i++) {
+    const nowMs = startMs + INTERVAL_MS * (i + 1)
+    const nowMock = mock.method(Date, 'now', () => nowMs)
+    try {
       const mv = buildMeterValue(station, TRANSACTION_ID, INTERVAL_MS)
       meterValues.push(mv)
+    } finally {
+      nowMock.mock.restore()
     }
-  } finally {
-    Date.now = originalNow
   }
 
   // StopTransaction — meterStop should equal the connector register.
@@ -247,7 +245,7 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
         Math.abs(power - expectedP) <= 3,
         `sample ${i.toString()}: |P - V·I·3|=${Math.abs(power - expectedP).toString()} exceeded 3W`
       )
-      // INV-2 / INV-4: E and SoC monotone non-decreasing.
+      // INV-2 (SoC monotone non-decreasing) and INV-3 (E monotone non-decreasing).
       assert.ok(energy >= prevEnergy, `sample ${i.toString()}: energy regressed`)
       assert.ok(soc >= prevSoc, `sample ${i.toString()}: SoC regressed`)
       prevEnergy = energy
@@ -275,10 +273,9 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
       Math.abs(stopEnergyWh - expectedAccumulatedWh) <= 1,
       `M4: stopEnergyWh=${stopEnergyWh.toString()} diverged from Σ(P·Δt)=${expectedAccumulatedWh.toString()} Wh`
     )
-    const lastEnergy = findValue(
-      meterValues.at(-1),
-      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    )
+    const lastMeterValue = meterValues.at(-1)
+    assert.ok(lastMeterValue != null, 'M4: expected at least one MeterValue in stream')
+    const lastEnergy = findValue(lastMeterValue, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
     assert.ok(lastEnergy != null)
     // Cross-check: stopEnergyWh must match the last MV register within the
     // same 1 Wh tolerance as the independent Σ(P·Δt) check. Both are read

@@ -591,9 +591,13 @@ export function createMockChargingStation (
     // Core properties
     index,
 
+    injectCoherentSession (transactionId: number | string, session: unknown): void {
+      this.coherentSessions.set(transactionId, session)
+    },
     inPendingState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
     },
+
     inRejectedState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
     },
