@@ -208,6 +208,10 @@ export class OCPP20ServiceUtils {
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
       delete connectorStatus.transactionId
+      // Destroy the coherent session BEFORE sleeping so an intervening
+      // stop cannot leak it. `destroyCoherentSession` is idempotent so the
+      // post-sleep call remains valid. Fix Phase 4 M3-OCPP20.
+      chargingStation.destroyCoherentSession(txId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {
         return

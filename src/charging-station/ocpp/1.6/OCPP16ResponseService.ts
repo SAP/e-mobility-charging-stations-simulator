@@ -575,6 +575,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
       if (transactionConnectorStatus != null) {
         delete transactionConnectorStatus.transactionId
       }
+      // Destroy the coherent session BEFORE sleeping so an intervening
+      // stop cannot leak it. `destroyCoherentSession` is idempotent so a
+      // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
+      // is a no-op. Fix Phase 4 M3-OCPP16.
+      chargingStation.destroyCoherentSession(requestPayload.transactionId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {
         return

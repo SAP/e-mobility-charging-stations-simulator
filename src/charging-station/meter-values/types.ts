@@ -92,6 +92,13 @@ export interface CoherentSession {
   readonly sessionStartMs: number
   socPercent: number
   transactionId: number | string
+  /**
+   * Cached voltage-noise PRNG. Lazily initialized on first sample and
+   * reused across samples so the PRNG state advances (fixes Phase 4 M1:
+   * per-sample construction produced a stalled sequence starting from
+   * the same seed each draw).
+   */
+  voltagePrng?: () => number
   voltageOutNominal: Voltage
 }
 

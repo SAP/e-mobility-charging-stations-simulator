@@ -224,10 +224,11 @@ export const computeCoherentSample = (
   const voltageNominal = context.getVoltageOut()
   let voltageV = voltageNominal
   if (options.voltageNoise !== false) {
-    const voltagePrng = createStreamPrng(options.rootSeed, transactionId, 'VOLTAGE_NOISE')
-    // Deterministic per-sample: mix elapsedMs to avoid stale draws.
-    voltagePrng()
-    voltageV = fluctuate(voltageNominal, VOLTAGE_NOISE_PERCENT, voltagePrng)
+    // Cache the PRNG on the session so state advances across samples.
+    // Fix Phase 4 M1: prior code constructed the PRNG per sample which
+    // restarted from the same seed each draw, producing a stalled sequence.
+    session.voltagePrng ??= createStreamPrng(options.rootSeed, transactionId, 'VOLTAGE_NOISE')
+    voltageV = fluctuate(voltageNominal, VOLTAGE_NOISE_PERCENT, session.voltagePrng)
   }
   const roundedVoltage = roundTo(voltageV, VOLTAGE_ROUNDING_SCALE)
 
@@ -244,7 +245,19 @@ export const computeCoherentSample = (
 
   const socCap = session.socPercent >= 100 ? 0 : 1
   const targetPowerW = rampFactor * Math.min(evseLimitW, evAcceptanceW, profileLimitW) * socCap
-  const powerW = Math.max(0, targetPowerW)
+  let powerW = Math.max(0, targetPowerW)
+
+  // Clamp powerW to whatever the remaining battery capacity accepts over
+  // this interval so a sample that crosses 100 % SoC cannot over-charge the
+  // register beyond the battery. INV-3 (P × Δt / 3.6e6 = ΔE) is preserved
+  // by recomputing everything downstream from the clamped power.
+  // Fix Phase 4 M2.
+  const remainingWh = Math.max(
+    0,
+    ((100 - session.socPercent) / 100) * session.profile.batteryCapacityWh
+  )
+  const maxPowerFromCapacityW = (remainingWh * MS_PER_HOUR) / options.intervalMs
+  powerW = Math.min(powerW, maxPowerFromCapacityW)
 
   // Current from existing electric utilities. These round to integer amps —
   // Recompute reported power from the rounded emitted V/I so INV-1 holds
@@ -257,6 +270,15 @@ export const computeCoherentSample = (
   } else {
     currentA = DCElectricUtils.amperage(powerW, roundedVoltage)
     reportedPowerW = DCElectricUtils.power(roundedVoltage, currentA)
+  }
+  // If capacity clamp bites, current from powerW may reconstruct a
+  // reportedPower that overshoots the clamp again — floor to remaining.
+  if (reportedPowerW * options.intervalMs > remainingWh * MS_PER_HOUR) {
+    reportedPowerW = maxPowerFromCapacityW
+    currentA =
+      currentType === CurrentType.AC
+        ? ACElectricUtils.amperagePerPhaseFromPower(numberOfPhases, reportedPowerW, roundedVoltage)
+        : DCElectricUtils.amperage(reportedPowerW, roundedVoltage)
   }
   const roundedCurrent = roundTo(currentA, CURRENT_ROUNDING_SCALE)
   const roundedPower = roundTo(reportedPowerW, POWER_ROUNDING_SCALE)
