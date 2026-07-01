@@ -102,6 +102,19 @@ export const interpolateChargingCurve = (
   if (curve.length === 0) {
     return 1
   }
+  // Debug-only invariant guard. Production path is `loadEvProfilesFile`
+  // which sorts in place; the only unsorted reach is the `__inject*` test
+  // seam. See `types.ts` `EvProfileSchema` docstring for the caller-
+  // responsibility contract.
+  if (process.env.NODE_ENV !== 'production') {
+    for (let i = 1; i < curve.length; i++) {
+      if (curve[i].socPercent < curve[i - 1].socPercent) {
+        throw new Error(
+          `interpolateChargingCurve: chargingCurve must be sorted non-decreasing by socPercent (index ${i.toString()})`
+        )
+      }
+    }
+  }
   if (socPercent <= curve[0].socPercent) {
     return curve[0].powerFraction
   }

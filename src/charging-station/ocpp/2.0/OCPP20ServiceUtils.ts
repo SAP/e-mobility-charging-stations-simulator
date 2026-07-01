@@ -903,18 +903,28 @@ export class OCPP20ServiceUtils {
     if (isNotEmptyArray(startedMeterValues) && connectorStatus != null) {
       connectorStatus.transactionBeginMeterValue = startedMeterValues[0] as MeterValue
     }
-    const response = await OCPP20ServiceUtils.sendTransactionEvent(
-      chargingStation,
-      OCPP20TransactionEventEnumType.Started,
-      OCPP20TriggerReasonEnumType.Authorized,
-      connectorId,
-      transactionId,
-      {
-        idToken:
-          idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
-        ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
-      }
-    )
+    let response
+    try {
+      response = await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId,
+        {
+          idToken:
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
+          ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
+        }
+      )
+    } catch (error) {
+      // Symmetric with OCPP 1.6 `resetConnectorOnStartTransactionError`: if
+      // the Started TransactionEvent fails to send, the coherent session
+      // (created at line 898 for the physics-consistent begin MeterValue)
+      // must not leak. `destroyCoherentSession` is idempotent.
+      chargingStation.destroyCoherentSession(transactionId)
+      throw error
+    }
     return {
       accepted:
         response.idTokenInfo == null ||
@@ -989,7 +999,11 @@ export class OCPP20ServiceUtils {
         const meterValue = buildMeterValue(
           chargingStation,
           connectorStatus.transactionId,
-          interval
+          interval,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxUpdatedMeasurands
+          )
         ) as OCPP20MeterValue
         OCPP20ServiceUtils.sendTransactionEvent(
           chargingStation,

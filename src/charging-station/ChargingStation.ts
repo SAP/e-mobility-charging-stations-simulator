@@ -317,7 +317,8 @@ export class ChargingStation extends EventEmitter {
   /**
    * Injects a pre-built coherent session directly into the session store.
    * **Test seam only** — never call from production code. The `__` prefix
-   * is enforced by the `no-restricted-syntax` ESLint rule.
+   * marks this as a non-public API by convention; it is not currently
+   * enforced by a lint rule.
    * @param transactionId - Transaction identifier.
    * @param session - Pre-built session.
    */
@@ -370,9 +371,13 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Creates a coherent MeterValues session for the given transaction.
-   * Called by OCPP response handlers immediately after a successful
-   * StartTransaction. When `stationInfo.coherentMeterValues` is not `true`,
-   * or when no valid EV profile file is loaded, this method is a no-op.
+   * Called by both request-builder and response-handler call sites;
+   * idempotent because OCPP 2.0.x has two call sites per transaction
+   * (request builder creates the session early so `Transaction.Started`
+   * MeterValues route through the coherent gate; the response-handler
+   * call then becomes a no-op). When `stationInfo.coherentMeterValues`
+   * is not `true`, or when no valid EV profile file is loaded, this
+   * method is a no-op.
    * @param transactionId - Transaction identifier from the CSMS.
    * @param connectorId - Connector on which the transaction is running.
    * @returns The created session or `undefined` when coherent mode is off.

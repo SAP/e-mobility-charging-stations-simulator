@@ -1073,6 +1073,9 @@ const createVersionedSampledValueDispatcher = (
  *   `undefined` (no filter) for OCPP 2.0.
  * @returns Enabled measurand set, or `undefined` for no filter.
  */
+const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
+const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
+
 const resolveEnabledMeasurands = (
   chargingStation: ChargingStation,
   measurandsKey: ConfigurationKeyType | undefined
@@ -1089,8 +1092,24 @@ const resolveEnabledMeasurands = (
   const enabled = new Set<MeterValueMeasurand>()
   for (const entry of csv.split(',')) {
     const trimmed = entry.trim()
-    if (trimmed.length > 0) {
+    if (trimmed.length === 0) {
+      continue
+    }
+    if (KNOWN_MEASURANDS.has(trimmed)) {
       enabled.add(trimmed as MeterValueMeasurand)
+      continue
+    }
+    // Debounce log spam: warn once per (station, invalid entry) pair.
+    let warned = warnedInvalidMeasurands.get(chargingStation)
+    if (warned == null) {
+      warned = new Set<string>()
+      warnedInvalidMeasurands.set(chargingStation, warned)
+    }
+    if (!warned.has(trimmed)) {
+      warned.add(trimmed)
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.resolveEnabledMeasurands: unknown measurand '${trimmed}' in ${effectiveKey} — ignored`
+      )
     }
   }
   enabled.add(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)

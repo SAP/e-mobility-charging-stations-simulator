@@ -183,7 +183,8 @@ export const advanceEnergyRegister = (
 }
 
 /**
- * Coherent physics sample.
+ * Coherent physics sample. All fields follow the `<quantity><Unit>` naming
+ * convention (`currentA`, `powerW`, `voltageV`, ...).
  */
 export interface CoherentSample {
   currentA: number
@@ -201,7 +202,15 @@ export interface ComputeSampleOptions {
   intervalMs: number
   nowMs: number
   rootSeed: number
-  /** For tests: enable/disable voltage noise. Defaults to `true` in production. */
+  /**
+   * Enable or disable per-sample voltage noise.
+   *
+   * When `false`, `voltageV` is exactly the nominal voltage with no
+   * PRNG-derived fluctuation. Intended for deterministic unit tests. In
+   * production callers this field is omitted, which is treated as `true`
+   * (noise enabled) by the `options.voltageNoise !== false` guard.
+   * @defaultValue `true` (noise enabled when omitted)
+   */
   voltageNoise?: boolean
 }
 
@@ -286,7 +295,8 @@ export const computeCoherentSample = (
     batteryCapacityWh <= 0 ||
     !Number.isFinite(batteryCapacityWh) ||
     nominalV <= 0 ||
-    !Number.isFinite(nominalV)
+    !Number.isFinite(nominalV) ||
+    !Number.isFinite(options.nowMs)
   ) {
     return {
       currentA: 0,
@@ -306,6 +316,9 @@ export const computeCoherentSample = (
   // (NaN) or produce rampFactor > 1 / negative. Treat any invalid value as
   // "no ramp" (immediate full-power), matching the existing semantic where
   // rampUpDurationMs = 0 means immediate full-power.
+  // Sub-millisecond values (e.g. Number.EPSILON) pass the guard but yield
+  // elapsedMs / rampUpDurationMs >> 1 for any real elapsed time, so
+  // Math.min(1, …) = 1 — semantically equivalent to rampUpDurationMs = 0.
   const rampFactor =
     session.rampUpDurationMs > 0 && Number.isFinite(session.rampUpDurationMs)
       ? Math.min(1, elapsedMs / session.rampUpDurationMs)

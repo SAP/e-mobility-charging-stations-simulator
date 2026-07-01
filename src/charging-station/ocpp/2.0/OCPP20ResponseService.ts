@@ -417,6 +417,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
           // the CSMS response arrived). Destroy any lingering coherent session
           // so the Map does not leak entries — symmetric with the OCPP 1.6
           // defensive destroy in handleResponseStopTransaction.
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Ending transaction ${requestPayload.transactionInfo.transactionId} on unknown connector — connector state already reset`
+          )
           chargingStation.destroyCoherentSession(requestPayload.transactionInfo.transactionId)
         }
         break

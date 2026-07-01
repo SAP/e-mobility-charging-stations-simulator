@@ -469,22 +469,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null && response.transactionId != null) {
-            chargingStation.createCoherentSession(response.transactionId, connectorId)
+            const txId = response.transactionId
+            chargingStation.createCoherentSession(txId, connectorId)
             const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
               chargingStation,
-              response.transactionId
+              txId
             )
             OCPP20ServiceUtils.sendTransactionEvent(
               chargingStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.RemoteStart,
               connectorId,
-              response.transactionId,
+              txId,
               {
                 ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
                 remoteStartId: request.remoteStartId,
               }
             ).catch((error: unknown) => {
+              // Session was created for this fire-and-forget send. If the
+              // send rejects, destroy it here — no other cleanup path
+              // covers this branch. `destroyCoherentSession` is idempotent.
+              chargingStation.destroyCoherentSession(txId)
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,
                 error
@@ -606,7 +611,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 const meterValue = buildMeterValue(
                   chargingStation,
                   connector.transactionId,
-                  txUpdatedInterval
+                  txUpdatedInterval,
+                  buildConfigKey(
+                    OCPP20ComponentName.SampledDataCtrlr,
+                    OCPP20RequiredVariableName.TxUpdatedMeasurands
+                  )
                 ) as OCPP20MeterValue
                 OCPP20ServiceUtils.sendTransactionEvent(
                   chargingStation,

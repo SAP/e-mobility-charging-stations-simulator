@@ -458,15 +458,16 @@ The EV profile file is a JSON file referenced by the `evProfilesFile` template f
   "profiles": [
     {
       "id": "city-ev-40kWh",
+      "weight": 3,
       "batteryCapacityWh": 40000,
-      "maxPowerW": 7400,
-      "weight": 1.0,
-      "initialSocPercentMin": 10,
-      "initialSocPercentMax": 80,
+      "maxPowerW": 11000,
+      "initialSocPercentMin": 15,
+      "initialSocPercentMax": 55,
       "chargingCurve": [
         { "socPercent": 0, "powerFraction": 1.0 },
-        { "socPercent": 80, "powerFraction": 1.0 },
-        { "socPercent": 100, "powerFraction": 0.0 }
+        { "socPercent": 75, "powerFraction": 1.0 },
+        { "socPercent": 90, "powerFraction": 0.4 },
+        { "socPercent": 100, "powerFraction": 0.08 }
       ]
     }
   ]
