@@ -1005,6 +1005,12 @@ export class OCPP20ServiceUtils {
             OCPP20RequiredVariableName.TxUpdatedMeasurands
           )
         ) as OCPP20MeterValue
+        if (!isNotEmptyArray(meterValue.sampledValue)) {
+          // OCPP 2.0.1 J02.FR.11: empty TxUpdatedMeasurands ⇒ no meter values
+          // are sent; skip the periodic TransactionEvent(Updated) entirely
+          // rather than sending an empty meterValue wrapper (schema violation).
+          return
+        }
         OCPP20ServiceUtils.sendTransactionEvent(
           chargingStation,
           OCPP20TransactionEventEnumType.Updated,

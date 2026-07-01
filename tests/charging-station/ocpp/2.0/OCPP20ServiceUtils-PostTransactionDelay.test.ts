@@ -115,7 +115,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     )
   })
 
-  await it('should destroy the coherent session even when the station stops during delay (regression: M3)', async t => {
+  await it('should destroy the coherent session even when the station stops during delay', async t => {
     const stubSession: CoherentSession = {
       connectorId: 1,
       currentType: CurrentType.AC,

@@ -35,7 +35,14 @@ import {
   ReservationTerminationReason,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { Constants, convertToInt, logger, sleep, truncateId } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToInt,
+  isNotEmptyArray,
+  logger,
+  sleep,
+  truncateId,
+} from '../../../utils/index.js'
 import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
@@ -474,15 +481,25 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         }
       }
-      chargingStation.stationInfo?.beginEndMeterValues === true &&
-        (await chargingStation.ocppRequestService.requestHandler<
+      // Whitepaper §3.3.4 composition: send only when the built begin
+      // MeterValue carries at least one SampledValue. When
+      // `StartTxnSampledData` is set, `buildTransactionBeginMeterValue`
+      // uses it; when absent it falls back to `MeterValuesSampledData`.
+      // Both empty ⇒ no send (avoids empty sampledValue array in
+      // `MeterValues.req`).
+      if (
+        chargingStation.stationInfo?.beginEndMeterValues === true &&
+        isNotEmptyArray(connectorStatus.transactionBeginMeterValue.sampledValue)
+      ) {
+        await chargingStation.ocppRequestService.requestHandler<
           OCPP16MeterValuesRequest,
           OCPP16MeterValuesResponse
         >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
           connectorId,
           meterValue: [connectorStatus.transactionBeginMeterValue],
           transactionId: payload.transactionId,
-        } satisfies OCPP16MeterValuesRequest))
+        } satisfies OCPP16MeterValuesRequest)
+      }
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: OCPP16ChargePointStatus.Charging,
@@ -541,23 +558,27 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
       return
     }
-    chargingStation.stationInfo?.beginEndMeterValues === true &&
+    if (
+      chargingStation.stationInfo?.beginEndMeterValues === true &&
       chargingStation.stationInfo.ocppStrictCompliance === false &&
-      chargingStation.stationInfo.outOfOrderEndMeterValues === true &&
-      (await chargingStation.ocppRequestService.requestHandler<
-        OCPP16MeterValuesRequest,
-        OCPP16MeterValuesResponse
-      >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
-        connectorId: transactionConnectorId,
-        meterValue: [
-          OCPP16ServiceUtils.buildTransactionEndMeterValue(
-            chargingStation,
-            transactionConnectorId,
-            requestPayload.meterStop
-          ),
-        ],
-        transactionId: requestPayload.transactionId,
-      }))
+      chargingStation.stationInfo.outOfOrderEndMeterValues === true
+    ) {
+      const endMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+        chargingStation,
+        transactionConnectorId,
+        requestPayload.meterStop
+      )
+      if (isNotEmptyArray(endMeterValue.sampledValue)) {
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16MeterValuesRequest,
+          OCPP16MeterValuesResponse
+        >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
+          connectorId: transactionConnectorId,
+          meterValue: [endMeterValue],
+          transactionId: requestPayload.transactionId,
+        })
+      }
+    }
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     let transactionIdTag: string | undefined
     if (postTransactionDelay > 0) {

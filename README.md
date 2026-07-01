@@ -490,10 +490,11 @@ A template file is available at [src/assets/ev-profiles-template.json](./src/ass
 
 **Phase-qualified measurands.** When a connector template carries a `phase` field, the coherent generator emits one `SampledValue` per matching template with phase-aware values:
 
-- `Voltage`: `L1-N`/`L2-N`/`L3-N` emit nominal phase voltage; `L1-L2`/`L2-L3`/`L3-L1` emit `√phases × V`.
-- `Power.Active.Import`: no phase emits total power; `L1-N`/`L2-N`/`L3-N` emit `P / phases`; line-to-line phase is unsupported and the template is skipped with a warning.
-- `Current.Import`: any line phase (`L1`/`L2`/`L3` or `L1-N`/`L2-N`/`L3-N`) emits `sample.currentA` (balanced 3-phase Y assumption); line-to-line phase is unsupported.
-- `SoC` and `Energy.Active.Import.Register`: aggregate scalars; phase-qualified templates are skipped with a warning.
+- `Voltage`: `L1-N`/`L2-N`/`L3-N` emit the sampled phase voltage; `L1-L2`/`L2-L3`/`L3-L1` emit `sqrt(phases) × sampled phase voltage` (unsupported when `phases < 2`); `N` emits 0.
+- `Power.Active.Import`: no phase emits total power; `L1-N`/`L2-N`/`L3-N` emit `P / phases`; line-to-line and `N` phases are unsupported and the template is skipped with a warning.
+- `Current.Import`: any line phase (`L1`/`L2`/`L3` or `L1-N`/`L2-N`/`L3-N`) emits `sample.currentA` (balanced 3-phase Y assumption); `N` emits 0; line-to-line phase is unsupported.
+- `Energy.Active.Import.Register`: no phase emits the aggregate register; `L1-N`/`L2-N`/`L3-N` emit `register / phases` (balanced 3-phase Y contribution per phase); line-to-line and `N` phases are unsupported. OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted; per-phase emission is driven by the connector template's phase qualifier and is tracked as a follow-up.
+- `SoC`: aggregate scalar; phase-qualified templates are skipped with a warning.
 
 ### Charging station configuration
 

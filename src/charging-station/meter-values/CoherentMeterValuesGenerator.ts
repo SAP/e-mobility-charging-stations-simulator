@@ -26,15 +26,19 @@
  * register exactly once per sample, unconditionally, so `meterStop` is
  * correct even when `Energy.Active.Import.Register` is not in the
  * configured MeterValues.
+ *
+ * TODO(#1936): file size exceeds the 250 LOC ceiling documented in
+ * AGENTS.md. Modular split (CoherentSampleComputer.ts + CoherentMeterValueBuilder.ts,
+ * keeping session lifecycle helpers in this entry) tracked as follow-up.
  */
 
 import type {
+  ConnectorStatus,
   MeterValue,
   MeterValueContext,
   SampledValue,
   SampledValueTemplate,
 } from '../../types/index.js'
-import type { ConnectorStatus } from '../../types/index.js'
 import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 
 import {
@@ -201,27 +205,32 @@ export interface CoherentSample {
 
 /**
  * Options for {@link computeCoherentSample}.
- *
- * - `intervalMs`: sample interval in milliseconds. Drives energy accrual
- *   and the remaining-capacity clamp. Non-positive/non-finite triggers the
- *   zero-sample defensive branch.
- * - `nowMs`: sample timestamp in milliseconds (typically `Date.now()`);
- *   combined with `session.sessionStartMs` for ramp-up progress. Non-finite
- *   triggers the zero-sample defensive branch.
- * - `rootSeed`: root 32-bit seed for stream splitting; combined with
- *   `session.transactionId` and per-measurand labels to derive independent
- *   PRNG streams via FNV-1a stream splitting.
- * - `voltageNoise`: enable or disable per-sample voltage noise. When
- *   `false`, `voltageV` is exactly the nominal voltage with no
- *   PRNG-derived fluctuation. Intended for deterministic unit tests. In
- *   production callers this field is omitted, which is treated as `true`
- *   (noise enabled) by the `options.voltageNoise !== false` guard.
- *   Defaults to `true` when omitted.
  */
 export interface ComputeSampleOptions {
+  /**
+   * Sample interval in milliseconds. Drives energy accrual and the
+   * remaining-capacity clamp. Non-positive/non-finite triggers the
+   * zero-sample defensive branch.
+   */
   intervalMs: number
+  /**
+   * Sample timestamp in milliseconds (typically `Date.now()`); combined
+   * with `session.sessionStartMs` for ramp-up progress. Non-finite
+   * triggers the zero-sample defensive branch.
+   */
   nowMs: number
+  /**
+   * Root 32-bit seed for stream splitting; combined with
+   * `session.transactionId` and per-measurand labels to derive
+   * independent PRNG streams via FNV-1a stream splitting.
+   */
   rootSeed: number
+  /**
+   * Enable or disable per-sample voltage noise. When `false`, `voltageV`
+   * is exactly the nominal voltage with no PRNG-derived fluctuation.
+   * Intended for deterministic unit tests. Defaults to `true` when
+   * omitted (the `options.voltageNoise !== false` guard).
+   */
   voltageNoise?: boolean
 }
 
@@ -308,7 +317,7 @@ export const computeCoherentSample = (
     return buildZeroSample(
       roundTo(session.socPercent, ROUNDING_SCALE),
       safeV,
-      connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
     )
   }
 
@@ -384,9 +393,12 @@ export const computeCoherentSample = (
 
   // Energy accounting uses the clamped (pre-rounding) `powerW` so INV-3
   // holds within floating-point ε and the capacity budget is respected
-  // exactly.
+  // exactly. `Math.max(0, ...)` on `preRegisterWh` mirrors the clamp
+  // applied by `advanceEnergyRegister` so the reported `energyRegisterWh`
+  // and the post-advance persisted state agree even if the persisted
+  // register is corrupted to a negative value.
   const deltaEnergyWh = (powerW * options.intervalMs) / Constants.MS_PER_HOUR
-  const preRegisterWh = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+  const preRegisterWh = Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
   const projectedRegisterWh = preRegisterWh + deltaEnergyWh
 
   // INV-2: SoC(t+1) ≥ SoC(t); ΔSoC = ΔE / batteryCapacityWh × 100. Saturates at 100 %.
@@ -406,8 +418,9 @@ export const computeCoherentSample = (
 /**
  * Phase family classifier for coherent emission.
  * - `Aggregate`: no `phase` field on the template (total measurement).
- * - `LineToNeutral`: bare `L1`/`L2`/`L3`, `L1-N`/`L2-N`/`L3-N`, or the
- *   neutral `N` line (line-current or phase-voltage measurements).
+ * - `LineToNeutral`: `L1`/`L2`/`L3` or `L1-N`/`L2-N`/`L3-N`
+ *   (line-current or phase-voltage measurements).
+ * - `Neutral`: `N` (physically 0 for balanced 3-phase Y).
  * - `LineToLine`: `L1-L2`/`L2-L3`/`L3-L1` (line-to-line voltage
  *   measurements; not defined for current or power in the coherent model).
  * @param phase - Template `phase` field (may be `undefined`).
@@ -415,7 +428,7 @@ export const computeCoherentSample = (
  */
 const phaseFamily = (
   phase: MeterValuePhase | undefined
-): 'Aggregate' | 'LineToLine' | 'LineToNeutral' => {
+): 'Aggregate' | 'LineToLine' | 'LineToNeutral' | 'Neutral' => {
   if (phase == null) return 'Aggregate'
   switch (phase) {
     case MeterValuePhase.L1:
@@ -424,12 +437,13 @@ const phaseFamily = (
     case MeterValuePhase.L2_N:
     case MeterValuePhase.L3:
     case MeterValuePhase.L3_N:
-    case MeterValuePhase.N:
       return 'LineToNeutral'
     case MeterValuePhase.L1_L2:
     case MeterValuePhase.L2_L3:
     case MeterValuePhase.L3_L1:
       return 'LineToLine'
+    case MeterValuePhase.N:
+      return 'Neutral'
     default:
       return 'Aggregate'
   }
@@ -450,25 +464,26 @@ const LEGACY_EMIT_ORDER: readonly MeterValueMeasurand[] = [
 
 /**
  * Within-measurand phase order for deterministic per-phase emission:
- * no-phase → L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N →
- * anything else. Lower rank emits first.
+ * no-phase → L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N.
+ * Lower rank emits first. `satisfies Record<...>` gates exhaustiveness
+ * so a new `MeterValuePhase` value fails compile until ranked.
  */
-const PHASE_RANK: ReadonlyMap<MeterValuePhase, number> = new Map<MeterValuePhase, number>([
-  [MeterValuePhase.L1, 1],
-  [MeterValuePhase.L1_L2, 4],
-  [MeterValuePhase.L1_N, 1],
-  [MeterValuePhase.L2, 2],
-  [MeterValuePhase.L2_L3, 5],
-  [MeterValuePhase.L2_N, 2],
-  [MeterValuePhase.L3, 3],
-  [MeterValuePhase.L3_L1, 6],
-  [MeterValuePhase.L3_N, 3],
-  [MeterValuePhase.N, 7],
-])
+const PHASE_RANK = {
+  [MeterValuePhase.L1]: 1,
+  [MeterValuePhase.L1_L2]: 4,
+  [MeterValuePhase.L1_N]: 1,
+  [MeterValuePhase.L2]: 2,
+  [MeterValuePhase.L2_L3]: 5,
+  [MeterValuePhase.L2_N]: 2,
+  [MeterValuePhase.L3]: 3,
+  [MeterValuePhase.L3_L1]: 6,
+  [MeterValuePhase.L3_N]: 3,
+  [MeterValuePhase.N]: 7,
+} as const satisfies Record<MeterValuePhase, number>
 
 const phaseRank = (phase: MeterValuePhase | undefined): number => {
   if (phase == null) return 0
-  return PHASE_RANK.get(phase) ?? 8
+  return PHASE_RANK[phase]
 }
 
 /**
@@ -481,14 +496,10 @@ const phaseRank = (phase: MeterValuePhase | undefined): number => {
 const groupTemplatesByMeasurand = (
   templates: SampledValueTemplate[] | undefined
 ): Map<MeterValueMeasurand, SampledValueTemplate[]> => {
-  const groups = new Map<MeterValueMeasurand, SampledValueTemplate[]>()
-  if (templates == null) return groups
-  for (const template of templates) {
-    const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    const bucket = groups.get(measurand) ?? []
-    bucket.push(template)
-    groups.set(measurand, bucket)
-  }
+  const groups = Map.groupBy(
+    templates ?? [],
+    t => t.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+  )
   for (const bucket of groups.values()) {
     bucket.sort((a, b) => phaseRank(a.phase) - phaseRank(b.phase))
   }
@@ -496,17 +507,27 @@ const groupTemplatesByMeasurand = (
 }
 
 /**
- * Resolves the physical value to emit for a template given the coherent
- * sample. Returns `undefined` for unsupported `(measurand, phase)` pairs
- * so the caller can log-and-skip.
+ * Resolves the exact physical value to emit for a template given the
+ * coherent sample. Returns `undefined` for unsupported `(measurand, phase)`
+ * pairs so the caller can log-and-skip. Rounding is deferred to the emit
+ * site so unit-conversion divisions round once.
  *
  * Per-phase resolution (balanced 3-phase Y assumption):
- * - Voltage: L-N ⇒ nominal V; L-L ⇒ `√phases × V`.
- * - Power.Active.Import: aggregate ⇒ total P; L-N ⇒ `P / phases`; L-L undefined.
+ * - Voltage: L-N ⇒ `sample.voltageV`; L-L ⇒ `√phases × sample.voltageV`
+ *   (`√phases` collapses to 1 on single-phase, in which case L-L has no
+ *   physical meaning and the template is skipped); N ⇒ 0.
+ * - Power.Active.Import: aggregate ⇒ total P; L-N ⇒ `P / phases`;
+ *   L-L undefined; N undefined (neutral carries no active power in
+ *   balanced 3-φ Y).
  * - Current.Import: any line phase ⇒ `sample.currentA` (line current);
- *   L-L undefined.
- * - SoC / Energy.Active.Import.Register: aggregate scalar; phase-qualified
- *   templates are rejected.
+ *   L-L undefined; N ⇒ 0 (balanced 3-φ Y neutral current is zero).
+ * - SoC: aggregate scalar; phase-qualified templates rejected.
+ * - Energy.Active.Import.Register: aggregate ⇒ total register; L-N ⇒
+ *   `register / phases` (per-phase energy contribution under balanced
+ *   3-φ Y); L-L undefined; N undefined. OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted;
+ *   per-phase emission is driven by the connector template's phase
+ *   qualifier (tracked as follow-up).
  * @param measurand - Target measurand.
  * @param template - Template being emitted.
  * @param sample - Coherent sample (source of aggregate values).
@@ -525,27 +546,58 @@ const resolvePhasedValue = (
   switch (measurand) {
     case MeterValueMeasurand.CURRENT_IMPORT:
       if (family === 'LineToLine') return undefined
+      if (family === 'Neutral') return 0
       return sample.currentA
-    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
-      if (family !== 'Aggregate') return undefined
-      return connectorStatus.energyActiveImportRegisterValue ?? 0
-    case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
-      if (family === 'LineToLine') return undefined
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER: {
+      if (family === 'LineToLine' || family === 'Neutral') return undefined
+      const register = Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
       if (family === 'LineToNeutral' && numberOfPhases > 0) {
-        return roundTo(sample.powerW / numberOfPhases, ROUNDING_SCALE)
+        return register / numberOfPhases
+      }
+      return register
+    }
+    case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
+      if (family === 'LineToLine' || family === 'Neutral') return undefined
+      if (family === 'LineToNeutral') {
+        if (numberOfPhases <= 0) return undefined
+        return sample.powerW / numberOfPhases
       }
       return sample.powerW
     case MeterValueMeasurand.STATE_OF_CHARGE:
       if (family !== 'Aggregate') return undefined
       return sample.socPercent
     case MeterValueMeasurand.VOLTAGE:
+      if (family === 'Neutral') return 0
       if (family === 'LineToLine') {
-        return roundTo(Math.sqrt(Math.max(numberOfPhases, 1)) * sample.voltageV, ROUNDING_SCALE)
+        if (numberOfPhases <= 1) return undefined
+        return Math.sqrt(numberOfPhases) * sample.voltageV
       }
       return sample.voltageV
     default:
       return undefined
   }
+}
+
+/**
+ * Measurand → matching kilo-prefixed unit lookup. Populated only for the
+ * measurands whose `SampledValueTemplate.unit` may legitimately carry a
+ * kilo-scaled value (kW / kWh). Any other `(measurand, unit)` pair
+ * emits at unit scale (divider = 1).
+ */
+const KILO_UNIT_BY_MEASURAND: ReadonlyMap<MeterValueMeasurand, MeterValueUnit> = new Map<
+  MeterValueMeasurand,
+  MeterValueUnit
+>([
+  [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueUnit.KILO_WATT_HOUR],
+  [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueUnit.KILO_WATT],
+])
+
+const resolveUnitDivider = (
+  measurand: MeterValueMeasurand,
+  unit: MeterValueUnit | undefined
+): number => {
+  const kiloUnit = KILO_UNIT_BY_MEASURAND.get(measurand)
+  return kiloUnit != null && kiloUnit === unit ? Constants.UNIT_DIVIDER_KILO : 1
 }
 
 /**
@@ -639,14 +691,8 @@ export const buildCoherentMeterValue = (
         )
         continue
       }
-      const unitDivider =
-        (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
-          template.unit === MeterValueUnit.KILO_WATT) ||
-        (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-          template.unit === MeterValueUnit.KILO_WATT_HOUR)
-          ? Constants.UNIT_DIVIDER_KILO
-          : 1
-      const scaled = unitDivider === 1 ? raw : roundTo(raw / unitDivider, ROUNDING_SCALE)
+      const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
+      const scaled = roundTo(raw / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
     }
   }
@@ -661,23 +707,22 @@ export const buildCoherentMeterValue = (
 
 /**
  * Options for {@link createCoherentSession}.
- *
- * - `connectorId`: target connector id.
- * - `now`: session start timestamp in milliseconds. Defaults to
- *   `Date.now()`.
- * - `profiles`: non-empty EV profile pool; one profile is picked via
- *   seeded weighted random selection.
- * - `rampUpDurationMs`: optional ramp-up duration in milliseconds.
- *   Defaults to `Constants.DEFAULT_COHERENT_RAMP_UP_DURATION_MS`.
- * - `rootSeed`: root 32-bit seed for stream splitting.
- * - `transactionId`: transaction identifier.
  */
 export interface CreateSessionOptions {
+  /** Target connector id. */
   connectorId: number
+  /** Session start timestamp in milliseconds. Defaults to `Date.now()`. */
   now?: number
+  /** Non-empty EV profile pool; one profile is picked via seeded weighted random selection. */
   profiles: EvProfile[]
+  /**
+   * Optional ramp-up duration in milliseconds. Defaults to
+   * `Constants.DEFAULT_COHERENT_RAMP_UP_DURATION_MS`.
+   */
   rampUpDurationMs?: number
+  /** Root 32-bit seed for stream splitting. */
   rootSeed: number
+  /** Transaction identifier. */
   transactionId: number | string
 }
 

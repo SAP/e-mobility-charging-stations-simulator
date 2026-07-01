@@ -35,6 +35,7 @@ import {
   StandardParametersKey,
   Voltage,
 } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,
@@ -188,7 +189,7 @@ const runTransaction = async (
   return { meterValues, stopEnergyWh: meterStop }
 }
 
-await describe('OCPP 1.6 coherent MeterValues integration', async () => {
+await describe('OCPP16CoherentMeterValues', async () => {
   let station: ChargingStation
   let responseService: OCPP16ResponseService
 
@@ -258,7 +259,7 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
     // over the interval (Σ P·Δt / 3.6e6), which is derived from the
     // MeterValue stream — NOT from the register. Divergence would
     // indicate the register drifted away from the reported physics.
-    const MS_PER_HOUR = 3_600_000
+    const MS_PER_HOUR = Constants.MS_PER_HOUR
     let expectedAccumulatedWh = 0
     for (const mv of meterValues) {
       const powerW = findValue(mv, MeterValueMeasurand.POWER_ACTIVE_IMPORT)
@@ -349,7 +350,7 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
     assert.strictEqual(station.getCoherentSession(7), undefined)
   })
 
-  await it('should destroy the coherent session even when the station stops during postTransactionDelay (regression: M3)', async t => {
+  await it('should destroy the coherent session even when the station stops during postTransactionDelay', async t => {
     const stationInfo = station.stationInfo
     assert.ok(stationInfo != null, 'stationInfo should be defined')
     stationInfo.coherentMeterValues = true

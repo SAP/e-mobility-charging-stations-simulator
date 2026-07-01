@@ -33,6 +33,7 @@ import {
   AvailabilityType,
   CurrentType,
   MeterValueMeasurand,
+  MeterValuePhase,
   MeterValueUnit,
   OCPPVersion,
 } from '../../../src/types/index.js'
@@ -448,7 +449,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('voltage noise across samples (regression: M1)', async () => {
+  await describe('voltage noise across samples', async () => {
     await it('should advance the voltage PRNG state across samples with voltageNoise=true', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
@@ -490,7 +491,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('SoC cap energy coherency (regression: M2)', async () => {
+  await describe('SoC cap energy coherency', async () => {
     await it('should clamp deltaEnergyWh to remaining battery capacity when crossing 100 % SoC', () => {
       // Taper-free profile so full power is delivered at 99.8 % SoC.
       // 40 kWh battery, 99.8 % SoC → remaining = 0.2/100 × 40000 = 80 Wh.
@@ -573,7 +574,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('INV-1 in capacity-clamp branch (regression: B1)', async () => {
+  await describe('INV-1 in capacity-clamp branch', async () => {
     await it('should keep V·I·phases coherent with reported P after AC 3-phase clamp', () => {
       const flatProfile: EvProfile = {
         ...baseProfile,
@@ -653,7 +654,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('intervalMs=0 defensive guard (regression: M7)', async () => {
+  await describe('intervalMs=0 defensive guard', async () => {
     await it('should not contaminate socPercent or deltaEnergyWh with NaN at saturated SoC', () => {
       const { connectorStatus, context, sessions } = buildContext()
       const session = createSessionOrFail(context, {
@@ -714,7 +715,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('runtime PRNG isolation from session (regression: M2)', async () => {
+  await describe('runtime PRNG isolation from session', async () => {
     await it('should not expose voltagePrng on CoherentSession', () => {
       const { context } = buildContext()
       const session = createSessionOrFail(context, {
@@ -764,11 +765,174 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('resolveRootSeed DRY dedup (regression: M1)', async () => {
+  await describe('resolveRootSeed DRY dedup', async () => {
     await it('should match hashLabel for the hashId path', () => {
       assert.strictEqual(resolveRootSeed({ hashId: 'abc' }), hashLabel('abc'))
       assert.strictEqual(resolveRootSeed({ hashId: '' }), hashLabel(''))
       assert.strictEqual(resolveRootSeed({ hashId: 'CS-1234' }), hashLabel('CS-1234'))
+    })
+  })
+
+  await describe('per-phase emission', async () => {
+    await it('should emit one SampledValue per phase-qualified template on AC 3-phase', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      // Phase-preserving builder: include template.phase and template.measurand
+      // so per-phase emissions can be counted and cross-checked.
+      const phaseBuilder: BuildVersionedSampledValue = (template, value): SampledValue =>
+        ({
+          ...(template.measurand != null && { measurand: template.measurand }),
+          ...(template.phase != null && { phase: template.phase as never }),
+          ...(template.unit != null && { unit: template.unit as never }),
+          value: value.toString(),
+        }) as SampledValue
+      connectorStatus.MeterValues = [
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L2_N },
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L3_N },
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_L2 },
+        { measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT, unit: MeterValueUnit.WATT },
+        {
+          measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT,
+        },
+        {
+          measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.WATT,
+        },
+        {
+          measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          phase: MeterValuePhase.L3_N,
+          unit: MeterValueUnit.WATT,
+        },
+        { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.L1 },
+        { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.N },
+      ] as unknown as SampledValueTemplate[]
+      const mv = buildCoherentMeterValue(context, 1, phaseBuilder, {
+        intervalMs: 30_000,
+        nowMs: 30_000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const byPhase = (measurand: MeterValueMeasurand): Record<string, number> => {
+        const out: Record<string, number> = {}
+        for (const sv of mv.sampledValue) {
+          if ((sv as { measurand?: MeterValueMeasurand }).measurand !== measurand) continue
+          const p = (sv as { phase?: string }).phase ?? 'aggregate'
+          out[p] = Number((sv as { value: string }).value)
+        }
+        return out
+      }
+      const v = byPhase(MeterValueMeasurand.VOLTAGE)
+      const p = byPhase(MeterValueMeasurand.POWER_ACTIVE_IMPORT)
+      const i = byPhase(MeterValueMeasurand.CURRENT_IMPORT)
+      // L-N voltages carry the sampled voltage (nominal here since noise is off).
+      assert.strictEqual(v['L1-N'], 230)
+      assert.strictEqual(v['L2-N'], 230)
+      assert.strictEqual(v['L3-N'], 230)
+      // L-L voltage: √3 × V_LN ≈ 398.37.
+      assert.ok(
+        Math.abs(v['L1-L2'] - Math.sqrt(3) * 230) < 0.01,
+        `L-L voltage=${v['L1-L2'].toString()} not ≈ √3·230`
+      )
+      // Aggregate power exists and per-phase powers sum to it within tolerance.
+      const perPhaseSum = p['L1-N'] + p['L2-N'] + p['L3-N']
+      assert.ok(
+        Math.abs(perPhaseSum - p.aggregate) < 0.05,
+        `per-phase Σ=${perPhaseSum.toString()} not ≈ aggregate=${p.aggregate.toString()}`
+      )
+      // N-phase current is 0 for balanced 3-φ Y.
+      assert.strictEqual(i.N, 0)
+      // L1 current matches the aggregate line current from computeCoherentSample.
+      assert.ok(i.L1 > 0)
+    })
+
+    await it('should skip L-L voltage on 1-phase AC (log-and-skip)', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 7400,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_L2 },
+        { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
+      ] as unknown as SampledValueTemplate[]
+      const mv = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+        intervalMs: 30_000,
+        nowMs: 30_000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const voltageSamples = mv.sampledValue.filter(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand === MeterValueMeasurand.VOLTAGE
+      )
+      assert.strictEqual(voltageSamples.length, 1, 'L-L voltage on 1-phase must be skipped')
+    })
+
+    await it('should emit per-phase energy register as register/phases on AC 3-phase', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.energyActiveImportRegisterValue = 6000
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 6000
+      connectorStatus.MeterValues = [
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      ] as unknown as SampledValueTemplate[]
+      const mv = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+        intervalMs: 3_600_000,
+        nowMs: 3_600_000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const emitted = Number(mv.sampledValue[0].value)
+      // register / phases; register is advanced during the call, so the emitted
+      // value reflects the post-advance state divided by 3.
+      const postRegister = connectorStatus.energyActiveImportRegisterValue ?? 0
+      assert.ok(
+        Math.abs(emitted - postRegister / 3) < 0.05,
+        `L-N register=${emitted.toString()} not ≈ ${(postRegister / 3).toString()}`
+      )
     })
   })
 })

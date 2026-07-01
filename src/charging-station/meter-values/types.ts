@@ -4,12 +4,8 @@
  * @file Coherent MeterValues shared types and validation schemas.
  * @description Types and Zod schemas for physics-based coherent MeterValues.
  *   The `ICoherentContext` interface is a minimal structural subset of
- *   {@link ../ChargingStation.ChargingStation} exposing only the methods the
- *   coherent generator needs. Passing this interface instead of the full class
- *   severs the type dependency on ChargingStation.ts and prevents a future
- *   `meter-values → ChargingStation → meter-values` cycle if
- *   `--no-trackTypeOnlyDependencies` is ever removed from the circular-deps
- *   audit.
+ *   {@link ../ChargingStation.ChargingStation}, keeping the coherent
+ *   generator decoupled from the full class.
  */
 
 import { z } from 'zod'
