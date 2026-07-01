@@ -148,6 +148,14 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
+  type CoherentSession,
+  createCoherentSession,
+  type EvProfilesFile,
+  getEvProfilesFile,
+  loadEvProfilesFile,
+  resolveRootSeed,
+} from './meter-values/index.js'
+import {
   buildBootNotificationRequest,
   createOCPPServices,
   flushQueuedTransactionMessages,
@@ -206,6 +214,8 @@ export class ChargingStation extends EventEmitter {
 
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
+  private coherentEvProfiles?: EvProfilesFile
+  private readonly coherentSessions: Map<number | string, CoherentSession>
   private configurationFile!: string
   private configurationFileHash!: string
   private configuredSupervisionUrl!: URL
@@ -241,6 +251,7 @@ export class ChargingStation extends EventEmitter {
     this.sharedLRUCache = SharedLRUCache.getInstance()
     this.idTagsCache = IdTagsCache.getInstance()
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this)
+    this.coherentSessions = new Map<number | string, CoherentSession>()
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))
@@ -346,6 +357,38 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Creates a coherent MeterValues session for the given transaction.
+   * Called by OCPP response handlers immediately after a successful
+   * StartTransaction. When `stationInfo.coherentMeterValues` is not `true`,
+   * or when no valid EV profile file is loaded, this method is a no-op.
+   * @param transactionId - Transaction identifier from the CSMS.
+   * @param connectorId - Connector on which the transaction is running.
+   * @returns The created session or `undefined` when coherent mode is off.
+   */
+  public createCoherentSession (
+    transactionId: number | string,
+    connectorId: number
+  ): CoherentSession | undefined {
+    if (this.stationInfo?.coherentMeterValues !== true) {
+      return undefined
+    }
+    if (this.coherentEvProfiles == null || this.coherentEvProfiles.profiles.length === 0) {
+      return undefined
+    }
+    const rootSeed = resolveRootSeed(this.stationInfo)
+    const session = createCoherentSession(this, {
+      connectorId,
+      profiles: this.coherentEvProfiles.profiles,
+      rootSeed,
+      transactionId,
+    })
+    if (session != null) {
+      this.coherentSessions.set(transactionId, session)
+    }
+    return session
+  }
+
+  /**
    * Deletes the charging station instance and optionally its persisted configuration.
    * @param deleteConfiguration - Whether to delete the persisted configuration file
    */
@@ -397,6 +440,19 @@ export class ChargingStation extends EventEmitter {
     this.chargingStationWorkerBroadcastChannel.unref()
     this.emitChargingStationEvent(ChargingStationEvents.deleted)
     this.removeAllListeners()
+  }
+
+  /**
+   * Removes the coherent session for a transaction. Idempotent — safe to
+   * call from every reset/stop/disconnect path.
+   * @param transactionId - Transaction identifier.
+   * @returns `true` when a session was removed, `false` otherwise.
+   */
+  public destroyCoherentSession (transactionId: number | string | undefined): boolean {
+    if (transactionId == null) {
+      return false
+    }
+    return this.coherentSessions.delete(transactionId)
   }
 
   /**
@@ -456,6 +512,15 @@ export class ChargingStation extends EventEmitter {
    */
   public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
+  }
+
+  /**
+   * Retrieves the coherent session for a transaction, if any.
+   * @param transactionId - Transaction identifier.
+   * @returns The session or `undefined` when none exists.
+   */
+  public getCoherentSession (transactionId: number | string): CoherentSession | undefined {
+    return this.coherentSessions.get(transactionId)
   }
 
   public getConnectionTimeout (): number {
@@ -1814,6 +1879,7 @@ export class ChargingStation extends EventEmitter {
       }
     }
     this.saveStationInfo()
+    this.initializeCoherentEvProfiles()
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     if (this.stationInfo.enableStatistics === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
@@ -1842,6 +1908,33 @@ export class ChargingStation extends EventEmitter {
         status: RegistrationStatusEnumType.ACCEPTED,
       }
     }
+  }
+
+  /**
+   * Loads and validates the EV profile file when coherent MeterValues are
+   * enabled. Fail-soft: any error disables coherent mode for this station
+   * (createCoherentSession then becomes a no-op).
+   */
+  private initializeCoherentEvProfiles (): void {
+    this.coherentEvProfiles = undefined
+    if (this.stationInfo?.coherentMeterValues !== true) {
+      return
+    }
+    const evProfilesFile = getEvProfilesFile(this.stationInfo)
+    if (evProfilesFile == null) {
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.initializeCoherentEvProfiles: coherentMeterValues=true but no evProfilesFile is configured, coherent MeterValues disabled`
+      )
+      return
+    }
+    const loaded = loadEvProfilesFile(evProfilesFile, this.logPrefix())
+    if (loaded == null) {
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.initializeCoherentEvProfiles: EV profiles could not be loaded, coherent MeterValues disabled`
+      )
+      return
+    }
+    this.coherentEvProfiles = loaded
   }
 
   private initializeConnectorsFromTemplate (stationTemplate: ChargingStationTemplate): void {

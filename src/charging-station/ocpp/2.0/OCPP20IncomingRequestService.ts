@@ -3222,7 +3222,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    // Snapshot transactionId BEFORE resetConnectorStatus deletes it (Phase 2
+    // merged finding #2).
+    const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 

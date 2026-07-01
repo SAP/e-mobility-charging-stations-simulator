@@ -200,6 +200,10 @@ export class OCPP20ServiceUtils {
     ) {
       return
     }
+    // Snapshot transactionId BEFORE any mutation below deletes it, so the
+    // coherent session (if any) can still be destroyed after the reset
+    // (Phase 2 merged finding #2).
+    const txId = connectorStatus.transactionId
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
@@ -210,6 +214,7 @@ export class OCPP20ServiceUtils {
       }
     }
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
     await sendPostTransactionStatus(chargingStation, connectorId)
   }

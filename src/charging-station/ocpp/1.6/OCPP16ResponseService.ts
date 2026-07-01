@@ -62,11 +62,17 @@ const decrementPowerDivider = (chargingStation: ChargingStation): void => {
 }
 
 const finalizeTransactionConnectorStatus = (
+  chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   requestPayload: OCPP16StopTransactionRequest
 ): string | undefined => {
   const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
+  // resetConnectorStatus deletes transactionId (Helpers.ts:508). Destroy the
+  // coherent session using requestPayload.transactionId, which is always
+  // present in the StopTransaction request and unaffected by the reset
+  // (Phase 2 merged finding #2).
   resetConnectorStatus(connectorStatus)
+  chargingStation.destroyCoherentSession(requestPayload.transactionId)
   if (connectorStatus != null) {
     connectorStatus.locked = false
   }
@@ -437,6 +443,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
           connectorId,
           requestPayload.meterStart
         )
+      // Create coherent MeterValues session after transactionId is known and
+      // the energy register is initialized. No-op when the feature flag or
+      // the EV profile file is not configured.
+      chargingStation.createCoherentSession(payload.transactionId, connectorId)
       if (requestPayload.reservationId != null) {
         const reservation = chargingStation.getReservationBy(
           'reservationId',
@@ -526,6 +536,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non-existent transaction with id ${requestPayload.transactionId.toString()}`
       )
+      // Destroy any lingering coherent session on this transaction so the
+      // Map does not leak entries when the connector-side state has already
+      // been reset (Phase 2 merged finding #4).
+      chargingStation.destroyCoherentSession(requestPayload.transactionId)
       return
     }
     chargingStation.stationInfo?.beginEndMeterValues === true &&
@@ -566,6 +580,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         return
       }
       transactionIdTag = finalizeTransactionConnectorStatus(
+        chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
@@ -575,6 +590,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       decrementPowerDivider(chargingStation)
       const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       transactionIdTag = finalizeTransactionConnectorStatus(
+        chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
@@ -608,7 +624,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): Promise<void> {
     OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    // Snapshot transactionId BEFORE resetConnectorStatus deletes it.
+    const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 }

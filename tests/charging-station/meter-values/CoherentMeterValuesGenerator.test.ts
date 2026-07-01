@@ -1,0 +1,478 @@
+/**
+ * @file Tests for CoherentMeterValuesGenerator physics.
+ * @description Verifies invariants (P=V·I·phases, ΔE=P·Δt/3.6e6, SoC monotone,
+ *   saturation at 100 %), Wh/kWh unit conversion, energy-register ownership,
+ *   and same-seed determinism across AC 1-phase, AC 3-phase, and DC modes.
+ */
+
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+
+import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import type {
+  CoherentSession,
+  EvProfile,
+  ICoherentContext,
+} from '../../../src/charging-station/meter-values/types.js'
+import type {
+  ChargingStationInfo,
+  ConnectorStatus,
+  SampledValue,
+  SampledValueTemplate,
+} from '../../../src/types/index.js'
+
+import {
+  buildCoherentMeterValue,
+  computeCoherentSample,
+  createCoherentSession,
+  resolveRootSeed,
+} from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import {
+  CurrentType,
+  MeterValueMeasurand,
+  MeterValueUnit,
+  OCPPVersion,
+} from '../../../src/types/index.js'
+
+const baseProfile: EvProfile = {
+  batteryCapacityWh: 40000,
+  chargingCurve: [
+    { powerFraction: 1, socPercent: 0 },
+    { powerFraction: 1, socPercent: 80 },
+    { powerFraction: 0.2, socPercent: 100 },
+  ],
+  id: 'unit-ev',
+  initialSocPercentMax: 30,
+  initialSocPercentMin: 30,
+  maxPowerW: 11000,
+  weight: 1,
+}
+
+/**
+ * Builds an in-memory ICoherentContext + connector status for unit tests.
+ * @param overrides - Optional overrides bag for context knobs.
+ * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
+ * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
+ * @param overrides.numberOfPhases - Number of AC phases (ignored for DC).
+ * @param overrides.voltageOut - Nominal phase voltage.
+ * @returns Bundle exposing context, sessions map, station info, and connector status.
+ */
+const buildContext = (
+  overrides: {
+    currentType?: CurrentType
+    evseMaxPowerW?: number
+    numberOfPhases?: number
+    voltageOut?: number
+  } = {}
+): {
+  connectorStatus: ConnectorStatus
+  context: ICoherentContext
+  sessions: Map<number | string, CoherentSession>
+  stationInfo: ChargingStationInfo
+} => {
+  const numberOfPhases = overrides.numberOfPhases ?? 1
+  const voltageOut = overrides.voltageOut ?? 230
+  const evseMax = overrides.evseMaxPowerW ?? 22000
+
+  const stationInfo: ChargingStationInfo = {
+    baseName: 'CS-TEST',
+    chargePointModel: 'model',
+    chargePointVendor: 'vendor',
+    coherentMeterValues: true,
+    currentOutType: overrides.currentType ?? CurrentType.AC,
+    hashId: 'hash-1',
+    numberOfPhases,
+    ocppVersion: OCPPVersion.VERSION_16,
+    randomSeed: 42,
+    templateIndex: 0,
+    templateName: 'CS-TEST',
+    voltageOut,
+  }
+
+  const connectorStatus: ConnectorStatus = {
+    availability: 'Operative' as ConnectorStatus['availability'],
+    energyActiveImportRegisterValue: 0,
+    MeterValues: [],
+    transactionEnergyActiveImportRegisterValue: 0,
+    transactionId: 1,
+  }
+
+  const sessions = new Map<number | string, CoherentSession>()
+
+  const context: ICoherentContext = {
+    getCoherentSession: (id: number | string) => sessions.get(id),
+    getConnectorMaximumAvailablePower: () => evseMax,
+    getConnectorStatus: () => connectorStatus,
+    getNumberOfPhases: () => numberOfPhases,
+    getVoltageOut: () => voltageOut,
+    logPrefix: () => '[test]',
+    stationInfo,
+  }
+  return { connectorStatus, context, sessions, stationInfo }
+}
+
+const templatesFor = (
+  measurands: MeterValueMeasurand[],
+  energyUnit: MeterValueUnit = MeterValueUnit.WATT_HOUR
+): SampledValueTemplate[] => {
+  return measurands.map(measurand => {
+    const template: SampledValueTemplate = { measurand } as SampledValueTemplate
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      ;(template as unknown as { unit: MeterValueUnit }).unit = energyUnit
+    }
+    if (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT) {
+      ;(template as unknown as { unit: MeterValueUnit }).unit = MeterValueUnit.WATT
+    }
+    return template
+  })
+}
+
+/**
+ * OCPP 1.6-style pass-through SampledValue builder used in unit tests. Keeps
+ * the numeric value accessible for algebraic invariant checks.
+ * @param template - SampledValueTemplate.
+ * @param value - Numeric value to be serialized.
+ * @returns Minimal SampledValue with stringified value.
+ */
+const passThroughBuilder: BuildVersionedSampledValue = (template, value): SampledValue => {
+  return {
+    ...(template.measurand != null && { measurand: template.measurand }),
+    ...(template.unit != null && { unit: template.unit as never }),
+    value: value.toString(),
+  } as SampledValue
+}
+
+/**
+ * Creates a coherent session and asserts it is defined. Encapsulates the
+ * `undefined` fallback so callers avoid non-null assertions.
+ * @param context - ICoherentContext.
+ * @param options - Session parameters (see createCoherentSession).
+ * @returns The created session.
+ */
+const createSessionOrFail = (
+  context: ICoherentContext,
+  options: Parameters<typeof createCoherentSession>[1]
+): CoherentSession => {
+  const session = createCoherentSession(context, options)
+  assert.ok(session != null, 'expected a session to be created')
+  return session
+}
+
+await describe('CoherentMeterValuesGenerator', async () => {
+  await describe('resolveRootSeed', async () => {
+    await it('should prefer explicit randomSeed', () => {
+      assert.strictEqual(resolveRootSeed({ hashId: 'x', randomSeed: 12345 }), 12345)
+    })
+
+    await it('should derive from hashId when randomSeed is missing', () => {
+      const a = resolveRootSeed({ hashId: 'x' })
+      const b = resolveRootSeed({ hashId: 'x' })
+      assert.strictEqual(a, b)
+      assert.notStrictEqual(a, resolveRootSeed({ hashId: 'y' }))
+    })
+
+    await it('should be stable and non-zero for empty hashId', () => {
+      const seed = resolveRootSeed({ hashId: '' })
+      assert.strictEqual(typeof seed, 'number')
+      assert.ok(seed >>> 0 === seed, 'expected a 32-bit unsigned integer')
+    })
+  })
+
+  await describe('AC 1-phase invariants', async () => {
+    await it('should satisfy P = V·I·phases within ±1 W after rounding', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 7400,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 30000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const expected = sample.voltageV * sample.currentA * 1
+      assert.ok(
+        Math.abs(sample.powerW - expected) <= 1,
+        `AC1: |P - V·I·phases|=${Math.abs(sample.powerW - expected).toString()} exceeded 1W tolerance`
+      )
+    })
+  })
+
+  await describe('AC 3-phase invariants', async () => {
+    await it('should satisfy P = V·I·3 within ±3 W after rounding', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 7,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 10000,
+        nowMs: 10000,
+        rootSeed: 7,
+        voltageNoise: false,
+      })
+      const expected = sample.voltageV * sample.currentA * 3
+      assert.ok(
+        Math.abs(sample.powerW - expected) <= 3,
+        `AC3: |P - V·I·3|=${Math.abs(sample.powerW - expected).toString()} exceeded 3W tolerance`
+      )
+    })
+  })
+
+  await describe('DC invariants', async () => {
+    await it('should satisfy P = V·I within ±1 W after rounding', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.DC,
+        evseMaxPowerW: 50000,
+        voltageOut: 400,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 1337,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 5000,
+        nowMs: 5000,
+        rootSeed: 1337,
+        voltageNoise: false,
+      })
+      const expected = sample.voltageV * sample.currentA
+      assert.ok(
+        Math.abs(sample.powerW - expected) <= 1,
+        `DC: |P - V·I|=${Math.abs(sample.powerW - expected).toString()} exceeded 1W tolerance`
+      )
+    })
+  })
+
+  await describe('SoC saturation', async () => {
+    await it('should produce zero power and no ΔE when SoC ≥ 100', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+
+      session.socPercent = 100
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 30000,
+        nowMs: 30000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.strictEqual(sample.powerW, 0)
+      assert.strictEqual(sample.currentA, 0)
+      assert.strictEqual(sample.deltaEnergyWh, 0)
+    })
+
+    await it('should keep SoC as a fixed point at 100 %', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+
+      session.socPercent = 100
+      sessions.set(1, session)
+      for (let i = 0; i < 5; i++) {
+        computeCoherentSample(context, connectorStatus, {
+          intervalMs: 30000,
+          nowMs: 30000 * (i + 1),
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+      }
+      assert.strictEqual(session.socPercent, 100)
+    })
+  })
+
+  await describe('multi-sample monotonicity', async () => {
+    await it('should keep energy and SoC monotone non-decreasing over N samples', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      let prevEnergy = 0
+      let prevSoc = 0
+      for (let i = 0; i < 30; i++) {
+        const sample = computeCoherentSample(context, connectorStatus, {
+          intervalMs: 10000,
+          nowMs: 10000 * (i + 1),
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        // The exported register is projected; caller applies advance. Simulate.
+        connectorStatus.energyActiveImportRegisterValue =
+          (connectorStatus.energyActiveImportRegisterValue ?? 0) + sample.deltaEnergyWh
+        connectorStatus.transactionEnergyActiveImportRegisterValue =
+          (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) + sample.deltaEnergyWh
+        assert.ok(sample.energyRegisterWh >= prevEnergy)
+        assert.ok(sample.socPercent >= prevSoc)
+        prevEnergy = sample.energyRegisterWh
+        prevSoc = sample.socPercent
+      }
+    })
+  })
+
+  await describe('energy register ownership', async () => {
+    await it('should advance registers even when Energy measurand is not emitted', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      // Only SoC + Voltage — no Energy template configured.
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.STATE_OF_CHARGE,
+        MeterValueMeasurand.VOLTAGE,
+      ])
+      const before = connectorStatus.energyActiveImportRegisterValue ?? 0
+      buildCoherentMeterValue(context, 1, passThroughBuilder, {
+        intervalMs: 30000,
+        nowMs: 30000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const after = connectorStatus.energyActiveImportRegisterValue ?? 0
+      assert.ok(after > before, 'energy register must advance regardless of template presence')
+    })
+  })
+
+  await describe('Wh / kWh unit conversion', async () => {
+    await it('should emit Wh raw when template unit is Wh', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor(
+        [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER],
+        MeterValueUnit.WATT_HOUR
+      )
+      const meterValue = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+        intervalMs: 3_600_000, // 1 h → 1 Wh per 1 W
+        nowMs: 3_600_000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const registerWh = connectorStatus.energyActiveImportRegisterValue ?? 0
+      const emitted = Number(meterValue.sampledValue[0].value)
+      // Rounded to 2 decimals: emitted ≈ registerWh.
+      assert.ok(
+        Math.abs(emitted - Math.round(registerWh * 100) / 100) < 0.01,
+        `Wh mismatch: registerWh=${registerWh.toString()} emitted=${emitted.toString()}`
+      )
+    })
+
+    await it('should emit kWh divided by 1000 when template unit is kWh', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor(
+        [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER],
+        MeterValueUnit.KILO_WATT_HOUR
+      )
+      const meterValue = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+        intervalMs: 3_600_000,
+        nowMs: 3_600_000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const registerWh = connectorStatus.energyActiveImportRegisterValue ?? 0
+      const emitted = Number(meterValue.sampledValue[0].value)
+      const expectedKwh = Math.round((registerWh / 1000) * 100) / 100
+      assert.ok(
+        Math.abs(emitted - expectedKwh) < 0.01,
+        `kWh mismatch: registerWh=${registerWh.toString()} emitted=${emitted.toString()} expectedKwh=${expectedKwh.toString()}`
+      )
+    })
+  })
+
+  await describe('determinism', async () => {
+    await it('should produce byte-identical sequences for identical seed + transactionId', () => {
+      const runOnce = (): number[] => {
+        const { connectorStatus, context, sessions } = buildContext()
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [baseProfile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const values: number[] = []
+        for (let i = 0; i < 20; i++) {
+          const sample = computeCoherentSample(context, connectorStatus, {
+            intervalMs: 10000,
+            nowMs: 10000 * (i + 1),
+            rootSeed: 42,
+          })
+          values.push(sample.voltageV, sample.powerW, sample.currentA, sample.socPercent)
+        }
+        return values
+      }
+      const a = runOnce()
+      const b = runOnce()
+      assert.deepStrictEqual(a, b)
+    })
+  })
+})

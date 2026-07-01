@@ -64,6 +64,10 @@ await build({
           to: ['./assets'],
         },
         {
+          from: ['./src/assets/ev-profiles!(-template)*.json'],
+          to: ['./assets'],
+        },
+        {
           from: ['./src/assets/json-schemas/**/*.json'],
           to: ['./assets/json-schemas'],
         },

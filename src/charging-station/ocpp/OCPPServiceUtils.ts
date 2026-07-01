@@ -69,6 +69,11 @@ import {
   roundTo,
 } from '../../utils/index.js'
 import {
+  buildCoherentMeterValue,
+  isCoherentModeActive,
+  resolveRootSeed,
+} from '../meter-values/index.js'
+import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
 } from './1.6/OCPP16RequestBuilders.js'
@@ -896,34 +901,49 @@ export const buildEmptyMeterValue = (): MeterValue => ({
 })
 
 /**
- * Builds a complete MeterValue with all configured measurands for a transaction.
- * @param chargingStation - Target charging station
- * @param transactionId - Active transaction identifier
- * @param interval - Meter value sampling interval in milliseconds
- * @param measurandsKey - Configuration key for the sampled measurands list
- * @param context - Meter value reading context
- * @param debug - Enable debug logging for measurand validation
- * @returns Populated MeterValue object
+ * Signature of the versioned SampledValue builder returned by
+ * {@link createVersionedSampledValueDispatcher}. Callers use it to construct
+ * OCPP 1.6 or OCPP 2.0 SampledValues without knowing the OCPP version.
  */
-export const buildMeterValue = (
-  chargingStation: ChargingStation,
-  transactionId: number | string | undefined,
-  interval: number,
-  measurandsKey?: ConfigurationKeyType,
+type BuildVersionedSampledValueFn = (
+  sampledValueTemplate: SampledValueTemplate,
+  value: number,
   context?: MeterValueContext,
-  debug = false
-): MeterValue => {
-  if (transactionId == null) {
-    return buildEmptyMeterValue()
-  }
+  phase?: MeterValuePhase
+) => SampledValue
+
+interface VersionedSampledValueDispatch {
+  buildVersionedSampledValue: BuildVersionedSampledValueFn
+  connectorId: number
+  evseId: number | undefined
+  signingConfig: SampledValueSigningConfig | undefined
+  /**
+   * Passed by reference; the closure returned in
+   * {@link buildVersionedSampledValue} mutates its `publicKeyIncluded`
+   * flag when a signed OCPP 2.0 SampledValue is emitted. Callers rely on
+   * the reference identity to detect the mutation.
+   */
+  signingState: { publicKeyIncluded: boolean }
+}
+
+/**
+ * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
+ * used by {@link buildMeterValue}. Extracted verbatim from the original
+ * `buildMeterValue` switch so behavior is byte-identical.
+ * @param chargingStation - Target charging station.
+ * @param transactionId - Active transaction identifier.
+ * @param context - Optional MeterValue reading context (drives signing
+ *   configuration for OCPP 2.0).
+ * @returns The dispatch bundle.
+ */
+const createVersionedSampledValueDispatcher = (
+  chargingStation: ChargingStation,
+  transactionId: number | string,
+  context?: MeterValueContext
+): VersionedSampledValueDispatch => {
   const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
   let evseId: number | undefined
-  let buildVersionedSampledValue: (
-    sampledValueTemplate: SampledValueTemplate,
-    value: number,
-    context?: MeterValueContext,
-    phase?: MeterValuePhase
-  ) => SampledValue
+  let buildVersionedSampledValue: BuildVersionedSampledValueFn
   let signingConfig: SampledValueSigningConfig | undefined
   const signingState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
@@ -1045,6 +1065,52 @@ export const buildMeterValue = (
         RequestCommand.METER_VALUES
       )
   }
+  return { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState }
+}
+
+/**
+ * Builds a complete MeterValue with all configured measurands for a transaction.
+ * @param chargingStation - Target charging station
+ * @param transactionId - Active transaction identifier
+ * @param interval - Meter value sampling interval in milliseconds
+ * @param measurandsKey - Configuration key for the sampled measurands list
+ * @param context - Meter value reading context
+ * @param debug - Enable debug logging for measurand validation
+ * @returns Populated MeterValue object
+ */
+export const buildMeterValue = (
+  chargingStation: ChargingStation,
+  transactionId: number | string | undefined,
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext,
+  debug = false
+): MeterValue => {
+  if (transactionId == null) {
+    return buildEmptyMeterValue()
+  }
+  const { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState } =
+    createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
+  // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
+  // is available (so the coherent path can emit versioned SampledValues) and
+  // BEFORE any legacy random measurand generation runs (Phase 2 merged
+  // finding #5). When coherent mode is not active for this station or no
+  // session exists for the transaction, this is a no-op and the legacy
+  // code path is unchanged (byte-identical outputs).
+  if (isCoherentModeActive(chargingStation, transactionId)) {
+    const rootSeed = resolveRootSeed(chargingStation.stationInfo)
+    return buildCoherentMeterValue(
+      chargingStation,
+      transactionId,
+      buildVersionedSampledValue,
+      {
+        intervalMs: interval,
+        nowMs: Date.now(),
+        rootSeed,
+      },
+      context
+    )
+  }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
   if (signingConfig != null) {
@@ -1101,7 +1167,7 @@ export const buildMeterValue = (
         context,
         voltageMeasurand.value
       )
-      if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
+      if (chargingStation.stationInfo?.phaseLineToLineVoltageMeterValues === true) {
         const nextPhase =
           (phase + 1) % chargingStation.getNumberOfPhases() !== 0
             ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
@@ -1199,7 +1265,7 @@ export const buildMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumAmperage =
-      chargingStation.stationInfo.currentOutType === CurrentType.AC
+      chargingStation.stationInfo?.currentOutType === CurrentType.AC
         ? ACElectricUtils.amperagePerPhaseFromPower(
           chargingStation.getNumberOfPhases(),
           connectorMaximumAvailablePower,

@@ -435,8 +435,14 @@ export function createMockChargingStation (
         this.wsConnection = null
       }
     },
+    // Coherent MeterValues session store (real class uses a private Map).
+    coherentSessions: new Map<number | string, unknown>(),
     connectors,
 
+    createCoherentSession (transactionId: number | string, _connectorId: number): unknown {
+      // Mock: never auto-create; tests inject sessions directly when needed.
+      return undefined
+    },
     async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
@@ -447,6 +453,13 @@ export function createMockChargingStation (
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
+    destroyCoherentSession (transactionId: number | string | undefined): boolean {
+      if (transactionId == null) {
+        return false
+      }
+      return this.coherentSessions.delete(transactionId)
+    },
+
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -455,6 +468,9 @@ export function createMockChargingStation (
     evses,
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
+    },
+    getCoherentSession (transactionId: number | string): unknown {
+      return this.coherentSessions.get(transactionId)
     },
     getConnectionTimeout (): number {
       return connectionTimeout
