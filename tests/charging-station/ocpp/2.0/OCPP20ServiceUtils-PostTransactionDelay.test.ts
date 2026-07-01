@@ -116,4 +116,34 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
       'No StatusNotification should be sent'
     )
   })
+
+  await it('should destroy the coherent session even when the station stops during delay (regression: M3)', async t => {
+    const sessionsMap = (
+      station as unknown as { coherentSessions: Map<number | string, unknown> }
+    ).coherentSessions
+    sessionsMap.set('tx-1', { transactionId: 'tx-1' })
+    assert.ok(
+      station.getCoherentSession('tx-1') != null,
+      'session should exist before cleanupEndedTransaction'
+    )
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const promise = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      station.started = false
+      t.mock.timers.tick(3000)
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      await promise
+    })
+
+    assert.strictEqual(
+      station.getCoherentSession('tx-1'),
+      undefined,
+      'M3: coherent session leaked when station stopped during postTransactionDelay'
+    )
+  })
 })

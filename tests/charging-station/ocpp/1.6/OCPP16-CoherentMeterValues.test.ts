@@ -33,7 +33,12 @@ import {
   OCPP16RequestCommand,
   StandardParametersKey,
 } from '../../../../src/types/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  setupConnectorWithTransaction,
+  standardCleanup,
+  withMockTimers,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import { createOCPP16ResponseTestContext, setMockRequestHandler } from './OCPP16TestUtils.js'
 
@@ -249,11 +254,33 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
       prevSoc = soc
     }
 
-    // meterStop must equal the last register value (rounded to the meter's
-    // Wh scale in the request).
+    // Regression M4: replace the tautological `Math.round(register) ===
+    // Math.round(register)` assertion with an INDEPENDENT reference. The
+    // expected stop energy is reconstructed from emitted power samples
+    // over the interval (Σ P·Δt / 3.6e6), which is derived from the
+    // MeterValue stream — NOT from the register. Divergence would
+    // indicate the register drifted away from the reported physics.
+    const MS_PER_HOUR = 3_600_000
+    let expectedAccumulatedWh = 0
+    for (const mv of meterValues) {
+      const powerW = findValue(mv, MeterValueMeasurand.POWER_ACTIVE_IMPORT)
+      assert.ok(powerW != null)
+      expectedAccumulatedWh += (powerW * INTERVAL_MS) / MS_PER_HOUR
+    }
+    assert.ok(
+      expectedAccumulatedWh > 0,
+      `M4: expected some energy delivered across ${meterValues.length.toString()} samples`
+    )
+    assert.ok(
+      Math.abs(stopEnergyWh - expectedAccumulatedWh) <= 1,
+      `M4: stopEnergyWh=${stopEnergyWh.toString()} diverged from Σ(P·Δt)=${expectedAccumulatedWh.toString()} Wh`
+    )
     const lastEnergy = findValue(meterValues[2], MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
     assert.ok(lastEnergy != null)
-    assert.strictEqual(stopEnergyWh, Math.round(lastEnergy))
+    assert.ok(
+      Math.abs(stopEnergyWh - lastEnergy) <= 1,
+      `M4: stopEnergyWh=${stopEnergyWh.toString()} vs last MV energy=${lastEnergy.toString()}`
+    )
   })
 
   await it('should produce identical MeterValues sequences for identical seed + transactionId', async () => {
@@ -315,5 +342,54 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
       request
     )
     assert.strictEqual(station.getCoherentSession(7), undefined)
+  })
+
+  await it('should destroy the coherent session even when the station stops during postTransactionDelay (regression: M3)', async t => {
+    const stationInfo = station.stationInfo
+    assert.ok(stationInfo != null, 'stationInfo should be defined')
+    stationInfo.coherentMeterValues = true
+    stationInfo.randomSeed = 42
+    stationInfo.postTransactionDelay = 5
+    station.started = true
+    setupConnectorWithTransaction(station, CONNECTOR_ID, { transactionId: TRANSACTION_ID })
+    injectSession(station, 1_700_000_000_000)
+    assert.ok(
+      station.getCoherentSession(TRANSACTION_ID) != null,
+      'session should exist before stop'
+    )
+
+    const stopRequest: OCPP16StopTransactionRequest = {
+      idTag: TEST_ID_TAG,
+      meterStop: 0,
+      timestamp: new Date(),
+      transactionId: TRANSACTION_ID,
+    }
+    const stopResponse: OCPP16StopTransactionResponse = {
+      idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+    }
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const promise = responseService.responseHandler(
+        station,
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        stopResponse,
+        stopRequest
+      )
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      station.started = false
+      t.mock.timers.tick(5000)
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      await promise
+    })
+
+    assert.strictEqual(
+      station.getCoherentSession(TRANSACTION_ID),
+      undefined,
+      'M3: coherent session leaked when station stopped during postTransactionDelay'
+    )
   })
 })

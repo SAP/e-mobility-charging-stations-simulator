@@ -446,6 +446,101 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
+  await describe('voltage noise across samples (regression: M1)', async () => {
+    await it('should advance the voltage PRNG state across samples with voltageNoise=true', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const voltages: number[] = []
+      for (let i = 0; i < 5; i++) {
+        const sample = computeCoherentSample(context, connectorStatus, {
+          intervalMs: 30000,
+          nowMs: 30000 * (i + 1),
+          rootSeed: 42,
+        })
+        voltages.push(sample.voltageV)
+      }
+      const uniqueVoltages = new Set(voltages)
+      assert.ok(
+        uniqueVoltages.size >= 2,
+        `M1: voltage noise stagnated across samples (PRNG seed reset each call): ${voltages
+          .map(v => v.toString())
+          .join(', ')}`
+      )
+      for (const v of voltages) {
+        assert.ok(
+          v >= 230 * 0.99 - 1e-6 && v <= 230 * 1.01 + 1e-6,
+          `voltage out of ±1 % band: ${v.toString()}`
+        )
+      }
+    })
+  })
+
+  await describe('SoC cap energy coherency (regression: M2)', async () => {
+    await it('should clamp deltaEnergyWh to remaining battery capacity when crossing 100 % SoC', () => {
+      // Taper-free profile so full power is delivered at 99.8 % SoC.
+      // 40 kWh battery, 99.8 % SoC → remaining = 0.2/100 × 40000 = 80 Wh.
+      // 11 kW × 60 s = 183 Wh would overshoot without clamping.
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [flatProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      session.socPercent = 99.8
+      sessions.set(1, session)
+      const sample = computeCoherentSample(context, connectorStatus, {
+        intervalMs: 60000,
+        nowMs: 60000,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const remainingWh = ((100 - 99.8) / 100) * flatProfile.batteryCapacityWh
+      assert.ok(
+        sample.deltaEnergyWh <= remainingWh + 1e-6,
+        `M2: deltaEnergyWh=${sample.deltaEnergyWh.toString()} exceeded remaining capacity ${remainingWh.toString()} Wh`
+      )
+      assert.strictEqual(sample.socPercent, 100)
+      // INV-3 (P × Δt / 3.6e6 = ΔE): reported P must be recomputed from clamped ΔE.
+      const expectedPowerW = (sample.deltaEnergyWh * 3_600_000) / 60000
+      assert.ok(
+        Math.abs(sample.powerW - expectedPowerW) <= 1,
+        `M2: powerW=${sample.powerW.toString()} incoherent with clamped ΔE (expected ~${expectedPowerW.toString()} W)`
+      )
+      assert.ok(
+        Math.abs(sample.deltaEnergyWh - remainingWh) < 0.01,
+        `M2: deltaEnergyWh=${sample.deltaEnergyWh.toString()} != remainingWh=${remainingWh.toString()}`
+      )
+    })
+  })
+
   await describe('determinism', async () => {
     await it('should produce byte-identical sequences for identical seed + transactionId', () => {
       const runOnce = (): number[] => {
