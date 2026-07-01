@@ -52,25 +52,16 @@ export const hashLabel = (label: string): number => {
  * Known limitation (deferred): XOR is commutative, so nested derivations
  * `deriveSeed(deriveSeed(root, tx), label)` collide when
  * `hashLabel(tx1) ^ hashLabel(label1) === hashLabel(tx2) ^ hashLabel(label2)`.
- * Birthday bound ≈ 2^16 (txId, label) pairs — well beyond simulator scale.
- * A non-commutative mix (see {@link mixSeed}) would shift every existing
- * stream and diverge from deterministic tests; do not change without
- * regenerating the golden set.
+ * Birthday bound for a 32-bit hash space: expected collisions ≈ N²/2^33
+ * where N is the number of (txId, label) pairs. At simulator scale
+ * (≤ 5×10⁴ active pairs), expected collisions ≈ (5×10⁴)²/2^33 ≈ 0.3 —
+ * negligible in practice. A non-commutative mix (e.g. `(base * prime) ^ hash(label)`)
+ * would shift every existing stream and invalidate deterministic golden
+ * tests; do not change without regenerating the golden set.
  * @param rootSeed - Root 32-bit seed.
  * @param label - Stable stream label.
  * @returns Derived 32-bit unsigned seed.
  */
 export const deriveSeed = (rootSeed: number, label: string): number => {
   return ((rootSeed >>> 0) ^ hashLabel(label)) >>> 0
-}
-
-/**
- * FNV-1a mix used to fold non-numeric material (e.g. transactionId) into a
- * seed. Deterministic and stable across Node runtimes.
- * @param base - Base 32-bit unsigned seed.
- * @param material - Additional stable material to mix in.
- * @returns Mixed 32-bit unsigned seed.
- */
-export const mixSeed = (base: number, material: string): number => {
-  return (((base >>> 0) ^ hashLabel(material)) * 0x01000193) >>> 0
 }

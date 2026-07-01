@@ -1058,6 +1058,46 @@ const createVersionedSampledValueDispatcher = (
 }
 
 /**
+ * Resolves the set of measurands enabled by the configured OCPP variable.
+ * Returns `undefined` when no key resolves (no filter — all templates emit,
+ * preserving legacy behavior). Returns a Set otherwise; `Energy.Active.Import.Register`
+ * is always included (default measurand, parity with `getSampledValueTemplate`
+ * behavior).
+ *
+ * Governs OCPP 2.0.1 J02.FR.11 (`TxUpdatedMeasurands`), E02.FR.09
+ * (`TxStartedMeasurands`), E06.FR.11 (`TxEndedMeasurands`), and OCPP 1.6
+ * `MeterValuesSampledData`.
+ * @param chargingStation - Target charging station.
+ * @param measurandsKey - Configuration key threaded from the caller. When
+ *   omitted, defaults to `MeterValuesSampledData` for OCPP 1.6 and returns
+ *   `undefined` (no filter) for OCPP 2.0.
+ * @returns Enabled measurand set, or `undefined` for no filter.
+ */
+const resolveEnabledMeasurands = (
+  chargingStation: ChargingStation,
+  measurandsKey: ConfigurationKeyType | undefined
+): ReadonlySet<MeterValueMeasurand> | undefined => {
+  const effectiveKey =
+    measurandsKey ??
+    (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+      ? StandardParametersKey.MeterValuesSampledData
+      : undefined)
+  if (effectiveKey == null) {
+    return undefined
+  }
+  const csv = getConfigurationKey(chargingStation, effectiveKey)?.value ?? ''
+  const enabled = new Set<MeterValueMeasurand>()
+  for (const entry of csv.split(',')) {
+    const trimmed = entry.trim()
+    if (trimmed.length > 0) {
+      enabled.add(trimmed as MeterValueMeasurand)
+    }
+  }
+  enabled.add(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+  return enabled
+}
+
+/**
  * Builds a complete MeterValue with all configured measurands for a transaction.
  * @param chargingStation - Target charging station
  * @param transactionId - Active transaction identifier
@@ -1096,7 +1136,8 @@ export const buildMeterValue = (
         nowMs: Date.now(),
         rootSeed,
       },
-      context
+      context,
+      resolveEnabledMeasurands(chargingStation, measurandsKey)
     )
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)

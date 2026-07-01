@@ -4,7 +4,7 @@
  * Factory functions to create mock ChargingStation instances with isolated dependencies.
  */
 
-import type { ChargingStation } from '../../../src/charging-station/index.js'
+import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type {
   ChargingStationInfo,
   ChargingStationOcppConfiguration,
@@ -397,6 +397,9 @@ export function createMockChargingStation (
   const station = {
     // Reservation methods (mock implementations - eslint disabled for test utilities)
 
+    __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+      this.coherentSessions.set(transactionId, session)
+    },
     addReservation (reservation: Record<string, unknown>): void {
       // Check if reservation with same ID exists and remove it
       const existingReservation = this.getReservationBy(
@@ -412,6 +415,7 @@ export function createMockChargingStation (
       }
     },
     automaticTransactionGenerator: undefined,
+
     bootNotificationRequest: undefined,
 
     bootNotificationResponse: {
@@ -425,7 +429,6 @@ export function createMockChargingStation (
         interval: number
         status: RegistrationStatusEnumType
       },
-
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
@@ -437,8 +440,8 @@ export function createMockChargingStation (
     },
     // Coherent MeterValues session store (real class uses a private Map).
     coherentSessions: new Map<number | string, unknown>(),
-    connectors,
 
+    connectors,
     createCoherentSession (transactionId: number | string, _connectorId: number): unknown {
       // Mock: never auto-create; tests inject sessions directly when needed.
       return undefined
@@ -453,13 +456,13 @@ export function createMockChargingStation (
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
+
     destroyCoherentSession (transactionId: number | string | undefined): boolean {
       if (transactionId == null) {
         return false
       }
       return this.coherentSessions.delete(transactionId)
     },
-
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -567,6 +570,7 @@ export function createMockChargingStation (
     getWebSocketPingInterval (): number {
       return websocketPingInterval
     },
+
     hasConnector (connectorId: number): boolean {
       return this.iterateConnectors().some(({ connectorId: id }) => id === connectorId)
     },
@@ -590,10 +594,6 @@ export function createMockChargingStation (
 
     // Core properties
     index,
-
-    injectCoherentSession (transactionId: number | string, session: unknown): void {
-      this.coherentSessions.set(transactionId, session)
-    },
     inPendingState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
     },

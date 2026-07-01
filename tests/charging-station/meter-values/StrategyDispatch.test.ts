@@ -168,7 +168,7 @@ await describe('coherent strategy dispatch', async () => {
         transactionId: TEST_TRANSACTION_ID,
         voltageOutNominal: Voltage.VOLTAGE_230,
       }
-      station.injectCoherentSession(TEST_TRANSACTION_ID, session)
+      station.__injectCoherentSession(TEST_TRANSACTION_ID, session)
 
       addConfigurationKey(station, StandardParametersKey.MeterValuesSampledData, 'SoC')
       const registerBefore = station.getConnectorStatus(1)?.energyActiveImportRegisterValue ?? -1

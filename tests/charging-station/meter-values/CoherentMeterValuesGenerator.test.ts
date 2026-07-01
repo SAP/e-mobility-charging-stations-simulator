@@ -206,8 +206,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       const expected = sample.voltageV * sample.currentA * 1
       assert.ok(
-        Math.abs(sample.powerW - expected) <= 1,
-        `AC1: |P - V·I·phases|=${Math.abs(sample.powerW - expected).toString()} exceeded 1W tolerance`
+        Math.abs(sample.powerW - expected) <= 0.01,
+        `AC1: |P - V·I·phases|=${Math.abs(sample.powerW - expected).toString()} exceeded 0.01W tolerance`
       )
     })
   })
@@ -237,8 +237,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       const expected = sample.voltageV * sample.currentA * 3
       assert.ok(
-        Math.abs(sample.powerW - expected) <= 3,
-        `AC3: |P - V·I·3|=${Math.abs(sample.powerW - expected).toString()} exceeded 3W tolerance`
+        Math.abs(sample.powerW - expected) <= 0.01,
+        `AC3: |P - V·I·3|=${Math.abs(sample.powerW - expected).toString()} exceeded 0.01W tolerance`
       )
     })
   })
@@ -267,8 +267,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       const expected = sample.voltageV * sample.currentA
       assert.ok(
-        Math.abs(sample.powerW - expected) <= 1,
-        `DC: |P - V·I|=${Math.abs(sample.powerW - expected).toString()} exceeded 1W tolerance`
+        Math.abs(sample.powerW - expected) <= 0.01,
+        `DC: |P - V·I|=${Math.abs(sample.powerW - expected).toString()} exceeded 0.01W tolerance`
       )
     })
   })

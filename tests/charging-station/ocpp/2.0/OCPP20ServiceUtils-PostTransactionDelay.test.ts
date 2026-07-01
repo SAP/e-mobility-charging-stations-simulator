@@ -137,7 +137,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
       transactionId: 'tx-1',
       voltageOutNominal: Voltage.VOLTAGE_230,
     }
-    station.injectCoherentSession('tx-1', stubSession)
+    station.__injectCoherentSession('tx-1', stubSession)
     assert.ok(
       station.getCoherentSession('tx-1') != null,
       'session should exist before cleanupEndedTransaction'

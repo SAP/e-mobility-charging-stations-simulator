@@ -16,7 +16,6 @@
 export {
   buildCoherentMeterValue,
   createCoherentSession,
-  disposeCoherentSessionRuntime,
   isCoherentModeActive,
   resolveRootSeed,
 } from './CoherentMeterValuesGenerator.js'

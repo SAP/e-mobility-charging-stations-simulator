@@ -52,7 +52,7 @@ export const loadEvProfilesFile = (
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn(
-        `${logPrefix} ${moduleName}.loadEvProfilesFile: EV profile file '${filePath}' failed validation: ${error.message}`
+        `${logPrefix} ${moduleName}.loadEvProfilesFile: EV profile file '${filePath}' failed validation: ${getErrorMessage(error)}`
       )
     } else {
       logger.warn(

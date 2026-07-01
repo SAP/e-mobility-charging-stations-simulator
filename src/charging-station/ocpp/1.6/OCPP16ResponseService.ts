@@ -436,16 +436,16 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.transactionIdTag = requestPayload.idTag
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.locked = true
+      // Session must exist before buildTransactionBeginMeterValue so the
+      // coherent-mode branch inside it can route through buildMeterValue.
+      // No-op when coherent mode is off or the EV profile pool is absent.
+      chargingStation.createCoherentSession(payload.transactionId, connectorId)
       connectorStatus.transactionBeginMeterValue =
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(
           chargingStation,
           connectorId,
           requestPayload.meterStart
         )
-      // Create coherent MeterValues session after transactionId is known and
-      // the energy register is initialized. No-op when the feature flag or
-      // the EV profile file is not configured.
-      chargingStation.createCoherentSession(payload.transactionId, connectorId)
       if (requestPayload.reservationId != null) {
         const reservation = chargingStation.getReservationBy(
           'reservationId',

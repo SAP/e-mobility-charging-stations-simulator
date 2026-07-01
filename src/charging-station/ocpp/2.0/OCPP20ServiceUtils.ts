@@ -891,6 +891,11 @@ export class OCPP20ServiceUtils {
       }
       OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
     }
+    // Create coherent session BEFORE building the Transaction.Started MeterValue
+    // so the coherent gate in `buildMeterValue` runs against a live session
+    // (E02.FR.09 measurands from a physics-consistent initial state).
+    // Idempotent — a duplicate call from the response handler is a no-op.
+    chargingStation.createCoherentSession(transactionId, connectorId)
     const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
       chargingStation,
       transactionId

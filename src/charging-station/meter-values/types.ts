@@ -58,8 +58,12 @@ export const ChargingCurvePointSchema = z.object({
 })
 
 /**
- * Zod schema for {@link EvProfile}. Curve must be non-empty; the loader
- * additionally verifies `socPercent` is sorted non-decreasing.
+ * Zod schema for {@link EvProfile}. `chargingCurve` must be non-empty; the
+ * on-disk loader (`loadEvProfilesFile`) sorts by `socPercent` in-place
+ * after parse. Programmatic constructors that bypass the loader (e.g.
+ * `__injectCoherentSession` in tests) are responsible for providing a
+ * sorted curve — `interpolateChargingCurve` assumes a monotone x-axis
+ * to bracket in O(n) without repeated sorts.
  */
 export const EvProfileSchema = z.object({
   batteryCapacityWh: z.number().positive(),

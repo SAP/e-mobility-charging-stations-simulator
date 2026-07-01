@@ -469,6 +469,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null && response.transactionId != null) {
+            chargingStation.createCoherentSession(response.transactionId, connectorId)
             const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
               chargingStation,
               response.transactionId

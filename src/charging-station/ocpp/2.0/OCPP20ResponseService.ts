@@ -412,6 +412,12 @@ export class OCPP20ResponseService extends OCPPResponseService {
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
           )
+        } else {
+          // connectorId is unknown (e.g. connector state already reset before
+          // the CSMS response arrived). Destroy any lingering coherent session
+          // so the Map does not leak entries — symmetric with the OCPP 1.6
+          // defensive destroy in handleResponseStopTransaction.
+          chargingStation.destroyCoherentSession(requestPayload.transactionInfo.transactionId)
         }
         break
       case OCPP20TransactionEventEnumType.Started:

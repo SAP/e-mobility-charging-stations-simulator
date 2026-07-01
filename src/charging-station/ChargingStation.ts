@@ -148,10 +148,10 @@ import {
   validateStationInfo,
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
+import { disposeCoherentSessionRuntime } from './meter-values/CoherentMeterValuesGenerator.js'
 import {
   type CoherentSession,
   createCoherentSession,
-  disposeCoherentSessionRuntime,
   type EvProfilesFile,
   loadEvProfilesFile,
   resolveRootSeed,
@@ -315,6 +315,17 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Injects a pre-built coherent session directly into the session store.
+   * **Test seam only** — never call from production code. The `__` prefix
+   * is enforced by the `no-restricted-syntax` ESLint rule.
+   * @param transactionId - Transaction identifier.
+   * @param session - Pre-built session.
+   */
+  public __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+    this.coherentSessions.set(transactionId, session)
+  }
+
+  /**
    * Adds a reservation to the specified connector.
    * @param reservation - The reservation to add
    */
@@ -370,6 +381,13 @@ export class ChargingStation extends EventEmitter {
     transactionId: number | string,
     connectorId: number
   ): CoherentSession | undefined {
+    // Idempotent: request-builder call sites create the session early so the
+    // Transaction.Started / Transaction.Begin MeterValues route through the
+    // coherent gate. The response-handler call site then becomes a no-op.
+    const existing = this.coherentSessions.get(transactionId)
+    if (existing != null) {
+      return existing
+    }
     if (this.stationInfo?.coherentMeterValues !== true) {
       return undefined
     }
@@ -799,16 +817,6 @@ export class ChargingStation extends EventEmitter {
 
   public inAcceptedState (): boolean {
     return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
-  }
-
-  /**
-   * Injects a pre-built coherent session directly into the session store.
-   * Intended for testing only — production code uses {@link createCoherentSession}.
-   * @param transactionId - Transaction identifier.
-   * @param session - Pre-built session.
-   */
-  public injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
-    this.coherentSessions.set(transactionId, session)
   }
 
   public inPendingState (): boolean {

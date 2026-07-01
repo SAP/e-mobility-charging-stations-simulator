@@ -72,7 +72,7 @@ const injectSession = (station: ChargingStation, startMs: number): CoherentSessi
     transactionId: TRANSACTION_ID,
     voltageOutNominal: Voltage.VOLTAGE_230,
   }
-  station.injectCoherentSession(TRANSACTION_ID, session)
+  station.__injectCoherentSession(TRANSACTION_ID, session)
   return session
 }
 
