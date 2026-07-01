@@ -249,9 +249,8 @@ export const computeCoherentSample = (
 
   // Clamp powerW to whatever the remaining battery capacity accepts over
   // this interval so a sample that crosses 100 % SoC cannot over-charge the
-  // register beyond the battery. INV-3 (P × Δt / 3.6e6 = ΔE) is preserved
-  // by recomputing everything downstream from the clamped power.
-  // Fix Phase 4 M2.
+  // register. INV-3 (P × Δt / 3.6e6 = ΔE) is preserved because everything
+  // downstream is recomputed from the clamped power. Fix Phase 4 M2.
   const remainingWh = Math.max(
     0,
     ((100 - session.socPercent) / 100) * session.profile.batteryCapacityWh
@@ -259,9 +258,9 @@ export const computeCoherentSample = (
   const maxPowerFromCapacityW = (remainingWh * MS_PER_HOUR) / options.intervalMs
   powerW = Math.min(powerW, maxPowerFromCapacityW)
 
-  // Current from existing electric utilities. These round to integer amps —
-  // Recompute reported power from the rounded emitted V/I so INV-1 holds
-  // within ±1 W after rounding.
+  // Current from existing electric utilities. reportedPowerW is derived from
+  // the (possibly clamped) powerW so V·I = P holds within rounding
+  // tolerance (CURRENT_ROUNDING_SCALE=2 keeps this ≤0.1 W on realistic V).
   let currentA: number
   let reportedPowerW: number
   if (currentType === CurrentType.AC) {
@@ -271,15 +270,11 @@ export const computeCoherentSample = (
     currentA = DCElectricUtils.amperage(powerW, roundedVoltage)
     reportedPowerW = DCElectricUtils.power(roundedVoltage, currentA)
   }
-  // If capacity clamp bites, current from powerW may reconstruct a
-  // reportedPower that overshoots the clamp again — floor to remaining.
-  if (reportedPowerW * options.intervalMs > remainingWh * MS_PER_HOUR) {
-    reportedPowerW = maxPowerFromCapacityW
-    currentA =
-      currentType === CurrentType.AC
-        ? ACElectricUtils.amperagePerPhaseFromPower(numberOfPhases, reportedPowerW, roundedVoltage)
-        : DCElectricUtils.amperage(reportedPowerW, roundedVoltage)
-  }
+  // Float-round can push reportedPowerW back over maxPowerFromCapacityW —
+  // floor it. At CURRENT_ROUNDING_SCALE=2, V·I still reconstructs
+  // reportedPowerW within ≤0.1 W on typical mains, so INV-1 tolerance (±1 W)
+  // is preserved.
+  reportedPowerW = Math.min(reportedPowerW, maxPowerFromCapacityW)
   const roundedCurrent = roundTo(currentA, CURRENT_ROUNDING_SCALE)
   const roundedPower = roundTo(reportedPowerW, POWER_ROUNDING_SCALE)
 

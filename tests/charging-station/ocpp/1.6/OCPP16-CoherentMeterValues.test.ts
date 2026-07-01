@@ -275,11 +275,19 @@ await describe('OCPP 1.6 coherent MeterValues integration', async () => {
       Math.abs(stopEnergyWh - expectedAccumulatedWh) <= 1,
       `M4: stopEnergyWh=${stopEnergyWh.toString()} diverged from Σ(P·Δt)=${expectedAccumulatedWh.toString()} Wh`
     )
-    const lastEnergy = findValue(meterValues[2], MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+    const lastEnergy = findValue(
+      meterValues.at(-1),
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    )
     assert.ok(lastEnergy != null)
+    // Cross-check: stopEnergyWh must match the last MV register within the
+    // same 1 Wh tolerance as the independent Σ(P·Δt) check. Both are read
+    // from the emitted OCPP stream (final register value) vs. the response's
+    // StopTransaction meterStop — divergence would indicate that meterStop
+    // and the final register drifted apart between emission and finalization.
     assert.ok(
       Math.abs(stopEnergyWh - lastEnergy) <= 1,
-      `M4: stopEnergyWh=${stopEnergyWh.toString()} vs last MV energy=${lastEnergy.toString()}`
+      `M4: stopEnergyWh=${stopEnergyWh.toString()} vs last MV register=${lastEnergy.toString()}`
     )
   })
 
