@@ -198,7 +198,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
 
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 30000,
         rootSeed: 42,
@@ -229,7 +229,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         transactionId: 1,
       })
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 10000,
         nowMs: 10000,
         rootSeed: 7,
@@ -259,7 +259,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         transactionId: 1,
       })
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 5000,
         nowMs: 5000,
         rootSeed: 1337,
@@ -287,7 +287,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
 
       session.socPercent = 100
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 30000,
         rootSeed: 42,
@@ -312,7 +312,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       session.socPercent = 100
       sessions.set(1, session)
       for (let i = 0; i < 5; i++) {
-        computeCoherentSample(context, connectorStatus, {
+        computeCoherentSample(context, connectorStatus, session, {
           intervalMs: 30000,
           nowMs: 30000 * (i + 1),
           rootSeed: 42,
@@ -338,7 +338,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       let prevEnergy = 0
       let prevSoc = 0
       for (let i = 0; i < 30; i++) {
-        const sample = computeCoherentSample(context, connectorStatus, {
+        const sample = computeCoherentSample(context, connectorStatus, session, {
           intervalMs: 10000,
           nowMs: 10000 * (i + 1),
           rootSeed: 42,
@@ -467,7 +467,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       sessions.set(1, session)
       const voltages: number[] = []
       for (let i = 0; i < 5; i++) {
-        const sample = computeCoherentSample(context, connectorStatus, {
+        const sample = computeCoherentSample(context, connectorStatus, session, {
           intervalMs: 30000,
           nowMs: 30000 * (i + 1),
           rootSeed: 42,
@@ -518,7 +518,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       session.socPercent = 99.8
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 60000,
         nowMs: 60000,
         rootSeed: 42,
@@ -558,7 +558,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         sessions.set(1, session)
         const values: number[] = []
         for (let i = 0; i < 20; i++) {
-          const sample = computeCoherentSample(context, connectorStatus, {
+          const sample = computeCoherentSample(context, connectorStatus, session, {
             intervalMs: 10000,
             nowMs: 10000 * (i + 1),
             rootSeed: 42,
@@ -598,7 +598,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       session.socPercent = 99.8
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 60000,
         nowMs: 60000,
         rootSeed: 42,
@@ -639,7 +639,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       session.socPercent = 99.9
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 60000,
         nowMs: 60000,
         rootSeed: 42,
@@ -666,7 +666,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       session.socPercent = 100
       sessions.set(1, session)
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 0,
         nowMs: 0,
         rootSeed: 42,
@@ -679,7 +679,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       assert.ok(!Number.isNaN(session.socPercent), 'session.socPercent must not be NaN')
       assert.strictEqual(sample.deltaEnergyWh, 0)
       // Second call to confirm session state stays healthy.
-      const next = computeCoherentSample(context, connectorStatus, {
+      const next = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 30000,
         rootSeed: 42,
@@ -702,7 +702,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       sessions.set(1, session)
       const socBefore = session.socPercent
-      const sample = computeCoherentSample(context, connectorStatus, {
+      const sample = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 0,
         nowMs: 0,
         rootSeed: 42,
@@ -742,19 +742,19 @@ await describe('CoherentMeterValuesGenerator', async () => {
         transactionId: 1,
       })
       sessions.set(1, session)
-      const v1 = computeCoherentSample(context, connectorStatus, {
+      const v1 = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 30000,
         rootSeed: 42,
       }).voltageV
-      const v2 = computeCoherentSample(context, connectorStatus, {
+      const v2 = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 60000,
         rootSeed: 42,
       }).voltageV
       // Dispose and re-run: v3 must equal v1 (fresh PRNG from same seed).
       assert.ok(disposeCoherentSessionRuntime(session))
-      const v3 = computeCoherentSample(context, connectorStatus, {
+      const v3 = computeCoherentSample(context, connectorStatus, session, {
         intervalMs: 30000,
         nowMs: 90000,
         rootSeed: 42,

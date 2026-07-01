@@ -2,6 +2,11 @@
  * Station helper functions for testing
  *
  * Factory functions to create mock ChargingStation instances with isolated dependencies.
+ *
+ * TODO(#1936): file size (≈ 950 LOC) exceeds the 250 LOC ceiling documented
+ * in AGENTS.md. Modular refactor (StationHelpers.types / .cleanup / .connector /
+ * .template / .factory) tracked as follow-up; 30+ test files import from
+ * this path so the split must preserve the public re-export surface.
  */
 
 import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
@@ -439,10 +444,13 @@ export function createMockChargingStation (
       }
     },
     // Coherent MeterValues session store (real class uses a private Map).
-    coherentSessions: new Map<number | string, unknown>(),
+    coherentSessions: new Map<number | string, CoherentSession>(),
 
     connectors,
-    createCoherentSession (transactionId: number | string, _connectorId: number): unknown {
+    createCoherentSession (
+      _transactionId: number | string,
+      _connectorId: number
+    ): CoherentSession | undefined {
       // Mock: never auto-create; tests inject sessions directly when needed.
       return undefined
     },
@@ -472,7 +480,7 @@ export function createMockChargingStation (
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
     },
-    getCoherentSession (transactionId: number | string): unknown {
+    getCoherentSession (transactionId: number | string): CoherentSession | undefined {
       return this.coherentSessions.get(transactionId)
     },
     getConnectionTimeout (): number {

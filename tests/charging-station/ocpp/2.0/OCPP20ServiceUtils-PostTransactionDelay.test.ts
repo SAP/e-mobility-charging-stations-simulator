@@ -42,9 +42,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     })
     station = result.station
     const cs = station.getConnectorStatus(1)
-    if (cs == null) {
-      throw new Error('Expected connector 1 to exist')
-    }
+    assert.ok(cs != null, 'Expected connector 1 to exist')
     connectorStatus = cs
     connectorStatus.transactionStarted = true
     connectorStatus.transactionId = 'tx-1'

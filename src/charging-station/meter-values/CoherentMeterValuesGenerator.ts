@@ -7,14 +7,18 @@
  *   (V → P → I → ΔE → SoC) rather than sampled independently.
  *
  * Invariants (enforced by construction):
- * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted power is
- *   recomputed from the rounded emitted current and voltage so V·I·phases
- *   equals the emitted P within `ROUNDING_SCALE` precision.
+ * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted `powerW`
+ *   is recomputed from the rounded emitted current and voltage so
+ *   `|P - V·I·phases|` stays within the `ROUNDING_SCALE` half-width
+ *   (≤ 0.005 W scalar bound) regardless of V or phases.
  * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
  *   SoC monotone non-decreasing during charging and saturates at 100 %.
- * - **INV-3**: `ΔE = P × Δt / 3_600_000` and `E(t+1) ≥ E(t)`. Energy
- *   register is monotone non-decreasing and integrates the clamped power
- *   exactly over the sample interval.
+ * - **INV-3**: `ΔE = P_clamped × Δt / MS_PER_HOUR` where `P_clamped` is the
+ *   pre-emit-rounding capacity-clamped power. `E(t+1) ≥ E(t)`. A consumer
+ *   integrating the post-rounding emitted `powerW` samples may diverge
+ *   from the register by at most `ROUNDING_SCALE half-width × N × Δt /
+ *   MS_PER_HOUR` Wh over `N` samples — bounded and invisible at
+ *   `ROUNDING_SCALE` (~0.12 Wh over 24 h at 1 Hz).
  * - `P ≤ min(EVSE_max, EV_acceptance(SoC))`.
  * - `SoC ≥ 100 ⇒ P = 0, I = 0, ΔE = 0`.
  *
@@ -27,27 +31,31 @@
 import type {
   MeterValue,
   MeterValueContext,
-  MeterValuePhase,
   SampledValue,
   SampledValueTemplate,
 } from '../../types/index.js'
 import type { ConnectorStatus } from '../../types/index.js'
 import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 
-import { CurrentType, MeterValueMeasurand, MeterValueUnit, Voltage } from '../../types/index.js'
-import { logger, roundTo } from '../../utils/index.js'
+import {
+  CurrentType,
+  MeterValueMeasurand,
+  MeterValuePhase,
+  MeterValueUnit,
+  Voltage,
+} from '../../types/index.js'
+import { Constants, logger, roundTo } from '../../utils/index.js'
 import { interpolateChargingCurve, selectEvProfile } from './EvProfiles.js'
 import { deriveSeed, hashLabel, mulberry32 } from './Prng.js'
 
 const moduleName = 'CoherentMeterValuesGenerator'
 
-const MS_PER_HOUR = 3_600_000
-const UNIT_DIVIDER_KILO = 1000
-/** Decimal places used for all physics-quantity rounding (V, A, W, Wh, SoC). */
+/**
+ * Decimal places for all physics-quantity rounding (V, A, W, Wh, SoC).
+ * The `roundTo` half-width bound is `0.5 × 10^-ROUNDING_SCALE = 0.005` on
+ * each rounded quantity; INV-1 residual is bounded by this scalar.
+ */
 const ROUNDING_SCALE = 2
-const DEFAULT_RAMP_UP_DURATION_MS = 5000
-/** Symmetric ±% noise applied to nominal voltage, seed-derived. */
-const VOLTAGE_NOISE_PERCENT = 0.01
 
 /**
  * Signature of the versioned SampledValue builder returned by the
@@ -160,6 +168,8 @@ export const isCoherentModeActive = (
  * Unconditionally advances the connector energy registers by `deltaEnergyWh`.
  * The coherent path owns register updates so `meterStop` stays correct even
  * when the `Energy.Active.Import.Register` measurand is not configured.
+ * Negative or nullish register starting values are clamped to zero before
+ * accrual.
  * @param connectorStatus - Target connector status (in-place update).
  * @param deltaEnergyWh - Energy delta (Wh).
  */
@@ -170,16 +180,10 @@ export const advanceEnergyRegister = (
   if (connectorStatus == null) {
     return
   }
-  if ((connectorStatus.energyActiveImportRegisterValue ?? -1) < 0) {
-    connectorStatus.energyActiveImportRegisterValue = 0
-  }
-  if ((connectorStatus.transactionEnergyActiveImportRegisterValue ?? -1) < 0) {
-    connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-  }
   connectorStatus.energyActiveImportRegisterValue =
-    (connectorStatus.energyActiveImportRegisterValue ?? 0) + deltaEnergyWh
+    Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0) + deltaEnergyWh
   connectorStatus.transactionEnergyActiveImportRegisterValue =
-    (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) + deltaEnergyWh
+    Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) + deltaEnergyWh
 }
 
 /**
@@ -197,29 +201,49 @@ export interface CoherentSample {
 
 /**
  * Options for {@link computeCoherentSample}.
+ *
+ * - `intervalMs`: sample interval in milliseconds. Drives energy accrual
+ *   and the remaining-capacity clamp. Non-positive/non-finite triggers the
+ *   zero-sample defensive branch.
+ * - `nowMs`: sample timestamp in milliseconds (typically `Date.now()`);
+ *   combined with `session.sessionStartMs` for ramp-up progress. Non-finite
+ *   triggers the zero-sample defensive branch.
+ * - `rootSeed`: root 32-bit seed for stream splitting; combined with
+ *   `session.transactionId` and per-measurand labels to derive independent
+ *   PRNG streams via FNV-1a stream splitting.
+ * - `voltageNoise`: enable or disable per-sample voltage noise. When
+ *   `false`, `voltageV` is exactly the nominal voltage with no
+ *   PRNG-derived fluctuation. Intended for deterministic unit tests. In
+ *   production callers this field is omitted, which is treated as `true`
+ *   (noise enabled) by the `options.voltageNoise !== false` guard.
+ *   Defaults to `true` when omitted.
  */
 export interface ComputeSampleOptions {
   intervalMs: number
   nowMs: number
   rootSeed: number
-  /**
-   * Enable or disable per-sample voltage noise.
-   *
-   * When `false`, `voltageV` is exactly the nominal voltage with no
-   * PRNG-derived fluctuation. Intended for deterministic unit tests. In
-   * production callers this field is omitted, which is treated as `true`
-   * (noise enabled) by the `options.voltageNoise !== false` guard.
-   * @defaultValue `true` (noise enabled when omitted)
-   */
   voltageNoise?: boolean
 }
 
+const buildZeroSample = (
+  socPercent: number,
+  voltageV: number,
+  energyRegisterWh: number
+): CoherentSample => ({
+  currentA: 0,
+  deltaEnergyWh: 0,
+  energyRegisterWh,
+  powerW: 0,
+  socPercent,
+  voltageV,
+})
+
 /**
  * Computes a single coherent sample and mutates the caller-owned
- * {@link ICoherentContext.getCoherentSession session} SoC. The energy
- * register is NOT advanced here; the caller is responsible for calling
- * {@link advanceEnergyRegister} once per emitted sample so the semantics
- * match the OCPP energy meter model.
+ * `session.socPercent`. The energy register is NOT advanced here; the
+ * caller (`buildCoherentMeterValue`) invokes {@link advanceEnergyRegister}
+ * once per emitted sample so the semantics match the OCPP energy meter
+ * model.
  *
  * Physics chain (INV-1/INV-2/INV-3 hold by construction):
  * 1. `rampFactor = min(1, elapsed / rampUp)` — immutable session start.
@@ -233,48 +257,28 @@ export interface ComputeSampleOptions {
  * 6. `currentAExact = powerW / (V_round · phases)` — exact fraction
  *    (phases=1 for DC). Emitted current is rounded to `ROUNDING_SCALE`.
  * 7. Emitted `powerW = round(V_round × currentA_round × phases)`;
- *    INV-1 holds within `ROUNDING_SCALE` (≤0.005 W) regardless of V or phases.
- * 8. `ΔE = powerW × Δt / 3.6e6` (exact, uses clamped powerW);
- *    `ΔSoC = ΔE / capacity × 100`.
+ *    INV-1 holds within `ROUNDING_SCALE` half-width (≤ 0.005 W).
+ * 8. `ΔE = P_clamped × Δt / MS_PER_HOUR` — uses the pre-emit-rounding
+ *    `powerW` so the register integrates the capacity-clamped power
+ *    exactly (INV-3).
+ * 9. `ΔSoC = ΔE / capacity × 100`; `socPercent = min(100, soc + ΔSoC)`.
  * @param context - Charging-station context.
  * @param connectorStatus - Connector status.
+ * @param session - Active coherent session (resolved by caller).
  * @param options - Per-sample parameters (interval, seed material, ...).
- * @returns The computed sample. `energyRegisterWh` reflects the value AFTER
- *   the caller applies {@link advanceEnergyRegister}, computed inline for
- *   emission convenience.
+ * @returns The computed sample. `energyRegisterWh` reflects the projected
+ *   register value AFTER `advanceEnergyRegister` is applied by the caller.
  */
 export const computeCoherentSample = (
   context: ICoherentContext,
   connectorStatus: ConnectorStatus,
+  session: CoherentSession,
   options: ComputeSampleOptions
 ): CoherentSample => {
-  const transactionId = connectorStatus.transactionId
-  if (transactionId == null) {
-    // Defensive: should never happen — caller guarantees a live transaction.
-    return {
-      currentA: 0,
-      deltaEnergyWh: 0,
-      energyRegisterWh: connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0,
-      powerW: 0,
-      socPercent: 0,
-      voltageV: context.getVoltageOut(),
-    }
-  }
-  const session = context.getCoherentSession(transactionId)
-  if (session == null) {
-    // Defensive: caller must ensure the session exists before invoking.
-    return {
-      currentA: 0,
-      deltaEnergyWh: 0,
-      energyRegisterWh: connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0,
-      powerW: 0,
-      socPercent: 0,
-      voltageV: context.getVoltageOut(),
-    }
-  }
+  const transactionId = session.transactionId
 
-  // Defensive guard bundle covering four NaN/incoherence sources:
-  // - intervalMs ≤ 0: `maxPowerFromCapacityW = remainingWh · 3.6e6 / intervalMs`
+  // Defensive guard bundle covering NaN/incoherence sources:
+  // - intervalMs ≤ 0: `maxPowerFromCapacityW = remainingWh · MS_PER_HOUR / intervalMs`
   //   yields NaN when remainingWh = 0 (SoC saturated, 0/0), which would
   //   permanently poison session.socPercent.
   // - batteryCapacityWh ≤ 0 or non-finite: Zod (`EvProfileSchema`) enforces
@@ -282,34 +286,31 @@ export const computeCoherentSample = (
   //   `deltaSocPercent = ΔE / batteryCapacityWh × 100 = NaN` would poison SoC.
   // - nominal voltage ≤ 0 or non-finite: `Voltage` enum values are all-positive,
   //   but a template override or future dynamic supply could return 0.
-  //   Without this guard, emitted P=0 (from the `divisor > 0` branch below)
-  //   while ΔE still accrues from evse-limit powerW, breaking INV-1/INV-3
-  //   consistency for downstream consumers.
+  // - nowMs non-finite: pushes elapsedMs to NaN and destabilizes rampFactor.
+  // - AC with numberOfPhases ≤ 0: divisor collapses to 0 (`V · 0 = 0`),
+  //   currentA is guarded to zero, and P = 0 silently — a misconfigured
+  //   multi-phase station would emit zeros for the whole session. Fail
+  //   loudly with a zero sample so operators notice the misconfiguration.
   const batteryCapacityWh = session.profile.batteryCapacityWh
-  // `Voltage` is a numeric enum with strictly positive members (110/230/400/800),
-  // so structural coercion to number is safe. The comparison catches runtime
-  // overrides that bypass the enum type (0, negative, NaN, ±Infinity).
   const nominalV: number = context.getVoltageOut()
+  const currentType = context.stationInfo?.currentOutType ?? CurrentType.AC
+  const numberOfPhases = currentType === CurrentType.AC ? context.getNumberOfPhases() : 1
   if (
     options.intervalMs <= 0 ||
     batteryCapacityWh <= 0 ||
     !Number.isFinite(batteryCapacityWh) ||
     nominalV <= 0 ||
     !Number.isFinite(nominalV) ||
-    !Number.isFinite(options.nowMs)
+    !Number.isFinite(options.nowMs) ||
+    (currentType === CurrentType.AC && numberOfPhases <= 0)
   ) {
-    return {
-      currentA: 0,
-      deltaEnergyWh: 0,
-      energyRegisterWh: connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0,
-      powerW: 0,
-      socPercent: roundTo(session.socPercent, ROUNDING_SCALE),
-      voltageV: nominalV > 0 && Number.isFinite(nominalV) ? roundTo(nominalV, ROUNDING_SCALE) : 0,
-    }
+    const safeV = nominalV > 0 && Number.isFinite(nominalV) ? roundTo(nominalV, ROUNDING_SCALE) : 0
+    return buildZeroSample(
+      roundTo(session.socPercent, ROUNDING_SCALE),
+      safeV,
+      connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+    )
   }
-
-  const currentType = context.stationInfo?.currentOutType ?? CurrentType.AC
-  const numberOfPhases = currentType === CurrentType.AC ? context.getNumberOfPhases() : 1
 
   const elapsedMs = Math.max(0, options.nowMs - session.sessionStartMs)
   // Non-positive or non-finite rampUpDurationMs would either divide by zero
@@ -333,7 +334,11 @@ export const computeCoherentSample = (
   if (options.voltageNoise !== false) {
     const runtime = getSessionRuntime(session)
     runtime.voltagePrng ??= createStreamPrng(options.rootSeed, transactionId, 'VOLTAGE_NOISE')
-    sampledV = fluctuate(nominalV, VOLTAGE_NOISE_PERCENT, runtime.voltagePrng)
+    sampledV = fluctuate(
+      nominalV,
+      Constants.DEFAULT_COHERENT_VOLTAGE_NOISE_PERCENT,
+      runtime.voltagePrng
+    )
   }
   const roundedV = roundTo(sampledV, ROUNDING_SCALE)
 
@@ -353,13 +358,13 @@ export const computeCoherentSample = (
 
   // Clamp powerW to whatever the remaining battery capacity accepts over
   // this interval so a sample that crosses 100 % SoC cannot over-charge the
-  // register. INV-3 (ΔE = P × Δt / 3.6e6) is preserved because ΔE is
-  // computed from the clamped power below.
+  // register. INV-3 is preserved because ΔE is computed from the clamped
+  // power below.
   const remainingWh = Math.max(
     0,
     ((100 - session.socPercent) / 100) * session.profile.batteryCapacityWh
   )
-  const maxPowerFromCapacityW = (remainingWh * MS_PER_HOUR) / options.intervalMs
+  const maxPowerFromCapacityW = (remainingWh * Constants.MS_PER_HOUR) / options.intervalMs
   powerW = Math.min(powerW, maxPowerFromCapacityW)
 
   // Physics: derive per-phase current as an exact fraction so
@@ -373,14 +378,14 @@ export const computeCoherentSample = (
 
   // Emission: round current to `ROUNDING_SCALE`, then derive emitted power
   // from the rounded current so INV-1 (P = V·I·phases) holds within
-  // `ROUNDING_SCALE` (≤0.005 W) regardless of V or phases.
+  // `ROUNDING_SCALE` half-width (≤ 0.005 W) regardless of V or phases.
   const roundedCurrent = roundTo(currentAExact, ROUNDING_SCALE)
   const roundedPower = roundTo(roundedV * roundedCurrent * numberOfPhases, ROUNDING_SCALE)
 
   // Energy accounting uses the clamped (pre-rounding) `powerW` so INV-3
-  // (ΔE = P × Δt / 3.6e6) holds within floating-point ε and the capacity
-  // budget is respected exactly.
-  const deltaEnergyWh = (powerW * options.intervalMs) / MS_PER_HOUR
+  // holds within floating-point ε and the capacity budget is respected
+  // exactly.
+  const deltaEnergyWh = (powerW * options.intervalMs) / Constants.MS_PER_HOUR
   const preRegisterWh = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
   const projectedRegisterWh = preRegisterWh + deltaEnergyWh
 
@@ -399,39 +404,159 @@ export const computeCoherentSample = (
 }
 
 /**
- * Emits a SampledValue for `measurand` using the configured template.
- * Returns `undefined` when no matching template exists so the caller can
- * omit the measurand entirely.
- * @param templates - Templates configured on the connector or EVSE.
- * @param measurand - Target measurand.
- * @returns Template or `undefined`.
+ * Phase family classifier for coherent emission.
+ * - `Aggregate`: no `phase` field on the template (total measurement).
+ * - `LineToNeutral`: bare `L1`/`L2`/`L3`, `L1-N`/`L2-N`/`L3-N`, or the
+ *   neutral `N` line (line-current or phase-voltage measurements).
+ * - `LineToLine`: `L1-L2`/`L2-L3`/`L3-L1` (line-to-line voltage
+ *   measurements; not defined for current or power in the coherent model).
+ * @param phase - Template `phase` field (may be `undefined`).
+ * @returns Phase family classification.
  */
-const findTemplate = (
-  templates: SampledValueTemplate[] | undefined,
-  measurand: MeterValueMeasurand
-): SampledValueTemplate | undefined => {
-  if (templates == null) {
-    return undefined
+const phaseFamily = (
+  phase: MeterValuePhase | undefined
+): 'Aggregate' | 'LineToLine' | 'LineToNeutral' => {
+  if (phase == null) return 'Aggregate'
+  switch (phase) {
+    case MeterValuePhase.L1:
+    case MeterValuePhase.L1_N:
+    case MeterValuePhase.L2:
+    case MeterValuePhase.L2_N:
+    case MeterValuePhase.L3:
+    case MeterValuePhase.L3_N:
+    case MeterValuePhase.N:
+      return 'LineToNeutral'
+    case MeterValuePhase.L1_L2:
+    case MeterValuePhase.L2_L3:
+    case MeterValuePhase.L3_L1:
+      return 'LineToLine'
+    default:
+      return 'Aggregate'
   }
-  const defaultMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+}
+
+/**
+ * Emit order across measurands, mirroring the legacy `getSampledValueTemplate`
+ * path (SoC → Voltage → Power → Current → Energy). Preserved so downstream
+ * consumers relying on OCPP MeterValue ordering keep working.
+ */
+const LEGACY_EMIT_ORDER: readonly MeterValueMeasurand[] = [
+  MeterValueMeasurand.STATE_OF_CHARGE,
+  MeterValueMeasurand.VOLTAGE,
+  MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+  MeterValueMeasurand.CURRENT_IMPORT,
+  MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+] as const
+
+/**
+ * Within-measurand phase order for deterministic per-phase emission:
+ * no-phase → L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N →
+ * anything else. Lower rank emits first.
+ */
+const PHASE_RANK: ReadonlyMap<MeterValuePhase, number> = new Map<MeterValuePhase, number>([
+  [MeterValuePhase.L1, 1],
+  [MeterValuePhase.L1_L2, 4],
+  [MeterValuePhase.L1_N, 1],
+  [MeterValuePhase.L2, 2],
+  [MeterValuePhase.L2_L3, 5],
+  [MeterValuePhase.L2_N, 2],
+  [MeterValuePhase.L3, 3],
+  [MeterValuePhase.L3_L1, 6],
+  [MeterValuePhase.L3_N, 3],
+  [MeterValuePhase.N, 7],
+])
+
+const phaseRank = (phase: MeterValuePhase | undefined): number => {
+  if (phase == null) return 0
+  return PHASE_RANK.get(phase) ?? 8
+}
+
+/**
+ * Groups templates by measurand and sorts each bucket by phase rank.
+ * Templates without an explicit `measurand` default to
+ * `Energy.Active.Import.Register`, mirroring legacy convention.
+ * @param templates - Templates configured on the connector (or `undefined`).
+ * @returns Grouped, phase-ordered templates.
+ */
+const groupTemplatesByMeasurand = (
+  templates: SampledValueTemplate[] | undefined
+): Map<MeterValueMeasurand, SampledValueTemplate[]> => {
+  const groups = new Map<MeterValueMeasurand, SampledValueTemplate[]>()
+  if (templates == null) return groups
   for (const template of templates) {
-    const templateMeasurand = template.measurand ?? defaultMeasurand
-    if (templateMeasurand === measurand) {
-      return template
-    }
+    const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    const bucket = groups.get(measurand) ?? []
+    bucket.push(template)
+    groups.set(measurand, bucket)
   }
-  return undefined
+  for (const bucket of groups.values()) {
+    bucket.sort((a, b) => phaseRank(a.phase) - phaseRank(b.phase))
+  }
+  return groups
+}
+
+/**
+ * Resolves the physical value to emit for a template given the coherent
+ * sample. Returns `undefined` for unsupported `(measurand, phase)` pairs
+ * so the caller can log-and-skip.
+ *
+ * Per-phase resolution (balanced 3-phase Y assumption):
+ * - Voltage: L-N ⇒ nominal V; L-L ⇒ `√phases × V`.
+ * - Power.Active.Import: aggregate ⇒ total P; L-N ⇒ `P / phases`; L-L undefined.
+ * - Current.Import: any line phase ⇒ `sample.currentA` (line current);
+ *   L-L undefined.
+ * - SoC / Energy.Active.Import.Register: aggregate scalar; phase-qualified
+ *   templates are rejected.
+ * @param measurand - Target measurand.
+ * @param template - Template being emitted.
+ * @param sample - Coherent sample (source of aggregate values).
+ * @param numberOfPhases - Session phase count.
+ * @param connectorStatus - Connector status (for the energy register).
+ * @returns Value to emit, or `undefined` if the combination is unsupported.
+ */
+const resolvePhasedValue = (
+  measurand: MeterValueMeasurand,
+  template: SampledValueTemplate,
+  sample: CoherentSample,
+  numberOfPhases: number,
+  connectorStatus: ConnectorStatus
+): number | undefined => {
+  const family = phaseFamily(template.phase)
+  switch (measurand) {
+    case MeterValueMeasurand.CURRENT_IMPORT:
+      if (family === 'LineToLine') return undefined
+      return sample.currentA
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
+      if (family !== 'Aggregate') return undefined
+      return connectorStatus.energyActiveImportRegisterValue ?? 0
+    case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
+      if (family === 'LineToLine') return undefined
+      if (family === 'LineToNeutral' && numberOfPhases > 0) {
+        return roundTo(sample.powerW / numberOfPhases, ROUNDING_SCALE)
+      }
+      return sample.powerW
+    case MeterValueMeasurand.STATE_OF_CHARGE:
+      if (family !== 'Aggregate') return undefined
+      return sample.socPercent
+    case MeterValueMeasurand.VOLTAGE:
+      if (family === 'LineToLine') {
+        return roundTo(Math.sqrt(Math.max(numberOfPhases, 1)) * sample.voltageV, ROUNDING_SCALE)
+      }
+      return sample.voltageV
+    default:
+      return undefined
+  }
 }
 
 /**
  * Returns the SampledValueTemplate array configured on the given connector.
  *
- * Returns the connector-level `MeterValues` templates only. Unlike
+ * Reads the connector-level `MeterValues` templates only. Unlike
  * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does NOT
  * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
  * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
  * EVSE-level template inheritance to the coherent path requires extending
- * the context interface and is tracked as a follow-up.
+ * the context interface and is tracked as a follow-up in issue #1936.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
@@ -446,12 +571,18 @@ const resolveTemplates = (
 /**
  * Builds a complete OCPP {@link MeterValue} from a coherent sample.
  *
- * Order of emitted SampledValues mirrors the legacy path (SoC → Voltage →
- * Power → Current → Energy) so consumers relying on order stay compatible.
- * Only measurands with a matching configured template AND enabled by the
- * caller-resolved allow-list are emitted. The energy register is advanced
- * unconditionally by {@link advanceEnergyRegister} independent of whether
- * the Energy measurand is emitted.
+ * Emission order:
+ * - Across measurands: legacy `SoC → Voltage → Power → Current → Energy`.
+ * - Within a measurand with multiple phase-qualified templates: no-phase
+ *   first, then `L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N`.
+ *
+ * Per-phase resolution — see {@link resolvePhasedValue}. Unsupported
+ * `(measurand, phase)` combinations are logged and skipped.
+ *
+ * Only measurands enabled by the caller-resolved allow-list are emitted.
+ * The energy register is advanced unconditionally by
+ * {@link advanceEnergyRegister} independent of whether the Energy
+ * measurand is emitted.
  * @param context - Charging-station context.
  * @param transactionId - Active transaction identifier.
  * @param buildVersionedSampledValue - Versioned SampledValue builder from
@@ -483,56 +614,41 @@ export const buildCoherentMeterValue = (
     return { sampledValue: [], timestamp: new Date() }
   }
 
-  const sample = computeCoherentSample(context, connectorStatus, options)
+  const sample = computeCoherentSample(context, connectorStatus, session, options)
   // Own the register update: happens once per sample, unconditionally, so
   // meterStop is correct even when Energy.Active.Import.Register is not in
   // the configured MeterValues.
   advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
 
   const templates = resolveTemplates(context, session.connectorId)
+  const groups = groupTemplatesByMeasurand(templates)
   const sampledValue: SampledValue[] = []
   const isEnabled = (measurand: MeterValueMeasurand): boolean =>
     enabledMeasurands == null || enabledMeasurands.has(measurand)
+  const numberOfPhases = session.numberOfPhases
 
-  const socTemplate = findTemplate(templates, MeterValueMeasurand.STATE_OF_CHARGE)
-  if (socTemplate != null && isEnabled(MeterValueMeasurand.STATE_OF_CHARGE)) {
-    sampledValue.push(buildVersionedSampledValue(socTemplate, sample.socPercent, mvContext))
-  }
-
-  const voltageTemplate = findTemplate(templates, MeterValueMeasurand.VOLTAGE)
-  if (voltageTemplate != null && isEnabled(MeterValueMeasurand.VOLTAGE)) {
-    sampledValue.push(buildVersionedSampledValue(voltageTemplate, sample.voltageV, mvContext))
-  }
-
-  const powerTemplate = findTemplate(templates, MeterValueMeasurand.POWER_ACTIVE_IMPORT)
-  if (powerTemplate != null && isEnabled(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
-    const unitDivider = powerTemplate.unit === MeterValueUnit.KILO_WATT ? UNIT_DIVIDER_KILO : 1
-    sampledValue.push(
-      buildVersionedSampledValue(
-        powerTemplate,
-        roundTo(sample.powerW / unitDivider, ROUNDING_SCALE),
-        mvContext
-      )
-    )
-  }
-
-  const currentTemplate = findTemplate(templates, MeterValueMeasurand.CURRENT_IMPORT)
-  if (currentTemplate != null && isEnabled(MeterValueMeasurand.CURRENT_IMPORT)) {
-    sampledValue.push(buildVersionedSampledValue(currentTemplate, sample.currentA, mvContext))
-  }
-
-  const energyTemplate = findTemplate(templates, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
-  if (energyTemplate != null && isEnabled(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
-    const unitDivider =
-      energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? UNIT_DIVIDER_KILO : 1
-    const registerWh = connectorStatus.energyActiveImportRegisterValue ?? 0
-    sampledValue.push(
-      buildVersionedSampledValue(
-        energyTemplate,
-        roundTo(registerWh / unitDivider, ROUNDING_SCALE),
-        mvContext
-      )
-    )
+  for (const measurand of LEGACY_EMIT_ORDER) {
+    if (!isEnabled(measurand)) continue
+    const bucket = groups.get(measurand)
+    if (bucket == null) continue
+    for (const template of bucket) {
+      const raw = resolvePhasedValue(measurand, template, sample, numberOfPhases, connectorStatus)
+      if (raw == null) {
+        logger.warn(
+          `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: unsupported (${measurand}, phase=${String(template.phase)}) — template skipped`
+        )
+        continue
+      }
+      const unitDivider =
+        (measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+          template.unit === MeterValueUnit.KILO_WATT) ||
+        (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+          template.unit === MeterValueUnit.KILO_WATT_HOUR)
+          ? Constants.UNIT_DIVIDER_KILO
+          : 1
+      const scaled = unitDivider === 1 ? raw : roundTo(raw / unitDivider, ROUNDING_SCALE)
+      sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
+    }
   }
 
   // MeterValue = OCPP16MeterValue | OCPP20MeterValue is a discriminated
@@ -545,6 +661,16 @@ export const buildCoherentMeterValue = (
 
 /**
  * Options for {@link createCoherentSession}.
+ *
+ * - `connectorId`: target connector id.
+ * - `now`: session start timestamp in milliseconds. Defaults to
+ *   `Date.now()`.
+ * - `profiles`: non-empty EV profile pool; one profile is picked via
+ *   seeded weighted random selection.
+ * - `rampUpDurationMs`: optional ramp-up duration in milliseconds.
+ *   Defaults to `Constants.DEFAULT_COHERENT_RAMP_UP_DURATION_MS`.
+ * - `rootSeed`: root 32-bit seed for stream splitting.
+ * - `transactionId`: transaction identifier.
  */
 export interface CreateSessionOptions {
   connectorId: number
@@ -601,7 +727,7 @@ export const createCoherentSession = (
     currentType,
     numberOfPhases: currentType === CurrentType.AC ? context.getNumberOfPhases() : 1,
     profile,
-    rampUpDurationMs: options.rampUpDurationMs ?? DEFAULT_RAMP_UP_DURATION_MS,
+    rampUpDurationMs: options.rampUpDurationMs ?? Constants.DEFAULT_COHERENT_RAMP_UP_DURATION_MS,
     sessionStartMs: now,
     socPercent: initialSoc,
     transactionId: options.transactionId,

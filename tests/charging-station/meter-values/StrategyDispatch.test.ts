@@ -40,7 +40,7 @@ const energyTemplate: SampledValueTemplate = {
   value: '0',
 } as unknown as SampledValueTemplate
 
-await describe('coherent strategy dispatch', async () => {
+await describe('StrategyDispatch', async () => {
   let station: ChargingStation
 
   afterEach(() => {

@@ -18,7 +18,7 @@ import {
   mulberry32,
 } from '../../../src/charging-station/meter-values/Prng.js'
 
-await describe('coherent PRNG', async () => {
+await describe('Prng', async () => {
   await describe('mulberry32', async () => {
     await it('should produce identical sequences for identical seeds', () => {
       const a = mulberry32(42)

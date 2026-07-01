@@ -14,8 +14,12 @@
 
 import { z } from 'zod'
 
-import type { ConnectorStatus } from '../../types/index.js'
-import type { ChargingStationInfo, CurrentType, Voltage } from '../../types/index.js'
+import type {
+  ChargingStationInfo,
+  ConnectorStatus,
+  CurrentType,
+  Voltage,
+} from '../../types/index.js'
 
 /**
  * A single point on the piecewise-linear charging power curve.
@@ -64,6 +68,12 @@ export const ChargingCurvePointSchema = z.object({
  * `__injectCoherentSession` in tests) are responsible for providing a
  * sorted curve — `interpolateChargingCurve` assumes a monotone x-axis
  * to bracket in O(n) without repeated sorts.
+ *
+ * Monotone-non-increasing `powerFraction` (physical taper) is a caller
+ * responsibility and is NOT enforced by the schema: real EV curves
+ * typically hold `powerFraction` flat at 1.0 through the CC region before
+ * tapering, so strict monotonicity would over-constrain valid profiles.
+ * Callers requiring a monotone taper should validate at load time.
  */
 export const EvProfileSchema = z.object({
   batteryCapacityWh: z.number().positive(),

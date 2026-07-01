@@ -92,8 +92,6 @@ import {
 const moduleName = 'OCPPServiceUtils'
 
 const SOC_MAXIMUM_VALUE = 100
-const UNIT_DIVIDER_KILO = 1000
-const MS_PER_HOUR = 3_600_000
 
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
@@ -430,11 +428,12 @@ const buildEnergyMeasurandValue = (
   }
 
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
-  const unitDivider = energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? UNIT_DIVIDER_KILO : 1
+  const unitDivider =
+    energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? Constants.UNIT_DIVIDER_KILO : 1
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMaximumEnergyRounded = roundTo(
-    (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
+    (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
     2
   )
   const connectorMinimumEnergyRounded = roundTo(energyTemplate.minimumValue ?? 0, 2)
@@ -530,7 +529,8 @@ const buildPowerMeasurandValue = (
 
   checkMeasurandPowerDivider(chargingStation, powerTemplate.measurand)
   const powerValues: MeasurandValues = {} as MeasurandValues
-  const unitDivider = powerTemplate.unit === MeterValueUnit.KILO_WATT ? UNIT_DIVIDER_KILO : 1
+  const unitDivider =
+    powerTemplate.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
@@ -1059,10 +1059,16 @@ const createVersionedSampledValueDispatcher = (
 
 /**
  * Resolves the set of measurands enabled by the configured OCPP variable.
- * Returns `undefined` when no key resolves (no filter — all templates emit,
- * preserving legacy behavior). Returns a Set otherwise; `Energy.Active.Import.Register`
- * is always included (default measurand, parity with `getSampledValueTemplate`
- * behavior).
+ *
+ * Presence-aware semantics:
+ * - No key resolves ⇒ returns `undefined` (no filter — all templates emit,
+ *   preserving legacy behavior).
+ * - Key resolves but the configuration variable is **absent** (never
+ *   written) ⇒ returns `{Energy.Active.Import.Register}` (default measurand,
+ *   ergonomic parity with a station that never set the variable).
+ * - Key resolves and the configuration variable is **present** ⇒ the CSV
+ *   is honored verbatim, including an explicit empty value which yields an
+ *   empty allow-list (spec-compliant suppression per OCPP 2.0.1 J02.FR.11).
  *
  * Governs OCPP 2.0.1 J02.FR.11 (`TxUpdatedMeasurands`), E02.FR.09
  * (`TxStartedMeasurands`), E06.FR.11 (`TxEndedMeasurands`), and OCPP 1.6
@@ -1088,9 +1094,12 @@ const resolveEnabledMeasurands = (
   if (effectiveKey == null) {
     return undefined
   }
-  const csv = getConfigurationKey(chargingStation, effectiveKey)?.value ?? ''
+  const rawValue = getConfigurationKey(chargingStation, effectiveKey)?.value
+  if (rawValue == null) {
+    return new Set<MeterValueMeasurand>([MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER])
+  }
   const enabled = new Set<MeterValueMeasurand>()
-  for (const entry of csv.split(',')) {
+  for (const entry of rawValue.split(',')) {
     const trimmed = entry.trim()
     if (trimmed.length === 0) {
       continue
@@ -1099,7 +1108,6 @@ const resolveEnabledMeasurands = (
       enabled.add(trimmed as MeterValueMeasurand)
       continue
     }
-    // Debounce log spam: warn once per (station, invalid entry) pair.
     let warned = warnedInvalidMeasurands.get(chargingStation)
     if (warned == null) {
       warned = new Set<string>()
@@ -1112,7 +1120,6 @@ const resolveEnabledMeasurands = (
       )
     }
   }
-  enabled.add(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
   return enabled
 }
 
@@ -1248,7 +1255,7 @@ export const buildMeterValue = (
   )
   if (powerMeasurand?.values.allPhases != null) {
     const unitDivider =
-      powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? UNIT_DIVIDER_KILO : 1
+      powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
@@ -1380,7 +1387,9 @@ export const buildMeterValue = (
   if (energyMeasurand != null) {
     updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
     const unitDivider =
-      energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? UNIT_DIVIDER_KILO : 1
+      energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
+        ? Constants.UNIT_DIVIDER_KILO
+        : 1
     const energySampledValue = buildVersionedSampledValue(
       energyMeasurand.template,
       roundTo(
@@ -1393,7 +1402,7 @@ export const buildMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
+      (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
       2
     )
     const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)

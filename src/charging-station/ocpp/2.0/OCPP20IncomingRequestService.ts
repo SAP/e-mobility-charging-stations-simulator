@@ -87,6 +87,7 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
+  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
@@ -615,7 +616,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   buildConfigKey(
                     OCPP20ComponentName.SampledDataCtrlr,
                     OCPP20RequiredVariableName.TxUpdatedMeasurands
-                  )
+                  ),
+                  OCPP20ReadingContextEnumType.TRIGGER
                 ) as OCPP20MeterValue
                 OCPP20ServiceUtils.sendTransactionEvent(
                   chargingStation,

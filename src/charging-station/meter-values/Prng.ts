@@ -3,8 +3,8 @@
 /**
  * @file Deterministic seeded PRNG for coherent MeterValues.
  * @description Mulberry32 core PRNG with FNV-1a label hashing for
- *   independent per-stream seed derivation. No runtime dependency;
- *   kept intentionally under ~50 LOC.
+ *   independent per-stream seed derivation. No runtime dependency; kept
+ *   intentionally small.
  *
  * Stream splitting: `deriveSeed(rootSeed, label)` XORs a stable FNV-1a
  * 32-bit hash of the label into the root seed so adding one consumer

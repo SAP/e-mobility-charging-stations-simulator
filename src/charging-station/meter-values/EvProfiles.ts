@@ -11,10 +11,9 @@
 import { readFileSync } from 'node:fs'
 import { z } from 'zod'
 
-import type { EvProfile, EvProfilesFile } from './types.js'
-
+import { BaseError } from '../../exception/index.js'
 import { getErrorMessage, logger } from '../../utils/index.js'
-import { EvProfilesFileSchema } from './types.js'
+import { type EvProfile, type EvProfilesFile, EvProfilesFileSchema } from './types.js'
 
 const moduleName = 'EvProfiles'
 
@@ -89,11 +88,19 @@ export const selectEvProfile = (profiles: EvProfile[], random: number): EvProfil
 
 /**
  * Piecewise-linear interpolation of `chargingCurve` at `socPercent`. The
- * curve must be sorted by `socPercent` (`loadEvProfilesFile` guarantees this).
+ * curve must be sorted non-decreasing by `socPercent` (`loadEvProfilesFile`
+ * guarantees this). At an interior curve node the left segment's endpoint
+ * is returned (equivalent for continuous curves; matters only for duplicate
+ * `socPercent` where `a.powerFraction` wins).
  * @param curve - Sorted-by-`socPercent` curve.
  * @param socPercent - Query point in [0, 100].
  * @returns `powerFraction` in [0, 1] (clamped to the endpoints outside the
  *   curve range).
+ * @throws {BaseError} In non-production environments when `curve` is not
+ *   sorted non-decreasing by `socPercent`. Production path is
+ *   `loadEvProfilesFile` which sorts in place; test seams
+ *   (`__injectCoherentSession`) that bypass Zod are the only reachable
+ *   source of an unsorted curve.
  */
 export const interpolateChargingCurve = (
   curve: { powerFraction: number; socPercent: number }[],
@@ -102,14 +109,10 @@ export const interpolateChargingCurve = (
   if (curve.length === 0) {
     return 1
   }
-  // Debug-only invariant guard. Production path is `loadEvProfilesFile`
-  // which sorts in place; the only unsorted reach is the `__inject*` test
-  // seam. See `types.ts` `EvProfileSchema` docstring for the caller-
-  // responsibility contract.
   if (process.env.NODE_ENV !== 'production') {
     for (let i = 1; i < curve.length; i++) {
       if (curve[i].socPercent < curve[i - 1].socPercent) {
-        throw new Error(
+        throw new BaseError(
           `interpolateChargingCurve: chargingCurve must be sorted non-decreasing by socPercent (index ${i.toString()})`
         )
       }
