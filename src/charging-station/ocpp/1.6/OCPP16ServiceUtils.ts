@@ -124,6 +124,66 @@ export class OCPP16ServiceUtils {
   ]
 
   /**
+   * OCPP 1.6 Signed Meter Values whitepaper POST-HOC signing wrapper.
+   * When `SampledDataSignReadings` and `SampledDataSignUpdatedReadings`
+   * are enabled and a signing key is configured for the connector,
+   * appends a paired `SignedData` `SampledValue` to the supplied
+   * `MeterValue`. Idempotent no-op when signing is disabled or the
+   * signing prerequisites are absent.
+   *
+   * Consolidates the signing block used by every trigger/broadcast path
+   * that emits a "Sample.Periodic"-context MeterValue (periodic
+   * background loop in `startUpdatedMeterValues`, OCPP 1.6
+   * `TriggerMessage(MeterValues)` handler in
+   * `OCPP16IncomingRequestService`, and the worker broadcast channel's
+   * `handleMeterValues` for OCPP 1.6). Mutates `meterValue.sampledValue`
+   * in place and updates `connectorStatus.publicKeySentInTransaction`
+   * so the public-key payload is emitted at most once per transaction.
+   * @param chargingStation - Target charging station.
+   * @param connectorId - Connector identifier owning the transaction.
+   * @param transactionId - Active transaction identifier.
+   * @param meterValue - MeterValue to mutate (in place).
+   */
+  public static appendSignedUpdatedReadings (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    transactionId: number,
+    meterValue: OCPP16MeterValue
+  ): void {
+    if (
+      !OCPP16ServiceUtils.isSigningEnabled(chargingStation) ||
+      !OCPP16ServiceUtils.isSigningUpdatedReadingsEnabled(chargingStation)
+    ) {
+      return
+    }
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      return
+    }
+    const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
+      chargingStation,
+      connectorId
+    )
+    if (signingCfg == null) {
+      return
+    }
+    const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
+    const publicKeySentInTransaction = connectorStatus.publicKeySentInTransaction ?? false
+    const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
+      signingCfg,
+      energyWh,
+      OCPP16MeterValueContext.SAMPLE_PERIODIC,
+      transactionId,
+      publicKeySentInTransaction,
+      meterValue.timestamp
+    )
+    meterValue.sampledValue.push(signedResult.sampledValue)
+    if (signedResult.publicKeyIncluded) {
+      connectorStatus.publicKeySentInTransaction = true
+    }
+  }
+
+  /**
    * @param commandParams - Status notification parameters
    * @returns Formatted OCPP 1.6 StatusNotification request payload
    */
@@ -842,34 +902,17 @@ export class OCPP16ServiceUtils {
     }
     connectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       const transactionId = convertToInt(connectorStatus.transactionId)
-      const meterValue = buildMeterValue(chargingStation, transactionId, interval)
-      if (
-        OCPP16ServiceUtils.isSigningEnabled(chargingStation) &&
-        OCPP16ServiceUtils.isSigningUpdatedReadingsEnabled(chargingStation)
-      ) {
-        const energyWh = chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          connectorStatus.transactionId
-        )
-        const publicKeySentInTransaction = connectorStatus.publicKeySentInTransaction ?? false
-        const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
-          chargingStation,
-          connectorId
-        )
-        if (signingCfg != null) {
-          const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
-            signingCfg,
-            energyWh,
-            OCPP16MeterValueContext.SAMPLE_PERIODIC,
-            transactionId,
-            publicKeySentInTransaction,
-            (meterValue as OCPP16MeterValue).timestamp
-          )
-          ;(meterValue as OCPP16MeterValue).sampledValue.push(signedResult.sampledValue)
-          if (signedResult.publicKeyIncluded) {
-            connectorStatus.publicKeySentInTransaction = true
-          }
-        }
-      }
+      const meterValue = buildMeterValue(
+        chargingStation,
+        transactionId,
+        interval
+      ) as OCPP16MeterValue
+      OCPP16ServiceUtils.appendSignedUpdatedReadings(
+        chargingStation,
+        connectorId,
+        transactionId,
+        meterValue
+      )
       chargingStation.ocppRequestService
         .requestHandler<MeterValuesRequest, MeterValuesResponse>(
           chargingStation,
@@ -878,7 +921,7 @@ export class OCPP16ServiceUtils {
             connectorId,
             meterValue: [meterValue],
             transactionId,
-          } as MeterValuesRequest
+          }
         )
         .catch((error: unknown) => {
           logger.error(

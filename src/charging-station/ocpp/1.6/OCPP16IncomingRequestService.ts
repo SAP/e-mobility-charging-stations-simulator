@@ -461,20 +461,26 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 connectorStatus?.transactionStarted === true &&
                 connectorStatus.transactionId != null
               ) {
+                const transactionId = convertToInt(connectorStatus.transactionId)
+                const meterValue = buildMeterValue(
+                  chargingStation,
+                  transactionId,
+                  0
+                ) as OCPP16MeterValue
+                OCPP16ServiceUtils.appendSignedUpdatedReadings(
+                  chargingStation,
+                  connectorId,
+                  transactionId,
+                  meterValue
+                )
                 chargingStation.ocppRequestService
                   .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                     chargingStation,
                     OCPP16RequestCommand.METER_VALUES,
                     {
                       connectorId,
-                      meterValue: [
-                        buildMeterValue(
-                          chargingStation,
-                          convertToInt(connectorStatus.transactionId),
-                          0
-                        ) as OCPP16MeterValue,
-                      ],
-                      transactionId: convertToInt(connectorStatus.transactionId),
+                      meterValue: [meterValue],
+                      transactionId,
                     },
                     {
                       triggerMessage: true,
@@ -486,20 +492,17 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               for (let id = 1; id <= chargingStation.getNumberOfConnectors(); id++) {
                 const cs = chargingStation.getConnectorStatus(id)
                 if (cs?.transactionStarted === true && cs.transactionId != null) {
+                  const txId = convertToInt(cs.transactionId)
+                  const mv = buildMeterValue(chargingStation, txId, 0) as OCPP16MeterValue
+                  OCPP16ServiceUtils.appendSignedUpdatedReadings(chargingStation, id, txId, mv)
                   chargingStation.ocppRequestService
                     .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                       chargingStation,
                       OCPP16RequestCommand.METER_VALUES,
                       {
                         connectorId: id,
-                        meterValue: [
-                          buildMeterValue(
-                            chargingStation,
-                            convertToInt(cs.transactionId),
-                            0
-                          ) as OCPP16MeterValue,
-                        ],
-                        transactionId: convertToInt(cs.transactionId),
+                        meterValue: [mv],
+                        transactionId: txId,
                       },
                       {
                         triggerMessage: true,
