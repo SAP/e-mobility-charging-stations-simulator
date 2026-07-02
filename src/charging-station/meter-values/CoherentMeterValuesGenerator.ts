@@ -306,9 +306,9 @@ export const computeCoherentSample = (
   //   multi-phase station would emit zeros for the whole session. Fail
   //   loudly with a zero sample so operators notice the misconfiguration.
   const batteryCapacityWh = session.profile.batteryCapacityWh
-  const nominalV: number = context.getVoltageOut()
-  const currentType = context.stationInfo?.currentOutType ?? CurrentType.AC
-  const numberOfPhases = currentType === CurrentType.AC ? context.getNumberOfPhases() : 1
+  const nominalV: number = session.voltageOutNominal
+  const currentType = session.currentType
+  const numberOfPhases = session.numberOfPhases
   if (
     options.intervalMs <= 0 ||
     batteryCapacityWh <= 0 ||
