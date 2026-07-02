@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
 
 /**
  * @file Coherent MeterValues module barrel.
@@ -9,15 +9,23 @@
  *
  *   Internal helpers are intentionally not re-exported; tests and internal
  *   callers should import them directly from the owning sub-module.
+ *
+ *   Module layout after the issue #1936 (item i) split:
+ *   - {@link ./CoherentMeterValuesGenerator} — session lifecycle, PRNG
+ *     helpers, WeakMap runtime state.
+ *   - {@link ./CoherentSampleComputer} — physics chain V→P→I→ΔE→SoC
+ *     (INV-1/2/3 by construction), energy-register advance.
+ *   - {@link ./CoherentMeterValueBuilder} — emit order, phase families,
+ *     unit conversion, OCPP MeterValue assembly.
  */
 
+export { buildCoherentMeterValue } from './CoherentMeterValueBuilder.js'
+export type { BuildVersionedSampledValue } from './CoherentMeterValueBuilder.js'
 export {
-  buildCoherentMeterValue,
   createCoherentSession,
   isCoherentModeActive,
   resolveRootSeed,
 } from './CoherentMeterValuesGenerator.js'
-export type { BuildVersionedSampledValue } from './CoherentMeterValuesGenerator.js'
 export { loadEvProfilesFile } from './EvProfiles.js'
 export type {
   ChargingCurvePoint,

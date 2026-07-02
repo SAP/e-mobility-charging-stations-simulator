@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import type {
   CoherentSession,
   EvProfile,
@@ -21,13 +21,13 @@ import type {
   SampledValueTemplate,
 } from '../../../src/types/index.js'
 
+import { buildCoherentMeterValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import {
-  buildCoherentMeterValue,
-  computeCoherentSample,
   createCoherentSession,
   disposeCoherentSessionRuntime,
   resolveRootSeed,
 } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import { computeCoherentSample } from '../../../src/charging-station/meter-values/CoherentSampleComputer.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/Prng.js'
 import {
   AvailabilityType,
