@@ -139,7 +139,11 @@ export const createStreamPrng = (
   transactionId: number | string,
   label: string
 ): (() => number) => {
-  const txSeed = deriveSeed(rootSeed, String(transactionId))
+  // Namespace the transactionId leg with a `tx:` prefix so
+  // `String(transactionId) === label` cannot trigger the XOR self-inverse
+  // `deriveSeed(deriveSeed(r, X), X) === r`. Labels never start with `tx:`
+  // by construction (`VOLTAGE_NOISE`, `POWER_NOISE`, ...).
+  const txSeed = deriveSeed(rootSeed, `tx:${String(transactionId)}`)
   return mulberry32(deriveSeed(txSeed, label))
 }
 

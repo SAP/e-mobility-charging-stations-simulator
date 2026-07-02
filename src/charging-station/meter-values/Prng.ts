@@ -47,17 +47,16 @@ export const hashLabel = (label: string): number => {
 /**
  * Derive a per-stream seed from a root seed and a stable label.
  * The XOR mix keeps `deriveSeed(root, 'A') !== deriveSeed(root, 'B')`
- * as long as `hashLabel('A') !== hashLabel('B')`.
+ * as long as `hashLabel('A') !== hashLabel('B')`, and adding a new
+ * consumer never shifts an existing stream's sequence.
  *
- * Known limitation (deferred): XOR is commutative, so nested derivations
- * `deriveSeed(deriveSeed(root, tx), label)` collide when
- * `hashLabel(tx1) ^ hashLabel(label1) === hashLabel(tx2) ^ hashLabel(label2)`.
- * Birthday bound for a 32-bit hash space: expected collisions ≈ N²/2^33
- * where N is the number of (txId, label) pairs. At simulator scale
- * (≤ 5×10⁴ active pairs), expected collisions ≈ (5×10⁴)²/2^33 ≈ 0.3 —
- * negligible in practice. A non-commutative mix (e.g. `(base * prime) ^ hash(label)`)
- * would shift every existing stream and invalidate deterministic golden
- * tests; do not change without regenerating the golden set.
+ * Chained derivations reduce to `deriveSeed(deriveSeed(r, x), y) = r ^ H(x) ^ H(y)`,
+ * so two chains collide when `H(x1) ^ H(y1) === H(x2) ^ H(y2)`. Birthday
+ * bound on the 32-bit hash space is negligible at simulator scale
+ * (expected collisions ≈ N²/2^33; ≈ 0.3 at N = 5×10⁴). The deterministic
+ * self-inverse `H(x) ^ H(x) === 0` is neutralized by
+ * {@link ./CoherentMeterValuesGenerator.createStreamPrng} namespacing the
+ * transactionId leg with a `tx:` prefix labels never carry.
  * @param rootSeed - Root 32-bit seed.
  * @param label - Stable stream label.
  * @returns Derived 32-bit unsigned seed.
