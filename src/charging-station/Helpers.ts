@@ -812,6 +812,12 @@ export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefi
     : undefined
 }
 
+export const getEvProfilesFile = (stationInfo: ChargingStationInfo): string | undefined => {
+  return stationInfo.evProfilesFile != null
+    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.evProfilesFile))
+    : undefined
+}
+
 export const waitChargingStationEvents = async (
   emitter: EventEmitter,
   event: ChargingStationWorkerMessageEvents,

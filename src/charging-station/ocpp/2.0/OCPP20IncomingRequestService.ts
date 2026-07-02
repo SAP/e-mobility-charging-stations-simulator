@@ -87,6 +87,7 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
+  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
@@ -469,21 +470,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null && response.transactionId != null) {
+            const txId = response.transactionId
+            chargingStation.createCoherentSession(txId, connectorId)
             const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
               chargingStation,
-              response.transactionId
+              txId
             )
             OCPP20ServiceUtils.sendTransactionEvent(
               chargingStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.RemoteStart,
               connectorId,
-              response.transactionId,
+              txId,
               {
                 ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
                 remoteStartId: request.remoteStartId,
               }
             ).catch((error: unknown) => {
+              // Session was created for this fire-and-forget send. If the
+              // send rejects, destroy it here — no other cleanup path
+              // covers this branch. `destroyCoherentSession` is idempotent.
+              chargingStation.destroyCoherentSession(txId)
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,
                 error
@@ -605,15 +612,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 const meterValue = buildMeterValue(
                   chargingStation,
                   connector.transactionId,
-                  txUpdatedInterval
+                  txUpdatedInterval,
+                  buildConfigKey(
+                    OCPP20ComponentName.SampledDataCtrlr,
+                    OCPP20RequiredVariableName.TxUpdatedMeasurands
+                  ),
+                  OCPP20ReadingContextEnumType.TRIGGER
                 ) as OCPP20MeterValue
+                // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*, while
+                // TransactionEventRequest.meterValue is 0..*: when TxUpdatedMeasurands
+                // yields no sampled values, omit the meterValue field entirely rather
+                // than send an empty-wrapper schema violation.
+                const eventPayload = isNotEmptyArray(meterValue.sampledValue)
+                  ? { meterValue: [meterValue] }
+                  : {}
                 OCPP20ServiceUtils.sendTransactionEvent(
                   chargingStation,
                   OCPP20TransactionEventEnumType.Updated,
                   OCPP20TriggerReasonEnumType.Trigger,
                   cId,
                   connector.transactionId as string,
-                  { meterValue: [meterValue] }
+                  eventPayload
                 ).catch(errorHandler)
               }
             }
@@ -3222,7 +3241,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    // Snapshot transactionId BEFORE resetConnectorStatus deletes it.
+    const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 

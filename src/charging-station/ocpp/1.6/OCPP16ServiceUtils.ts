@@ -60,6 +60,7 @@ import {
   roundTo,
   truncateId,
 } from '../../../utils/index.js'
+import { isCoherentModeActive } from '../../meter-values/index.js'
 import { mapOCPP16Status, OCPPAuthServiceFactory } from '../auth/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import {
@@ -148,6 +149,30 @@ export class OCPP16ServiceUtils {
     connectorId: number,
     meterStart: number | undefined
   ): OCPP16MeterValue {
+    // Coherent path: when an active coherent session exists for this
+    // transaction, route through `buildMeterValue` so the begin MeterValue
+    // is drawn from the same physics chain as subsequent samples (SoC in
+    // the profile's initial band, energy=0, V=nominal, P=I=0). Vendor
+    // parameter `StartTxnSampledData` (per OCPP 1.6 Signed Meter Values
+    // whitepaper) overrides `MeterValuesSampledData` for this MeterValue
+    // when configured; `resolveEnabledMeasurands` falls back to
+    // `MeterValuesSampledData` when the vendor key is absent.
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const transactionId = connectorStatus?.transactionId
+    if (transactionId != null && isCoherentModeActive(chargingStation, transactionId)) {
+      const startTxnSampledDataKey = OCPP16VendorParametersKey.StartTxnSampledData
+      const measurandsKey =
+        getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null
+          ? startTxnSampledDataKey
+          : undefined
+      return buildMeterValue(
+        chargingStation,
+        transactionId,
+        0,
+        measurandsKey,
+        OCPP16MeterValueContext.TRANSACTION_BEGIN
+      ) as OCPP16MeterValue
+    }
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)

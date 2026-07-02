@@ -42,6 +42,7 @@ export {
 } from './Helpers.js'
 export type { IBootstrap } from './IBootstrap.js'
 export { IdTagsCache } from './IdTagsCache.js'
+export type { CoherentSession } from './meter-values/index.js'
 export { SharedLRUCache } from './SharedLRUCache.js'
 export { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 export { StrictTemplateSchema, TemplateSchema } from './TemplateSchema.js'
