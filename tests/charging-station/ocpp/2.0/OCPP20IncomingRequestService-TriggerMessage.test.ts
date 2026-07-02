@@ -459,10 +459,6 @@ await describe('F06 - TriggerMessage', async () => {
         name: 'LogStatusNotification',
         trigger: MessageTriggerEnumType.LogStatusNotification,
       },
-      {
-        name: 'MeterValues',
-        trigger: MessageTriggerEnumType.MeterValues,
-      },
     ]
 
     for (const { name, trigger } of triggerCases) {
@@ -484,6 +480,27 @@ await describe('F06 - TriggerMessage', async () => {
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })
     }
+
+    await it('should broadcast MeterValuesRequest for all EVSEs on Accepted (F06.FR.06)', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      // F06.FR.06: TriggerMessage(MessageTrigger.MeterValues) without a
+      // specific EVSE MUST emit one MeterValuesRequest per EVSE. Fixture has
+      // 3 EVSEs → 3 requests.
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
+    })
 
     await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {
       const request: OCPP20TriggerMessageRequest = {
