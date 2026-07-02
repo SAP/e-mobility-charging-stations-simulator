@@ -296,9 +296,10 @@ export const computeCoherentSample = (
   const transactionId = session.transactionId
 
   // Defensive guard bundle covering NaN/incoherence sources:
-  // - intervalMs ≤ 0: `maxPowerFromCapacityW = remainingWh · MS_PER_HOUR / intervalMs`
-  //   yields NaN when remainingWh = 0 (SoC saturated, 0/0), which would
-  //   permanently poison session.socPercent.
+  // - intervalMs ≤ 0 or non-finite: divide-by-zero, negative Δt, or NaN/Infinity
+  //   propagates through `maxPowerFromCapacityW = remainingWh · MS_PER_HOUR /
+  //   intervalMs` and permanently poisons session.socPercent. `Number.isFinite`
+  //   covers the NaN/±Infinity paths since `NaN <= 0 === false`.
   // - batteryCapacityWh ≤ 0 or non-finite: Zod (`EvProfileSchema`) enforces
   //   `.positive()` at file load, but `injectCoherentSession` bypasses Zod;
   //   `deltaSocPercent = ΔE / batteryCapacityWh × 100 = NaN` would poison SoC.
@@ -315,6 +316,7 @@ export const computeCoherentSample = (
   const numberOfPhases = session.numberOfPhases
   if (
     options.intervalMs <= 0 ||
+    !Number.isFinite(options.intervalMs) ||
     batteryCapacityWh <= 0 ||
     !Number.isFinite(batteryCapacityWh) ||
     nominalV <= 0 ||

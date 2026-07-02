@@ -660,7 +660,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
     })
   })
 
-  await describe('intervalMs=0 defensive guard', async () => {
+  await describe('intervalMs defensive guard', async () => {
     await it('should not contaminate socPercent or deltaEnergyWh with NaN at saturated SoC', () => {
       const { connectorStatus, context, sessions } = buildContext()
       const session = createSessionOrFail(context, {
@@ -715,6 +715,62 @@ await describe('CoherentMeterValuesGenerator', async () => {
         rootSeed: 42,
         voltageNoise: false,
       })
+      assert.strictEqual(sample.deltaEnergyWh, 0)
+      assert.strictEqual(sample.powerW, 0)
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should short-circuit on NaN intervalMs without poisoning session state', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const socBefore = session.socPercent
+      const sample = computeCoherentSample(context, connectorStatus, session, {
+        intervalMs: Number.NaN,
+        nowMs: 0,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.ok(Number.isFinite(sample.powerW), 'powerW must be finite')
+      assert.ok(Number.isFinite(sample.currentA), 'currentA must be finite')
+      assert.ok(Number.isFinite(sample.deltaEnergyWh), 'deltaEnergyWh must be finite')
+      assert.ok(Number.isFinite(sample.socPercent), 'sample.socPercent must be finite')
+      assert.ok(Number.isFinite(session.socPercent), 'session.socPercent must be finite')
+      assert.strictEqual(sample.deltaEnergyWh, 0)
+      assert.strictEqual(sample.powerW, 0)
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should short-circuit on +Infinity intervalMs without poisoning session state', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const socBefore = session.socPercent
+      const sample = computeCoherentSample(context, connectorStatus, session, {
+        intervalMs: Number.POSITIVE_INFINITY,
+        nowMs: 0,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.ok(Number.isFinite(sample.powerW), 'powerW must be finite')
+      assert.ok(Number.isFinite(sample.currentA), 'currentA must be finite')
+      assert.ok(Number.isFinite(sample.deltaEnergyWh), 'deltaEnergyWh must be finite')
+      assert.ok(Number.isFinite(sample.socPercent), 'sample.socPercent must be finite')
+      assert.ok(Number.isFinite(session.socPercent), 'session.socPercent must be finite')
       assert.strictEqual(sample.deltaEnergyWh, 0)
       assert.strictEqual(sample.powerW, 0)
       assert.strictEqual(session.socPercent, socBefore)
