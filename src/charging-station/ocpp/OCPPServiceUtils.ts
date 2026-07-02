@@ -1160,16 +1160,16 @@ export const buildMeterValue = (
   // BEFORE the random/fixed measurand generation runs. When coherent mode
   // is not active for this station or no session exists for the transaction,
   // this is a no-op and the random/fixed code path is unchanged.
-  if (isCoherentModeActive(chargingStation, transactionId)) {
-    const rootSeed = resolveRootSeed(chargingStation.stationInfo)
+  const coherentSession = chargingStation.getCoherentSession(transactionId)
+  if (isCoherentModeActive(coherentSession)) {
     return buildCoherentMeterValue(
       chargingStation,
-      transactionId,
+      coherentSession,
       buildVersionedSampledValue,
       {
         intervalMs: interval,
         nowMs: Date.now(),
-        rootSeed,
+        rootSeed: resolveRootSeed(chargingStation.stationInfo),
       },
       context,
       resolveEnabledMeasurands(chargingStation, measurandsKey)

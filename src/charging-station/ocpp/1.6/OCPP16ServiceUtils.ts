@@ -149,29 +149,15 @@ export class OCPP16ServiceUtils {
     connectorId: number,
     meterStart: number | undefined
   ): OCPP16MeterValue {
-    // Coherent path: when an active coherent session exists for this
-    // transaction, route through `buildMeterValue` so the begin MeterValue
-    // is drawn from the same physics chain as subsequent samples (SoC in
-    // the profile's initial band, energy=0, V=nominal, P=I=0). Vendor
-    // parameter `StartTxnSampledData` (per OCPP 1.6 Signed Meter Values
-    // whitepaper) overrides `MeterValuesSampledData` for this MeterValue
-    // when configured; `resolveEnabledMeasurands` falls back to
-    // `MeterValuesSampledData` when the vendor key is absent.
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     const transactionId = connectorStatus?.transactionId
-    if (transactionId != null && isCoherentModeActive(chargingStation, transactionId)) {
-      const startTxnSampledDataKey = OCPP16VendorParametersKey.StartTxnSampledData
-      const measurandsKey =
-        getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null
-          ? startTxnSampledDataKey
-          : undefined
-      return buildMeterValue(
+    const coherentSession =
+      transactionId != null ? chargingStation.getCoherentSession(transactionId) : undefined
+    if (transactionId != null && isCoherentModeActive(coherentSession)) {
+      return OCPP16ServiceUtils.buildCoherentTransactionBeginMeterValue(
         chargingStation,
-        transactionId,
-        0,
-        measurandsKey,
-        OCPP16MeterValueContext.TRANSACTION_BEGIN
-      ) as OCPP16MeterValue
+        transactionId
+      )
     }
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     // Energy.Active.Import.Register measurand (default)
@@ -979,6 +965,37 @@ export class OCPP16ServiceUtils {
         error
       )
     }
+  }
+
+  /**
+   * Coherent-path builder for the OCPP 1.6 transaction-begin MeterValue.
+   * Routes through `buildMeterValue` so the begin MeterValue is drawn
+   * from the same physics chain as subsequent samples (SoC in the
+   * profile's initial band, energy=0, V=nominal, P=I=0). Vendor
+   * parameter `StartTxnSampledData` (per the OCPP 1.6 Signed Meter
+   * Values whitepaper) overrides `MeterValuesSampledData` for this
+   * MeterValue when configured; `resolveEnabledMeasurands` falls back to
+   * `MeterValuesSampledData` when the vendor key is absent.
+   * @param chargingStation - Target charging station.
+   * @param transactionId - Active transaction identifier.
+   * @returns OCPP 1.6 MeterValue produced by the coherent physics chain.
+   */
+  private static buildCoherentTransactionBeginMeterValue (
+    chargingStation: ChargingStation,
+    transactionId: number | string
+  ): OCPP16MeterValue {
+    const startTxnSampledDataKey = OCPP16VendorParametersKey.StartTxnSampledData
+    const measurandsKey =
+      getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null
+        ? startTxnSampledDataKey
+        : undefined
+    return buildMeterValue(
+      chargingStation,
+      transactionId,
+      0,
+      measurandsKey,
+      OCPP16MeterValueContext.TRANSACTION_BEGIN
+    ) as OCPP16MeterValue
   }
 
   private static buildSignedSampledValue (

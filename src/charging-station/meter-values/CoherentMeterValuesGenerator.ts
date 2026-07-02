@@ -160,22 +160,20 @@ const fluctuate = (base: number, percent: number, prng: () => number): number =>
 }
 
 /**
- * Determines whether coherent mode is enabled on the given context and a
- * session exists for the transaction. Returned by the strategy gate to
- * decide dispatch.
- * @param context - Charging-station context (subset of `ChargingStation`).
- * @param transactionId - Transaction identifier.
- * @returns `true` if coherent mode should own MeterValue construction.
+ * Type guard indicating that the coherent strategy owns MeterValue
+ * construction for a transaction. Callers look up the session via the
+ * per-station manager and pass the result to this predicate; a non-null
+ * session implies coherent mode is active (sessions are only created
+ * when the opt-in `coherentMeterValues=true` template flag is set and a
+ * valid EV profile file is loaded).
+ * @param session - Session looked up from
+ *   {@link ../../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}.
+ * @returns `true` when the coherent path should own MeterValue
+ *   construction, narrowing `session` to `CoherentSession`.
  */
 export const isCoherentModeActive = (
-  context: ICoherentContext,
-  transactionId: number | string
-): boolean => {
-  if (context.stationInfo?.coherentMeterValues !== true) {
-    return false
-  }
-  return context.getCoherentSession(transactionId) != null
-}
+  session: CoherentSession | undefined
+): session is CoherentSession => session != null
 
 /**
  * Unconditionally advances the connector energy registers by `deltaEnergyWh`.
@@ -649,7 +647,11 @@ const resolveTemplates = (
  * {@link advanceEnergyRegister} independent of whether the Energy
  * measurand is emitted.
  * @param context - Charging-station context.
- * @param transactionId - Active transaction identifier.
+ * @param session - Active coherent session for the transaction. Callers
+ *   look this up via
+ *   {@link ../../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}
+ *   at the strategy gate and thread it through — the port no longer
+ *   exposes session lookup.
  * @param buildVersionedSampledValue - Versioned SampledValue builder from
  *   the OCPP dispatcher in `OCPPServiceUtils.buildMeterValue`.
  * @param options - Per-sample parameters (interval, seed material, timestamp).
@@ -663,18 +665,16 @@ const resolveTemplates = (
  */
 export const buildCoherentMeterValue = (
   context: ICoherentContext,
-  transactionId: number | string,
+  session: CoherentSession,
   buildVersionedSampledValue: BuildVersionedSampledValue,
   options: ComputeSampleOptions,
   mvContext?: MeterValueContext,
   enabledMeasurands?: ReadonlySet<MeterValueMeasurand>
 ): MeterValue => {
-  const session = context.getCoherentSession(transactionId)
-  const connectorStatus =
-    session != null ? context.getConnectorStatus(session.connectorId) : undefined
-  if (session == null || connectorStatus == null) {
+  const connectorStatus = context.getConnectorStatus(session.connectorId)
+  if (connectorStatus == null) {
     logger.warn(
-      `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: missing session or connector for transaction ${String(transactionId)}`
+      `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: missing connector ${session.connectorId.toString()} for transaction ${String(session.transactionId)}`
     )
     return { sampledValue: [], timestamp: new Date() }
   }
