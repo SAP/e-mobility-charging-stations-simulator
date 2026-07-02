@@ -405,7 +405,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           await flushMicrotasks()
           assert.strictEqual(sentRequests[3].payload.status, OCPP20FirmwareStatusEnumType.Installed)
 
-          // H11: SecurityEventNotification for FirmwareUpdated
+          // Expect SecurityEventNotification of type FirmwareUpdated on successful install
           assert.strictEqual(sentRequests.length, 5)
           assert.strictEqual(
             sentRequests[4].command,
@@ -723,7 +723,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           await flushMicrotasks()
           assert.strictEqual(sentRequests[4].payload.status, OCPP20FirmwareStatusEnumType.Installed)
 
-          // H11: SecurityEventNotification after Installed
+          // Expect SecurityEventNotification to be emitted after the Installed status
           assert.strictEqual(sentRequests.length, 6)
           assert.strictEqual(
             sentRequests[5].command,

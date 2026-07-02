@@ -3037,7 +3037,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
     )
 
-    // C10: Validate signing certificate PEM format if present
+    // Reject malformed signing certificates up front so the firmware update path handles only parsable PEMs
     if (isNotEmptyString(firmware.signingCertificate)) {
       if (
         !hasCertificateManager(chargingStation) ||
@@ -3066,7 +3066,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // H10: Cancel any in-progress firmware update
+    // Cancel any in-progress firmware update; respond with AcceptedCanceled so the new request starts fresh
     const stationState = this.getStationState(chargingStation)
     if (stationState.activeFirmwareUpdateAbortController != null) {
       const previousRequestId = stationState.activeFirmwareUpdateRequestId
@@ -3673,7 +3673,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
-    // H10: Set up abort controller for cancellation support
+    // Store the abort controller so a subsequent UpdateFirmware can cancel this in-progress update
     const abortController = new AbortController()
     const stationState = this.getStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
@@ -3681,7 +3681,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
-    // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
+    // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
     const now = Date.now()
     const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
     if (retrieveTime > now) {
@@ -3703,7 +3703,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
     if (checkAborted()) return
 
-    // H9: If firmware location is empty or malformed, send DownloadFailed and stop
+    // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
     if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
       // L01.FR.30: Simulate download retries before reporting DownloadFailed
       const maxRetries = retries ?? 0
@@ -3778,7 +3778,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // C12: If installDateTime is in the future, send InstallScheduled and wait
+    // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
     if (installDateTime != null) {
       const currentTime = Date.now()
       const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
@@ -3845,7 +3845,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    // H11: Send SecurityEventNotification for successful firmware update
+    // Send SecurityEventNotification after a successful firmware update
     this.sendSecurityEventNotification(
       chargingStation,
       'FirmwareUpdated',
