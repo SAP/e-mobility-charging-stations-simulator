@@ -910,10 +910,9 @@ interface VersionedSampledValueDispatch {
   evseId: number | undefined
   signingConfig: SampledValueSigningConfig | undefined
   /**
-   * Passed by reference; the closure returned in
-   * {@link buildVersionedSampledValue} mutates its `publicKeyIncluded`
-   * flag when a signed OCPP 2.0 SampledValue is emitted. Callers rely on
-   * the reference identity to detect the mutation.
+   * Passed by reference; the closure assigned to `buildVersionedSampledValue`
+   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0 SampledValue
+   * is emitted. Callers rely on the reference identity to detect the mutation.
    */
   signingState: { publicKeyIncluded: boolean }
 }
@@ -1078,8 +1077,9 @@ const createVersionedSampledValueDispatcher = (
  * `MeterValuesSampledData`.
  * @param chargingStation - Target charging station.
  * @param measurandsKey - Configuration key threaded from the caller. When
- *   omitted, defaults to `MeterValuesSampledData` for OCPP 1.6 and returns
- *   `undefined` (no filter) for OCPP 2.0.
+ *   `undefined` (or omitted), defaults to `StandardParametersKey.MeterValuesSampledData`
+ *   for OCPP 1.6 stations and returns `undefined` (no filter) for all
+ *   other versions.
  * @returns Enabled measurand set, or `undefined` for no filter.
  */
 // Module-scope keyed by `ChargingStation` instance (auto-collected on GC).

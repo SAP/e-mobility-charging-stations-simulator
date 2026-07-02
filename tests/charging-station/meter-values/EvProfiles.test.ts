@@ -13,7 +13,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { EvProfile } from '../../../src/charging-station/meter-values/types.js'
 
@@ -22,6 +22,7 @@ import {
   loadEvProfilesFile,
   selectEvProfile,
 } from '../../../src/charging-station/meter-values/EvProfiles.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 const midProfile: EvProfile = {
   batteryCapacityWh: 40000,
@@ -38,6 +39,9 @@ const midProfile: EvProfile = {
 }
 
 await describe('EvProfiles', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
   await describe('interpolateChargingCurve', async () => {
     await it('should return endpoint value at the lower boundary', () => {
       assert.strictEqual(interpolateChargingCurve(midProfile.chargingCurve, 0), 1)

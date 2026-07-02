@@ -10,15 +10,19 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   deriveSeed,
   hashLabel,
   mulberry32,
 } from '../../../src/charging-station/meter-values/Prng.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 await describe('Prng', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
   await describe('mulberry32', async () => {
     await it('should produce identical sequences for identical seeds', () => {
       const a = mulberry32(42)

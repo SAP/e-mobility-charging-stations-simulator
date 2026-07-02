@@ -10,7 +10,12 @@
  * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted `powerW`
  *   is recomputed from the rounded emitted current and voltage so
  *   `|P - V·I·phases|` stays within the `ROUNDING_SCALE` half-width
- *   (≤ 0.005 W scalar bound) regardless of V or phases.
+ *   (≤ 0.005 W scalar bound) regardless of V or phases. Per-phase L-N
+ *   `Power.Active.Import` emission is derived as
+ *   `round(aggregate_P / phases, 2)`; the per-phase identity
+ *   `|P_LxN - V_LxN · I_Lx|` therefore holds within `2 × ROUNDING_SCALE`
+ *   half-width (≤ 0.01 W) — one half-width for the aggregate emit and
+ *   one for the per-phase division.
  * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
  *   SoC monotone non-decreasing during charging and saturates at 100 %.
  * - **INV-3**: `ΔE = P_clamped × Δt / MS_PER_HOUR` where `P_clamped` is the
@@ -243,8 +248,9 @@ const buildZeroSample = (
   deltaEnergyWh: 0,
   energyRegisterWh,
   powerW: 0,
-  socPercent,
-  voltageV,
+  socPercent: roundTo(socPercent, ROUNDING_SCALE),
+  voltageV:
+    voltageV > 0 && Number.isFinite(voltageV) ? roundTo(voltageV, ROUNDING_SCALE) : 0,
 })
 
 /**
@@ -313,9 +319,9 @@ export const computeCoherentSample = (
     !Number.isFinite(options.nowMs) ||
     (currentType === CurrentType.AC && numberOfPhases <= 0)
   ) {
-    const safeV = nominalV > 0 && Number.isFinite(nominalV) ? roundTo(nominalV, ROUNDING_SCALE) : 0
+    const safeV = nominalV > 0 && Number.isFinite(nominalV) ? nominalV : 0
     return buildZeroSample(
-      roundTo(session.socPercent, ROUNDING_SCALE),
+      session.socPercent,
       safeV,
       Math.max(0, connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
     )
@@ -454,7 +460,7 @@ const phaseFamily = (
  * path (SoC → Voltage → Power → Current → Energy). Preserved so downstream
  * consumers relying on OCPP MeterValue ordering keep working.
  */
-const LEGACY_EMIT_ORDER: readonly MeterValueMeasurand[] = [
+const MEASURAND_EMIT_ORDER: readonly MeterValueMeasurand[] = [
   MeterValueMeasurand.STATE_OF_CHARGE,
   MeterValueMeasurand.VOLTAGE,
   MeterValueMeasurand.POWER_ACTIVE_IMPORT,
@@ -524,12 +530,14 @@ const groupTemplatesByMeasurand = (
  * - SoC: aggregate scalar; phase-qualified templates rejected.
  * - Energy.Active.Import.Register: aggregate ⇒ total register; L-N ⇒
  *   `register / phases` (per-phase energy contribution under balanced
- *   3-φ Y); L-L undefined; N undefined. OCPP 2.0.1
+ *   3-φ Y; Σ across all L-N templates equals the aggregate register
+ *   within emit-unit rounding granularity — Wh: ≤ phases · 0.005 Wh;
+ *   kWh: ≤ phases · 5 Wh); L-L undefined; N undefined. OCPP 2.0.1
  *   `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted;
  *   per-phase emission is driven by the connector template's phase
- *   qualifier (tracked as follow-up).
+ *   qualifier.
  * @param measurand - Target measurand.
- * @param template - Template being emitted.
+ * @param phase - Template `phase` field (may be `undefined`).
  * @param sample - Coherent sample (source of aggregate values).
  * @param numberOfPhases - Session phase count.
  * @param connectorStatus - Connector status (for the energy register).
@@ -537,12 +545,12 @@ const groupTemplatesByMeasurand = (
  */
 const resolvePhasedValue = (
   measurand: MeterValueMeasurand,
-  template: SampledValueTemplate,
+  phase: MeterValuePhase | undefined,
   sample: CoherentSample,
   numberOfPhases: number,
   connectorStatus: ConnectorStatus
 ): number | undefined => {
-  const family = phaseFamily(template.phase)
+  const family = phaseFamily(phase)
   switch (measurand) {
     case MeterValueMeasurand.CURRENT_IMPORT:
       if (family === 'LineToLine') return undefined
@@ -551,7 +559,8 @@ const resolvePhasedValue = (
     case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER: {
       if (family === 'LineToLine' || family === 'Neutral') return undefined
       const register = Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
-      if (family === 'LineToNeutral' && numberOfPhases > 0) {
+      if (family === 'LineToNeutral') {
+        if (numberOfPhases <= 0) return undefined
         return register / numberOfPhases
       }
       return register
@@ -592,13 +601,21 @@ const KILO_UNIT_BY_MEASURAND: ReadonlyMap<MeterValueMeasurand, MeterValueUnit> =
   [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueUnit.KILO_WATT],
 ])
 
+/**
+ * Returns the unit divider for a `(measurand, unit)` pair: the kilo divider
+ * when the template's unit is the kilo-prefixed variant of the measurand's
+ * base unit (kW for Power, kWh for Energy register), otherwise 1.
+ * @param measurand - Target measurand.
+ * @param unit - Template unit (may be `undefined`).
+ * @returns `Constants.UNIT_DIVIDER_KILO` or `1`.
+ */
 const resolveUnitDivider = (
   measurand: MeterValueMeasurand,
   unit: MeterValueUnit | undefined
-): number => {
-  const kiloUnit = KILO_UNIT_BY_MEASURAND.get(measurand)
-  return kiloUnit != null && kiloUnit === unit ? Constants.UNIT_DIVIDER_KILO : 1
-}
+): number =>
+  unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit
+    ? Constants.UNIT_DIVIDER_KILO
+    : 1
 
 /**
  * Returns the SampledValueTemplate array configured on the given connector.
@@ -679,12 +696,12 @@ export const buildCoherentMeterValue = (
     enabledMeasurands == null || enabledMeasurands.has(measurand)
   const numberOfPhases = session.numberOfPhases
 
-  for (const measurand of LEGACY_EMIT_ORDER) {
+  for (const measurand of MEASURAND_EMIT_ORDER) {
     if (!isEnabled(measurand)) continue
     const bucket = groups.get(measurand)
     if (bucket == null) continue
     for (const template of bucket) {
-      const raw = resolvePhasedValue(measurand, template, sample, numberOfPhases, connectorStatus)
+      const raw = resolvePhasedValue(measurand, template.phase, sample, numberOfPhases, connectorStatus)
       if (raw == null) {
         logger.warn(
           `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: unsupported (${measurand}, phase=${String(template.phase)}) — template skipped`

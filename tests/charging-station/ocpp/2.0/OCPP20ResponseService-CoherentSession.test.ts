@@ -43,7 +43,7 @@ const buildStartedRequest = (transactionId: UUIDv4): OCPP20TransactionEventReque
   return req
 }
 
-await describe('B2 - OCPP 2.0.1 TransactionEvent Started → coherent session wiring', async () => {
+await describe('OCPP20ResponseServiceCoherentSession', async () => {
   let station: ChargingStation
   let testable: TestableOCPP20ResponseService
   let createSpy: ReturnType<typeof mock.method<ChargingStation, 'createCoherentSession'>>

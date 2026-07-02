@@ -370,25 +370,18 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Creates a coherent MeterValues session for the given transaction.
-   * Called by both request-builder and response-handler call sites;
-   * idempotent because OCPP 2.0.x has two call sites per transaction
-   * (request builder creates the session early so `Transaction.Started`
-   * MeterValues route through the coherent gate; the response-handler
-   * call then becomes a no-op). When `stationInfo.coherentMeterValues`
-   * is not `true`, or when no valid EV profile file is loaded, this
-   * method is a no-op.
+   * Creates or returns the coherent MeterValues session for a transaction.
+   * Idempotent. Returns `undefined` when coherent mode is disabled or no
+   * valid EV profile file is loaded.
    * @param transactionId - Transaction identifier from the CSMS.
    * @param connectorId - Connector on which the transaction is running.
-   * @returns The created session or `undefined` when coherent mode is off.
+   * @returns The active or newly-created session, or `undefined` when
+   *   coherent mode is not usable.
    */
   public createCoherentSession (
     transactionId: number | string,
     connectorId: number
   ): CoherentSession | undefined {
-    // Idempotent: request-builder call sites create the session early so the
-    // Transaction.Started / Transaction.Begin MeterValues route through the
-    // coherent gate. The response-handler call site then becomes a no-op.
     const existing = this.coherentSessions.get(transactionId)
     if (existing != null) {
       return existing

@@ -6,7 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
 import type {
@@ -37,6 +37,7 @@ import {
   MeterValueUnit,
   OCPPVersion,
 } from '../../../src/types/index.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 const baseProfile: EvProfile = {
   batteryCapacityWh: 40000,
@@ -162,6 +163,10 @@ const createSessionOrFail = (
 }
 
 await describe('CoherentMeterValuesGenerator', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
   await describe('resolveRootSeed', async () => {
     await it('should prefer explicit randomSeed', () => {
       assert.strictEqual(resolveRootSeed({ hashId: 'x', randomSeed: 12345 }), 12345)

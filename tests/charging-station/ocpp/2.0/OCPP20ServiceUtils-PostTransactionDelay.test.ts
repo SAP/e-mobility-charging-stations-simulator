@@ -20,7 +20,7 @@ import {
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
-await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
+await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
   let station: ChargingStation
   let connectorStatus: ConnectorStatus
   let requestHandlerMock: ReturnType<typeof mock.fn>

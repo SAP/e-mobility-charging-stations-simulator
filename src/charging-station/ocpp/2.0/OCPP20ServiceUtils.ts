@@ -1005,19 +1005,19 @@ export class OCPP20ServiceUtils {
             OCPP20RequiredVariableName.TxUpdatedMeasurands
           )
         ) as OCPP20MeterValue
-        if (!isNotEmptyArray(meterValue.sampledValue)) {
-          // OCPP 2.0.1 J02.FR.11: empty TxUpdatedMeasurands ⇒ no meter values
-          // are sent; skip the periodic TransactionEvent(Updated) entirely
-          // rather than sending an empty meterValue wrapper (schema violation).
-          return
-        }
+        // OCPP 2.0.1 J02.FR.11: when `TxUpdatedMeasurands` is empty, send
+        // the periodic `TransactionEvent(Updated)` WITHOUT the `meterValue`
+        // field (empty wrapper is a schema violation via `minItems=1`).
+        const eventPayload = isNotEmptyArray(meterValue.sampledValue)
+          ? { meterValue: [meterValue] }
+          : {}
         OCPP20ServiceUtils.sendTransactionEvent(
           chargingStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           connectorStatus.transactionId as string,
-          { meterValue: [meterValue] }
+          eventPayload
         ).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error sending periodic TransactionEvent:`,
