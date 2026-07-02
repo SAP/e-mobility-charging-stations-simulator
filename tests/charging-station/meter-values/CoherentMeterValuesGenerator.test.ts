@@ -38,6 +38,7 @@ import {
   OCPPVersion,
 } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_METER_VALUES_INTERVAL_MS } from '../ChargingStationTestConstants.js'
 
 const baseProfile: EvProfile = {
   batteryCapacityWh: 40000,
@@ -205,8 +206,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
 
       sessions.set(1, session)
       const sample = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
-        nowMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })
@@ -294,8 +295,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       session.socPercent = 100
       sessions.set(1, session)
       const sample = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
-        nowMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })
@@ -319,8 +320,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       sessions.set(1, session)
       for (let i = 0; i < 5; i++) {
         computeCoherentSample(context, connectorStatus, session, {
-          intervalMs: 30000,
-          nowMs: 30000 * (i + 1),
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS * (i + 1),
           rootSeed: 42,
           voltageNoise: false,
         })
@@ -382,8 +383,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       ])
       const before = connectorStatus.energyActiveImportRegisterValue ?? 0
       buildCoherentMeterValue(context, 1, passThroughBuilder, {
-        intervalMs: 30000,
-        nowMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })
@@ -474,8 +475,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const voltages: number[] = []
       for (let i = 0; i < 5; i++) {
         const sample = computeCoherentSample(context, connectorStatus, session, {
-          intervalMs: 30000,
-          nowMs: 30000 * (i + 1),
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS * (i + 1),
           rootSeed: 42,
         })
         voltages.push(sample.voltageV)
@@ -686,8 +687,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
       assert.strictEqual(sample.deltaEnergyWh, 0)
       // Second call to confirm session state stays healthy.
       const next = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
-        nowMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })
@@ -749,19 +750,19 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       sessions.set(1, session)
       const v1 = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
-        nowMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
       }).voltageV
       const v2 = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: 60000,
         rootSeed: 42,
       }).voltageV
       // Dispose and re-run: v3 must equal v1 (fresh PRNG from same seed).
       assert.ok(disposeCoherentSessionRuntime(session))
       const v3 = computeCoherentSample(context, connectorStatus, session, {
-        intervalMs: 30000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: 90000,
         rootSeed: 42,
       }).voltageV
@@ -829,8 +830,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
         { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.N },
       ] as unknown as SampledValueTemplate[]
       const mv = buildCoherentMeterValue(context, 1, phaseBuilder, {
-        intervalMs: 30_000,
-        nowMs: 30_000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })
@@ -888,8 +889,8 @@ await describe('CoherentMeterValuesGenerator', async () => {
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
       ] as unknown as SampledValueTemplate[]
       const mv = buildCoherentMeterValue(context, 1, passThroughBuilder, {
-        intervalMs: 30_000,
-        nowMs: 30_000,
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
         voltageNoise: false,
       })

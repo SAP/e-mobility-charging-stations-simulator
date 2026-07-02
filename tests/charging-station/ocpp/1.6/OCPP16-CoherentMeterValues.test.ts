@@ -42,10 +42,9 @@ import {
   standardCleanup,
   withMockTimers,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
+import { TEST_ID_TAG, TEST_METER_VALUES_INTERVAL_MS } from '../../ChargingStationTestConstants.js'
 import { createOCPP16ResponseTestContext, setMockRequestHandler } from './OCPP16TestUtils.js'
 
-const INTERVAL_MS = 30_000
 const CONNECTOR_ID = 1
 const TRANSACTION_ID = 4242
 
@@ -156,10 +155,10 @@ const runTransaction = async (
   // call throws, avoiding global mutation leaks under concurrent runners.
   const meterValues: MeterValue[] = []
   for (let i = 0; i < 3; i++) {
-    const nowMs = startMs + INTERVAL_MS * (i + 1)
+    const nowMs = startMs + TEST_METER_VALUES_INTERVAL_MS * (i + 1)
     const nowMock = mock.method(Date, 'now', () => nowMs)
     try {
-      const mv = buildMeterValue(station, TRANSACTION_ID, INTERVAL_MS)
+      const mv = buildMeterValue(station, TRANSACTION_ID, TEST_METER_VALUES_INTERVAL_MS)
       meterValues.push(mv)
     } finally {
       nowMock.mock.restore()
@@ -264,7 +263,7 @@ await describe('OCPP16CoherentMeterValues', async () => {
     for (const mv of meterValues) {
       const powerW = findValue(mv, MeterValueMeasurand.POWER_ACTIVE_IMPORT)
       assert.ok(powerW != null)
-      expectedAccumulatedWh += (powerW * INTERVAL_MS) / MS_PER_HOUR
+      expectedAccumulatedWh += (powerW * TEST_METER_VALUES_INTERVAL_MS) / MS_PER_HOUR
     }
     assert.ok(
       expectedAccumulatedWh > 0,

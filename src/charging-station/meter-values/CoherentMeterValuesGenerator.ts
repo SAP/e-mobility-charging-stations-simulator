@@ -431,28 +431,34 @@ export const computeCoherentSample = (
  * @param phase - Template `phase` field (may be `undefined`).
  * @returns Phase family classification.
  */
+/**
+ * Phase family classifier lookup for coherent emission. `satisfies Record<...>`
+ * gates compile-time exhaustiveness so a new `MeterValuePhase` value fails
+ * compile until classified. `Aggregate` is applied when `phase` is `undefined`
+ * (the sentinel handled by `phaseFamily` outside the table).
+ * - `LineToNeutral`: bare `L1`/`L2`/`L3` and `L1-N`/`L2-N`/`L3-N`
+ *   (line-current or phase-voltage measurements).
+ * - `LineToLine`: `L1-L2`/`L2-L3`/`L3-L1` (line-to-line voltage; not
+ *   defined for current or power in the coherent model).
+ * - `Neutral`: `N` (physically 0 for balanced 3-phase Y).
+ */
+const PHASE_FAMILY = {
+  [MeterValuePhase.L1]: 'LineToNeutral',
+  [MeterValuePhase.L1_L2]: 'LineToLine',
+  [MeterValuePhase.L1_N]: 'LineToNeutral',
+  [MeterValuePhase.L2]: 'LineToNeutral',
+  [MeterValuePhase.L2_L3]: 'LineToLine',
+  [MeterValuePhase.L2_N]: 'LineToNeutral',
+  [MeterValuePhase.L3]: 'LineToNeutral',
+  [MeterValuePhase.L3_L1]: 'LineToLine',
+  [MeterValuePhase.L3_N]: 'LineToNeutral',
+  [MeterValuePhase.N]: 'Neutral',
+} as const satisfies Record<MeterValuePhase, 'LineToLine' | 'LineToNeutral' | 'Neutral'>
+
 const phaseFamily = (
   phase: MeterValuePhase | undefined
-): 'Aggregate' | 'LineToLine' | 'LineToNeutral' | 'Neutral' => {
-  if (phase == null) return 'Aggregate'
-  switch (phase) {
-    case MeterValuePhase.L1:
-    case MeterValuePhase.L1_N:
-    case MeterValuePhase.L2:
-    case MeterValuePhase.L2_N:
-    case MeterValuePhase.L3:
-    case MeterValuePhase.L3_N:
-      return 'LineToNeutral'
-    case MeterValuePhase.L1_L2:
-    case MeterValuePhase.L2_L3:
-    case MeterValuePhase.L3_L1:
-      return 'LineToLine'
-    case MeterValuePhase.N:
-      return 'Neutral'
-    default:
-      return 'Aggregate'
-  }
-}
+): 'Aggregate' | 'LineToLine' | 'LineToNeutral' | 'Neutral' =>
+  phase == null ? 'Aggregate' : PHASE_FAMILY[phase]
 
 /**
  * Emit order across measurands, mirroring the legacy `getSampledValueTemplate`
@@ -486,11 +492,6 @@ const PHASE_RANK = {
   [MeterValuePhase.N]: 7,
 } as const satisfies Record<MeterValuePhase, number>
 
-const phaseRank = (phase: MeterValuePhase | undefined): number => {
-  if (phase == null) return 0
-  return PHASE_RANK[phase]
-}
-
 /**
  * Groups templates by measurand and sorts each bucket by phase rank.
  * Templates without an explicit `measurand` default to
@@ -506,7 +507,11 @@ const groupTemplatesByMeasurand = (
     t => t.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
   )
   for (const bucket of groups.values()) {
-    bucket.sort((a, b) => phaseRank(a.phase) - phaseRank(b.phase))
+    bucket.sort(
+      (a, b) =>
+        (a.phase == null ? 0 : PHASE_RANK[a.phase]) -
+        (b.phase == null ? 0 : PHASE_RANK[b.phase])
+    )
   }
   return groups
 }
