@@ -111,10 +111,12 @@ export interface CoherentSession {
 /**
  * Minimal structural interface consumed by the coherent generator. Only
  * fields/methods actually used are declared to break any potential type
- * cycle back to `ChargingStation`.
+ * cycle back to `ChargingStation`. Per-transaction session lookup is
+ * intentionally NOT exposed here: sessions are threaded to the generator
+ * by the caller (the strategy gate), so this port describes only what
+ * the physics chain needs to query about the station itself.
  */
 export interface ICoherentContext {
-  getCoherentSession: (transactionId: number | string) => CoherentSession | undefined
   getConnectorMaximumAvailablePower: (connectorId: number) => number
   getConnectorStatus: (connectorId: number) => ConnectorStatus | undefined
   getNumberOfPhases: () => number

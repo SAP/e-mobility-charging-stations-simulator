@@ -159,7 +159,9 @@ export class OCPP16ServiceUtils {
     // `MeterValuesSampledData` when the vendor key is absent.
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     const transactionId = connectorStatus?.transactionId
-    if (transactionId != null && isCoherentModeActive(chargingStation, transactionId)) {
+    const coherentSession =
+      transactionId != null ? chargingStation.getCoherentSession(transactionId) : undefined
+    if (transactionId != null && isCoherentModeActive(coherentSession)) {
       const startTxnSampledDataKey = OCPP16VendorParametersKey.StartTxnSampledData
       const measurandsKey =
         getConfigurationKey(chargingStation, startTxnSampledDataKey)?.value != null

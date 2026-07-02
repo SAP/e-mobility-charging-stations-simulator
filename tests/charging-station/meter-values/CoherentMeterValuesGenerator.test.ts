@@ -106,7 +106,6 @@ const buildContext = (
   const sessions = new Map<number | string, CoherentSession>()
 
   const context: ICoherentContext = {
-    getCoherentSession: (id: number | string) => sessions.get(id),
     getConnectorMaximumAvailablePower: () => evseMax,
     getConnectorStatus: () => connectorStatus,
     getNumberOfPhases: () => numberOfPhases,
@@ -382,7 +381,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         MeterValueMeasurand.VOLTAGE,
       ])
       const before = connectorStatus.energyActiveImportRegisterValue ?? 0
-      buildCoherentMeterValue(context, 1, passThroughBuilder, {
+      buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
@@ -409,7 +408,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER],
         MeterValueUnit.WATT_HOUR
       )
-      const meterValue = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+      const meterValue = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: 3_600_000, // 1 h → 1 Wh per 1 W
         nowMs: 3_600_000,
         rootSeed: 42,
@@ -439,7 +438,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER],
         MeterValueUnit.KILO_WATT_HOUR
       )
-      const meterValue = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+      const meterValue = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: 3_600_000,
         nowMs: 3_600_000,
         rootSeed: 42,
@@ -885,7 +884,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.L1 },
         { measurand: MeterValueMeasurand.CURRENT_IMPORT, phase: MeterValuePhase.N },
       ] as unknown as SampledValueTemplate[]
-      const mv = buildCoherentMeterValue(context, 1, phaseBuilder, {
+      const mv = buildCoherentMeterValue(context, session, phaseBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
@@ -944,7 +943,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_L2 },
         { measurand: MeterValueMeasurand.VOLTAGE, phase: MeterValuePhase.L1_N },
       ] as unknown as SampledValueTemplate[]
-      const mv = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: TEST_METER_VALUES_INTERVAL_MS,
         nowMs: TEST_METER_VALUES_INTERVAL_MS,
         rootSeed: 42,
@@ -981,7 +980,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
           unit: MeterValueUnit.WATT_HOUR,
         },
       ] as unknown as SampledValueTemplate[]
-      const mv = buildCoherentMeterValue(context, 1, passThroughBuilder, {
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
         intervalMs: 3_600_000,
         nowMs: 3_600_000,
         rootSeed: 42,
