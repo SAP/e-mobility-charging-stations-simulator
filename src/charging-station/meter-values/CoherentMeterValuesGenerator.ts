@@ -249,8 +249,7 @@ const buildZeroSample = (
   energyRegisterWh,
   powerW: 0,
   socPercent: roundTo(socPercent, ROUNDING_SCALE),
-  voltageV:
-    voltageV > 0 && Number.isFinite(voltageV) ? roundTo(voltageV, ROUNDING_SCALE) : 0,
+  voltageV: voltageV > 0 && Number.isFinite(voltageV) ? roundTo(voltageV, ROUNDING_SCALE) : 0,
 })
 
 /**
@@ -613,9 +612,7 @@ const resolveUnitDivider = (
   measurand: MeterValueMeasurand,
   unit: MeterValueUnit | undefined
 ): number =>
-  unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit
-    ? Constants.UNIT_DIVIDER_KILO
-    : 1
+  unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
 
 /**
  * Returns the SampledValueTemplate array configured on the given connector.
@@ -701,7 +698,13 @@ export const buildCoherentMeterValue = (
     const bucket = groups.get(measurand)
     if (bucket == null) continue
     for (const template of bucket) {
-      const raw = resolvePhasedValue(measurand, template.phase, sample, numberOfPhases, connectorStatus)
+      const raw = resolvePhasedValue(
+        measurand,
+        template.phase,
+        sample,
+        numberOfPhases,
+        connectorStatus
+      )
       if (raw == null) {
         logger.warn(
           `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: unsupported (${measurand}, phase=${String(template.phase)}) — template skipped`
