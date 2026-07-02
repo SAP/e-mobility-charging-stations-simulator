@@ -316,11 +316,19 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Injects a pre-built coherent session directly into the session store.
-   * **Test seam only** — never call from production code.
+   * **Test seam only** — never call from production code; enforced at
+   * runtime by a `NODE_ENV === 'production'` guard that throws
+   * {@link BaseError}.
    * @param transactionId - Transaction identifier.
    * @param session - Pre-built session.
+   * @throws {BaseError} When invoked in a production build.
    */
   public __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new BaseError(
+        `${this.logPrefix()} ${moduleName}.__injectCoherentSession: test-only seam called in production build`
+      )
+    }
     this.coherentSessions.set(transactionId, session)
   }
 
