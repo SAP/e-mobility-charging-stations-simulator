@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 /**
  * @file Coherent MeterValue emission (phase families, emit order, units).

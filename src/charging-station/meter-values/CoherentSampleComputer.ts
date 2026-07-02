@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 /**
  * @file Physics computation for coherent MeterValues.
@@ -73,9 +73,10 @@ export interface ComputeSampleOptions {
    */
   intervalMs: number
   /**
-   * Sample timestamp in milliseconds (typically `Date.now()`); combined
-   * with `session.sessionStartMs` for ramp-up progress. Non-finite
-   * triggers the zero-sample defensive branch.
+   * Sample timestamp in milliseconds; callers pass `Date.now()` in
+   * production and a test-controlled clock in unit tests. Combined with
+   * `session.sessionStartMs` for ramp-up progress. Non-finite triggers
+   * the zero-sample defensive branch.
    */
   nowMs: number
   /**
@@ -188,7 +189,7 @@ export const computeCoherentSample = (
   //   `.positive()` at file load, but `injectCoherentSession` bypasses Zod;
   //   `deltaSocPercent = ΔE / batteryCapacityWh × 100 = NaN` would poison SoC.
   // - nominal voltage ≤ 0 or non-finite: `Voltage` enum values are all-positive,
-  //   but a template override or future dynamic supply could return 0.
+  //   but a template override may set `voltageOut` to 0.
   // - nowMs non-finite: pushes elapsedMs to NaN and destabilizes rampFactor.
   // - AC with numberOfPhases ≤ 0: divisor collapses to 0 (`V · 0 = 0`),
   //   currentA is guarded to zero, and P = 0 silently — a misconfigured
