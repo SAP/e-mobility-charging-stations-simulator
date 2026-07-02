@@ -263,7 +263,7 @@ export const getDefaultConnectorMaximumPower = (
   const staticCount =
     stationTemplate.Evses != null
       ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        getMaxNumberOfEvses(stationTemplate.Evses) - (stationTemplate.Evses['0'] != null ? 1 : 0)
+      getMaxNumberOfEvses(stationTemplate.Evses) - (stationTemplate.Evses['0'] != null ? 1 : 0)
       : getMaxNumberOfConnectors(stationTemplate.Connectors) -
         (stationTemplate.Connectors?.['0'] != null ? 1 : 0)
   return staticCount > 0 ? maximumPower / staticCount : undefined
@@ -530,8 +530,8 @@ export const createSerialNumber = (
   }
   const serialNumberSuffix = params.randomSerialNumber
     ? getRandomSerialNumberSuffix({
-        upperCase: params.randomSerialNumberUpperCase,
-      })
+      upperCase: params.randomSerialNumberUpperCase,
+    })
     : ''
   isNotEmptyString(stationTemplate.chargePointSerialNumberPrefix) &&
     (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`)
@@ -716,10 +716,10 @@ const buildChargingProfilesLimit = (
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
         : ACElectricUtils.powerTotal(
-            chargingStation.getNumberOfPhases(),
-            chargingStation.getVoltageOut(),
-            limit
-          )
+          chargingStation.getNumberOfPhases(),
+          chargingStation.getVoltageOut(),
+          limit
+        )
     case CurrentType.DC:
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
