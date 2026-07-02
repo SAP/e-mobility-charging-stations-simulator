@@ -213,10 +213,13 @@ export class CoherentMeterValuesManager {
    * mirroring the seam previously exposed on {@link ChargingStation}.
    *
    * Silently no-ops on non-opt-in stations
-   * (`stationInfo.coherentMeterValues !== true`) so the type guard
-   * `isCoherentModeActive(session)` — which now trusts session
-   * existence — cannot be tricked into activating the coherent wire
-   * path by injecting on a station that never opted in.
+   * (`stationInfo.coherentMeterValues !== true`) so on the
+   * production-backed injection path the type guard
+   * `isCoherentModeActive(session)` cannot activate the coherent wire
+   * path by injecting on a station that never opted in. Tests that
+   * mock `ChargingStation` may write to their own session store
+   * bypassing this seam; the mock is responsible for enforcing its own
+   * opt-in invariant where relevant.
    * @param transactionId - Transaction identifier.
    * @param session - Pre-built session.
    * @throws {BaseError} When invoked in a production build.
