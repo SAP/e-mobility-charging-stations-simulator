@@ -110,7 +110,7 @@ await describe('StrategyDispatch', async () => {
 
     await it('should fall through to the random/fixed path in buildMeterValue', () => {
       // Without a session buildMeterValue must NOT call coherent code.
-      // Legacy path returns non-empty when Energy template is present.
+      // Random/fixed path returns non-empty when Energy template is present.
       addConfigurationKey(
         station,
         StandardParametersKey.MeterValuesSampledData,
