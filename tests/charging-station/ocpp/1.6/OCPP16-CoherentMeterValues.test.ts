@@ -252,11 +252,10 @@ await describe('OCPP16CoherentMeterValues', async () => {
       prevSoc = soc
     }
 
-    // Regression M4: replace the tautological `Math.round(register) ===
-    // Math.round(register)` assertion with an INDEPENDENT reference. The
-    // expected stop energy is reconstructed from emitted power samples
-    // over the interval (Σ P·Δt / 3.6e6), which is derived from the
-    // MeterValue stream — NOT from the register. Divergence would
+    // Reconstruct the expected stop energy from emitted power samples
+    // (Σ P·Δt / 3.6e6) as an INDEPENDENT reference derived from the
+    // MeterValue stream — not from the register itself. Divergence
+    // between this reconstruction and the reported stop energy would
     // indicate the register drifted away from the reported physics.
     const MS_PER_HOUR = Constants.MS_PER_HOUR
     let expectedAccumulatedWh = 0
@@ -267,14 +266,14 @@ await describe('OCPP16CoherentMeterValues', async () => {
     }
     assert.ok(
       expectedAccumulatedWh > 0,
-      `M4: expected some energy delivered across ${meterValues.length.toString()} samples`
+      `expected some energy delivered across ${meterValues.length.toString()} samples`
     )
     assert.ok(
       Math.abs(stopEnergyWh - expectedAccumulatedWh) <= 1,
-      `M4: stopEnergyWh=${stopEnergyWh.toString()} diverged from Σ(P·Δt)=${expectedAccumulatedWh.toString()} Wh`
+      `stopEnergyWh=${stopEnergyWh.toString()} diverged from Σ(P·Δt)=${expectedAccumulatedWh.toString()} Wh`
     )
     const lastMeterValue = meterValues.at(-1)
-    assert.ok(lastMeterValue != null, 'M4: expected at least one MeterValue in stream')
+    assert.ok(lastMeterValue != null, 'expected at least one MeterValue in stream')
     const lastEnergy = findValue(lastMeterValue, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
     assert.ok(lastEnergy != null)
     // Cross-check: stopEnergyWh must match the last MV register within the
@@ -284,7 +283,7 @@ await describe('OCPP16CoherentMeterValues', async () => {
     // and the final register drifted apart between emission and finalization.
     assert.ok(
       Math.abs(stopEnergyWh - lastEnergy) <= 1,
-      `M4: stopEnergyWh=${stopEnergyWh.toString()} vs last MV register=${lastEnergy.toString()}`
+      `stopEnergyWh=${stopEnergyWh.toString()} vs last MV register=${lastEnergy.toString()}`
     )
   })
 
@@ -394,7 +393,7 @@ await describe('OCPP16CoherentMeterValues', async () => {
     assert.strictEqual(
       station.getCoherentSession(TRANSACTION_ID),
       undefined,
-      'M3: coherent session leaked when station stopped during postTransactionDelay'
+      'coherent session leaked when station stopped during postTransactionDelay'
     )
   })
 })

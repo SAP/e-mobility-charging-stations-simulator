@@ -901,9 +901,11 @@ export const buildEmptyMeterValue = (): MeterValue => ({
   timestamp: new Date(),
 })
 
-// Internal: not exported — coupled to `createVersionedSampledValueDispatcher`
-// and `buildMeterValue` inside this file. Kept out of the module surface so
-// external callers rely on the higher-level `buildMeterValue` entry point.
+/**
+ * Internal dispatch bag returned by {@link createVersionedSampledValueDispatcher}
+ * and consumed by {@link buildMeterValue}. Not exported: kept out of the
+ * module surface so external callers rely on the higher-level entry point.
+ */
 interface VersionedSampledValueDispatch {
   buildVersionedSampledValue: BuildVersionedSampledValue
   connectorId: number
@@ -1059,6 +1061,13 @@ const createVersionedSampledValueDispatcher = (
   return { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState }
 }
 
+// Module-scope keyed by `ChargingStation` instance (auto-collected on GC).
+// Kept off the class API to avoid touching `ChargingStation` for a
+// warn-once diagnostic; the WeakMap's semantics match the intent — one
+// bag of already-warned entries per station, freed with the station.
+const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
+const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
+
 /**
  * Resolves the set of measurands enabled by the configured OCPP variable.
  *
@@ -1082,13 +1091,6 @@ const createVersionedSampledValueDispatcher = (
  *   other versions.
  * @returns Enabled measurand set, or `undefined` for no filter.
  */
-// Module-scope keyed by `ChargingStation` instance (auto-collected on GC).
-// Kept off the class API to avoid touching `ChargingStation` for a
-// warn-once diagnostic; the WeakMap's semantics match the intent — one
-// bag of already-warned entries per station, freed with the station.
-const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
-const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
-
 const resolveEnabledMeasurands = (
   chargingStation: ChargingStation,
   measurandsKey: ConfigurationKeyType | undefined

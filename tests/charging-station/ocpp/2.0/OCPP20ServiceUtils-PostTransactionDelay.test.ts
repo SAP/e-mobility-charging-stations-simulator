@@ -157,7 +157,7 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     assert.strictEqual(
       station.getCoherentSession('tx-1'),
       undefined,
-      'M3: coherent session leaked when station stopped during postTransactionDelay'
+      'coherent session leaked when station stopped during postTransactionDelay'
     )
   })
 })

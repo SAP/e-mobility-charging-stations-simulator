@@ -484,7 +484,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const uniqueVoltages = new Set(voltages)
       assert.ok(
         uniqueVoltages.size >= 2,
-        `M1: voltage noise stagnated across samples (PRNG seed reset each call): ${voltages
+        `voltage noise stagnated across samples (PRNG seed reset each call): ${voltages
           .map(v => v.toString())
           .join(', ')}`
       )
@@ -534,18 +534,18 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const remainingWh = ((100 - 99.8) / 100) * flatProfile.batteryCapacityWh
       assert.ok(
         sample.deltaEnergyWh <= remainingWh + 1e-6,
-        `M2: deltaEnergyWh=${sample.deltaEnergyWh.toString()} exceeded remaining capacity ${remainingWh.toString()} Wh`
+        `deltaEnergyWh=${sample.deltaEnergyWh.toString()} exceeded remaining capacity ${remainingWh.toString()} Wh`
       )
       assert.strictEqual(sample.socPercent, 100)
       // INV-3 (P × Δt / 3.6e6 = ΔE): reported P must be recomputed from clamped ΔE.
       const expectedPowerW = (sample.deltaEnergyWh * 3_600_000) / 60000
       assert.ok(
         Math.abs(sample.powerW - expectedPowerW) <= 1,
-        `M2: powerW=${sample.powerW.toString()} incoherent with clamped ΔE (expected ~${expectedPowerW.toString()} W)`
+        `emitted powerW=${sample.powerW.toString()} incoherent with clamped ΔE (expected ~${expectedPowerW.toString()} W)`
       )
       assert.ok(
         Math.abs(sample.deltaEnergyWh - remainingWh) < 0.01,
-        `M2: deltaEnergyWh=${sample.deltaEnergyWh.toString()} != remainingWh=${remainingWh.toString()}`
+        `deltaEnergyWh=${sample.deltaEnergyWh.toString()} != remainingWh=${remainingWh.toString()}`
       )
     })
   })
@@ -614,12 +614,12 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const viPhases = sample.voltageV * sample.currentA * 3
       assert.ok(
         Math.abs(sample.powerW - viPhases) <= 0.01,
-        `B1 AC3 clamp: |P - V·I·phases|=${Math.abs(sample.powerW - viPhases).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+        `AC 3-phase capacity clamp: |P - V·I·phases|=${Math.abs(sample.powerW - viPhases).toString()} exceeded ROUNDING_SCALE (0.005 W)`
       )
       const remainingWh = ((100 - 99.8) / 100) * flatProfile.batteryCapacityWh
       assert.ok(
         sample.deltaEnergyWh <= remainingWh + 1e-6,
-        `B1 AC3 clamp: ΔE=${sample.deltaEnergyWh.toString()} > remainingWh=${remainingWh.toString()}`
+        `AC 3-phase capacity clamp: ΔE=${sample.deltaEnergyWh.toString()} > remainingWh=${remainingWh.toString()}`
       )
     })
 
@@ -655,7 +655,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const vi = sample.voltageV * sample.currentA
       assert.ok(
         Math.abs(sample.powerW - vi) <= 0.01,
-        `B1 DC clamp: |P - V·I|=${Math.abs(sample.powerW - vi).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+        `DC capacity clamp: |P - V·I|=${Math.abs(sample.powerW - vi).toString()} exceeded ROUNDING_SCALE (0.005 W)`
       )
     })
   })

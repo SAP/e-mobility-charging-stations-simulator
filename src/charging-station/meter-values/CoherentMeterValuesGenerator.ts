@@ -421,17 +421,6 @@ export const computeCoherentSample = (
 }
 
 /**
- * Phase family classifier for coherent emission.
- * - `Aggregate`: no `phase` field on the template (total measurement).
- * - `LineToNeutral`: `L1`/`L2`/`L3` or `L1-N`/`L2-N`/`L3-N`
- *   (line-current or phase-voltage measurements).
- * - `Neutral`: `N` (physically 0 for balanced 3-phase Y).
- * - `LineToLine`: `L1-L2`/`L2-L3`/`L3-L1` (line-to-line voltage
- *   measurements; not defined for current or power in the coherent model).
- * @param phase - Template `phase` field (may be `undefined`).
- * @returns Phase family classification.
- */
-/**
  * Phase family classifier lookup for coherent emission. `satisfies Record<...>`
  * gates compile-time exhaustiveness so a new `MeterValuePhase` value fails
  * compile until classified. `Aggregate` is applied when `phase` is `undefined`
@@ -465,7 +454,7 @@ const phaseFamily = (
  * path (SoC → Voltage → Power → Current → Energy). Preserved so downstream
  * consumers relying on OCPP MeterValue ordering keep working.
  */
-const MEASURAND_EMIT_ORDER: readonly MeterValueMeasurand[] = [
+const MEASURAND_EMIT_ORDER = [
   MeterValueMeasurand.STATE_OF_CHARGE,
   MeterValueMeasurand.VOLTAGE,
   MeterValueMeasurand.POWER_ACTIVE_IMPORT,
@@ -715,6 +704,10 @@ export const buildCoherentMeterValue = (
         )
         continue
       }
+      // Narrow the OCPP 2.0 `SampledValueTemplate.unit` open-string branch
+      // to the closed `MeterValueUnit` union for the Map lookup below; any
+      // string outside the enum returns `undefined` from the Map and falls
+      // through to divider = 1 (unit-scale emission).
       const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
       const scaled = roundTo(raw / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))

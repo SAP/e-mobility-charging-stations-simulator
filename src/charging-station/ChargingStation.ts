@@ -316,9 +316,7 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Injects a pre-built coherent session directly into the session store.
-   * **Test seam only** — never call from production code. The `__` prefix
-   * marks this as a non-public API by convention; it is not currently
-   * enforced by a lint rule.
+   * **Test seam only** — never call from production code.
    * @param transactionId - Transaction identifier.
    * @param session - Pre-built session.
    */

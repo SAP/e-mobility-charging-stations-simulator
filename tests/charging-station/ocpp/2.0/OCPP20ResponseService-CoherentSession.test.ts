@@ -1,6 +1,6 @@
 /**
  * @file Tests for OCPP20ResponseService coherent MeterValues session wiring.
- * @description Regression B2: verifies that TransactionEvent(Started) creates
+ * @description Verifies that TransactionEvent(Started) creates
  *   a coherent MeterValues session on OCPP 2.0.1, mirroring the OCPP 1.6 path
  *   in `OCPP16ResponseService.handleResponseStartTransaction`. Also verifies
  *   the guards: opt-in feature flag and idToken acceptance.
@@ -109,7 +109,7 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(
       createSpy.mock.calls.length,
       0,
-      'B2: session must not be created when idToken rejected and force override is off'
+      'session must not be created when idToken rejected and force override is off'
     )
   })
 
@@ -126,7 +126,7 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(
       createSpy.mock.calls.length,
       1,
-      'B2: session must be created when force override is enabled, mirroring OCPP 1.6'
+      'session must be created when force override is enabled, mirroring OCPP 1.6'
     )
   })
 
@@ -144,7 +144,7 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     assert.strictEqual(
       createSpy.mock.calls.length,
       0,
-      'B2: session must only be created on eventType=Started'
+      'session must only be created on eventType=Started'
     )
   })
 })
