@@ -11,7 +11,6 @@ import {
   isAfter,
   isBefore,
   isDate,
-  isPast,
   isWithinInterval,
   toDate,
 } from 'date-fns'
@@ -46,8 +45,6 @@ import {
   OCPPVersion,
   PowerUnits,
   RecurrencyKindType,
-  type Reservation,
-  ReservationTerminationReason,
   StandardParametersKey,
   type SupportedFeatureProfiles,
   Voltage,
@@ -105,62 +102,12 @@ export const getChargingStationId = (
       )}${idSuffix}`
 }
 
-export const hasReservationExpired = (reservation: Reservation): boolean => {
-  return isPast(reservation.expiryDate)
-}
-
-/**
- * Checks if a connector has a pending (non-expired) reservation.
- * @param connectorStatus - The connector status to check
- * @returns true if the connector has a pending reservation, false otherwise
- */
-export const hasPendingReservation = (connectorStatus: ConnectorStatus): boolean => {
-  return connectorStatus.reservation != null && !hasReservationExpired(connectorStatus.reservation)
-}
-
-/**
- * Checks if a charging station has any pending (non-expired) reservations.
- * @param chargingStation - The charging station to check
- * @returns true if any connector has a pending reservation, false otherwise
- */
-export const hasPendingReservations = (chargingStation: ChargingStation): boolean => {
-  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
-    if (hasPendingReservation(connectorStatus)) {
-      return true
-    }
-  }
-  return false
-}
-
-export const removeExpiredReservations = async (
-  chargingStation: ChargingStation
-): Promise<void> => {
-  const reservations: Reservation[] = []
-  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
-    if (connectorStatus.reservation != null && hasReservationExpired(connectorStatus.reservation)) {
-      reservations.push(connectorStatus.reservation)
-    }
-  }
-  const results = await Promise.allSettled(
-    reservations.map(reservation =>
-      chargingStation.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
-    )
-  )
-  let failureCount = 0
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      ++failureCount
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: reservation removal failed: ${String(result.reason)}`
-      )
-    }
-  }
-  if (failureCount > 0) {
-    logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: ${failureCount.toString()}/${reservations.length.toString()} expired reservation removal(s) failed`
-    )
-  }
-}
+export {
+  hasPendingReservation,
+  hasPendingReservations,
+  hasReservationExpired,
+  removeExpiredReservations,
+} from './HelpersReservation.js'
 
 export const getHashId = (
   index: number,
@@ -316,7 +263,7 @@ export const getDefaultConnectorMaximumPower = (
   const staticCount =
     stationTemplate.Evses != null
       ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      getMaxNumberOfEvses(stationTemplate.Evses) - (stationTemplate.Evses['0'] != null ? 1 : 0)
+        getMaxNumberOfEvses(stationTemplate.Evses) - (stationTemplate.Evses['0'] != null ? 1 : 0)
       : getMaxNumberOfConnectors(stationTemplate.Connectors) -
         (stationTemplate.Connectors?.['0'] != null ? 1 : 0)
   return staticCount > 0 ? maximumPower / staticCount : undefined
@@ -583,8 +530,8 @@ export const createSerialNumber = (
   }
   const serialNumberSuffix = params.randomSerialNumber
     ? getRandomSerialNumberSuffix({
-      upperCase: params.randomSerialNumberUpperCase,
-    })
+        upperCase: params.randomSerialNumberUpperCase,
+      })
     : ''
   isNotEmptyString(stationTemplate.chargePointSerialNumberPrefix) &&
     (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`)
@@ -769,10 +716,10 @@ const buildChargingProfilesLimit = (
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
         : ACElectricUtils.powerTotal(
-          chargingStation.getNumberOfPhases(),
-          chargingStation.getVoltageOut(),
-          limit
-        )
+            chargingStation.getNumberOfPhases(),
+            chargingStation.getVoltageOut(),
+            limit
+          )
     case CurrentType.DC:
       return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
