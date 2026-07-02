@@ -505,10 +505,6 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionStart
-  // NOTE: `transactionId` is deleted here. Callers that need to identify
-  // the just-stopped transaction (e.g. `ChargingStation.destroyCoherentSession`)
-  // MUST snapshot `connectorStatus.transactionId` BEFORE invoking this
-  // function.
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
   delete connectorStatus.transactionGroupIdToken
