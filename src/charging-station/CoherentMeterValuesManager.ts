@@ -76,13 +76,14 @@ export class CoherentMeterValuesManager {
    * constructor eagerly loads the EV profile file (fail-soft: warnings
    * logged, coherent session creation silently disabled on error).
    *
-   * Use this at write paths (`createSession`, `injectSession`) and the
-   * opt-in eager warm-up in `ChargingStation.initialize`. Read-only paths
-   * (`getSession`, `destroySession`, shutdown dispose) MUST use
-   * {@link peekInstance} to avoid allocating a manager for stations
-   * where `coherentMeterValues !== true` — the strategy gate in
-   * `OCPPServiceUtils.buildMeterValue` reaches this code path
-   * unconditionally on every MeterValue tick.
+   * Use this only at the opt-in eager warm-up in
+   * `ChargingStation.initialize` and at the `injectSession` test seam
+   * (where the production-guard `BaseError` throw must remain
+   * reachable). Every other read/write path — including `createSession`
+   * — MUST use {@link peekInstance}: the eager warm-up guarantees
+   * opt-in stations already have a cached manager, and non-opt-in
+   * stations must not allocate on paths reached from the unconditional
+   * strategy gate in `OCPPServiceUtils.buildMeterValue`.
    * @param chargingStation - Owning station.
    * @returns The station's manager, or `undefined` iff
    *   `stationInfo.hashId` is not yet resolved (early-bootstrap failure
@@ -105,9 +106,17 @@ export class CoherentMeterValuesManager {
 
   /**
    * Lookup-only sibling of {@link getInstance}. Returns the existing
-   * manager for the station or `undefined` — never constructs. Use at
-   * read-only paths reached from stations that may not have opted into
-   * coherent MeterValues, so non-opt-in stations never allocate.
+   * manager for the station or `undefined` — never constructs. Use on
+   * every path that must not allocate a manager on behalf of non-opt-in
+   * stations, including both reads (`getSession`) and idempotent
+   * teardown (`destroySession`, `stop()` dispose) — the strategy gate
+   * in `OCPPServiceUtils.buildMeterValue` reaches these paths
+   * unconditionally on every MeterValue tick.
+   *
+   * Load-bearing invariant: `ChargingStation.initialize` MUST call
+   * {@link getInstance} for opt-in stations before any subsequent write
+   * path is reached; otherwise `createCoherentSession` on an opt-in
+   * station silently no-ops because the cache miss returns `undefined`.
    * @param chargingStation - Owning station.
    * @returns The station's existing manager, or `undefined` when no
    *   manager has been created (station is not opted in, or
