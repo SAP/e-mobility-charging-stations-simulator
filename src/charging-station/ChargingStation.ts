@@ -1888,13 +1888,14 @@ export class ChargingStation extends EventEmitter {
     // Warm up the coherent MeterValues manager on opt-in so
     // EV-profile-file warnings surface at startup, and reload profiles
     // on every subsequent `initialize()` (reset, template file change)
-    // to propagate template mutations. When the opt-in flag flips
-    // `true → false` at runtime, drop the manager so cached sessions
-    // and stale profiles do not leak across the config change.
+    // to propagate template mutations. On opt-out we deliberately
+    // leave any pre-existing manager in place: new sessions are
+    // already blocked by the `coherentMeterValues` gate in
+    // `createSession`, and in-flight sessions drain via
+    // `destroyCoherentSession` on transaction end — preserving
+    // provenance of transactions started before the flag flip.
     if (this.stationInfo.coherentMeterValues === true) {
       CoherentMeterValuesManager.getInstance(this)?.reloadEvProfiles()
-    } else {
-      CoherentMeterValuesManager.deleteInstance(this)
     }
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     if (this.stationInfo.enableStatistics === true) {
