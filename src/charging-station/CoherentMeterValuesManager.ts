@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 /**
  * @file Per-station coherent MeterValues lifecycle owner.
@@ -81,7 +81,7 @@ export class CoherentMeterValuesManager {
    * (where the production-guard `BaseError` throw must remain
    * reachable). Every other read/write path — including `createSession`
    * — MUST use {@link peekInstance}: the eager warm-up guarantees
-   * opt-in stations already have a cached manager, and non-opt-in
+   * opt-in stations already have their instance entry, and non-opt-in
    * stations must not allocate on paths reached from the unconditional
    * strategy gate in `OCPPServiceUtils.buildMeterValue`.
    * @param chargingStation - Owning station.
@@ -107,16 +107,18 @@ export class CoherentMeterValuesManager {
   /**
    * Lookup-only sibling of {@link getInstance}. Returns the existing
    * manager for the station or `undefined` — never constructs. Use on
-   * every path that must not allocate a manager on behalf of non-opt-in
-   * stations, including both reads (`getSession`) and idempotent
-   * teardown (`destroySession`, `stop()` dispose) — the strategy gate
-   * in `OCPPServiceUtils.buildMeterValue` reaches these paths
+   * every non-warm-up path that must not allocate a manager on behalf
+   * of non-opt-in stations, including `createSession`, reads
+   * (`getSession`), and idempotent teardown (`destroySession`,
+   * `stop()` dispose) — the strategy gate in
+   * `OCPPServiceUtils.buildMeterValue` reaches these paths
    * unconditionally on every MeterValue tick.
    *
    * Load-bearing invariant: `ChargingStation.initialize` MUST call
    * {@link getInstance} for opt-in stations before any subsequent write
    * path is reached; otherwise `createCoherentSession` on an opt-in
-   * station silently no-ops because the cache miss returns `undefined`.
+   * station silently no-ops because the instances-map miss returns
+   * `undefined`.
    * @param chargingStation - Owning station.
    * @returns The station's existing manager, or `undefined` when no
    *   manager has been created (station is not opted in, or
@@ -209,6 +211,12 @@ export class CoherentMeterValuesManager {
    * only** — never call from production code; enforced at runtime by a
    * `NODE_ENV === 'production'` guard that throws {@link BaseError},
    * mirroring the seam previously exposed on {@link ChargingStation}.
+   *
+   * Silently no-ops on non-opt-in stations
+   * (`stationInfo.coherentMeterValues !== true`) so the type guard
+   * `isCoherentModeActive(session)` — which now trusts session
+   * existence — cannot be tricked into activating the coherent wire
+   * path by injecting on a station that never opted in.
    * @param transactionId - Transaction identifier.
    * @param session - Pre-built session.
    * @throws {BaseError} When invoked in a production build.
@@ -219,15 +227,21 @@ export class CoherentMeterValuesManager {
         `${this.chargingStation.logPrefix()} ${moduleName}.injectSession: test-only seam called in production build`
       )
     }
+    if (this.chargingStation.stationInfo?.coherentMeterValues !== true) {
+      return
+    }
     this.sessions.set(transactionId, session)
   }
 
   /**
    * Loads (or reloads) the EV profile file referenced by the station
-   * template. Fail-soft: any error leaves `evProfiles` as `undefined`,
-   * which turns {@link createSession} into a no-op for this station.
-   * Called eagerly by the constructor so operators see profile-file
-   * warnings at startup rather than at first transaction.
+   * template. Fail-soft: non-opt-in stations and any error leave
+   * `evProfiles` as `undefined`, which turns {@link createSession}
+   * into a no-op for this station. Called eagerly by the constructor
+   * so operators see profile-file warnings at startup rather than at
+   * first transaction, and re-invoked by `ChargingStation.initialize`
+   * on every reload so runtime mutations of `evProfilesFile` or the
+   * file contents propagate without a process restart.
    */
   public reloadEvProfiles (): void {
     this.evProfiles = undefined
