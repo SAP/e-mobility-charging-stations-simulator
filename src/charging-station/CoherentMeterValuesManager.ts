@@ -75,11 +75,18 @@ export class CoherentMeterValuesManager {
    * Returns the manager for the station, constructing on first call. The
    * constructor eagerly loads the EV profile file (fail-soft: warnings
    * logged, coherent session creation silently disabled on error).
-   * @param chargingStation - Owning station. Requires `stationInfo.hashId`
-   *   to be resolved; returns `undefined` when called during early
-   *   bootstrap.
-   * @returns The station's manager, or `undefined` when `stationInfo` is
-   *   not yet resolved.
+   *
+   * Use this at write paths (`createSession`, `injectSession`) and the
+   * opt-in eager warm-up in `ChargingStation.initialize`. Read-only paths
+   * (`getSession`, `destroySession`, shutdown dispose) MUST use
+   * {@link peekInstance} to avoid allocating a manager for stations
+   * where `coherentMeterValues !== true` — the strategy gate in
+   * `OCPPServiceUtils.buildMeterValue` reaches this code path
+   * unconditionally on every MeterValue tick.
+   * @param chargingStation - Owning station.
+   * @returns The station's manager, or `undefined` iff
+   *   `stationInfo.hashId` is not yet resolved (early-bootstrap failure
+   *   mode — the sole path that returns `undefined`).
    */
   public static getInstance (
     chargingStation: ChargingStation
@@ -94,6 +101,26 @@ export class CoherentMeterValuesManager {
       CoherentMeterValuesManager.instances.set(hashId, manager)
     }
     return manager
+  }
+
+  /**
+   * Lookup-only sibling of {@link getInstance}. Returns the existing
+   * manager for the station or `undefined` — never constructs. Use at
+   * read-only paths reached from stations that may not have opted into
+   * coherent MeterValues, so non-opt-in stations never allocate.
+   * @param chargingStation - Owning station.
+   * @returns The station's existing manager, or `undefined` when no
+   *   manager has been created (station is not opted in, or
+   *   `stationInfo.hashId` is not yet resolved).
+   */
+  public static peekInstance (
+    chargingStation: ChargingStation
+  ): CoherentMeterValuesManager | undefined {
+    const hashId = chargingStation.stationInfo?.hashId
+    if (hashId == null) {
+      return undefined
+    }
+    return CoherentMeterValuesManager.instances.get(hashId)
   }
 
   /**

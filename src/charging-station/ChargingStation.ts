@@ -366,6 +366,11 @@ export class ChargingStation extends EventEmitter {
    * Idempotent. Delegates to
    * {@link CoherentMeterValuesManager.createSession}; returns `undefined`
    * when coherent mode is disabled or no valid EV profile file is loaded.
+   *
+   * Uses `peekInstance` (lookup-only): opt-in stations warm up the
+   * manager at initialize, so subsequent calls find it in the cache;
+   * non-opt-in stations never allocate a manager because
+   * `manager.createSession` would return `undefined` anyway.
    * @param transactionId - Transaction identifier from the CSMS.
    * @param connectorId - Connector on which the transaction is running.
    * @returns The active or newly-created session, or `undefined` when
@@ -375,7 +380,7 @@ export class ChargingStation extends EventEmitter {
     transactionId: number | string,
     connectorId: number
   ): CoherentSession | undefined {
-    return CoherentMeterValuesManager.getInstance(this)?.createSession(transactionId, connectorId)
+    return CoherentMeterValuesManager.peekInstance(this)?.createSession(transactionId, connectorId)
   }
 
   /**
@@ -438,11 +443,13 @@ export class ChargingStation extends EventEmitter {
    * call from every reset/stop/disconnect path. Delegates to
    * {@link CoherentMeterValuesManager.destroySession}, which disposes the
    * module-scope per-session runtime state (voltage-noise PRNG closure).
+   * Uses `peekInstance` so non-opt-in stations never allocate a manager
+   * on a transaction-end tear-down.
    * @param transactionId - Transaction identifier.
    * @returns `true` when a session was removed, `false` otherwise.
    */
   public destroyCoherentSession (transactionId: number | string | undefined): boolean {
-    return CoherentMeterValuesManager.getInstance(this)?.destroySession(transactionId) ?? false
+    return CoherentMeterValuesManager.peekInstance(this)?.destroySession(transactionId) ?? false
   }
 
   /**
@@ -506,12 +513,16 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Retrieves the coherent session for a transaction, if any. Delegates
-   * to {@link CoherentMeterValuesManager.getSession}.
+   * to {@link CoherentMeterValuesManager.getSession}. Uses `peekInstance`
+   * because this method is reached from the unconditional strategy gate
+   * in `OCPPServiceUtils.buildMeterValue` on every MeterValue tick — a
+   * `getInstance` here would allocate a manager for every station that
+   * ever emits a MeterValue, opt-in or not.
    * @param transactionId - Transaction identifier.
    * @returns The session or `undefined` when none exists.
    */
   public getCoherentSession (transactionId: number | string): CoherentSession | undefined {
-    return CoherentMeterValuesManager.getInstance(this)?.getSession(transactionId)
+    return CoherentMeterValuesManager.peekInstance(this)?.getSession(transactionId)
   }
 
   public getConnectionTimeout (): number {
@@ -1280,7 +1291,7 @@ export class ChargingStation extends EventEmitter {
           // Drop any coherent sessions still tracked at shutdown so a
           // subsequent restart cannot resurrect stale state or leak
           // module-scope runtime PRNG closures.
-          CoherentMeterValuesManager.getInstance(this)?.dispose()
+          CoherentMeterValuesManager.peekInstance(this)?.dispose()
           this.stopping = false
         }
       } else {
