@@ -1073,7 +1073,7 @@ const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(Mete
  *
  * Presence-aware semantics:
  * - No key resolves ⇒ returns `undefined` (no filter — all templates emit,
- *   preserving legacy behavior).
+ *   preserving the default behavior).
  * - Key resolves but the configuration variable is **absent** (never
  *   written) ⇒ returns `{Energy.Active.Import.Register}` (default measurand,
  *   ergonomic parity with a station that never set the variable).
@@ -1157,9 +1157,9 @@ export const buildMeterValue = (
     createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
   // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
   // is available (so the coherent path can emit versioned SampledValues) and
-  // BEFORE any legacy random measurand generation runs. When coherent mode
+  // BEFORE the random/fixed measurand generation runs. When coherent mode
   // is not active for this station or no session exists for the transaction,
-  // this is a no-op and the legacy code path is unchanged.
+  // this is a no-op and the random/fixed code path is unchanged.
   if (isCoherentModeActive(chargingStation, transactionId)) {
     const rootSeed = resolveRootSeed(chargingStation.stationInfo)
     return buildCoherentMeterValue(

@@ -1,12 +1,12 @@
 /**
  * @file Tests for coherent MeterValues strategy dispatch.
  * @description Verifies the strategy gate in buildMeterValue:
- *   - flag off / absent → legacy code path unchanged.
+ *   - flag off / absent → random/fixed code path unchanged.
  *   - flag on + session → coherent path emits coherent SampledValues.
- *   - flag on + no session → falls back to legacy path.
+ *   - flag on + no session → falls back to the random/fixed path.
  *
  * Covers the strategy gate boundary: the gate runs AFTER the versioned
- * SampledValue dispatcher is constructed and BEFORE the legacy random
+ * SampledValue dispatcher is constructed and BEFORE the random/fixed
  * measurand generation, so the coherent path can emit versioned
  * SampledValues without duplicating the dispatcher logic.
  */
@@ -48,7 +48,7 @@ await describe('StrategyDispatch', async () => {
     standardCleanup()
   })
 
-  await describe('flag absent (legacy default)', async () => {
+  await describe('flag absent (default random/fixed)', async () => {
     beforeEach(() => {
       const { station: s } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -72,7 +72,7 @@ await describe('StrategyDispatch', async () => {
       assert.strictEqual(station.destroyCoherentSession(TEST_TRANSACTION_ID), false)
     })
 
-    await it('should build a MeterValue via the legacy path', () => {
+    await it('should build a MeterValue via the random/fixed path', () => {
       const meterValue = buildMeterValue(
         station,
         TEST_TRANSACTION_ID,
@@ -108,7 +108,7 @@ await describe('StrategyDispatch', async () => {
       assert.strictEqual(station.getCoherentSession(TEST_TRANSACTION_ID), undefined)
     })
 
-    await it('should fall through to the legacy path in buildMeterValue', () => {
+    await it('should fall through to the random/fixed path in buildMeterValue', () => {
       // Without a session buildMeterValue must NOT call coherent code.
       // Legacy path returns non-empty when Energy template is present.
       addConfigurationKey(

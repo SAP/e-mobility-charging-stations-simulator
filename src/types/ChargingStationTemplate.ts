@@ -66,8 +66,8 @@ export interface ChargingStationTemplate {
    * Enable physics-based coherent MeterValues generation (opt-in, default `false`).
    * When `true`, MeterValues are derived from a single physics chain
    * (V → P → I → ΔE → SoC) using a deterministic seeded PRNG and an
-   * optional {@link evProfilesFile}. When `false` or absent, legacy
-   * per-measurand random generation is used and behavior is unchanged.
+   * optional {@link evProfilesFile}. When `false` or absent, the random/fixed
+   * per-measurand generation is used and behavior is unchanged.
    */
   coherentMeterValues?: boolean
   commandsSupport?: CommandsSupport

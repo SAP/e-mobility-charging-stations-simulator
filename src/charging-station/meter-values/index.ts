@@ -4,7 +4,7 @@
  * @file Coherent MeterValues module barrel.
  * @description Physics-based coherent MeterValues generation for the
  *   OCPP simulator. Opt-in via the template flag `coherentMeterValues`;
- *   when disabled or absent, legacy random measurand generation is used
+ *   when disabled or absent, the random/fixed measurand generation is used
  *   unchanged (see `../ocpp/OCPPServiceUtils.ts`).
  *
  *   Internal helpers are intentionally not re-exported; tests and internal

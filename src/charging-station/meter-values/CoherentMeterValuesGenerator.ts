@@ -456,7 +456,7 @@ const phaseFamily = (
   phase == null ? 'Aggregate' : PHASE_FAMILY[phase]
 
 /**
- * Emit order across measurands, mirroring the legacy `getSampledValueTemplate`
+ * Emit order across measurands, mirroring the `getSampledValueTemplate`
  * path (SoC → Voltage → Power → Current → Energy). Preserved so downstream
  * consumers relying on OCPP MeterValue ordering keep working.
  */
@@ -490,7 +490,7 @@ const PHASE_RANK = {
 /**
  * Groups templates by measurand and sorts each bucket by phase rank.
  * Templates without an explicit `measurand` default to
- * `Energy.Active.Import.Register`, mirroring legacy convention.
+ * `Energy.Active.Import.Register`, mirroring the existing convention.
  * @param templates - Templates configured on the connector (or `undefined`).
  * @returns Grouped, phase-ordered templates.
  */
@@ -637,7 +637,7 @@ const resolveTemplates = (
  * Builds a complete OCPP {@link MeterValue} from a coherent sample.
  *
  * Emission order:
- * - Across measurands: legacy `SoC → Voltage → Power → Current → Energy`.
+ * - Across measurands: `SoC → Voltage → Power → Current → Energy`.
  * - Within a measurand with multiple phase-qualified templates: no-phase
  *   first, then `L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N`.
  *
@@ -656,7 +656,7 @@ const resolveTemplates = (
  * @param mvContext - Optional MeterValue reading context.
  * @param enabledMeasurands - Optional allow-list resolved from the
  *   version-appropriate OCPP variable at the `buildMeterValue` boundary.
- *   When `undefined`, all templates emit (legacy behavior). When defined,
+ *   When `undefined`, all templates emit (default behavior). When defined,
  *   only measurands in the set emit. Governs OCPP 2.0.1 J02.FR.11 /
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
  * @returns MeterValue with sampled values and current timestamp.
