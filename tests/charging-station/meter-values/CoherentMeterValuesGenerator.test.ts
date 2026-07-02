@@ -614,7 +614,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const viPhases = sample.voltageV * sample.currentA * 3
       assert.ok(
         Math.abs(sample.powerW - viPhases) <= 0.01,
-        `AC 3-phase capacity clamp: |P - V·I·phases|=${Math.abs(sample.powerW - viPhases).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+        `AC 3-phase capacity clamp: |P - V·I·phases|=${Math.abs(sample.powerW - viPhases).toString()} exceeded 2 × ROUNDING_SCALE (0.01 W)`
       )
       const remainingWh = ((100 - 99.8) / 100) * flatProfile.batteryCapacityWh
       assert.ok(
@@ -655,7 +655,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       const vi = sample.voltageV * sample.currentA
       assert.ok(
         Math.abs(sample.powerW - vi) <= 0.01,
-        `DC capacity clamp: |P - V·I|=${Math.abs(sample.powerW - vi).toString()} exceeded ROUNDING_SCALE (0.005 W)`
+        `DC capacity clamp: |P - V·I|=${Math.abs(sample.powerW - vi).toString()} exceeded 2 × ROUNDING_SCALE (0.01 W)`
       )
     })
   })

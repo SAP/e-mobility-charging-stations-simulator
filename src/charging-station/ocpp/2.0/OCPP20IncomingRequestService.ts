@@ -619,9 +619,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   ),
                   OCPP20ReadingContextEnumType.TRIGGER
                 ) as OCPP20MeterValue
-                // OCPP 2.0.1 J02.FR.11: when TxUpdatedMeasurands is empty,
-                // send TransactionEvent(Updated) WITHOUT the meterValue field
-                // (empty wrapper is a schema violation via minItems=1).
+                // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*, while
+                // TransactionEventRequest.meterValue is 0..*: when TxUpdatedMeasurands
+                // yields no sampled values, omit the meterValue field entirely rather
+                // than send an empty-wrapper schema violation.
                 const eventPayload = isNotEmptyArray(meterValue.sampledValue)
                   ? { meterValue: [meterValue] }
                   : {}
