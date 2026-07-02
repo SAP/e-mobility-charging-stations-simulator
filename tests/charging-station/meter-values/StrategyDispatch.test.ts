@@ -73,7 +73,11 @@ await describe('StrategyDispatch', async () => {
     })
 
     await it('should build a MeterValue via the legacy path', () => {
-      const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, TEST_METER_VALUES_INTERVAL_MS)
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID,
+        TEST_METER_VALUES_INTERVAL_MS
+      )
       assert.ok(meterValue.timestamp instanceof Date)
       assert.ok(Array.isArray(meterValue.sampledValue))
     })
@@ -112,7 +116,11 @@ await describe('StrategyDispatch', async () => {
         StandardParametersKey.MeterValuesSampledData,
         'Energy.Active.Import.Register'
       )
-      const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, TEST_METER_VALUES_INTERVAL_MS)
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID,
+        TEST_METER_VALUES_INTERVAL_MS
+      )
       assert.ok(meterValue.sampledValue.length > 0)
     })
   })
@@ -173,7 +181,11 @@ await describe('StrategyDispatch', async () => {
 
       addConfigurationKey(station, StandardParametersKey.MeterValuesSampledData, 'SoC')
       const registerBefore = station.getConnectorStatus(1)?.energyActiveImportRegisterValue ?? -1
-      const meterValue = buildMeterValue(station, TEST_TRANSACTION_ID, TEST_METER_VALUES_INTERVAL_MS)
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID,
+        TEST_METER_VALUES_INTERVAL_MS
+      )
       const registerAfter = station.getConnectorStatus(1)?.energyActiveImportRegisterValue ?? -1
 
       // Register must advance because coherent path owns updates.

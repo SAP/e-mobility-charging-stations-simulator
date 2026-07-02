@@ -509,8 +509,7 @@ const groupTemplatesByMeasurand = (
   for (const bucket of groups.values()) {
     bucket.sort(
       (a, b) =>
-        (a.phase == null ? 0 : PHASE_RANK[a.phase]) -
-        (b.phase == null ? 0 : PHASE_RANK[b.phase])
+        (a.phase == null ? 0 : PHASE_RANK[a.phase]) - (b.phase == null ? 0 : PHASE_RANK[b.phase])
     )
   }
   return groups
