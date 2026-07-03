@@ -1,14 +1,17 @@
 /**
- * @file Tests for CoherentMeterValuesGenerator physics.
+ * @file Tests for coherent MeterValues generation.
  * @description Verifies invariants (P=V·I·phases, ΔE=P·Δt/3.6e6, SoC monotone,
  *   saturation at 100 %), Wh/kWh unit conversion, energy-register ownership,
  *   and same-seed determinism across AC 1-phase, AC 3-phase, and DC modes.
+ *   Cross-module tests spanning `CoherentSampleComputer` (physics),
+ *   `CoherentMeterValueBuilder` (emission), `CoherentSession` (lifecycle),
+ *   and `Prng` (stream splitting).
  */
 
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+import type { BuildVersionedSampledValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import type {
   CoherentSession,
   EvProfile,
@@ -21,13 +24,15 @@ import type {
   SampledValueTemplate,
 } from '../../../src/types/index.js'
 
+import { buildCoherentMeterValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import {
-  buildCoherentMeterValue,
   computeCoherentSample,
-  createCoherentSession,
   disposeCoherentSessionRuntime,
+} from '../../../src/charging-station/meter-values/CoherentSampleComputer.js'
+import {
+  createCoherentSession,
   resolveRootSeed,
-} from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
+} from '../../../src/charging-station/meter-values/CoherentSession.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/Prng.js'
 import {
   AvailabilityType,
@@ -162,7 +167,7 @@ const createSessionOrFail = (
   return session
 }
 
-await describe('CoherentMeterValuesGenerator', async () => {
+await describe('CoherentMeterValues', async () => {
   afterEach(() => {
     standardCleanup()
   })
@@ -789,7 +794,7 @@ await describe('CoherentMeterValuesGenerator', async () => {
       })
       assert.ok(
         !Object.prototype.hasOwnProperty.call(session, 'voltagePrng'),
-        'CoherentSession must not carry voltagePrng (moved to module-scope runtime state)'
+        'CoherentSession must not carry voltagePrng (owned by module-scope runtime state in CoherentSampleComputer)'
       )
     })
 

@@ -4,7 +4,7 @@
  * @file Per-station coherent MeterValues lifecycle owner.
  * @description Holds the EV profile file, the active-session Map, and the
  *   create/destroy/inject lifecycle for physics-based coherent
- *   MeterValues. Extracted from {@link ChargingStation} to keep the
+ *   MeterValues. Sits alongside {@link ChargingStation} to keep the
  *   strictly opt-in coherent surface off the main class body. Follows the
  *   per-station multiton pattern of `AutomaticTransactionGenerator` /
  *   `IdTagsCache` / `SharedLRUCache`: one instance per `stationInfo.hashId`.
@@ -15,7 +15,7 @@ import type { ChargingStation } from './ChargingStation.js'
 import { BaseError } from '../exception/index.js'
 import { logger } from '../utils/index.js'
 import { getEvProfilesFile } from './Helpers.js'
-import { disposeCoherentSessionRuntime } from './meter-values/CoherentMeterValuesGenerator.js'
+import { disposeCoherentSessionRuntime } from './meter-values/CoherentSampleComputer.js'
 import {
   type CoherentSession,
   createCoherentSession,
@@ -210,7 +210,7 @@ export class CoherentMeterValuesManager {
    * Injects a pre-built session directly into the store. **Test seam
    * only** — never call from production code; enforced at runtime by a
    * `NODE_ENV === 'production'` guard that throws {@link BaseError},
-   * mirroring the seam previously exposed on {@link ChargingStation}.
+   * mirroring the seam on {@link ChargingStation}.
    *
    * Silently no-ops on non-opt-in stations
    * (`stationInfo.coherentMeterValues !== true`) so on the
