@@ -3,7 +3,7 @@
  * @description Verifies invariants (P=V·I·phases, ΔE=P·Δt/3.6e6, SoC monotone,
  *   saturation at 100 %), Wh/kWh unit conversion, energy-register ownership,
  *   and same-seed determinism across AC 1-phase, AC 3-phase, and DC modes.
- *   Exercises the split modules together: `CoherentSampleComputer` (physics),
+ *   Cross-module tests spanning `CoherentSampleComputer` (physics),
  *   `CoherentMeterValueBuilder` (emission), `CoherentSession` (lifecycle),
  *   and `Prng` (stream splitting).
  */
@@ -794,7 +794,7 @@ await describe('CoherentMeterValues', async () => {
       })
       assert.ok(
         !Object.prototype.hasOwnProperty.call(session, 'voltagePrng'),
-        'CoherentSession must not carry voltagePrng (moved to module-scope runtime state)'
+        'CoherentSession must not carry voltagePrng (owned by module-scope runtime state in CoherentSampleComputer)'
       )
     })
 

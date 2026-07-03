@@ -10,7 +10,7 @@
  *   Internal helpers are intentionally not re-exported; tests and internal
  *   callers should import them directly from the owning sub-module.
  *
- *   Module layout after the issue #1936 (item i) split:
+ *   Module layout:
  *   - {@link ./CoherentSession} — session lifecycle
  *     (`createCoherentSession`, `CreateSessionOptions`), the strategy-gate
  *     type guard `isCoherentModeActive`, and the root-seed resolver

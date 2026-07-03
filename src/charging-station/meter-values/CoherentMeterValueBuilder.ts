@@ -4,9 +4,7 @@
  * @file Coherent MeterValue emission (phase families, emit order, units).
  * @description Assembles an OCPP {@link MeterValue} from a single
  *   {@link CoherentSample} produced by
- *   {@link ./CoherentSampleComputer.computeCoherentSample}. Extracted from
- *   the original single-file generator as part of the issue #1936 (item i)
- *   file split to keep each module under the 250 LOC ceiling.
+ *   {@link ./CoherentSampleComputer.computeCoherentSample}.
  *
  * Two axes of ordering:
  * - Across measurands: `SoC → Voltage → Power → Current → Energy`
@@ -254,7 +252,7 @@ const resolveUnitDivider = (
  * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
  * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
  * EVSE-level template inheritance to the coherent path requires extending
- * the context interface and is tracked as a follow-up in issue #1936.
+ * the context interface with `getEvseStatus`.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
