@@ -532,7 +532,10 @@ await describe('F06 - TriggerMessage', async () => {
         assert.strictEqual(options.skipBufferingOnError, true)
         assert.strictEqual(options.triggerMessage, true)
       }
-      assert.deepStrictEqual([...observedEvseIds].sort(), [1, 2, 3])
+      assert.deepStrictEqual(
+        [...observedEvseIds].sort((a, b) => a - b),
+        [1, 2, 3]
+      )
     })
 
     await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {
