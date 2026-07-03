@@ -11,21 +11,22 @@
  *   callers should import them directly from the owning sub-module.
  *
  *   Module layout after the issue #1936 (item i) split:
- *   - {@link ./CoherentMeterValuesGenerator} — session lifecycle, PRNG
- *     helpers, WeakMap runtime state.
+ *   - {@link ./CoherentSession} — session lifecycle
+ *     (`createCoherentSession`, `CreateSessionOptions`), the strategy-gate
+ *     type guard `isCoherentModeActive`, and the root-seed resolver
+ *     `resolveRootSeed`.
  *   - {@link ./CoherentSampleComputer} — physics chain V→P→I→ΔE→SoC
- *     (INV-1/2/3 by construction), energy-register advance.
+ *     (INV-1/2/3 by construction), energy-register advance, and the
+ *     module-scope runtime WeakMap (`disposeCoherentSessionRuntime`).
  *   - {@link ./CoherentMeterValueBuilder} — emit order, phase families,
  *     unit conversion, OCPP MeterValue assembly.
+ *   - {@link ./Prng} — PRNG primitives (`mulberry32`, `hashLabel`,
+ *     `deriveSeed`, `createStreamPrng`).
  */
 
 export { buildCoherentMeterValue } from './CoherentMeterValueBuilder.js'
 export type { BuildVersionedSampledValue } from './CoherentMeterValueBuilder.js'
-export {
-  createCoherentSession,
-  isCoherentModeActive,
-  resolveRootSeed,
-} from './CoherentMeterValuesGenerator.js'
+export { createCoherentSession, isCoherentModeActive, resolveRootSeed } from './CoherentSession.js'
 export { loadEvProfilesFile } from './EvProfiles.js'
 export type {
   ChargingCurvePoint,

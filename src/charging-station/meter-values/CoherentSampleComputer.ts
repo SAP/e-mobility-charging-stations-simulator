@@ -39,8 +39,48 @@ import type { CoherentSession, ICoherentContext } from './types.js'
 
 import { CurrentType } from '../../types/index.js'
 import { Constants, roundTo } from '../../utils/index.js'
-import { createStreamPrng, getSessionRuntime } from './CoherentMeterValuesGenerator.js'
 import { interpolateChargingCurve } from './EvProfiles.js'
+import { createStreamPrng } from './Prng.js'
+
+/**
+ * Runtime-only per-session state. Kept in a module-scope WeakMap keyed by
+ * the {@link CoherentSession} object (rather than by transactionId) so
+ * runtime state is scoped to the session's identity — no cross-station
+ * coupling when two stations happen to share a transactionId — and is
+ * auto-collected when the session becomes unreachable.
+ */
+interface SessionRuntime {
+  voltagePrng?: () => number
+}
+
+const sessionRuntimes = new WeakMap<CoherentSession, SessionRuntime>()
+
+const getSessionRuntime = (session: CoherentSession): SessionRuntime => {
+  let runtime = sessionRuntimes.get(session)
+  if (runtime == null) {
+    runtime = {}
+    sessionRuntimes.set(session, runtime)
+  }
+  return runtime
+}
+
+/**
+ * Disposes runtime state for a session. Call from every session-teardown
+ * path (stop/reset/disconnect) to release cached PRNG state eagerly.
+ * The WeakMap makes eager disposal optional — unreachable sessions are
+ * collected automatically — but eager disposal preserves determinism
+ * across sequential transactions that reuse the same session identity.
+ * Idempotent.
+ * @param session - Coherent session (or `undefined` when the caller has
+ *   no session at hand).
+ * @returns `true` when runtime was removed, `false` otherwise.
+ */
+export const disposeCoherentSessionRuntime = (session: CoherentSession | undefined): boolean => {
+  if (session == null) {
+    return false
+  }
+  return sessionRuntimes.delete(session)
+}
 
 /**
  * Decimal places for all physics-quantity rounding (V, A, W, Wh, SoC).

@@ -1,19 +1,19 @@
-// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 /**
- * @file Coherent MeterValues session lifecycle, PRNG helpers, and runtime state.
+ * @file Coherent MeterValues session lifecycle + strategy-gate helpers.
  * @description Session construction ({@link createCoherentSession}), the
- *   type-guard predicate ({@link isCoherentModeActive}), the strategy-gate
- *   root-seed resolver ({@link resolveRootSeed}), and the module-scope
- *   WeakMap runtime state accessed by
- *   {@link ./CoherentSampleComputer.computeCoherentSample}.
+ *   type-guard predicate ({@link isCoherentModeActive}) used by the OCPP
+ *   strategy gate, and the root-seed resolver ({@link resolveRootSeed}).
  *
- *   Extracted from the original single-file generator in issue #1936
- *   (item i). Physics computation moved to
- *   {@link ./CoherentSampleComputer} and MeterValue emission moved to
- *   {@link ./CoherentMeterValueBuilder}; this file is the session-owning
- *   entry point and the sink for `disposeCoherentSessionRuntime` at
- *   session teardown.
+ *   Physics computation and the module-scope runtime WeakMap
+ *   (`disposeCoherentSessionRuntime`) live in
+ *   {@link ./CoherentSampleComputer}; MeterValue emission lives in
+ *   {@link ./CoherentMeterValueBuilder}; PRNG primitives
+ *   ({@link ./Prng.createStreamPrng}, `deriveSeed`, `hashLabel`,
+ *   `mulberry32`) live in {@link ./Prng}. This module owns only
+ *   session identity and the strategy predicate — it has no cross-module
+ *   private dependencies.
  */
 
 import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
@@ -21,90 +21,20 @@ import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 import { CurrentType, Voltage } from '../../types/index.js'
 import { Constants, logger } from '../../utils/index.js'
 import { selectEvProfile } from './EvProfiles.js'
-import { deriveSeed, hashLabel, mulberry32 } from './Prng.js'
+import { createStreamPrng, hashLabel } from './Prng.js'
 
-const moduleName = 'CoherentMeterValuesGenerator'
-
-/**
- * Runtime-only per-session state. Kept in a module-scope WeakMap keyed by
- * the {@link CoherentSession} object (rather than by transactionId) so
- * runtime state is scoped to the session's identity — no cross-station
- * coupling when two stations happen to share a transactionId — and is
- * auto-collected when the session becomes unreachable.
- */
-export interface SessionRuntime {
-  voltagePrng?: () => number
-}
-
-const sessionRuntimes = new WeakMap<CoherentSession, SessionRuntime>()
-
-/**
- * Retrieves the runtime bag for a session, creating it on first access.
- * Consumed by {@link ./CoherentSampleComputer.computeCoherentSample} to
- * cache the voltage-noise PRNG across samples (so the stream advances
- * rather than restarting from the same seed each draw).
- * @param session - Coherent session.
- * @returns Live runtime bag (mutated in place).
- */
-export const getSessionRuntime = (session: CoherentSession): SessionRuntime => {
-  let runtime = sessionRuntimes.get(session)
-  if (runtime == null) {
-    runtime = {}
-    sessionRuntimes.set(session, runtime)
-  }
-  return runtime
-}
-
-/**
- * Disposes runtime state for a session. Call from every session-teardown
- * path (stop/reset/disconnect) to release cached PRNG state eagerly.
- * The WeakMap makes eager disposal optional — unreachable sessions are
- * collected automatically — but eager disposal preserves determinism
- * across sequential transactions that reuse the same session identity.
- * Idempotent.
- * @param session - Coherent session (or `undefined` when the caller has
- *   no session at hand).
- * @returns `true` when runtime was removed, `false` otherwise.
- */
-export const disposeCoherentSessionRuntime = (session: CoherentSession | undefined): boolean => {
-  if (session == null) {
-    return false
-  }
-  return sessionRuntimes.delete(session)
-}
-
-/**
- * Deterministic per-transaction stream splitter. Combines the station
- * `randomSeed` (or a stable fallback), the transactionId, and a label so
- * that adding a new consumer never shifts an existing stream's sequence.
- * @param rootSeed - Root 32-bit seed for the station.
- * @param transactionId - Transaction identifier.
- * @param label - Stream label (`'VOLTAGE_NOISE'`, `'PROFILE_PICK'`,
- *   `'INITIAL_SOC'`, ...).
- * @returns PRNG function producing [0, 1) floats.
- */
-export const createStreamPrng = (
-  rootSeed: number,
-  transactionId: number | string,
-  label: string
-): (() => number) => {
-  // Namespace the transactionId leg with a `tx:` prefix so
-  // `String(transactionId) === label` cannot trigger the XOR self-inverse
-  // `deriveSeed(deriveSeed(r, X), X) === r`. Labels never start with `tx:`
-  // by construction (`VOLTAGE_NOISE`, `PROFILE_PICK`, `INITIAL_SOC`, ...).
-  const txSeed = deriveSeed(rootSeed, `tx:${String(transactionId)}`)
-  return mulberry32(deriveSeed(txSeed, label))
-}
+const moduleName = 'CoherentSession'
 
 /**
  * Type guard indicating that the coherent strategy owns MeterValue
  * construction for a transaction. Callers look up the session via the
  * per-station manager and pass the result to this predicate; a non-null
- * session implies coherent mode is active (sessions are only created
- * when the opt-in `coherentMeterValues=true` template flag is set and a
- * valid EV profile file is loaded).
+ * session implies coherent mode is active on the production-backed
+ * injection path (sessions are only created when the opt-in
+ * `coherentMeterValues=true` template flag is set and a valid EV
+ * profile file is loaded).
  * @param session - Session looked up from
- *   {@link ../../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}.
+ *   {@link ../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}.
  * @returns `true` when the coherent path should own MeterValue
  *   construction, narrowing `session` to `CoherentSession`.
  */

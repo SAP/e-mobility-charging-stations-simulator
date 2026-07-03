@@ -15,7 +15,7 @@ import type { ChargingStation } from './ChargingStation.js'
 import { BaseError } from '../exception/index.js'
 import { logger } from '../utils/index.js'
 import { getEvProfilesFile } from './Helpers.js'
-import { disposeCoherentSessionRuntime } from './meter-values/CoherentMeterValuesGenerator.js'
+import { disposeCoherentSessionRuntime } from './meter-values/CoherentSampleComputer.js'
 import {
   type CoherentSession,
   createCoherentSession,

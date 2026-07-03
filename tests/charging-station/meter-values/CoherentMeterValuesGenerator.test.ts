@@ -23,11 +23,13 @@ import type {
 
 import { buildCoherentMeterValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import {
-  createCoherentSession,
+  computeCoherentSample,
   disposeCoherentSessionRuntime,
+} from '../../../src/charging-station/meter-values/CoherentSampleComputer.js'
+import {
+  createCoherentSession,
   resolveRootSeed,
-} from '../../../src/charging-station/meter-values/CoherentMeterValuesGenerator.js'
-import { computeCoherentSample } from '../../../src/charging-station/meter-values/CoherentSampleComputer.js'
+} from '../../../src/charging-station/meter-values/CoherentSession.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/Prng.js'
 import {
   AvailabilityType,
