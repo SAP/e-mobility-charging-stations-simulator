@@ -124,21 +124,18 @@ export class OCPP16ServiceUtils {
   ]
 
   /**
-   * OCPP 1.6 Signed Meter Values whitepaper POST-HOC signing wrapper.
-   * When `SampledDataSignReadings` and `SampledDataSignUpdatedReadings`
-   * are enabled and a signing key is configured for the connector,
+   * Post-hoc signing wrapper for OCPP 1.6 Signed Meter Values whitepaper
+   * §3.3.6 (`SampledDataSignUpdatedReadings`). When
+   * `SampledDataSignReadings` and `SampledDataSignUpdatedReadings` are
+   * both enabled and a signing key is configured for the connector,
    * appends a paired `SignedData` `SampledValue` to the supplied
    * `MeterValue`. Idempotent no-op when signing is disabled or the
    * signing prerequisites are absent.
    *
-   * Consolidates the signing block used by every trigger/broadcast path
-   * that emits a "Sample.Periodic"-context MeterValue (periodic
-   * background loop in `startUpdatedMeterValues`, OCPP 1.6
-   * `TriggerMessage(MeterValues)` handler in
-   * `OCPP16IncomingRequestService`, and the worker broadcast channel's
-   * `handleMeterValues` for OCPP 1.6). Mutates `meterValue.sampledValue`
-   * in place and updates `connectorStatus.publicKeySentInTransaction`
-   * so the public-key payload is emitted at most once per transaction.
+   * Mutates `meterValue.sampledValue` in place and updates
+   * `connectorStatus.publicKeySentInTransaction` so the public-key
+   * payload is emitted at most once per transaction (per
+   * `PublicKeyWithSignedMeterValue = OncePerTransaction`).
    * @param chargingStation - Target charging station.
    * @param connectorId - Connector identifier owning the transaction.
    * @param transactionId - Active transaction identifier.

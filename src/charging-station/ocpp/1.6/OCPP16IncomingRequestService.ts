@@ -489,20 +489,36 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   .catch(errorHandler)
               }
             } else {
-              for (let id = 1; id <= chargingStation.getNumberOfConnectors(); id++) {
-                const cs = chargingStation.getConnectorStatus(id)
-                if (cs?.transactionStarted === true && cs.transactionId != null) {
-                  const txId = convertToInt(cs.transactionId)
-                  const mv = buildMeterValue(chargingStation, txId, 0) as OCPP16MeterValue
-                  OCPP16ServiceUtils.appendSignedUpdatedReadings(chargingStation, id, txId, mv)
+              for (
+                let connectorId = 1;
+                connectorId <= chargingStation.getNumberOfConnectors();
+                connectorId++
+              ) {
+                const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+                if (
+                  connectorStatus?.transactionStarted === true &&
+                  connectorStatus.transactionId != null
+                ) {
+                  const transactionId = convertToInt(connectorStatus.transactionId)
+                  const meterValue = buildMeterValue(
+                    chargingStation,
+                    transactionId,
+                    0
+                  ) as OCPP16MeterValue
+                  OCPP16ServiceUtils.appendSignedUpdatedReadings(
+                    chargingStation,
+                    connectorId,
+                    transactionId,
+                    meterValue
+                  )
                   chargingStation.ocppRequestService
                     .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                       chargingStation,
                       OCPP16RequestCommand.METER_VALUES,
                       {
-                        connectorId: id,
-                        meterValue: [mv],
-                        transactionId: txId,
+                        connectorId,
+                        meterValue: [meterValue],
+                        transactionId,
                       },
                       {
                         triggerMessage: true,

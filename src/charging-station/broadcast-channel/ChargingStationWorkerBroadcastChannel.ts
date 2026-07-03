@@ -428,12 +428,14 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
         })()
     const meterValue = buildMeterValue(this.chargingStation, transactionId, interval)
-    // OCPP 1.6 Signed Meter Values whitepaper: mirror the periodic loop
-    // (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
+    // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
+    // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
     // SignedData SampledValue when signing is enabled for the connector.
-    // Guarded on `!isOcpp2` because the whitepaper is OCPP 1.6 specific;
-    // guarded on `transactionId != null` because the signing helper needs
-    // a numeric transactionId to derive `energyWh`.
+    // Guarded on `!isOcpp2` because OCPP 2.0.x signing is applied inline
+    // inside `buildMeterValue` (via the versioned dispatcher's signing hook);
+    // post-hoc wrapping is the 1.6 pattern only. Guarded on `transactionId
+    // != null` because signing a MeterValue outside an active transaction
+    // has no defined semantics in the whitepaper.
     if (!isOcpp2 && transactionId != null) {
       OCPP16ServiceUtils.appendSignedUpdatedReadings(
         this.chargingStation,
