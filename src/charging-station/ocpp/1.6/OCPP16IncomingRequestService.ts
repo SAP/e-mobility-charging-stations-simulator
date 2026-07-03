@@ -74,6 +74,7 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   type OCPP16MeterValue,
+  OCPP16MeterValueContext,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -471,7 +472,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   chargingStation,
                   connectorId,
                   transactionId,
-                  meterValue
+                  meterValue,
+                  OCPP16MeterValueContext.TRIGGER
                 )
                 chargingStation.ocppRequestService
                   .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
@@ -509,7 +511,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     chargingStation,
                     connectorId,
                     transactionId,
-                    meterValue
+                    meterValue,
+                    OCPP16MeterValueContext.TRIGGER
                   )
                   chargingStation.ocppRequestService
                     .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(

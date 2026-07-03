@@ -140,12 +140,14 @@ export class OCPP16ServiceUtils {
    * @param connectorId - Connector identifier owning the transaction.
    * @param transactionId - Active transaction identifier.
    * @param meterValue - MeterValue to mutate (in place).
+   * @param context - Reading context for the emitted `SignedData` sampled value (defaults to `Sample.Periodic`); pass `Trigger` for TriggerMessage-originated emissions per OCPP 1.6 Core Table 30.
    */
   public static appendSignedUpdatedReadings (
     chargingStation: ChargingStation,
     connectorId: number,
     transactionId: number,
-    meterValue: OCPP16MeterValue
+    meterValue: OCPP16MeterValue,
+    context: OCPP16MeterValueContext = OCPP16MeterValueContext.SAMPLE_PERIODIC
   ): void {
     if (
       !OCPP16ServiceUtils.isSigningEnabled(chargingStation) ||
@@ -154,7 +156,7 @@ export class OCPP16ServiceUtils {
       return
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
+    if (connectorStatus?.transactionStarted !== true) {
       return
     }
     const signingCfg = OCPP16ServiceUtils.readSigningConfigForConnector(
@@ -169,7 +171,7 @@ export class OCPP16ServiceUtils {
     const signedResult = OCPP16ServiceUtils.buildSignedSampledValue(
       signingCfg,
       energyWh,
-      OCPP16MeterValueContext.SAMPLE_PERIODIC,
+      context,
       transactionId,
       publicKeySentInTransaction,
       meterValue.timestamp
@@ -1153,7 +1155,7 @@ export class OCPP16ServiceUtils {
 
     const prerequisiteResult = validateSigningPrerequisites(publicKeyHex, configuredSigningMethod)
     if (!prerequisiteResult.enabled) {
-      logger.warn(
+      logger.debug(
         `${chargingStation.logPrefix()} OCPP16ServiceUtils.readSigningConfigForConnector: Signed meter values disabled for connector ${connectorId.toString()}: ${prerequisiteResult.reason}`
       )
       return undefined
