@@ -1,10 +1,11 @@
-// Copyright Jerome Benoit. 2021-2026. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 /**
  * @file Reservation lifecycle helpers.
- * @description Extracted from {@link ./Helpers} as the first slice of the
- *   issue #1936 (item f) file split. The `Helpers.ts` barrel re-exports
- *   every symbol so external callers keep their existing import path
+ * @description Predicates for reservation state (`hasReservationExpired`,
+ *   `hasPendingReservation`, `hasPendingReservations`) and a best-effort
+ *   bulk cleanup (`removeExpiredReservations`). Re-exported from
+ *   `./Helpers.js` so callers keep the barrel import path
  *   (`import { hasReservationExpired, ... } from './Helpers.js'`).
  */
 
@@ -59,6 +60,7 @@ export const hasPendingReservations = (chargingStation: ChargingStation): boolea
  * single error log at the end so a partial-failure batch is still
  * observable.
  * @param chargingStation - The charging station whose expired reservations should be cleared.
+ * @returns Resolves once every expiry sweep has settled; individual failures are logged, never rethrown.
  */
 export const removeExpiredReservations = async (
   chargingStation: ChargingStation
