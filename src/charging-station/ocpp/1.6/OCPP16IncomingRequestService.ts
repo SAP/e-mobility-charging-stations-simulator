@@ -74,6 +74,7 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   type OCPP16MeterValue,
+  OCPP16MeterValueContext,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -461,20 +462,27 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 connectorStatus?.transactionStarted === true &&
                 connectorStatus.transactionId != null
               ) {
+                const transactionId = convertToInt(connectorStatus.transactionId)
+                const meterValue = buildMeterValue(
+                  chargingStation,
+                  transactionId,
+                  0
+                ) as OCPP16MeterValue
+                OCPP16ServiceUtils.appendSignedUpdatedReadings(
+                  chargingStation,
+                  connectorId,
+                  transactionId,
+                  meterValue,
+                  OCPP16MeterValueContext.TRIGGER
+                )
                 chargingStation.ocppRequestService
                   .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                     chargingStation,
                     OCPP16RequestCommand.METER_VALUES,
                     {
                       connectorId,
-                      meterValue: [
-                        buildMeterValue(
-                          chargingStation,
-                          convertToInt(connectorStatus.transactionId),
-                          0
-                        ) as OCPP16MeterValue,
-                      ],
-                      transactionId: convertToInt(connectorStatus.transactionId),
+                      meterValue: [meterValue],
+                      transactionId,
                     },
                     {
                       triggerMessage: true,
@@ -483,23 +491,37 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   .catch(errorHandler)
               }
             } else {
-              for (let id = 1; id <= chargingStation.getNumberOfConnectors(); id++) {
-                const cs = chargingStation.getConnectorStatus(id)
-                if (cs?.transactionStarted === true && cs.transactionId != null) {
+              for (
+                let connectorId = 1;
+                connectorId <= chargingStation.getNumberOfConnectors();
+                connectorId++
+              ) {
+                const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+                if (
+                  connectorStatus?.transactionStarted === true &&
+                  connectorStatus.transactionId != null
+                ) {
+                  const transactionId = convertToInt(connectorStatus.transactionId)
+                  const meterValue = buildMeterValue(
+                    chargingStation,
+                    transactionId,
+                    0
+                  ) as OCPP16MeterValue
+                  OCPP16ServiceUtils.appendSignedUpdatedReadings(
+                    chargingStation,
+                    connectorId,
+                    transactionId,
+                    meterValue,
+                    OCPP16MeterValueContext.TRIGGER
+                  )
                   chargingStation.ocppRequestService
                     .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
                       chargingStation,
                       OCPP16RequestCommand.METER_VALUES,
                       {
-                        connectorId: id,
-                        meterValue: [
-                          buildMeterValue(
-                            chargingStation,
-                            convertToInt(cs.transactionId),
-                            0
-                          ) as OCPP16MeterValue,
-                        ],
-                        transactionId: convertToInt(cs.transactionId),
+                        connectorId,
+                        meterValue: [meterValue],
+                        transactionId,
                       },
                       {
                         triggerMessage: true,
