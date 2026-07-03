@@ -11,7 +11,6 @@ import {
   isAfter,
   isBefore,
   isDate,
-  isPast,
   isWithinInterval,
   toDate,
 } from 'date-fns'
@@ -46,8 +45,6 @@ import {
   OCPPVersion,
   PowerUnits,
   RecurrencyKindType,
-  type Reservation,
-  ReservationTerminationReason,
   StandardParametersKey,
   type SupportedFeatureProfiles,
   Voltage,
@@ -105,62 +102,12 @@ export const getChargingStationId = (
       )}${idSuffix}`
 }
 
-export const hasReservationExpired = (reservation: Reservation): boolean => {
-  return isPast(reservation.expiryDate)
-}
-
-/**
- * Checks if a connector has a pending (non-expired) reservation.
- * @param connectorStatus - The connector status to check
- * @returns true if the connector has a pending reservation, false otherwise
- */
-export const hasPendingReservation = (connectorStatus: ConnectorStatus): boolean => {
-  return connectorStatus.reservation != null && !hasReservationExpired(connectorStatus.reservation)
-}
-
-/**
- * Checks if a charging station has any pending (non-expired) reservations.
- * @param chargingStation - The charging station to check
- * @returns true if any connector has a pending reservation, false otherwise
- */
-export const hasPendingReservations = (chargingStation: ChargingStation): boolean => {
-  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
-    if (hasPendingReservation(connectorStatus)) {
-      return true
-    }
-  }
-  return false
-}
-
-export const removeExpiredReservations = async (
-  chargingStation: ChargingStation
-): Promise<void> => {
-  const reservations: Reservation[] = []
-  for (const { connectorStatus } of chargingStation.iterateConnectors()) {
-    if (connectorStatus.reservation != null && hasReservationExpired(connectorStatus.reservation)) {
-      reservations.push(connectorStatus.reservation)
-    }
-  }
-  const results = await Promise.allSettled(
-    reservations.map(reservation =>
-      chargingStation.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
-    )
-  )
-  let failureCount = 0
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      ++failureCount
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: reservation removal failed: ${String(result.reason)}`
-      )
-    }
-  }
-  if (failureCount > 0) {
-    logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: ${failureCount.toString()}/${reservations.length.toString()} expired reservation removal(s) failed`
-    )
-  }
-}
+export {
+  hasPendingReservation,
+  hasPendingReservations,
+  hasReservationExpired,
+  removeExpiredReservations,
+} from './HelpersReservation.js'
 
 export const getHashId = (
   index: number,
