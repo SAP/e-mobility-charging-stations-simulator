@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
+  OCPP20MeterValuesRequest,
   OCPP20StatusNotificationRequest,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
@@ -19,6 +20,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   MessageTriggerEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
@@ -498,8 +500,39 @@ await describe('F06 - TriggerMessage', async () => {
 
       // F06.FR.06: TriggerMessage(MessageTrigger.MeterValues) without a
       // specific EVSE MUST emit one MeterValuesRequest per EVSE. Fixture has
-      // 3 EVSEs → 3 requests.
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 3)
+      // 3 EVSEs -> 3 requests.
+      const callCount = requestHandlerMock.mock.callCount()
+      assert.strictEqual(callCount, 3)
+      const observedEvseIds = new Set<number>()
+      for (const call of requestHandlerMock.mock.calls) {
+        const args = call.arguments as [
+          unknown,
+          string,
+          Partial<OCPP20MeterValuesRequest>,
+          RequestParams
+        ]
+        const [, command, payload, options] = args
+        assert.strictEqual(command, OCPP20RequestCommand.METER_VALUES)
+        assert.notStrictEqual(payload, undefined)
+        assert.ok('evseId' in payload, 'Expected payload to include evseId')
+        assert.ok('meterValue' in payload, 'Expected payload to include meterValue')
+        assert.ok(
+          payload.evseId != null && payload.evseId > 0,
+          'Expected evseId > 0 (EVSE 0 excluded)'
+        )
+        observedEvseIds.add(payload.evseId)
+        assert.ok(Array.isArray(payload.meterValue), 'Expected meterValue to be an array')
+        assert.ok(payload.meterValue.length >= 1, 'Expected meterValue.length >= 1')
+        const firstSample = payload.meterValue[0].sampledValue[0]
+        assert.strictEqual(
+          firstSample.context,
+          OCPP20ReadingContextEnumType.TRIGGER,
+          'Expected sampledValue[0].context = Trigger per TC_F_12_CS'
+        )
+        assert.strictEqual(options.skipBufferingOnError, true)
+        assert.strictEqual(options.triggerMessage, true)
+      }
+      assert.deepStrictEqual([...observedEvseIds].sort(), [1, 2, 3])
     })
 
     await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {

@@ -78,6 +78,7 @@ import {
   type OCPP20InstallCertificateResponse,
   type OCPP20LogStatusNotificationRequest,
   type OCPP20LogStatusNotificationResponse,
+  OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
   type OCPP20MeterValuesResponse,
@@ -635,7 +636,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               }
               if (meterValues.length === 0) {
                 meterValues.push({
-                  sampledValue: [{ value: 0 }],
+                  sampledValue: [
+                    {
+                      context: OCPP20ReadingContextEnumType.TRIGGER,
+                      measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+                      value: 0,
+                    },
+                  ],
                   timestamp: new Date(),
                 })
               }
