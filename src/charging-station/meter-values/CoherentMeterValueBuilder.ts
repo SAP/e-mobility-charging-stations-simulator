@@ -99,7 +99,7 @@ const MEASURAND_EMIT_ORDER = [
   MeterValueMeasurand.POWER_ACTIVE_IMPORT,
   MeterValueMeasurand.CURRENT_IMPORT,
   MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-] as const
+] as const satisfies readonly MeterValueMeasurand[]
 
 /**
  * Within-measurand phase order for deterministic per-phase emission:
@@ -284,7 +284,7 @@ const resolveTemplates = (
  * @param context - Charging-station context.
  * @param session - Active coherent session for the transaction. Callers
  *   look this up via
- *   {@link ../../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}
+ *   {@link ../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}
  *   at the strategy gate and thread it through — the port no longer
  *   exposes session lookup.
  * @param buildVersionedSampledValue - Versioned SampledValue builder from

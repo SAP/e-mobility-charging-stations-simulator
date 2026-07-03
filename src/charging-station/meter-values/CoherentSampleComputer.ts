@@ -296,7 +296,10 @@ export const computeCoherentSample = (
   }
   const roundedV = roundTo(sampledV, ROUNDING_SCALE)
 
-  // EV acceptance from the curve at running SoC.
+  // EV acceptance from the profile's charging curve at the SoC of THIS
+  // sample (session.socPercent is advanced by the previous
+  // advanceEnergyRegister tick), not the session's initial SoC — the
+  // taper must track live state so P falls off as the battery fills.
   const acceptanceFraction = interpolateChargingCurve(
     session.profile.chargingCurve,
     session.socPercent
