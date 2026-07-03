@@ -32,7 +32,7 @@ export const hasReservationExpired = (reservation: Reservation): boolean => {
 }
 
 /**
- * Checks if a connector has a pending (non-expired) reservation.
+ * Determines whether a connector has a pending (non-expired) reservation.
  * @param connectorStatus - The connector status to check.
  * @returns `true` if the connector has a pending reservation, `false` otherwise.
  */
@@ -41,7 +41,7 @@ export const hasPendingReservation = (connectorStatus: ConnectorStatus): boolean
 }
 
 /**
- * Checks if a charging station has any pending (non-expired) reservations.
+ * Determines whether a charging station has any pending (non-expired) reservations.
  * @param chargingStation - The charging station to check.
  * @returns `true` if any connector has a pending reservation, `false` otherwise.
  */
