@@ -1,8 +1,11 @@
 /**
- * @file Tests for CoherentMeterValuesGenerator physics.
+ * @file Tests for coherent MeterValues generation.
  * @description Verifies invariants (P=V·I·phases, ΔE=P·Δt/3.6e6, SoC monotone,
  *   saturation at 100 %), Wh/kWh unit conversion, energy-register ownership,
  *   and same-seed determinism across AC 1-phase, AC 3-phase, and DC modes.
+ *   Exercises the split modules together: `CoherentSampleComputer` (physics),
+ *   `CoherentMeterValueBuilder` (emission), `CoherentSession` (lifecycle),
+ *   and `Prng` (stream splitting).
  */
 
 import assert from 'node:assert/strict'
@@ -164,7 +167,7 @@ const createSessionOrFail = (
   return session
 }
 
-await describe('CoherentMeterValuesGenerator', async () => {
+await describe('CoherentMeterValues', async () => {
   afterEach(() => {
     standardCleanup()
   })

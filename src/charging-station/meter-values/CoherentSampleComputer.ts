@@ -3,9 +3,10 @@
 /**
  * @file Physics computation for coherent MeterValues.
  * @description Owns the physics chain V → P → I → ΔE → SoC that produces a
- *   single {@link CoherentSample} per emission tick. Extracted from
- *   {@link ./CoherentMeterValuesGenerator} as part of the file split in
- *   issue #1936 (item i) to keep each module under the 250 LOC ceiling.
+ *   single {@link CoherentSample} per emission tick, the per-session
+ *   runtime WeakMap that caches the voltage-noise PRNG across samples,
+ *   and the `disposeCoherentSessionRuntime` teardown hook consumed by
+ *   {@link ../CoherentMeterValuesManager}.
  *
  * Invariants (enforced by construction):
  * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted `powerW`
@@ -55,6 +56,14 @@ interface SessionRuntime {
 
 const sessionRuntimes = new WeakMap<CoherentSession, SessionRuntime>()
 
+/**
+ * Retrieves the runtime bag for a session, creating it on first access.
+ * Consumed by {@link computeCoherentSample} to cache the voltage-noise
+ * PRNG across samples so the stream advances rather than restarting
+ * from the same seed each draw.
+ * @param session - Coherent session.
+ * @returns Live runtime bag (mutated in place).
+ */
 const getSessionRuntime = (session: CoherentSession): SessionRuntime => {
   let runtime = sessionRuntimes.get(session)
   if (runtime == null) {
