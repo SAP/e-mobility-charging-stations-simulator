@@ -141,14 +141,20 @@ const groupTemplatesByMeasurand = (
   return groups
 }
 
+const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
+  phaseFamily(t.phase) === 'LineToNeutral'
+
 /**
  * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
- * suppression to the `Energy.Active.Import.Register` bucket in-place:
- * removes per-phase L-N templates so they never enter the emit loop
+ * suppression to the `Energy.Active.Import.Register` bucket in-place.
+ * Partitions templates into identity families keyed by `(context, format,
+ * location, unit)` so mixed-family configurations preserve one aggregate
+ * per family: within each family, per-phase L-N templates are removed
  * (avoiding "unsupported combination" warnings for a configured skip),
- * and synthesizes an aggregate template from the first suppressed L-N
- * when the connector configures only per-phase templates (spec: "will
- * only report the total energy over all phases"). No-op when the
+ * and if no aggregate template exists in that family an aggregate is
+ * synthesized from the first suppressed per-phase L-N template of the
+ * same family (phase cleared, other identity fields inherited). Spec:
+ * "will only report the total energy over all phases". No-op when the
  * measurand bucket is absent or contains no per-phase L-N templates.
  * @param groups - Grouped templates map (mutated in-place).
  */
@@ -157,20 +163,37 @@ const applyRegisterValuesWithoutPhases = (
 ): void => {
   const bucket = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
   if (bucket == null) return
-  const perPhaseLN = bucket.filter(t => t.phase != null && phaseFamily(t.phase) === 'LineToNeutral')
-  if (perPhaseLN.length === 0) return
-  const surviving = bucket.filter(
-    t => !(t.phase != null && phaseFamily(t.phase) === 'LineToNeutral')
-  )
-  const hasAggregate = surviving.some(t => t.phase == null)
-  if (!hasAggregate) {
-    // Synthesize aggregate template from first per-phase L-N to preserve
-    // the spec-mandated total: unit/measurand/location/context inherit
-    // from the L-N template; phase is cleared so the aggregate branch of
-    // `resolvePhasedValue` emits the total register.
-    const synthesized: SampledValueTemplate = { ...perPhaseLN[0], phase: undefined }
-    surviving.unshift(synthesized)
+  if (!bucket.some(isLineToNeutralTemplate)) return
+  // Identity family excludes `phase` so per-phase L-N templates suppress
+  // and synthesize against siblings sharing (context, format, location, unit).
+  const familyKey = (t: SampledValueTemplate): string =>
+    JSON.stringify([t.context ?? null, t.format ?? null, t.location ?? null, t.unit ?? null])
+  const perPhaseLNByFamily = new Map<string, SampledValueTemplate[]>()
+  const otherByFamily = new Map<string, SampledValueTemplate[]>()
+  for (const template of bucket) {
+    const key = familyKey(template)
+    const target = isLineToNeutralTemplate(template) ? perPhaseLNByFamily : otherByFamily
+    const family = target.get(key) ?? []
+    family.push(template)
+    target.set(key, family)
   }
+  for (const [key, perPhaseLN] of perPhaseLNByFamily) {
+    const other = otherByFamily.get(key) ?? []
+    if (!other.some(t => t.phase == null)) {
+      // Synthesize aggregate from first suppressed per-phase L-N of this family:
+      // unit / measurand / location / context / format inherit from the L-N
+      // template; phase is cleared so the aggregate branch of
+      // `resolvePhasedValue` emits the total register.
+      const synthesized: SampledValueTemplate = { ...perPhaseLN[0], phase: undefined }
+      other.unshift(synthesized)
+    }
+    otherByFamily.set(key, other)
+  }
+  const surviving = [...otherByFamily.values()].flat()
+  surviving.sort(
+    (a, b) =>
+      (a.phase == null ? 0 : PHASE_RANK[a.phase]) - (b.phase == null ? 0 : PHASE_RANK[b.phase])
+  )
   groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, surviving)
 }
 
@@ -339,7 +362,7 @@ const resolveTemplates = (
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
  * @param registerValuesWithoutPhases - Optional OCPP 2.0.1
  *   `SampledDataCtrlr.RegisterValuesWithoutPhases` flag. When `true`,
- *   L-N per-phase `Energy.Active.Import.Register` templates are
+ *   per-phase L-N `Energy.Active.Import.Register` templates are
  *   filtered out of the emit bucket before iteration; if the connector
  *   configures only per-phase L-N templates (no aggregate), an
  *   aggregate template is synthesized from the first suppressed L-N

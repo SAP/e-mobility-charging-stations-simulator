@@ -37,6 +37,7 @@ import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
 import {
   AvailabilityType,
   CurrentType,
+  MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
@@ -1253,6 +1254,89 @@ await describe('CoherentMeterValues', async () => {
         MeterValueUnit.WATT_HOUR,
         'synthesized aggregate must inherit unit from the first suppressed L-N template'
       )
+    })
+
+    await it('should synthesize aggregate per identity family when Energy.Active.Import.Register bucket mixes families and registerValuesWithoutPhases=true', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.energyActiveImportRegisterValue = 6000
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 6000
+      // Two identity families in the Energy.Active.Import.Register bucket:
+      // - INLET / Wh: per-phase L-N templates only (no aggregate)
+      // - OUTLET / Wh: aggregate template only (no per-phase)
+      // Correct behavior per family: INLET must synthesize its aggregate,
+      // OUTLET's aggregate emits untouched. The pre-fix keyed-only-by-measurand
+      // logic would incorrectly rely on OUTLET's aggregate to satisfy INLET
+      // and drop INLET's per-phase family without synthesis.
+      connectorStatus.MeterValues = [
+        {
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L3_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          location: MeterValueLocation.OUTLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      ] as unknown as SampledValueTemplate[]
+      const mv = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        {
+          intervalMs: 3_600_000,
+          nowMs: 3_600_000,
+          rootSeed: 42,
+          voltageNoise: false,
+        },
+        undefined,
+        undefined,
+        true
+      )
+      const energySamples = mv.sampledValue.filter(
+        sv =>
+          (sv as { measurand?: MeterValueMeasurand }).measurand ===
+          MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(
+        energySamples.length,
+        2,
+        'both identity families must emit an aggregate: INLET synthesizes, OUTLET keeps its configured aggregate (per-family suppression semantic); pre-fix logic keyed only by measurand would emit exactly 1 (OUTLET) and silently drop the INLET family'
+      )
+      for (const sv of energySamples) {
+        assert.strictEqual(
+          (sv as { phase?: string }).phase,
+          undefined,
+          'both surviving samples must be aggregates (no phase qualifier)'
+        )
+      }
     })
   })
 })

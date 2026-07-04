@@ -1163,7 +1163,7 @@ export const buildMeterValue = (
   const coherentSession = chargingStation.getCoherentSession(transactionId)
   if (isCoherentModeActive(coherentSession)) {
     // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
-    // through to the coherent builder so L-N per-phase
+    // through to the coherent builder so per-phase L-N
     // Energy.Active.Import.Register templates are skipped when the
     // variable resolves to true. OCPP 1.6 stations do not carry the
     // component-scoped key by default: `getConfigurationKey` returns
