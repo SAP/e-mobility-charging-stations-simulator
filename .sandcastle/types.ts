@@ -97,10 +97,7 @@ export interface LoopResult {
   baseBranch: string
   /** Reason for non-converged termination, if applicable. */
   failureReason?:
-    | 'actor_error'
-    | 'critic_parse_failed'
-    | 'critic_quorum_failed'
-    | 'quality_regression'
+    'actor_error' | 'critic_parse_failed' | 'critic_quorum_failed' | 'quality_regression'
   /** Complete findings history across all rounds. */
   roundHistory: RoundSnapshot[]
   /** Number of rounds executed, including the optional post-loop validation retry round when it ran. */
