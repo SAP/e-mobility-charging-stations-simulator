@@ -17,11 +17,15 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type { SampledValueTemplate } from '../../../src/types/index.js'
 
-import { addConfigurationKey } from '../../../src/charging-station/index.js'
+import { addConfigurationKey, buildConfigKey } from '../../../src/charging-station/index.js'
 import { buildMeterValue } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   CurrentType,
   MeterValueMeasurand,
+  MeterValuePhase,
+  MeterValueUnit,
+  OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPPVersion,
   StandardParametersKey,
   Voltage,
@@ -192,6 +196,139 @@ await describe('StrategyDispatch', async () => {
       assert.ok(registerAfter >= registerBefore)
       // Only SoC template configured → SampledValue count matches.
       assert.ok(meterValue.sampledValue.length <= 1)
+    })
+  })
+
+  await describe('OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases wire', async () => {
+    beforeEach(() => {
+      const { station: s } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        stationInfo: {
+          coherentMeterValues: true,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      station = s
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = [
+          {
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            phase: MeterValuePhase.L1_N,
+            unit: MeterValueUnit.WATT_HOUR,
+          },
+          {
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            phase: MeterValuePhase.L2_N,
+            unit: MeterValueUnit.WATT_HOUR,
+          },
+          {
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            phase: MeterValuePhase.L3_N,
+            unit: MeterValueUnit.WATT_HOUR,
+          },
+        ] as unknown as SampledValueTemplate[]
+        connectorStatus.transactionId = TEST_TRANSACTION_ID
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 6000
+        connectorStatus.energyActiveImportRegisterValue = 6000
+      }
+    })
+
+    await it('should synthesize aggregate register at buildMeterValue boundary when the SampledDataCtrlr variable resolves to true', () => {
+      const now = Date.now()
+      const session: CoherentSession = {
+        connectorId: 1,
+        currentType: CurrentType.AC,
+        numberOfPhases: 3,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [{ powerFraction: 1, socPercent: 0 }],
+          id: 'inline',
+          initialSocPercentMax: 30,
+          initialSocPercentMin: 30,
+          maxPowerW: 11000,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: now,
+        socPercent: 30,
+        transactionId: TEST_TRANSACTION_ID,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      }
+      station.__injectCoherentSession(TEST_TRANSACTION_ID, session)
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+        ),
+        'true'
+      )
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID,
+        TEST_METER_VALUES_INTERVAL_MS
+      )
+      const energySamples = meterValue.sampledValue.filter(
+        sv =>
+          (sv as { measurand?: MeterValueMeasurand }).measurand ===
+          MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(
+        energySamples.length,
+        1,
+        'the OCPP 2.0.1 strategy gate must resolve RegisterValuesWithoutPhases and thread it into the coherent builder so only one aggregate sample emits (synthesized when only per-phase L-N templates are configured)'
+      )
+      assert.strictEqual(
+        (energySamples[0] as { phase?: string }).phase,
+        undefined,
+        'the surviving sample must be the aggregate (no phase qualifier)'
+      )
+    })
+
+    await it('should preserve per-phase L-N emission when the SampledDataCtrlr variable is absent', () => {
+      const now = Date.now()
+      const session: CoherentSession = {
+        connectorId: 1,
+        currentType: CurrentType.AC,
+        numberOfPhases: 3,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [{ powerFraction: 1, socPercent: 0 }],
+          id: 'inline',
+          initialSocPercentMax: 30,
+          initialSocPercentMin: 30,
+          maxPowerW: 11000,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: now,
+        socPercent: 30,
+        transactionId: TEST_TRANSACTION_ID,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      }
+      station.__injectCoherentSession(TEST_TRANSACTION_ID, session)
+      // Do not set the configuration key: the variable is absent, so
+      // isOCPP20FlagEnabled resolves to false (default behavior).
+
+      const meterValue = buildMeterValue(
+        station,
+        TEST_TRANSACTION_ID,
+        TEST_METER_VALUES_INTERVAL_MS
+      )
+      const energySamples = meterValue.sampledValue.filter(
+        sv =>
+          (sv as { measurand?: MeterValueMeasurand }).measurand ===
+          MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(
+        energySamples.length,
+        3,
+        'when RegisterValuesWithoutPhases is absent the strategy gate must not apply suppression: all 3 configured per-phase L-N templates must emit'
+      )
     })
   })
 })
