@@ -141,6 +141,7 @@ import {
   convertToIntOrNaN,
   ensureError,
   generateUUID,
+  getErrorMessage,
   handleIncomingRequestError,
   isEmpty,
   isNotEmptyArray,
@@ -1317,13 +1318,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const meterValues: OCPP20MeterValue[] = []
     for (const connector of evseStatus.connectors.values()) {
       if (connector.transactionId == null) continue
-      const meterValue = buildMeterValue(
-        chargingStation,
-        connector.transactionId,
-        alignedInterval,
-        alignedMeasurandsKey,
-        OCPP20ReadingContextEnumType.TRIGGER
-      ) as OCPP20MeterValue
+      let meterValue: OCPP20MeterValue
+      try {
+        meterValue = buildMeterValue(
+          chargingStation,
+          connector.transactionId,
+          alignedInterval,
+          alignedMeasurandsKey,
+          OCPP20ReadingContextEnumType.TRIGGER
+        ) as OCPP20MeterValue
+      } catch (error) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.emitEvseMeterValues: ${getErrorMessage(error)}`
+        )
+        continue
+      }
       // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*:
       // skip a MeterValue whose emit set collapsed to empty so the
       // outgoing MeterValuesRequest stays schema-conforming.
