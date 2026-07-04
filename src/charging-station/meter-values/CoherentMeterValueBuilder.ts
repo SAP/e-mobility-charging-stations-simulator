@@ -142,6 +142,39 @@ const groupTemplatesByMeasurand = (
 }
 
 /**
+ * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
+ * suppression to the `Energy.Active.Import.Register` bucket in-place:
+ * removes per-phase L-N templates so they never enter the emit loop
+ * (avoiding "unsupported combination" warnings for a configured skip),
+ * and synthesizes an aggregate template from the first suppressed L-N
+ * when the connector configures only per-phase templates (spec: "will
+ * only report the total energy over all phases"). No-op when the
+ * measurand bucket is absent or contains no per-phase L-N templates.
+ * @param groups - Grouped templates map (mutated in-place).
+ */
+const applyRegisterValuesWithoutPhases = (
+  groups: Map<MeterValueMeasurand, SampledValueTemplate[]>
+): void => {
+  const bucket = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+  if (bucket == null) return
+  const perPhaseLN = bucket.filter(t => t.phase != null && phaseFamily(t.phase) === 'LineToNeutral')
+  if (perPhaseLN.length === 0) return
+  const surviving = bucket.filter(
+    t => !(t.phase != null && phaseFamily(t.phase) === 'LineToNeutral')
+  )
+  const hasAggregate = surviving.some(t => t.phase == null)
+  if (!hasAggregate) {
+    // Synthesize aggregate template from first per-phase L-N to preserve
+    // the spec-mandated total: unit/measurand/location/context inherit
+    // from the L-N template; phase is cleared so the aggregate branch of
+    // `resolvePhasedValue` emits the total register.
+    const synthesized: SampledValueTemplate = { ...perPhaseLN[0], phase: undefined }
+    surviving.unshift(synthesized)
+  }
+  groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, surviving)
+}
+
+/**
  * Resolves the exact physical value to emit for a template given the
  * coherent sample. Returns `undefined` for unsupported `(measurand, phase)`
  * pairs so the caller can log-and-skip. Rounding is deferred to the emit
@@ -157,25 +190,22 @@ const groupTemplatesByMeasurand = (
  * - Current.Import: any line phase ⇒ `sample.currentA` (line current);
  *   L-L undefined; N ⇒ 0 (balanced 3-φ Y neutral current is zero).
  * - SoC: aggregate scalar; phase-qualified templates rejected.
- * - Energy.Active.Import.Register: aggregate ⇒ total register (always
- *   emitted regardless of `suppressPerPhaseRegister`); L-N ⇒
+ * - Energy.Active.Import.Register: aggregate ⇒ total register; L-N ⇒
  *   `register / phases` (per-phase energy contribution under balanced
  *   3-φ Y; Σ across all L-N templates equals the aggregate register
  *   within emit-unit rounding granularity - Wh: ≤ phases · 0.005 Wh;
- *   kWh: ≤ phases · 5 Wh), OR `undefined` when
- *   `suppressPerPhaseRegister === true` so the caller log-and-skips the
- *   per-phase template (OCPP 2.0.1
- *   `SampledDataCtrlr.RegisterValuesWithoutPhases`); L-L undefined;
- *   N undefined.
+ *   kWh: ≤ phases · 5 Wh); L-L undefined; N undefined. OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases` suppression is
+ *   applied at the bucket level in {@link buildCoherentMeterValue}
+ *   before this function is called; L-N templates for
+ *   `Energy.Active.Import.Register` are filtered out at that boundary
+ *   when the flag is set, and an aggregate template is synthesized if
+ *   the connector only configures per-phase templates.
  * @param measurand - Target measurand.
  * @param phase - Template `phase` field (may be `undefined`).
  * @param sample - Coherent sample (source of aggregate values).
  * @param numberOfPhases - Session phase count.
  * @param connectorStatus - Connector status (for the energy register).
- * @param suppressPerPhaseRegister - When `true`, L-N templates for the
- *   `Energy.Active.Import.Register` measurand return `undefined` so the
- *   caller log-and-skips them (OCPP 2.0.1
- *   `SampledDataCtrlr.RegisterValuesWithoutPhases`). Defaults to `false`.
  * @returns Value to emit, or `undefined` if the combination is unsupported.
  */
 const resolvePhasedValue = (
@@ -183,8 +213,7 @@ const resolvePhasedValue = (
   phase: MeterValuePhase | undefined,
   sample: CoherentSample,
   numberOfPhases: number,
-  connectorStatus: ConnectorStatus,
-  suppressPerPhaseRegister = false
+  connectorStatus: ConnectorStatus
 ): number | undefined => {
   const family = phaseFamily(phase)
   switch (measurand) {
@@ -196,10 +225,6 @@ const resolvePhasedValue = (
       if (family === 'LineToLine' || family === 'Neutral') return undefined
       const register = Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
       if (family === 'LineToNeutral') {
-        // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: when true,
-        // suppress the L-N per-phase register template so only the aggregate
-        // register is emitted. The aggregate branch below is unaffected.
-        if (suppressPerPhaseRegister) return undefined
         if (numberOfPhases <= 0) return undefined
         return register / numberOfPhases
       }
@@ -314,9 +339,14 @@ const resolveTemplates = (
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
  * @param registerValuesWithoutPhases - Optional OCPP 2.0.1
  *   `SampledDataCtrlr.RegisterValuesWithoutPhases` flag. When `true`,
- *   L-N per-phase `Energy.Active.Import.Register` templates are skipped
- *   (only the aggregate register is emitted). Defaults to `false` (or
- *   `undefined`) so OCPP 1.6 callers preserve current behavior.
+ *   L-N per-phase `Energy.Active.Import.Register` templates are
+ *   filtered out of the emit bucket before iteration; if the connector
+ *   configures only per-phase L-N templates (no aggregate), an
+ *   aggregate template is synthesized from the first suppressed L-N
+ *   template (phase cleared, other fields preserved) so the spec
+ *   requirement "will only report the total energy over all phases" is
+ *   satisfied. Defaults to `false` (or `undefined`) so OCPP 1.6 callers
+ *   preserve current behavior.
  * @returns MeterValue with sampled values and current timestamp.
  */
 export const buildCoherentMeterValue = (
@@ -344,6 +374,9 @@ export const buildCoherentMeterValue = (
 
   const templates = resolveTemplates(context, session.connectorId)
   const groups = groupTemplatesByMeasurand(templates)
+  if (registerValuesWithoutPhases === true) {
+    applyRegisterValuesWithoutPhases(groups)
+  }
   const sampledValue: SampledValue[] = []
   const isEnabled = (measurand: MeterValueMeasurand): boolean =>
     enabledMeasurands == null || enabledMeasurands.has(measurand)
@@ -359,8 +392,7 @@ export const buildCoherentMeterValue = (
         template.phase,
         sample,
         numberOfPhases,
-        connectorStatus,
-        registerValuesWithoutPhases
+        connectorStatus
       )
       if (raw == null) {
         logger.warn(

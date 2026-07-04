@@ -1177,5 +1177,82 @@ await describe('CoherentMeterValues', async () => {
         'Power.Active.Import per-phase L-N templates must remain emitted regardless of registerValuesWithoutPhases (flag scoped to Energy.Active.Import.Register)'
       )
     })
+
+    await it('should synthesize aggregate Energy.Active.Import.Register when only per-phase L-N templates configured and registerValuesWithoutPhases=true', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.energyActiveImportRegisterValue = 6000
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 6000
+      connectorStatus.MeterValues = [
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L3_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      ] as unknown as SampledValueTemplate[]
+      const mv = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        {
+          intervalMs: 3_600_000,
+          nowMs: 3_600_000,
+          rootSeed: 42,
+          voltageNoise: false,
+        },
+        undefined,
+        undefined,
+        true
+      )
+      const energySamples = mv.sampledValue.filter(
+        sv =>
+          (sv as { measurand?: MeterValueMeasurand }).measurand ===
+          MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(
+        energySamples.length,
+        1,
+        'exactly one synthesized aggregate Energy.Active.Import.Register sample must be emitted when only per-phase L-N templates are configured and registerValuesWithoutPhases=true (spec: "will only report the total energy over all phases")'
+      )
+      assert.strictEqual(
+        (energySamples[0] as { phase?: string }).phase,
+        undefined,
+        'the synthesized sample must be the aggregate (no phase qualifier)'
+      )
+      const emitted = Number(energySamples[0].value)
+      const postRegister = connectorStatus.energyActiveImportRegisterValue ?? 0
+      assert.ok(
+        Math.abs(emitted - postRegister) < 0.05,
+        `synthesized aggregate=${emitted.toString()} not ≈ ${postRegister.toString()} (total register, not register/phases)`
+      )
+      assert.strictEqual(
+        (energySamples[0] as { unit?: string }).unit,
+        MeterValueUnit.WATT_HOUR,
+        'synthesized aggregate must inherit unit from the first suppressed L-N template'
+      )
+    })
   })
 })
