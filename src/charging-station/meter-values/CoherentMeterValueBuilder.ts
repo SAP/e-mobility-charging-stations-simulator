@@ -157,19 +157,25 @@ const groupTemplatesByMeasurand = (
  * - Current.Import: any line phase ⇒ `sample.currentA` (line current);
  *   L-L undefined; N ⇒ 0 (balanced 3-φ Y neutral current is zero).
  * - SoC: aggregate scalar; phase-qualified templates rejected.
- * - Energy.Active.Import.Register: aggregate ⇒ total register; L-N ⇒
+ * - Energy.Active.Import.Register: aggregate ⇒ total register (always
+ *   emitted regardless of `suppressPerPhaseRegister`); L-N ⇒
  *   `register / phases` (per-phase energy contribution under balanced
  *   3-φ Y; Σ across all L-N templates equals the aggregate register
  *   within emit-unit rounding granularity - Wh: ≤ phases · 0.005 Wh;
- *   kWh: ≤ phases · 5 Wh); L-L undefined; N undefined. OCPP 2.0.1
- *   `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted;
- *   per-phase emission is driven by the connector template's phase
- *   qualifier.
+ *   kWh: ≤ phases · 5 Wh), OR `undefined` when
+ *   `suppressPerPhaseRegister === true` so the caller log-and-skips the
+ *   per-phase template (OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases`); L-L undefined;
+ *   N undefined.
  * @param measurand - Target measurand.
  * @param phase - Template `phase` field (may be `undefined`).
  * @param sample - Coherent sample (source of aggregate values).
  * @param numberOfPhases - Session phase count.
  * @param connectorStatus - Connector status (for the energy register).
+ * @param suppressPerPhaseRegister - When `true`, L-N templates for the
+ *   `Energy.Active.Import.Register` measurand return `undefined` so the
+ *   caller log-and-skips them (OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases`). Defaults to `false`.
  * @returns Value to emit, or `undefined` if the combination is unsupported.
  */
 const resolvePhasedValue = (
@@ -177,7 +183,8 @@ const resolvePhasedValue = (
   phase: MeterValuePhase | undefined,
   sample: CoherentSample,
   numberOfPhases: number,
-  connectorStatus: ConnectorStatus
+  connectorStatus: ConnectorStatus,
+  suppressPerPhaseRegister = false
 ): number | undefined => {
   const family = phaseFamily(phase)
   switch (measurand) {
@@ -189,6 +196,10 @@ const resolvePhasedValue = (
       if (family === 'LineToLine' || family === 'Neutral') return undefined
       const register = Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
       if (family === 'LineToNeutral') {
+        // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: when true,
+        // suppress the L-N per-phase register template so only the aggregate
+        // register is emitted. The aggregate branch below is unaffected.
+        if (suppressPerPhaseRegister) return undefined
         if (numberOfPhases <= 0) return undefined
         return register / numberOfPhases
       }
@@ -301,6 +312,11 @@ const resolveTemplates = (
  *   When `undefined`, all templates emit (default behavior). When defined,
  *   only measurands in the set emit. Governs OCPP 2.0.1 J02.FR.11 /
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
+ * @param registerValuesWithoutPhases - Optional OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases` flag. When `true`,
+ *   L-N per-phase `Energy.Active.Import.Register` templates are skipped
+ *   (only the aggregate register is emitted). Defaults to `false` (or
+ *   `undefined`) so OCPP 1.6 callers preserve current behavior.
  * @returns MeterValue with sampled values and current timestamp.
  */
 export const buildCoherentMeterValue = (
@@ -309,7 +325,8 @@ export const buildCoherentMeterValue = (
   buildVersionedSampledValue: BuildVersionedSampledValue,
   options: ComputeSampleOptions,
   mvContext?: MeterValueContext,
-  enabledMeasurands?: ReadonlySet<MeterValueMeasurand>
+  enabledMeasurands?: ReadonlySet<MeterValueMeasurand>,
+  registerValuesWithoutPhases?: boolean
 ): MeterValue => {
   const connectorStatus = context.getConnectorStatus(session.connectorId)
   if (connectorStatus == null) {
@@ -342,7 +359,8 @@ export const buildCoherentMeterValue = (
         template.phase,
         sample,
         numberOfPhases,
-        connectorStatus
+        connectorStatus,
+        registerValuesWithoutPhases
       )
       if (raw == null) {
         logger.warn(

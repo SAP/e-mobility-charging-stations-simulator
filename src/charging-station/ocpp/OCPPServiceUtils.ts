@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url'
 
 import type {
   BootReasonEnumType,
-  OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
   SigningMethodEnumType,
@@ -40,6 +39,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
   OCPPVersion,
   RequestCommand,
@@ -1162,6 +1162,16 @@ export const buildMeterValue = (
   // this is a no-op and the random/fixed code path is unchanged.
   const coherentSession = chargingStation.getCoherentSession(transactionId)
   if (isCoherentModeActive(coherentSession)) {
+    // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
+    // through to the coherent builder so L-N per-phase
+    // Energy.Active.Import.Register templates are skipped when the
+    // variable resolves to true. OCPP 1.6 stations never resolve the
+    // component-scoped key (returns false), preserving current behavior.
+    const registerValuesWithoutPhases = isOCPP20FlagEnabled(
+      chargingStation,
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+    )
     return buildCoherentMeterValue(
       chargingStation,
       coherentSession,
@@ -1172,7 +1182,8 @@ export const buildMeterValue = (
         rootSeed: resolveRootSeed(chargingStation.stationInfo),
       },
       context,
-      resolveEnabledMeasurands(chargingStation, measurandsKey)
+      resolveEnabledMeasurands(chargingStation, measurandsKey),
+      registerValuesWithoutPhases
     )
   }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
