@@ -78,6 +78,7 @@ import {
   type OCPP20InstallCertificateResponse,
   type OCPP20LogStatusNotificationRequest,
   type OCPP20LogStatusNotificationResponse,
+  OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
   type OCPP20MeterValuesResponse,
@@ -140,6 +141,7 @@ import {
   convertToIntOrNaN,
   ensureError,
   generateUUID,
+  getErrorMessage,
   handleIncomingRequestError,
   isEmpty,
   isNotEmptyArray,
@@ -592,69 +594,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               )
               .catch(errorHandler)
             break
-          case MessageTriggerEnumType.MeterValues: {
-            const targetEvseIds: number[] = []
-            if (evse?.id != null && evse.id > 0) {
-              targetEvseIds.push(evse.id)
-            } else {
-              for (const { evseId } of chargingStation.iterateEvses(true)) {
-                targetEvseIds.push(evseId)
-              }
-            }
-            let hasSentTransactionEvent = false
-            for (const targetEvseId of targetEvseIds) {
-              const evseStatus = chargingStation.getEvseStatus(targetEvseId)
-              if (evseStatus == null) continue
-              for (const [cId, connector] of evseStatus.connectors) {
-                if (connector.transactionId == null) continue
-                hasSentTransactionEvent = true
-                const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-                const meterValue = buildMeterValue(
-                  chargingStation,
-                  connector.transactionId,
-                  txUpdatedInterval,
-                  buildConfigKey(
-                    OCPP20ComponentName.SampledDataCtrlr,
-                    OCPP20RequiredVariableName.TxUpdatedMeasurands
-                  ),
-                  OCPP20ReadingContextEnumType.TRIGGER
-                ) as OCPP20MeterValue
-                // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*, while
-                // TransactionEventRequest.meterValue is 0..*: when TxUpdatedMeasurands
-                // yields no sampled values, omit the meterValue field entirely rather
-                // than send an empty-wrapper schema violation.
-                const eventPayload = isNotEmptyArray(meterValue.sampledValue)
-                  ? { meterValue: [meterValue] }
-                  : {}
-                OCPP20ServiceUtils.sendTransactionEvent(
-                  chargingStation,
-                  OCPP20TransactionEventEnumType.Updated,
-                  OCPP20TriggerReasonEnumType.Trigger,
-                  cId,
-                  connector.transactionId as string,
-                  eventPayload
-                ).catch(errorHandler)
-              }
-            }
-            if (!hasSentTransactionEvent) {
-              const meterValue: OCPP20MeterValue = {
-                sampledValue: [{ value: 0 }],
-                timestamp: new Date(),
-              }
-              chargingStation.ocppRequestService
-                .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-                  chargingStation,
-                  OCPP20RequestCommand.METER_VALUES,
-                  {
-                    evseId: evse?.id ?? 1,
-                    meterValue: [meterValue],
-                  },
-                  { skipBufferingOnError: true, triggerMessage: true }
-                )
-                .catch(errorHandler)
-            }
+          case MessageTriggerEnumType.MeterValues:
+            this.triggerMeterValues(chargingStation, evse, errorHandler)
             break
-          }
           case MessageTriggerEnumType.StatusNotification:
             this.triggerStatusNotification(chargingStation, evse, errorHandler)
             break
@@ -1352,6 +1294,75 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return true
     }
     return queue.some(({ request }) => request.transactionInfo.transactionId === transactionId)
+  }
+
+  /**
+   * Emits one `MeterValuesRequest` aggregating the given EVSE's
+   * active-transaction connectors, or a schema-conforming placeholder
+   * when the EVSE has no active transactions.
+   * @param chargingStation - Target charging station.
+   * @param evseId - Target EVSE identifier.
+   * @param evseStatus - Target EVSE status (yields the connectors).
+   * @param alignedInterval - Aligned-data emission interval in milliseconds.
+   * @param alignedMeasurandsKey - Configuration key for the AlignedDataCtrlr.Measurands allow-list.
+   * @param errorHandler - Handler for downstream request-emission errors.
+   */
+  private emitEvseMeterValues (
+    chargingStation: ChargingStation,
+    evseId: number,
+    evseStatus: EvseStatus,
+    alignedInterval: number,
+    alignedMeasurandsKey: string,
+    errorHandler: (error: unknown) => void
+  ): void {
+    const meterValues: OCPP20MeterValue[] = []
+    for (const connector of evseStatus.connectors.values()) {
+      if (connector.transactionId == null) continue
+      let meterValue: OCPP20MeterValue
+      try {
+        meterValue = buildMeterValue(
+          chargingStation,
+          connector.transactionId,
+          alignedInterval,
+          alignedMeasurandsKey,
+          OCPP20ReadingContextEnumType.TRIGGER
+        ) as OCPP20MeterValue
+      } catch (error) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.emitEvseMeterValues: ${getErrorMessage(error)}`
+        )
+        continue
+      }
+      // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*:
+      // skip a MeterValue whose emit set collapsed to empty so the
+      // outgoing MeterValuesRequest stays schema-conforming.
+      if (isNotEmptyArray(meterValue.sampledValue)) {
+        meterValues.push(meterValue)
+      }
+    }
+    if (meterValues.length === 0) {
+      meterValues.push({
+        sampledValue: [
+          {
+            context: OCPP20ReadingContextEnumType.TRIGGER,
+            measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+            value: 0,
+          },
+        ],
+        timestamp: new Date(),
+      })
+    }
+    chargingStation.ocppRequestService
+      .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
+        chargingStation,
+        OCPP20RequestCommand.METER_VALUES,
+        {
+          evseId,
+          meterValue: meterValues,
+        },
+        { skipBufferingOnError: true, triggerMessage: true }
+      )
+      .catch(errorHandler)
   }
 
   private getRestoredConnectorStatus (
@@ -3941,6 +3952,55 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           { skipBufferingOnError: true, triggerMessage: true }
         )
         .catch(errorHandler)
+    }
+  }
+
+  /**
+   * OCPP 2.0.1 F06.FR.06: TriggerMessage with `MessageTrigger.MeterValues`
+   * SHALL respond with `MeterValuesRequest` (not `TransactionEventRequest`),
+   * using the `AlignedDataCtrlr.Measurands` allow-list and `TRIGGER`
+   * ReadingContext. One `MeterValuesRequest` per target EVSE aggregating
+   * MeterValues from every connector with an active transaction; when an
+   * EVSE has no active transactions, still emit one request with a
+   * schema-conforming placeholder so the CSMS observes the response
+   * (F06.FR.10). F06.FR.11 broadcast semantics apply when `evse` is absent.
+   * @param chargingStation - Target charging station.
+   * @param evse - Optional target EVSE from the TriggerMessage payload.
+   * @param errorHandler - Handler for downstream request-emission errors.
+   */
+  private triggerMeterValues (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse'],
+    errorHandler: (error: unknown) => void
+  ): void {
+    const alignedInterval = OCPP20ServiceUtils.getAlignedDataInterval(chargingStation)
+    const alignedMeasurandsKey = buildConfigKey(
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20RequiredVariableName.Measurands
+    )
+    if (evse?.id != null && evse.id > 0) {
+      const evseStatus = chargingStation.getEvseStatus(evse.id)
+      if (evseStatus != null) {
+        this.emitEvseMeterValues(
+          chargingStation,
+          evse.id,
+          evseStatus,
+          alignedInterval,
+          alignedMeasurandsKey,
+          errorHandler
+        )
+      }
+    } else {
+      for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+        this.emitEvseMeterValues(
+          chargingStation,
+          evseId,
+          evseStatus,
+          alignedInterval,
+          alignedMeasurandsKey,
+          errorHandler
+        )
+      }
     }
   }
 
