@@ -1436,5 +1436,45 @@ await describe('CoherentMeterValues', async () => {
         'connector-level MeterValues must emit when the connector is not grouped under an EVSE'
       )
     })
+
+    await it('should fall back to connector-level MeterValues when EVSE grouping exists but EVSE-level MeterValues array is empty', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // evseMeterValues=[] => getEvseIdByConnectorId returns 1, getEvseStatus(1).MeterValues = [].
+      // resolveTemplates must skip the empty EVSE array and fall back to connector-level.
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [],
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when EVSE grouping exists but the EVSE-level MeterValues array is empty'
+      )
+    })
   })
 })

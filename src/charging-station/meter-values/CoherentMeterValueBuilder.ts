@@ -307,14 +307,21 @@ const resolveUnitDivider = (
   unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
 
 /**
- * Resolves `MeterValues` templates for a connector with the same
- * precedence as the random/fixed path's
- * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}: EVSE-level
+ * Resolves `MeterValues` templates for a connector. EVSE-level
  * `MeterValues` (when defined and non-empty) override connector-level
  * definitions for every connector under that EVSE; connector-level
  * `MeterValues` are used when the connector is not grouped under an
  * EVSE (flat `Connectors` map station layout) or when the EVSE-level
- * array is empty.
+ * array is undefined or empty.
+ *
+ * NOTE: Unlike
+ * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does
+ * NOT aggregate `MeterValues` across sibling connectors under the
+ * same EVSE when both EVSE-level and the queried connector's
+ * `MeterValues` are empty. The coherent path emits templates from
+ * exactly one source (EVSE-level or the queried connector), keeping
+ * per-connector template ownership isolated; the random/fixed path's
+ * cross-connector aggregation is intentionally not replicated.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
