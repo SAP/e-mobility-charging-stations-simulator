@@ -20,6 +20,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   MessageTriggerEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20MeasurandEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   OCPPVersion,
@@ -528,6 +529,11 @@ await describe('F06 - TriggerMessage', async () => {
           firstSample.context,
           OCPP20ReadingContextEnumType.TRIGGER,
           'Expected sampledValue[0].context = Trigger per TC_F_12_CS'
+        )
+        assert.strictEqual(
+          firstSample.measurand,
+          OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          'Expected sampledValue[0].measurand = Power.Active.Import (placeholder emits Power.Active.Import = 0 W, truthful when idle, regardless of AlignedDataCtrlr.Measurands default which is Energy.Active.Import.Register)'
         )
         assert.strictEqual(options.skipBufferingOnError, true)
         assert.strictEqual(options.triggerMessage, true)
