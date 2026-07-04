@@ -68,7 +68,7 @@ export interface CreateSessionOptions {
  * and per-transaction seed material. Weight-based profile selection uses a
  * dedicated `'PROFILE_PICK'` stream and initial SoC uses `'INITIAL_SOC'`,
  * so adding one consumer does not shift any other stream's sequence
- * (stream-splitting via FNV-1a label hashing — see `deriveSeed` in `PRNG.ts`).
+ * (stream-splitting via FNV-1a label hashing - see `deriveSeed` in `PRNG.ts`).
  *
  * The nominal AC voltage is treated as phase voltage (line-to-neutral) per
  * {@link ../../utils/ElectricUtils.ACElectricUtils}. If the station is AC

@@ -20,7 +20,7 @@
  *     module-scope runtime WeakMap (`disposeCoherentSessionRuntime`).
  *   - {@link ./CoherentMeterValueBuilder} — emit order, phase families,
  *     unit conversion, OCPP MeterValue assembly.
- *   - {@link ./PRNG} — PRNG primitives (`mulberry32`, `hashLabel`,
+ *   - {@link ./PRNG} - PRNG primitives (`mulberry32`, `hashLabel`,
  *     `deriveSeed`, `createStreamPrng`).
  */
 
