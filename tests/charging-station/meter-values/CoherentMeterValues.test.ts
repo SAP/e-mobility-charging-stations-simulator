@@ -74,6 +74,11 @@ const baseProfile: EvProfile = {
  *   `undefined`, grouping is implied by `evseMeterValues != null` (backward-compat).
  *   Set to `false` to force flat-connector layout even with `evseMeterValues` defined.
  * @param overrides.numberOfPhases - Number of AC phases (ignored for DC).
+ * @param overrides.siblingConnectorMeterValues - When defined and grouping is active,
+ *   adds a sibling connector (id 2) under EVSE 1 with the given `MeterValues`. Lets
+ *   tests verify that the coherent path does NOT aggregate sibling-connector
+ *   templates when EVSE-level MeterValues is undefined or empty (documented
+ *   divergence from `getSampledValueTemplate`).
  * @param overrides.voltageOut - Nominal phase voltage.
  * @returns Bundle exposing context, sessions map, station info, and connector status.
  */
@@ -84,6 +89,7 @@ const buildContext = (
     evseMeterValues?: SampledValueTemplate[]
     groupUnderEvse?: boolean
     numberOfPhases?: number
+    siblingConnectorMeterValues?: SampledValueTemplate[]
     voltageOut?: number
   } = {}
 ): {
@@ -135,13 +141,22 @@ const buildContext = (
       const grouped =
         overrides.groupUnderEvse === true ||
         (overrides.groupUnderEvse !== false && overrides.evseMeterValues != null)
-      return grouped && evseId === 1
-        ? {
-            availability: AvailabilityType.Operative,
-            connectors: new Map([[1, connectorStatus]]),
-            MeterValues: overrides.evseMeterValues,
-          }
-        : undefined
+      if (!(grouped && evseId === 1)) return undefined
+      const connectors = new Map<number, ConnectorStatus>([[1, connectorStatus]])
+      if (overrides.siblingConnectorMeterValues != null) {
+        connectors.set(2, {
+          availability: AvailabilityType.Operative,
+          energyActiveImportRegisterValue: 0,
+          MeterValues: overrides.siblingConnectorMeterValues,
+          transactionEnergyActiveImportRegisterValue: 0,
+          transactionId: 2,
+        })
+      }
+      return {
+        availability: AvailabilityType.Operative,
+        connectors,
+        MeterValues: overrides.evseMeterValues,
+      }
     },
     getNumberOfPhases: () => numberOfPhases,
     getVoltageOut: () => voltageOut,
@@ -1499,8 +1514,8 @@ await describe('CoherentMeterValues', async () => {
       } as unknown as SampledValueTemplate
       // groupUnderEvse=true + no evseMeterValues => getEvseIdByConnectorId returns 1,
       // getEvseStatus(1).MeterValues = undefined. resolveTemplates must fall back
-      // to connector-level (guard: evseTemplates != null && length > 0 fails on both
-      // empty array and undefined branches).
+      // to connector-level (guard: isNotEmptyArray(evseTemplates) narrows undefined
+      // and empty-array to false uniformly).
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
@@ -1531,6 +1546,48 @@ await describe('CoherentMeterValues', async () => {
         measurands,
         [MeterValueMeasurand.STATE_OF_CHARGE],
         'connector-level MeterValues must emit when EVSE grouping exists but EVSE-level MeterValues is undefined (both undefined and empty-array branches must fall back)'
+      )
+    })
+
+    await it('should NOT aggregate sibling-connector MeterValues when EVSE-level MeterValues is undefined or empty (documented divergence from getSampledValueTemplate)', () => {
+      // Sibling connector under the same EVSE has POWER_ACTIVE_IMPORT template.
+      // Queried connector has empty MeterValues. EVSE-level MeterValues is empty.
+      // Reference `getSampledValueTemplate` would aggregate: emit Power from sibling.
+      // Coherent `resolveTemplates` deliberately does NOT (per-connector template
+      // ownership) so nothing emits.
+      const siblingTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        unit: MeterValueUnit.WATT,
+      } as unknown as SampledValueTemplate
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [],
+        groupUnderEvse: true,
+        numberOfPhases: 3,
+        siblingConnectorMeterValues: [siblingTemplate],
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = []
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.strictEqual(
+        mv.sampledValue.length,
+        0,
+        'coherent path must NOT aggregate sibling-connector templates under the same EVSE; reference getSampledValueTemplate would emit sibling Power, coherent must emit nothing per documented one-source-per-connector divergence'
       )
     })
   })

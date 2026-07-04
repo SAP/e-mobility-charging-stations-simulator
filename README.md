@@ -364,9 +364,9 @@ type AutomaticTransactionGeneratorConfiguration = {
 
 #### Evses section syntax example
 
-`MeterValues` can be defined at EVSE level or at connector level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
+`MeterValues` can be defined at EVSE-level or at connector-level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
 
-##### MeterValues at EVSE level
+##### MeterValues at EVSE-level
 
 ```json
   "Evses": {
@@ -406,7 +406,7 @@ type AutomaticTransactionGeneratorConfiguration = {
   },
 ```
 
-##### MeterValues at connector level
+##### MeterValues at connector-level
 
 ```json
   "Evses": {
