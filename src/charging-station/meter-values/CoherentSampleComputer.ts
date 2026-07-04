@@ -41,7 +41,7 @@ import type { CoherentSession, ICoherentContext } from './types.js'
 import { CurrentType } from '../../types/index.js'
 import { Constants, roundTo } from '../../utils/index.js'
 import { interpolateChargingCurve } from './EvProfiles.js'
-import { createStreamPrng } from './Prng.js'
+import { createStreamPrng } from './PRNG.js'
 
 /**
  * Runtime-only per-session state. Kept in a module-scope WeakMap keyed by
