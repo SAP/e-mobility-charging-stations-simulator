@@ -486,7 +486,7 @@ The EV profile file is a JSON file referenced by the `evProfilesFile` template f
 
 A template file is available at [src/assets/ev-profiles-template.json](./src/assets/ev-profiles-template.json).
 
-**Template resolution scope.** When `coherentMeterValues` is `true`, the coherent generator reads `MeterValues` templates from the connector-level definition only. EVSE-level `MeterValues` inheritance is not applied, so define per-connector `MeterValues` inside each connector entry.
+**Template resolution scope.** When `coherentMeterValues` is `true`, the coherent generator resolves `MeterValues` templates with the same precedence as the random/fixed path's `getSampledValueTemplate`: EVSE-level `MeterValues` (when defined and non-empty) override connector-level definitions for every connector under that EVSE; connector-level `MeterValues` are used when the connector is not grouped under an EVSE (flat `Connectors` map station layout) or when the EVSE-level array is empty.
 
 **Phase-qualified measurands.** When a connector template carries a `phase` field, the coherent generator emits one `SampledValue` per matching template with phase-aware values:
 

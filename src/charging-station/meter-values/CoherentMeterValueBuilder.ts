@@ -307,14 +307,14 @@ const resolveUnitDivider = (
   unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
 
 /**
- * Returns the SampledValueTemplate array configured on the given connector.
- *
- * Reads the connector-level `MeterValues` templates only. Unlike
- * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does NOT
- * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
- * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
- * EVSE-level template inheritance to the coherent path requires extending
- * the context interface with `getEvseStatus`.
+ * Resolves `MeterValues` templates for a connector with the same
+ * precedence as the random/fixed path's
+ * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}: EVSE-level
+ * `MeterValues` (when defined and non-empty) override connector-level
+ * definitions for every connector under that EVSE; connector-level
+ * `MeterValues` are used when the connector is not grouped under an
+ * EVSE (flat `Connectors` map station layout) or when the EVSE-level
+ * array is empty.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
@@ -323,6 +323,13 @@ const resolveTemplates = (
   context: ICoherentContext,
   connectorId: number
 ): SampledValueTemplate[] | undefined => {
+  const evseId = context.getEvseIdByConnectorId(connectorId)
+  if (evseId != null) {
+    const evseTemplates = context.getEvseStatus(evseId)?.MeterValues
+    if (evseTemplates != null && evseTemplates.length > 0) {
+      return evseTemplates
+    }
+  }
   return context.getConnectorStatus(connectorId)?.MeterValues
 }
 

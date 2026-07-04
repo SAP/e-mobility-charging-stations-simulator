@@ -65,6 +65,10 @@ const baseProfile: EvProfile = {
  * @param overrides - Optional overrides bag for context knobs.
  * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
  * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
+ * @param overrides.evseMeterValues - When defined and non-empty, exposed via
+ *   `getEvseStatus(evseId).MeterValues`; also implies `getEvseIdByConnectorId`
+ *   resolves to a non-null EVSE id. When `undefined`, `getEvseIdByConnectorId`
+ *   returns `undefined` (flat connector layout).
  * @param overrides.numberOfPhases - Number of AC phases (ignored for DC).
  * @param overrides.voltageOut - Nominal phase voltage.
  * @returns Bundle exposing context, sessions map, station info, and connector status.
@@ -73,6 +77,7 @@ const buildContext = (
   overrides: {
     currentType?: CurrentType
     evseMaxPowerW?: number
+    evseMeterValues?: SampledValueTemplate[]
     numberOfPhases?: number
     voltageOut?: number
   } = {}
@@ -114,6 +119,15 @@ const buildContext = (
   const context: ICoherentContext = {
     getConnectorMaximumAvailablePower: () => evseMax,
     getConnectorStatus: () => connectorStatus,
+    getEvseIdByConnectorId: () => (overrides.evseMeterValues != null ? 1 : undefined),
+    getEvseStatus: (evseId: number) =>
+      overrides.evseMeterValues != null && evseId === 1
+        ? {
+            availability: AvailabilityType.Operative,
+            connectors: new Map([[1, connectorStatus]]),
+            MeterValues: overrides.evseMeterValues,
+          }
+        : undefined,
     getNumberOfPhases: () => numberOfPhases,
     getVoltageOut: () => voltageOut,
     logPrefix: () => '[test]',
@@ -1337,6 +1351,90 @@ await describe('CoherentMeterValues', async () => {
           'both surviving samples must be aggregates (no phase qualifier)'
         )
       }
+    })
+  })
+
+  await describe('EVSE-level template fallback', async () => {
+    await it('should emit EVSE-level MeterValues when the connector is grouped under an EVSE with a non-empty MeterValues array', () => {
+      const evseTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [evseTemplate],
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      // Connector-level templates ignored when EVSE-level is defined and non-empty.
+      connectorStatus.MeterValues = [
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: MeterValueUnit.WATT_HOUR,
+        } as unknown as SampledValueTemplate,
+      ]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'EVSE-level MeterValues (SoC only) must override connector-level (Energy only); connector Energy template must not emit'
+      )
+    })
+
+    await it('should fall back to connector-level MeterValues when no EVSE grouping exists', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // No evseMeterValues override => getEvseIdByConnectorId returns undefined.
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when the connector is not grouped under an EVSE'
+      )
     })
   })
 })
