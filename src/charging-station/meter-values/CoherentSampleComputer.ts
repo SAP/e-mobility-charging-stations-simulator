@@ -105,6 +105,20 @@ export const ROUNDING_SCALE = 2
 export interface CoherentSample {
   currentA: number
   deltaEnergyWh: number
+  /**
+   * Transaction-scoped projected register value AFTER the delta from
+   * {@link advanceEnergyRegister} is applied by the caller: derived from
+   * `connectorStatus.transactionEnergyActiveImportRegisterValue +
+   * deltaEnergyWh` at compute time. Exists to expose the transaction-scoped
+   * projection to tests and other in-process introspection paths.
+   *
+   * NOT the value emitted for the `Energy.Active.Import.Register` measurand:
+   * that measurand reads `connectorStatus.energyActiveImportRegisterValue`
+   * (station-scoped, monotone-cumulative across the station's lifetime),
+   * which diverges from this field whenever the station has non-zero
+   * pre-transaction register history. Converges only when the transaction
+   * begins on a station whose register was previously zero.
+   */
   energyRegisterWh: number
   powerW: number
   socPercent: number
