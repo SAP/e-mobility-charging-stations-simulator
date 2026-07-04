@@ -141,6 +141,58 @@ const groupTemplatesByMeasurand = (
   return groups
 }
 
+const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
+  phaseFamily(t.phase) === 'LineToNeutral'
+
+const templateFamilyKey = (t: SampledValueTemplate): string =>
+  JSON.stringify([t.context ?? null, t.format ?? null, t.location ?? null, t.unit ?? null])
+
+/**
+ * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
+ * suppression to the `Energy.Active.Import.Register` bucket in-place.
+ * Groups templates into identity families keyed by
+ * `(context, format, location, unit)`; within each family, per-phase
+ * L-N templates are filtered out (avoiding "unsupported combination"
+ * warnings for a configured skip). If a family has per-phase L-N
+ * templates but no aggregate template, an aggregate is synthesized
+ * from the first suppressed per-phase L-N of that family (phase
+ * cleared, other identity fields inherited via shallow spread), so
+ * the spec-mandated total is reported per family. Result is re-sorted
+ * by `PHASE_RANK` to preserve stable emit order. No-op when the
+ * measurand bucket is absent or has no per-phase L-N templates.
+ * @param groups - Grouped templates map (mutated in-place).
+ */
+const applyRegisterValuesWithoutPhases = (
+  groups: Map<MeterValueMeasurand, SampledValueTemplate[]>
+): void => {
+  const bucket = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+  if (bucket == null) return
+  if (!bucket.some(isLineToNeutralTemplate)) return
+  const surviving: SampledValueTemplate[] = []
+  for (const family of Map.groupBy(bucket, templateFamilyKey).values()) {
+    const perPhaseLN = family.filter(isLineToNeutralTemplate)
+    if (perPhaseLN.length === 0) {
+      surviving.push(...family)
+      continue
+    }
+    const nonLN = family.filter(t => !isLineToNeutralTemplate(t))
+    if (nonLN.some(t => t.phase == null)) {
+      surviving.push(...nonLN)
+    } else {
+      // Synthesize family aggregate from first suppressed per-phase L-N:
+      // unit / measurand / location / context / format inherit via shallow
+      // spread; phase cleared so the aggregate branch of
+      // `resolvePhasedValue` emits the total register for this family.
+      surviving.push({ ...perPhaseLN[0], phase: undefined }, ...nonLN)
+    }
+  }
+  surviving.sort(
+    (a, b) =>
+      (a.phase == null ? 0 : PHASE_RANK[a.phase]) - (b.phase == null ? 0 : PHASE_RANK[b.phase])
+  )
+  groups.set(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, surviving)
+}
+
 /**
  * Resolves the exact physical value to emit for a template given the
  * coherent sample. Returns `undefined` for unsupported `(measurand, phase)`
@@ -162,9 +214,12 @@ const groupTemplatesByMeasurand = (
  *   3-φ Y; Σ across all L-N templates equals the aggregate register
  *   within emit-unit rounding granularity - Wh: ≤ phases · 0.005 Wh;
  *   kWh: ≤ phases · 5 Wh); L-L undefined; N undefined. OCPP 2.0.1
- *   `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted;
- *   per-phase emission is driven by the connector template's phase
- *   qualifier.
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases` suppression is
+ *   applied at the bucket level in {@link buildCoherentMeterValue}
+ *   before this function is called; L-N templates for
+ *   `Energy.Active.Import.Register` are filtered out at that boundary
+ *   when the flag is set, and an aggregate template is synthesized if
+ *   the connector only configures per-phase templates.
  * @param measurand - Target measurand.
  * @param phase - Template `phase` field (may be `undefined`).
  * @param sample - Coherent sample (source of aggregate values).
@@ -301,6 +356,17 @@ const resolveTemplates = (
  *   When `undefined`, all templates emit (default behavior). When defined,
  *   only measurands in the set emit. Governs OCPP 2.0.1 J02.FR.11 /
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
+ * @param registerValuesWithoutPhases - Optional OCPP 2.0.1
+ *   `SampledDataCtrlr.RegisterValuesWithoutPhases` flag. When `true`,
+ *   `Energy.Active.Import.Register` templates are grouped into identity
+ *   families keyed by `(context, format, location, unit)`; within each
+ *   family, per-phase L-N templates are filtered out and, when a
+ *   family has no aggregate template configured, an aggregate is
+ *   synthesized from the first suppressed L-N of that family (phase
+ *   cleared, other identity fields preserved) so the spec requirement
+ *   "will only report the total energy over all phases" holds per
+ *   family. Defaults to `false` (or `undefined`) so OCPP 1.6 callers
+ *   preserve current behavior.
  * @returns MeterValue with sampled values and current timestamp.
  */
 export const buildCoherentMeterValue = (
@@ -309,7 +375,8 @@ export const buildCoherentMeterValue = (
   buildVersionedSampledValue: BuildVersionedSampledValue,
   options: ComputeSampleOptions,
   mvContext?: MeterValueContext,
-  enabledMeasurands?: ReadonlySet<MeterValueMeasurand>
+  enabledMeasurands?: ReadonlySet<MeterValueMeasurand>,
+  registerValuesWithoutPhases?: boolean
 ): MeterValue => {
   const connectorStatus = context.getConnectorStatus(session.connectorId)
   if (connectorStatus == null) {
@@ -327,6 +394,9 @@ export const buildCoherentMeterValue = (
 
   const templates = resolveTemplates(context, session.connectorId)
   const groups = groupTemplatesByMeasurand(templates)
+  if (registerValuesWithoutPhases === true) {
+    applyRegisterValuesWithoutPhases(groups)
+  }
   const sampledValue: SampledValue[] = []
   const isEnabled = (measurand: MeterValueMeasurand): boolean =>
     enabledMeasurands == null || enabledMeasurands.has(measurand)
