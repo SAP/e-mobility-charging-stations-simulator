@@ -1165,8 +1165,10 @@ export const buildMeterValue = (
     // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
     // through to the coherent builder so L-N per-phase
     // Energy.Active.Import.Register templates are skipped when the
-    // variable resolves to true. OCPP 1.6 stations never resolve the
-    // component-scoped key (returns false), preserving current behavior.
+    // variable resolves to true. OCPP 1.6 stations do not carry the
+    // component-scoped key by default: `getConfigurationKey` returns
+    // `undefined`, `convertToBoolean(undefined) === false`, so current
+    // behavior is preserved.
     const registerValuesWithoutPhases = isOCPP20FlagEnabled(
       chargingStation,
       OCPP20ComponentName.SampledDataCtrlr,
