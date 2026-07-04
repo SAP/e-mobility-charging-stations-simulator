@@ -35,7 +35,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
 } from '../../types/index.js'
-import { Constants, logger, roundTo } from '../../utils/index.js'
+import { Constants, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
   computeCoherentSample,
@@ -317,9 +317,9 @@ const resolveUnitDivider = (
  * NOTE: Unlike
  * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does
  * NOT aggregate `MeterValues` across sibling connectors under the
- * same EVSE when both EVSE-level and the queried connector's
- * `MeterValues` are empty. The coherent path emits templates from
- * exactly one source (EVSE-level or the queried connector), keeping
+ * same EVSE when EVSE-level `MeterValues` is undefined or empty. The
+ * coherent path emits templates from exactly one source (EVSE-level
+ * when non-empty, otherwise the queried connector), keeping
  * per-connector template ownership isolated; the random/fixed path's
  * cross-connector aggregation is intentionally not replicated.
  * @param context - Charging-station context.
@@ -333,7 +333,7 @@ const resolveTemplates = (
   const evseId = context.getEvseIdByConnectorId(connectorId)
   if (evseId != null) {
     const evseTemplates = context.getEvseStatus(evseId)?.MeterValues
-    if (evseTemplates != null && evseTemplates.length > 0) {
+    if (isNotEmptyArray(evseTemplates)) {
       return evseTemplates
     }
   }
