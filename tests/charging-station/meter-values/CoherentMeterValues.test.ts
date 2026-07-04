@@ -65,10 +65,14 @@ const baseProfile: EvProfile = {
  * @param overrides - Optional overrides bag for context knobs.
  * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
  * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
- * @param overrides.evseMeterValues - When defined and non-empty, exposed via
- *   `getEvseStatus(evseId).MeterValues`; also implies `getEvseIdByConnectorId`
- *   resolves to a non-null EVSE id. When `undefined`, `getEvseIdByConnectorId`
- *   returns `undefined` (flat connector layout).
+ * @param overrides.evseMeterValues - When defined and `groupUnderEvse !== false`, exposed via
+ *   `getEvseStatus(evseId).MeterValues`. When omitted with `groupUnderEvse === true`,
+ *   `getEvseStatus(evseId).MeterValues` is `undefined` (EVSE grouping present with no
+ *   EVSE-level MeterValues configured).
+ * @param overrides.groupUnderEvse - Explicit EVSE grouping flag. When `true`,
+ *   `getEvseIdByConnectorId` returns 1 regardless of `evseMeterValues`. When
+ *   `undefined`, grouping is implied by `evseMeterValues != null` (backward-compat).
+ *   Set to `false` to force flat-connector layout even with `evseMeterValues` defined.
  * @param overrides.numberOfPhases - Number of AC phases (ignored for DC).
  * @param overrides.voltageOut - Nominal phase voltage.
  * @returns Bundle exposing context, sessions map, station info, and connector status.
@@ -78,6 +82,7 @@ const buildContext = (
     currentType?: CurrentType
     evseMaxPowerW?: number
     evseMeterValues?: SampledValueTemplate[]
+    groupUnderEvse?: boolean
     numberOfPhases?: number
     voltageOut?: number
   } = {}
@@ -119,15 +124,25 @@ const buildContext = (
   const context: ICoherentContext = {
     getConnectorMaximumAvailablePower: () => evseMax,
     getConnectorStatus: () => connectorStatus,
-    getEvseIdByConnectorId: () => (overrides.evseMeterValues != null ? 1 : undefined),
-    getEvseStatus: (evseId: number) =>
-      overrides.evseMeterValues != null && evseId === 1
+    getEvseIdByConnectorId: () => {
+      // groupUnderEvse takes precedence over evseMeterValues heuristic.
+      // Undefined groupUnderEvse falls back to evseMeterValues != null.
+      if (overrides.groupUnderEvse === true) return 1
+      if (overrides.groupUnderEvse === false) return undefined
+      return overrides.evseMeterValues != null ? 1 : undefined
+    },
+    getEvseStatus: (evseId: number) => {
+      const grouped =
+        overrides.groupUnderEvse === true ||
+        (overrides.groupUnderEvse !== false && overrides.evseMeterValues != null)
+      return grouped && evseId === 1
         ? {
             availability: AvailabilityType.Operative,
             connectors: new Map([[1, connectorStatus]]),
             MeterValues: overrides.evseMeterValues,
           }
-        : undefined,
+        : undefined
+    },
     getNumberOfPhases: () => numberOfPhases,
     getVoltageOut: () => voltageOut,
     logPrefix: () => '[test]',
@@ -1474,6 +1489,48 @@ await describe('CoherentMeterValues', async () => {
         measurands,
         [MeterValueMeasurand.STATE_OF_CHARGE],
         'connector-level MeterValues must emit when EVSE grouping exists but the EVSE-level MeterValues array is empty'
+      )
+    })
+
+    await it('should fall back to connector-level MeterValues when EVSE grouping exists but EVSE-level MeterValues is undefined', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // groupUnderEvse=true + no evseMeterValues => getEvseIdByConnectorId returns 1,
+      // getEvseStatus(1).MeterValues = undefined. resolveTemplates must fall back
+      // to connector-level (guard: evseTemplates != null && length > 0 fails on both
+      // empty array and undefined branches).
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        groupUnderEvse: true,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when EVSE grouping exists but EVSE-level MeterValues is undefined (both undefined and empty-array branches must fall back)'
       )
     })
   })
