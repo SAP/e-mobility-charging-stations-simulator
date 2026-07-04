@@ -160,7 +160,7 @@ const groupTemplatesByMeasurand = (
  * - Energy.Active.Import.Register: aggregate ⇒ total register; L-N ⇒
  *   `register / phases` (per-phase energy contribution under balanced
  *   3-φ Y; Σ across all L-N templates equals the aggregate register
- *   within emit-unit rounding granularity — Wh: ≤ phases · 0.005 Wh;
+ *   within emit-unit rounding granularity - Wh: ≤ phases · 0.005 Wh;
  *   kWh: ≤ phases · 5 Wh); L-L undefined; N undefined. OCPP 2.0.1
  *   `SampledDataCtrlr.RegisterValuesWithoutPhases` is not consulted;
  *   per-phase emission is driven by the connector template's phase
@@ -279,7 +279,7 @@ const resolveTemplates = (
  * - Within a measurand with multiple phase-qualified templates: no-phase
  *   first, then `L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N`.
  *
- * Per-phase resolution — see {@link resolvePhasedValue}. Unsupported
+ * Per-phase resolution - see {@link resolvePhasedValue}. Unsupported
  * `(measurand, phase)` combinations are logged and skipped.
  *
  * Only measurands enabled by the caller-resolved allow-list are emitted.
@@ -290,7 +290,7 @@ const resolveTemplates = (
  * @param session - Active coherent session for the transaction. Callers
  *   look this up via
  *   {@link ../CoherentMeterValuesManager.CoherentMeterValuesManager.getSession}
- *   at the strategy gate and thread it through — the port no longer
+ *   at the strategy gate and thread it through - the port no longer
  *   exposes session lookup.
  * @param buildVersionedSampledValue - Versioned SampledValue builder from
  *   the OCPP dispatcher in `OCPPServiceUtils.buildMeterValue`.
@@ -346,7 +346,7 @@ export const buildCoherentMeterValue = (
       )
       if (raw == null) {
         logger.warn(
-          `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: unsupported (${measurand}, phase=${String(template.phase)}) — template skipped`
+          `${context.logPrefix()} ${moduleName}.buildCoherentMeterValue: unsupported (${measurand}, phase=${String(template.phase)}) - template skipped`
         )
         continue
       }
@@ -364,6 +364,6 @@ export const buildCoherentMeterValue = (
   // union that diverges on the SampledValue.context enum. Coherent path
   // produces version-appropriate SampledValues via the injected
   // buildVersionedSampledValue callback, but the compile-time union of
-  // SampledValue[] cannot be narrowed here — a boundary cast is required.
+  // SampledValue[] cannot be narrowed here - a boundary cast is required.
   return { sampledValue, timestamp: new Date() } as MeterValue
 }
