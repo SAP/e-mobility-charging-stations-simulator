@@ -16,7 +16,7 @@
  *   `Power.Active.Import` emission is derived as
  *   `round(aggregate_P / phases, 2)`; the per-phase identity
  *   `|P_LxN - V_LxN · I_Lx|` therefore holds within `2 × ROUNDING_SCALE`
- *   half-width (≤ 0.01 W) — one half-width for the aggregate emit and
+ *   half-width (≤ 0.01 W) - one half-width for the aggregate emit and
  *   one for the per-phase division.
  * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
  *   SoC monotone non-decreasing during charging and saturates at 100 %.
@@ -24,7 +24,7 @@
  *   pre-emit-rounding capacity-clamped power. `E(t+1) ≥ E(t)`. A consumer
  *   integrating the post-rounding emitted `powerW` samples may diverge
  *   from the register by at most `ROUNDING_SCALE half-width × N × Δt /
- *   MS_PER_HOUR` Wh over `N` samples — bounded and invisible at
+ *   MS_PER_HOUR` Wh over `N` samples - bounded and invisible at
  *   `ROUNDING_SCALE` (~0.12 Wh over 24 h at 1 Hz).
  * - `P ≤ min(EVSE_max, EV_acceptance(SoC))`.
  * - `SoC ≥ 100 ⇒ P = 0, I = 0, ΔE = 0`.
@@ -46,8 +46,8 @@ import { createStreamPrng } from './Prng.js'
 /**
  * Runtime-only per-session state. Kept in a module-scope WeakMap keyed by
  * the {@link CoherentSession} object (rather than by transactionId) so
- * runtime state is scoped to the session's identity — no cross-station
- * coupling when two stations happen to share a transactionId — and is
+ * runtime state is scoped to the session's identity - no cross-station
+ * coupling when two stations happen to share a transactionId - and is
  * auto-collected when the session becomes unreachable.
  */
 interface SessionRuntime {
@@ -76,8 +76,8 @@ const getSessionRuntime = (session: CoherentSession): SessionRuntime => {
 /**
  * Disposes runtime state for a session. Call from every session-teardown
  * path (stop/reset/disconnect) to release cached PRNG state eagerly.
- * The WeakMap makes eager disposal optional — unreachable sessions are
- * collected automatically — but eager disposal preserves determinism
+ * The WeakMap makes eager disposal optional - unreachable sessions are
+ * collected automatically - but eager disposal preserves determinism
  * across sequential transactions that reuse the same session identity.
  * Idempotent.
  * @param session - Coherent session (or `undefined` when the caller has
@@ -105,6 +105,20 @@ export const ROUNDING_SCALE = 2
 export interface CoherentSample {
   currentA: number
   deltaEnergyWh: number
+  /**
+   * Transaction-scoped projected register value AFTER the delta from
+   * {@link advanceEnergyRegister} is applied by the caller: derived from
+   * `connectorStatus.transactionEnergyActiveImportRegisterValue +
+   * deltaEnergyWh` at compute time. Exists to expose the transaction-scoped
+   * projection to tests and other in-process introspection paths.
+   *
+   * NOT the value emitted for the `Energy.Active.Import.Register` measurand:
+   * that measurand reads `connectorStatus.energyActiveImportRegisterValue`
+   * (station-scoped, monotone-cumulative across the station's lifetime),
+   * which diverges from this field whenever the station has non-zero
+   * pre-transaction register history. Converges only when the transaction
+   * begins on a station whose register was previously zero.
+   */
   energyRegisterWh: number
   powerW: number
   socPercent: number
@@ -198,19 +212,19 @@ export const advanceEnergyRegister = (
  * model.
  *
  * Physics chain (INV-1/INV-2/INV-3 hold by construction):
- * 1. `rampFactor = min(1, elapsed / rampUp)` — immutable session start.
- * 2. `V` — nominal ± small seed-derived noise.
+ * 1. `rampFactor = min(1, elapsed / rampUp)` - immutable session start.
+ * 2. `V` - nominal ± small seed-derived noise.
  * 3. `evAcceptanceW = curve(SoC) × profile.maxPowerW`.
  * 4. `powerW = rampFactor × min(EVSE_max, evAcceptance) × socCap`.
  *    EVSE cap already folds in charging profiles via
  *    {@link ICoherentContext.getConnectorMaximumAvailablePower}.
  * 5. `powerW` is then clamped to remaining battery capacity so a sample
  *    crossing 100 % SoC never over-charges the register.
- * 6. `currentAExact = powerW / (V_round · phases)` — exact fraction
+ * 6. `currentAExact = powerW / (V_round · phases)` - exact fraction
  *    (phases=1 for DC). Emitted current is rounded to `ROUNDING_SCALE`.
  * 7. Emitted `powerW = round(V_round × currentA_round × phases)`;
  *    INV-1 holds within `ROUNDING_SCALE` half-width (≤ 0.005 W).
- * 8. `ΔE = P_clamped × Δt / MS_PER_HOUR` — uses the pre-emit-rounding
+ * 8. `ΔE = P_clamped × Δt / MS_PER_HOUR` - uses the pre-emit-rounding
  *    `powerW` so the register integrates the capacity-clamped power
  *    exactly (INV-3).
  * 9. `ΔSoC = ΔE / capacity × 100`; `socPercent = min(100, soc + ΔSoC)`.
@@ -241,7 +255,7 @@ export const computeCoherentSample = (
   //   but a template override may set `voltageOut` to 0.
   // - nowMs non-finite: pushes elapsedMs to NaN and destabilizes rampFactor.
   // - AC with numberOfPhases ≤ 0: divisor collapses to 0 (`V · 0 = 0`),
-  //   currentA is guarded to zero, and P = 0 silently — a misconfigured
+  //   currentA is guarded to zero, and P = 0 silently - a misconfigured
   //   multi-phase station would emit zeros for the whole session. Fail
   //   loudly with a zero sample so operators notice the misconfiguration.
   const batteryCapacityWh = session.profile.batteryCapacityWh
@@ -273,7 +287,7 @@ export const computeCoherentSample = (
   // rampUpDurationMs = 0 means immediate full-power.
   // Sub-millisecond values (e.g. Number.EPSILON) pass the guard but yield
   // elapsedMs / rampUpDurationMs >> 1 for any real elapsed time, so
-  // Math.min(1, …) = 1 — semantically equivalent to rampUpDurationMs = 0.
+  // Math.min(1, ...) = 1 - semantically equivalent to rampUpDurationMs = 0.
   const rampFactor =
     session.rampUpDurationMs > 0 && Number.isFinite(session.rampUpDurationMs)
       ? Math.min(1, elapsedMs / session.rampUpDurationMs)
@@ -298,8 +312,8 @@ export const computeCoherentSample = (
 
   // EV acceptance from the profile's charging curve at the SoC of THIS
   // sample (session.socPercent is advanced at the end of the previous
-  // computeCoherentSample tick — see the `session.socPercent = ...`
-  // assignment below), not the session's initial SoC — the taper must
+  // computeCoherentSample tick - see the `session.socPercent = ...`
+  // assignment below), not the session's initial SoC - the taper must
   // track live state so P falls off as the battery fills.
   const acceptanceFraction = interpolateChargingCurve(
     session.profile.chargingCurve,
