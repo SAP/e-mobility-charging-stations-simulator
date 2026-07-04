@@ -358,13 +358,14 @@ const resolveTemplates = (
  *   E02.FR.09 / E06.FR.11 and OCPP 1.6 `MeterValuesSampledData`.
  * @param registerValuesWithoutPhases - Optional OCPP 2.0.1
  *   `SampledDataCtrlr.RegisterValuesWithoutPhases` flag. When `true`,
- *   per-phase L-N `Energy.Active.Import.Register` templates are
- *   filtered out of the emit bucket before iteration; if the connector
- *   configures only per-phase L-N templates (no aggregate), an
- *   aggregate template is synthesized from the first suppressed L-N
- *   template (phase cleared, other fields preserved) so the spec
- *   requirement "will only report the total energy over all phases" is
- *   satisfied. Defaults to `false` (or `undefined`) so OCPP 1.6 callers
+ *   `Energy.Active.Import.Register` templates are grouped into identity
+ *   families keyed by `(context, format, location, unit)`; within each
+ *   family, per-phase L-N templates are filtered out and, when a
+ *   family has no aggregate template configured, an aggregate is
+ *   synthesized from the first suppressed L-N of that family (phase
+ *   cleared, other identity fields preserved) so the spec requirement
+ *   "will only report the total energy over all phases" holds per
+ *   family. Defaults to `false` (or `undefined`) so OCPP 1.6 callers
  *   preserve current behavior.
  * @returns MeterValue with sampled values and current timestamp.
  */
