@@ -5,7 +5,7 @@
  *   and same-seed determinism across AC 1-phase, AC 3-phase, and DC modes.
  *   Cross-module tests spanning `CoherentSampleComputer` (physics),
  *   `CoherentMeterValueBuilder` (emission), `CoherentSession` (lifecycle),
- *   and `Prng` (stream splitting).
+ *   and `PRNG` (stream splitting).
  */
 
 import assert from 'node:assert/strict'
@@ -33,7 +33,7 @@ import {
   createCoherentSession,
   resolveRootSeed,
 } from '../../../src/charging-station/meter-values/CoherentSession.js'
-import { hashLabel } from '../../../src/charging-station/meter-values/Prng.js'
+import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
 import {
   AvailabilityType,
   CurrentType,

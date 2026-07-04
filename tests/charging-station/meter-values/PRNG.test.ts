@@ -16,10 +16,10 @@ import {
   deriveSeed,
   hashLabel,
   mulberry32,
-} from '../../../src/charging-station/meter-values/Prng.js'
+} from '../../../src/charging-station/meter-values/PRNG.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
-await describe('Prng', async () => {
+await describe('PRNG', async () => {
   afterEach(() => {
     standardCleanup()
   })

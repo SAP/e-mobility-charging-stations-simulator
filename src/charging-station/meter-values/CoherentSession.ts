@@ -10,8 +10,8 @@
  *   (`disposeCoherentSessionRuntime`) live in
  *   {@link ./CoherentSampleComputer}; MeterValue emission lives in
  *   {@link ./CoherentMeterValueBuilder}; PRNG primitives
- *   ({@link ./Prng.createStreamPrng}, `deriveSeed`, `hashLabel`,
- *   `mulberry32`) live in {@link ./Prng}. This module owns only
+ *   ({@link ./PRNG.createStreamPrng}, `deriveSeed`, `hashLabel`,
+ *   `mulberry32`) live in {@link ./PRNG}. This module owns only
  *   session identity and the strategy predicate — it has no cross-module
  *   private dependencies.
  */
@@ -21,7 +21,7 @@ import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 import { CurrentType, Voltage } from '../../types/index.js'
 import { Constants, logger } from '../../utils/index.js'
 import { selectEvProfile } from './EvProfiles.js'
-import { createStreamPrng, hashLabel } from './Prng.js'
+import { createStreamPrng, hashLabel } from './PRNG.js'
 
 const moduleName = 'CoherentSession'
 
@@ -68,7 +68,7 @@ export interface CreateSessionOptions {
  * and per-transaction seed material. Weight-based profile selection uses a
  * dedicated `'PROFILE_PICK'` stream and initial SoC uses `'INITIAL_SOC'`,
  * so adding one consumer does not shift any other stream's sequence
- * (stream-splitting via FNV-1a label hashing — see `deriveSeed` in `Prng.ts`).
+ * (stream-splitting via FNV-1a label hashing - see `deriveSeed` in `PRNG.ts`).
  *
  * The nominal AC voltage is treated as phase voltage (line-to-neutral) per
  * {@link ../../utils/ElectricUtils.ACElectricUtils}. If the station is AC
