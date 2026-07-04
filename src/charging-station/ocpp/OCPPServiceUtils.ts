@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url'
 
 import type {
   BootReasonEnumType,
-  OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
   SigningMethodEnumType,
@@ -40,6 +39,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
   OCPPVersion,
   RequestCommand,
@@ -69,6 +69,12 @@ import {
   roundTo,
 } from '../../utils/index.js'
 import {
+  buildCoherentMeterValue,
+  type BuildVersionedSampledValue,
+  isCoherentModeActive,
+  resolveRootSeed,
+} from '../meter-values/index.js'
+import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
 } from './1.6/OCPP16RequestBuilders.js'
@@ -86,8 +92,6 @@ import {
 const moduleName = 'OCPPServiceUtils'
 
 const SOC_MAXIMUM_VALUE = 100
-const UNIT_DIVIDER_KILO = 1000
-const MS_PER_HOUR = 3_600_000
 
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
@@ -424,11 +428,12 @@ const buildEnergyMeasurandValue = (
   }
 
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
-  const unitDivider = energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? UNIT_DIVIDER_KILO : 1
+  const unitDivider =
+    energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? Constants.UNIT_DIVIDER_KILO : 1
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMaximumEnergyRounded = roundTo(
-    (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
+    (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
     2
   )
   const connectorMinimumEnergyRounded = roundTo(energyTemplate.minimumValue ?? 0, 2)
@@ -524,7 +529,8 @@ const buildPowerMeasurandValue = (
 
   checkMeasurandPowerDivider(chargingStation, powerTemplate.measurand)
   const powerValues: MeasurandValues = {} as MeasurandValues
-  const unitDivider = powerTemplate.unit === MeterValueUnit.KILO_WATT ? UNIT_DIVIDER_KILO : 1
+  const unitDivider =
+    powerTemplate.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
@@ -896,34 +902,41 @@ export const buildEmptyMeterValue = (): MeterValue => ({
 })
 
 /**
- * Builds a complete MeterValue with all configured measurands for a transaction.
- * @param chargingStation - Target charging station
- * @param transactionId - Active transaction identifier
- * @param interval - Meter value sampling interval in milliseconds
- * @param measurandsKey - Configuration key for the sampled measurands list
- * @param context - Meter value reading context
- * @param debug - Enable debug logging for measurand validation
- * @returns Populated MeterValue object
+ * Internal dispatch bag returned by {@link createVersionedSampledValueDispatcher}
+ * and consumed by {@link buildMeterValue}. Not exported: kept out of the
+ * module surface so external callers rely on the higher-level entry point.
  */
-export const buildMeterValue = (
+interface VersionedSampledValueDispatch {
+  buildVersionedSampledValue: BuildVersionedSampledValue
+  connectorId: number
+  evseId: number | undefined
+  signingConfig: SampledValueSigningConfig | undefined
+  /**
+   * Passed by reference; the closure assigned to `buildVersionedSampledValue`
+   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0 SampledValue
+   * is emitted. Callers rely on the reference identity to detect the mutation.
+   */
+  signingState: { publicKeyIncluded: boolean }
+}
+
+/**
+ * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
+ * used by {@link buildMeterValue}. Extracted verbatim from the original
+ * `buildMeterValue` switch so behavior is preserved exactly.
+ * @param chargingStation - Target charging station.
+ * @param transactionId - Active transaction identifier.
+ * @param context - Optional MeterValue reading context (drives signing
+ *   configuration for OCPP 2.0).
+ * @returns The dispatch bundle.
+ */
+const createVersionedSampledValueDispatcher = (
   chargingStation: ChargingStation,
-  transactionId: number | string | undefined,
-  interval: number,
-  measurandsKey?: ConfigurationKeyType,
-  context?: MeterValueContext,
-  debug = false
-): MeterValue => {
-  if (transactionId == null) {
-    return buildEmptyMeterValue()
-  }
+  transactionId: number | string,
+  context?: MeterValueContext
+): VersionedSampledValueDispatch => {
   const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
   let evseId: number | undefined
-  let buildVersionedSampledValue: (
-    sampledValueTemplate: SampledValueTemplate,
-    value: number,
-    context?: MeterValueContext,
-    phase?: MeterValuePhase
-  ) => SampledValue
+  let buildVersionedSampledValue: BuildVersionedSampledValue
   let signingConfig: SampledValueSigningConfig | undefined
   const signingState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
@@ -1045,6 +1058,136 @@ export const buildMeterValue = (
         RequestCommand.METER_VALUES
       )
   }
+  return { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState }
+}
+
+// Module-scope keyed by `ChargingStation` instance (auto-collected on GC).
+// Kept off the class API to avoid touching `ChargingStation` for a
+// warn-once diagnostic; the WeakMap's semantics match the intent — one
+// bag of already-warned entries per station, freed with the station.
+const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
+const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
+
+/**
+ * Resolves the set of measurands enabled by the configured OCPP variable.
+ *
+ * Presence-aware semantics:
+ * - No key resolves ⇒ returns `undefined` (no filter — all templates emit,
+ *   preserving the default behavior).
+ * - Key resolves but the configuration variable is **absent** (never
+ *   written) ⇒ returns `{Energy.Active.Import.Register}` (default measurand,
+ *   ergonomic parity with a station that never set the variable).
+ * - Key resolves and the configuration variable is **present** ⇒ the CSV
+ *   is honored verbatim, including an explicit empty value which yields an
+ *   empty allow-list (spec-compliant suppression per OCPP 2.0.1 J02.FR.11).
+ *
+ * Governs OCPP 2.0.1 J02.FR.11 (`TxUpdatedMeasurands`), E02.FR.09
+ * (`TxStartedMeasurands`), E06.FR.11 (`TxEndedMeasurands`), and OCPP 1.6
+ * `MeterValuesSampledData`.
+ * @param chargingStation - Target charging station.
+ * @param measurandsKey - Configuration key threaded from the caller. When
+ *   `undefined` (or omitted), defaults to `StandardParametersKey.MeterValuesSampledData`
+ *   for OCPP 1.6 stations and returns `undefined` (no filter) for all
+ *   other versions.
+ * @returns Enabled measurand set, or `undefined` for no filter.
+ */
+const resolveEnabledMeasurands = (
+  chargingStation: ChargingStation,
+  measurandsKey: ConfigurationKeyType | undefined
+): ReadonlySet<MeterValueMeasurand> | undefined => {
+  const effectiveKey =
+    measurandsKey ??
+    (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+      ? StandardParametersKey.MeterValuesSampledData
+      : undefined)
+  if (effectiveKey == null) {
+    return undefined
+  }
+  const rawValue = getConfigurationKey(chargingStation, effectiveKey)?.value
+  if (rawValue == null) {
+    return new Set<MeterValueMeasurand>([MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER])
+  }
+  const enabled = new Set<MeterValueMeasurand>()
+  for (const entry of rawValue.split(',')) {
+    const trimmed = entry.trim()
+    if (trimmed.length === 0) {
+      continue
+    }
+    if (KNOWN_MEASURANDS.has(trimmed)) {
+      enabled.add(trimmed as MeterValueMeasurand)
+      continue
+    }
+    let warned = warnedInvalidMeasurands.get(chargingStation)
+    if (warned == null) {
+      warned = new Set<string>()
+      warnedInvalidMeasurands.set(chargingStation, warned)
+    }
+    if (!warned.has(trimmed)) {
+      warned.add(trimmed)
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.resolveEnabledMeasurands: unknown measurand '${trimmed}' in ${effectiveKey} — ignored`
+      )
+    }
+  }
+  return enabled
+}
+
+/**
+ * Builds a complete MeterValue with all configured measurands for a transaction.
+ * @param chargingStation - Target charging station
+ * @param transactionId - Active transaction identifier
+ * @param interval - Meter value sampling interval in milliseconds
+ * @param measurandsKey - Configuration key for the sampled measurands list
+ * @param context - Meter value reading context
+ * @param debug - Enable debug logging for measurand validation
+ * @returns Populated MeterValue object
+ */
+export const buildMeterValue = (
+  chargingStation: ChargingStation,
+  transactionId: number | string | undefined,
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext,
+  debug = false
+): MeterValue => {
+  if (transactionId == null) {
+    return buildEmptyMeterValue()
+  }
+  const { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState } =
+    createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
+  // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
+  // is available (so the coherent path can emit versioned SampledValues) and
+  // BEFORE the random/fixed measurand generation runs. When coherent mode
+  // is not active for this station or no session exists for the transaction,
+  // this is a no-op and the random/fixed code path is unchanged.
+  const coherentSession = chargingStation.getCoherentSession(transactionId)
+  if (isCoherentModeActive(coherentSession)) {
+    // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
+    // through to the coherent builder so per-phase L-N
+    // Energy.Active.Import.Register templates are skipped when the
+    // variable resolves to true. OCPP 1.6 stations do not carry the
+    // component-scoped key by default: `getConfigurationKey` returns
+    // `undefined`, `convertToBoolean(undefined) === false`, so current
+    // behavior is preserved.
+    const registerValuesWithoutPhases = isOCPP20FlagEnabled(
+      chargingStation,
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+    )
+    return buildCoherentMeterValue(
+      chargingStation,
+      coherentSession,
+      buildVersionedSampledValue,
+      {
+        intervalMs: interval,
+        nowMs: Date.now(),
+        rootSeed: resolveRootSeed(chargingStation.stationInfo),
+      },
+      context,
+      resolveEnabledMeasurands(chargingStation, measurandsKey),
+      registerValuesWithoutPhases
+    )
+  }
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
   if (signingConfig != null) {
@@ -1101,7 +1244,7 @@ export const buildMeterValue = (
         context,
         voltageMeasurand.value
       )
-      if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
+      if (chargingStation.stationInfo?.phaseLineToLineVoltageMeterValues === true) {
         const nextPhase =
           (phase + 1) % chargingStation.getNumberOfPhases() !== 0
             ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
@@ -1134,7 +1277,7 @@ export const buildMeterValue = (
   )
   if (powerMeasurand?.values.allPhases != null) {
     const unitDivider =
-      powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? UNIT_DIVIDER_KILO : 1
+      powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
@@ -1199,7 +1342,7 @@ export const buildMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumAmperage =
-      chargingStation.stationInfo.currentOutType === CurrentType.AC
+      chargingStation.stationInfo?.currentOutType === CurrentType.AC
         ? ACElectricUtils.amperagePerPhaseFromPower(
           chargingStation.getNumberOfPhases(),
           connectorMaximumAvailablePower,
@@ -1266,7 +1409,9 @@ export const buildMeterValue = (
   if (energyMeasurand != null) {
     updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
     const unitDivider =
-      energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? UNIT_DIVIDER_KILO : 1
+      energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
+        ? Constants.UNIT_DIVIDER_KILO
+        : 1
     const energySampledValue = buildVersionedSampledValue(
       energyMeasurand.template,
       roundTo(
@@ -1279,7 +1424,7 @@ export const buildMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / MS_PER_HOUR,
+      (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
       2
     )
     const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)

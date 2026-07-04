@@ -43,6 +43,7 @@ export enum OCPP20OptionalVariableName {
   MaxEnergyOnInvalidId = 'MaxEnergyOnInvalidId',
   NonEvseSpecific = 'NonEvseSpecific',
   PublicKeyWithSignedMeterValue = 'PublicKeyWithSignedMeterValue',
+  RegisterValuesWithoutPhases = 'RegisterValuesWithoutPhases',
   ReportingValueSize = 'ReportingValueSize',
   RetryBackOffRandomRange = 'RetryBackOffRandomRange',
   RetryBackOffRepeatTimes = 'RetryBackOffRepeatTimes',

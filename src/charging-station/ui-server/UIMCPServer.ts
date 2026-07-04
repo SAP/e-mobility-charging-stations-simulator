@@ -296,8 +296,7 @@ export class UIMCPServer extends AbstractUIServer {
     // The SDK does not provide a public API for wrapping existing handlers.
     // setRequestHandler() replaces handlers entirely, losing Zod→JSON Schema conversion.
     const handlers = Reflect.get(mcpServer.server, '_requestHandlers') as
-      | Map<string, (...args: unknown[]) => Promise<unknown>>
-      | undefined
+      Map<string, (...args: unknown[]) => Promise<unknown>> | undefined
     if (handlers == null || !(handlers instanceof Map)) {
       logger.warn(
         `${this.logPrefix(moduleName, 'injectOcppJsonSchemas')} MCP SDK internal API changed — OCPP schema injection disabled`

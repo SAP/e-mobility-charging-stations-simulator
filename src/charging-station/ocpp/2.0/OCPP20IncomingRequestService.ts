@@ -78,6 +78,7 @@ import {
   type OCPP20InstallCertificateResponse,
   type OCPP20LogStatusNotificationRequest,
   type OCPP20LogStatusNotificationResponse,
+  OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
   type OCPP20MeterValuesResponse,
@@ -87,6 +88,7 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
+  OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
@@ -139,6 +141,7 @@ import {
   convertToIntOrNaN,
   ensureError,
   generateUUID,
+  getErrorMessage,
   handleIncomingRequestError,
   isEmpty,
   isNotEmptyArray,
@@ -469,21 +472,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (response.status === RequestStartStopStatusEnumType.Accepted) {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null && response.transactionId != null) {
+            const txId = response.transactionId
+            chargingStation.createCoherentSession(txId, connectorId)
             const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
               chargingStation,
-              response.transactionId
+              txId
             )
             OCPP20ServiceUtils.sendTransactionEvent(
               chargingStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.RemoteStart,
               connectorId,
-              response.transactionId,
+              txId,
               {
                 ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
                 remoteStartId: request.remoteStartId,
               }
             ).catch((error: unknown) => {
+              // Session was created for this fire-and-forget send. If the
+              // send rejects, destroy it here — no other cleanup path
+              // covers this branch. `destroyCoherentSession` is idempotent.
+              chargingStation.destroyCoherentSession(txId)
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,
                 error
@@ -536,10 +545,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         switch (requestedMessage) {
           case MessageTriggerEnumType.BootNotification:
             chargingStation.ocppRequestService
-              .requestHandler<
-                OCPP20BootNotificationRequest,
-                OCPP20BootNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+              .requestHandler<OCPP20BootNotificationRequest, OCPP20BootNotificationResponse>(
+                chargingStation,
+                OCPP20RequestCommand.BOOT_NOTIFICATION,
+                chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest,
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
@@ -551,16 +562,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus }, { skipBufferingOnError: true, triggerMessage: true })
+              >(
+                chargingStation,
+                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+                { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           }
           case MessageTriggerEnumType.Heartbeat:
             chargingStation.ocppRequestService
-              .requestHandler<
-                OCPP20HeartbeatRequest,
-                OCPP20HeartbeatResponse
-              >(chargingStation, OCPP20RequestCommand.HEARTBEAT, OCPP20Constants.OCPP_RESPONSE_EMPTY as OCPP20HeartbeatRequest, { skipBufferingOnError: true, triggerMessage: true })
+              .requestHandler<OCPP20HeartbeatRequest, OCPP20HeartbeatResponse>(
+                chargingStation,
+                OCPP20RequestCommand.HEARTBEAT,
+                OCPP20Constants.OCPP_RESPONSE_EMPTY as OCPP20HeartbeatRequest,
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.LogStatusNotification:
@@ -568,60 +586,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20LogStatusNotificationRequest,
                 OCPP20LogStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, { status: UploadLogStatusEnumType.Idle }, { skipBufferingOnError: true, triggerMessage: true })
+              >(
+                chargingStation,
+                OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+                { status: UploadLogStatusEnumType.Idle },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
               .catch(errorHandler)
             break
-          case MessageTriggerEnumType.MeterValues: {
-            const targetEvseIds: number[] = []
-            if (evse?.id != null && evse.id > 0) {
-              targetEvseIds.push(evse.id)
-            } else {
-              for (const { evseId } of chargingStation.iterateEvses(true)) {
-                targetEvseIds.push(evseId)
-              }
-            }
-            let hasSentTransactionEvent = false
-            for (const targetEvseId of targetEvseIds) {
-              const evseStatus = chargingStation.getEvseStatus(targetEvseId)
-              if (evseStatus == null) continue
-              for (const [cId, connector] of evseStatus.connectors) {
-                if (connector.transactionId == null) continue
-                hasSentTransactionEvent = true
-                const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-                const meterValue = buildMeterValue(
-                  chargingStation,
-                  connector.transactionId,
-                  txUpdatedInterval
-                ) as OCPP20MeterValue
-                OCPP20ServiceUtils.sendTransactionEvent(
-                  chargingStation,
-                  OCPP20TransactionEventEnumType.Updated,
-                  OCPP20TriggerReasonEnumType.Trigger,
-                  cId,
-                  connector.transactionId as string,
-                  { meterValue: [meterValue] }
-                ).catch(errorHandler)
-              }
-            }
-            if (!hasSentTransactionEvent) {
-              const meterValue: OCPP20MeterValue = {
-                sampledValue: [{ value: 0 }],
-                timestamp: new Date(),
-              }
-              chargingStation.ocppRequestService
-                .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-                  chargingStation,
-                  OCPP20RequestCommand.METER_VALUES,
-                  {
-                    evseId: evse?.id ?? 1,
-                    meterValue: [meterValue],
-                  },
-                  { skipBufferingOnError: true, triggerMessage: true }
-                )
-                .catch(errorHandler)
-            }
+          case MessageTriggerEnumType.MeterValues:
+            this.triggerMeterValues(chargingStation, evse, errorHandler)
             break
-          }
           case MessageTriggerEnumType.StatusNotification:
             this.triggerStatusNotification(chargingStation, evse, errorHandler)
             break
@@ -1319,6 +1294,75 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return true
     }
     return queue.some(({ request }) => request.transactionInfo.transactionId === transactionId)
+  }
+
+  /**
+   * Emits one `MeterValuesRequest` aggregating the given EVSE's
+   * active-transaction connectors, or a schema-conforming placeholder
+   * when the EVSE has no active transactions.
+   * @param chargingStation - Target charging station.
+   * @param evseId - Target EVSE identifier.
+   * @param evseStatus - Target EVSE status (yields the connectors).
+   * @param alignedInterval - Aligned-data emission interval in milliseconds.
+   * @param alignedMeasurandsKey - Configuration key for the AlignedDataCtrlr.Measurands allow-list.
+   * @param errorHandler - Handler for downstream request-emission errors.
+   */
+  private emitEvseMeterValues (
+    chargingStation: ChargingStation,
+    evseId: number,
+    evseStatus: EvseStatus,
+    alignedInterval: number,
+    alignedMeasurandsKey: string,
+    errorHandler: (error: unknown) => void
+  ): void {
+    const meterValues: OCPP20MeterValue[] = []
+    for (const connector of evseStatus.connectors.values()) {
+      if (connector.transactionId == null) continue
+      let meterValue: OCPP20MeterValue
+      try {
+        meterValue = buildMeterValue(
+          chargingStation,
+          connector.transactionId,
+          alignedInterval,
+          alignedMeasurandsKey,
+          OCPP20ReadingContextEnumType.TRIGGER
+        ) as OCPP20MeterValue
+      } catch (error) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.emitEvseMeterValues: ${getErrorMessage(error)}`
+        )
+        continue
+      }
+      // OCPP 2.0.1 MeterValueType.sampledValue cardinality is 1..*:
+      // skip a MeterValue whose emit set collapsed to empty so the
+      // outgoing MeterValuesRequest stays schema-conforming.
+      if (isNotEmptyArray(meterValue.sampledValue)) {
+        meterValues.push(meterValue)
+      }
+    }
+    if (meterValues.length === 0) {
+      meterValues.push({
+        sampledValue: [
+          {
+            context: OCPP20ReadingContextEnumType.TRIGGER,
+            measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+            value: 0,
+          },
+        ],
+        timestamp: new Date(),
+      })
+    }
+    chargingStation.ocppRequestService
+      .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
+        chargingStation,
+        OCPP20RequestCommand.METER_VALUES,
+        {
+          evseId,
+          meterValue: meterValues,
+        },
+        { skipBufferingOnError: true, triggerMessage: true }
+      )
+      .catch(errorHandler)
   }
 
   private getRestoredConnectorStatus (
@@ -3004,7 +3048,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
     )
 
-    // C10: Validate signing certificate PEM format if present
+    // Reject malformed signing certificates up front so the firmware update path handles only parsable PEMs
     if (isNotEmptyString(firmware.signingCertificate)) {
       if (
         !hasCertificateManager(chargingStation) ||
@@ -3033,7 +3077,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // H10: Cancel any in-progress firmware update
+    // Cancel any in-progress firmware update; respond with AcceptedCanceled so the new request starts fresh
     const stationState = this.getStationState(chargingStation)
     if (stationState.activeFirmwareUpdateAbortController != null) {
       const previousRequestId = stationState.activeFirmwareUpdateRequestId
@@ -3208,7 +3252,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    // Snapshot transactionId BEFORE resetConnectorStatus deletes it.
+    const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 
@@ -3637,7 +3684,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
-    // H10: Set up abort controller for cancellation support
+    // Store the abort controller so a subsequent UpdateFirmware can cancel this in-progress update
     const abortController = new AbortController()
     const stationState = this.getStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
@@ -3645,7 +3692,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
-    // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
+    // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
     const now = Date.now()
     const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
     if (retrieveTime > now) {
@@ -3667,7 +3714,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
     if (checkAborted()) return
 
-    // H9: If firmware location is empty or malformed, send DownloadFailed and stop
+    // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
     if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
       // L01.FR.30: Simulate download retries before reporting DownloadFailed
       const maxRetries = retries ?? 0
@@ -3742,7 +3789,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // C12: If installDateTime is in the future, send InstallScheduled and wait
+    // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
     if (installDateTime != null) {
       const currentTime = Date.now()
       const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
@@ -3809,7 +3856,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    // H11: Send SecurityEventNotification for successful firmware update
+    // Send SecurityEventNotification after a successful firmware update
     this.sendSecurityEventNotification(
       chargingStation,
       'FirmwareUpdated',
@@ -3894,11 +3941,66 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )) {
       const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<
-          OCPP20StatusNotificationRequest,
-          OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+          chargingStation,
+          OCPP20RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            connectorStatus: resolvedStatus,
+            evseId,
+          } as unknown as OCPP20StatusNotificationRequest,
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
         .catch(errorHandler)
+    }
+  }
+
+  /**
+   * OCPP 2.0.1 F06.FR.06: TriggerMessage with `MessageTrigger.MeterValues`
+   * SHALL respond with `MeterValuesRequest` (not `TransactionEventRequest`),
+   * using the `AlignedDataCtrlr.Measurands` allow-list and `TRIGGER`
+   * ReadingContext. One `MeterValuesRequest` per target EVSE aggregating
+   * MeterValues from every connector with an active transaction; when an
+   * EVSE has no active transactions, still emit one request with a
+   * schema-conforming placeholder so the CSMS observes the response
+   * (F06.FR.10). F06.FR.11 broadcast semantics apply when `evse` is absent.
+   * @param chargingStation - Target charging station.
+   * @param evse - Optional target EVSE from the TriggerMessage payload.
+   * @param errorHandler - Handler for downstream request-emission errors.
+   */
+  private triggerMeterValues (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse'],
+    errorHandler: (error: unknown) => void
+  ): void {
+    const alignedInterval = OCPP20ServiceUtils.getAlignedDataInterval(chargingStation)
+    const alignedMeasurandsKey = buildConfigKey(
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20RequiredVariableName.Measurands
+    )
+    if (evse?.id != null && evse.id > 0) {
+      const evseStatus = chargingStation.getEvseStatus(evse.id)
+      if (evseStatus != null) {
+        this.emitEvseMeterValues(
+          chargingStation,
+          evse.id,
+          evseStatus,
+          alignedInterval,
+          alignedMeasurandsKey,
+          errorHandler
+        )
+      }
+    } else {
+      for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+        this.emitEvseMeterValues(
+          chargingStation,
+          evseId,
+          evseStatus,
+          alignedInterval,
+          alignedMeasurandsKey,
+          errorHandler
+        )
+      }
     }
   }
 
@@ -3912,10 +4014,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
       const resolvedStatus = connectorStatus?.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<
-          OCPP20StatusNotificationRequest,
-          OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, connectorStatus: resolvedStatus, evseId: evse.id } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+          chargingStation,
+          OCPP20RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: evse.connectorId,
+            connectorStatus: resolvedStatus,
+            evseId: evse.id,
+          } as unknown as OCPP20StatusNotificationRequest,
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)

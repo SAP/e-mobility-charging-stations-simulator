@@ -329,8 +329,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
     // Get rate limiting stats from cache via remote strategy
     let rateLimitStatistics:
-      | undefined
-      | { blockedRequests: number; rateLimitedIdentifiers: number; totalChecks: number }
+      undefined | { blockedRequests: number; rateLimitedIdentifiers: number; totalChecks: number }
     const remoteStrategy = this.strategies.get('remote')
     if (remoteStrategy?.getStats) {
       const strategyStatistics = remoteStrategy.getStats()

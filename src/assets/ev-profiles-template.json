@@ -1,0 +1,46 @@
+{
+  "profiles": [
+    {
+      "id": "city-ev-40kWh",
+      "weight": 3,
+      "batteryCapacityWh": 40000,
+      "maxPowerW": 11000,
+      "initialSocPercentMin": 15,
+      "initialSocPercentMax": 55,
+      "chargingCurve": [
+        { "socPercent": 0, "powerFraction": 1.0 },
+        { "socPercent": 75, "powerFraction": 1.0 },
+        { "socPercent": 90, "powerFraction": 0.4 },
+        { "socPercent": 100, "powerFraction": 0.08 }
+      ]
+    },
+    {
+      "id": "long-range-ev-77kWh",
+      "weight": 2,
+      "batteryCapacityWh": 77000,
+      "maxPowerW": 22000,
+      "initialSocPercentMin": 10,
+      "initialSocPercentMax": 60,
+      "chargingCurve": [
+        { "socPercent": 0, "powerFraction": 1.0 },
+        { "socPercent": 70, "powerFraction": 0.85 },
+        { "socPercent": 90, "powerFraction": 0.35 },
+        { "socPercent": 100, "powerFraction": 0.05 }
+      ]
+    },
+    {
+      "id": "dc-fast-ev-90kWh",
+      "weight": 1,
+      "batteryCapacityWh": 90000,
+      "maxPowerW": 150000,
+      "initialSocPercentMin": 10,
+      "initialSocPercentMax": 40,
+      "chargingCurve": [
+        { "socPercent": 0, "powerFraction": 1.0 },
+        { "socPercent": 50, "powerFraction": 0.85 },
+        { "socPercent": 80, "powerFraction": 0.45 },
+        { "socPercent": 100, "powerFraction": 0.05 }
+      ]
+    }
+  ]
+}

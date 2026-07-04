@@ -1,11 +1,10 @@
 /**
- * Common test constants for charging station tests across all OCPP versions
- *
- * This file serves as the single source of truth for test constants used across
- * charging station test suites. Constants are organized by functional area and
- * follow naming conventions: UPPERCASE_WITH_UNDERSCORES.
- * @see tests/charging-station/ocpp/2.0/OCPP20TestConstants.ts for OCPP 2.0 specific constants
- * @see tests/charging-station/OCPPSpecRequirements.md for OCPP specification requirements
+ * @file Common test constants for charging station tests.
+ * @description Single source of truth for test constants shared across
+ *   charging station test suites, organized by functional area. Naming
+ *   convention: `TEST_UPPERCASE_WITH_UNDERSCORES`. OCPP-2.0-specific
+ *   constants live in `OCPP20TestConstants.ts`; specification requirements
+ *   live in `OCPPSpecRequirements.md`.
  */
 
 /**
@@ -17,11 +16,15 @@ export const TEST_CHARGING_STATION_HASH_ID = 'cs-test-hash-001'
 
 /**
  * Timer Intervals
- * Test values for timing-related configuration and expectations
+ * Test values for timing-related configuration and expectations.
+ * The `_MS` intervals are intentionally half of their production
+ * `Constants.DEFAULT_*_INTERVAL_MS` counterparts to keep test wall-clock
+ * time bounded without changing the invariants under test.
  */
 export const TEST_HEARTBEAT_INTERVAL_SECONDS = 60
 export const TEST_HEARTBEAT_INTERVAL_MS = 30000
 export const TEST_AUTHORIZATION_TIMEOUT_MS = 30000
+export const TEST_METER_VALUES_INTERVAL_MS = 30_000
 export const TEST_ONE_HOUR_SECONDS = 3600
 export const TEST_ONE_HOUR_MS = TEST_ONE_HOUR_SECONDS * 1000
 

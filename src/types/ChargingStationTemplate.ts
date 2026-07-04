@@ -62,12 +62,27 @@ export interface ChargingStationTemplate {
   chargePointModel: string
   chargePointSerialNumberPrefix?: string
   chargePointVendor: string
+  /**
+   * Enable physics-based coherent MeterValues generation (opt-in, default `false`).
+   * When `true`, MeterValues are derived from a single physics chain
+   * (V → P → I → ΔE → SoC) using a deterministic seeded PRNG and an
+   * optional {@link evProfilesFile}. When `false` or absent, the random/fixed
+   * per-measurand generation is used and behavior is unchanged.
+   */
+  coherentMeterValues?: boolean
   commandsSupport?: CommandsSupport
   Configuration?: ChargingStationOcppConfiguration
   Connectors?: Record<string, ConnectorStatus>
   currentOutType?: CurrentType
   customValueLimitationMeterValues?: boolean
   enableStatistics?: boolean
+  /**
+   * Optional EV profile file (same asset pattern as {@link idTagsFile}).
+   * Consumed only when `coherentMeterValues` is `true`. Malformed or
+   * missing files disable coherent generation for the station and log
+   * a warning; the station still starts.
+   */
+  evProfilesFile?: string
   Evses?: Record<string, EvseTemplate>
   firmwareUpgrade?: FirmwareUpgrade
   firmwareVersion?: string
@@ -111,6 +126,14 @@ export interface ChargingStationTemplate {
   powerSharedByConnectors?: boolean
   powerUnit?: PowerUnits
   randomConnectors?: boolean
+  /**
+   * Optional deterministic seed for coherent MeterValues generation.
+   * When set together with `coherentMeterValues=true`, the physics-based
+   * generator produces reproducible MeterValues sequences for identical
+   * inputs (same seed + same transactionId + same interval). Ignored when
+   * `coherentMeterValues` is `false` or absent.
+   */
+  randomSeed?: number
   reconnectExponentialDelay?: boolean
   registrationMaxRetries?: number
   remoteAuthorization?: boolean

@@ -9,6 +9,8 @@ import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 import { type RawData, WebSocket } from 'ws'
 
+import type { CoherentSession } from './meter-values/index.js'
+
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -110,6 +112,7 @@ import {
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
 import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import { CoherentMeterValuesManager } from './CoherentMeterValuesManager.js'
 import {
   addConfigurationKey,
   deleteConfigurationKey,
@@ -303,6 +306,19 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Injects a pre-built coherent session directly into the session store.
+   * **Test seam only** — delegates to
+   * {@link CoherentMeterValuesManager.injectSession}, which enforces the
+   * `NODE_ENV === 'production'` guard.
+   * @param transactionId - Transaction identifier.
+   * @param session - Pre-built session.
+   * @throws {BaseError} When invoked in a production build.
+   */
+  public __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+    CoherentMeterValuesManager.getInstance(this)?.injectSession(transactionId, session)
+  }
+
+  /**
    * Adds a reservation to the specified connector.
    * @param reservation - The reservation to add
    */
@@ -346,6 +362,28 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Creates or returns the coherent MeterValues session for a transaction.
+   * Idempotent. Delegates to
+   * {@link CoherentMeterValuesManager.createSession}; returns `undefined`
+   * when coherent mode is disabled or no valid EV profile file is loaded.
+   *
+   * Uses `peekInstance` (lookup-only): opt-in stations warm up the
+   * manager at initialize, so subsequent calls find it in the cache;
+   * non-opt-in stations never allocate a manager because
+   * `manager.createSession` would return `undefined` anyway.
+   * @param transactionId - Transaction identifier from the CSMS.
+   * @param connectorId - Connector on which the transaction is running.
+   * @returns The active or newly-created session, or `undefined` when
+   *   coherent mode is not usable.
+   */
+  public createCoherentSession (
+    transactionId: number | string,
+    connectorId: number
+  ): CoherentSession | undefined {
+    return CoherentMeterValuesManager.peekInstance(this)?.createSession(transactionId, connectorId)
+  }
+
+  /**
    * Deletes the charging station instance and optionally its persisted configuration.
    * @param deleteConfiguration - Whether to delete the persisted configuration file
    */
@@ -362,6 +400,7 @@ export class ChargingStation extends EventEmitter {
       }
     }
     AutomaticTransactionGenerator.deleteInstance(this)
+    CoherentMeterValuesManager.deleteInstance(this)
     PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
     OCPPAuthServiceFactory.clearInstance(this)
     if (this.stationInfo != null) {
@@ -400,6 +439,20 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Removes the coherent session for a transaction. Idempotent — safe to
+   * call from every reset/stop/disconnect path. Delegates to
+   * {@link CoherentMeterValuesManager.destroySession}, which disposes the
+   * module-scope per-session runtime state (voltage-noise PRNG closure).
+   * Uses `peekInstance` so non-opt-in stations never allocate a manager
+   * on a transaction-end tear-down.
+   * @param transactionId - Transaction identifier.
+   * @returns `true` when a session was removed, `false` otherwise.
+   */
+  public destroyCoherentSession (transactionId: number | string | undefined): boolean {
+    return CoherentMeterValuesManager.peekInstance(this)?.destroySession(transactionId) ?? false
+  }
+
+  /**
    * Emit a ChargingStation event only if there are listeners registered for it.
    * This optimizes performance by avoiding unnecessary event emission.
    * @param event - The ChargingStation event to emit
@@ -426,12 +479,10 @@ export class ChargingStation extends EventEmitter {
    * @returns The ATG configuration or undefined if not available
    */
   public getAutomaticTransactionGeneratorConfiguration ():
-    | AutomaticTransactionGeneratorConfiguration
-    | undefined {
+    AutomaticTransactionGeneratorConfiguration | undefined {
     if (this.automaticTransactionGeneratorConfiguration == null) {
       let automaticTransactionGeneratorConfiguration:
-        | AutomaticTransactionGeneratorConfiguration
-        | undefined
+        AutomaticTransactionGeneratorConfiguration | undefined
       const stationTemplate = this.getTemplateFromFile()
       const stationConfiguration = this.getConfigurationFromFile()
       if (
@@ -458,6 +509,20 @@ export class ChargingStation extends EventEmitter {
    */
   public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
+  }
+
+  /**
+   * Retrieves the coherent session for a transaction, if any. Delegates
+   * to {@link CoherentMeterValuesManager.getSession}. Uses `peekInstance`
+   * because this method is reached from the unconditional strategy gate
+   * in `OCPPServiceUtils.buildMeterValue` on every MeterValue tick — a
+   * `getInstance` here would allocate a manager for every station that
+   * ever emits a MeterValue, opt-in or not.
+   * @param transactionId - Transaction identifier.
+   * @returns The session or `undefined` when none exists.
+   */
+  public getCoherentSession (transactionId: number | string): CoherentSession | undefined {
+    return CoherentMeterValuesManager.peekInstance(this)?.getSession(transactionId)
   }
 
   public getConnectionTimeout (): number {
@@ -1223,6 +1288,10 @@ export class ChargingStation extends EventEmitter {
           this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
           this.emitChargingStationEvent(ChargingStationEvents.stopped)
         } finally {
+          // Drop any coherent sessions still tracked at shutdown so a
+          // subsequent restart cannot resurrect stale state or leak
+          // module-scope runtime PRNG closures.
+          CoherentMeterValuesManager.peekInstance(this)?.dispose()
           this.stopping = false
         }
       } else {
@@ -1816,6 +1885,18 @@ export class ChargingStation extends EventEmitter {
       }
     }
     this.saveStationInfo()
+    // Warm up the coherent MeterValues manager on opt-in so
+    // EV-profile-file warnings surface at startup, and reload profiles
+    // on every subsequent `initialize()` (reset, template file change)
+    // to propagate template mutations. On opt-out we deliberately
+    // leave any pre-existing manager in place: new sessions are
+    // already blocked by the `coherentMeterValues` gate in
+    // `createSession`, and in-flight sessions drain via
+    // `destroyCoherentSession` on transaction end — preserving
+    // provenance of transactions started before the flag flip.
+    if (this.stationInfo.coherentMeterValues === true) {
+      CoherentMeterValuesManager.getInstance(this)?.reloadEvProfiles()
+    }
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     if (this.stationInfo.enableStatistics === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(

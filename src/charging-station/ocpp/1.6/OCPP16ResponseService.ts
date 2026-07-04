@@ -35,7 +35,14 @@ import {
   ReservationTerminationReason,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { Constants, convertToInt, logger, sleep, truncateId } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToInt,
+  isNotEmptyArray,
+  logger,
+  sleep,
+  truncateId,
+} from '../../../utils/index.js'
 import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
@@ -62,11 +69,16 @@ const decrementPowerDivider = (chargingStation: ChargingStation): void => {
 }
 
 const finalizeTransactionConnectorStatus = (
+  chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   requestPayload: OCPP16StopTransactionRequest
 ): string | undefined => {
   const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
+  // resetConnectorStatus deletes transactionId (Helpers.ts:508). Destroy the
+  // coherent session using requestPayload.transactionId, which is always
+  // present in the StopTransaction request and unaffected by the reset.
   resetConnectorStatus(connectorStatus)
+  chargingStation.destroyCoherentSession(requestPayload.transactionId)
   if (connectorStatus != null) {
     connectorStatus.locked = false
   }
@@ -431,6 +443,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.transactionIdTag = requestPayload.idTag
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.locked = true
+      // Session must exist before buildTransactionBeginMeterValue so the
+      // coherent-mode branch inside it can route through buildMeterValue.
+      // No-op when coherent mode is off or the EV profile pool is absent.
+      chargingStation.createCoherentSession(payload.transactionId, connectorId)
       connectorStatus.transactionBeginMeterValue =
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(
           chargingStation,
@@ -465,15 +481,25 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         }
       }
-      chargingStation.stationInfo?.beginEndMeterValues === true &&
-        (await chargingStation.ocppRequestService.requestHandler<
+      // Whitepaper §3.3.4 composition: send only when the built begin
+      // MeterValue carries at least one SampledValue. When
+      // `StartTxnSampledData` is set, `buildTransactionBeginMeterValue`
+      // uses it; when absent it falls back to `MeterValuesSampledData`.
+      // Both empty ⇒ no send (avoids empty sampledValue array in
+      // `MeterValues.req`).
+      if (
+        chargingStation.stationInfo?.beginEndMeterValues === true &&
+        isNotEmptyArray(connectorStatus.transactionBeginMeterValue.sampledValue)
+      ) {
+        await chargingStation.ocppRequestService.requestHandler<
           OCPP16MeterValuesRequest,
           OCPP16MeterValuesResponse
         >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
           connectorId,
           meterValue: [connectorStatus.transactionBeginMeterValue],
           transactionId: payload.transactionId,
-        } satisfies OCPP16MeterValuesRequest))
+        } satisfies OCPP16MeterValuesRequest)
+      }
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: OCPP16ChargePointStatus.Charging,
@@ -526,25 +552,33 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non-existent transaction with id ${requestPayload.transactionId.toString()}`
       )
+      // Destroy any lingering coherent session on this transaction so the
+      // Map does not leak entries when the connector-side state has already
+      // been reset.
+      chargingStation.destroyCoherentSession(requestPayload.transactionId)
       return
     }
-    chargingStation.stationInfo?.beginEndMeterValues === true &&
+    if (
+      chargingStation.stationInfo?.beginEndMeterValues === true &&
       chargingStation.stationInfo.ocppStrictCompliance === false &&
-      chargingStation.stationInfo.outOfOrderEndMeterValues === true &&
-      (await chargingStation.ocppRequestService.requestHandler<
-        OCPP16MeterValuesRequest,
-        OCPP16MeterValuesResponse
-      >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
-        connectorId: transactionConnectorId,
-        meterValue: [
-          OCPP16ServiceUtils.buildTransactionEndMeterValue(
-            chargingStation,
-            transactionConnectorId,
-            requestPayload.meterStop
-          ),
-        ],
-        transactionId: requestPayload.transactionId,
-      }))
+      chargingStation.stationInfo.outOfOrderEndMeterValues === true
+    ) {
+      const endMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+        chargingStation,
+        transactionConnectorId,
+        requestPayload.meterStop
+      )
+      if (isNotEmptyArray(endMeterValue.sampledValue)) {
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16MeterValuesRequest,
+          OCPP16MeterValuesResponse
+        >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
+          connectorId: transactionConnectorId,
+          meterValue: [endMeterValue],
+          transactionId: requestPayload.transactionId,
+        })
+      }
+    }
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     let transactionIdTag: string | undefined
     if (postTransactionDelay > 0) {
@@ -561,11 +595,17 @@ export class OCPP16ResponseService extends OCPPResponseService {
       if (transactionConnectorStatus != null) {
         delete transactionConnectorStatus.transactionId
       }
+      // Destroy the coherent session BEFORE sleeping so an intervening
+      // stop cannot leak it. `destroyCoherentSession` is idempotent so a
+      // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
+      // is a no-op.
+      chargingStation.destroyCoherentSession(requestPayload.transactionId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {
         return
       }
       transactionIdTag = finalizeTransactionConnectorStatus(
+        chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
@@ -575,6 +615,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       decrementPowerDivider(chargingStation)
       const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       transactionIdTag = finalizeTransactionConnectorStatus(
+        chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
@@ -608,7 +649,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): Promise<void> {
     OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    // Snapshot transactionId BEFORE resetConnectorStatus deletes it.
+    const txId = connectorStatus?.transactionId
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 }

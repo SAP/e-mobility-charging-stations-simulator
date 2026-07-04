@@ -8,11 +8,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ChargingStation, CoherentSession } from '../../../../src/charging-station/index.js'
 import type { ConnectorStatus } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
+import { CurrentType, OCPPVersion, Voltage } from '../../../../src/types/index.js'
 import {
   flushMicrotasks,
   standardCleanup,
@@ -20,7 +20,7 @@ import {
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
-await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
+await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
   let station: ChargingStation
   let connectorStatus: ConnectorStatus
   let requestHandlerMock: ReturnType<typeof mock.fn>
@@ -42,9 +42,7 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
     })
     station = result.station
     const cs = station.getConnectorStatus(1)
-    if (cs == null) {
-      throw new Error('Expected connector 1 to exist')
-    }
+    assert.ok(cs != null, 'Expected connector 1 to exist')
     connectorStatus = cs
     connectorStatus.transactionStarted = true
     connectorStatus.transactionId = 'tx-1'
@@ -114,6 +112,52 @@ await describe('OCPP20ServiceUtils — PostTransactionDelay', async () => {
       requestHandlerMock.mock.calls.length,
       0,
       'No StatusNotification should be sent'
+    )
+  })
+
+  await it('should destroy the coherent session even when the station stops during delay', async t => {
+    const stubSession: CoherentSession = {
+      connectorId: 1,
+      currentType: CurrentType.AC,
+      numberOfPhases: 1,
+      profile: {
+        batteryCapacityWh: 1,
+        chargingCurve: [{ powerFraction: 0, socPercent: 0 }],
+        id: 'stub',
+        initialSocPercentMax: 0,
+        initialSocPercentMin: 0,
+        maxPowerW: 1,
+        weight: 1,
+      },
+      rampUpDurationMs: 0,
+      sessionStartMs: 0,
+      socPercent: 0,
+      transactionId: 'tx-1',
+      voltageOutNominal: Voltage.VOLTAGE_230,
+    }
+    station.__injectCoherentSession('tx-1', stubSession)
+    assert.ok(
+      station.getCoherentSession('tx-1') != null,
+      'session should exist before cleanupEndedTransaction'
+    )
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const promise = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      station.started = false
+      t.mock.timers.tick(3000)
+      for (let i = 0; i < 10; i++) {
+        await flushMicrotasks()
+      }
+      await promise
+    })
+
+    assert.strictEqual(
+      station.getCoherentSession('tx-1'),
+      undefined,
+      'coherent session leaked when station stopped during postTransactionDelay'
     )
   })
 })

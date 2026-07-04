@@ -200,16 +200,24 @@ export class OCPP20ServiceUtils {
     ) {
       return
     }
+    // Snapshot transactionId BEFORE any mutation below deletes it, so the
+    // coherent session (if any) can still be destroyed after the reset.
+    const txId = connectorStatus.transactionId
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
       delete connectorStatus.transactionId
+      // Destroy the coherent session BEFORE sleeping so an intervening
+      // stop cannot leak it. `destroyCoherentSession` is idempotent so the
+      // post-sleep call remains valid.
+      chargingStation.destroyCoherentSession(txId)
       await sleep(secondsToMilliseconds(postTransactionDelay))
       if (!chargingStation.started) {
         return
       }
     }
     resetConnectorStatus(connectorStatus)
+    chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
     await sendPostTransactionStatus(chargingStation, connectorId)
   }
@@ -883,6 +891,11 @@ export class OCPP20ServiceUtils {
       }
       OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
     }
+    // Create coherent session BEFORE building the Transaction.Started MeterValue
+    // so the coherent gate in `buildMeterValue` runs against a live session
+    // (E02.FR.09 measurands from a physics-consistent initial state).
+    // Idempotent — a duplicate call from the response handler is a no-op.
+    chargingStation.createCoherentSession(transactionId, connectorId)
     const startedMeterValues = OCPP20ServiceUtils.buildTransactionStartedMeterValues(
       chargingStation,
       transactionId
@@ -890,18 +903,28 @@ export class OCPP20ServiceUtils {
     if (isNotEmptyArray(startedMeterValues) && connectorStatus != null) {
       connectorStatus.transactionBeginMeterValue = startedMeterValues[0] as MeterValue
     }
-    const response = await OCPP20ServiceUtils.sendTransactionEvent(
-      chargingStation,
-      OCPP20TransactionEventEnumType.Started,
-      OCPP20TriggerReasonEnumType.Authorized,
-      connectorId,
-      transactionId,
-      {
-        idToken:
-          idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
-        ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
-      }
-    )
+    let response
+    try {
+      response = await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId,
+        {
+          idToken:
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
+          ...(isNotEmptyArray(startedMeterValues) && { meterValue: startedMeterValues }),
+        }
+      )
+    } catch (error) {
+      // Symmetric with OCPP 1.6 `resetConnectorOnStartTransactionError`: if
+      // the Started TransactionEvent fails to send, the coherent session
+      // (created at line 898 for the physics-consistent begin MeterValue)
+      // must not leak. `destroyCoherentSession` is idempotent.
+      chargingStation.destroyCoherentSession(transactionId)
+      throw error
+    }
     return {
       accepted:
         response.idTokenInfo == null ||
@@ -976,15 +999,26 @@ export class OCPP20ServiceUtils {
         const meterValue = buildMeterValue(
           chargingStation,
           connectorStatus.transactionId,
-          interval
+          interval,
+          buildConfigKey(
+            OCPP20ComponentName.SampledDataCtrlr,
+            OCPP20RequiredVariableName.TxUpdatedMeasurands
+          )
         ) as OCPP20MeterValue
+        // OCPP 2.0.1 `MeterValueType.sampledValue` cardinality is `1..*`, while
+        // `TransactionEventRequest.meterValue` is `0..*`: when `TxUpdatedMeasurands`
+        // yields no sampled values, omit the `meterValue` field entirely rather
+        // than send an empty-wrapper schema violation.
+        const eventPayload = isNotEmptyArray(meterValue.sampledValue)
+          ? { meterValue: [meterValue] }
+          : {}
         OCPP20ServiceUtils.sendTransactionEvent(
           chargingStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           connectorStatus.transactionId as string,
-          { meterValue: [meterValue] }
+          eventPayload
         ).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error sending periodic TransactionEvent:`,
@@ -1155,8 +1189,7 @@ export class OCPP20ServiceUtils {
     const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
       []) as OCPP20MeterValue[]
     const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
-      | OCPP20MeterValue
-      | undefined
+      OCPP20MeterValue | undefined
 
     try {
       const measurandsKey = buildConfigKey(

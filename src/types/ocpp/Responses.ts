@@ -38,8 +38,7 @@ import {
 import { type GenericResponse, GenericStatus } from './Common.js'
 
 export type BootNotificationResponse =
-  | OCPP16BootNotificationResponse
-  | OCPP20BootNotificationResponse
+  OCPP16BootNotificationResponse | OCPP20BootNotificationResponse
 
 export type CancelReservationResponse = GenericResponse
 

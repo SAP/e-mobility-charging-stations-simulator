@@ -1671,8 +1671,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       localServer as unknown as { scheduleClientNotification: () => void }
     ).scheduleClientNotification()
     const installed = Reflect.get(localServer, 'clientNotificationDebounceTimer') as
-      | NodeJS.Timeout
-      | undefined
+      NodeJS.Timeout | undefined
     assert.ok(installed !== undefined, 'precondition: debounce timer installed')
     const clearedHandles: unknown[] = []
     const originalClearTimeout = globalThis.clearTimeout
@@ -1702,8 +1701,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
         localServer as unknown as { scheduleClientNotification: () => void }
       ).scheduleClientNotification()
       const reinstalled = Reflect.get(localServer, 'clientNotificationDebounceTimer') as
-        | NodeJS.Timeout
-        | undefined
+        NodeJS.Timeout | undefined
       assert.ok(reinstalled !== undefined, 'precondition: 2nd timer installed after first stop()')
       const beforeStop2 = clearedHandles.length
       localServer.stop()

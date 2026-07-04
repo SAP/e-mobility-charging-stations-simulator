@@ -22,6 +22,7 @@ import {
   type MeterValuesRequest,
   type MeterValuesResponse,
   type OCPP16AuthorizeResponse,
+  type OCPP16MeterValue,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
   type OCPP20Get15118EVCertificateResponse,
@@ -48,7 +49,12 @@ import {
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
-import { buildMeterValue, OCPP20ServiceUtils, sendAndSetConnectorStatus } from '../ocpp/index.js'
+import {
+  buildMeterValue,
+  OCPP16ServiceUtils,
+  OCPP20ServiceUtils,
+  sendAndSetConnectorStatus,
+} from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -349,9 +355,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         if (
           (
             commandResponse as
-              | OCPP16AuthorizeResponse
-              | StartTransactionResponse
-              | StopTransactionResponse
+              OCPP16AuthorizeResponse | StartTransactionResponse | StopTransactionResponse
           ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
           return ResponseStatus.SUCCESS
@@ -423,6 +427,23 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             ? secondsToMilliseconds(convertToInt(key.value))
             : Constants.DEFAULT_METER_VALUES_INTERVAL_MS
         })()
+    const meterValue = buildMeterValue(this.chargingStation, transactionId, interval)
+    // OCPP 1.6 Signed Meter Values whitepaper §3.3.6: mirror the periodic
+    // loop (`OCPP16ServiceUtils.startUpdatedMeterValues`) and append a paired
+    // SignedData SampledValue when signing is enabled for the connector.
+    // Guarded on `!isOcpp2` because OCPP 2.0.x signing is applied inline
+    // inside `buildMeterValue` (via the versioned dispatcher's signing hook);
+    // post-hoc wrapping is the 1.6 pattern only. Guarded on `transactionId
+    // != null` because signing a MeterValue outside an active transaction
+    // has no defined semantics in the whitepaper.
+    if (!isOcpp2 && transactionId != null) {
+      OCPP16ServiceUtils.appendSignedUpdatedReadings(
+        this.chargingStation,
+        connectorId,
+        convertToInt(transactionId),
+        meterValue as OCPP16MeterValue
+      )
+    }
     return await this.chargingStation.ocppRequestService.requestHandler<
       MeterValuesRequest,
       MeterValuesResponse
@@ -435,7 +456,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               evseId: payloadEvseId ?? this.chargingStation.getEvseIdByConnectorId(connectorId),
             }
           : { connectorId }),
-        meterValue: [buildMeterValue(this.chargingStation, transactionId, interval)],
+        meterValue: [meterValue],
         ...requestPayload,
       } as MeterValuesRequest,
       this.requestParams

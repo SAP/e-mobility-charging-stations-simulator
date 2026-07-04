@@ -219,9 +219,9 @@ await describe('OCPP16ResponseService — forceTransactionOnInvalidIdToken (issu
       timestamp: new Date(),
     }
     const responsePayload: OCPP16StartTransactionResponse = {
-      // INVALID + flag=true exercises the regression: without the pre-Start
-      // guard the override would skip the abort path. The guard MUST still
-      // win. ACCEPTED would not exercise the flag-vs-guard interaction.
+      // INVALID + flag=true exercises the pre-Start guard: the override
+      // must not bypass the abort path. ACCEPTED would not exercise the
+      // flag-vs-guard interaction.
       idTagInfo: { status: OCPP16AuthorizationStatus.INVALID },
       transactionId: 22,
     }

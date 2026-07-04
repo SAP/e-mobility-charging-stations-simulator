@@ -36,6 +36,12 @@ export class Constants {
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
 
+  /** Default coherent MeterValues ramp-up duration in milliseconds. Non-positive values disable the ramp. */
+  static readonly DEFAULT_COHERENT_RAMP_UP_DURATION_MS = 5000
+
+  /** Default coherent MeterValues voltage-noise symmetric half-width (0.01 = ±1 %). */
+  static readonly DEFAULT_COHERENT_VOLTAGE_NOISE_PERCENT = 0.01
+
   static readonly DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS = 180
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
@@ -118,9 +124,15 @@ export class Constants {
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2147483647
 
+  /** Milliseconds per hour; conversion factor for `Wh` accrual from `W·ms`. */
+  static readonly MS_PER_HOUR = 3_600_000
+
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT_MS = 60000
 
   static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT_MS = 30000
+
+  /** Divider between base units (W, Wh) and kilo units (kW, kWh). */
+  static readonly UNIT_DIVIDER_KILO = 1000
 }

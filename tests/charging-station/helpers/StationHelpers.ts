@@ -2,9 +2,14 @@
  * Station helper functions for testing
  *
  * Factory functions to create mock ChargingStation instances with isolated dependencies.
+ *
+ * TODO(#1936): file size (≈ 950 LOC) exceeds the 250 LOC ceiling documented
+ * in AGENTS.md. Modular refactor (StationHelpers.types / .cleanup / .connector /
+ * .template / .factory) tracked as follow-up; 30+ test files import from
+ * this path so the split must preserve the public re-export surface.
  */
 
-import type { ChargingStation } from '../../../src/charging-station/index.js'
+import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type {
   ChargingStationInfo,
   ChargingStationOcppConfiguration,
@@ -397,6 +402,9 @@ export function createMockChargingStation (
   const station = {
     // Reservation methods (mock implementations - eslint disabled for test utilities)
 
+    __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
+      this.coherentSessions.set(transactionId, session)
+    },
     addReservation (reservation: Record<string, unknown>): void {
       // Check if reservation with same ID exists and remove it
       const existingReservation = this.getReservationBy(
@@ -412,6 +420,7 @@ export function createMockChargingStation (
       }
     },
     automaticTransactionGenerator: undefined,
+
     bootNotificationRequest: undefined,
 
     bootNotificationResponse: {
@@ -425,7 +434,6 @@ export function createMockChargingStation (
         interval: number
         status: RegistrationStatusEnumType
       },
-
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
@@ -435,8 +443,17 @@ export function createMockChargingStation (
         this.wsConnection = null
       }
     },
-    connectors,
+    // Coherent MeterValues session store (real class uses a private Map).
+    coherentSessions: new Map<number | string, CoherentSession>(),
 
+    connectors,
+    createCoherentSession (
+      _transactionId: number | string,
+      _connectorId: number
+    ): CoherentSession | undefined {
+      // Mock: never auto-create; tests inject sessions directly when needed.
+      return undefined
+    },
     async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
@@ -447,6 +464,13 @@ export function createMockChargingStation (
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
+
+    destroyCoherentSession (transactionId: number | string | undefined): boolean {
+      if (transactionId == null) {
+        return false
+      }
+      return this.coherentSessions.delete(transactionId)
+    },
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -455,6 +479,9 @@ export function createMockChargingStation (
     evses,
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
+    },
+    getCoherentSession (transactionId: number | string): CoherentSession | undefined {
+      return this.coherentSessions.get(transactionId)
     },
     getConnectionTimeout (): number {
       return connectionTimeout
@@ -551,6 +578,7 @@ export function createMockChargingStation (
     getWebSocketPingInterval (): number {
       return websocketPingInterval
     },
+
     hasConnector (connectorId: number): boolean {
       return this.iterateConnectors().some(({ connectorId: id }) => id === connectorId)
     },
@@ -574,10 +602,10 @@ export function createMockChargingStation (
 
     // Core properties
     index,
-
     inPendingState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
     },
+
     inRejectedState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
     },
