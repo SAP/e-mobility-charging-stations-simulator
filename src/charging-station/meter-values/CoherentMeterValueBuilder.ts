@@ -144,18 +144,22 @@ const groupTemplatesByMeasurand = (
 const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
   phaseFamily(t.phase) === 'LineToNeutral'
 
+const templateFamilyKey = (t: SampledValueTemplate): string =>
+  JSON.stringify([t.context ?? null, t.format ?? null, t.location ?? null, t.unit ?? null])
+
 /**
  * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
  * suppression to the `Energy.Active.Import.Register` bucket in-place.
- * Partitions templates into identity families keyed by `(context, format,
- * location, unit)` so mixed-family configurations preserve one aggregate
- * per family: within each family, per-phase L-N templates are removed
- * (avoiding "unsupported combination" warnings for a configured skip),
- * and if no aggregate template exists in that family an aggregate is
- * synthesized from the first suppressed per-phase L-N template of the
- * same family (phase cleared, other identity fields inherited). Spec:
- * "will only report the total energy over all phases". No-op when the
- * measurand bucket is absent or contains no per-phase L-N templates.
+ * Groups templates into identity families keyed by
+ * `(context, format, location, unit)`; within each family, per-phase
+ * L-N templates are filtered out (avoiding "unsupported combination"
+ * warnings for a configured skip). If a family has per-phase L-N
+ * templates but no aggregate template, an aggregate is synthesized
+ * from the first suppressed per-phase L-N of that family (phase
+ * cleared, other identity fields inherited via shallow spread), so
+ * the spec-mandated total is reported per family. Result is re-sorted
+ * by `PHASE_RANK` to preserve stable emit order. No-op when the
+ * measurand bucket is absent or has no per-phase L-N templates.
  * @param groups - Grouped templates map (mutated in-place).
  */
 const applyRegisterValuesWithoutPhases = (
@@ -164,32 +168,24 @@ const applyRegisterValuesWithoutPhases = (
   const bucket = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
   if (bucket == null) return
   if (!bucket.some(isLineToNeutralTemplate)) return
-  // Identity family excludes `phase` so per-phase L-N templates suppress
-  // and synthesize against siblings sharing (context, format, location, unit).
-  const familyKey = (t: SampledValueTemplate): string =>
-    JSON.stringify([t.context ?? null, t.format ?? null, t.location ?? null, t.unit ?? null])
-  const perPhaseLNByFamily = new Map<string, SampledValueTemplate[]>()
-  const otherByFamily = new Map<string, SampledValueTemplate[]>()
-  for (const template of bucket) {
-    const key = familyKey(template)
-    const target = isLineToNeutralTemplate(template) ? perPhaseLNByFamily : otherByFamily
-    const family = target.get(key) ?? []
-    family.push(template)
-    target.set(key, family)
-  }
-  for (const [key, perPhaseLN] of perPhaseLNByFamily) {
-    const other = otherByFamily.get(key) ?? []
-    if (!other.some(t => t.phase == null)) {
-      // Synthesize aggregate from first suppressed per-phase L-N of this family:
-      // unit / measurand / location / context / format inherit from the L-N
-      // template; phase is cleared so the aggregate branch of
-      // `resolvePhasedValue` emits the total register.
-      const synthesized: SampledValueTemplate = { ...perPhaseLN[0], phase: undefined }
-      other.unshift(synthesized)
+  const surviving: SampledValueTemplate[] = []
+  for (const family of Map.groupBy(bucket, templateFamilyKey).values()) {
+    const perPhaseLN = family.filter(isLineToNeutralTemplate)
+    if (perPhaseLN.length === 0) {
+      surviving.push(...family)
+      continue
     }
-    otherByFamily.set(key, other)
+    const nonLN = family.filter(t => !isLineToNeutralTemplate(t))
+    if (nonLN.some(t => t.phase == null)) {
+      surviving.push(...nonLN)
+    } else {
+      // Synthesize family aggregate from first suppressed per-phase L-N:
+      // unit / measurand / location / context / format inherit via shallow
+      // spread; phase cleared so the aggregate branch of
+      // `resolvePhasedValue` emits the total register for this family.
+      surviving.push({ ...perPhaseLN[0], phase: undefined }, ...nonLN)
+    }
   }
-  const surviving = [...otherByFamily.values()].flat()
   surviving.sort(
     (a, b) =>
       (a.phase == null ? 0 : PHASE_RANK[a.phase]) - (b.phase == null ? 0 : PHASE_RANK[b.phase])
