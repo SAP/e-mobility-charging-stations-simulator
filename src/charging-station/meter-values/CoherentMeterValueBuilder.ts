@@ -148,9 +148,9 @@ const groupTemplatesByMeasurand = (
  * site so unit-conversion divisions round once.
  *
  * Per-phase resolution (balanced 3-phase Y assumption):
- * - Voltage: L-N ⇒ `sample.voltageV`; L-L ⇒ `√phases × sample.voltageV`
- *   (`√phases` collapses to 1 on single-phase, in which case L-L has no
- *   physical meaning and the template is skipped); N ⇒ 0.
+ * - Voltage: L-N ⇒ `sample.voltageV`; L-L ⇒ `sqrt(3) * sample.voltageV`
+ *   when `numberOfPhases === 3` (L-L is defined only for balanced
+ *   3-phase AC; skipped for any other phase count); N ⇒ 0.
  * - Power.Active.Import: aggregate ⇒ total P; L-N ⇒ `P / phases`;
  *   L-L undefined; N undefined (neutral carries no active power in
  *   balanced 3-φ Y).
