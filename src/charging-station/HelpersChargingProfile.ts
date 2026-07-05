@@ -65,13 +65,15 @@ const getChargingProfileId = (chargingProfile: ChargingProfile): string => {
  * Extracts the single {@link ChargingSchedule} referenced by a charging
  * profile. OCPP 1.6 templates carry the schedule directly as a single
  * value and are returned unchanged. OCPP 2.0.x templates carry a
- * `chargingSchedule` array, which the coherent path does not currently
- * consume: any array shape is logged (debug level) and `undefined` is
- * returned so the caller can skip cleanly.
+ * `chargingSchedule` array of 1 to 3 entries: a single-entry array is
+ * unwrapped and returned; a 0 or 2-3 entry array is logged (debug) and
+ * `undefined` is returned so the caller can skip cleanly, because the
+ * coherent path does not currently pick between multiple concurrent
+ * OCPP 2.0.x schedules.
  * @param chargingProfile - Source charging profile.
- * @param logPrefix - Optional log prefix for the array-shape debug entry.
+ * @param logPrefix - Optional log prefix for the multi-entry debug entry.
  * @param methodName - Optional caller name included in the debug entry.
- * @returns Single schedule for the OCPP 1.6 shape, or `undefined` when the profile carries an array-shape schedule.
+ * @returns Single schedule for the OCPP 1.6 shape or a length-1 OCPP 2.0.x array, or `undefined` when the array carries 0 or 2-3 entries.
  */
 export const getSingleChargingSchedule = (
   chargingProfile: ChargingProfile,
@@ -81,9 +83,12 @@ export const getSingleChargingSchedule = (
   if (!Array.isArray(chargingProfile.chargingSchedule)) {
     return chargingProfile.chargingSchedule
   }
+  if (chargingProfile.chargingSchedule.length === 1) {
+    return chargingProfile.chargingSchedule[0]
+  }
   if (logPrefix != null && methodName != null) {
     logger.debug(
-      `${logPrefix} ${moduleName}.${methodName}: Charging profile id ${getChargingProfileId(chargingProfile)} has an OCPP 2.0 chargingSchedule array and is skipped`
+      `${logPrefix} ${moduleName}.${methodName}: Charging profile id ${getChargingProfileId(chargingProfile)} has an OCPP 2.0 chargingSchedule array with ${chargingProfile.chargingSchedule.length.toString()} entries and is skipped`
     )
   }
 }
@@ -95,18 +100,19 @@ const getChargingStationChargingProfiles = (
     .filter(
       chargingProfile =>
         chargingProfile.chargingProfilePurpose ===
-        ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE
+          ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE ||
+        chargingProfile.chargingProfilePurpose ===
+          ChargingProfilePurposeType.ChargingStationMaxProfile
     )
     .sort((a, b) => b.stackLevel - a.stackLevel)
 }
 
 /**
  * Highest-priority station-scope power limit currently in effect on the
- * station. Combines the charging profiles whose purpose matches
- * `ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE` (the OCPP 1.6
- * station-scope value; the OCPP 2.0.1 equivalent `ChargingStationMaxProfile`
- * is not handled by this filter), sorts them by stack level, and
- * evaluates the winning profile's schedule period.
+ * station. Combines the charging profiles whose purpose matches the
+ * station-scope value for either OCPP version (`CHARGE_POINT_MAX_PROFILE`
+ * on OCPP 1.6 or `ChargingStationMaxProfile` on OCPP 2.0.1), sorts them
+ * by stack level, and evaluates the winning profile's schedule period.
  * @param chargingStation - Source charging station.
  * @returns Limit in watts, or `undefined` when no applicable profile is found.
  */

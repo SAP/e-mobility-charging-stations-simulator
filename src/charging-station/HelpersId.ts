@@ -27,11 +27,12 @@ import { Constants, isNotEmptyString } from '../utils/index.js'
  * Structural subset of {@link ChargingStationTemplate} carrying only the
  * three fields that shape the composed `chargingStationId`. Kept as a
  * separate type so callers passing user-supplied overrides do not have
- * to satisfy the full template shape.
+ * to satisfy the full template shape. Wrapped in `Readonly` to make
+ * `getChargingStationId`'s pure-read contract explicit at the type
+ * level.
  */
-export type ChargingStationNameTemplate = Pick<
-  ChargingStationTemplate,
-  'baseName' | 'fixedName' | 'nameSuffix'
+export type ChargingStationNameTemplate = Readonly<
+  Pick<ChargingStationTemplate, 'baseName' | 'fixedName' | 'nameSuffix'>
 >
 
 /**

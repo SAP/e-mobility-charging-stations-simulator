@@ -23,11 +23,13 @@ import {
   resetConnectorStatus,
   setChargingStationOptions,
   validateStationInfo,
-} from '../../src/charging-station/index.js'
+} from '../../src/charging-station/Helpers.js'
+import { getSingleChargingSchedule } from '../../src/charging-station/HelpersChargingProfile.js'
 import {
   AvailabilityType,
   type ChargingProfile,
   ChargingProfilePurposeType,
+  type ChargingSchedule,
   type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationTemplate,
@@ -1004,6 +1006,62 @@ await describe('Helpers', async () => {
         const picked = pickConfiguredNumberOfConnectors(candidates)
         assert.ok(picked != null && candidates.includes(picked))
       }
+    })
+  })
+
+  await describe('getSingleChargingSchedule', async () => {
+    await it('should return the schedule unchanged for OCPP 1.6 single-schedule shape', () => {
+      const schedule = { chargingSchedulePeriod: [], duration: 3600 } as unknown as ChargingSchedule
+      const chargingProfile = {
+        chargingProfileId: 1,
+        chargingSchedule: schedule,
+      } as unknown as ChargingProfile
+
+      const result = getSingleChargingSchedule(chargingProfile)
+
+      assert.strictEqual(result, schedule)
+    })
+
+    await it('should unwrap a length-1 OCPP 2.0.x chargingSchedule array', () => {
+      const schedule = { chargingSchedulePeriod: [], duration: 3600 } as unknown as ChargingSchedule
+      const chargingProfile = {
+        chargingProfileId: 1,
+        chargingSchedule: [schedule],
+      } as unknown as ChargingProfile
+
+      const result = getSingleChargingSchedule(chargingProfile)
+
+      assert.strictEqual(result, schedule)
+    })
+
+    await it('should return undefined for an OCPP 2.0.x chargingSchedule array with 2 entries', () => {
+      const schedule1 = {
+        chargingSchedulePeriod: [],
+        duration: 3600,
+      } as unknown as ChargingSchedule
+      const schedule2 = {
+        chargingSchedulePeriod: [],
+        duration: 7200,
+      } as unknown as ChargingSchedule
+      const chargingProfile = {
+        chargingProfileId: 1,
+        chargingSchedule: [schedule1, schedule2],
+      } as unknown as ChargingProfile
+
+      const result = getSingleChargingSchedule(chargingProfile)
+
+      assert.strictEqual(result, undefined)
+    })
+
+    await it('should return undefined for an empty OCPP 2.0.x chargingSchedule array', () => {
+      const chargingProfile = {
+        chargingProfileId: 1,
+        chargingSchedule: [],
+      } as unknown as ChargingProfile
+
+      const result = getSingleChargingSchedule(chargingProfile)
+
+      assert.strictEqual(result, undefined)
     })
   })
 })
