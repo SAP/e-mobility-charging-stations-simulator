@@ -1683,12 +1683,12 @@ export class ChargingStation extends EventEmitter {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power[powerArrayRandomIndex] * 1000
+          ? stationTemplate.power[powerArrayRandomIndex] * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power[powerArrayRandomIndex]
     } else if (typeof stationTemplate.power === 'number') {
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power * 1000
+          ? stationTemplate.power * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
