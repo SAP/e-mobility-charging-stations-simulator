@@ -28,6 +28,7 @@ import {
   getErrorMessage,
   isEmpty,
   isNotEmptyArray,
+  JSONStringify,
   logger,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
@@ -82,7 +83,7 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   private static createToolResponse (payload: unknown): CallToolResult {
-    return { content: [{ text: JSON.stringify(payload), type: 'text' as const }] }
+    return { content: [{ text: JSONStringify(payload), type: 'text' as const }] }
   }
 
   public override hasResponseHandler (uuid: UUIDv4): boolean {
