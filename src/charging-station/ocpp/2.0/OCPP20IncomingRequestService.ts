@@ -1340,7 +1340,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         meterValues.push(meterValue)
       }
     }
-    if (meterValues.length === 0) {
+    if (isEmpty(meterValues)) {
       meterValues.push({
         sampledValue: [
           {

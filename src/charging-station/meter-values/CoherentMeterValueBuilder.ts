@@ -35,7 +35,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
 } from '../../types/index.js'
-import { Constants, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
+import { Constants, isEmpty, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
   computeCoherentSample,
@@ -171,7 +171,7 @@ const applyRegisterValuesWithoutPhases = (
   const surviving: SampledValueTemplate[] = []
   for (const family of Map.groupBy(bucket, templateFamilyKey).values()) {
     const perPhaseLN = family.filter(isLineToNeutralTemplate)
-    if (perPhaseLN.length === 0) {
+    if (isEmpty(perPhaseLN)) {
       surviving.push(...family)
       continue
     }

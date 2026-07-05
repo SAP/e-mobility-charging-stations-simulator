@@ -59,6 +59,7 @@ import {
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   JSONStringify,
@@ -1110,6 +1111,9 @@ const resolveEnabledMeasurands = (
   const enabled = new Set<MeterValueMeasurand>()
   for (const entry of rawValue.split(',')) {
     const trimmed = entry.trim()
+    // Kept as `.length === 0`: entry is already trimmed above; `isEmpty()` here would be
+    // semantically identical (its string branch is `value.trim().length === 0`) — direct
+    // check avoids a redundant re-trim.
     if (trimmed.length === 0) {
       continue
     }

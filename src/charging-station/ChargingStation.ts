@@ -1954,7 +1954,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const connectorsConfigChanged =
-        this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
+        !isEmpty(this.connectors) && this.connectorsConfigurationHash !== connectorsConfigHash
       if (isEmpty(this.connectors) || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear()
         this.connectorsConfigurationHash = connectorsConfigHash
@@ -2118,7 +2118,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const evsesConfigChanged =
-        this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
+        !isEmpty(this.evses) && this.evsesConfigurationHash !== evsesConfigHash
       if (isEmpty(this.evses) || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear()
         this.evsesConfigurationHash = evsesConfigHash
