@@ -62,10 +62,10 @@ export function getConnectorEntries (station: ChargingStationData): ConnectorEnt
 }
 
 // cspell:ignore suspendedev suspendedevse
-// Case-insensitive lookup keyed by lowercase OCPP status values (OCPP 1.6
-// ChargePointStatus + OCPP 2.0.1 ConnectorStatusEnumType.Occupied); the callers
-// may echo any case, and this file must not access ui-common runtime enums at
-// module scope because unit-test suites mock the module.
+// Lowercase keys — OCPP 1.6 `ChargePointStatus` + OCPP 2.0.1
+// `ConnectorStatusEnumType.Occupied` values lowercased for case-insensitive
+// lookup. No `ui-common` runtime enum access at module scope (test suites
+// mock the module).
 const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object.freeze({
   available: 'ok',
   charging: 'warn',

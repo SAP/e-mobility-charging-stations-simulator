@@ -1,8 +1,6 @@
-// Type-only import (erased at compile time). Routes through the ui-server barrel
-// safely because the type edge does not create a runtime cycle. If a future edit
-// converts this to a value import, revert to the deep path
-// (`../ui-server/ui-services/AbstractUIService.js`) to avoid pulling the barrel's
-// full transitive graph (UIHttpServer/UIMCPServer/UIServiceFactory) into this file.
+// Type-only edge, erased at compile time. A value import through this barrel
+// would pull `UIHttpServer` / `UIMCPServer` / `UIServiceFactory` transitively
+// and close a runtime cycle.
 import type { AbstractUIService } from '../ui-server/index.js'
 
 import {

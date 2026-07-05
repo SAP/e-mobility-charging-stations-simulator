@@ -2,14 +2,10 @@ import chalk from 'chalk'
 import { getRandomValues } from 'node:crypto'
 
 /**
- * Maximum jitter fraction applied to randomized worker delays; the jitter is
- * bounded within ±20 % of the base delay (see `randomizeDelay` for the actual
- * distribution, which is not symmetric — magnitude and sign both derive from a
- * single uniform draw).
- * Same value as `Constants.DEFAULT_RECONNECT_JITTER_PERCENT`; kept as a local
- * duplicate because `src/worker/` is a standalone module (no cross-module value
- * imports). Any change to either constant must update both to preserve the
- * shared jitter magnitude cap.
+ * Peak jitter fraction for randomized worker delays. Mirrors
+ * `Constants.DEFAULT_RECONNECT_JITTER_PERCENT`; `src/worker/` has no
+ * cross-module value imports. See `randomizeDelay` for the asymmetric
+ * distribution `(−10 %, 0] ∪ [+10 %, +20 %)`.
  */
 const JITTER_PERCENT = 0.2
 

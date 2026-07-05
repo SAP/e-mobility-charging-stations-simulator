@@ -6,9 +6,8 @@ import {
   VendorParametersKey,
 } from '../types/index.js'
 
-// Shared values referenced by both derived defaults and canonical time-unit
-// constants below; TS class-static forward-reference is illegal (TS2729), so the
-// duplicate literal is hoisted to module scope to preserve a single source of truth.
+// Shared literals for class-static members below (TS2729 forbids static
+// forward-reference).
 const DAY_IN_MS = 86_400_000
 const DAY_IN_SECONDS = 86_400
 
@@ -75,11 +74,9 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
 
   /**
-   * Default jitter fraction applied to reconnect and retry delays; consumers
-   * additively scale the base delay by a uniform draw from `[0, jitterPercent)`.
-   * See `computeExponentialBackOffDelay` for the canonical uni-directional
-   * positive-jitter distribution; `randomizeDelay` (in `src/worker/`) uses the
-   * same magnitude cap but a different, asymmetric distribution.
+   * Peak jitter fraction: consumers scale the base delay by a uniform draw in
+   * `[0, jitterPercent)`. See `computeExponentialBackOffDelay` (uni-directional
+   * positive) and `randomizeDelay` (asymmetric with a probability-zero gap).
    */
   static readonly DEFAULT_RECONNECT_JITTER_PERCENT = 0.2
 
