@@ -26,7 +26,7 @@ import { AvailabilityType, ConnectorStatusEnum, OCPPVersion } from '../../../src
  * const status = createConnectorStatus(1, { availability: AvailabilityType.Inoperative })
  * ```
  */
-export function createConnectorStatus(
+export function createConnectorStatus (
   _connectorId: number,
   options: CreateConnectorStatusOptions = {}
 ): ConnectorStatus {
@@ -53,7 +53,7 @@ export function createConnectorStatus(
  * @param options - Configuration options to check
  * @returns True if EVSEs should be used, false otherwise
  */
-export function determineEvseUsage(options: MockChargingStationOptions): boolean {
+export function determineEvseUsage (options: MockChargingStationOptions): boolean {
   // If explicitly set to 0, don't use EVSEs
   if (options.evseConfiguration?.evsesCount === 0) {
     return false

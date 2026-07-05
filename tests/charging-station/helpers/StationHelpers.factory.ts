@@ -57,7 +57,7 @@ import { createConnectorStatus, determineEvseUsage } from './StationHelpers.conn
  * mocks.webSocket.simulateMessage('["3","uuid",{}]')
  * ```
  */
-export function createMockChargingStation(
+export function createMockChargingStation (
   options: MockChargingStationOptions = {}
 ): MockChargingStationResult {
   const {
@@ -153,10 +153,10 @@ export function createMockChargingStation(
   const station = {
     // Reservation methods (mock implementations - eslint disabled for test utilities)
 
-    __injectCoherentSession(transactionId: number | string, session: CoherentSession): void {
+    __injectCoherentSession (transactionId: number | string, session: CoherentSession): void {
       this.coherentSessions.set(transactionId, session)
     },
-    addReservation(reservation: Record<string, unknown>): void {
+    addReservation (reservation: Record<string, unknown>): void {
       // Check if reservation with same ID exists and remove it
       const existingReservation = this.getReservationBy(
         'reservationId',
@@ -181,14 +181,14 @@ export function createMockChargingStation(
     } as
       | undefined
       | {
-          currentTime: Date
-          interval: number
-          status: RegistrationStatusEnumType
-        },
-    bufferMessage(message: string): void {
+        currentTime: Date
+        interval: number
+        status: RegistrationStatusEnumType
+      },
+    bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
-    closeWSConnection(): void {
+    closeWSConnection (): void {
       if (this.wsConnection != null) {
         this.wsConnection.close()
         this.wsConnection = null
@@ -198,14 +198,14 @@ export function createMockChargingStation(
     coherentSessions: new Map<number | string, CoherentSession>(),
 
     connectors,
-    createCoherentSession(
+    createCoherentSession (
       _transactionId: number | string,
       _connectorId: number
     ): CoherentSession | undefined {
       // Mock: never auto-create; tests inject sessions directly when needed.
       return undefined
     },
-    async delete(deleteConfiguration = true): Promise<void> {
+    async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
       }
@@ -216,7 +216,7 @@ export function createMockChargingStation(
       // Mock doesn't have file system access, so parameter is unused
     },
 
-    destroyCoherentSession(transactionId: number | string | undefined): boolean {
+    destroyCoherentSession (transactionId: number | string | undefined): boolean {
       if (transactionId == null) {
         return false
       }
@@ -228,19 +228,19 @@ export function createMockChargingStation(
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     emitChargingStationEvent: () => {},
     evses,
-    getAuthorizeRemoteTxRequests(): boolean {
+    getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
     },
-    getCoherentSession(transactionId: number | string): CoherentSession | undefined {
+    getCoherentSession (transactionId: number | string): CoherentSession | undefined {
       return this.coherentSessions.get(transactionId)
     },
-    getConnectionTimeout(): number {
+    getConnectionTimeout (): number {
       return connectionTimeout
     },
-    getConnectorIdByEvseId(evseId: number): number | undefined {
+    getConnectorIdByEvseId (evseId: number): number | undefined {
       return this.iterateConnectors().find(({ evseId: id }) => id === evseId)?.connectorId
     },
-    getConnectorIdByTransactionId(transactionId: number | string | undefined): number | undefined {
+    getConnectorIdByTransactionId (transactionId: number | string | undefined): number | undefined {
       if (transactionId == null) {
         return undefined
       }
@@ -248,14 +248,14 @@ export function createMockChargingStation(
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorId
     },
-    getConnectorMaximumAvailablePower(_connectorId: number): number {
+    getConnectorMaximumAvailablePower (_connectorId: number): number {
       return stationInfoOverrides?.maximumPower ?? 22000
     },
-    getConnectorStatus(connectorId: number): ConnectorStatus | undefined {
+    getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
         ?.connectorStatus
     },
-    getEnergyActiveImportRegisterByConnectorId(connectorId: number, rounded = false): number {
+    getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
       const connectorStatus = this.getConnectorStatus(connectorId)
       if (connectorStatus == null) {
         return 0
@@ -263,7 +263,7 @@ export function createMockChargingStation(
       const value = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
       return rounded ? Math.round(value) : value
     },
-    getEnergyActiveImportRegisterByTransactionId(
+    getEnergyActiveImportRegisterByTransactionId (
       transactionId: number | string | undefined,
       rounded = false
     ): number {
@@ -273,10 +273,10 @@ export function createMockChargingStation(
       }
       return this.getEnergyActiveImportRegisterByConnectorId(connectorId, rounded)
     },
-    getEvseIdByConnectorId(connectorId: number): number | undefined {
+    getEvseIdByConnectorId (connectorId: number): number | undefined {
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)?.evseId
     },
-    getEvseIdByTransactionId(transactionId: number | string | undefined): number | undefined {
+    getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
       if (transactionId == null) {
         return undefined
       }
@@ -284,62 +284,62 @@ export function createMockChargingStation(
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.evseId
     },
-    getEvseStatus(evseId: number): EvseStatus | undefined {
+    getEvseStatus (evseId: number): EvseStatus | undefined {
       return evses.get(evseId)
     },
-    getHeartbeatInterval(): number {
+    getHeartbeatInterval (): number {
       return heartbeatInterval * 1000 // Return in ms
     },
-    getLocalAuthListEnabled(): boolean {
+    getLocalAuthListEnabled (): boolean {
       const key = getConfigurationKey(
         this as unknown as ChargingStation,
         StandardParametersKey.LocalAuthListEnabled
       )
       return key?.value != null ? convertToBoolean(key.value) : false
     },
-    getNumberOfConnectors(): number {
+    getNumberOfConnectors (): number {
       return this.iterateConnectors(true).reduce(count => count + 1, 0)
     },
-    getNumberOfEvses(): number {
+    getNumberOfEvses (): number {
       return evses.has(0) ? evses.size - 1 : evses.size
     },
-    getNumberOfPhases(): number {
+    getNumberOfPhases (): number {
       return stationInfoOverrides?.numberOfPhases ?? 3
     },
-    getNumberOfRunningTransactions(): number {
+    getNumberOfRunningTransactions (): number {
       return this.iterateConnectors(true).reduce(
         (count, { connectorStatus }) =>
           connectorStatus.transactionStarted === true ? count + 1 : count,
         0
       )
     },
-    getReservationBy(filterKey: ReservationKey, value: number | string): Reservation | undefined {
+    getReservationBy (filterKey: ReservationKey, value: number | string): Reservation | undefined {
       return this.iterateConnectors().find(
         ({ connectorStatus }) => connectorStatus.reservation?.[filterKey] === value
       )?.connectorStatus.reservation
     },
-    getTransactionIdTag(transactionId: number): string | undefined {
+    getTransactionIdTag (transactionId: number): string | undefined {
       return this.iterateConnectors().find(
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorStatus.transactionIdTag
     },
-    getVoltageOut(): number {
+    getVoltageOut (): number {
       return stationInfoOverrides?.voltageOut ?? 230
     },
-    getWebSocketPingInterval(): number {
+    getWebSocketPingInterval (): number {
       return websocketPingInterval
     },
 
-    hasConnector(connectorId: number): boolean {
+    hasConnector (connectorId: number): boolean {
       return this.iterateConnectors().some(({ connectorId: id }) => id === connectorId)
     },
 
-    hasEvse(evseId: number): boolean {
+    hasEvse (evseId: number): boolean {
       return evses.has(evseId)
     },
 
     // Getters
-    get hasEvses(): boolean {
+    get hasEvses (): boolean {
       return useEvses
     },
 
@@ -347,36 +347,36 @@ export function createMockChargingStation(
 
     idTagsCache: mockIdTagsCache as unknown,
 
-    inAcceptedState(): boolean {
+    inAcceptedState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
     },
 
     // Core properties
     index,
-    inPendingState(): boolean {
+    inPendingState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
     },
 
-    inRejectedState(): boolean {
+    inRejectedState (): boolean {
       return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
     },
 
-    inUnknownState(): boolean {
+    inUnknownState (): boolean {
       return this.bootNotificationResponse?.status == null
     },
 
-    isChargingStationAvailable(): boolean {
+    isChargingStationAvailable (): boolean {
       return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
 
-    isConnectorAvailable(connectorId: number): boolean {
+    isConnectorAvailable (connectorId: number): boolean {
       return (
         connectorId > 0 &&
         this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
       )
     },
 
-    isConnectorReservable(reservationId: number, idTag?: string, connectorId?: number): boolean {
+    isConnectorReservable (reservationId: number, idTag?: string, connectorId?: number): boolean {
       if (connectorId === 0) {
         return false
       }
@@ -384,11 +384,11 @@ export function createMockChargingStation(
       return reservation == null
     },
 
-    isWebSocketConnectionOpened(): boolean {
+    isWebSocketConnectionOpened (): boolean {
       return this.wsConnection?.readyState === WebSocketReadyState.OPEN
     },
 
-    *iterateConnectors(skipZero = false): Generator<ConnectorEntry> {
+    * iterateConnectors (skipZero = false): Generator<ConnectorEntry> {
       if (useEvses) {
         for (const [evseId, evseStatus] of evses) {
           if (skipZero && evseId === 0) continue
@@ -405,7 +405,7 @@ export function createMockChargingStation(
       }
     },
 
-    *iterateEvses(skipZero = false): Generator<EvseEntry> {
+    * iterateEvses (skipZero = false): Generator<EvseEntry> {
       for (const [evseId, evseStatus] of evses) {
         if (skipZero && evseId === 0) continue
         yield { evseId, evseStatus }
@@ -414,7 +414,7 @@ export function createMockChargingStation(
 
     listenerCount: () => 0,
 
-    lockConnector(connectorId: number): void {
+    lockConnector (connectorId: number): void {
       if (connectorId === 0) {
         return
       }
@@ -428,7 +428,7 @@ export function createMockChargingStation(
       connectorStatus.locked = true
     },
 
-    logPrefix(): string {
+    logPrefix (): string {
       return `${this.stationInfo.chargingStationId} |`
     },
 
@@ -491,7 +491,7 @@ export function createMockChargingStation(
 
     removeListener: () => station,
 
-    removeReservation(reservation: Record<string, unknown>, _reason?: string): void {
+    removeReservation (reservation: Record<string, unknown>, _reason?: string): void {
       const connectorStatus = this.getConnectorStatus(reservation.connectorId as number)
       if (connectorStatus != null) {
         delete connectorStatus.reservation
@@ -499,32 +499,32 @@ export function createMockChargingStation(
     },
     requests,
 
-    restartHeartbeat(): void {
+    restartHeartbeat (): void {
       this.stopHeartbeat()
       this.startHeartbeat()
     },
 
-    restartWebSocketPing(): void {
+    restartWebSocketPing (): void {
       /* empty */
     },
 
-    saveOcppConfiguration(): void {
+    saveOcppConfiguration (): void {
       /* empty */
     },
-    start(): void {
+    start (): void {
       this.started = true
       this.starting = false
     },
     started,
 
-    startHeartbeat(): void {
+    startHeartbeat (): void {
       this.heartbeatSetInterval ??= setInterval(() => {
         /* empty */
       }, 30000)
     },
     starting,
 
-    startWebSocketPing(): void {
+    startWebSocketPing (): void {
       /* empty */
     },
     stationInfo: {
@@ -544,7 +544,7 @@ export function createMockChargingStation(
       ...stationInfoOverrides,
     },
 
-    async stop(reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
+    async stop (reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
       if (this.started && !this.stopping) {
         this.stopping = true
         // Simulate async stop behavior (immediate resolution for tests)
@@ -556,7 +556,7 @@ export function createMockChargingStation(
       }
     },
 
-    stopHeartbeat(): void {
+    stopHeartbeat (): void {
       if (this.heartbeatSetInterval != null) {
         clearInterval(this.heartbeatSetInterval)
         delete this.heartbeatSetInterval
@@ -566,7 +566,7 @@ export function createMockChargingStation(
 
     templateFile,
 
-    unlockConnector(connectorId: number): void {
+    unlockConnector (connectorId: number): void {
       if (connectorId === 0) {
         return
       }

@@ -11,7 +11,7 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../ChargingStationTestConstants
  * @param baseName - Base name for the template
  * @returns ChargingStationTemplate with minimal required properties for testing
  */
-export function createMockChargingStationTemplate(
+export function createMockChargingStationTemplate (
   baseName: string = TEST_CHARGING_STATION_BASE_NAME
 ): ChargingStationTemplate {
   return {

@@ -26,7 +26,7 @@ import { MockIdTagsCache, MockSharedLRUCache } from '../mocks/MockCaches.js'
  * })
  * ```
  */
-export function cleanupChargingStation(station: ChargingStation): void {
+export function cleanupChargingStation (station: ChargingStation): void {
   // Stop heartbeat timer
   if (station.heartbeatSetInterval != null) {
     clearInterval(station.heartbeatSetInterval)
@@ -98,7 +98,7 @@ export function cleanupChargingStation(station: ChargingStation): void {
  * })
  * ```
  */
-export function resetChargingStationState(station: ChargingStation): void {
+export function resetChargingStationState (station: ChargingStation): void {
   // Reset station state
   station.started = false
   station.starting = false
@@ -134,7 +134,7 @@ export function resetChargingStationState(station: ChargingStation): void {
  * @param status - Connector status object to reset
  * @param isConnectorZero - Whether this is connector 0 (station-level)
  */
-function resetConnectorStatus(status: ConnectorStatus, isConnectorZero: boolean): void {
+function resetConnectorStatus (status: ConnectorStatus, isConnectorZero: boolean): void {
   status.availability = AvailabilityType.Operative
   status.status = isConnectorZero ? undefined : ConnectorStatusEnum.Available
   status.transactionId = undefined
