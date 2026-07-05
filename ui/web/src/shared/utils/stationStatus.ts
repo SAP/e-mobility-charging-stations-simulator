@@ -60,10 +60,6 @@ export function getConnectorEntries (station: ChargingStationData): ConnectorEnt
 }
 
 // cspell:ignore suspendedev suspendedevse
-// Lowercase keys — OCPP 1.6 `ChargePointStatus` + OCPP 2.0.1
-// `ConnectorStatusEnumType.Occupied` values lowercased for case-insensitive
-// lookup. No `ui-common` runtime enum access at module scope (test suites
-// mock the module).
 const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object.freeze({
   available: 'ok',
   charging: 'warn',
@@ -86,9 +82,6 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
   return CONNECTOR_STATUS_VARIANT[status.toLowerCase()] ?? 'idle'
 }
 
-// WebSocket readyState values (mirror `WebSocketReadyState` from ui-common;
-// module-local to keep this file free of runtime ui-common access at module
-// scope — test suites mock ui-common).
 const WS_STATE_CLOSED = 3
 const WS_STATE_CLOSING = 2
 const WS_STATE_CONNECTING = 0
