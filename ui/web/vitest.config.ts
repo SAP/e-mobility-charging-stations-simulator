@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { mergeConfig } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
 
-import viteConfig from './vite.config'
+import viteConfig from './vite.config.js'
 
 const nodeMajor = Number.parseInt(process.versions.node.split('.')[0], 10)
 
