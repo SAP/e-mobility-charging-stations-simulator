@@ -44,6 +44,8 @@ export class Constants {
 
   static readonly DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS = 180
 
+  static readonly DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS = 100
+
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'

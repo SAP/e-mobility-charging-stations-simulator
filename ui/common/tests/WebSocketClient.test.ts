@@ -7,6 +7,7 @@ import type { WebSocketFactory } from '../src/client/types.js'
 import type { ResponsePayload } from '../src/types/UIProtocol.js'
 
 import { ServerFailureError, WebSocketClient } from '../src/client/WebSocketClient.js'
+import { DEFAULT_HOST, DEFAULT_PORT } from '../src/constants.js'
 import {
   AuthenticationType,
   ProcedureName,
@@ -21,8 +22,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -45,8 +46,8 @@ await describe('WebSocketClient', async () => {
         type: AuthenticationType.PROTOCOL_BASIC_AUTH,
         username: 'admin',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -62,8 +63,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -90,8 +91,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -120,8 +121,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -164,8 +165,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -183,8 +184,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -203,8 +204,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -245,8 +246,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -264,8 +265,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -286,8 +287,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -306,8 +307,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -340,8 +341,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(
       () => mockWs,
       {
-        host: 'localhost',
-        port: 8080,
+        host: DEFAULT_HOST,
+        port: DEFAULT_PORT,
         protocol: Protocol.UI,
         version: ProtocolVersion['0.0.1'],
       },
@@ -369,8 +370,8 @@ await describe('WebSocketClient', async () => {
     const client = new WebSocketClient(
       () => mockWs,
       {
-        host: 'localhost',
-        port: 8080,
+        host: DEFAULT_HOST,
+        port: DEFAULT_PORT,
         protocol: Protocol.UI,
         version: ProtocolVersion['0.0.1'],
       },
@@ -397,8 +398,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -421,8 +422,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -445,8 +446,8 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(factory, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })
@@ -469,7 +470,12 @@ await describe('WebSocketClient', async () => {
     const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(
       () => mockWs,
-      { host: 'localhost', port: 8080, protocol: Protocol.UI, version: ProtocolVersion['0.0.1'] },
+      {
+        host: DEFAULT_HOST,
+        port: DEFAULT_PORT,
+        protocol: Protocol.UI,
+        version: ProtocolVersion['0.0.1'],
+      },
       undefined,
       notification => {
         notifications.push(notification)
@@ -492,7 +498,12 @@ await describe('WebSocketClient', async () => {
     const factory: WebSocketFactory = () => mockWs
     const client = new WebSocketClient(
       factory,
-      { host: 'localhost', port: 8080, protocol: Protocol.UI, version: ProtocolVersion['0.0.1'] },
+      {
+        host: DEFAULT_HOST,
+        port: DEFAULT_PORT,
+        protocol: Protocol.UI,
+        version: ProtocolVersion['0.0.1'],
+      },
       undefined,
       notification => {
         notifications.push(notification)
@@ -514,8 +525,8 @@ await describe('WebSocketClient', async () => {
   await it('should NOT fire onNotification when callback is undefined', async () => {
     const mockWs = createMockWebSocketLike()
     const client = new WebSocketClient(() => mockWs, {
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: Protocol.UI,
       version: ProtocolVersion['0.0.1'],
     })

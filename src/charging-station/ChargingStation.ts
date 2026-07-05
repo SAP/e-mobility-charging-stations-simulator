@@ -1606,7 +1606,7 @@ export class ChargingStation extends EventEmitter {
     }
     return this.stationInfo?.reconnectExponentialDelay === true
       ? computeExponentialBackOffDelay({
-        baseDelayMs: 100,
+        baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
         jitterPercent: 0.2,
         retryNumber: this.wsConnectionRetryCount,
       })
@@ -1683,12 +1683,12 @@ export class ChargingStation extends EventEmitter {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power[powerArrayRandomIndex] * 1000
+          ? stationTemplate.power[powerArrayRandomIndex] * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power[powerArrayRandomIndex]
     } else if (typeof stationTemplate.power === 'number') {
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power * 1000
+          ? stationTemplate.power * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
@@ -1954,7 +1954,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const connectorsConfigChanged =
-        this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
+        !isEmpty(this.connectors) && this.connectorsConfigurationHash !== connectorsConfigHash
       if (isEmpty(this.connectors) || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear()
         this.connectorsConfigurationHash = connectorsConfigHash
@@ -2118,7 +2118,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const evsesConfigChanged =
-        this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
+        !isEmpty(this.evses) && this.evsesConfigurationHash !== evsesConfigHash
       if (isEmpty(this.evses) || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear()
         this.evsesConfigurationHash = evsesConfigHash
@@ -2786,7 +2786,7 @@ export class ChargingStation extends EventEmitter {
         // eslint-disable-next-line promise/no-promise-in-callback
         sleep(
           computeExponentialBackOffDelay({
-            baseDelayMs: 100,
+            baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
             jitterPercent: 0.2,
             retryNumber: messageIdx ?? 0,
           })

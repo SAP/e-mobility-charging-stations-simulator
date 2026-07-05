@@ -599,7 +599,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       allowOfflineTxForUnknownId: false,
       authKeyManagementEnabled: false,
       authorizationCacheEnabled: true,
-      authorizationCacheLifetime: 3600,
+      authorizationCacheLifetime: Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS,
       authorizationTimeout: 30,
       certificateAuthEnabled:
         this.chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_16,

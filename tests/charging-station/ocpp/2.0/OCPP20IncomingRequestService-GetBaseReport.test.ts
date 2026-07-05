@@ -12,7 +12,7 @@ import {
   addConfigurationKey,
   buildConfigKey,
   setConfigurationKeyValue,
-} from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+} from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'

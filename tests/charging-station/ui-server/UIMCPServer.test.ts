@@ -38,7 +38,7 @@ import {
   ProcedureName,
   ResponseStatus,
 } from '../../../src/types/index.js'
-import { logger } from '../../../src/utils/Logger.js'
+import { logger } from '../../../src/utils/index.js'
 import {
   createLoggerMocks,
   standardCleanup,

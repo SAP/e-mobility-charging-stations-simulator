@@ -16,7 +16,7 @@ import {
   ResponseStatus,
   UIRequestOrigin,
 } from '../../../../src/types/index.js'
-import { logger } from '../../../../src/utils/Logger.js'
+import { logger } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
 import {

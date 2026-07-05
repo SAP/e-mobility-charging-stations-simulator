@@ -8,6 +8,9 @@ import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
 
+// Rough heap-footprint estimate per cached entry — not measured; used only for stats display.
+const AVG_ENTRY_SIZE_BYTES = 500 as const
+
 /**
  * Cached authorization entry with expiration
  */
@@ -236,8 +239,7 @@ export class InMemoryAuthCache implements AuthCache {
     const hitRate = totalAccess > 0 ? (this.stats.hits / totalAccess) * 100 : 0
 
     // Calculate memory usage estimate
-    const avgEntrySize = 500 // Rough estimate: 500 bytes per entry
-    const memoryUsage = this.cache.size * avgEntrySize
+    const memoryUsage = this.cache.size * AVG_ENTRY_SIZE_BYTES
 
     // Clean expired rate limit entries
     this.cleanupExpiredRateLimits()

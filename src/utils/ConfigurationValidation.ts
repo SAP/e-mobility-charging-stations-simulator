@@ -14,7 +14,7 @@ import {
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
-import { assertIsJsonObject, clone, isEmpty } from './Utils.js'
+import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
 
@@ -121,7 +121,7 @@ export const validateConfiguration = (parsed: unknown, filePath: string): Config
       )}`
     )
   }
-  if (remapErrors.length > 0) {
+  if (isNotEmptyArray(remapErrors)) {
     throw new ConfigurationValidationError(remapErrors, {
       filePath,
       migratedFrom,

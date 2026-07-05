@@ -1110,6 +1110,9 @@ const resolveEnabledMeasurands = (
   const enabled = new Set<MeterValueMeasurand>()
   for (const entry of rawValue.split(',')) {
     const trimmed = entry.trim()
+    // Kept as `.length === 0`: entry is already trimmed above; `isEmpty()` here would be
+    // semantically identical (its string branch is `value.trim().length === 0`) — direct
+    // check avoids a redundant re-trim.
     if (trimmed.length === 0) {
       continue
     }
@@ -1486,6 +1489,8 @@ const getLimitFromSampledValueTemplateCustomValue = (
     },
     ...options,
   }
+  // Number.parseFloat preserved: NaN sentinel drives the POSITIVE_INFINITY fallback below;
+  // convertToFloat throws on NaN and would break the fallback branch.
   const parsedValue = Number.parseFloat(value ?? '')
   if (options.limitationEnabled) {
     return max(

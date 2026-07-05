@@ -36,7 +36,7 @@ import {
   PowerUnits,
   Voltage,
 } from '../types/index.js'
-import { clone, isEmpty, isNotEmptyArray, logger, secureRandom } from '../utils/index.js'
+import { clone, Constants, isEmpty, isNotEmptyArray, logger, secureRandom } from '../utils/index.js'
 
 const moduleName = 'HelpersConfig'
 
@@ -170,12 +170,12 @@ export const getDefaultConnectorMaximumPower = (
     const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
     maximumPower =
       stationTemplate.powerUnit === PowerUnits.KILO_WATT
-        ? stationTemplate.power[powerArrayRandomIndex] * 1000
+        ? stationTemplate.power[powerArrayRandomIndex] * Constants.UNIT_DIVIDER_KILO
         : stationTemplate.power[powerArrayRandomIndex]
   } else if (typeof stationTemplate.power === 'number') {
     maximumPower =
       stationTemplate.powerUnit === PowerUnits.KILO_WATT
-        ? stationTemplate.power * 1000
+        ? stationTemplate.power * Constants.UNIT_DIVIDER_KILO
         : stationTemplate.power
   }
   if (maximumPower == null) {

@@ -13,7 +13,7 @@ import {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
-} from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+} from '../../../../src/charging-station/index.js'
 import { createTestableVariableManager } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'

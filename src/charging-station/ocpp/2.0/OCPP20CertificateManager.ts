@@ -474,7 +474,7 @@ export class OCPP20CertificateManager {
       const pemCertificates = pem.match(
         /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
       )
-      if (pemCertificates == null || pemCertificates.length === 0) {
+      if (pemCertificates == null || isEmpty(pemCertificates)) {
         return { reason: 'No PEM certificate found', valid: false }
       }
 
