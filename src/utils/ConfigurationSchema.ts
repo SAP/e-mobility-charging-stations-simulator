@@ -4,7 +4,6 @@ import type { ResourceLimits } from 'node:worker_threads'
 import { isIP } from 'node:net'
 import { z } from 'zod'
 
-import { isHostLiteralWithoutPort } from '../charging-station/ui-server/UIServerNet.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -14,6 +13,7 @@ import {
 } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'
 import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
+import { isHostLiteralWithoutPort } from './HostUtils.js'
 import { has } from './Utils.js'
 
 // ---------------------------------------------------------------

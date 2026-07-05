@@ -26,7 +26,14 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { isEmpty, isNotEmptyArray, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
+import {
+  isEmpty,
+  isLoopback,
+  isNotEmptyArray,
+  isNotEmptyString,
+  logger,
+  logPrefix,
+} from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createUIServerAccessCache,
@@ -34,7 +41,6 @@ import {
   type UIServerAccessCache,
   type UIServerAccessDecision,
 } from './UIServerAccessPolicy.js'
-import { isLoopback } from './UIServerNet.js'
 import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,

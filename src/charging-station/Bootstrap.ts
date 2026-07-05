@@ -10,7 +10,6 @@ import { isMainThread } from 'node:worker_threads'
 import { availableParallelism, type MessageHandler } from 'poolifier'
 
 import type { IBootstrap } from './IBootstrap.js'
-import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError, TimeoutError } from '../exception/index.js'
@@ -58,7 +57,7 @@ import {
 } from '../worker/index.js'
 import { readStateFile, reconstructTemplateIndexes, writeStateFile } from './BootstrapStateUtils.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
-import { UIServerFactory } from './ui-server/index.js'
+import { type AbstractUIServer, UIServerFactory } from './ui-server/index.js'
 
 const moduleName = 'Bootstrap'
 
