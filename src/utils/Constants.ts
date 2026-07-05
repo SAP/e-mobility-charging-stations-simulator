@@ -44,6 +44,8 @@ export class Constants {
 
   static readonly DEFAULT_EV_CONNECTION_TIMEOUT_SECONDS = 180
 
+  static readonly DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS = 100
+
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
@@ -62,7 +64,6 @@ export class Constants {
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
-  static readonly DEFAULT_RECONNECT_BASE_DELAY_MS = 100
   static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,

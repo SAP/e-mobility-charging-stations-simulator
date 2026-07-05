@@ -8,7 +8,7 @@ import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
 
-
+// Rough heap-footprint estimate per cached entry — not measured; used only for stats display.
 const AVG_ENTRY_SIZE_BYTES = 500 as const
 
 /**

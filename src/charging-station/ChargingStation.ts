@@ -1606,7 +1606,7 @@ export class ChargingStation extends EventEmitter {
     }
     return this.stationInfo?.reconnectExponentialDelay === true
       ? computeExponentialBackOffDelay({
-        baseDelayMs: Constants.DEFAULT_RECONNECT_BASE_DELAY_MS,
+        baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
         jitterPercent: 0.2,
         retryNumber: this.wsConnectionRetryCount,
       })
@@ -2786,7 +2786,7 @@ export class ChargingStation extends EventEmitter {
         // eslint-disable-next-line promise/no-promise-in-callback
         sleep(
           computeExponentialBackOffDelay({
-            baseDelayMs: Constants.DEFAULT_RECONNECT_BASE_DELAY_MS,
+            baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
             jitterPercent: 0.2,
             retryNumber: messageIdx ?? 0,
           })
