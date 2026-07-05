@@ -139,6 +139,18 @@ export abstract class OCPPRequestService {
     }
   }
 
+  protected logRequestHandlerError (
+    chargingStation: ChargingStation,
+    subclassModuleName: string,
+    commandName: RequestCommand,
+    error: unknown
+  ): void {
+    logger.error(
+      `${chargingStation.logPrefix()} ${subclassModuleName}.requestHandler: Error processing '${commandName}' request:`,
+      error
+    )
+  }
+
   protected async sendMessage (
     chargingStation: ChargingStation,
     messageId: string,

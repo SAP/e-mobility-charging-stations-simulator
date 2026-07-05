@@ -9,11 +9,8 @@ export {
 } from './ChargingStationConfigurationUtils.js'
 export { Configuration, DEFAULT_PERSIST_STATE } from './Configuration.js'
 export {
-  applyConfigurationMigration,
-  coerceConfigurationVersion,
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
-  type FieldError,
   remapDeprecatedKeys,
 } from './ConfigurationMigrations.js'
 export {
@@ -103,7 +100,6 @@ export {
   mergeDeepRight,
   once,
   promiseWithTimeout,
-  queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
   sleep,

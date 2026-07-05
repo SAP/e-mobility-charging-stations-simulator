@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { DEFAULT_SKIN, MAX_SKIN_ERROR_RELOADS, setToLocalStorage } from '@/core/index.js'
+import { DEFAULT_SKIN, MAX_SKIN_ERROR_RELOADS, setToLocalStorage, SKIN_ERROR_RELOAD_COUNT_KEY } from '@/core/index.js'
 import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
 // Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { skins } from '@/skins/registry.js'
@@ -23,13 +23,12 @@ const defaultSkinLabel = skins.find(s => s.id === DEFAULT_SKIN)?.label ?? 'Defau
 /**
  * Resets to default skin with reload loop protection.
  * NOTE: Successful skin loads (e.g. in useSkin.switchSkin) should clear
- * the 'skin-error-reload-count' sessionStorage key to reset the counter.
+ * the reload-count sessionStorage key to reset the counter.
  */
 function resetToDefault (): void {
-  const RELOAD_KEY = 'skin-error-reload-count'
   let count = 0
   try {
-    count = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
+    count = Number(sessionStorage.getItem(SKIN_ERROR_RELOAD_COUNT_KEY) ?? '0')
   } catch {
     // sessionStorage unavailable (e.g. Safari private browsing)
   }
@@ -38,7 +37,7 @@ function resetToDefault (): void {
     return
   }
   try {
-    sessionStorage.setItem(RELOAD_KEY, String(count + 1))
+    sessionStorage.setItem(SKIN_ERROR_RELOAD_COUNT_KEY, String(count + 1))
   } catch {
     // sessionStorage unavailable — proceed with reset anyway
   }

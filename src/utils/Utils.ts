@@ -195,14 +195,14 @@ export const formatDurationMilliSeconds = (duration: number): string => {
   if (duration < 0) {
     throw new RangeError('Duration cannot be negative')
   }
-  const days = Math.floor(duration / (24 * 3600 * 1000))
+  const days = Math.floor(duration / Constants.MS_PER_DAY)
   const hours = Math.floor(millisecondsToHours(duration) - days * 24)
   const minutes = Math.floor(
     millisecondsToMinutes(duration) - days * 24 * 60 - hoursToMinutes(hours)
   )
   const seconds = Math.floor(
     millisecondsToSeconds(duration) -
-      days * 24 * 3600 -
+      days * Constants.SECONDS_PER_DAY -
       hoursToSeconds(hours) -
       minutesToSeconds(minutes)
   )
@@ -385,7 +385,7 @@ export const clone = <T>(object: T): T => {
 
 type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// eslint-disable-next-line @typescript-eslint/no-empty-function -- intentional no-op async lambda used only to capture its constructor for isAsyncFunction
 const AsyncFunctionConstructor = (async () => {}).constructor
 
 /**

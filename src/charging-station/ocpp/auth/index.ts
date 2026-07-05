@@ -12,11 +12,7 @@ export { InMemoryLocalAuthListManager } from './cache/InMemoryLocalAuthListManag
 export type {
   AuthCache,
   AuthComponentFactory,
-  AuthStats,
   AuthStrategy,
-  CacheStats,
-  CertificateAuthProvider,
-  CertificateInfo,
   DifferentialAuthEntry,
   LocalAuthEntry,
   LocalAuthListManager,

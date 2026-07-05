@@ -1,6 +1,11 @@
 import chalk from 'chalk'
 import Table from 'cli-table3'
-import { type ConnectorEntry, type EvseEntry } from 'ui-common'
+import {
+  type ConnectorEntry,
+  type EvseEntry,
+  OCPP16ChargePointStatus,
+  WebSocketReadyState,
+} from 'ui-common'
 
 const NO_BORDER = {
   bottom: '',
@@ -20,6 +25,10 @@ const NO_BORDER = {
   'top-right': '',
 }
 
+export const MISSING_VALUE_PLACEHOLDER = '–'
+export const TEMPLATE_NAME_SUFFIX = '.station-template'
+export const TRUNCATED_HASH_ID_LENGTH = 12
+
 // cspell:ignore borderless
 export const borderlessTable = (head: string[], colWidths?: number[]): Table.Table =>
   new Table({
@@ -29,7 +38,10 @@ export const borderlessTable = (head: string[], colWidths?: number[]): Table.Tab
     ...(colWidths != null && { colWidths }),
   })
 
-export const truncateId = (id: string, len = 12): string =>
+export const stripTemplateSuffix = (name: string): string =>
+  name.endsWith(TEMPLATE_NAME_SUFFIX) ? name.slice(0, -TEMPLATE_NAME_SUFFIX.length) : name
+
+export const truncateId = (id: string, len = TRUNCATED_HASH_ID_LENGTH): string =>
   id.length > len ? `${id.slice(0, len)}…` : id
 
 export const statusIcon = (started: boolean | undefined): string =>
@@ -37,22 +49,22 @@ export const statusIcon = (started: boolean | undefined): string =>
 
 export const wsIcon = (wsState: number | undefined): string => {
   switch (wsState) {
-    case 0:
-      return chalk.yellow('…')
-    case 1:
-      return chalk.green('✓')
-    case 2:
-    case 3:
+    case WebSocketReadyState.CLOSED:
+    case WebSocketReadyState.CLOSING:
       return chalk.red('✗')
+    case WebSocketReadyState.CONNECTING:
+      return chalk.yellow('…')
+    case WebSocketReadyState.OPEN:
+      return chalk.green('✓')
     default:
-      return chalk.dim('–')
+      return chalk.dim(MISSING_VALUE_PLACEHOLDER)
   }
 }
 
 const STATUS_ABBREVIATIONS: Record<string, string> = {
-  Finishing: 'Fi',
-  SuspendedEV: 'SE',
-  SuspendedEVSE: 'SS',
+  [OCPP16ChargePointStatus.FINISHING]: 'Fi',
+  [OCPP16ChargePointStatus.SUSPENDED_EV]: 'SE',
+  [OCPP16ChargePointStatus.SUSPENDED_EVSE]: 'SS',
 }
 
 const statusLetter = (status: string | undefined): string => {
@@ -81,11 +93,11 @@ export const formatConnectors = (evses: EvseEntry[], connectors: ConnectorEntry[
     }
   }
 
-  return entries.length > 0 ? chalk.dim(entries.join(' ')) : chalk.dim('–')
+  return entries.length > 0 ? chalk.dim(entries.join(' ')) : chalk.dim(MISSING_VALUE_PLACEHOLDER)
 }
 
 export const fuzzyTime = (ts: number | undefined): string => {
-  if (ts == null) return chalk.dim('–')
+  if (ts == null) return chalk.dim(MISSING_VALUE_PLACEHOLDER)
   const diff = Math.max(0, Date.now() - ts)
   const seconds = Math.floor(diff / 1000)
   if (seconds < 60) return chalk.dim('just now')

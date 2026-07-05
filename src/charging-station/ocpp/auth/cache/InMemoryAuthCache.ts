@@ -1,4 +1,4 @@
-import { secondsToMilliseconds } from 'date-fns'
+import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
@@ -65,9 +65,6 @@ interface RateLimitStats {
  * - Bounded rate limits map prevents unbounded memory growth
  */
 export class InMemoryAuthCache implements AuthCache {
-  // Implementation-specific safety limit (not mandated by OCPP spec)
-  private static readonly DEFAULT_MAX_ABSOLUTE_LIFETIME_MS = 86_400_000 // 24 hours
-
   /** Cache storage: identifier -> entry */
   private readonly cache = new Map<string, CacheEntry>()
 
@@ -126,7 +123,7 @@ export class InMemoryAuthCache implements AuthCache {
   }) {
     this.defaultTtl = options?.defaultTtl ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS
     this.maxAbsoluteLifetimeMs =
-      options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
+      options?.maxAbsoluteLifetimeMs ?? Constants.DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS
     this.maxEntries = Math.max(1, options?.maxEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
@@ -341,7 +338,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     const ttlSeconds = ttl ?? this.defaultTtl
-    const maxTtlSeconds = this.maxAbsoluteLifetimeMs / 1000
+    const maxTtlSeconds = millisecondsToSeconds(this.maxAbsoluteLifetimeMs)
     const clampedTtl = Math.min(Math.max(0, ttlSeconds), maxTtlSeconds)
     const now = Date.now()
     const expiresAt = now + secondsToMilliseconds(clampedTtl)

@@ -2,6 +2,7 @@ import type { ResponsePayload } from 'ui-common'
 
 import chalk from 'chalk'
 import process from 'node:process'
+import { WebSocketReadyState } from 'ui-common'
 
 import type { StationListPayload } from '../types.js'
 
@@ -9,7 +10,9 @@ import {
   borderlessTable,
   formatConnectors,
   fuzzyTime,
+  MISSING_VALUE_PLACEHOLDER,
   statusIcon,
+  stripTemplateSuffix,
   truncateId,
   wsIcon,
 } from './format.js'
@@ -83,7 +86,9 @@ const renderSimulatorState = (payload: SimulatorStatePayload): void => {
   process.stdout.write(`  Version    ${state.version}\n`)
   if (state.configuration?.worker != null) {
     const w = state.configuration.worker
-    process.stdout.write(`  Worker     ${w.processType ?? '–'} (${w.elementsPerWorker ?? '–'})\n`)
+    process.stdout.write(
+      `  Worker     ${w.processType ?? MISSING_VALUE_PLACEHOLDER} (${w.elementsPerWorker ?? MISSING_VALUE_PLACEHOLDER})\n`
+    )
   }
   if (
     state.configuration?.supervisionUrls != null &&
@@ -101,7 +106,7 @@ const renderSimulatorState = (payload: SimulatorStatePayload): void => {
     const table = borderlessTable(['Name', 'Added', 'Started', 'Provisioned', 'Configured'])
     for (const [name, s] of activeTemplates) {
       table.push([
-        name.replace('.station-template', ''),
+        stripTemplateSuffix(name),
         s.added > 0 ? chalk.green(s.added.toString()) : chalk.dim('0'),
         s.started > 0 ? chalk.green(s.started.toString()) : chalk.dim('0'),
         s.provisioned > 0 ? s.provisioned.toString() : chalk.dim('0'),
@@ -145,18 +150,18 @@ const renderStationList = (payload: StationListPayload): void => {
       statusIcon(cs.started),
       si.chargingStationId,
       chalk.dim(truncateId(si.hashId)),
-      reg ?? chalk.dim('–'),
+      reg ?? chalk.dim(MISSING_VALUE_PLACEHOLDER),
       wsIcon(cs.wsState),
       formatConnectors(cs.evses ?? [], cs.connectors ?? []),
-      chalk.dim(si.ocppVersion ?? '–'),
-      chalk.dim(si.templateName.replace('.station-template', '')),
+      chalk.dim(si.ocppVersion ?? MISSING_VALUE_PLACEHOLDER),
+      chalk.dim(stripTemplateSuffix(si.templateName)),
       fuzzyTime(cs.timestamp),
     ])
   }
   process.stdout.write(`${table.toString()}\n`)
 
   const started = stations.filter(s => s.started).length
-  const connected = stations.filter(s => s.wsState === 1).length
+  const connected = stations.filter(s => s.wsState === WebSocketReadyState.OPEN).length
   process.stdout.write(
     chalk.dim(
       `\n${stations.length.toString()} station${stations.length !== 1 ? 's' : ''} (${started.toString()} started, ${connected.toString()} connected)\n`

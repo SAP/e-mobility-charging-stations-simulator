@@ -14,7 +14,7 @@ import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
   remapDeprecatedKeys,
-} from '../../src/utils/index.js'
+} from '../../src/utils/ConfigurationMigrations.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildLegacyConfiguration,

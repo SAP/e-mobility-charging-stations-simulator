@@ -85,7 +85,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useChargingStations, useUIClient } from '@/core/index.js'
 import { useSetUrlForm } from '@/shared/composables/useSetUrlForm.js'
-import { stripStationId } from '@/shared/utils/stripStationId.js'
+import { stripStationId } from '@/shared/utils/index.js'
 
 import ActionButton from '../ActionButton.vue'
 import Modal from '../ModernModal.vue'

@@ -115,7 +115,7 @@ import { useLayoutData } from '@/shared/composables/useLayoutData.js'
 import { useSimulatorControl } from '@/shared/composables/useSimulatorControl.js'
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
-import { getSelectValue } from '@/shared/utils/dom.js'
+import { getSelectValue } from '@/shared/utils/index.js'
 
 import StateButton from './components/buttons/StateButton.vue'
 import ToggleButton from './components/buttons/ToggleButton.vue'

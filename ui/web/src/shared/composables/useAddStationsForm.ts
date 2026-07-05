@@ -3,6 +3,7 @@ import { type DeepReadonly, readonly, ref, type Ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useTemplates, useUIClient } from '@/core/index.js'
+import { nonEmptyStringOrUndefined } from '@/shared/utils/index.js'
 
 export interface AddStationsFormState {
   autoStart: boolean
@@ -70,14 +71,17 @@ export function useAddStationsForm (options?: { onFinally?: () => void }): {
         formState.value.numberOfStations,
         {
           autoStart: formState.value.autoStart,
-          baseName: nonEmpty(formState.value.baseName),
+          baseName: nonEmptyStringOrUndefined(formState.value.baseName),
           enableStatistics: formState.value.enableStatistics,
-          fixedName: formState.value.baseName.length > 0 ? formState.value.fixedName : undefined,
+          fixedName:
+            nonEmptyStringOrUndefined(formState.value.baseName) != null
+              ? formState.value.fixedName
+              : undefined,
           ocppStrictCompliance: formState.value.ocppStrictCompliance,
           persistentConfiguration: formState.value.persistentConfiguration,
-          supervisionPassword: nonEmpty(formState.value.supervisionPassword),
-          supervisionUrls: nonEmpty(formState.value.supervisionUrl),
-          supervisionUser: nonEmpty(formState.value.supervisionUser),
+          supervisionPassword: nonEmptyStringOrUndefined(formState.value.supervisionPassword),
+          supervisionUrls: nonEmptyStringOrUndefined(formState.value.supervisionUrl),
+          supervisionUser: nonEmptyStringOrUndefined(formState.value.supervisionUser),
         }
       )
       $toast.success('Charging stations successfully added')
@@ -122,15 +126,6 @@ function makeInitialState (): AddStationsFormState {
     supervisionUser: '',
     template: '',
   }
-}
-
-/**
- * Returns `value` when it is non-empty, otherwise `undefined`.
- * @param value - The string to test.
- * @returns The original string, or `undefined` if it is empty.
- */
-function nonEmpty (value: string): string | undefined {
-  return value.length > 0 ? value : undefined
 }
 
 /**

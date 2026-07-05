@@ -49,7 +49,7 @@ export const percentile = (dataSet: number[], percentile: number): number => {
   }
   const base = (percentile / 100) * (sortedDataSet.length - 1)
   const baseIndex = Math.floor(base)
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard: sortedDataSet may originate from JSON.parse and violate its typed contract at index boundaries
   if (sortedDataSet[baseIndex + 1] != null) {
     return (
       sortedDataSet[baseIndex] +

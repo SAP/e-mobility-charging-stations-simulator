@@ -90,7 +90,7 @@ import { computed } from 'vue'
 
 import { useSkin } from '@/shared/composables/useSkin.js'
 import { type ThemeName, useTheme } from '@/shared/composables/useTheme.js'
-import { getSelectValue } from '@/shared/utils/dom.js'
+import { getSelectValue } from '@/shared/utils/index.js'
 
 import ActionButton from './ActionButton.vue'
 import StatePill from './StatePill.vue'

@@ -1,6 +1,9 @@
 import chalk from 'chalk'
 import { getRandomValues } from 'node:crypto'
 
+/** Symmetric jitter fraction applied to randomized worker delays (0.2 = ±20 %). */
+const JITTER_PERCENT = 0.2
+
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null) return false
   return Object.prototype.toString.call(value).slice(8, -1) === 'Object'
@@ -49,7 +52,7 @@ export const defaultErrorHandler = (error: Error): void => {
 export const randomizeDelay = (delay: number): number => {
   const random = secureRandom()
   const sign = random < 0.5 ? -1 : 1
-  const randomSum = delay * 0.2 * random // 0-20% of the delay
+  const randomSum = delay * JITTER_PERCENT * random
   return delay + sign * randomSum
 }
 

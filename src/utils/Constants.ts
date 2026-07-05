@@ -24,6 +24,9 @@ export class Constants {
 
   static readonly DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS = 300
 
+  /** Implementation-specific upper bound for auth cache entry absolute lifetime (24 hours). Not mandated by OCPP spec. */
+  static readonly DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS = 86_400_000
+
   static readonly DEFAULT_AUTH_CACHE_MAX_ENTRIES = 1000
 
   static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS = 10
@@ -64,6 +67,13 @@ export class Constants {
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
+
+  /** Default symmetric jitter fraction applied to reconnect and retry delays (0.2 = ±20 %). */
+  static readonly DEFAULT_RECONNECT_JITTER_PERCENT = 0.2
+
+  /** Default cache TTL for remote authorization results, distinct from local `_TTL_SECONDS = 3600`. */
+  static readonly DEFAULT_REMOTE_AUTH_CACHE_TTL_SECONDS = 300
+
   static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
@@ -126,15 +136,30 @@ export class Constants {
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2147483647
 
+  /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
+  static readonly MS_PER_DAY = 86_400_000
+
   /** Milliseconds per hour; conversion factor for `Wh` accrual from `W·ms`. */
   static readonly MS_PER_HOUR = 3_600_000
 
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
+  /** Seconds per day; used for day-normalized time arithmetic. */
+  static readonly SECONDS_PER_DAY = 86_400
+
+  /** State of Charge maximum percentage (upper bound for SoC measurand emission). */
+  static readonly SOC_MAXIMUM_PERCENT = 100
+
   static readonly STOP_CHARGING_STATIONS_TIMEOUT_MS = 60000
 
   static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT_MS = 30000
 
-  /** Divider between base units (W, Wh) and kilo units (kW, kWh). */
+  /** Divider between base units (A) and centi units (cA). */
+  static readonly UNIT_DIVIDER_CENTI = 100
+
+  /** Divider between base units (A) and deci units (dA). */
+  static readonly UNIT_DIVIDER_DECI = 10
+
+  /** Divider between base units (W, Wh, A) and kilo/milli units (kW, kWh, mA). */
   static readonly UNIT_DIVIDER_KILO = 1000
 }

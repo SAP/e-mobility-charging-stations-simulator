@@ -69,7 +69,7 @@ import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestServi
  * Interface exposing private handler methods of OCPP20IncomingRequestService for testing.
  * Each method signature matches the corresponding private method in the service class.
  */
-export interface TestableOCPP20IncomingRequestService {
+interface TestableOCPP20IncomingRequestService {
   /**
    * Builds report data for the device model report.
    * Used internally by handleRequestGetBaseReport.
@@ -313,11 +313,8 @@ export function createTestableIncomingRequestService (
 
 export {
   createTestableRequestService,
-  type SendMessageFn,
   type SendMessageMock,
   type TestableOCPP20RequestService,
-  type TestableRequestServiceOptions,
-  type TestableRequestServiceResult,
 } from './OCPP20RequestServiceTestable.js'
 
 export {
@@ -325,7 +322,4 @@ export {
   type TestableOCPP20ResponseService,
 } from './OCPP20ResponseServiceTestable.js'
 
-export {
-  createTestableVariableManager,
-  type TestableOCPP20VariableManager,
-} from './OCPP20VariableManagerTestable.js'
+export { createTestableVariableManager } from './OCPP20VariableManagerTestable.js'

@@ -41,6 +41,8 @@ import {
 
 const moduleName = 'PerformanceStatistics'
 
+const STATISTICS_PERCENTILE = 95
+
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<
     string,
@@ -241,7 +243,7 @@ export class PerformanceStatistics {
       entryStatisticsData.medTimeMeasurement = median(timeMeasurementValues)
       entryStatisticsData.ninetyFiveThPercentileTimeMeasurement = percentile(
         timeMeasurementValues,
-        95
+        STATISTICS_PERCENTILE
       )
       entryStatisticsData.stdTimeMeasurement = std(
         timeMeasurementValues,

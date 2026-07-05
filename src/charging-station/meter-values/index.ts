@@ -26,12 +26,7 @@
 
 export { buildCoherentMeterValue } from './CoherentMeterValueBuilder.js'
 export type { BuildVersionedSampledValue } from './CoherentMeterValueBuilder.js'
+export { disposeCoherentSessionRuntime } from './CoherentSampleComputer.js'
 export { createCoherentSession, isCoherentModeActive, resolveRootSeed } from './CoherentSession.js'
 export { loadEvProfilesFile } from './EvProfiles.js'
-export type {
-  ChargingCurvePoint,
-  CoherentSession,
-  EvProfile,
-  EvProfilesFile,
-  ICoherentContext,
-} from './types.js'
+export type { CoherentSession, EvProfile, EvProfilesFile, ICoherentContext } from './types.js'

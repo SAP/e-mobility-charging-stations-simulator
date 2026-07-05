@@ -34,6 +34,12 @@ import {
 
 const moduleName = 'UIWebSocketServer'
 
+const WS_DEFLATE_CONCURRENCY_LIMIT = 10
+const WS_DEFLATE_SERVER_MAX_WINDOW_BITS = 12
+const WS_DEFLATE_ZLIB_CHUNK_SIZE_BYTES = 16 * 1024
+const WS_DEFLATE_ZLIB_COMPRESSION_LEVEL = 6
+const WS_DEFLATE_ZLIB_MEM_LEVEL = 7
+
 // Pre-handshake WS rejections write raw HTTP/1.1 to the Duplex socket;
 // AbstractUIServer.renderDenial targets ServerResponse and is not applicable.
 const buildUpgradeRejectionResponse = (
@@ -68,17 +74,17 @@ export class UIWebSocketServer extends AbstractUIServer {
       noServer: true,
       perMessageDeflate: {
         clientNoContextTakeover: true,
-        concurrencyLimit: 10,
-        serverMaxWindowBits: 12,
+        concurrencyLimit: WS_DEFLATE_CONCURRENCY_LIMIT,
+        serverMaxWindowBits: WS_DEFLATE_SERVER_MAX_WINDOW_BITS,
         serverNoContextTakeover: true,
         threshold: DEFAULT_COMPRESSION_THRESHOLD_BYTES,
         zlibDeflateOptions: {
-          chunkSize: 16 * 1024,
-          level: 6,
-          memLevel: 7,
+          chunkSize: WS_DEFLATE_ZLIB_CHUNK_SIZE_BYTES,
+          level: WS_DEFLATE_ZLIB_COMPRESSION_LEVEL,
+          memLevel: WS_DEFLATE_ZLIB_MEM_LEVEL,
         },
         zlibInflateOptions: {
-          chunkSize: 16 * 1024,
+          chunkSize: WS_DEFLATE_ZLIB_CHUNK_SIZE_BYTES,
         },
       },
     })

@@ -6,6 +6,12 @@
  */
 import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
 
+import {
+  OCPP16ChargePointStatus,
+  OCPP20ConnectorStatusEnumType,
+  WebSocketReadyState,
+} from 'ui-common'
+
 /**
  * Status variant type for UI display.
  * Maps semantic OCPP states to visual indicator categories.
@@ -59,31 +65,26 @@ export function getConnectorEntries (station: ChargingStationData): ConnectorEnt
     }))
 }
 
+const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object.freeze({
+  [OCPP16ChargePointStatus.AVAILABLE]: 'ok',
+  [OCPP16ChargePointStatus.CHARGING]: 'warn',
+  [OCPP16ChargePointStatus.FAULTED]: 'err',
+  [OCPP16ChargePointStatus.FINISHING]: 'warn',
+  [OCPP16ChargePointStatus.PREPARING]: 'warn',
+  [OCPP16ChargePointStatus.SUSPENDED_EV]: 'warn',
+  [OCPP16ChargePointStatus.SUSPENDED_EVSE]: 'warn',
+  [OCPP16ChargePointStatus.UNAVAILABLE]: 'err',
+  [OCPP20ConnectorStatusEnumType.OCCUPIED]: 'warn',
+})
+
 /**
  * Maps an OCPP connector status string to a display variant.
  * @param status - The OCPP connector status value
  * @returns The display variant for the status
  */
 export function getConnectorStatusVariant (status?: string): StatusVariant {
-  // cspell:ignore suspendedev suspendedevse
-  switch (status?.toLowerCase()) {
-    case 'available':
-      return 'ok'
-    // Active use states: amber to distinguish from 'available' (green)
-    case 'charging':
-    case 'occupied':
-      return 'warn'
-    case 'faulted':
-    case 'unavailable':
-      return 'err'
-    case 'finishing':
-    case 'preparing':
-    case 'suspendedev':
-    case 'suspendedevse':
-      return 'warn'
-    default:
-      return 'idle'
-  }
+  if (status == null) return 'idle'
+  return CONNECTOR_STATUS_VARIANT[status] ?? 'idle'
 }
 
 /**
@@ -93,14 +94,14 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
  */
 export function getWebSocketStateVariant (wsState?: number): StatusVariant {
   switch (wsState) {
-    case 0: // WebSocket.CONNECTING
-      return 'warn'
-    case 1: // WebSocket.OPEN
-      return 'ok'
-    case 2: // WebSocket.CLOSING
-      return 'warn'
-    case 3: // WebSocket.CLOSED
+    case WebSocketReadyState.CLOSED:
       return 'err'
+    case WebSocketReadyState.CLOSING:
+      return 'warn'
+    case WebSocketReadyState.CONNECTING:
+      return 'warn'
+    case WebSocketReadyState.OPEN:
+      return 'ok'
     default:
       return 'idle'
   }

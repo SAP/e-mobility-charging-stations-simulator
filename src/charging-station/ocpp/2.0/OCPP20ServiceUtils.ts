@@ -65,6 +65,7 @@ import {
   createPayloadConfigs,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 import { mapStopReasonToOCPP20 } from './OCPP20RequestBuilders.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
@@ -236,19 +237,19 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffWaitMinimum,
-      30
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_WAIT_MINIMUM_SECONDS
     )
     const randomRange = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffRandomRange,
-      10
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_RANDOM_RANGE_SECONDS
     )
     const repeatTimes = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffRepeatTimes,
-      5
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_REPEAT_TIMES
     )
     return computeExponentialBackOffDelay({
       baseDelayMs: secondsToMilliseconds(waitMinimum),
