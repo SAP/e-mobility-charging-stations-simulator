@@ -11,6 +11,7 @@ import {
   checkConfiguration,
   checkStationInfoConnectorStatus,
   getBootConnectorStatus,
+  getChargingStationChargingProfilesLimit,
   getChargingStationId,
   getHashId,
   getMaxConfiguredNumberOfConnectors,
@@ -29,12 +30,14 @@ import {
   AvailabilityType,
   type ChargingProfile,
   ChargingProfilePurposeType,
+  ChargingRateUnitType,
   type ChargingSchedule,
   type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  CurrentType,
   OCPPVersion,
   type Reservation,
   type SampledValueTemplate,
@@ -1062,6 +1065,83 @@ await describe('Helpers', async () => {
       const result = getSingleChargingSchedule(chargingProfile)
 
       assert.strictEqual(result, undefined)
+    })
+  })
+
+  await describe('getChargingStationChargingProfilesLimit station-scope filter', async () => {
+    const buildStationScopeProfile = (
+      purpose: ChargingProfilePurposeType,
+      limitW: number
+    ): ChargingProfile => {
+      return {
+        chargingProfileId: 1,
+        chargingProfilePurpose: purpose,
+        chargingSchedule: {
+          chargingRateUnit: ChargingRateUnitType.WATT,
+          chargingSchedulePeriod: [{ limit: limitW, startPeriod: 0 }],
+          duration: 3600,
+          startSchedule: new Date(Date.now() - 60_000),
+        },
+        stackLevel: 0,
+      } as unknown as ChargingProfile
+    }
+
+    const seedConnectorZeroWithProfile = (profile: ChargingProfile) => {
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+      })
+      station.stationInfo = {
+        ...(station.stationInfo ?? {}),
+        currentOutType: CurrentType.AC,
+        maximumPower: 22_000,
+      } as unknown as ChargingStationInfo
+      const connectorZero = station.getConnectorStatus(0)
+      assert.ok(connectorZero != null, 'connector 0 must exist on the mock station')
+      connectorZero.chargingProfiles = [profile]
+      return station
+    }
+
+    await it('should accept OCPP 1.6 CHARGE_POINT_MAX_PROFILE station-scope profile', () => {
+      const station = seedConnectorZeroWithProfile(
+        buildStationScopeProfile(ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE, 5000)
+      )
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, 5000)
+    })
+
+    await it('should accept OCPP 2.0.1 ChargingStationMaxProfile station-scope profile', () => {
+      const station = seedConnectorZeroWithProfile(
+        buildStationScopeProfile(ChargingProfilePurposeType.ChargingStationMaxProfile, 7000)
+      )
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, 7000)
+    })
+
+    await it('should accept OCPP 2.0.1 ChargingStationExternalConstraints station-scope profile', () => {
+      const station = seedConnectorZeroWithProfile(
+        buildStationScopeProfile(
+          ChargingProfilePurposeType.ChargingStationExternalConstraints,
+          6500
+        )
+      )
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, 6500)
+    })
+
+    await it('should reject TX_PROFILE (connector-scope) at the station-scope filter', () => {
+      const station = seedConnectorZeroWithProfile(
+        buildStationScopeProfile(ChargingProfilePurposeType.TX_PROFILE, 4000)
+      )
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, undefined)
     })
   })
 })

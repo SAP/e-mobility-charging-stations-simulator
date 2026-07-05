@@ -102,17 +102,24 @@ const getChargingStationChargingProfiles = (
         chargingProfile.chargingProfilePurpose ===
           ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE ||
         chargingProfile.chargingProfilePurpose ===
-          ChargingProfilePurposeType.ChargingStationMaxProfile
+          ChargingProfilePurposeType.ChargingStationMaxProfile ||
+        chargingProfile.chargingProfilePurpose ===
+          ChargingProfilePurposeType.ChargingStationExternalConstraints
     )
     .sort((a, b) => b.stackLevel - a.stackLevel)
 }
 
 /**
  * Highest-priority station-scope power limit currently in effect on the
- * station. Combines the charging profiles whose purpose matches the
- * station-scope value for either OCPP version (`CHARGE_POINT_MAX_PROFILE`
- * on OCPP 1.6 or `ChargingStationMaxProfile` on OCPP 2.0.1), sorts them
- * by stack level, and evaluates the winning profile's schedule period.
+ * station. Combines the charging profiles whose purpose matches any
+ * station-scope value: `CHARGE_POINT_MAX_PROFILE` on OCPP 1.6, or
+ * `ChargingStationMaxProfile` / `ChargingStationExternalConstraints` on
+ * OCPP 2.0.1. Both OCPP 2.0.1 purposes cap station power at EVSE 0
+ * (`ChargingStationMaxProfile` is the station-owned operational cap;
+ * `ChargingStationExternalConstraints` is an LMS/EMS-imposed cap per
+ * OCA J01); the coherent path treats them as equivalent inputs to the
+ * stack-level tie-break. Sorts by stack level and evaluates the winning
+ * profile's schedule period.
  * @param chargingStation - Source charging station.
  * @returns Limit in watts, or `undefined` when no applicable profile is found.
  */
