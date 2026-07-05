@@ -191,6 +191,13 @@ import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry
 
 const moduleName = 'OCPP20IncomingRequestService'
 
+// GetBaseReport response chunking: conservative project default.
+// The actual per-device limits are reported at runtime by the Charging Station via
+// OCPP 2.0.1 §2.1.16 DeviceDataCtrlr.ItemsPerMessage(instance:GetReport) and
+// §2.1.18 DeviceDataCtrlr.BytesPerMessage(instance:GetReport); both are ReadOnly
+// device capability declarations with no spec-defined ceiling.
+const MAX_ITEMS_PER_REPORT_MESSAGE = 100 as const
+
 interface StationInfoReportField {
   property: 'chargePointModel' | 'chargePointSerialNumber' | 'chargePointVendor' | 'firmwareVersion'
   variable: OCPP20DeviceInfoVariableName
@@ -3512,10 +3519,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const cached = stationState.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
-    const maxItemsPerMessage = 100
     const chunks = []
-    for (let i = 0; i < reportData.length; i += maxItemsPerMessage) {
-      chunks.push(reportData.slice(i, i + maxItemsPerMessage))
+    for (let i = 0; i < reportData.length; i += MAX_ITEMS_PER_REPORT_MESSAGE) {
+      chunks.push(reportData.slice(i, i + MAX_ITEMS_PER_REPORT_MESSAGE))
     }
 
     if (!isNotEmptyArray(chunks)) {
