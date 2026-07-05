@@ -58,7 +58,7 @@ import {
 } from '../worker/index.js'
 import { readStateFile, reconstructTemplateIndexes, writeStateFile } from './BootstrapStateUtils.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
-import { UIServerFactory } from './ui-server/UIServerFactory.js'
+import { UIServerFactory } from './ui-server/index.js'
 
 const moduleName = 'Bootstrap'
 
