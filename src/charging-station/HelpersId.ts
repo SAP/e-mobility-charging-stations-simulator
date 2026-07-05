@@ -106,14 +106,14 @@ export const getHashId = (
  * Populates `stationInfo`'s serial-number fields from the template's
  * prefixes and a shared random suffix. Only the serial-number channels
  * whose prefix is declared in `stationTemplate` are set on
- * `stationInfo`; the suffix defaults to a random hex string (uppercased
- * unless `params.randomSerialNumberUpperCase === false`), or the empty
- * string when `params.randomSerialNumber === false`.
+ * `stationInfo`; the suffix defaults to a random hex string in upper
+ * case unless `params.randomSerialNumberUpperCase === false`, or the
+ * empty string when `params.randomSerialNumber === false`.
  * @param stationTemplate - Template declaring which serial-number channels exist.
  * @param stationInfo - Station info to mutate.
- * @param params - Random-suffix knobs (defaults: enabled + uppercase).
- * @param params.randomSerialNumber
- * @param params.randomSerialNumberUpperCase
+ * @param params - Random-suffix knobs (defaults: enabled + upper case).
+ * @param params.randomSerialNumber - When `true` (default), the suffix is a random hex string; when `false`, the suffix is the empty string.
+ * @param params.randomSerialNumberUpperCase - When `true` (default), the random hex suffix is emitted in upper case; when `false`, lower case is used.
  */
 export const createSerialNumber = (
   stationTemplate: ChargingStationTemplate,
