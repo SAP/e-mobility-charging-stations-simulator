@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
-import { buildConfigKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20CertSigningRetryManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertSigningRetryManager.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
