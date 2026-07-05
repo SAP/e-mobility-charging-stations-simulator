@@ -9,17 +9,19 @@
  *   {@link ../CoherentMeterValuesManager}.
  *
  * Invariants (enforced by construction):
- * - **INV-1**: AC: `P = V × I × phases × powerFactor`; DC: `P = V × I × powerFactor`.
- *   `powerFactor` (cos φ) defaults to `1` (unity) so pre-M-09 profiles are
- *   unchanged. Emitted `powerW` is recomputed from the rounded emitted
- *   current, voltage, and `powerFactor` so `|P - V·I·phases·powerFactor|`
- *   stays within the `ROUNDING_SCALE` half-width (≤ 0.005 W scalar bound)
- *   regardless of V, phases, or `powerFactor`. Per-phase L-N
- *   `Power.Active.Import` emission is derived as
- *   `round(aggregate_P / phases, 2)`; the per-phase identity
- *   `|P_LxN - V_LxN · I_Lx · powerFactor|` therefore holds within
- *   `2 × ROUNDING_SCALE` half-width (≤ 0.01 W) - one half-width for the
- *   aggregate emit and one for the per-phase division.
+ * - **INV-1**: AC: `P = V × I × phases × powerFactor`; DC: `P = V × I`
+ *   (DC has no reactive component, so `powerFactor` is pinned to `1`
+ *   regardless of the profile field). `powerFactor` (cos φ) defaults to
+ *   `1` (unity) on AC so pre-M-09 profiles are unchanged. Emitted
+ *   `powerW` is recomputed from the rounded emitted current, voltage,
+ *   and `powerFactor` so `|P - V·I·phases·powerFactor|` stays within
+ *   the `ROUNDING_SCALE` half-width (≤ 0.005 W scalar bound) regardless
+ *   of V, phases, or `powerFactor`. Per-phase L-N `Power.Active.Import`
+ *   emission is derived as `round(aggregate_P / phases, 2)`; the
+ *   per-phase identity `|P_LxN - V_LxN · I_Lx · powerFactor|` therefore
+ *   holds within `2 × ROUNDING_SCALE` half-width (≤ 0.01 W) - one
+ *   half-width for the aggregate emit and one for the per-phase
+ *   division.
  * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
  *   SoC monotone non-decreasing during charging and saturates at 100 %.
  * - **INV-3**: `ΔE = P_clamped × Δt / MS_PER_HOUR` where `P_clamped` is the

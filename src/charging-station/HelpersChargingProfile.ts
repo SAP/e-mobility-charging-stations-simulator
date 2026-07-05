@@ -181,6 +181,16 @@ export const getConnectorChargingProfilesLimit = (
   }
 }
 
+/**
+ * Converts a charging-profiles limit expressed in the schedule's unit into
+ * watts. When the schedule unit is already `WATT`, the limit is returned
+ * unchanged; when it is `AMPERE`, the value is converted using the AC or
+ * DC electrical helper matching the station's `currentOutType`.
+ * @param chargingStation - Station carrying `stationInfo.currentOutType`.
+ * @param chargingProfilesLimit - Selected charging profile and its raw limit.
+ * @returns Limit in watts, or the raw limit when no schedule is available.
+ * @throws {BaseError} When `stationInfo.currentOutType` is neither `AC` nor `DC`.
+ */
 const buildChargingProfilesLimit = (
   chargingStation: ChargingStation,
   chargingProfilesLimit: ChargingProfilesLimit

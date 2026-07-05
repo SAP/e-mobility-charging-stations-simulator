@@ -96,6 +96,19 @@ export const createSerialNumber = (
     (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`)
 }
 
+/**
+ * Copies serial numbers from an existing station info (typically a
+ * pre-existing on-disk configuration) to a fresh station info derived
+ * from a template. Each of the three serial-number channels
+ * (`chargePointSerialNumber`, `chargeBoxSerialNumber`, `meterSerialNumber`)
+ * is copied only when the template declares the corresponding prefix
+ * and the source carries a value; otherwise the destination field is
+ * cleared.
+ * @param stationTemplate - Template driving which serial-number channels are declared.
+ * @param stationInfoSrc - Source station info carrying the existing serial numbers.
+ * @param stationInfoDst - Destination station info to update in place.
+ * @throws {BaseError} When either `stationTemplate` or `stationInfoSrc` is `null` / `undefined`.
+ */
 export const propagateSerialNumber = (
   stationTemplate: ChargingStationTemplate | undefined,
   stationInfoSrc: ChargingStationInfo | undefined,

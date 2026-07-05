@@ -226,6 +226,15 @@ const applyRegisterValuesWithoutPhases = (
  * @param numberOfPhases - Session phase count.
  * @param connectorStatus - Connector status (for the energy register).
  * @returns Value to emit, or `undefined` if the combination is unsupported.
+ *
+ * Supported measurands: `Current.Import`, `Energy.Active.Import.Register`,
+ * `Power.Active.Import`, `SoC`, `Voltage`. Other OCPP-defined measurands
+ * (notably `Power.Factor`, `Power.Reactive.Import`, `Frequency`,
+ * `Temperature`) return `undefined` so the emission path logs and skips
+ * the template. `EvProfile.powerFactor` scales the AC current/power chain
+ * but is NOT emitted as a `Power.Factor` measurand; templates configuring
+ * these unsupported measurands under coherent mode are skipped with a
+ * warning in `buildCoherentMeterValue`.
  */
 const resolvePhasedValue = (
   measurand: MeterValueMeasurand,

@@ -1730,7 +1730,7 @@ await describe('CoherentMeterValues', async () => {
     })
   })
 
-  await describe('rampShape sigmoid', async () => {
+  await describe("rampShape 'sigmoid'", async () => {
     await it('should pin f(0)=0, f(rampUpDurationMs)=1, and f(midpoint)=0.5 within ±0.01', () => {
       const sigmoidProfile: EvProfile = {
         ...baseProfile,
