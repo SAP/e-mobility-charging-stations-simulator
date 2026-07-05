@@ -21,6 +21,8 @@
       "maxPowerW": 22000,
       "initialSocPercentMin": 10,
       "initialSocPercentMax": 60,
+      "powerFactor": 0.98,
+      "rampShape": "sigmoid",
       "chargingCurve": [
         { "socPercent": 0, "powerFraction": 1.0 },
         { "socPercent": 70, "powerFraction": 0.85 },

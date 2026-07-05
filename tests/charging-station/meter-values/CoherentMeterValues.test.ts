@@ -1591,4 +1591,285 @@ await describe('CoherentMeterValues', async () => {
       )
     })
   })
+
+  await describe('powerFactor', async () => {
+    await it('should raise emitted current inversely proportional to powerFactor when set to 0.95', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithPF: EvProfile = { ...flatProfile, powerFactor: 0.95 }
+      const runOnce = (profile: EvProfile): number => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 7400,
+          numberOfPhases: 1,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        return computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        }).currentA
+      }
+      const baselineCurrent = runOnce(flatProfile)
+      const currentWithPF = runOnce(flatProfileWithPF)
+      const expectedRatio = 1 / 0.95
+      const actualRatio = currentWithPF / baselineCurrent
+      assert.ok(
+        Math.abs(actualRatio - expectedRatio) < 0.01,
+        `powerFactor=0.95 must raise current inversely proportional: ratio=${actualRatio.toString()} expected=${expectedRatio.toString()}`
+      )
+    })
+
+    await it('should preserve baseline behavior when powerFactor is absent', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithUnity: EvProfile = { ...flatProfile, powerFactor: 1 }
+      const runOnce = (profile: EvProfile): { currentA: number; powerW: number } => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 22000,
+          numberOfPhases: 3,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const sample = computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        return { currentA: sample.currentA, powerW: sample.powerW }
+      }
+      const baseline = runOnce(flatProfile)
+      const withUnity = runOnce(flatProfileWithUnity)
+      assert.strictEqual(
+        baseline.currentA,
+        withUnity.currentA,
+        'absent powerFactor must produce identical current to powerFactor=1'
+      )
+      assert.strictEqual(
+        baseline.powerW,
+        withUnity.powerW,
+        'absent powerFactor must produce identical power to powerFactor=1'
+      )
+    })
+
+    await it('should ignore powerFactor on DC profiles (no reactive component)', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithPF: EvProfile = { ...flatProfile, powerFactor: 0.7 }
+      const runOnce = (profile: EvProfile): { currentA: number; powerW: number } => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.DC,
+          evseMaxPowerW: 50000,
+          numberOfPhases: 0,
+          voltageOut: 400,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const sample = computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        return { currentA: sample.currentA, powerW: sample.powerW }
+      }
+      const baseline = runOnce(flatProfile)
+      const withPF = runOnce(flatProfileWithPF)
+      assert.strictEqual(
+        baseline.currentA,
+        withPF.currentA,
+        'DC powerFactor=0.7 must produce identical current to DC without powerFactor'
+      )
+      assert.strictEqual(
+        baseline.powerW,
+        withPF.powerW,
+        'DC powerFactor=0.7 must produce identical power to DC without powerFactor'
+      )
+    })
+  })
+
+  await describe("rampShape 'sigmoid'", async () => {
+    await it('should pin f(0)=0, f(rampUpDurationMs)=1, and f(midpoint)=0.5 within ±0.01', () => {
+      const sigmoidProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+        rampShape: 'sigmoid',
+      }
+      const rampUpDurationMs = 60000
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 7400,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [sigmoidProfile],
+        rampUpDurationMs,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const powerAtSocConstant = (nowMs: number): number => {
+        session.socPercent = 30
+        return computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: 1,
+          nowMs,
+          rootSeed: 42,
+          voltageNoise: false,
+        }).powerW
+      }
+      const fullPower = powerAtSocConstant(rampUpDurationMs)
+      const atStart = powerAtSocConstant(0)
+      const atQuarter = powerAtSocConstant(rampUpDurationMs / 4)
+      const atMid = powerAtSocConstant(rampUpDurationMs / 2)
+      const atThreeQuarter = powerAtSocConstant((3 * rampUpDurationMs) / 4)
+      const atEnd = powerAtSocConstant(rampUpDurationMs)
+      assert.strictEqual(atStart, 0, 'sigmoid must be 0 at t=0 exactly')
+      assert.ok(
+        Math.abs(atMid / fullPower - 0.5) < 0.01,
+        `sigmoid must be 0.5 at midpoint: got ${(atMid / fullPower).toString()}`
+      )
+      assert.ok(
+        Math.abs(atEnd / fullPower - 1) < 1e-9,
+        `sigmoid must be 1 at t=rampUpDurationMs: got ${(atEnd / fullPower).toString()}`
+      )
+      // Interior curvature: sigmoid diverges from linear at the quarter
+      // points. Linear would emit 0.25 and 0.75 of fullPower; sigmoid
+      // (k=10) emits about 0.07 and 0.93 (analytical value from the
+      // shift-scale logistic with SIGMOID_STEEPNESS=10). The tolerance
+      // 0.05 is well below the ~0.18 gap between sigmoid and linear at
+      // these points, so a silent revert of the sigmoid branch back to
+      // a linear ramp shape would fail this assertion.
+      assert.ok(
+        atQuarter / fullPower < 0.15,
+        `sigmoid must curve below 0.15 at t=rampUpDurationMs/4 (linear would emit 0.25): got ${(atQuarter / fullPower).toString()}`
+      )
+      assert.ok(
+        atThreeQuarter / fullPower > 0.85,
+        `sigmoid must curve above 0.85 at t=3*rampUpDurationMs/4 (linear would emit 0.75): got ${(atThreeQuarter / fullPower).toString()}`
+      )
+    })
+
+    await it('should preserve linear baseline when rampShape is absent or explicit linear', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const explicitLinearProfile: EvProfile = { ...flatProfile, rampShape: 'linear' }
+      const rampUpDurationMs = 60000
+      const runOnce = (profile: EvProfile): number[] => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 7400,
+          numberOfPhases: 1,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const samples: number[] = []
+        for (const nowMs of [
+          0,
+          rampUpDurationMs / 4,
+          rampUpDurationMs / 2,
+          (rampUpDurationMs * 3) / 4,
+          rampUpDurationMs,
+        ]) {
+          session.socPercent = 30
+          samples.push(
+            computeCoherentSample(context, connectorStatus, session, {
+              intervalMs: 1,
+              nowMs,
+              rootSeed: 42,
+              voltageNoise: false,
+            }).powerW
+          )
+        }
+        return samples
+      }
+      const absentSamples = runOnce(flatProfile)
+      const explicitSamples = runOnce(explicitLinearProfile)
+      assert.deepStrictEqual(
+        absentSamples,
+        explicitSamples,
+        'absent rampShape must produce identical ramp curve to explicit linear'
+      )
+      const fullPower = absentSamples[4]
+      assert.ok(fullPower > 0, 'full power must be reached at t=rampUpDurationMs')
+      const quarterRatio = absentSamples[1] / fullPower
+      const midRatio = absentSamples[2] / fullPower
+      const threeQuarterRatio = absentSamples[3] / fullPower
+      // Tolerance covers the two-decimal rounding applied to the emitted
+      // powerW at each sample (roundedV × roundedCurrent × phases → 2 dp).
+      const rampTolerance = 0.001
+      assert.ok(
+        Math.abs(quarterRatio - 0.25) < rampTolerance,
+        `linear ramp must be 0.25 at t=T/4: got ${quarterRatio.toString()}`
+      )
+      assert.ok(
+        Math.abs(midRatio - 0.5) < rampTolerance,
+        `linear ramp must be 0.5 at midpoint: got ${midRatio.toString()}`
+      )
+      assert.ok(
+        Math.abs(threeQuarterRatio - 0.75) < rampTolerance,
+        `linear ramp must be 0.75 at t=3T/4: got ${threeQuarterRatio.toString()}`
+      )
+    })
+  })
 })
