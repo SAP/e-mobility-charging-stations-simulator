@@ -7,7 +7,7 @@ export {
   buildEvseEntries,
   buildEvsesStatus,
 } from './ChargingStationConfigurationUtils.js'
-export { Configuration } from './Configuration.js'
+export { Configuration, DEFAULT_PERSIST_STATE } from './Configuration.js'
 export {
   applyConfigurationMigration,
   coerceConfigurationVersion,
