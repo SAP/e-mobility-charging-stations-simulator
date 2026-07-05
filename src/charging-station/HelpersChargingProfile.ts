@@ -63,15 +63,15 @@ const getChargingProfileId = (chargingProfile: ChargingProfile): string => {
 
 /**
  * Extracts the single {@link ChargingSchedule} referenced by a charging
- * profile. OCPP 1.6 templates carry a single schedule directly, OCPP
- * 2.0.x carry a one-element array; both shapes reduce to one schedule
- * per profile. When the array shape holds zero or more than one entry
- * the situation is logged and `undefined` is returned so the caller can
- * skip cleanly.
+ * profile. OCPP 1.6 templates carry the schedule directly as a single
+ * value and are returned unchanged. OCPP 2.0.x templates carry a
+ * `chargingSchedule` array, which the coherent path does not currently
+ * consume: any array shape is logged (debug level) and `undefined` is
+ * returned so the caller can skip cleanly.
  * @param chargingProfile - Source charging profile.
- * @param logPrefix - Optional log prefix for the malformed-array warning.
- * @param methodName - Optional caller name included in the warning.
- * @returns Single schedule, or `undefined` when the array shape is not exactly one entry.
+ * @param logPrefix - Optional log prefix for the array-shape debug entry.
+ * @param methodName - Optional caller name included in the debug entry.
+ * @returns Single schedule for the OCPP 1.6 shape, or `undefined` when the profile carries an array-shape schedule.
  */
 export const getSingleChargingSchedule = (
   chargingProfile: ChargingProfile,
@@ -101,10 +101,12 @@ const getChargingStationChargingProfiles = (
 }
 
 /**
- * Highest-priority station-level (`ChargingStationMaxProfile`) power
- * limit currently in effect. Combines the station's charging profiles,
- * filters by priority, and evaluates the winning profile's schedule
- * period.
+ * Highest-priority station-scope power limit currently in effect on the
+ * station. Combines the charging profiles whose purpose matches
+ * `ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE` (the OCPP 1.6
+ * station-scope value; the OCPP 2.0.1 equivalent `ChargingStationMaxProfile`
+ * is not handled by this filter), sorts them by stack level, and
+ * evaluates the winning profile's schedule period.
  * @param chargingStation - Source charging station.
  * @returns Limit in watts, or `undefined` when no applicable profile is found.
  */

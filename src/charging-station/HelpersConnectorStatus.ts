@@ -25,10 +25,11 @@ import { getMaxNumberOfConnectors } from './HelpersConfig.js'
 const moduleName = 'HelpersConnectorStatus'
 
 /**
- * Boot-time connector status derivation. Returns the persisted status
- * only when both the station and the specific connector are Available;
- * otherwise falls back to `Available` so a stale unavailable state does
- * not survive a station restart.
+ * Boot-time connector status derivation.
+ * - When the station is unavailable OR the specific connector is unavailable, returns `ConnectorStatusEnum.Unavailable`.
+ * - Otherwise, when a transaction was running with a persisted `status`, returns that status so mid-transaction state survives a restart.
+ * - Otherwise, when a `bootStatus` is configured on the connector, returns it.
+ * - Otherwise, returns `ConnectorStatusEnum.Available` so a fresh connector boots ready to accept a session.
  * @param chargingStation - Owning charging station.
  * @param connectorId - Target connector id.
  * @param connectorStatus - Persisted connector status.
@@ -109,13 +110,14 @@ export const buildConnectorsMap = (
 }
 
 /**
- * Post-materialization pass over the connectors map: for every connector
- * `> 0` with a pending `transactionStarted` flag, restores the runtime
- * status via {@link initializeConnectorStatus}. Connector 0 (station
- * scope) is left untouched.
- * @param connectors - Materialized connectors map.
- * @param logPrefix - Log prefix.
- * @param defaultMaximumPower - Optional default per-connector maximum power passed to {@link initializeConnectorStatus}.
+ * Post-materialization pass over the connectors map.
+ * - Connector 0 (station scope) is normalized: `availability` set to `Operative` and `chargingProfiles` defaulted to `[]` when unset.
+ * - Connector id `> 0` with `transactionStarted === true` and no live `transactionId` (or in `Finishing`): the stale transaction is dropped via the module-private `resetConnectorStatus`, and `locked` is cleared. A warning is logged.
+ * - Connector id `> 0` with `transactionStarted === true` and a live `transactionId`: state is preserved and only a warning is logged.
+ * - Connector id `> 0` with `transactionStarted` unset: the connector is fully initialized via the module-private `initializeConnectorStatus`.
+ * @param connectors - Materialized connectors map (mutated in place).
+ * @param logPrefix - Log prefix for the stale-transaction and live-transaction warnings.
+ * @param defaultMaximumPower - Optional default per-connector maximum power forwarded to the connector initializer.
  */
 export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
@@ -162,10 +164,12 @@ export const resetAuthorizeConnectorStatus = (connectorStatus: ConnectorStatus):
 }
 
 /**
- * Full connector reset: drops the transaction bookkeeping, energy
- * counters, and non-station charging profiles while preserving the
- * connector's identity (id, availability). Safe to call on a
- * `null` / `undefined` connector (no-op).
+ * Full connector reset: drops the transaction bookkeeping and the
+ * transaction-scoped energy counter, filters out non-station-scope
+ * charging profiles, and clears authorization + reservation state. The
+ * station-scoped `energyActiveImportRegisterValue` is deliberately
+ * preserved (persistent energy register per OCPP), and `availability` is
+ * untouched. Safe to call on a `null` / `undefined` connector (no-op).
  * @param connectorStatus - Target connector status to reset in place, or `null` / `undefined` for a no-op.
  */
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
