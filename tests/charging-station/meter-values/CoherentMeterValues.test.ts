@@ -1767,7 +1767,9 @@ await describe('CoherentMeterValues', async () => {
       }
       const fullPower = powerAtSocConstant(rampUpDurationMs)
       const atStart = powerAtSocConstant(0)
+      const atQuarter = powerAtSocConstant(rampUpDurationMs / 4)
       const atMid = powerAtSocConstant(rampUpDurationMs / 2)
+      const atThreeQuarter = powerAtSocConstant((3 * rampUpDurationMs) / 4)
       const atEnd = powerAtSocConstant(rampUpDurationMs)
       assert.strictEqual(atStart, 0, 'sigmoid must be 0 at t=0 exactly')
       assert.ok(
@@ -1777,6 +1779,21 @@ await describe('CoherentMeterValues', async () => {
       assert.ok(
         Math.abs(atEnd / fullPower - 1) < 1e-9,
         `sigmoid must be 1 at t=rampUpDurationMs: got ${(atEnd / fullPower).toString()}`
+      )
+      // Interior curvature: sigmoid diverges from linear at the quarter
+      // points. Linear would emit 0.25 and 0.75 of fullPower; sigmoid
+      // (k=10) emits about 0.07 and 0.93 (analytical value from the
+      // shift-scale logistic with SIGMOID_STEEPNESS=10). The tolerance
+      // 0.05 is well below the ~0.18 gap between sigmoid and linear at
+      // these points, so a silent revert of the sigmoid branch back to
+      // a linear ramp shape would fail this assertion.
+      assert.ok(
+        atQuarter / fullPower < 0.15,
+        `sigmoid must curve below 0.15 at t=rampUpDurationMs/4 (linear would emit 0.25): got ${(atQuarter / fullPower).toString()}`
+      )
+      assert.ok(
+        atThreeQuarter / fullPower > 0.85,
+        `sigmoid must curve above 0.85 at t=3*rampUpDurationMs/4 (linear would emit 0.75): got ${(atThreeQuarter / fullPower).toString()}`
       )
     })
 

@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
+  type ChargingStationNameTemplate,
   checkChargingStationState,
   checkConfiguration,
   checkStationInfoConnectorStatus,
@@ -81,6 +82,22 @@ await describe('Helpers', async () => {
       getHashId(1, chargingStationTemplate),
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
+  })
+
+  await it('should reject property mutation on ChargingStationNameTemplate at compile time (Readonly contract)', () => {
+    const nameTemplate: ChargingStationNameTemplate = {
+      baseName: 'READONLY-STATION',
+      fixedName: true,
+      nameSuffix: '',
+    }
+    // @ts-expect-error - Readonly<Pick<...>> must prevent baseName mutation.
+    // If the Readonly wrapper is silently removed from ChargingStationNameTemplate,
+    // this directive becomes unused and typecheck (`tsc --noEmit`) fails with
+    // "Unused '@ts-expect-error' directive", catching the regression at build time.
+    nameTemplate.baseName = 'MUTATED'
+    // Runtime tolerates the mutation (Readonly is compile-time only); the
+    // compile-time directive above is the regression lock.
+    assert.strictEqual(nameTemplate.baseName, 'MUTATED')
   })
 
   await it('should return baseName verbatim when fixedName is true', () => {
