@@ -364,9 +364,9 @@ type AutomaticTransactionGeneratorConfiguration = {
 
 #### Evses section syntax example
 
-`MeterValues` can be defined at EVSE level or at connector level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
+`MeterValues` can be defined at EVSE-level or at connector-level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
 
-##### MeterValues at EVSE level
+##### MeterValues at EVSE-level
 
 ```json
   "Evses": {
@@ -406,7 +406,7 @@ type AutomaticTransactionGeneratorConfiguration = {
   },
 ```
 
-##### MeterValues at connector level
+##### MeterValues at connector-level
 
 ```json
   "Evses": {
@@ -486,7 +486,7 @@ The EV profile file is a JSON file referenced by the `evProfilesFile` template f
 
 A template file is available at [src/assets/ev-profiles-template.json](./src/assets/ev-profiles-template.json).
 
-**Template resolution scope.** When `coherentMeterValues` is `true`, the coherent generator reads `MeterValues` templates from the connector-level definition only. EVSE-level `MeterValues` inheritance is not applied, so define per-connector `MeterValues` inside each connector entry.
+**Template resolution scope.** When `coherentMeterValues` is `true`, EVSE-level `MeterValues` (when defined and non-empty) override connector-level definitions for every connector under that EVSE; connector-level `MeterValues` are used when the connector is not grouped under an EVSE (flat `Connectors` map station layout) or when the EVSE-level array is undefined or empty. Note: the coherent generator emits templates from exactly one source (EVSE-level or the queried connector) - unlike the random/fixed path's `getSampledValueTemplate`, it does not aggregate `MeterValues` across sibling connectors under the same EVSE.
 
 **Phase-qualified measurands.** When a connector template carries a `phase` field, the coherent generator emits one `SampledValue` per matching template with phase-aware values:
 

@@ -35,7 +35,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
 } from '../../types/index.js'
-import { Constants, logger, roundTo } from '../../utils/index.js'
+import { Constants, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
   computeCoherentSample,
@@ -307,14 +307,21 @@ const resolveUnitDivider = (
   unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
 
 /**
- * Returns the SampledValueTemplate array configured on the given connector.
+ * Resolves `MeterValues` templates for a connector. EVSE-level
+ * `MeterValues` (when defined and non-empty) override connector-level
+ * definitions for every connector under that EVSE; connector-level
+ * `MeterValues` are used when the connector is not grouped under an
+ * EVSE (flat `Connectors` map station layout) or when the EVSE-level
+ * array is undefined or empty.
  *
- * Reads the connector-level `MeterValues` templates only. Unlike
- * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does NOT
- * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
- * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
- * EVSE-level template inheritance to the coherent path requires extending
- * the context interface with `getEvseStatus`.
+ * NOTE: Unlike
+ * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does
+ * NOT aggregate `MeterValues` across sibling connectors under the
+ * same EVSE when EVSE-level `MeterValues` is undefined or empty. The
+ * coherent path emits templates from exactly one source (EVSE-level
+ * when non-empty, otherwise the queried connector), keeping
+ * per-connector template ownership isolated; the random/fixed path's
+ * cross-connector aggregation is intentionally not replicated.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
@@ -323,6 +330,13 @@ const resolveTemplates = (
   context: ICoherentContext,
   connectorId: number
 ): SampledValueTemplate[] | undefined => {
+  const evseId = context.getEvseIdByConnectorId(connectorId)
+  if (evseId != null) {
+    const evseTemplates = context.getEvseStatus(evseId)?.MeterValues
+    if (isNotEmptyArray(evseTemplates)) {
+      return evseTemplates
+    }
+  }
   return context.getConnectorStatus(connectorId)?.MeterValues
 }
 

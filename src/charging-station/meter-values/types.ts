@@ -14,6 +14,7 @@ import type {
   ChargingStationInfo,
   ConnectorStatus,
   CurrentType,
+  EvseStatus,
   Voltage,
 } from '../../types/index.js'
 
@@ -119,6 +120,8 @@ export interface CoherentSession {
 export interface ICoherentContext {
   getConnectorMaximumAvailablePower: (connectorId: number) => number
   getConnectorStatus: (connectorId: number) => ConnectorStatus | undefined
+  getEvseIdByConnectorId: (connectorId: number) => number | undefined
+  getEvseStatus: (evseId: number) => EvseStatus | undefined
   getNumberOfPhases: () => number
   getVoltageOut: () => Voltage
   logPrefix: () => string
