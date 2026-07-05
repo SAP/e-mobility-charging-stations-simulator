@@ -105,14 +105,14 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Create an in-memory auth cache
    * @param options - Cache configuration options
-   * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
-   * @param options.defaultTtl - Default TTL in seconds (default: 3600)
-   * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: 86400000)
+   * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: Constants.DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS, 0 to disable)
+   * @param options.defaultTtl - Default TTL in seconds (default: Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS)
+   * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: Constants.DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS)
    * @param options.maxEntries - Maximum number of cache entries (default: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
    * @param options.rateLimit - Rate limiting configuration
    * @param options.rateLimit.enabled - Enable rate limiting (default: false)
-   * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
-   * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
+   * @param options.rateLimit.maxRequests - Max requests per window (default: Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS)
+   * @param options.rateLimit.windowMs - Time window in milliseconds (default: Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS)
    */
   constructor (options?: {
     cleanupIntervalSeconds?: number

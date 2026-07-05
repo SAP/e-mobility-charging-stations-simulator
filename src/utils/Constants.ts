@@ -74,10 +74,10 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
 
-  /** Default symmetric jitter fraction applied to reconnect and retry delays (0.2 = ±20 %). */
+  /** Default maximum jitter fraction applied to reconnect and retry delays; bounds the jitter within ±20 % of the base delay. */
   static readonly DEFAULT_RECONNECT_JITTER_PERCENT = 0.2
 
-  /** Default cache TTL for remote authorization results, distinct from local `_TTL_SECONDS = 3600`. */
+  /** Default cache TTL for remote authorization results, distinct from `DEFAULT_AUTH_CACHE_TTL_SECONDS` (3600, local cache default). */
   static readonly DEFAULT_REMOTE_AUTH_CACHE_TTL_SECONDS = 300
 
   static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
