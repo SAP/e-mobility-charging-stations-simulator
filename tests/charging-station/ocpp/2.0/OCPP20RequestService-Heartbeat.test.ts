@@ -1,5 +1,5 @@
 /**
- * @file Tests for OCPP20RequestService HeartBeat
+ * @file Tests for OCPP20RequestService Heartbeat
  * @description Unit tests for OCPP 2.0 Heartbeat request building (G02)
  */
 import assert from 'node:assert/strict'
@@ -49,7 +49,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.01
-  await it('should build HeartBeat request payload correctly with empty object', () => {
+  await it('should build Heartbeat request payload correctly with empty object', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = testableRequestService.buildRequestPayload(
@@ -64,7 +64,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.02
-  await it('should build HeartBeat request payload correctly without parameters', () => {
+  await it('should build Heartbeat request payload correctly without parameters', () => {
     // Test without passing any request parameters
     const payload = testableRequestService.buildRequestPayload(
       station,
@@ -95,7 +95,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.04
-  await it('should handle HeartBeat request consistently across multiple calls', () => {
+  await it('should handle Heartbeat request consistently across multiple calls', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     // Call buildRequestPayload multiple times to ensure consistency
@@ -125,7 +125,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.05
-  await it('should handle HeartBeat request with different charging station configurations', () => {
+  await it('should handle Heartbeat request with different charging station configurations', () => {
     const { station: alternativeChargingStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
@@ -150,7 +150,7 @@ await describe('G02 - Heartbeat', async () => {
       requestParams
     )
 
-    // HeartBeat payload should remain empty regardless of charging station configuration
+    // Heartbeat payload should remain empty regardless of charging station configuration
     assert.notStrictEqual(payload, undefined)
     assert.strictEqual(typeof payload, 'object')
     assert.strictEqual(Object.keys(payload as object).length, 0)
@@ -158,7 +158,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.06
-  await it('should build empty HeartBeat request conforming to OCPP 2.0 specification', () => {
+  await it('should build empty Heartbeat request conforming to OCPP 2.0 specification', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = testableRequestService.buildRequestPayload(
@@ -167,7 +167,7 @@ await describe('G02 - Heartbeat', async () => {
       requestParams
     )
 
-    // According to OCPP 2.0 specification, HeartBeat request should be an empty object
+    // According to OCPP 2.0 specification, Heartbeat request should be an empty object
     // This validates compliance with the official OCPP 2.0 standard
     assert.notStrictEqual(payload, undefined)
     assert.deepStrictEqual(payload, {})
