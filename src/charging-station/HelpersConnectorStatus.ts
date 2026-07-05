@@ -19,8 +19,8 @@ import {
   ConnectorStatusEnum,
 } from '../types/index.js'
 import { clone, convertToDate, convertToInt, isNotEmptyArray, logger } from '../utils/index.js'
-import { getMaxNumberOfConnectors } from './Helpers.js'
 import { getSingleChargingSchedule } from './HelpersChargingProfile.js'
+import { getMaxNumberOfConnectors } from './HelpersConfig.js'
 
 const moduleName = 'HelpersConnectorStatus'
 

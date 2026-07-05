@@ -1,8 +1,8 @@
 /**
- * @file Barrel re-export for StationHelpers modular files (backward compatibility).
+ * @file Barrel re-export for StationHelpers modular files.
  *
- * Public surface preserved: consumers importing from './StationHelpers.js'
- * continue to receive every previously-exported symbol.
+ * Public surface: consumers importing from './StationHelpers.js' receive
+ * every exported symbol from the sibling modules unchanged.
  */
 
 export * from './StationHelpers.cleanup.js'

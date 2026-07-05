@@ -1681,6 +1681,53 @@ await describe('CoherentMeterValues', async () => {
         'absent powerFactor must produce identical power to powerFactor=1'
       )
     })
+
+    await it('should ignore powerFactor on DC profiles (no reactive component)', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithPF: EvProfile = { ...flatProfile, powerFactor: 0.7 }
+      const runOnce = (profile: EvProfile): { currentA: number; powerW: number } => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.DC,
+          evseMaxPowerW: 50000,
+          numberOfPhases: 0,
+          voltageOut: 400,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const sample = computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        return { currentA: sample.currentA, powerW: sample.powerW }
+      }
+      const baseline = runOnce(flatProfile)
+      const withPF = runOnce(flatProfileWithPF)
+      assert.strictEqual(
+        baseline.currentA,
+        withPF.currentA,
+        'DC powerFactor=0.7 must produce identical current to DC without powerFactor'
+      )
+      assert.strictEqual(
+        baseline.powerW,
+        withPF.powerW,
+        'DC powerFactor=0.7 must produce identical power to DC without powerFactor'
+      )
+    })
   })
 
   await describe('rampShape sigmoid', async () => {

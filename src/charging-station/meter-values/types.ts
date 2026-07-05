@@ -33,11 +33,12 @@ export interface ChargingCurvePoint {
  * `chargingCurve` is a sorted-by-`socPercent` piecewise-linear taper.
  *
  * Optional physics refinements:
- * - `powerFactor` (AC only, but applied unconditionally): the cos φ factor
- *   between real and apparent power. Real onboard chargers sit around
- *   `0.98..1.0`. When present, the per-phase current derivation becomes
- *   `I = P / (V · phases · powerFactor)` (AC) or `I = P / (V · powerFactor)`
- *   (DC), so `I` rises as `powerFactor` shrinks for the same delivered `P`.
+ * - `powerFactor` (AC only, ignored on DC): the cos φ factor between real
+ *   and apparent power. Real onboard chargers sit around `0.98..1.0`.
+ *   When present on an AC profile, the per-phase current derivation
+ *   becomes `I = P / (V · phases · powerFactor)`, so `I` rises as
+ *   `powerFactor` shrinks for the same delivered `P`. DC has no reactive
+ *   component (`P = V·I`), so the field is ignored on DC profiles.
  *   Absent ⇒ 1 (unity) ⇒ current behavior preserved.
  * - `rampShape` selects the ramp-up curve; see {@link EvRampShape}. Absent
  *   ⇒ `linear` ⇒ current behavior preserved.
@@ -101,11 +102,14 @@ export const EvProfileSchema = z.object({
   initialSocPercentMin: z.number().min(0).max(100),
   maxPowerW: z.number().positive(),
   /**
-   * Optional cos φ ∈ (0, 1]. Absent ⇒ 1. Multiplies the divisor in the
-   * per-phase current derivation `I = P / (V · phases · powerFactor)`, so
-   * `I` rises as `powerFactor` shrinks for the same delivered `P`.
+   * Optional cos φ ∈ [0.5, 1]. Absent ⇒ 1. AC only: multiplies the divisor
+   * in the per-phase current derivation `I = P / (V · phases · powerFactor)`
+   * so `I` rises as `powerFactor` shrinks for the same delivered `P`. The
+   * lower bound at `0.5` blocks configuration values that would drive the
+   * divisor toward zero and produce non-physical current; real onboard
+   * chargers sit at `0.98..1.0`. Ignored on DC profiles (`P = V·I`).
    */
-  powerFactor: z.number().positive().max(1).optional(),
+  powerFactor: z.number().min(0.5).max(1).optional(),
   /**
    * Optional ramp-up shape. Absent ⇒ `'linear'` (preserves existing golden
    * tests). See {@link EvRampShape}.

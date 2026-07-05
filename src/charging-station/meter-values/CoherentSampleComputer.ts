@@ -186,9 +186,12 @@ const fluctuate = (base: number, percent: number, prng: () => number): number =>
 
 /**
  * Steepness constant of the logistic used by {@link sigmoidRamp}. `k=10`
- * yields `raw(0) ≈ 6.69e-3` and `raw(1) ≈ 0.993`, so the boundary values
- * are within `1e-2` of the ideal `{0, 1}`; the endpoint normalization
- * below then pins `f(0) = 0` and `f(1) = 1` exactly.
+ * yields `raw(0) ≈ 6.69e-3` and `raw(1) ≈ 0.993`, so the shift-scale
+ * normalization below places interior values within `1e-2` of the ideal
+ * `{0, 1}` at the boundaries. Bit-exact endpoints are pinned by the
+ * short-circuit paths in {@link sigmoidRamp}; the normalization aligns
+ * the open interval `(0, 1)` so the transition into the short-circuit is
+ * continuous.
  */
 const SIGMOID_STEEPNESS = 10
 
@@ -205,8 +208,11 @@ const SIGMOID_RANGE = SIGMOID_RAW_AT_1 - SIGMOID_RAW_AT_0
  * f(p)   = (raw(p) - raw(0)) / (raw(1) - raw(0))
  * ```
  *
- * so `f(0) = 0` and `f(1) = 1` exactly. Progress outside `[0, 1]` is
- * clamped so the ramp saturates like the linear branch.
+ * Endpoints `f(0) = 0` and `f(1) = 1` are pinned bit-exact by the
+ * short-circuit paths below; the normalization aligns the open-interval
+ * values so approaching either boundary matches the pinned endpoint
+ * within floating-point ε. Progress outside `[0, 1]` is clamped so the
+ * ramp saturates like the linear branch.
  * @param progress - Normalized progress `elapsedMs / rampUpDurationMs`.
  * @returns Ramp fraction in `[0, 1]`.
  */
@@ -394,13 +400,16 @@ export const computeCoherentSample = (
   // Physics: derive per-phase current as an exact fraction so
   //   V_round · currentAExact · phases · powerFactor = powerW
   // holds identically. `numberOfPhases` is 1 for DC (line above) so a
-  // single branch covers both currents. `powerFactor` (cos φ) defaults to
-  // 1 (unity) so existing profiles are unchanged; when `< 1` the divisor
+  // single branch covers both currents. `powerFactor` (cos φ) is AC-only;
+  // DC has no reactive component (`P = V·I`), so the field is pinned to 1
+  // on DC profiles even if the caller set it. On AC it defaults to 1
+  // (unity) so existing profiles are unchanged; when `< 1` the divisor
   // shrinks and `I` rises inversely proportional to `powerFactor` for a
   // given `powerW` (active). Using integer-rounded amps here would inflate
   // V·I·phases above the capacity-clamped powerW by up to V·phases·0.5 W,
   // breaking INV-1.
-  const powerFactor = session.profile.powerFactor ?? 1
+  const powerFactor =
+    session.currentType === CurrentType.AC ? (session.profile.powerFactor ?? 1) : 1
   const divisor = roundedV * numberOfPhases * powerFactor
   const currentAExact = divisor > 0 ? powerW / divisor : 0
 
