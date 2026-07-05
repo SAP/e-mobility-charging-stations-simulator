@@ -2,12 +2,8 @@
  * @file Shared configuration fixtures for schema/migration/validation tests.
  */
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/utils/index.js'
-import {
-  TEST_SUPERVISION_URL,
-  TEST_UI_SERVER_HOST,
-  TEST_UI_SERVER_PORT,
-} from '../TestNetworkConstants.js'
+import { Constants, CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/utils/index.js'
+import { TEST_SUPERVISION_URL } from '../TestNetworkConstants.js'
 
 /**
  * Build a minimal valid configuration at the current schema version.
@@ -68,7 +64,7 @@ export const buildFullConfiguration = (): Record<string, unknown> => ({
   supervisionUrls: [`${TEST_SUPERVISION_URL}/ocpp`],
   uiServer: {
     enabled: false,
-    options: { host: TEST_UI_SERVER_HOST, port: TEST_UI_SERVER_PORT },
+    options: { host: Constants.DEFAULT_UI_SERVER_HOST, port: Constants.DEFAULT_UI_SERVER_PORT },
     type: 'ws',
     version: '1.1',
   },

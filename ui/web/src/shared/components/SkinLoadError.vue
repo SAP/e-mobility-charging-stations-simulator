@@ -25,11 +25,7 @@ defineEmits<{ retry: [] }>()
 
 const defaultSkinLabel = skins.find(s => s.id === DEFAULT_SKIN)?.label ?? 'Default'
 
-/**
- * Resets to default skin with reload loop protection.
- * NOTE: Successful skin loads (e.g. in useSkin.switchSkin) should clear
- * the reload-count sessionStorage key to reset the counter.
- */
+/** Resets to default skin with reload loop protection. Counter is reset by `useSkin.switchSkin` on successful load. */
 function resetToDefault (): void {
   let count = 0
   try {

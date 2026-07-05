@@ -6,8 +6,6 @@
  */
 import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
 
-import { WebSocketReadyState } from 'ui-common'
-
 /**
  * Status variant type for UI display.
  * Maps semantic OCPP states to visual indicator categories.
@@ -88,6 +86,14 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
   return CONNECTOR_STATUS_VARIANT[status.toLowerCase()] ?? 'idle'
 }
 
+// WebSocket readyState values (mirror `WebSocketReadyState` from ui-common;
+// module-local to keep this file free of runtime ui-common access at module
+// scope — test suites mock ui-common).
+const WS_STATE_CLOSED = 3
+const WS_STATE_CLOSING = 2
+const WS_STATE_CONNECTING = 0
+const WS_STATE_OPEN = 1
+
 /**
  * Maps a WebSocket ready state to a display variant.
  * @param wsState - The WebSocket readyState value
@@ -95,13 +101,13 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
  */
 export function getWebSocketStateVariant (wsState?: number): StatusVariant {
   switch (wsState) {
-    case WebSocketReadyState.CLOSED:
+    case WS_STATE_CLOSED:
       return 'err'
-    case WebSocketReadyState.CLOSING:
+    case WS_STATE_CLOSING:
       return 'warn'
-    case WebSocketReadyState.CONNECTING:
+    case WS_STATE_CONNECTING:
       return 'warn'
-    case WebSocketReadyState.OPEN:
+    case WS_STATE_OPEN:
       return 'ok'
     default:
       return 'idle'
