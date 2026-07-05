@@ -117,10 +117,13 @@ const getChargingStationChargingProfiles = (
  * OCPP 2.0.1. Both OCPP 2.0.1 purposes cap station power at EVSE 0
  * (`ChargingStationMaxProfile` is the station-owned operational cap per
  * OCA K04 Internal Load Balancing; `ChargingStationExternalConstraints`
- * is an LMS/EMS-imposed cap that the station reports to the CSMS per
- * OCA K11-K14 External Charging Limit); the coherent path treats them
- * as equivalent inputs to the stack-level tie-break. Sorts by stack
- * level and evaluates the winning profile's schedule period.
+ * is a limit imposed by an external system that the station stores
+ * internally per OCA K11-K14 External Charging Limit and reports upstream
+ * to the CSMS via `NotifyChargingLimit` / `ReportChargingProfiles`, and
+ * that participates in composite-schedule merging per OCA K08.FR.04 and
+ * safety invariant SC.01); the coherent path treats both OCPP 2.0.1
+ * purposes as equivalent inputs to the stack-level tie-break. Sorts by
+ * stack level and evaluates the winning profile's schedule period.
  * @param chargingStation - Source charging station.
  * @returns Limit in watts, or `undefined` when no applicable profile is found.
  */
