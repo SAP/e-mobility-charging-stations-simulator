@@ -6,6 +6,12 @@ import {
   VendorParametersKey,
 } from '../types/index.js'
 
+// Shared values referenced by both derived defaults and canonical time-unit
+// constants below; TS class-static forward-reference is illegal (TS2729), so the
+// duplicate literal is hoisted to module scope to preserve a single source of truth.
+const DAY_IN_MS = 86_400_000
+const DAY_IN_SECONDS = 86_400
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
   static readonly DEFAULT_ATG_CONFIGURATION: Readonly<AutomaticTransactionGeneratorConfiguration> =
@@ -25,7 +31,7 @@ export class Constants {
   static readonly DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS = 300
 
   /** Implementation-specific upper bound for auth cache entry absolute lifetime (24 hours). Not mandated by OCPP spec. */
-  static readonly DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS = 86_400_000
+  static readonly DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS = DAY_IN_MS
 
   static readonly DEFAULT_AUTH_CACHE_MAX_ENTRIES = 1000
 
@@ -137,7 +143,7 @@ export class Constants {
   static readonly MAX_SETINTERVAL_DELAY_MS = 2147483647
 
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
-  static readonly MS_PER_DAY = 86_400_000
+  static readonly MS_PER_DAY = DAY_IN_MS
 
   /** Milliseconds per hour; conversion factor for `Wh` accrual from `W·ms`. */
   static readonly MS_PER_HOUR = 3_600_000
@@ -145,7 +151,7 @@ export class Constants {
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
   /** Seconds per day; used for day-normalized time arithmetic. */
-  static readonly SECONDS_PER_DAY = 86_400
+  static readonly SECONDS_PER_DAY = DAY_IN_SECONDS
 
   /** State of Charge maximum percentage (upper bound for SoC measurand emission). */
   static readonly SOC_MAXIMUM_PERCENT = 100

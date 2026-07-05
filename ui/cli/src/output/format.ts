@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import Table from 'cli-table3'
+import { millisecondsToSeconds } from 'date-fns'
 import {
   type ConnectorEntry,
   type EvseEntry,
@@ -25,9 +26,9 @@ const NO_BORDER = {
   'top-right': '',
 }
 
-export const MISSING_VALUE_PLACEHOLDER = '–'
-export const TEMPLATE_NAME_SUFFIX = '.station-template'
-export const TRUNCATED_HASH_ID_LENGTH = 12
+export const EMPTY_VALUE_PLACEHOLDER = '–'
+const TEMPLATE_NAME_SUFFIX = '.station-template'
+const TRUNCATED_HASH_ID_LENGTH = 12
 
 // cspell:ignore borderless
 export const borderlessTable = (head: string[], colWidths?: number[]): Table.Table =>
@@ -57,7 +58,7 @@ export const wsIcon = (wsState: number | undefined): string => {
     case WebSocketReadyState.OPEN:
       return chalk.green('✓')
     default:
-      return chalk.dim(MISSING_VALUE_PLACEHOLDER)
+      return chalk.dim(EMPTY_VALUE_PLACEHOLDER)
   }
 }
 
@@ -93,13 +94,13 @@ export const formatConnectors = (evses: EvseEntry[], connectors: ConnectorEntry[
     }
   }
 
-  return entries.length > 0 ? chalk.dim(entries.join(' ')) : chalk.dim(MISSING_VALUE_PLACEHOLDER)
+  return entries.length > 0 ? chalk.dim(entries.join(' ')) : chalk.dim(EMPTY_VALUE_PLACEHOLDER)
 }
 
 export const fuzzyTime = (ts: number | undefined): string => {
-  if (ts == null) return chalk.dim(MISSING_VALUE_PLACEHOLDER)
+  if (ts == null) return chalk.dim(EMPTY_VALUE_PLACEHOLDER)
   const diff = Math.max(0, Date.now() - ts)
-  const seconds = Math.floor(diff / 1000)
+  const seconds = Math.floor(millisecondsToSeconds(diff))
   if (seconds < 60) return chalk.dim('just now')
   const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return chalk.dim(`${minutes.toString()}m ago`)

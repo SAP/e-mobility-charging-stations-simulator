@@ -1,7 +1,13 @@
 import chalk from 'chalk'
 import { getRandomValues } from 'node:crypto'
 
-/** Symmetric jitter fraction applied to randomized worker delays (0.2 = ±20 %). */
+/**
+ * Symmetric jitter fraction applied to randomized worker delays (0.2 = ±20 %).
+ * Same value as `Constants.DEFAULT_RECONNECT_JITTER_PERCENT`; kept as a local
+ * duplicate because `src/worker/` is a standalone module (no cross-module value
+ * imports). Any change to either constant must update both to preserve the
+ * shared jitter policy.
+ */
 const JITTER_PERCENT = 0.2
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {

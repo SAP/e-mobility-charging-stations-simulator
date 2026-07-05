@@ -8,9 +8,9 @@ import type { StationListPayload } from '../types.js'
 
 import {
   borderlessTable,
+  EMPTY_VALUE_PLACEHOLDER,
   formatConnectors,
   fuzzyTime,
-  MISSING_VALUE_PLACEHOLDER,
   statusIcon,
   stripTemplateSuffix,
   truncateId,
@@ -87,7 +87,7 @@ const renderSimulatorState = (payload: SimulatorStatePayload): void => {
   if (state.configuration?.worker != null) {
     const w = state.configuration.worker
     process.stdout.write(
-      `  Worker     ${w.processType ?? MISSING_VALUE_PLACEHOLDER} (${w.elementsPerWorker ?? MISSING_VALUE_PLACEHOLDER})\n`
+      `  Worker     ${w.processType ?? EMPTY_VALUE_PLACEHOLDER} (${w.elementsPerWorker ?? EMPTY_VALUE_PLACEHOLDER})\n`
     )
   }
   if (
@@ -150,10 +150,10 @@ const renderStationList = (payload: StationListPayload): void => {
       statusIcon(cs.started),
       si.chargingStationId,
       chalk.dim(truncateId(si.hashId)),
-      reg ?? chalk.dim(MISSING_VALUE_PLACEHOLDER),
+      reg ?? chalk.dim(EMPTY_VALUE_PLACEHOLDER),
       wsIcon(cs.wsState),
       formatConnectors(cs.evses ?? [], cs.connectors ?? []),
-      chalk.dim(si.ocppVersion ?? MISSING_VALUE_PLACEHOLDER),
+      chalk.dim(si.ocppVersion ?? EMPTY_VALUE_PLACEHOLDER),
       chalk.dim(stripTemplateSuffix(si.templateName)),
       fuzzyTime(cs.timestamp),
     ])
