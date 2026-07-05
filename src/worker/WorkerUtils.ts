@@ -9,7 +9,7 @@ import { getRandomValues } from 'node:crypto'
  * Same value as `Constants.DEFAULT_RECONNECT_JITTER_PERCENT`; kept as a local
  * duplicate because `src/worker/` is a standalone module (no cross-module value
  * imports). Any change to either constant must update both to preserve the
- * shared jitter policy.
+ * shared jitter magnitude cap.
  */
 const JITTER_PERCENT = 0.2
 

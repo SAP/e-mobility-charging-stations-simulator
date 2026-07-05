@@ -6,11 +6,7 @@
  */
 import type { ChargingStationData, ConnectorEntry, Status } from 'ui-common'
 
-import {
-  OCPP16ChargePointStatus,
-  OCPP20ConnectorStatusEnumType,
-  WebSocketReadyState,
-} from 'ui-common'
+import { WebSocketReadyState } from 'ui-common'
 
 /**
  * Status variant type for UI display.
@@ -65,16 +61,21 @@ export function getConnectorEntries (station: ChargingStationData): ConnectorEnt
     }))
 }
 
+// cspell:ignore suspendedev suspendedevse
+// Case-insensitive lookup keyed by lowercase OCPP status values (OCPP 1.6
+// ChargePointStatus + OCPP 2.0.1 ConnectorStatusEnumType.Occupied); the callers
+// may echo any case, and this file must not access ui-common runtime enums at
+// module scope because unit-test suites mock the module.
 const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object.freeze({
-  [OCPP16ChargePointStatus.AVAILABLE]: 'ok',
-  [OCPP16ChargePointStatus.CHARGING]: 'warn',
-  [OCPP16ChargePointStatus.FAULTED]: 'err',
-  [OCPP16ChargePointStatus.FINISHING]: 'warn',
-  [OCPP16ChargePointStatus.PREPARING]: 'warn',
-  [OCPP16ChargePointStatus.SUSPENDED_EV]: 'warn',
-  [OCPP16ChargePointStatus.SUSPENDED_EVSE]: 'warn',
-  [OCPP16ChargePointStatus.UNAVAILABLE]: 'err',
-  [OCPP20ConnectorStatusEnumType.OCCUPIED]: 'warn',
+  available: 'ok',
+  charging: 'warn',
+  faulted: 'err',
+  finishing: 'warn',
+  occupied: 'warn',
+  preparing: 'warn',
+  suspendedev: 'warn',
+  suspendedevse: 'warn',
+  unavailable: 'err',
 })
 
 /**
@@ -84,7 +85,7 @@ const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object
  */
 export function getConnectorStatusVariant (status?: string): StatusVariant {
   if (status == null) return 'idle'
-  return CONNECTOR_STATUS_VARIANT[status] ?? 'idle'
+  return CONNECTOR_STATUS_VARIANT[status.toLowerCase()] ?? 'idle'
 }
 
 /**

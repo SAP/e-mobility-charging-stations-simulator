@@ -74,7 +74,13 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
 
-  /** Default maximum jitter fraction applied to reconnect and retry delays; bounds the jitter within ±20 % of the base delay. */
+  /**
+   * Default jitter fraction applied to reconnect and retry delays; consumers
+   * additively scale the base delay by a uniform draw from `[0, jitterPercent)`.
+   * See `computeExponentialBackOffDelay` for the canonical uni-directional
+   * positive-jitter distribution; `randomizeDelay` (in `src/worker/`) uses the
+   * same magnitude cap but a different, asymmetric distribution.
+   */
   static readonly DEFAULT_RECONNECT_JITTER_PERCENT = 0.2
 
   /** Default cache TTL for remote authorization results, distinct from `DEFAULT_AUTH_CACHE_TTL_SECONDS` (3600, local cache default). */
