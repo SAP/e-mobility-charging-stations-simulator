@@ -418,14 +418,15 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
   `${str.slice(0, pos)}${subStr}${str.slice(pos)}`
 
 /**
- * Generalized exponential back-off: baseDelayMs × 2^min(retryNumber, maxRetries) + jitter.
+ * Generalized exponential back-off: baseDelayMs × 2^min(retryNumber, maxRetries) + jitter,
+ * clamped to [0, Constants.MAX_SETINTERVAL_DELAY_MS] for setTimeout/setInterval safety.
  * @param options - back-off configuration
  * @param options.baseDelayMs - base delay in milliseconds
  * @param options.retryNumber - current retry attempt (0-based)
  * @param options.maxRetries - stop doubling after this many retries (default: unlimited)
  * @param options.jitterMs - maximum fixed random jitter in milliseconds (default: 0)
  * @param options.jitterPercent - proportional jitter as fraction of computed delay, e.g. 0.2 = 20% (default: 0)
- * @returns delay in milliseconds
+ * @returns delay in milliseconds, guaranteed within [0, Constants.MAX_SETINTERVAL_DELAY_MS]
  */
 export const computeExponentialBackOffDelay = (options: {
   baseDelayMs: number
@@ -443,7 +444,7 @@ export const computeExponentialBackOffDelay = (options: {
   } else if (jitterMs != null && jitterMs > 0) {
     jitter = secureRandom() * jitterMs
   }
-  return delay + jitter
+  return clampToSafeTimerValue(delay + jitter)
 }
 
 /**
