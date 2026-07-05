@@ -111,7 +111,7 @@ import {
   watchJsonFile,
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
-import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/index.js'
 import { CoherentMeterValuesManager } from './CoherentMeterValuesManager.js'
 import {
   addConfigurationKey,
