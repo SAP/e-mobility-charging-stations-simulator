@@ -706,6 +706,36 @@ await describe('Utils', async () => {
       const maxDelay = computeExponentialBackOffDelay({ baseDelayMs, retryNumber: 10 })
       assert.strictEqual(maxDelay, 102400) // ~102 seconds
     })
+
+    await it('should clamp overflowing delays to MAX_SETINTERVAL_DELAY_MS', () => {
+      // At retry 25 with base 100ms: 100 * 2^25 = 3_355_443_200 ms > MAX_SETINTERVAL_DELAY_MS
+      // Without clamping, setTimeout would silently coerce to 1 ms (Node.js docs), producing
+      // a tight-loop reconnect storm instead of the intended exponential backoff.
+      const overflowDelay = computeExponentialBackOffDelay({
+        baseDelayMs: 100,
+        retryNumber: 25,
+      })
+      assert.strictEqual(overflowDelay, Constants.MAX_SETINTERVAL_DELAY_MS)
+
+      const extremeDelay = computeExponentialBackOffDelay({
+        baseDelayMs: 100,
+        retryNumber: 30,
+      })
+      assert.strictEqual(extremeDelay, Constants.MAX_SETINTERVAL_DELAY_MS)
+
+      // Clamping applies AFTER jitter is added — jitter cannot push past the safe ceiling.
+      // At retry 25 with base 100ms, `delay = 100 * 2^25 = 3.35e9` already exceeds the ceiling
+      // before jitter, so every iteration pins exactly to MAX_SETINTERVAL_DELAY_MS regardless
+      // of the random draw.
+      for (let i = 0; i < 20; i++) {
+        const jitteredDelay = computeExponentialBackOffDelay({
+          baseDelayMs: 100,
+          jitterPercent: 0.2,
+          retryNumber: 25,
+        })
+        assert.strictEqual(jitteredDelay, Constants.MAX_SETINTERVAL_DELAY_MS)
+      }
+    })
   })
 
   await it('should return timestamped log prefix with optional string', () => {
