@@ -1,8 +1,6 @@
 import type { EventEmitter } from 'node:events'
 
-import { hash, randomBytes } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
-import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import type { ChargingStation } from './ChargingStation.js'
@@ -25,15 +23,7 @@ import {
   type SupportedFeatureProfiles,
   Voltage,
 } from '../types/index.js'
-import {
-  clone,
-  Constants,
-  isEmpty,
-  isNotEmptyArray,
-  isNotEmptyString,
-  logger,
-  secureRandom,
-} from '../utils/index.js'
+import { clone, isEmpty, isNotEmptyArray, logger, secureRandom } from '../utils/index.js'
 import { getConfigurationKey } from './ConfigurationKeyUtils.js'
 
 const moduleName = 'Helpers'
@@ -47,29 +37,6 @@ export const buildTemplateName = (templateFile: string): string => {
   }
   const templateFileParsedPath = parse(templateFile)
   return join(templateFileParsedPath.dir, templateFileParsedPath.name)
-}
-
-export type ChargingStationNameTemplate = Pick<
-  ChargingStationTemplate,
-  'baseName' | 'fixedName' | 'nameSuffix'
->
-
-export const getChargingStationId = (
-  index: number,
-  nameTemplate: ChargingStationNameTemplate | undefined
-): string => {
-  if (nameTemplate == null) {
-    return "Unknown 'chargingStationId'"
-  }
-  // In case of multiple instances: add instance index to charging station id
-  const instanceIndex = env.CF_INSTANCE_INDEX ?? 0
-  const idSuffix = nameTemplate.nameSuffix ?? ''
-  const idStr = `000000000${index.toString()}`
-  return nameTemplate.fixedName === true
-    ? nameTemplate.baseName
-    : `${nameTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
-        idStr.length - 4
-      )}${idSuffix}`
 }
 
 export {
@@ -89,41 +56,18 @@ export {
   resetConnectorStatus,
 } from './HelpersConnectorStatus.js'
 export {
+  type ChargingStationNameTemplate,
+  createSerialNumber,
+  getChargingStationId,
+  getHashId,
+  propagateSerialNumber,
+} from './HelpersId.js'
+export {
   hasPendingReservation,
   hasPendingReservations,
   hasReservationExpired,
   removeExpiredReservations,
 } from './HelpersReservation.js'
-
-export const getHashId = (
-  index: number,
-  stationTemplate: ChargingStationTemplate,
-  chargingStationIdOverride?: string
-): string => {
-  const chargingStationInfo = {
-    chargePointModel: stationTemplate.chargePointModel,
-    chargePointVendor: stationTemplate.chargePointVendor,
-    ...(stationTemplate.chargeBoxSerialNumberPrefix != null && {
-      chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix,
-    }),
-    ...(stationTemplate.chargePointSerialNumberPrefix != null && {
-      chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
-    }),
-    ...(stationTemplate.meterSerialNumberPrefix != null && {
-      meterSerialNumber: stationTemplate.meterSerialNumberPrefix,
-    }),
-    ...(stationTemplate.meterType != null && {
-      meterType: stationTemplate.meterType,
-    }),
-  }
-  return hash(
-    Constants.DEFAULT_HASH_ALGORITHM,
-    `${JSON.stringify(chargingStationInfo)}${
-      chargingStationIdOverride ?? getChargingStationId(index, stationTemplate)
-    }`,
-    'hex'
-  )
-}
 
 export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (chargingStation.stationInfo == null || isEmpty(chargingStation.stationInfo)) {
@@ -344,55 +288,6 @@ export const stationTemplateToStationInfo = (
   return stationTemplate as ChargingStationInfo
 }
 
-export const createSerialNumber = (
-  stationTemplate: ChargingStationTemplate,
-  stationInfo: ChargingStationInfo,
-  params?: {
-    randomSerialNumber?: boolean
-    randomSerialNumberUpperCase?: boolean
-  }
-): void => {
-  params = {
-    ...{ randomSerialNumber: true, randomSerialNumberUpperCase: true },
-    ...params,
-  }
-  const serialNumberSuffix = params.randomSerialNumber
-    ? getRandomSerialNumberSuffix({
-      upperCase: params.randomSerialNumberUpperCase,
-    })
-    : ''
-  isNotEmptyString(stationTemplate.chargePointSerialNumberPrefix) &&
-    (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`)
-  isNotEmptyString(stationTemplate.chargeBoxSerialNumberPrefix) &&
-    (stationInfo.chargeBoxSerialNumber = `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`)
-  isNotEmptyString(stationTemplate.meterSerialNumberPrefix) &&
-    (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`)
-}
-
-export const propagateSerialNumber = (
-  stationTemplate: ChargingStationTemplate | undefined,
-  stationInfoSrc: ChargingStationInfo | undefined,
-  stationInfoDst: ChargingStationInfo
-): void => {
-  if (stationInfoSrc == null || stationTemplate == null) {
-    throw new BaseError(
-      'Missing charging station template or existing configuration to propagate serial number'
-    )
-  }
-  stationTemplate.chargePointSerialNumberPrefix != null &&
-  stationInfoSrc.chargePointSerialNumber != null
-    ? (stationInfoDst.chargePointSerialNumber = stationInfoSrc.chargePointSerialNumber)
-    : stationInfoDst.chargePointSerialNumber != null &&
-      delete stationInfoDst.chargePointSerialNumber
-  stationTemplate.chargeBoxSerialNumberPrefix != null &&
-  stationInfoSrc.chargeBoxSerialNumber != null
-    ? (stationInfoDst.chargeBoxSerialNumber = stationInfoSrc.chargeBoxSerialNumber)
-    : stationInfoDst.chargeBoxSerialNumber != null && delete stationInfoDst.chargeBoxSerialNumber
-  stationTemplate.meterSerialNumberPrefix != null && stationInfoSrc.meterSerialNumber != null
-    ? (stationInfoDst.meterSerialNumber = stationInfoSrc.meterSerialNumber)
-    : stationInfoDst.meterSerialNumber != null && delete stationInfoDst.meterSerialNumber
-}
-
 export const hasFeatureProfile = (
   chargingStation: ChargingStation,
   featureProfile: SupportedFeatureProfiles
@@ -534,15 +429,4 @@ export const pickConfiguredNumberOfConnectors = (
     return numberOfConnectors
   }
   return undefined
-}
-
-const getRandomSerialNumberSuffix = (params?: {
-  randomBytesLength?: number
-  upperCase?: boolean
-}): string => {
-  const randomSerialNumberSuffix = randomBytes(params?.randomBytesLength ?? 16).toString('hex')
-  if (params?.upperCase) {
-    return randomSerialNumberSuffix.toUpperCase()
-  }
-  return randomSerialNumberSuffix
 }
