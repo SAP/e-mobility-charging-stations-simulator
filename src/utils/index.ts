@@ -51,6 +51,13 @@ export {
   type AtomicWriteOptions,
   watchJsonFile,
 } from './FileUtils.js'
+export {
+  isHostLiteralWithoutPort,
+  isLoopback,
+  LOOPBACK_HOSTNAME,
+  normalizeHost,
+  normalizeIPAddress,
+} from './HostUtils.js'
 export { logger } from './Logger.js'
 export {
   buildAddedMessage,
