@@ -1066,15 +1066,40 @@ await describe('Helpers', async () => {
 
       assert.strictEqual(result, undefined)
     })
+
+    await it('should return undefined for an OCPP 2.0.x chargingSchedule array with 3 entries (spec upper bound)', () => {
+      const schedule1 = {
+        chargingSchedulePeriod: [],
+        duration: 3600,
+      } as unknown as ChargingSchedule
+      const schedule2 = {
+        chargingSchedulePeriod: [],
+        duration: 7200,
+      } as unknown as ChargingSchedule
+      const schedule3 = {
+        chargingSchedulePeriod: [],
+        duration: 10800,
+      } as unknown as ChargingSchedule
+      const chargingProfile = {
+        chargingProfileId: 1,
+        chargingSchedule: [schedule1, schedule2, schedule3],
+      } as unknown as ChargingProfile
+
+      const result = getSingleChargingSchedule(chargingProfile)
+
+      assert.strictEqual(result, undefined)
+    })
   })
 
   await describe('getChargingStationChargingProfilesLimit station-scope filter', async () => {
     const buildStationScopeProfile = (
       purpose: ChargingProfilePurposeType,
-      limitW: number
+      limitW: number,
+      stackLevel = 0,
+      chargingProfileId = 1
     ): ChargingProfile => {
       return {
-        chargingProfileId: 1,
+        chargingProfileId,
         chargingProfilePurpose: purpose,
         chargingSchedule: {
           chargingRateUnit: ChargingRateUnitType.WATT,
@@ -1082,11 +1107,21 @@ await describe('Helpers', async () => {
           duration: 3600,
           startSchedule: new Date(Date.now() - 60_000),
         },
-        stackLevel: 0,
+        stackLevel,
       } as unknown as ChargingProfile
     }
 
-    const seedConnectorZeroWithProfile = (profile: ChargingProfile) => {
+    // Test setup rationale: the mock station's `stationInfo` reassignment
+    // after construction only reaches code paths that read
+    // `chargingStation.stationInfo` directly (currently the
+    // `maximumPower` sanity check). Factory methods like
+    // `getNumberOfPhases` / `getVoltageOut` capture `stationInfoOverrides`
+    // in a closure at construction time and do NOT re-read the mutated
+    // `stationInfo`. Tests use `ChargingRateUnitType.WATT` on the schedule
+    // to bypass AC/DC current-to-power conversion, so `currentOutType` is
+    // not exercised in this suite; that assignment documents intent for
+    // future readers rather than driving code paths.
+    const seedConnectorZeroWithProfiles = (profiles: ChargingProfile[]) => {
       const { station } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
       })
@@ -1097,14 +1132,14 @@ await describe('Helpers', async () => {
       } as unknown as ChargingStationInfo
       const connectorZero = station.getConnectorStatus(0)
       assert.ok(connectorZero != null, 'connector 0 must exist on the mock station')
-      connectorZero.chargingProfiles = [profile]
+      connectorZero.chargingProfiles = profiles
       return station
     }
 
     await it('should accept OCPP 1.6 CHARGE_POINT_MAX_PROFILE station-scope profile', () => {
-      const station = seedConnectorZeroWithProfile(
-        buildStationScopeProfile(ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE, 5000)
-      )
+      const station = seedConnectorZeroWithProfiles([
+        buildStationScopeProfile(ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE, 5000),
+      ])
 
       const limit = getChargingStationChargingProfilesLimit(station)
 
@@ -1112,9 +1147,9 @@ await describe('Helpers', async () => {
     })
 
     await it('should accept OCPP 2.0.1 ChargingStationMaxProfile station-scope profile', () => {
-      const station = seedConnectorZeroWithProfile(
-        buildStationScopeProfile(ChargingProfilePurposeType.ChargingStationMaxProfile, 7000)
-      )
+      const station = seedConnectorZeroWithProfiles([
+        buildStationScopeProfile(ChargingProfilePurposeType.ChargingStationMaxProfile, 7000),
+      ])
 
       const limit = getChargingStationChargingProfilesLimit(station)
 
@@ -1122,12 +1157,12 @@ await describe('Helpers', async () => {
     })
 
     await it('should accept OCPP 2.0.1 ChargingStationExternalConstraints station-scope profile', () => {
-      const station = seedConnectorZeroWithProfile(
+      const station = seedConnectorZeroWithProfiles([
         buildStationScopeProfile(
           ChargingProfilePurposeType.ChargingStationExternalConstraints,
           6500
-        )
-      )
+        ),
+      ])
 
       const limit = getChargingStationChargingProfilesLimit(station)
 
@@ -1135,13 +1170,40 @@ await describe('Helpers', async () => {
     })
 
     await it('should reject TX_PROFILE (connector-scope) at the station-scope filter', () => {
-      const station = seedConnectorZeroWithProfile(
-        buildStationScopeProfile(ChargingProfilePurposeType.TX_PROFILE, 4000)
-      )
+      const station = seedConnectorZeroWithProfiles([
+        buildStationScopeProfile(ChargingProfilePurposeType.TX_PROFILE, 4000),
+      ])
 
       const limit = getChargingStationChargingProfilesLimit(station)
 
       assert.strictEqual(limit, undefined)
+    })
+
+    await it('should pick the highest stackLevel when multiple station-scope profiles are seeded', () => {
+      const station = seedConnectorZeroWithProfiles([
+        buildStationScopeProfile(ChargingProfilePurposeType.ChargingStationMaxProfile, 3000, 0, 1),
+        buildStationScopeProfile(ChargingProfilePurposeType.ChargingStationMaxProfile, 8000, 5, 2),
+      ])
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, 8000)
+    })
+
+    await it('should drop TX_PROFILE and keep station-scope profile when both are seeded', () => {
+      const station = seedConnectorZeroWithProfiles([
+        buildStationScopeProfile(
+          ChargingProfilePurposeType.ChargingStationExternalConstraints,
+          6000,
+          0,
+          1
+        ),
+        buildStationScopeProfile(ChargingProfilePurposeType.TX_PROFILE, 9000, 5, 2),
+      ])
+
+      const limit = getChargingStationChargingProfilesLimit(station)
+
+      assert.strictEqual(limit, 6000)
     })
   })
 })
