@@ -61,6 +61,18 @@ const getChargingProfileId = (chargingProfile: ChargingProfile): string => {
   return typeof id === 'number' ? id.toString() : 'unknown'
 }
 
+/**
+ * Extracts the single {@link ChargingSchedule} referenced by a charging
+ * profile. OCPP 1.6 templates carry a single schedule directly, OCPP
+ * 2.0.x carry a one-element array; both shapes reduce to one schedule
+ * per profile. When the array shape holds zero or more than one entry
+ * the situation is logged and `undefined` is returned so the caller can
+ * skip cleanly.
+ * @param chargingProfile - Source charging profile.
+ * @param logPrefix - Optional log prefix for the malformed-array warning.
+ * @param methodName - Optional caller name included in the warning.
+ * @returns Single schedule, or `undefined` when the array shape is not exactly one entry.
+ */
 export const getSingleChargingSchedule = (
   chargingProfile: ChargingProfile,
   logPrefix?: string,
@@ -88,6 +100,14 @@ const getChargingStationChargingProfiles = (
     .sort((a, b) => b.stackLevel - a.stackLevel)
 }
 
+/**
+ * Highest-priority station-level (`ChargingStationMaxProfile`) power
+ * limit currently in effect. Combines the station's charging profiles,
+ * filters by priority, and evaluates the winning profile's schedule
+ * period.
+ * @param chargingStation - Source charging station.
+ * @returns Limit in watts, or `undefined` when no applicable profile is found.
+ */
 export const getChargingStationChargingProfilesLimit = (
   chargingStation: ChargingStation
 ): number | undefined => {
@@ -149,6 +169,14 @@ export const getConnectorChargingProfiles = (
     )
 }
 
+/**
+ * Highest-priority per-connector power limit currently in effect on the
+ * given connector. Combines that connector's charging profiles, filters
+ * by priority, and evaluates the winning profile's schedule period.
+ * @param chargingStation - Source charging station.
+ * @param connectorId - Target connector id.
+ * @returns Limit in watts, or `undefined` when no applicable profile is found.
+ */
 export const getConnectorChargingProfilesLimit = (
   chargingStation: ChargingStation,
   connectorId: number
@@ -387,6 +415,17 @@ const getChargingProfilesLimit = (
   }
 }
 
+/**
+ * Materializes a charging profile's `chargingProfileKind` for the given
+ * connector when the kind is `Recurring` or `Relative`, promoting the
+ * profile's `startSchedule` to an absolute date derived from the current
+ * moment (relative) or the recurrence period (recurring).
+ * @param connectorStatus - Target connector status; unused for absolute-kind profiles.
+ * @param chargingProfile - Profile to prepare (mutated when kind is `Recurring` or `Relative`).
+ * @param currentDate - Reference clock reading.
+ * @param logPrefix - Log prefix for the warn/error paths.
+ * @returns `true` when the profile is usable after preparation, `false` otherwise.
+ */
 export const prepareChargingProfileKind = (
   connectorStatus: ConnectorStatus | undefined,
   chargingProfile: ChargingProfile,
@@ -443,6 +482,14 @@ export const prepareChargingProfileKind = (
   return true
 }
 
+/**
+ * Predicate deciding whether a charging profile is currently active
+ * (within its validity window and recurrence rules).
+ * @param chargingProfile - Profile to evaluate.
+ * @param currentDate - Reference clock reading.
+ * @param logPrefix - Log prefix for the warn paths.
+ * @returns `true` when the profile is currently applicable, `false` otherwise.
+ */
 export const canProceedChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date | number | string,

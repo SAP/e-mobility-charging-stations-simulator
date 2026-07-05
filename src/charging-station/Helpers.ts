@@ -15,6 +15,13 @@ import { getMaxNumberOfConnectors } from './HelpersConfig.js'
 
 const moduleName = 'Helpers'
 
+// Barrel re-exports use explicit name lists (rather than `export * from`)
+// so the public API surface of `./Helpers.js` is documented in-file and
+// grep-able, and so accidental additions to a sibling file do not
+// silently widen the public surface. The test-side barrel
+// (`tests/charging-station/helpers/StationHelpers.ts`) uses `export *`
+// because its consumers are internal to the test tree.
+
 export {
   canProceedChargingProfile,
   getChargingStationChargingProfilesLimit,
