@@ -1490,6 +1490,8 @@ const getLimitFromSampledValueTemplateCustomValue = (
     },
     ...options,
   }
+  // Number.parseFloat preserved: NaN sentinel drives the POSITIVE_INFINITY fallback below;
+  // convertToFloat throws on NaN and would break the fallback branch.
   const parsedValue = Number.parseFloat(value ?? '')
   if (options.limitationEnabled) {
     return max(

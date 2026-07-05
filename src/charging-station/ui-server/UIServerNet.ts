@@ -152,6 +152,7 @@ const parseIPv4MappedAddress = (address: string): string | undefined => {
   if (hexMatch == null) {
     return undefined
   }
+  // radix-16 required for IPv4-mapped IPv6 hex octet parsing; convertToInt does not accept a radix
   const high = Number.parseInt(hexMatch[1], 16)
   const low = Number.parseInt(hexMatch[2], 16)
   return [high >> 8, high & 0xff, low >> 8, low & 0xff].join('.')
@@ -172,6 +173,7 @@ const expandIPv6 = (address: string): string[] | undefined => {
   if (groups.length !== 8) {
     return undefined
   }
+  // radix-16 required for IPv6 hex group normalization; convertToInt does not accept a radix
   return groups.every(isIPv6Group)
     ? groups.map(group => Number.parseInt(group, 16).toString(16))
     : undefined
