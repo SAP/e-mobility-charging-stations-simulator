@@ -9,15 +9,17 @@
  *   {@link ../CoherentMeterValuesManager}.
  *
  * Invariants (enforced by construction):
- * - **INV-1**: AC: `P = V × I × phases`; DC: `P = V × I`. Emitted `powerW`
- *   is recomputed from the rounded emitted current and voltage so
- *   `|P - V·I·phases|` stays within the `ROUNDING_SCALE` half-width
- *   (≤ 0.005 W scalar bound) regardless of V or phases. Per-phase L-N
+ * - **INV-1**: AC: `P = V × I × phases × powerFactor`; DC: `P = V × I × powerFactor`.
+ *   `powerFactor` (cos φ) defaults to `1` (unity) so pre-M-09 profiles are
+ *   unchanged. Emitted `powerW` is recomputed from the rounded emitted
+ *   current, voltage, and `powerFactor` so `|P - V·I·phases·powerFactor|`
+ *   stays within the `ROUNDING_SCALE` half-width (≤ 0.005 W scalar bound)
+ *   regardless of V, phases, or `powerFactor`. Per-phase L-N
  *   `Power.Active.Import` emission is derived as
  *   `round(aggregate_P / phases, 2)`; the per-phase identity
- *   `|P_LxN - V_LxN · I_Lx|` therefore holds within `2 × ROUNDING_SCALE`
- *   half-width (≤ 0.01 W) - one half-width for the aggregate emit and
- *   one for the per-phase division.
+ *   `|P_LxN - V_LxN · I_Lx · powerFactor|` therefore holds within
+ *   `2 × ROUNDING_SCALE` half-width (≤ 0.01 W) - one half-width for the
+ *   aggregate emit and one for the per-phase division.
  * - **INV-2**: `SoC(t+1) ≥ SoC(t)` and `ΔSoC = ΔE / batteryCapacityWh × 100`.
  *   SoC monotone non-decreasing during charging and saturates at 100 %.
  * - **INV-3**: `ΔE = P_clamped × Δt / MS_PER_HOUR` where `P_clamped` is the
@@ -183,6 +185,43 @@ const fluctuate = (base: number, percent: number, prng: () => number): number =>
 }
 
 /**
+ * Steepness constant of the logistic used by {@link sigmoidRamp}. `k=10`
+ * yields `raw(0) ≈ 6.69e-3` and `raw(1) ≈ 0.993`, so the boundary values
+ * are within `1e-2` of the ideal `{0, 1}`; the endpoint normalization
+ * below then pins `f(0) = 0` and `f(1) = 1` exactly.
+ */
+const SIGMOID_STEEPNESS = 10
+
+const SIGMOID_RAW_AT_0 = 1 / (1 + Math.exp(SIGMOID_STEEPNESS * 0.5))
+const SIGMOID_RAW_AT_1 = 1 / (1 + Math.exp(-SIGMOID_STEEPNESS * 0.5))
+const SIGMOID_RANGE = SIGMOID_RAW_AT_1 - SIGMOID_RAW_AT_0
+
+/**
+ * S-shaped ramp fraction over normalized progress `p ∈ [0, 1]`. Uses a
+ * shifted-and-scaled logistic:
+ *
+ * ```
+ * raw(p) = 1 / (1 + exp(-k · (p - 0.5)))
+ * f(p)   = (raw(p) - raw(0)) / (raw(1) - raw(0))
+ * ```
+ *
+ * so `f(0) = 0` and `f(1) = 1` exactly. Progress outside `[0, 1]` is
+ * clamped so the ramp saturates like the linear branch.
+ * @param progress - Normalized progress `elapsedMs / rampUpDurationMs`.
+ * @returns Ramp fraction in `[0, 1]`.
+ */
+const sigmoidRamp = (progress: number): number => {
+  if (progress <= 0) {
+    return 0
+  }
+  if (progress >= 1) {
+    return 1
+  }
+  const raw = 1 / (1 + Math.exp(-SIGMOID_STEEPNESS * (progress - 0.5)))
+  return (raw - SIGMOID_RAW_AT_0) / SIGMOID_RANGE
+}
+
+/**
  * Unconditionally advances the connector energy registers by `deltaEnergyWh`.
  * The coherent path owns register updates so `meterStop` stays correct even
  * when the `Energy.Active.Import.Register` measurand is not configured.
@@ -212,7 +251,9 @@ export const advanceEnergyRegister = (
  * model.
  *
  * Physics chain (INV-1/INV-2/INV-3 hold by construction):
- * 1. `rampFactor = min(1, elapsed / rampUp)` - immutable session start.
+ * 1. `rampFactor = min(1, elapsed / rampUp)` for `rampShape='linear'` (default)
+ *    or the {@link sigmoidRamp} S-curve for `rampShape='sigmoid'` -
+ *    immutable session start.
  * 2. `V` - nominal ± small seed-derived noise.
  * 3. `evAcceptanceW = curve(SoC) × profile.maxPowerW`.
  * 4. `powerW = rampFactor × min(EVSE_max, evAcceptance) × socCap`.
@@ -220,13 +261,14 @@ export const advanceEnergyRegister = (
  *    {@link ICoherentContext.getConnectorMaximumAvailablePower}.
  * 5. `powerW` is then clamped to remaining battery capacity so a sample
  *    crossing 100 % SoC never over-charges the register.
- * 6. `currentAExact = powerW / (V_round · phases)` - exact fraction
- *    (phases=1 for DC). Emitted current is rounded to `ROUNDING_SCALE`.
- * 7. Emitted `powerW = round(V_round × currentA_round × phases)`;
+ * 6. `currentAExact = powerW / (V_round · phases · powerFactor)` - exact
+ *    fraction (phases=1 for DC; `powerFactor` defaults to 1). Emitted
+ *    current is rounded to `ROUNDING_SCALE`.
+ * 7. Emitted `powerW = round(V_round × currentA_round × phases × powerFactor)`;
  *    INV-1 holds within `ROUNDING_SCALE` half-width (≤ 0.005 W).
  * 8. `ΔE = P_clamped × Δt / MS_PER_HOUR` - uses the pre-emit-rounding
- *    `powerW` so the register integrates the capacity-clamped power
- *    exactly (INV-3).
+ *    `powerW` (active) so the register integrates the capacity-clamped
+ *    active power exactly (INV-3), independent of `powerFactor`.
  * 9. `ΔSoC = ΔE / capacity × 100`; `socPercent = min(100, soc + ΔSoC)`.
  * @param context - Charging-station context.
  * @param connectorStatus - Connector status.
@@ -288,10 +330,20 @@ export const computeCoherentSample = (
   // Sub-millisecond values (e.g. Number.EPSILON) pass the guard but yield
   // elapsedMs / rampUpDurationMs >> 1 for any real elapsed time, so
   // Math.min(1, ...) = 1 - semantically equivalent to rampUpDurationMs = 0.
-  const rampFactor =
-    session.rampUpDurationMs > 0 && Number.isFinite(session.rampUpDurationMs)
-      ? Math.min(1, elapsedMs / session.rampUpDurationMs)
-      : 1
+  // Ramp shape defaults to `'linear'` (fraction rises linearly with elapsed
+  // time). `'sigmoid'` selects the {@link sigmoidRamp} S-curve which better
+  // matches CCS/CHAdeMO handshake and pre-charge behavior; both shapes saturate
+  // at 1 for progress ≥ 1 so downstream physics is unchanged past ramp-up.
+  let rampFactor: number
+  if (session.rampUpDurationMs > 0 && Number.isFinite(session.rampUpDurationMs)) {
+    const rampProgress = elapsedMs / session.rampUpDurationMs
+    rampFactor =
+      session.profile.rampShape === 'sigmoid'
+        ? sigmoidRamp(rampProgress)
+        : Math.min(1, rampProgress)
+  } else {
+    rampFactor = 1
+  }
 
   // Voltage: nominal ± small seed-derived noise. The voltage PRNG lives on
   // module-scope runtime state (not on the serializable session) so its
@@ -340,19 +392,28 @@ export const computeCoherentSample = (
   powerW = Math.min(powerW, maxPowerFromCapacityW)
 
   // Physics: derive per-phase current as an exact fraction so
-  //   V_round · currentAExact · phases = powerW
+  //   V_round · currentAExact · phases · powerFactor = powerW
   // holds identically. `numberOfPhases` is 1 for DC (line above) so a
-  // single branch covers both currents. Using integer-rounded amps here
-  // would inflate V·I·phases above the capacity-clamped powerW by up to
-  // V·phases·0.5 W, breaking INV-1.
-  const divisor = roundedV * numberOfPhases
+  // single branch covers both currents. `powerFactor` (cos φ) defaults to
+  // 1 (unity) so existing profiles are unchanged; when `< 1` the divisor
+  // shrinks and `I` rises inversely proportional to `powerFactor` for a
+  // given `powerW` (active). Using integer-rounded amps here would inflate
+  // V·I·phases above the capacity-clamped powerW by up to V·phases·0.5 W,
+  // breaking INV-1.
+  const powerFactor = session.profile.powerFactor ?? 1
+  const divisor = roundedV * numberOfPhases * powerFactor
   const currentAExact = divisor > 0 ? powerW / divisor : 0
 
-  // Emission: round current to `ROUNDING_SCALE`, then derive emitted power
-  // from the rounded current so INV-1 (P = V·I·phases) holds within
-  // `ROUNDING_SCALE` half-width (≤ 0.005 W) regardless of V or phases.
+  // Emission: round current to `ROUNDING_SCALE`, then derive emitted
+  // active power from `V · I · phases · powerFactor` so INV-1
+  // (P_active = V·I·phases·powerFactor) holds within `ROUNDING_SCALE`
+  // half-width (≤ 0.005 W) regardless of V, phases, or powerFactor. When
+  // `powerFactor = 1` (default) this reduces to the original identity.
   const roundedCurrent = roundTo(currentAExact, ROUNDING_SCALE)
-  const roundedPower = roundTo(roundedV * roundedCurrent * numberOfPhases, ROUNDING_SCALE)
+  const roundedPower = roundTo(
+    roundedV * roundedCurrent * numberOfPhases * powerFactor,
+    ROUNDING_SCALE
+  )
 
   // Energy accounting uses the clamped (pre-rounding) `powerW` so INV-3
   // holds within floating-point ε and the capacity budget is respected

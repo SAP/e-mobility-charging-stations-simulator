@@ -31,6 +31,16 @@ export interface ChargingCurvePoint {
  * A weighted EV profile. `weight` biases random per-transaction selection.
  * `batteryCapacityWh` bounds ΔSoC per ΔE. `maxPowerW` bounds acceptance.
  * `chargingCurve` is a sorted-by-`socPercent` piecewise-linear taper.
+ *
+ * Optional physics refinements:
+ * - `powerFactor` (AC only, but applied unconditionally): the cos φ factor
+ *   between real and apparent power. Real onboard chargers sit around
+ *   `0.98..1.0`. When present, the per-phase current derivation becomes
+ *   `I = P / (V · phases · powerFactor)` (AC) or `I = P / (V · powerFactor)`
+ *   (DC), so `I` rises as `powerFactor` shrinks for the same delivered `P`.
+ *   Absent ⇒ 1 (unity) ⇒ current behavior preserved.
+ * - `rampShape` selects the ramp-up curve; see {@link EvRampShape}. Absent
+ *   ⇒ `linear` ⇒ current behavior preserved.
  */
 export interface EvProfile {
   batteryCapacityWh: number
@@ -39,6 +49,8 @@ export interface EvProfile {
   initialSocPercentMax: number
   initialSocPercentMin: number
   maxPowerW: number
+  powerFactor?: number
+  rampShape?: EvRampShape
   weight: number
 }
 
@@ -48,6 +60,15 @@ export interface EvProfile {
 export interface EvProfilesFile {
   profiles: EvProfile[]
 }
+
+/**
+ * Ramp-up shape between session start and full-power acceptance.
+ * - `linear` (default): progress fraction rises linearly with elapsed time.
+ * - `sigmoid`: S-shaped logistic curve pinned at f(0)=0 and f(1)=1; models
+ *   real CCS/CHAdeMO handshake and pre-charge behavior more faithfully than
+ *   a pure linear ramp.
+ */
+export type EvRampShape = 'linear' | 'sigmoid'
 
 /**
  * Zod schema for {@link ChargingCurvePoint}. `socPercent` in [0, 100],
@@ -79,6 +100,17 @@ export const EvProfileSchema = z.object({
   initialSocPercentMax: z.number().min(0).max(100),
   initialSocPercentMin: z.number().min(0).max(100),
   maxPowerW: z.number().positive(),
+  /**
+   * Optional cos φ ∈ (0, 1]. Absent ⇒ 1. Multiplies the divisor in the
+   * per-phase current derivation `I = P / (V · phases · powerFactor)`, so
+   * `I` rises as `powerFactor` shrinks for the same delivered `P`.
+   */
+  powerFactor: z.number().positive().max(1).optional(),
+  /**
+   * Optional ramp-up shape. Absent ⇒ `'linear'` (preserves existing golden
+   * tests). See {@link EvRampShape}.
+   */
+  rampShape: z.enum(['linear', 'sigmoid']).optional(),
   weight: z.number().nonnegative(),
 })
 
