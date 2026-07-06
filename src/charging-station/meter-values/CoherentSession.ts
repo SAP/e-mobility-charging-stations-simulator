@@ -100,7 +100,7 @@ export const createCoherentSession = (
     (voltageOutNominal === Voltage.VOLTAGE_400 || voltageOutNominal === Voltage.VOLTAGE_800)
   ) {
     logger.warn(
-      `${context.logPrefix()} ${moduleName}.createCoherentSession: voltageOut=${voltageOutNominal.toString()} V matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage). If this value is meant as line-to-line, coherent power/current will be physically implausible. Set voltageOut to the L-N equivalent in the station template to resolve.`
+      `${context.logPrefix()} ${moduleName}.createCoherentSession: voltageOut=${voltageOutNominal.toString()} V matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage). If you intended this as line-to-line, coherent power/current will be physically implausible. Set voltageOut to the L-N equivalent in the station template to resolve.`
     )
   }
 
