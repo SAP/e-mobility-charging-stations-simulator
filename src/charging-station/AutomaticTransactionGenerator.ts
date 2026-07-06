@@ -371,10 +371,8 @@ export class AutomaticTransactionGenerator {
           0)
       ) {
         connectorStatus.skippedConsecutiveTransactions = 0
-        // Start transaction
         const startResponse = await this.startTransaction(connectorId)
         if (startResponse?.accepted === true) {
-          // Wait until end of transaction
           const waitTrxEnd = secondsToMilliseconds(
             randomInt(
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration ??
