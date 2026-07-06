@@ -265,7 +265,7 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
  * `NaN`, `Infinity`, non-integer floats, negative values, and ranges
  * where `maxValue - minValue >= 2^48 - 1` — all of which would cause
  * `randomInt` to throw `RangeError`.
- * @param minValue - Lower bound (inclusive; must be a non-negative safe integer).
+ * @param minValue - Lower bound (inclusive; must be a safe integer >= 0).
  * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue).
  * @returns `true` when the bounds are safe; `false` otherwise.
  */
