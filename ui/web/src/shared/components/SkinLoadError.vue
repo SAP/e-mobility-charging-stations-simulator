@@ -16,8 +16,8 @@ import {
   MAX_SKIN_ERROR_RELOADS,
   setToLocalStorage,
   SKIN_ERROR_RELOAD_COUNT_KEY,
+  SKIN_STORAGE_KEY,
 } from '@/core/index.js'
-import { SKIN_STORAGE_KEY } from '@/shared/composables/useSkin.js'
 // Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { skins } from '@/skins/registry.js'
 

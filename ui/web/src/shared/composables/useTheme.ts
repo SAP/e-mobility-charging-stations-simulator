@@ -1,12 +1,15 @@
 import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
-import { getFromLocalStorage, setToLocalStorage } from '@/core/index.js'
+import {
+  DEFAULT_THEME,
+  getFromLocalStorage,
+  setToLocalStorage,
+  THEME_STORAGE_KEY,
+} from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 
 export const AVAILABLE_THEMES = THEME_IDS
-export const DEFAULT_THEME: ThemeName = 'tokyo-night-storm'
-export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof THEME_IDS)[number]
 

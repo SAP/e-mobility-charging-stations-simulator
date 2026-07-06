@@ -10,6 +10,8 @@ import {
   applyConfigurationMigration,
   coerceConfigurationVersion,
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
+  formatFieldErrorsSummary,
+  mapZodIssuesToFieldErrors,
   remapDeprecatedKeys,
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
@@ -44,9 +46,7 @@ export class ConfigurationValidationError extends BaseError {
     fieldErrors: FieldError[],
     context: { filePath: string; migratedFrom?: number; phase: ValidationPhase }
   ) {
-    const fieldSummary = fieldErrors
-      .map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`)
-      .join('\n')
+    const fieldSummary = formatFieldErrorsSummary(fieldErrors)
     const migrationNote =
       context.migratedFrom != null
         ? ` (migrated from v${context.migratedFrom.toString()} → v${CURRENT_CONFIGURATION_SCHEMA_VERSION.toString()})`
@@ -72,10 +72,7 @@ export class ConfigurationValidationError extends BaseError {
     zodError: ZodError,
     context: { filePath: string; migratedFrom?: number }
   ): ConfigurationValidationError {
-    const fieldErrors: FieldError[] = zodError.issues.map(issue => ({
-      message: issue.message,
-      path: issue.path.join('.'),
-    }))
+    const fieldErrors: FieldError[] = mapZodIssuesToFieldErrors(zodError)
     return new ConfigurationValidationError(fieldErrors, { ...context, phase: 'schema' })
   }
 }

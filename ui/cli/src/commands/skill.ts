@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { extractErrorMessage } from 'ui-common'
 
 declare const __EMBEDDED_SKILL__: string
 
@@ -43,8 +44,7 @@ export const createSkillCommands = (): Command => {
         mkdirSync(dir, { recursive: true })
         writeFileSync(filepath, __EMBEDDED_SKILL__, 'utf8')
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error)
-        process.stderr.write(`Failed to install skill: ${msg}\n`)
+        process.stderr.write(`Failed to install skill: ${extractErrorMessage(error)}\n`)
         process.exitCode = 1
         return
       }

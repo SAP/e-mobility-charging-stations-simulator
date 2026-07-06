@@ -1,3 +1,5 @@
+import type { ZodError } from 'zod'
+
 import { isDeepStrictEqual } from 'node:util'
 
 // Direct path: the `exception/index.js` barrel re-exports OCPPError, causing a TDZ cycle.
@@ -58,6 +60,15 @@ export interface FieldError {
   message: string
   path: string
 }
+
+export const mapZodIssuesToFieldErrors = (zodError: ZodError): FieldError[] =>
+  zodError.issues.map(issue => ({
+    message: issue.message,
+    path: issue.path.join('.'),
+  }))
+
+export const formatFieldErrorsSummary = (fieldErrors: readonly FieldError[]): string =>
+  fieldErrors.map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`).join('\n')
 
 export type MigrationFn = (
   config: Record<string, unknown>,

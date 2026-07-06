@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 
 import process from 'node:process'
 import {
+  extractErrorMessage,
   type OCPPVersion,
   ProcedureName,
   type RequestPayload,
@@ -58,8 +59,7 @@ const fetchStationList = async (
       silent: true,
     })
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to fetch charging station list: ${msg}`)
+    throw new Error(`Failed to fetch charging station list: ${extractErrorMessage(error)}`)
   }
 
   if (response.status !== ResponseStatus.SUCCESS || !Array.isArray(response.chargingStations)) {
