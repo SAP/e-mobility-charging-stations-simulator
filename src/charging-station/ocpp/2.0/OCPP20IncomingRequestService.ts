@@ -1285,8 +1285,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private clearActiveFirmwareUpdate (chargingStation: ChargingStation, requestId: number): void {
     const stationState = this.getStationState(chargingStation)
     if (stationState.activeFirmwareUpdateRequestId === requestId) {
-      stationState.activeFirmwareUpdateAbortController = undefined
-      stationState.activeFirmwareUpdateRequestId = undefined
+      this.resetActiveFirmwareUpdateState(stationState)
     }
   }
 
@@ -3090,8 +3089,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (stationState.activeFirmwareUpdateAbortController != null) {
       const previousRequestId = stationState.activeFirmwareUpdateRequestId
       stationState.activeFirmwareUpdateAbortController.abort()
-      stationState.activeFirmwareUpdateAbortController = undefined
-      stationState.activeFirmwareUpdateRequestId = undefined
+      this.resetActiveFirmwareUpdateState(stationState)
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update (requestId ${String(previousRequestId)})`
       )
@@ -3245,6 +3243,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     } catch {
       return false
     }
+  }
+
+  private resetActiveFirmwareUpdateState (stationState: OCPP20StationState): void {
+    stationState.activeFirmwareUpdateAbortController = undefined
+    stationState.activeFirmwareUpdateRequestId = undefined
   }
 
   /**
