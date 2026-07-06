@@ -81,7 +81,7 @@ export abstract class OCPPRequestService {
    * @param chargingStation - Target charging station.
    * @param commandName - OCPP request command name.
    * @param commandParams - Optional request payload.
-   * @param params - Optional request behaviour parameters.
+   * @param params - Optional request behavior parameters.
    * @returns Response payload from the Central System.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

@@ -63,7 +63,7 @@ import {
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   VendorParametersKey,
-  type Voltage,
+  Voltage,
   WebSocketCloseEventStatusCode,
   type WSError,
   type WsOptions,
@@ -1684,6 +1684,23 @@ export class ChargingStation extends EventEmitter {
     stationInfo.templateName = buildTemplateName(this.templateFile)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
+    // voltageOut is line-to-neutral throughout the simulator: V_LL is
+    // derived as sqrt(3) * V_LN in a balanced 3-phase Y system (see
+    // OCPPServiceUtils.buildVoltageMeasurandValue). Users configuring
+    // Voltage.VOLTAGE_400 (400 V, a common L-L nominal in EU 3-phase)
+    // as L-N produce an unrealistic simulated L-L ~= 693 V. Warn so the
+    // ambiguity surfaces at station start rather than in unexpected
+    // meter values downstream.
+    if (
+      this.getCurrentOutType(stationInfo) === CurrentType.AC &&
+      this.getNumberOfPhases(stationInfo) === 3 &&
+      stationInfo.voltageOut === Voltage.VOLTAGE_400
+    ) {
+      const derivedLineToLine = (Math.sqrt(3) * Voltage.VOLTAGE_400).toFixed(0)
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=400 V with 3 AC phases matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral, so the derived line-to-line voltage is ${derivedLineToLine} V. If you intended 400 V line-to-line, set voltageOut=${Voltage.VOLTAGE_230.toString()} V.`
+      )
+    }
     if (isNotEmptyArray<number>(stationTemplate.power)) {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
