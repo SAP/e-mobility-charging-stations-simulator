@@ -259,6 +259,8 @@ const buildRejectedResponse = (
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
+  activeLogUploadRequestId?: number
+  activeLogUploadStatus?: UploadLogStatusEnumType
   certSigningRetryManager?: OCPP20CertSigningRetryManager
   isDrainingSecurityEvents: boolean
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
@@ -591,7 +593,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               )
               .catch(errorHandler)
             break
-          case MessageTriggerEnumType.LogStatusNotification:
+          case MessageTriggerEnumType.LogStatusNotification: {
+            const stationState = this.stationsState.get(chargingStation)
+            const requestId = stationState?.activeLogUploadRequestId
+            const logStatus =
+              requestId != null
+                ? (stationState?.activeLogUploadStatus ?? UploadLogStatusEnumType.Uploading)
+                : UploadLogStatusEnumType.Idle
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20LogStatusNotificationRequest,
@@ -599,11 +607,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               >(
                 chargingStation,
                 OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-                { status: UploadLogStatusEnumType.Idle },
+                { requestId, status: logStatus },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
               .catch(errorHandler)
             break
+          }
           case MessageTriggerEnumType.MeterValues:
             this.triggerMeterValues(chargingStation, evse, errorHandler)
             break
@@ -3914,22 +3923,33 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     requestId: number
   ): Promise<void> {
-    await this.sendLogStatusNotification(
-      chargingStation,
-      UploadLogStatusEnumType.Uploading,
-      requestId
-    )
+    const stationState = this.getOrCreateStationState(chargingStation)
+    stationState.activeLogUploadRequestId = requestId
+    stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploading
+    try {
+      await this.sendLogStatusNotification(
+        chargingStation,
+        UploadLogStatusEnumType.Uploading,
+        requestId
+      )
 
-    await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
-    await this.sendLogStatusNotification(
-      chargingStation,
-      UploadLogStatusEnumType.Uploaded,
-      requestId
-    )
+      await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
+      stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
+      await this.sendLogStatusNotification(
+        chargingStation,
+        UploadLogStatusEnumType.Uploaded,
+        requestId
+      )
 
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
-    )
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
+      )
+    } finally {
+      if (stationState.activeLogUploadRequestId === requestId) {
+        stationState.activeLogUploadRequestId = undefined
+        stationState.activeLogUploadStatus = undefined
+      }
+    }
   }
 
   /**
