@@ -790,6 +790,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (stationState != null) {
       stationState.activeFirmwareUpdateAbortController?.abort()
       this.resetActiveFirmwareUpdateState(stationState)
+      this.resetActiveLogUploadState(stationState)
       this.stationsState.delete(chargingStation)
     }
     try {
@@ -1304,9 +1305,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (stationState.activeFirmwareUpdateRequestId === requestId) {
       this.resetActiveFirmwareUpdateState(stationState)
-    } else {
+    } else if (stationState.activeFirmwareUpdateRequestId != null) {
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.clearActiveFirmwareUpdate: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${String(stationState.activeFirmwareUpdateRequestId)})`
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveFirmwareUpdate: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${stationState.activeFirmwareUpdateRequestId.toString()})`
       )
     }
   }
@@ -1318,9 +1319,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (stationState.activeLogUploadRequestId === requestId) {
       this.resetActiveLogUploadState(stationState)
-    } else {
+    } else if (stationState.activeLogUploadRequestId != null) {
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.clearActiveLogUpload: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${String(stationState.activeLogUploadRequestId)})`
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveLogUpload: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${stationState.activeLogUploadRequestId.toString()})`
       )
     }
   }
@@ -2099,12 +2100,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   /**
    * Handles OCPP 2.0.1 GetLog request from central system.
-   * Accepts the log upload request and simulates the log upload lifecycle
-   * by sending LogStatusNotification messages through a state machine:
-   * Uploading → Uploaded
+   * When a prior upload is in progress, cancels it per N01.FR.12/FR.20
+   * and returns AcceptedCanceled; otherwise simulates a Uploading → Uploaded
+   * lifecycle via LogStatusNotification messages.
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - GetLog request payload with log type, requestId, and log parameters
-   * @returns GetLogResponse with Accepted status and simulated filename
+   * @returns GetLogResponse with `Accepted` (no prior upload) or `AcceptedCanceled` (superseded prior upload) status and simulated filename.
    */
   private handleRequestGetLog (
     chargingStation: ChargingStation,
