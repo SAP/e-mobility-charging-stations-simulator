@@ -956,14 +956,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP16DataTransferRequest
   ): OCPP16DataTransferResponse {
-    const { messageId, vendorId } = commandPayload
+    const { vendorId } = commandPayload
     try {
       if (vendorId !== chargingStation.stationInfo?.chargePointVendor) {
         return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
       }
-      if (messageId != null) {
-        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_MESSAGE_ID
-      }
+      // OCPP 1.6 §4.3: `UnknownMessageId` is reserved for the case where the
+      // vendor is known but the messageId is not recognized by the Charge
+      // Point. The simulator does not maintain a per-vendor messageId
+      // registry, so any messageId (including undefined) is accepted when
+      // the vendor matches.
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
     } catch (error) {
       const errorResponse: OCPP16DataTransferResponse =
