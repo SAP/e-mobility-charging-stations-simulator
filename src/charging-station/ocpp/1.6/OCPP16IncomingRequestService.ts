@@ -117,6 +117,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isValidRandomIntBounds,
   logger,
   sleep,
   truncateId,
@@ -1834,6 +1835,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     minDelay = 15
   ): Promise<void> {
     if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
+      return
+    }
+    if (!isValidRandomIntBounds(minDelay, maxDelay)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: invalid bounds minDelay=${minDelay.toString()}, maxDelay=${maxDelay.toString()} for randomInt(min, max + 1) — aborting firmware update simulation`
+      )
       return
     }
     for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
