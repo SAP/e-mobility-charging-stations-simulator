@@ -59,7 +59,7 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   if (getFromLocalStorage<string>(SKIN_STORAGE_KEY, '') === '' && config.skin != null) {
     setToLocalStorage<string>(SKIN_STORAGE_KEY, config.skin)
   }
-  const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? 'classic')
+  const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? DEFAULT_SKIN)
   const switched = await switchSkin(initialSkin)
   if (!switched && initialSkin !== DEFAULT_SKIN) {
     console.warn(`[useSkin] Failed to load skin '${initialSkin}', falling back to default`)

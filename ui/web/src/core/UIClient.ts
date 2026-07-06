@@ -299,6 +299,7 @@ export class UIClient {
     let aborted = false
     const config = this.uiServerConfiguration
     const eventTarget = this.wsEventTarget
+    const uiServerAddress = `${config.host}:${config.port.toString()}`
 
     const factory: WebSocketFactory = (url, protocols) => {
       const adapter = createBrowserWsAdapter(
@@ -329,13 +330,8 @@ export class UIClient {
           adapter.onerror = event => {
             if (aborted) return
             handler?.(event)
-            useToast().error(
-              `Error in WebSocket to UI server '${config.host}:${config.port.toString()}'`
-            )
-            console.error(
-              `Error in WebSocket to UI server '${config.host}:${config.port.toString()}'`,
-              event
-            )
+            useToast().error(`Error in WebSocket to UI server '${uiServerAddress}'`)
+            console.error(`Error in WebSocket to UI server '${uiServerAddress}'`, event)
             eventTarget.dispatchEvent(new Event('error'))
           }
         },
@@ -352,9 +348,7 @@ export class UIClient {
           adapter.onopen = () => {
             if (aborted) return
             handler?.()
-            useToast().success(
-              `WebSocket to UI server '${config.host}:${config.port.toString()}' successfully opened`
-            )
+            useToast().success(`WebSocket to UI server '${uiServerAddress}' successfully opened`)
             eventTarget.dispatchEvent(new Event('open'))
           }
         },
