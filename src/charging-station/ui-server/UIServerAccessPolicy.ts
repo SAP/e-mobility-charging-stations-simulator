@@ -20,7 +20,7 @@ const FORWARDED_HEADER_NAMES = [
   'x-forwarded-proto',
 ] as const
 const SECURE_FORWARDED_PROTOCOLS = new Set(['https', 'wss'])
-const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::'])
+export const WILDCARD_HOSTS: ReadonlySet<string> = new Set(['', '0.0.0.0', '::'])
 
 /**
  * Reasons a UI server access decision is denied.
