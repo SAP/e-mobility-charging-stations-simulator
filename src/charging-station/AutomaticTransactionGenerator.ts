@@ -379,24 +379,28 @@ export class AutomaticTransactionGenerator {
         connectorStatus.lastRunDate = new Date()
       }
     } finally {
-      // Delete only when the entry still points to this run's controller:
-      // a concurrent stopConnector→startConnector may have replaced it.
-      if (this.connectorAbortControllers.get(connectorId) === abortController) {
+      // Gate all post-loop bookkeeping on ownership of the current
+      // controller entry: a concurrent stopConnector→startConnector may
+      // have already installed a successor and reset connectorStatus.
+      // Writing stoppedDate unconditionally would corrupt the new run's
+      // status object (shared reference in connectorsStatus).
+      const isOwner = this.connectorAbortControllers.get(connectorId) === abortController
+      if (isOwner) {
         this.connectorAbortControllers.delete(connectorId)
+        connectorStatus.stoppedDate = new Date()
+        logger.info(
+          `${this.logPrefix(
+            connectorId
+          )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
+            connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
+          )}`
+        )
+        logger.debug(
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
+          connectorStatus
+        )
+        this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
       }
-      connectorStatus.stoppedDate = new Date()
-      logger.info(
-        `${this.logPrefix(
-          connectorId
-        )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
-          connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
-        )}`
-      )
-      logger.debug(
-        `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
-        connectorStatus
-      )
-      this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
     }
   }
 
