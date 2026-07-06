@@ -775,6 +775,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
       stationState.activeFirmwareUpdateAbortController?.abort()
+      this.resetActiveFirmwareUpdateState(stationState)
       this.stationsState.delete(chargingStation)
     }
     try {
@@ -1286,6 +1287,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.getStationState(chargingStation)
     if (stationState.activeFirmwareUpdateRequestId === requestId) {
       this.resetActiveFirmwareUpdateState(stationState)
+    } else {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveFirmwareUpdate: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${String(stationState.activeFirmwareUpdateRequestId)})`
+      )
     }
   }
 
