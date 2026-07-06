@@ -12,6 +12,7 @@ import { TemplateValidationError, validateTemplate } from '../../src/charging-st
 import { BaseError } from '../../src/exception/index.js'
 import { logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildLegacyTemplate, buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -51,7 +52,7 @@ await describe('TemplateValidation', async () => {
       mockLoggerWarnDebug(t, logger)
       const parsed = buildLegacyTemplate({
         Connectors: { 0: {}, 1: {} },
-        supervisionUrl: 'ws://localhost:8080',
+        supervisionUrl: TEST_SUPERVISION_URL,
       })
       const before = structuredClone(parsed)
 
@@ -96,12 +97,12 @@ await describe('TemplateValidation', async () => {
       const parsed = buildLegacyTemplate({
         $schemaVersion: 0,
         Connectors: { 0: {}, 1: {} },
-        supervisionUrl: 'ws://localhost:8080',
+        supervisionUrl: TEST_SUPERVISION_URL,
       })
 
       const result = validateTemplate(parsed, 'test.json')
 
-      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
+      assert.strictEqual(result.supervisionUrls, TEST_SUPERVISION_URL)
     })
 
     await it('should auto-migrate template missing $schemaVersion (legacy v0 default)', t => {
@@ -111,12 +112,12 @@ await describe('TemplateValidation', async () => {
         Connectors: { 0: {}, 1: {} },
         mustAuthorizeAtRemoteStart: true,
         payloadSchemaValidation: false,
-        supervisionUrl: 'ws://localhost:8080',
+        supervisionUrl: TEST_SUPERVISION_URL,
       })
 
       const result = validateTemplate(parsed, 'legacy.json')
 
-      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
+      assert.strictEqual(result.supervisionUrls, TEST_SUPERVISION_URL)
       assert.strictEqual(result.idTagsFile, 'tags.json')
       assert.strictEqual(result.remoteAuthorization, true)
       assert.strictEqual(result.ocppStrictCompliance, false)
@@ -143,7 +144,7 @@ await describe('TemplateValidation', async () => {
     }
 
     for (const [legacyKey, legacyValue] of [
-      ['supervisionUrl', 'ws://localhost:8080'],
+      ['supervisionUrl', TEST_SUPERVISION_URL],
       ['mustAuthorizeAtRemoteStart', true],
       ['payloadSchemaValidation', false],
     ] as const) {

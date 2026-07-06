@@ -22,6 +22,7 @@ import {
   buildFullConfiguration,
   buildMinimalConfiguration,
 } from './helpers/ConfigurationFixtures.js'
+import { TEST_SUPERVISION_URL } from './TestNetworkConstants.js'
 
 await describe('ConfigurationSchema', async () => {
   afterEach(() => {
@@ -104,7 +105,7 @@ await describe('ConfigurationSchema', async () => {
       ['logRotate', true],
       ['logStatisticsInterval', 60],
       ['stationTemplateURLs', [{ file: 'a.json', numberOfStations: 1 }]],
-      ['supervisionURLs', 'ws://localhost:8080'],
+      ['supervisionURLs', TEST_SUPERVISION_URL],
       ['uiWebSocketServer', {}],
       ['useWorkerPool', false],
       ['workerPoolMaxSize', 16],
@@ -805,7 +806,7 @@ await describe('ConfigurationSchema', async () => {
   await describe('mixed-type fields', async () => {
     await it('should accept supervisionUrls as string', () => {
       const result = ConfigurationSchema.safeParse(
-        buildMinimalConfiguration({ supervisionUrls: 'ws://localhost:8080' })
+        buildMinimalConfiguration({ supervisionUrls: TEST_SUPERVISION_URL })
       )
       assert.ok(result.success)
     })
@@ -813,7 +814,7 @@ await describe('ConfigurationSchema', async () => {
     await it('should accept supervisionUrls as string array', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({
-          supervisionUrls: ['ws://localhost:8080', 'ws://localhost:8081'],
+          supervisionUrls: [TEST_SUPERVISION_URL, 'ws://localhost:8081'],
         })
       )
       assert.ok(result.success)

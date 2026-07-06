@@ -22,6 +22,7 @@ import {
   buildMinimalConfiguration,
   buildV1WithDeprecatedKey,
 } from './helpers/ConfigurationFixtures.js'
+import { TEST_SUPERVISION_URL } from './TestNetworkConstants.js'
 
 /** Expected error message for a v1 config missing `stationTemplateUrls`. */
 const EXPECTED_SNAPSHOT =
@@ -50,7 +51,7 @@ const SAMPLE_DEPRECATED_VALUES: Readonly<Record<string, unknown>> = {
   logRotate: true,
   logStatisticsInterval: 60,
   stationTemplateURLs: [{ file: 'a.json', numberOfStations: 1 }],
-  supervisionURLs: 'ws://localhost:8080',
+  supervisionURLs: TEST_SUPERVISION_URL,
   uiWebSocketServer: {},
   useWorkerPool: false,
   'worker.elementStartDelay': 100,
