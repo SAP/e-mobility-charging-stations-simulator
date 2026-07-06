@@ -13,6 +13,7 @@ import {
 } from '../../src/charging-station/index.js'
 import { logger } from '../../src/utils/index.js'
 import { mockLoggerWarnDebug, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
 import { buildLegacyTemplate } from './helpers/TemplateFixtures.js'
 
 await describe('TemplateMigrations', async () => {
@@ -93,13 +94,13 @@ await describe('TemplateMigrations', async () => {
         authorizationFile: 'tags.json',
         mustAuthorizeAtRemoteStart: true,
         payloadSchemaValidation: false,
-        supervisionUrl: 'ws://localhost:8080',
+        supervisionUrl: TEST_SUPERVISION_URL,
       })
 
       const result = applyMigration(0, template)
 
       assert.strictEqual(result.$schemaVersion, CURRENT_SCHEMA_VERSION)
-      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
+      assert.strictEqual(result.supervisionUrls, TEST_SUPERVISION_URL)
       assert.strictEqual(result.idTagsFile, 'tags.json')
       assert.strictEqual(result.remoteAuthorization, true)
       assert.strictEqual(result.ocppStrictCompliance, false)
@@ -110,7 +111,7 @@ await describe('TemplateMigrations', async () => {
     })
 
     for (const [deprecated, replacement, value] of [
-      ['supervisionUrl', 'supervisionUrls', 'ws://localhost:8080'],
+      ['supervisionUrl', 'supervisionUrls', TEST_SUPERVISION_URL],
       ['authorizationFile', 'idTagsFile', 'tags.json'],
       ['payloadSchemaValidation', 'ocppStrictCompliance', false],
       ['mustAuthorizeAtRemoteStart', 'remoteAuthorization', true],

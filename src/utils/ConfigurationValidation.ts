@@ -3,7 +3,7 @@ import type { ZodError } from 'zod'
 import chalk from 'chalk'
 
 import type { ConfigurationData } from '../types/index.js'
-import type { FieldError } from './ConfigurationMigrations.js'
+import type { FieldError } from './FieldError.js'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -14,6 +14,7 @@ import {
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
+import { formatFieldErrorsSummary, mapZodIssuesToFieldErrors } from './FieldError.js'
 import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'
@@ -44,9 +45,7 @@ export class ConfigurationValidationError extends BaseError {
     fieldErrors: FieldError[],
     context: { filePath: string; migratedFrom?: number; phase: ValidationPhase }
   ) {
-    const fieldSummary = fieldErrors
-      .map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`)
-      .join('\n')
+    const fieldSummary = formatFieldErrorsSummary(fieldErrors)
     const migrationNote =
       context.migratedFrom != null
         ? ` (migrated from v${context.migratedFrom.toString()} → v${CURRENT_CONFIGURATION_SCHEMA_VERSION.toString()})`
@@ -72,10 +71,7 @@ export class ConfigurationValidationError extends BaseError {
     zodError: ZodError,
     context: { filePath: string; migratedFrom?: number }
   ): ConfigurationValidationError {
-    const fieldErrors: FieldError[] = zodError.issues.map(issue => ({
-      message: issue.message,
-      path: issue.path.join('.'),
-    }))
+    const fieldErrors: FieldError[] = mapZodIssuesToFieldErrors(zodError)
     return new ConfigurationValidationError(fieldErrors, { ...context, phase: 'schema' })
   }
 }

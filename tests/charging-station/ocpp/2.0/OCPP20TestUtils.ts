@@ -265,7 +265,7 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
       OCPP20ComponentName.DeviceDataCtrlr,
       OCPP20OptionalVariableName.ReportingValueSize
     ),
-    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
+    OCPP20Constants.MAX_REPORTING_VALUE_SIZE.toString()
   )
 }
 
@@ -281,12 +281,12 @@ export function resetValueSizeLimits (chargingStation: ChargingStation) {
       OCPP20ComponentName.DeviceDataCtrlr,
       OCPP20OptionalVariableName.ConfigurationValueSize
     ),
-    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
+    OCPP20Constants.MAX_CONFIGURATION_VALUE_SIZE.toString()
   )
   upsertConfigurationKey(
     chargingStation,
     buildConfigKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize),
-    OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString()
+    OCPP20Constants.MAX_REPORTING_VALUE_SIZE.toString()
   )
 }
 

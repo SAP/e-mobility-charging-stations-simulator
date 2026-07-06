@@ -1,5 +1,7 @@
 import { isDeepStrictEqual } from 'node:util'
 
+import type { FieldError } from './FieldError.js'
+
 // Direct path: the `exception/index.js` barrel re-exports OCPPError, causing a TDZ cycle.
 import { BaseError } from '../exception/BaseError.js'
 import { clone } from './Utils.js'
@@ -53,11 +55,6 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
  * Single authoritative location — concurrent bumps force git merge conflict.
  */
 export const CURRENT_CONFIGURATION_SCHEMA_VERSION = 1
-
-export interface FieldError {
-  message: string
-  path: string
-}
 
 export type MigrationFn = (
   config: Record<string, unknown>,

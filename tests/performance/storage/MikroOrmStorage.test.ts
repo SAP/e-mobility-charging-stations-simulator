@@ -12,6 +12,7 @@ import { StorageType } from '../../../src/types/index.js'
 import { PerformanceRecord } from '../../../src/types/orm/entities/PerformanceRecord.js'
 import { Constants, logger } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL } from '../../utils/TestNetworkConstants.js'
 import { buildTestStatistics } from './StorageTestHelpers.js'
 
 const TEST_LOG_PREFIX = '[MikroOrmStorage Test]'
@@ -331,7 +332,7 @@ await describe('MikroOrmStorage', async () => {
         const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
         assert.notStrictEqual(record, undefined)
         assert.strictEqual(record?.name, 'cs-station-1')
-        assert.strictEqual(record.uri, 'ws://localhost:8080')
+        assert.strictEqual(record.uri, TEST_SUPERVISION_URL)
       } finally {
         await verifyOrm.close()
       }

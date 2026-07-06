@@ -9,6 +9,7 @@ import { afterEach, describe, it } from 'node:test'
 import { CURRENT_SCHEMA_VERSION } from '../../src/charging-station/index.js'
 import { TemplateSchema } from '../../src/charging-station/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL } from '../utils/TestNetworkConstants.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import { buildMinimalTemplate } from './helpers/TemplateFixtures.js'
 
@@ -73,7 +74,7 @@ await describe('TemplateSchema', async () => {
 
   await describe('deprecated keys rejection', async () => {
     for (const [legacyKey, legacyValue] of [
-      ['supervisionUrl', 'ws://localhost:8080'],
+      ['supervisionUrl', TEST_SUPERVISION_URL],
       ['authorizationFile', 'tags.json'],
       ['mustAuthorizeAtRemoteStart', true],
       ['payloadSchemaValidation', false],

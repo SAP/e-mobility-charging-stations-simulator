@@ -221,7 +221,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         this.addWorkerSetElement()
       }
       worker.unref()
-      // eslint-disable-next-line promise/no-promise-in-callback
+      // eslint-disable-next-line promise/no-promise-in-callback -- fire-and-forget worker termination inside an 'error' listener; failures are surfaced via safeEmit
       worker.terminate().catch((error: unknown) => {
         this.safeEmit(WorkerSetEvents.error, error)
       })

@@ -33,7 +33,7 @@ import {
   type Identifier,
   IdentifierType,
 } from '../types/AuthTypes.js'
-import { AuthConfigValidator } from '../utils/ConfigValidator.js'
+import { AuthConfigValidator } from '../utils/AuthConfigValidator.js'
 
 const moduleName = 'OCPPAuthServiceImpl'
 

@@ -1459,7 +1459,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED
             break
           }
-        // eslint-disable-next-line no-fallthrough
+        // eslint-disable-next-line no-fallthrough -- intentional fall-through when the connector-scoped reservability check passes: continue to the connector-agnostic check
         default:
           if (!chargingStation.isConnectorReservable(reservationId, idTag)) {
             response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED

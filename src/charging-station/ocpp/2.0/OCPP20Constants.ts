@@ -161,9 +161,13 @@ export class OCPP20Constants extends OCPPConstants {
 
   static readonly LOG_UPLOAD_STEP_DELAY_MS = 1000
 
-  static readonly MAX_SECURITY_EVENT_SEND_ATTEMPTS = 3
+  /** OCPP 2.0.1 §2.1.20: `ConfigurationValueSize` `maxLimit`. Cap on `SetVariableDataType.attributeValue` `string[0..1000]`. */
+  static readonly MAX_CONFIGURATION_VALUE_SIZE = 1000
 
-  static readonly MAX_VARIABLE_VALUE_LENGTH = 2500
+  /** OCPP 2.0.1 §2.1.21: `ReportingValueSize` `maxLimit`. Cap on `GetVariableResult.attributeValue` `string[0..2500]`. */
+  static readonly MAX_REPORTING_VALUE_SIZE = 2500
+
+  static readonly MAX_SECURITY_EVENT_SEND_ATTEMPTS = 3
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED: OCPP20SendLocalListResponse =
     Object.freeze({

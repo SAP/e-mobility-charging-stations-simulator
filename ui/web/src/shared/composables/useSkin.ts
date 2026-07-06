@@ -1,4 +1,4 @@
-import { type SKIN_IDS } from 'ui-common'
+import { extractErrorMessage, type SKIN_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
 import {
@@ -6,12 +6,11 @@ import {
   getFromLocalStorage,
   setToLocalStorage,
   SKIN_ERROR_RELOAD_COUNT_KEY,
+  SKIN_STORAGE_KEY,
 } from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 // Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { type SkinDefinition, skins } from '@/skins/registry.js'
-
-export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
 
 export type SkinName = (typeof SKIN_IDS)[number]
 
@@ -140,7 +139,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     }
     return true
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = extractErrorMessage(error)
     console.warn(`[useSkin] Failed to load CSS for skin '${skinId}':`, message)
     lastError.value = message
     return false

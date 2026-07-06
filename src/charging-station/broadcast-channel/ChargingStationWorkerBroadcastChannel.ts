@@ -61,7 +61,7 @@ const moduleName = 'ChargingStationWorkerBroadcastChannel'
 
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- broadcast-channel command handlers may legitimately return no payload
 ) => CommandResponse | Promise<CommandResponse | void> | void
 
 type CommandResponse =
@@ -274,7 +274,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async commandHandler (
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- broadcast-channel command handlers may resolve with no payload
   ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command)) {
       this.cleanRequestPayload(command, requestPayload)
@@ -288,7 +288,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return (
         commandHandler as (
           requestPayload?: BroadcastChannelRequestPayload
-          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- narrow cast onto the void-returning branch of the CommandHandler union
         ) => CommandResponse | void
       )(requestPayload)
     }
@@ -544,7 +544,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
-    // eslint-disable-next-line promise/catch-or-return
+    // eslint-disable-next-line promise/catch-or-return -- errors are handled inside .then via the response payload; the returned promise is intentionally discarded
     this.commandHandler(command, requestPayload)
       .then(commandResponse => {
         if (commandResponse == null || isEmpty(commandResponse)) {

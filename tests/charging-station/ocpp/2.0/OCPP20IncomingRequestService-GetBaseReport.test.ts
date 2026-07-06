@@ -272,7 +272,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // ReportingValueSize truncation test
   await it('should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
-    // Ensure ReportingValueSize is at a small value (default is OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH). We will override configuration key if absent.
+    // Ensure ReportingValueSize is at a small value (default is OCPP20Constants.MAX_REPORTING_VALUE_SIZE). We will override configuration key if absent.
     const reportingSizeKey = buildConfigKey(
       OCPP20ComponentName.DeviceDataCtrlr,
       StandardParametersKey.ReportingValueSize

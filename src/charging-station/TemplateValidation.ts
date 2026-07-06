@@ -3,7 +3,16 @@ import type { ZodError } from 'zod'
 import type { ChargingStationTemplate } from '../types/index.js'
 
 import { BaseError } from '../exception/index.js'
-import { assertIsJsonObject, clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
+import {
+  assertIsJsonObject,
+  clone,
+  type FieldError,
+  formatFieldErrorsSummary,
+  isEmpty,
+  isNotEmptyString,
+  logger,
+  mapZodIssuesToFieldErrors,
+} from '../utils/index.js'
 import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { TemplateSchema } from './TemplateSchema.js'
@@ -15,19 +24,14 @@ const moduleName = 'TemplateValidation'
  * Includes structured field errors and migration context for diagnostics.
  */
 export class TemplateValidationError extends BaseError {
-  public readonly fieldErrors: { message: string; path: string }[]
+  public readonly fieldErrors: FieldError[]
   public readonly filePath: string
   public readonly migratedFrom?: number
   public override readonly name = 'TemplateValidationError' as const
 
   public constructor (zodError: ZodError, context: { filePath: string; migratedFrom?: number }) {
-    const fieldErrors = zodError.issues.map(issue => ({
-      message: issue.message,
-      path: issue.path.join('.'),
-    }))
-    const fieldSummary = fieldErrors
-      .map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`)
-      .join('\n')
+    const fieldErrors = mapZodIssuesToFieldErrors(zodError)
+    const fieldSummary = formatFieldErrorsSummary(fieldErrors)
     const migrationNote =
       context.migratedFrom != null
         ? ` (migrated from v${context.migratedFrom.toString()} → v${CURRENT_SCHEMA_VERSION.toString()})`

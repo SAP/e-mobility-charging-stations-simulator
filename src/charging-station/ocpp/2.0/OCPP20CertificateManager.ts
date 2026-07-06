@@ -342,8 +342,8 @@ export class OCPP20CertificateManager {
         CertificateSigningUseEnumType.ChargingStationCertificate,
         ''
       )
-      // getCertificatePath returns basePath/ChargingStationCertificate/.pem
-      // We need the directory: basePath/ChargingStationCertificate
+      // `getCertificatePath` returns `basePath/ChargingStationCertificate/.pem`;
+      // `dirPath` is its parent directory `basePath/ChargingStationCertificate`.
       const dirPath = resolve(certFilePath, '..')
 
       if (!(await this.pathExists(dirPath))) {

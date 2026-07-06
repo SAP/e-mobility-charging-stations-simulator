@@ -11,7 +11,7 @@ import {
   AuthenticationError,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { AuthConfigValidator } from '../../../../../src/charging-station/ocpp/auth/utils/ConfigValidator.js'
+import { AuthConfigValidator } from '../../../../../src/charging-station/ocpp/auth/utils/AuthConfigValidator.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthConfigValidator', async () => {

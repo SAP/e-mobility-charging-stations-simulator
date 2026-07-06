@@ -64,7 +64,7 @@ export function useAsyncAction<T extends Record<string, boolean>> (
     const { action, errorMsg, onSuccess, successMsg } = options
     if (pending[key]) return
     pending[key] = true as T[keyof T]
-    // eslint-disable-next-line no-void
+    // eslint-disable-next-line no-void -- fire-and-forget IIFE; the returned promise is intentionally discarded (rejections are handled inside the try/catch)
     void (async () => {
       try {
         await action()

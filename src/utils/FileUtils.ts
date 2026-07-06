@@ -27,7 +27,7 @@ const DEFAULT_FILE_MODE = 0o666
 
 let tmpInvocationCounter = 0
 
-export interface AtomicWriteOptions {
+interface AtomicWriteOptions {
   /**
    * Character encoding when `data` is a string. Defaults to `'utf8'`.
    */

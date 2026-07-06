@@ -225,7 +225,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
       }
     } else if (Array.isArray(value)) {
       for (let i = 0; i < value.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- iterating an unknown-typed JSON array to normalize Date entries in place
         const item = value[i]
         if (isDate(item)) {
           try {

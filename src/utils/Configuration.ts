@@ -90,7 +90,7 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
   startDelay: DEFAULT_WORKER_START_DELAY_MS,
 }
 
-export const DEFAULT_PERSIST_STATE = true as const
+const DEFAULT_PERSIST_STATE = true as const
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {

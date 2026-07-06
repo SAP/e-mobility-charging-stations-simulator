@@ -17,7 +17,7 @@ import { InMemoryLocalAuthListManager } from '../cache/InMemoryLocalAuthListMana
 import { CertificateAuthStrategy } from '../strategies/CertificateAuthStrategy.js'
 import { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 import { RemoteAuthStrategy } from '../strategies/RemoteAuthStrategy.js'
-import { AuthConfigValidator } from '../utils/ConfigValidator.js'
+import { AuthConfigValidator } from '../utils/AuthConfigValidator.js'
 
 /**
  * Factory for creating authentication components with proper dependency injection

@@ -29,7 +29,6 @@ export enum SupervisionUrlDistribution {
 }
 
 export type ConfigurationData = z.infer<typeof ConfigurationSchema>
-export type ElementsPerWorkerType = NonNullable<WorkerConfiguration['elementsPerWorker']>
 export type LogConfiguration = z.infer<typeof LogConfigurationSchema>
 export type StationTemplateUrl = z.infer<typeof StationTemplateUrlSchema>
 export type StorageConfiguration = z.infer<typeof StorageConfigurationSchema>

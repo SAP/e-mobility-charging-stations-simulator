@@ -7,7 +7,7 @@ export {
   buildEvseEntries,
   buildEvsesStatus,
 } from './ChargingStationConfigurationUtils.js'
-export { Configuration, DEFAULT_PERSIST_STATE } from './Configuration.js'
+export { Configuration } from './Configuration.js'
 export {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
@@ -19,8 +19,6 @@ export {
   StationTemplateUrlSchema,
   StorageConfigurationSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
-  UIServerAccessPolicySchema,
-  UIServerAuthenticationSchema,
   UIServerConfigurationSchema,
   UIServerMetricsConfigurationSchema,
   WorkerConfigurationSchema,
@@ -43,11 +41,11 @@ export {
   handleUnhandledRejection,
 } from './ErrorUtils.js'
 export {
-  atomicWriteFile,
-  atomicWriteFileSync,
-  type AtomicWriteOptions,
-  watchJsonFile,
-} from './FileUtils.js'
+  type FieldError,
+  formatFieldErrorsSummary,
+  mapZodIssuesToFieldErrors,
+} from './FieldError.js'
+export { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from './FileUtils.js'
 export {
   isHostLiteralWithoutPort,
   isLoopback,

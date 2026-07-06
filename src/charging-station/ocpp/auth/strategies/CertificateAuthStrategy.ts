@@ -83,7 +83,8 @@ export class CertificateAuthStrategy implements AuthStrategy {
         return result
       }
 
-      // Should not reach here due to canHandle check, but handle gracefully
+      // Unreachable when the `canHandle` contract holds; defensive fallback
+      // for unsupported OCPP versions.
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
         `Certificate authentication not supported for OCPP ${this.adapter.ocppVersion}`,
@@ -118,10 +119,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
       return false
     }
 
-    // Certificate authentication must be enabled
+    // Certificate authentication is enabled per configuration.
     const certAuthEnabled = config.certificateAuthEnabled
 
-    // Must have certificate data in the identifier
+    // The identifier carries certificate data.
     const hasCertificateData = this.hasCertificateData(request.identifier)
 
     return certAuthEnabled && hasCertificateData && this.isInitialized
