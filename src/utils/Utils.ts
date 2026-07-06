@@ -266,7 +266,7 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
  * where `maxValue - minValue >= 2^48 - 1` — all of which would cause
  * `randomInt` to throw `RangeError`.
  * @param minValue - Lower bound (inclusive; must be a non-negative safe integer).
- * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue, with maxValue - minValue < 2^48 - 1).
+ * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue).
  * @returns `true` when the bounds are safe; `false` otherwise.
  */
 export const isValidRandomIntBounds = (minValue: number, maxValue: number): boolean =>
