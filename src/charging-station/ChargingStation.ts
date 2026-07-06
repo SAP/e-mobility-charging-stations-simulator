@@ -1673,28 +1673,31 @@ export class ChargingStation extends EventEmitter {
     stationInfo.templateName = buildTemplateName(this.templateFile)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
-    // voltageOut is line-to-neutral throughout the simulator: V_LL is
-    // derived as sqrt(3) * V_LN in a balanced 3-phase Y system (see
-    // OCPPServiceUtils.buildVoltageMeasurandValue). Users configuring
-    // Voltage.VOLTAGE_400 (common L-L nominal in EU 3-phase) or
-    // Voltage.VOLTAGE_800 (common L-L nominal in DC HPC / industrial
-    // systems) as L-N produce an unrealistic simulated L-L. Warn once
-    // at station init, harmonized with the per-session warning at
-    // CoherentSession.createCoherentSession (which fires only when
-    // coherentMeterValues=true).
+    // voltageOut is line-to-neutral (phase voltage) throughout the
+    // simulator. Voltage.VOLTAGE_400 (EU 3-phase L-L nominal) and
+    // Voltage.VOLTAGE_800 (DC HPC / industrial L-L nominal) are commonly
+    // mis-configured as L-N; warn once at station init. Harmonized with
+    // the per-session warning at CoherentSession.createCoherentSession.
     if (
       this.getCurrentOutType(stationInfo) === CurrentType.AC &&
       (stationInfo.voltageOut === Voltage.VOLTAGE_400 ||
         stationInfo.voltageOut === Voltage.VOLTAGE_800)
     ) {
       const voltageOut = stationInfo.voltageOut
-      const derivedLineToLine = (Math.sqrt(3) * voltageOut).toFixed(0)
+      const derivedInfo =
+        this.getNumberOfPhases(stationInfo) === 3
+          ? ` In 3-phase Y systems the derived line-to-line = sqrt(3) * ${voltageOut.toString()} = ${(
+              Math.sqrt(3) * voltageOut
+            ).toFixed(0)} V.`
+          : ''
       const suggestion =
         voltageOut === Voltage.VOLTAGE_400
-          ? ` If you intended 400 V line-to-line, set voltageOut=${Voltage.VOLTAGE_230.toString()} V (closest L-N enum value).`
-          : ''
+          ? ` If you intended 400 V line-to-line, set voltageOut=${Voltage.VOLTAGE_230.toString()} V (standard L-N enum value for EU 3-phase).`
+          : ` No standard L-N enum value exists for ${voltageOut.toString()} V line-to-line (~${(
+              voltageOut / Math.sqrt(3)
+            ).toFixed(0)} V L-N); verify template voltageOut intent.`
       logger.warn(
-        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=${voltageOut.toString()} V with AC output matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral, so a 3-phase Y-derived line-to-line = ${derivedLineToLine} V.${suggestion}`
+        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=${voltageOut.toString()} V with AC output matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage).${derivedInfo}${suggestion}`
       )
     }
     if (isNotEmptyArray<number>(stationTemplate.power)) {
