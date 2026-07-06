@@ -232,18 +232,24 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
 }
 
 /**
- * Predicate: `minValue <= maxValue`, safe input to
- * `randomInt(minValue, maxValue + 1)` (from `node:crypto`). Equality is
- * permitted because `randomInt(x, x + 1)` returns exactly `x` without
- * throwing. Callers should invoke this before drawing a random integer
- * from a config-driven min/max pair so a mis-configured template cannot
- * leak a `RangeError` into async loops.
+ * Predicate for a min/max pair intended as input to
+ * `randomInt(minValue, maxValue + 1)` (from `node:crypto`). Returns
+ * `true` when both bounds are safe integers, non-negative, and
+ * `minValue <= maxValue`. Equality is permitted because
+ * `randomInt(x, x + 1)` returns exactly `x` without throwing. Rejects
+ * `NaN`, `Infinity`, non-integer floats and negative values — all of
+ * which would cause `randomInt` to throw `RangeError` regardless of
+ * ordering. Callers should invoke this before drawing a random integer
+ * from a config-driven pair so a mis-configured template cannot leak a
+ * `RangeError` into async loops.
  * @param minValue - Lower bound (inclusive).
- * @param maxValue - Upper bound (inclusive; the caller is expected to
- *   pass `maxValue + 1` to `randomInt`).
+ * @param maxValue - Upper bound (inclusive).
  * @returns `true` when the bounds are safe; `false` otherwise.
  */
-export const isRandomIntBoundsValid = (minValue: number, maxValue: number): boolean =>
+export const isValidRandomIntBounds = (minValue: number, maxValue: number): boolean =>
+  Number.isSafeInteger(minValue) &&
+  Number.isSafeInteger(maxValue) &&
+  minValue >= 0 &&
   minValue <= maxValue
 
 export const convertToDate = (
