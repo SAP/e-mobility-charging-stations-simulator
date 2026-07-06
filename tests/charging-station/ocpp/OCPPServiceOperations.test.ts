@@ -56,7 +56,7 @@ await describe('OCPPServiceOperations', async () => {
   })
 
   await describe('stopTransactionOnConnector', async () => {
-    await it('should send StatusNotification(Finishing) then StopTransaction for OCPP 1.6 stations (per §5.12)', async () => {
+    await it('should send StatusNotification(Finishing) then StopTransaction for OCPP 1.6 stations (matches remote-stop message sequence)', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
         Promise.resolve({ idTagInfo: { status: 'Accepted' } })
