@@ -143,6 +143,7 @@ import {
   generateUUID,
   getErrorMessage,
   handleIncomingRequestError,
+  interruptibleSleep,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
@@ -3714,7 +3715,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20FirmwareStatusEnumType.DownloadScheduled,
         requestId
       )
-      await sleep(retrieveTime - now)
+      await interruptibleSleep(retrieveTime - now, abortController.signal)
       if (checkAborted()) return
     }
 
@@ -3724,7 +3725,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
+    await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
     if (checkAborted()) return
 
     // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
@@ -3736,14 +3737,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
         )
-        await sleep(retryDelayMs)
+        await interruptibleSleep(retryDelayMs, abortController.signal)
         if (checkAborted()) return
         await this.sendFirmwareStatusNotification(
           chargingStation,
           OCPP20FirmwareStatusEnumType.Downloading,
           requestId
         )
-        await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
+        await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
         if (checkAborted()) return
       }
       await this.sendFirmwareStatusNotification(
@@ -3765,7 +3766,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     if (signature != null) {
-      await sleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS)
+      await interruptibleSleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS, abortController.signal)
       if (checkAborted()) return
 
       // L01.FR.04: Simulate signature verification
@@ -3812,7 +3813,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           OCPP20FirmwareStatusEnumType.InstallScheduled,
           requestId
         )
-        await sleep(installTime - currentTime)
+        await interruptibleSleep(installTime - currentTime, abortController.signal)
         if (checkAborted()) return
       }
     }
@@ -3850,7 +3851,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
         )
-        await sleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS)
+        await interruptibleSleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS, abortController.signal)
       }
     }
     if (checkAborted()) return
@@ -3861,7 +3862,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    await sleep(OCPP20Constants.RESET_DELAY_MS)
+    await interruptibleSleep(OCPP20Constants.RESET_DELAY_MS, abortController.signal)
     if (checkAborted()) return
     await this.sendFirmwareStatusNotification(
       chargingStation,
