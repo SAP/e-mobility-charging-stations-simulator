@@ -7,7 +7,7 @@ import {
   type FieldError,
   formatFieldErrorsSummary,
   mapZodIssuesToFieldErrors,
-} from '../utils/ConfigurationMigrations.js'
+} from '../utils/FieldError.js'
 import { assertIsJsonObject, clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
 import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'

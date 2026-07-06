@@ -1,6 +1,6 @@
-import type { ZodError } from 'zod'
-
 import { isDeepStrictEqual } from 'node:util'
+
+import type { FieldError } from './FieldError.js'
 
 // Direct path: the `exception/index.js` barrel re-exports OCPPError, causing a TDZ cycle.
 import { BaseError } from '../exception/BaseError.js'
@@ -55,20 +55,6 @@ export const DEPRECATED_KEY_REMAPPINGS: Readonly<Record<string, null | string>> 
  * Single authoritative location — concurrent bumps force git merge conflict.
  */
 export const CURRENT_CONFIGURATION_SCHEMA_VERSION = 1
-
-export interface FieldError {
-  message: string
-  path: string
-}
-
-export const mapZodIssuesToFieldErrors = (zodError: ZodError): FieldError[] =>
-  zodError.issues.map(issue => ({
-    message: issue.message,
-    path: issue.path.join('.'),
-  }))
-
-export const formatFieldErrorsSummary = (fieldErrors: readonly FieldError[]): string =>
-  fieldErrors.map(e => `  - ${e.path !== '' ? e.path : '(root)'}: ${e.message}`).join('\n')
 
 export type MigrationFn = (
   config: Record<string, unknown>,

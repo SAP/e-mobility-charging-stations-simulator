@@ -22,7 +22,7 @@ import {
   buildFullConfiguration,
   buildMinimalConfiguration,
 } from './helpers/ConfigurationFixtures.js'
-import { TEST_SUPERVISION_URL } from './TestNetworkConstants.js'
+import { TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT } from './TestNetworkConstants.js'
 
 await describe('ConfigurationSchema', async () => {
   afterEach(() => {
@@ -814,7 +814,7 @@ await describe('ConfigurationSchema', async () => {
     await it('should accept supervisionUrls as string array', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({
-          supervisionUrls: [TEST_SUPERVISION_URL, 'ws://localhost:8081'],
+          supervisionUrls: [TEST_SUPERVISION_URL, TEST_SUPERVISION_URL_ALT_PORT],
         })
       )
       assert.ok(result.success)

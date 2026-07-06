@@ -3,19 +3,18 @@ import type { ZodError } from 'zod'
 import chalk from 'chalk'
 
 import type { ConfigurationData } from '../types/index.js'
-import type { FieldError } from './ConfigurationMigrations.js'
+import type { FieldError } from './FieldError.js'
 
 import { BaseError } from '../exception/index.js'
 import {
   applyConfigurationMigration,
   coerceConfigurationVersion,
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
-  formatFieldErrorsSummary,
-  mapZodIssuesToFieldErrors,
   remapDeprecatedKeys,
 } from './ConfigurationMigrations.js'
 import { ConfigurationSchema } from './ConfigurationSchema.js'
 import { configurationLogPrefix } from './ConfigurationUtils.js'
+import { formatFieldErrorsSummary, mapZodIssuesToFieldErrors } from './FieldError.js'
 import { assertIsJsonObject, clone, isEmpty, isNotEmptyArray } from './Utils.js'
 
 const moduleName = 'ConfigurationValidation'

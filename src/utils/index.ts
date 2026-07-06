@@ -40,6 +40,11 @@ export {
   handleUncaughtException,
   handleUnhandledRejection,
 } from './ErrorUtils.js'
+export {
+  type FieldError,
+  formatFieldErrorsSummary,
+  mapZodIssuesToFieldErrors,
+} from './FieldError.js'
 export { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from './FileUtils.js'
 export {
   isHostLiteralWithoutPort,
