@@ -1138,7 +1138,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           return OCPP16Constants.OCPP_RESPONSE_EMPTY
         }
         const logFiles = readdirSync(
-          resolve((fileURLToPath(import.meta.url), '../', dirname(logFile)))
+          resolve(dirname(fileURLToPath(import.meta.url)), '../', dirname(logFile))
         )
           .filter(file => file.endsWith(extname(logFile)))
           .map(file => join(dirname(logFile), file))
