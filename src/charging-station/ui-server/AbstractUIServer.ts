@@ -415,7 +415,12 @@ export abstract class AbstractUIServer {
           .finally(() => {
             registry.clear()
           })
-          .catch(() => undefined)
+          .catch((error: unknown) => {
+            logger.warn(
+              `${this.logPrefix()} ${moduleName}.stop: metrics registry cleanup failed`,
+              error
+            )
+          })
         this.metricsRegistry = undefined
       }
       // detachTransport() / uiService.stop() are subclass hooks — see
@@ -1268,7 +1273,12 @@ export abstract class AbstractUIServer {
     registry: Registry
   ): Promise<void> {
     this.metricsScrapeChain = this.metricsScrapeChain
-      .catch(() => undefined)
+      .catch((error: unknown) => {
+        logger.warn(
+          `${this.logPrefix()} ${moduleName}.runMetricsScrape: previous scrape errored; absorbing rejection so next scrape can proceed`,
+          error
+        )
+      })
       .then(async () => {
         this.metricsSampleCount = 0
         // prom-client's sync prefix runs every collect() (each writing

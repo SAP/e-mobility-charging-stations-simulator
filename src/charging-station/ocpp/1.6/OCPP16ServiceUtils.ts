@@ -949,6 +949,13 @@ export class OCPP16ServiceUtils {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
+      await sendAndSetConnectorStatus(chargingStation, {
+        connectorId,
+        status: OCPP16ChargePointStatus.Finishing,
+      } as OCPP16StatusNotificationRequest)
+    }
     const rawTransactionId = chargingStation.getConnectorStatus(connectorId)?.transactionId
     const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
     if (

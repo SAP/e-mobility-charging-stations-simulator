@@ -209,20 +209,20 @@ export class ChargingStation extends EventEmitter {
 
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
-  private configurationFile!: string
-  private configurationFileHash!: string
+  private configurationFile: string
+  private configurationFileHash: string
   private configuredSupervisionUrl!: URL
   private readonly connectors: Map<number, ConnectorStatus>
-  private connectorsConfigurationHash!: string
+  private connectorsConfigurationHash: string
   private readonly evses: Map<number, EvseStatus>
-  private evsesConfigurationHash!: string
+  private evsesConfigurationHash: string
   private flushingMessageBuffer: boolean
   private flushMessageBufferSetInterval?: NodeJS.Timeout
   private readonly messageQueue: string[]
   private ocppIncomingRequestService!: OCPPIncomingRequestService
   private readonly sharedLRUCache: SharedLRUCache
   private stopping: boolean
-  private templateFileHash!: string
+  private templateFileHash: string
   private templateFileWatcher?: FSWatcher
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
@@ -244,6 +244,11 @@ export class ChargingStation extends EventEmitter {
     this.sharedLRUCache = SharedLRUCache.getInstance()
     this.idTagsCache = IdTagsCache.getInstance()
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this)
+    this.configurationFile = ''
+    this.configurationFileHash = ''
+    this.connectorsConfigurationHash = ''
+    this.evsesConfigurationHash = ''
+    this.templateFileHash = ''
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))

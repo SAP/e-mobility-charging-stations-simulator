@@ -3319,6 +3319,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: Executing EVSE ${evseId.toString()} reset${hasActiveTransactions ? ' after transaction termination' : ''}`
       )
+      // Unref: fire-and-forget pending EVSE reset must not block
+      // node.js exit.
       setTimeout(() => {
         const evse = chargingStation.getEvseStatus(evseId)
         if (evse) {
@@ -3337,7 +3339,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: EVSE ${evseId.toString()} reset completed`
           )
         }
-      }, OCPP20Constants.RESET_DELAY_MS)
+      }, OCPP20Constants.RESET_DELAY_MS).unref()
     })
   }
 
@@ -3347,6 +3349,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    */
   private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
+    // Unref: idle-monitor poll must not block node.js exit; the interval
+    // self-clears once the EVSE is idle or its state is gone.
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
@@ -3360,7 +3364,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         clearInterval(monitorInterval)
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   /**
@@ -3368,6 +3372,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    */
   private scheduleResetOnIdle (chargingStation: ChargingStation): void {
+    // Unref: idle-monitor poll must not block node.js exit; the interval
+    // self-clears once the station reports idle.
     const monitorInterval = setInterval(() => {
       if (this.isChargingStationIdle(chargingStation)) {
         clearInterval(monitorInterval)
@@ -3381,7 +3387,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         })
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
@@ -3611,9 +3617,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
           queue.unshift({ ...event, retryCount })
           stationState.isDrainingSecurityEvents = false
+          // Unref: fire-and-forget retry must not block node.js exit.
           setTimeout(() => {
             this.sendQueuedSecurityEvents(chargingStation)
-          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS)
+          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS).unref()
         })
     }
     drainNextEvent()

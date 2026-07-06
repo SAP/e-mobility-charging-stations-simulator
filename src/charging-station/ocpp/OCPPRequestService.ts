@@ -301,7 +301,7 @@ export abstract class OCPPRequestService {
         chargingStation.inRejectedState()) &&
         commandName === RequestCommand.BOOT_NOTIFICATION) ||
       (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        (chargingStation.inUnknownState() || chargingStation.inPendingState())) ||
+        chargingStation.inUnknownState()) ||
       chargingStation.inAcceptedState() ||
       (chargingStation.inPendingState() &&
         (params.triggerMessage === true || messageType === MessageType.CALL_RESULT_MESSAGE))
