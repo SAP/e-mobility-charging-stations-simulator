@@ -53,7 +53,10 @@ const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): Promise<
       return
     }
     /**
-     *
+     * Cleanup on abort: cancel the pending setTimeout so its callback
+     * cannot fire after the promise has already resolved, then resolve
+     * the outer promise. The `{ once: true }` addEventListener flag
+     * removes this listener automatically after it fires.
      */
     function onAbort (): void {
       clearTimeout(timeout)
