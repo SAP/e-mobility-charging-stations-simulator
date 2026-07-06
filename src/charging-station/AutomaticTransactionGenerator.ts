@@ -400,7 +400,7 @@ export class AutomaticTransactionGenerator {
         this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
       } else {
         logger.debug(
-          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Exiting displaced loop — a successor controller is already installed`
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Exited displaced loop — a successor controller is already installed`
         )
       }
     }

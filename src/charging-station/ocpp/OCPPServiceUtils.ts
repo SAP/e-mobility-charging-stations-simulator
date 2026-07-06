@@ -273,7 +273,7 @@ const buildSocMeasurandValue = (
     socSampledValueTemplateValue = randomInt(socMinimumValue, socMaximumValue + 1)
   } else {
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.buildSocMeasurandValue: invalid SoC bounds socMinimumValue=${socMinimumValue.toString()}, socMaximumValue=${socMaximumValue.toString()} — skipping measurand`
+      `${chargingStation.logPrefix()} ${moduleName}.buildSocMeasurandValue: invalid SoC bounds socMinimumValue=${socMinimumValue.toString()}, socMaximumValue=${socMaximumValue.toString()} — skipping SoC measurand`
     )
     return null
   }
