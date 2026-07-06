@@ -149,7 +149,6 @@ import {
   isNotEmptyString,
   logger,
   promiseWithTimeout,
-  sleep,
   truncateId,
   validateUUID,
 } from '../../../utils/index.js'
@@ -259,6 +258,7 @@ const buildRejectedResponse = (
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
+  activeLogUploadAbortController?: AbortController
   activeLogUploadRequestId?: number
   activeLogUploadStatus?: UploadLogStatusEnumType
   certSigningRetryManager?: OCPP20CertSigningRetryManager
@@ -789,6 +789,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
       stationState.activeFirmwareUpdateAbortController?.abort()
+      stationState.activeLogUploadAbortController?.abort()
       stationState.certSigningRetryManager?.cancelRetryTimer()
       this.resetActiveFirmwareUpdateState(stationState)
       this.resetActiveLogUploadState(stationState)
@@ -2122,6 +2123,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState?.activeLogUploadRequestId != null) {
       const previousRequestId = stationState.activeLogUploadRequestId
+      stationState.activeLogUploadAbortController?.abort()
       this.resetActiveLogUploadState(stationState)
       this.sendLogStatusNotification(
         chargingStation,
@@ -3315,6 +3317,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private resetActiveLogUploadState (stationState: OCPP20StationState): void {
+    stationState.activeLogUploadAbortController = undefined
     stationState.activeLogUploadRequestId = undefined
     stationState.activeLogUploadStatus = undefined
   }
@@ -3974,6 +3977,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     requestId: number
   ): Promise<void> {
     const stationState = this.getOrCreateStationState(chargingStation)
+    const abortController = new AbortController()
+    stationState.activeLogUploadAbortController = abortController
     stationState.activeLogUploadRequestId = requestId
     stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploading
     try {
@@ -3983,8 +3988,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         requestId
       )
 
-      await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
-      if (stationState.activeLogUploadRequestId === requestId) {
+      await interruptibleSleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS, abortController.signal)
+      if (!abortController.signal.aborted && stationState.activeLogUploadRequestId === requestId) {
         stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
         await this.sendLogStatusNotification(
           chargingStation,
