@@ -597,7 +597,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 error
               )
             })
-          }, retrieveDate.getTime() - now)
+          }, retrieveDate.getTime() - now).unref()
         }
       }
     )

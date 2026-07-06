@@ -3337,7 +3337,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: EVSE ${evseId.toString()} reset completed`
           )
         }
-      }, OCPP20Constants.RESET_DELAY_MS)
+      }, OCPP20Constants.RESET_DELAY_MS).unref()
     })
   }
 
@@ -3613,7 +3613,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           stationState.isDrainingSecurityEvents = false
           setTimeout(() => {
             this.sendQueuedSecurityEvents(chargingStation)
-          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS)
+          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS).unref()
         })
     }
     drainNextEvent()
