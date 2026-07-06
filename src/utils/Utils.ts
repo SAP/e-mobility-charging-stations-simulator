@@ -181,16 +181,10 @@ export const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): P
       return
     }
     const timeout = setTimeout(() => {
-      // Timer-path cleanup: `{ once: true }` on addEventListener only
-      // removes the listener when the abort event fires, so we remove
-      // it explicitly here to avoid a stale listener on the signal.
       signal.removeEventListener('abort', onAbort)
       resolve()
     }, milliSeconds)
     const onAbort = (): void => {
-      // Abort-path cleanup: cancel the pending setTimeout so its
-      // callback cannot fire after the promise has already resolved.
-      // The listener itself is auto-removed by `{ once: true }` below.
       clearTimeout(timeout)
       resolve()
     }
@@ -273,11 +267,9 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
  * `randomInt(x, x + 1)` returns exactly `x` without throwing. Rejects
  * `NaN`, `Infinity`, non-integer floats and negative values — all of
  * which would cause `randomInt` to throw `RangeError` regardless of
- * ordering. Callers should invoke this before drawing a random integer
- * from a config-driven pair so a mis-configured template cannot leak a
- * `RangeError` into async loops.
- * @param minValue - Lower bound (inclusive).
- * @param maxValue - Upper bound (inclusive).
+ * ordering.
+ * @param minValue - Lower bound (inclusive; must be a non-negative safe integer).
+ * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue).
  * @returns `true` when the bounds are safe; `false` otherwise.
  */
 export const isValidRandomIntBounds = (minValue: number, maxValue: number): boolean =>

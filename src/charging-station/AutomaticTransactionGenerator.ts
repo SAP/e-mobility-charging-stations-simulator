@@ -542,12 +542,10 @@ export class AutomaticTransactionGenerator {
   /**
    * Validates min/max invariants on the ATG configuration so a
    * mis-configured template cannot kill the run loop with a
-   * `randomInt(min, max + 1)` RangeError at the first iteration. The
-   * result is memoized on `configurationValidationResult` so a station
-   * with N connectors emits the diagnostic log line at most once per
-   * `start()` cycle (reset by `stop()`). Returns `true` when no
-   * configuration is present (absence is handled elsewhere with
-   * defaulting to 0).
+   * `randomInt(min, max + 1)` RangeError at the first iteration.
+   * Memoized per `start()` cycle; reset by `stop()`. Returns `true`
+   * when no configuration is present (absence is handled elsewhere
+   * with defaulting to 0).
    * @returns `true` when configuration is absent or its min/max
    * invariants hold; `false` when a violation was found and logged.
    */
@@ -568,14 +566,14 @@ export class AutomaticTransactionGenerator {
     } = config
     if (!isValidRandomIntBounds(minDelayBetweenTwoTransactions, maxDelayBetweenTwoTransactions)) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.validateConfiguration: minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()} > maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()}; randomInt(min, max + 1) would throw RangeError — aborting connector startup`
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()}, maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()} for randomInt(min, max + 1) — aborting connector startup`
       )
       this.configurationValidationResult = false
       return false
     }
     if (!isValidRandomIntBounds(minDuration, maxDuration)) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.validateConfiguration: minDuration=${minDuration.toString()} > maxDuration=${maxDuration.toString()}; randomInt(min, max + 1) would throw RangeError — aborting connector startup`
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDuration=${minDuration.toString()}, maxDuration=${maxDuration.toString()} for randomInt(min, max + 1) — aborting connector startup`
       )
       this.configurationValidationResult = false
       return false
