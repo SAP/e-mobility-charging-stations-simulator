@@ -41,6 +41,7 @@ import {
   resolveUIServerAccess,
   type UIServerAccessCache,
   type UIServerAccessDecision,
+  WILDCARD_HOSTS,
 } from './UIServerAccessPolicy.js'
 import {
   createRateLimiter,
@@ -1322,8 +1323,7 @@ export abstract class AbstractUIServer {
     const allowedHosts = accessPolicy?.allowedHosts ?? []
     const trustedProxies = accessPolicy?.trustedProxies ?? []
     const requireTls = accessPolicy?.requireTlsForNonLoopback ?? true
-    const isWildcard =
-      configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
+    const isWildcard = WILDCARD_HOSTS.has(configuredHost)
 
     if (isWildcard && isEmpty(allowedHosts)) {
       logger.warn(

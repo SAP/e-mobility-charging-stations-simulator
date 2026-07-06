@@ -154,7 +154,7 @@ export class OCPP20Constants extends OCPPConstants {
   static readonly FIRMWARE_STATUS_DELAY_MS = 2000
   static readonly FIRMWARE_VERIFY_DELAY_MS = 500
   /**
-   * Default timeout in milliseconds for async OCPP 2.0 handler operations
+   * Default timeout in milliseconds for async OCPP 2.0.1 handler operations
    * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
    */
   static readonly HANDLER_TIMEOUT_MS = 30_000

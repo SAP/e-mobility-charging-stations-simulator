@@ -350,7 +350,7 @@ export class UIMCPServer extends AbstractUIServer {
 
     if (ocpp16Payload != null && ocpp20Payload != null) {
       return UIMCPServer.createToolErrorResponse(
-        'Cannot provide both ocpp16Payload and ocpp20Payload. Use ocpp16Payload for OCPP 1.6 stations or ocpp20Payload for OCPP 2.0 stations.'
+        'Cannot provide both ocpp16Payload and ocpp20Payload. Use ocpp16Payload for OCPP 1.6 stations or ocpp20Payload for OCPP 2.0.1 stations.'
       )
     }
 
@@ -436,7 +436,7 @@ export class UIMCPServer extends AbstractUIServer {
           )
         } catch {
           logger.warn(
-            `${this.logPrefix(moduleName, 'loadOcppSchemas')} Failed to load OCPP 2.0 schema for ${procedureName}`
+            `${this.logPrefix(moduleName, 'loadOcppSchemas')} Failed to load OCPP 2.0.1 schema for ${procedureName}`
           )
         }
       }

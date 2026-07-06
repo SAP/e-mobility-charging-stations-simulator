@@ -159,8 +159,7 @@ export class OCPPConstants {
     status: TriggerMessageStatus.REJECTED,
   })
 
-  static readonly OCPP_WEBSOCKET_TIMEOUT_MS = 60000
-
+  static readonly OCPP_WEBSOCKET_TIMEOUT_MS = 60_000
   static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
     IncomingRequestCommand | RequestCommand
 

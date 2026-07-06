@@ -9,11 +9,11 @@ interface RateLimitEntry {
   resetTime: number
 }
 
-export const DEFAULT_MAX_PAYLOAD_SIZE_BYTES = 1048576
+export const DEFAULT_MAX_PAYLOAD_SIZE_BYTES = 1_048_576
 export const DEFAULT_RATE_LIMIT = 100
-export const DEFAULT_RATE_WINDOW_MS = 60000
+export const DEFAULT_RATE_WINDOW_MS = 60_000
 export const DEFAULT_MAX_STATIONS = 100
-export const DEFAULT_MAX_TRACKED_IPS = 10000
+export const DEFAULT_MAX_TRACKED_IPS = 10_000
 export const DEFAULT_COMPRESSION_THRESHOLD_BYTES = 1024
 
 export class PayloadTooLargeError extends BaseError {

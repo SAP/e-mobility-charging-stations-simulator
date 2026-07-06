@@ -1,5 +1,5 @@
 /**
- * Testable wrapper for OCPP 2.0 ResponseService
+ * Testable wrapper for OCPP 2.0.1 ResponseService
  *
  * This module provides type-safe access to private handler methods of
  * OCPP20ResponseService for testing purposes. It replaces ad hoc

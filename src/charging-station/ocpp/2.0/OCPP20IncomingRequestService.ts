@@ -1536,7 +1536,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 CertificateSigned request from central system
+   * Handles OCPP 2.0.1 CertificateSigned request from central system
    * Receives signed certificate chain from CSMS and stores it in the charging station
    * Triggers websocket reconnect for ChargingStationCertificate type to use the new certificate
    * @param chargingStation - The charging station instance processing the request
@@ -1854,7 +1854,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 DeleteCertificate request from central system
+   * Handles OCPP 2.0.1 DeleteCertificate request from central system
    * Deletes a certificate matching the provided hash data from the charging station
    * Per M04.FR.06: ChargingStationCertificate cannot be deleted via DeleteCertificateRequest
    * @param chargingStation - The charging station instance processing the request
@@ -1990,7 +1990,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 GetInstalledCertificateIds request from central system
+   * Handles OCPP 2.0.1 GetInstalledCertificateIds request from central system
    * Returns list of installed certificates matching the optional filter types
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - GetInstalledCertificateIds request payload with optional certificate type filter
@@ -2542,7 +2542,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 RequestStartTransaction request from central system
+   * Handles OCPP 2.0.1 RequestStartTransaction request from central system
    * Initiates charging transaction on specified EVSE with enhanced authorization
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - RequestStartTransaction request payload with EVSE, ID token and profiles
@@ -2618,7 +2618,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return buildRejectedResponse(
         ReasonCodeEnumType.TxStarted,
         `Connector ${connectorId.toString()} has a pending transaction not yet authorized`,
-        // safe: OCPP 2.0 paths always store generateUUID() output here (see line ~2740)
+        // safe: OCPP 2.0.1 paths always store generateUUID() output here (see line ~2740)
         connectorStatus.transactionId as UUIDv4
       )
     }
@@ -3904,7 +3904,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Terminates all active transactions on the charging station using OCPP 2.0 TransactionEventRequest
+   * Terminates all active transactions on the charging station using OCPP 2.0.1 TransactionEventRequest
    * @param chargingStation - The charging station instance
    * @param reason - The reason for transaction termination
    */
@@ -3920,7 +3920,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Terminates all active transactions on the specified EVSE using OCPP 2.0 TransactionEventRequest
+   * Terminates all active transactions on the specified EVSE using OCPP 2.0.1 TransactionEventRequest
    * @param chargingStation - The charging station instance
    * @param evseId - The EVSE identifier to terminate transactions on
    * @param reason - The reason for transaction termination
@@ -4370,17 +4370,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 }
 
 /**
- * OCPP 2.0+ Incoming Request Service - handles and processes all incoming requests
- * from the Central System (CSMS) to the Charging Station using OCPP 2.0+ protocol.
+ * OCPP 2.0.1 Incoming Request Service - handles and processes all incoming requests
+ * from the Central System (CSMS) to the Charging Station using OCPP 2.0.1 protocol.
  *
  * This service class is responsible for:
- * - **Request Reception**: Receiving and routing OCPP 2.0+ incoming requests from CSMS
- * - **Payload Validation**: Validating incoming request payloads against OCPP 2.0+ JSON schemas
- * - **Request Processing**: Executing business logic for each OCPP 2.0+ request type
+ * - **Request Reception**: Receiving and routing OCPP 2.0.1 incoming requests from CSMS
+ * - **Payload Validation**: Validating incoming request payloads against OCPP 2.0.1 JSON schemas
+ * - **Request Processing**: Executing business logic for each OCPP 2.0.1 request type
  * - **Response Generation**: Creating and sending appropriate responses back to CSMS
- * - **Enhanced Features**: Supporting advanced OCPP 2.0+ features like variable management
+ * - **Enhanced Features**: Supporting advanced OCPP 2.0.1 features like variable management
  *
- * Supported OCPP 2.0+ Incoming Request Types:
+ * Supported OCPP 2.0.1 Incoming Request Types:
  * - **Transaction Management**: RequestStartTransaction, RequestStopTransaction
  * - **Configuration Management**: SetVariables, GetVariables, GetBaseReport
  * - **Security Operations**: CertificatesSigned, SecurityEventNotification
@@ -4389,7 +4389,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * - **Display Management**: SetDisplayMessage, ClearDisplayMessage
  * - **Customer Management**: ClearCache, SendLocalList
  *
- * Key OCPP 2.0+ Enhancements:
+ * Key OCPP 2.0.1 Enhancements:
  * - **Variable Model**: Advanced configuration through standardized variable system
  * - **Enhanced Security**: Improved authentication and authorization mechanisms
  * - **Rich Messaging**: Support for display messages and customer information
@@ -4397,18 +4397,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * - **Flexible Charging**: Enhanced charging profile management and scheduling
  *
  * Architecture Pattern:
- * This class extends OCPPIncomingRequestService and implements OCPP 2.0+-specific
+ * This class extends OCPPIncomingRequestService and implements OCPP 2.0.1-specific
  * request handling logic. It integrates with the OCPP20VariableManager for advanced
  * configuration management and maintains backward compatibility concepts while
  * providing next-generation OCPP features.
  *
  * Validation Workflow:
  * 1. Incoming request received and parsed
- * 2. Payload validated against OCPP 2.0+ JSON schema
+ * 2. Payload validated against OCPP 2.0.1 JSON schema
  * 3. Request routed to appropriate handler method
  * 4. Business logic executed with variable model integration
  * 5. Response payload validated and sent back to CSMS
  * @see {@link validateIncomingRequestPayload} Request payload validation method
- * @see {@link handleRequestStartTransaction} Example OCPP 2.0+ request handler
+ * @see {@link handleRequestStartTransaction} Example OCPP 2.0.1 request handler
  * @see {@link OCPP20VariableManager} Variable management integration
  */

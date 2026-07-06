@@ -36,12 +36,10 @@ export class Constants {
 
   static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS = 10
 
-  static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS = 60000
-
+  static readonly DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS = 60_000
   static readonly DEFAULT_AUTH_CACHE_TTL_SECONDS = 3600
 
-  static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL_MS = 60000
-
+  static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL_MS = 60_000
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
 
   /** Default coherent MeterValues ramp-up duration in milliseconds. Non-positive values disable the ramp. */
@@ -58,16 +56,13 @@ export class Constants {
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
 
-  static readonly DEFAULT_HEARTBEAT_INTERVAL_MS = 60000
-
+  static readonly DEFAULT_HEARTBEAT_INTERVAL_MS = 60_000
   static readonly DEFAULT_LOG_STATISTICS_INTERVAL_SECONDS = 60
 
-  static readonly DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS = 60000
-
+  static readonly DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS = 60_000
   static readonly DEFAULT_MESSAGE_TIMEOUT_SECONDS = 30
 
-  static readonly DEFAULT_METER_VALUES_INTERVAL_MS = 60000
-
+  static readonly DEFAULT_METER_VALUES_INTERVAL_MS = 60_000
   static readonly DEFAULT_PERFORMANCE_DIRECTORY = 'performance'
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
@@ -139,12 +134,11 @@ export class Constants {
 
   static readonly ENV_SIMULATOR_COLD_START = 'SIMULATOR_COLD_START'
 
-  static readonly MAX_RANDOM_INTEGER = 281474976710655 // 2^48 - 1 (randomInit() limit)
+  static readonly MAX_RANDOM_INTEGER = 281_474_976_710_655 // 2^48 - 1 (randomInit() limit)
 
   // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
-  static readonly MAX_SETINTERVAL_DELAY_MS = 2147483647
-
+  static readonly MAX_SETINTERVAL_DELAY_MS = 2_147_483_647
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
   static readonly MS_PER_DAY = DAY_IN_MS
 
@@ -159,10 +153,8 @@ export class Constants {
   /** State of Charge maximum percentage (upper bound for SoC measurand emission). */
   static readonly SOC_MAXIMUM_PERCENT = 100
 
-  static readonly STOP_CHARGING_STATIONS_TIMEOUT_MS = 60000
-
-  static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT_MS = 30000
-
+  static readonly STOP_CHARGING_STATIONS_TIMEOUT_MS = 60_000
+  static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT_MS = 30_000
   /** Divider between base units (A) and centi units (cA). */
   static readonly UNIT_DIVIDER_CENTI = 100
 

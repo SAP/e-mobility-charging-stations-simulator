@@ -173,7 +173,7 @@ const moduleName = 'OCPP16IncomingRequestService'
  */
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
-  protected readonly csmsName = 'central system'
+  protected readonly csmsName = 'Central System'
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
 
   protected readonly moduleName = moduleName
@@ -956,14 +956,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP16DataTransferRequest
   ): OCPP16DataTransferResponse {
-    const { messageId, vendorId } = commandPayload
+    const { vendorId } = commandPayload
     try {
       if (vendorId !== chargingStation.stationInfo?.chargePointVendor) {
         return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
       }
-      if (messageId != null) {
-        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_MESSAGE_ID
-      }
+      // OCPP 1.6 §4.3: `UnknownMessageId` is reserved for the case where the
+      // vendor is known but the messageId is not recognized by the Charge
+      // Point. The simulator does not maintain a per-vendor messageId
+      // registry, so any messageId (including undefined) is accepted when
+      // the vendor matches.
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
     } catch (error) {
       const errorResponse: OCPP16DataTransferResponse =
@@ -1138,7 +1140,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           return OCPP16Constants.OCPP_RESPONSE_EMPTY
         }
         const logFiles = readdirSync(
-          resolve((fileURLToPath(import.meta.url), '../', dirname(logFile)))
+          resolve(dirname(fileURLToPath(import.meta.url)), '../', dirname(logFile))
         )
           .filter(file => file.endsWith(extname(logFile)))
           .map(file => join(dirname(logFile), file))
@@ -1249,7 +1251,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 1.6 GetLocalListVersion request from central system.
+   * Handles OCPP 1.6 GetLocalListVersion request from Central System.
    * Returns the version number of the local authorization list.
    * @param chargingStation - The charging station instance processing the request
    * @returns GetLocalListVersionResponse with list version
@@ -1283,7 +1285,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 1.6 RemoteStartTransaction request from central system
+   * Handles OCPP 1.6 RemoteStartTransaction request from Central System
    * Initiates charging transaction on specified or available connector
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - RemoteStartTransaction request payload with connector and ID tag
@@ -1534,11 +1536,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     try {
       const authService = OCPPAuthServiceFactory.getInstance(chargingStation)
       if (!chargingStation.getLocalAuthListEnabled()) {
-        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
       }
       const manager = authService.getLocalAuthListManager()
       if (manager == null) {
-        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_NOT_SUPPORTED
+        return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
       }
       if (commandPayload.listVersion <= 0) {
         return OCPP16Constants.OCPP_SEND_LOCAL_LIST_RESPONSE_FAILED
@@ -1924,6 +1926,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo.firmwareStatus =
         chargingStation.stationInfo.firmwareUpgrade.failureStatus
       return
+    }
+    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP16FirmwareStatusNotificationRequest,
+      OCPP16FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      status: OCPP16FirmwareStatus.Installed,
+    })
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installed
     }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
       await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))

@@ -625,6 +625,7 @@ make SUBMODULES_INIT=true
 
 #### C. Authorization
 
+- :white_check_mark: Authorize
 - :white_check_mark: ClearCache
 
 #### D. LocalAuthorizationListManagement

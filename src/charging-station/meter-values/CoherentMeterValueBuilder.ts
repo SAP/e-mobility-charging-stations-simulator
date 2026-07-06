@@ -271,15 +271,11 @@ const resolvePhasedValue = (
     case MeterValueMeasurand.VOLTAGE:
       if (family === 'Neutral') return 0
       if (family === 'LineToLine') {
-        // Line-to-line voltage is only defined for 3-phase AC
-        // (V_LL = sqrt(3) * V_LN); 1-phase has no L-L pair, and
-        // `numberOfPhases === 2` is unsupported by contract
-        // (`Helpers.getPhaseRotationValue` branches only on {0, 1, 3}).
-        // Return `undefined` on any non-3-phase configuration so the
-        // caller can log-and-skip rather than emit a physically
-        // meaningless sqrt(2) * V_LN value.
+        // V_LL = sqrt(3) * V_LN in a balanced 3-phase Y system (30-degree
+        // phase separation). Defined only for numberOfPhases === 3;
+        // 1-phase has no L-L pair, 2-phase is unsupported by contract.
         if (numberOfPhases !== 3) return undefined
-        return Math.sqrt(numberOfPhases) * sample.voltageV
+        return Math.sqrt(3) * sample.voltageV
       }
       return sample.voltageV
     default:
@@ -443,7 +439,7 @@ export const buildCoherentMeterValue = (
         )
         continue
       }
-      // Narrow the OCPP 2.0 `SampledValueTemplate.unit` open-string branch
+      // Narrow the OCPP 2.0.1 `SampledValueTemplate.unit` open-string branch
       // to the closed `MeterValueUnit` union for the Map lookup below; any
       // string outside the enum returns `undefined` from the Map and falls
       // through to divider = 1 (unit-scale emission).

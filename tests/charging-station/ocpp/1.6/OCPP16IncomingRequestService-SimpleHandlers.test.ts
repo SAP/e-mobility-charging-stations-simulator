@@ -81,7 +81,7 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       assert.strictEqual(typeof response.status, 'string')
     })
 
-    await it('should return UnknownMessageId for matching vendor with messageId', () => {
+    await it('should return Accepted for matching vendor with messageId (no messageId registry per §4.3)', () => {
       // Arrange
       const { station, testableService } = context
       const matchingVendor = 'test-vendor-match'
@@ -99,7 +99,7 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
 
       // Assert
       assert.notStrictEqual(response, undefined)
-      assert.strictEqual(response.status, OCPP16DataTransferStatus.UNKNOWN_MESSAGE_ID)
+      assert.strictEqual(response.status, OCPP16DataTransferStatus.ACCEPTED)
       assert.strictEqual(typeof response.status, 'string')
     })
   })
