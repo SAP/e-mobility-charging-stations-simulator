@@ -565,7 +565,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             const firmwareStatus = this.hasFirmwareUpdateInProgress(chargingStation)
               ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
               : OCPP20FirmwareStatusEnumType.Idle
-            const stationState = this.getStationState(chargingStation)
+            const stationState = this.stationsState.get(chargingStation)
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
@@ -573,7 +573,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               >(
                 chargingStation,
                 OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus },
+                { requestId: stationState?.activeFirmwareUpdateRequestId, status: firmwareStatus },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
               .catch(errorHandler)
