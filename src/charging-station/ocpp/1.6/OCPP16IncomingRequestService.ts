@@ -1839,7 +1839,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (!isValidRandomIntBounds(minDelay, maxDelay)) {
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: invalid bounds minDelay=${minDelay.toString()}, maxDelay=${maxDelay.toString()} for randomInt(min, max + 1) — aborting firmware update simulation`
+        `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: invalid bounds minDelay=${minDelay.toString()}, maxDelay=${maxDelay.toString()} — aborting firmware update simulation`
       )
       return
     }

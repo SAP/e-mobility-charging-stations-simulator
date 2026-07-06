@@ -570,14 +570,14 @@ export class AutomaticTransactionGenerator {
     } = config
     if (!isValidRandomIntBounds(minDelayBetweenTwoTransactions, maxDelayBetweenTwoTransactions)) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()}, maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()} for randomInt(min, max + 1) — aborting connector startup`
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()}, maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()} — aborting connector startup`
       )
       this.configurationValidationResult = false
       return false
     }
     if (!isValidRandomIntBounds(minDuration, maxDuration)) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDuration=${minDuration.toString()}, maxDuration=${maxDuration.toString()} for randomInt(min, max + 1) — aborting connector startup`
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDuration=${minDuration.toString()}, maxDuration=${maxDuration.toString()} — aborting connector startup`
       )
       this.configurationValidationResult = false
       return false
@@ -629,9 +629,10 @@ export class AutomaticTransactionGenerator {
       !signal.aborted
     ) {
       if (!logged) {
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
         logger.info(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${this.chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
+          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
         )
         logged = true
       }
