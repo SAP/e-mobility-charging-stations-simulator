@@ -40,7 +40,7 @@ function applyTheme (themeName: ThemeName): void {
   document.documentElement.classList.add('theme-switching')
   document.documentElement.setAttribute('data-theme', themeName)
   // Force reflow so the theme CSS is resolved before reading color-scheme.
-  // eslint-disable-next-line no-void
+  // eslint-disable-next-line no-void -- reading `offsetHeight` forces a layout reflow so the theme CSS is resolved before `color-scheme` is read; `void` discards the value
   void document.documentElement.offsetHeight
   document.documentElement.setAttribute('data-color-scheme', resolveColorScheme())
   document.documentElement.classList.remove('theme-switching')

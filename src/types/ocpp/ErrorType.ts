@@ -23,7 +23,7 @@ export enum ErrorType {
   RPC_FRAMEWORK_ERROR = 'RpcFrameworkError',
   // During the processing of Action a security issue occurred preventing receiver from completing the Action successfully
   SECURITY_ERROR = 'SecurityError',
-  // eslint-disable-next-line @cspell/spellchecker
+  // eslint-disable-next-line @cspell/spellchecker -- placeholder example value in the spec quote is not a dictionary word
   // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. "somestring" = 12)
   TYPE_CONSTRAINT_VIOLATION = 'TypeConstraintViolation',
 }

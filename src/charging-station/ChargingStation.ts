@@ -1652,7 +1652,7 @@ export class ChargingStation extends EventEmitter {
     if (stationInfoPersistentConfiguration) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- pruning the deprecated `infoHash` field from the persisted-configuration snapshot before use
         delete stationInfo.infoHash
         delete (stationInfo as ChargingStationTemplate).numberOfConnectors
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -2783,7 +2783,7 @@ export class ChargingStation extends EventEmitter {
             error
           )
         }
-        // eslint-disable-next-line promise/no-promise-in-callback
+        // eslint-disable-next-line promise/no-promise-in-callback -- exponential-backoff sleep inside a WebSocket callback; failures on the outer send are surfaced separately
         sleep(
           computeExponentialBackOffDelay({
             baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
