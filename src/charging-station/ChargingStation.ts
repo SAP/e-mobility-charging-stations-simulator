@@ -1673,11 +1673,6 @@ export class ChargingStation extends EventEmitter {
     stationInfo.templateName = buildTemplateName(this.templateFile)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
-    // voltageOut is line-to-neutral (phase voltage) throughout the
-    // simulator. Voltage.VOLTAGE_400 (EU 3-phase L-L nominal) and
-    // Voltage.VOLTAGE_800 (DC HPC / industrial L-L nominal) are commonly
-    // mis-configured as L-N; warn once at station init. Harmonized with
-    // the per-session warning at CoherentSession.createCoherentSession.
     if (
       this.getCurrentOutType(stationInfo) === CurrentType.AC &&
       (stationInfo.voltageOut === Voltage.VOLTAGE_400 ||

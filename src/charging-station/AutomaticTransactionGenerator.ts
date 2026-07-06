@@ -134,10 +134,9 @@ export class AutomaticTransactionGenerator {
   }
 
   public stop (): void {
-    // Reset unconditionally before the started/stopping guards so external
-    // startConnector() callers (bypassing start()) can recover from a
-    // cached-false configurationValidationResult even when this.started
-    // never transitioned to true.
+    // Reset before the guards so external startConnector() callers can
+    // recover from a cached-false state via stop() even when start()
+    // was never called.
     this.configurationValidationResult = undefined
     if (!this.started) {
       logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
@@ -163,11 +162,9 @@ export class AutomaticTransactionGenerator {
     const connectorStatus = this.connectorsStatus.get(connectorId)
     if (connectorStatus?.start === true) {
       connectorStatus.start = false
-      // Wake the internalStartConnector loop out of its interruptible
-      // sleeps so it observes start=false immediately rather than waiting
-      // for the next transaction wait (up to maxDuration seconds) to
-      // elapse. The controller is created per run of internalStartConnector
-      // and lives in connectorAbortControllers keyed by connectorId.
+      // Wake internalStartConnector out of its interruptible sleeps so
+      // it observes start=false immediately rather than after the
+      // current wait (up to maxDuration seconds) expires.
       this.connectorAbortControllers.get(connectorId)?.abort()
     } else if (connectorStatus?.start === false) {
       logger.warn(
@@ -309,10 +306,9 @@ export class AutomaticTransactionGenerator {
     if (connectorStatus == null) {
       return
     }
-    // Fresh AbortController per run of internalStartConnector so a stale
-    // abort from a previous run cannot short-circuit a new loop. The
-    // previous controller (if any) is aborted first to unblock any
-    // lingering interruptibleSleep from the earlier invocation.
+    // Abort the previous controller (if any) first to unblock any
+    // lingering interruptibleSleep from an earlier invocation on this
+    // connector before installing the new controller.
     this.connectorAbortControllers.get(connectorId)?.abort()
     const abortController = new AbortController()
     this.connectorAbortControllers.set(connectorId, abortController)
@@ -380,11 +376,8 @@ export class AutomaticTransactionGenerator {
         connectorStatus.lastRunDate = new Date()
       }
     } finally {
-      // Only clear the entry if it still references the current run's
-      // controller: a concurrent stopConnector→startConnector sequence
-      // may have replaced it, and we must not delete the successor's
-      // controller. Guarantees cleanup on both normal exit and any
-      // rejected await inside the loop (which the caller's .catch swallows).
+      // Delete only when the entry still points to this run's controller:
+      // a concurrent stopConnector→startConnector may have replaced it.
       if (this.connectorAbortControllers.get(connectorId) === abortController) {
         this.connectorAbortControllers.delete(connectorId)
       }
