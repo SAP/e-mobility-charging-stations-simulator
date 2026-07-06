@@ -590,6 +590,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             )
           })
         } else {
+          // Unref: fire-and-forget deferred firmware update must not
+          // block node.js exit.
           setTimeout(() => {
             this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
               logger.error(
