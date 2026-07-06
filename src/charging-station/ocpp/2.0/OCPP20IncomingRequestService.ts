@@ -616,7 +616,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   public getCertSigningRetryManager (
     chargingStation: ChargingStation
   ): OCPP20CertSigningRetryManager {
-    const state = this.getStationState(chargingStation)
+    const state = this.getOrCreateStationState(chargingStation)
     state.certSigningRetryManager ??= new OCPP20CertSigningRetryManager(chargingStation)
     return state.certSigningRetryManager
   }
@@ -1380,20 +1380,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       .catch(errorHandler)
   }
 
-  private getRestoredConnectorStatus (
-    chargingStation: ChargingStation,
-    connectorId: number
-  ): OCPP20ConnectorStatusEnumType {
-    const stationState = this.getStationState(chargingStation)
-    const saved = stationState.preInoperativeConnectorStatuses.get(connectorId)
-    if (saved != null) {
-      stationState.preInoperativeConnectorStatuses.delete(connectorId)
-      return saved
-    }
-    return OCPP20ConnectorStatusEnumType.Available
-  }
-
-  private getStationState (chargingStation: ChargingStation): OCPP20StationState {
+  private getOrCreateStationState (chargingStation: ChargingStation): OCPP20StationState {
     let state = this.stationsState.get(chargingStation)
     if (state == null) {
       state = {
@@ -1405,6 +1392,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.stationsState.set(chargingStation, state)
     }
     return state
+  }
+
+  private getRestoredConnectorStatus (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): OCPP20ConnectorStatusEnumType {
+    const stationState = this.getOrCreateStationState(chargingStation)
+    const saved = stationState.preInoperativeConnectorStatuses.get(connectorId)
+    if (saved != null) {
+      stationState.preInoperativeConnectorStatuses.delete(connectorId)
+      return saved
+    }
+    return OCPP20ConnectorStatusEnumType.Available
   }
 
   private handleConnectorChangeAvailability (
@@ -1978,7 +1978,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const cached = stationState.reportDataCache.get(commandPayload.requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
     if (!cached && isNotEmptyArray(reportData)) {
@@ -3093,7 +3093,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Cancel any in-progress firmware update; respond with AcceptedCanceled so the new request starts fresh
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     if (stationState.activeFirmwareUpdateAbortController != null) {
       const previousRequestId = stationState.activeFirmwareUpdateRequestId
       stationState.activeFirmwareUpdateAbortController.abort()
@@ -3284,7 +3284,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - Optional EVSE ID to scope the save; if omitted, saves all EVSEs
    */
   private savePreInoperativeStatuses (chargingStation: ChargingStation, evseId?: number): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const evseIds =
       evseId != null && evseId > 0
         ? [evseId]
@@ -3533,7 +3533,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
     const { reportBase, requestId } = request
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const cached = stationState.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
@@ -3577,7 +3577,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private sendQueuedSecurityEvents (chargingStation: ChargingStation): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     if (
       stationState.isDrainingSecurityEvents ||
       !chargingStation.isWebSocketConnectionOpened() ||
@@ -3682,7 +3682,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendSecurityEventNotification: [SecurityEvent] type=${type}${techInfo != null ? `, techInfo=${techInfo}` : ''}`
     )
-    this.getStationState(chargingStation).securityEventQueue.push({
+    this.getOrCreateStationState(chargingStation).securityEventQueue.push({
       timestamp: new Date(),
       type,
       ...(techInfo !== undefined && { techInfo }),
@@ -3711,7 +3711,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // Store the abort controller so a subsequent UpdateFirmware can abort this in-progress update
     const abortController = new AbortController()
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
     stationState.activeFirmwareUpdateRequestId = requestId
 
