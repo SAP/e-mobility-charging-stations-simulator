@@ -134,7 +134,7 @@ export class Constants {
 
   static readonly ENV_SIMULATOR_COLD_START = 'SIMULATOR_COLD_START'
 
-  static readonly MAX_RANDOM_INTEGER = 281_474_976_710_655 // 2^48 - 1 (randomInit() limit)
+  static readonly MAX_RANDOM_INTEGER = 281_474_976_710_655 // 2^48 - 1 (randomInt() limit)
 
   // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
