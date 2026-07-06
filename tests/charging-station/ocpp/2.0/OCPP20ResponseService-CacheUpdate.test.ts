@@ -14,8 +14,8 @@ import {
   AuthorizationStatus,
   IdentifierType,
   OCPPAuthServiceFactory,
-  OCPPAuthServiceImpl,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
+import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import { OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
