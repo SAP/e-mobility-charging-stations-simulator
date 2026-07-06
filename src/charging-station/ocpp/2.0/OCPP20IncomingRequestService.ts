@@ -1284,7 +1284,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private clearActiveFirmwareUpdate (chargingStation: ChargingStation, requestId: number): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null) {
+      return
+    }
     if (stationState.activeFirmwareUpdateRequestId === requestId) {
       this.resetActiveFirmwareUpdateState(stationState)
     } else {
