@@ -1251,10 +1251,12 @@ export const buildMeterValue = (
             ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
             : chargingStation.getNumberOfPhases().toString()
         const lineToLineLabel = `L${phase.toString()}-L${nextPhase}` as MeterValuePhase
-        const lineToLineNominalVoltage = roundTo(
-          Math.sqrt(chargingStation.getNumberOfPhases()) * chargingStation.getVoltageOut(),
-          2
-        )
+        // `V_LL = sqrt(3) * V_LN` in a balanced 3-phase Y system; the
+        // sqrt(3) factor comes from the 30-degree phase separation, not
+        // from the phase count itself. Emitting L-L values makes physical
+        // sense only for `numberOfPhases === 3`; single-phase has no L-L
+        // pair, and `numberOfPhases === 2` is unsupported by contract.
+        const lineToLineNominalVoltage = roundTo(Math.sqrt(3) * chargingStation.getVoltageOut(), 2)
         addPhaseVoltageToMeterValue(
           chargingStation,
           connectorId,

@@ -277,9 +277,11 @@ const resolvePhasedValue = (
         // (`Helpers.getPhaseRotationValue` branches only on {0, 1, 3}).
         // Return `undefined` on any non-3-phase configuration so the
         // caller can log-and-skip rather than emit a physically
-        // meaningless sqrt(2) * V_LN value.
+        // meaningless value. The sqrt(3) factor comes from the 30-degree
+        // phase separation in a balanced Y system, not from the phase
+        // count itself.
         if (numberOfPhases !== 3) return undefined
-        return Math.sqrt(numberOfPhases) * sample.voltageV
+        return Math.sqrt(3) * sample.voltageV
       }
       return sample.voltageV
     default:
