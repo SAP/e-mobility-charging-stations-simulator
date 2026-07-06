@@ -4,11 +4,15 @@ import type { ChargingStationTemplate } from '../types/index.js'
 
 import { BaseError } from '../exception/index.js'
 import {
+  assertIsJsonObject,
+  clone,
   type FieldError,
   formatFieldErrorsSummary,
+  isEmpty,
+  isNotEmptyString,
+  logger,
   mapZodIssuesToFieldErrors,
-} from '../utils/FieldError.js'
-import { assertIsJsonObject, clone, isEmpty, isNotEmptyString, logger } from '../utils/index.js'
+} from '../utils/index.js'
 import { getMaxConfiguredNumberOfConnectors } from './Helpers.js'
 import { applyMigration, coerceVersion, CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { TemplateSchema } from './TemplateSchema.js'
