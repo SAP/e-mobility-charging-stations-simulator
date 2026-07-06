@@ -61,6 +61,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  isValidRandomIntBounds,
   JSONStringify,
   logger,
   logPrefix,
@@ -262,12 +263,20 @@ const buildSocMeasurandValue = (
 
   const socMaximumValue = Constants.SOC_MAXIMUM_PERCENT
   const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
-  const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
-    ? getRandomFloatFluctuatedRounded(
+  let socSampledValueTemplateValue: number
+  if (isNotEmptyString(socSampledValueTemplate.value)) {
+    socSampledValueTemplateValue = getRandomFloatFluctuatedRounded(
       convertToInt(socSampledValueTemplate.value),
       socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
     )
-    : randomInt(socMinimumValue, socMaximumValue + 1)
+  } else if (isValidRandomIntBounds(socMinimumValue, socMaximumValue)) {
+    socSampledValueTemplateValue = randomInt(socMinimumValue, socMaximumValue + 1)
+  } else {
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.buildSocMeasurandValue: invalid SoC bounds socMinimumValue=${socMinimumValue.toString()}, socMaximumValue=${socMaximumValue.toString()} — falling back to socMaximumValue`
+    )
+    socSampledValueTemplateValue = socMaximumValue
+  }
 
   return {
     template: socSampledValueTemplate,
