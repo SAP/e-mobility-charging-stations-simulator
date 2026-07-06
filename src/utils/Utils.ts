@@ -262,21 +262,24 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
 /**
  * Predicate for a min/max pair intended as input to
  * `randomInt(minValue, maxValue + 1)` (from `node:crypto`). Returns
- * `true` when both bounds are safe integers, non-negative, and
- * `minValue <= maxValue`. Equality is permitted because
- * `randomInt(x, x + 1)` returns exactly `x` without throwing. Rejects
- * `NaN`, `Infinity`, non-integer floats and negative values — all of
- * which would cause `randomInt` to throw `RangeError` regardless of
- * ordering.
+ * `true` when both bounds are safe integers, non-negative,
+ * `minValue <= maxValue`, and the resulting range is within
+ * `node:crypto`'s hard limit (`randomInt` requires
+ * `max - min <= 2^48 - 1`). Equality is permitted because
+ * `randomInt(x, x + 1)` returns exactly `x` without throwing.
+ * Rejects `NaN`, `Infinity`, non-integer floats, negative values, and
+ * ranges wider than 2^48 — all of which would cause `randomInt` to
+ * throw `RangeError`.
  * @param minValue - Lower bound (inclusive; must be a non-negative safe integer).
- * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue).
+ * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue, with maxValue - minValue < 2^48).
  * @returns `true` when the bounds are safe; `false` otherwise.
  */
 export const isValidRandomIntBounds = (minValue: number, maxValue: number): boolean =>
   Number.isSafeInteger(minValue) &&
   Number.isSafeInteger(maxValue) &&
   minValue >= 0 &&
-  minValue <= maxValue
+  minValue <= maxValue &&
+  maxValue - minValue < 2 ** 48
 
 export const convertToDate = (
   value: Date | null | number | string | undefined
