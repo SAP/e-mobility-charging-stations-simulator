@@ -384,20 +384,20 @@ export class AutomaticTransactionGenerator {
       if (this.connectorAbortControllers.get(connectorId) === abortController) {
         this.connectorAbortControllers.delete(connectorId)
       }
+      connectorStatus.stoppedDate = new Date()
+      logger.info(
+        `${this.logPrefix(
+          connectorId
+        )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
+          connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
+        )}`
+      )
+      logger.debug(
+        `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
+        connectorStatus
+      )
+      this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
     }
-    connectorStatus.stoppedDate = new Date()
-    logger.info(
-      `${this.logPrefix(
-        connectorId
-      )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
-        connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
-      )}`
-    )
-    logger.debug(
-      `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
-      connectorStatus
-    )
-    this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   private readonly logPrefix = (connectorId?: number): string => {
