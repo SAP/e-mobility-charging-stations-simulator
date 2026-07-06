@@ -20,13 +20,13 @@ import {
   Constants,
   convertToDate,
   formatDurationMilliSeconds,
+  interruptibleSleep,
   isEmpty,
   isValidDate,
   isValidRandomIntBounds,
   logger,
   logPrefix,
   secureRandom,
-  sleep,
 } from '../utils/index.js'
 import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
@@ -37,38 +37,6 @@ import {
 } from './ocpp/index.js'
 
 const moduleName = 'AutomaticTransactionGenerator'
-
-/**
- * Sleeps for the specified duration or resolves early when the signal aborts.
- * Both the setTimeout handle and the 'abort' listener are cleaned up on
- * whichever path resolves the promise first so the caller cannot leak
- * a pending Timeout or a stale abort listener.
- * @param milliSeconds - Duration to sleep in milliseconds.
- * @param signal - AbortSignal that resolves the promise early on abort.
- * @returns Promise that resolves when the timer fires or the signal aborts.
- */
-const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): Promise<void> =>
-  new Promise(resolve => {
-    if (signal.aborted) {
-      resolve()
-      return
-    }
-    /**
-     * Cleanup on abort: cancel the pending setTimeout so its callback
-     * cannot fire after the promise has already resolved, then resolve
-     * the outer promise. The `{ once: true }` addEventListener flag
-     * removes this listener automatically after it fires.
-     */
-    function onAbort (): void {
-      clearTimeout(timeout)
-      resolve()
-    }
-    const timeout = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort)
-      resolve()
-    }, milliSeconds)
-    signal.addEventListener('abort', onAbort, { once: true })
-  })
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -357,9 +325,9 @@ export class AutomaticTransactionGenerator {
     )
     try {
       while (this.connectorsStatus.get(connectorId)?.start === true) {
-        await this.waitChargingStationAvailable(connectorId)
-        await this.waitConnectorAvailable(connectorId)
-        await this.waitRunningTransactionStopped(connectorId)
+        await this.waitChargingStationAvailable(connectorId, abortController.signal)
+        await this.waitConnectorAvailable(connectorId, abortController.signal)
+        await this.waitRunningTransactionStopped(connectorId, abortController.signal)
         if (!this.canStartConnector(connectorId)) {
           this.stopConnector(connectorId)
           break
@@ -620,9 +588,12 @@ export class AutomaticTransactionGenerator {
     return true
   }
 
-  private async waitChargingStationAvailable (connectorId: number): Promise<void> {
+  private async waitChargingStationAvailable (
+    connectorId: number,
+    signal: AbortSignal
+  ): Promise<void> {
     let logged = false
-    while (!this.chargingStation.isChargingStationAvailable()) {
+    while (!this.chargingStation.isChargingStationAvailable() && !signal.aborted) {
       if (!logged) {
         logger.info(
           `${this.logPrefix(
@@ -631,13 +602,13 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 
-  private async waitConnectorAvailable (connectorId: number): Promise<void> {
+  private async waitConnectorAvailable (connectorId: number, signal: AbortSignal): Promise<void> {
     let logged = false
-    while (!this.chargingStation.isConnectorAvailable(connectorId)) {
+    while (!this.chargingStation.isConnectorAvailable(connectorId) && !signal.aborted) {
       if (!logged) {
         logger.info(
           `${this.logPrefix(
@@ -646,14 +617,17 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 
-  private async waitRunningTransactionStopped (connectorId: number): Promise<void> {
+  private async waitRunningTransactionStopped (
+    connectorId: number,
+    signal: AbortSignal
+  ): Promise<void> {
     const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
     let logged = false
-    while (connectorStatus?.transactionStarted === true) {
+    while (connectorStatus?.transactionStarted === true && !signal.aborted) {
       if (!logged) {
         logger.info(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -661,7 +635,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 }

@@ -85,6 +85,7 @@ export {
   getWebSocketCloseEventStatusString,
   has,
   insertAt,
+  interruptibleSleep,
   isArraySorted,
   isAsyncFunction,
   isCFEnvironment,

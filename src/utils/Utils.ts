@@ -164,6 +164,40 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
 }
 
 /**
+ * Sleeps for the specified duration or resolves early when the signal
+ * aborts. Both the `setTimeout` handle and the `'abort'` listener are
+ * cleaned up on whichever path resolves the promise first so the caller
+ * cannot leak a pending `Timeout` or a stale listener. Resolves (does
+ * not reject) on abort — callers observe the abort by rechecking their
+ * own loop condition after the promise settles.
+ * @param milliSeconds - Duration to sleep in milliseconds.
+ * @param signal - `AbortSignal` that resolves the promise early on abort.
+ * @returns Promise that resolves when the timer fires or the signal aborts.
+ */
+export const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): Promise<void> =>
+  new Promise(resolve => {
+    if (signal.aborted) {
+      resolve()
+      return
+    }
+    const timeout = setTimeout(() => {
+      // Timer-path cleanup: `{ once: true }` on addEventListener only
+      // removes the listener when the abort event fires, so we remove
+      // it explicitly here to avoid a stale listener on the signal.
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, milliSeconds)
+    const onAbort = (): void => {
+      // Abort-path cleanup: cancel the pending setTimeout so its
+      // callback cannot fire after the promise has already resolved.
+      // The listener itself is auto-removed by `{ once: true }` below.
+      clearTimeout(timeout)
+      resolve()
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+
+/**
  * Races a promise against a timeout. Resolves/rejects with the promise result
  * if it settles before the deadline, otherwise rejects with a timeout error.
  * The timer is always cleaned up when the promise settles first.

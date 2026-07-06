@@ -103,3 +103,4 @@ words:
   - secret
   - emerg
   - REMAPPINGS
+  - interruptible
