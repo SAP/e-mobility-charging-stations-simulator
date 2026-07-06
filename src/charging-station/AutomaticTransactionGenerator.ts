@@ -143,6 +143,9 @@ export class AutomaticTransactionGenerator {
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
+      if (!this.validateConfiguration()) {
+        return
+      }
       this.internalStartConnector(connectorId, stopAbsoluteDuration).catch((error: unknown) =>
         logger.error(
           `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Error while starting connector:`,
@@ -551,6 +554,41 @@ export class AutomaticTransactionGenerator {
     }
     PerformanceStatistics.endMeasure(measureId, beginId)
     return result
+  }
+
+  /**
+   * Validates min/max invariants on the ATG configuration so a
+   * mis-configured template cannot kill the run loop with a
+   * `randomInt(min, max)` RangeError at the first iteration. Returns
+   * `true` when no configuration is present (absence is handled
+   * elsewhere with defaulting to 0).
+   * @returns `true` when configuration is absent or its min/max
+   * invariants hold; `false` when a violation was found and logged.
+   */
+  private validateConfiguration (): boolean {
+    const config = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+    if (config == null) {
+      return true
+    }
+    const {
+      maxDelayBetweenTwoTransactions,
+      maxDuration,
+      minDelayBetweenTwoTransactions,
+      minDuration,
+    } = config
+    if (minDelayBetweenTwoTransactions > maxDelayBetweenTwoTransactions) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()} > maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
+      )
+      return false
+    }
+    if (minDuration > maxDuration) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: minDuration=${minDuration.toString()} > maxDuration=${maxDuration.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
+      )
+      return false
+    }
+    return true
   }
 
   private async waitChargingStationAvailable (connectorId: number): Promise<void> {
