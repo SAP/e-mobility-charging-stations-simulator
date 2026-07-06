@@ -99,7 +99,6 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand | RequestCommand
   ): Promise<ResponseType> {
     try {
-      // Send error message
       return await this.internalSendMessage(
         chargingStation,
         messageId,
@@ -125,7 +124,6 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand
   ): Promise<ResponseType> {
     try {
-      // Send response message
       return await this.internalSendMessage(
         chargingStation,
         messageId,
@@ -264,7 +262,6 @@ export abstract class OCPPRequestService {
       }
       // Request
       case MessageType.CALL_MESSAGE:
-        // Build request
         this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType)
         messageToSend = JSON.stringify([
           messageType,
@@ -275,7 +272,6 @@ export abstract class OCPPRequestService {
         break
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
-        // Build response
         this.validateIncomingRequestResponsePayload(
           chargingStation,
           commandName,
@@ -316,7 +312,6 @@ export abstract class OCPPRequestService {
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias -- stable outer-this reference captured for nested Promise executor and its response-handler closures
       const self = this
-      // Send a message through wsConnection
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
@@ -330,7 +325,6 @@ export abstract class OCPPRequestService {
               MessageType.CALL_RESULT_MESSAGE
             )
           }
-          // Handle the request's response
           self.ocppResponseService
             .responseHandler(
               chargingStation,
@@ -391,7 +385,6 @@ export abstract class OCPPRequestService {
             params.skipBufferingOnError === true &&
             messageType === MessageType.CALL_MESSAGE
           ) {
-            // Remove request from the cache
             chargingStation.requests.delete(messageId)
           }
           reject(ocppError)
@@ -407,7 +400,6 @@ export abstract class OCPPRequestService {
           messageType,
           commandName
         )
-        // Check if wsConnection opened
         if (chargingStation.isWebSocketConnectionOpened()) {
           const beginId = PerformanceStatistics.beginMeasure(commandName)
           const sendTimeout = setTimeout(() => {

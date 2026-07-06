@@ -99,7 +99,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
             response = incomingRequestHandler(chargingStation, commandPayload) as ResType
           }
         } catch (error) {
-          // Log
           logger.error(
             `${chargingStation.logPrefix()} ${this.moduleName}.incomingRequestHandler: Handle incoming request error:`,
             error
@@ -123,7 +122,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
         commandPayload
       )
     }
-    // Send the built response
     await chargingStation.ocppRequestService.sendResponse(
       chargingStation,
       messageId,
