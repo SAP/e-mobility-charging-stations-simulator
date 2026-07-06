@@ -76,6 +76,14 @@ export abstract class OCPPRequestService {
     return OCPPRequestService.instances.get(this) as T
   }
 
+  /**
+   * Sends an OCPP request and awaits its response.
+   * @param chargingStation - Target charging station.
+   * @param commandName - OCPP request command name.
+   * @param commandParams - Optional request payload.
+   * @param params - Optional request behaviour parameters.
+   * @returns Response payload from the Central System.
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,

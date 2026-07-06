@@ -136,8 +136,18 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     }
   }
 
+  /**
+   * Stops the incoming-request service for the given charging station.
+   * @param chargingStation - Target charging station.
+   */
   public abstract stop (chargingStation: ChargingStation): void
 
+  /**
+   * Whether the given incoming-request command is supported for this station.
+   * @param chargingStation - Target charging station.
+   * @param commandName - OCPP incoming-request command name.
+   * @returns True when the command is supported.
+   */
   protected abstract isIncomingRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand

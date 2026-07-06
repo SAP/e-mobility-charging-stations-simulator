@@ -112,6 +112,12 @@ export abstract class OCPPResponseService {
     }
   }
 
+  /**
+   * Whether the given request command is supported for this station.
+   * @param chargingStation - Target charging station.
+   * @param commandName - OCPP request command name.
+   * @returns True when the command is supported.
+   */
   protected abstract isRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: RequestCommand

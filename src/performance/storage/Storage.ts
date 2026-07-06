@@ -24,14 +24,27 @@ export abstract class Storage {
     this.logPrefix = logPrefix
   }
 
+  /**
+   * Closes the storage, releasing any underlying handles.
+   * @returns Promise that resolves once closed, or void for synchronous implementations.
+   */
   public abstract close (): Promise<void> | void
 
   public getPerformanceStatistics (): IterableIterator<Statistics> {
     return Storage.performanceStatistics.values()
   }
 
+  /**
+   * Opens the storage, acquiring any underlying handles.
+   * @returns Promise that resolves once open, or void for synchronous implementations.
+   */
   public abstract open (): Promise<void> | void
 
+  /**
+   * Persists a performance statistics snapshot.
+   * @param performanceStatistics - Statistics snapshot to persist.
+   * @returns Promise that resolves once the snapshot is stored, or void for synchronous implementations.
+   */
   public abstract storePerformanceStatistics (
     performanceStatistics: Statistics
   ): Promise<void> | void

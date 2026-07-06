@@ -312,8 +312,16 @@ export abstract class AbstractUIServer {
       ?.requestHandler(request, { origin: UIRequestOrigin.INTERNAL }) as Promise<ProtocolResponse>)
   }
 
+  /**
+   * Sends a UI protocol request to the connected UI client.
+   * @param request - Protocol request to send.
+   */
   public abstract sendRequest (request: ProtocolRequest): void
 
+  /**
+   * Sends a UI protocol response to the connected UI client.
+   * @param response - Protocol response to send.
+   */
   public abstract sendResponse (response: ProtocolResponse): void
 
   public setChargingStationData (hashId: string, data: ChargingStationData): boolean {
