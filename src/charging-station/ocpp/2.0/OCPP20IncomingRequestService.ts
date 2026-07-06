@@ -1308,6 +1308,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private clearActiveLogUpload (chargingStation: ChargingStation, requestId: number): void {
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null) {
+      return
+    }
+    if (stationState.activeLogUploadRequestId === requestId) {
+      stationState.activeLogUploadRequestId = undefined
+      stationState.activeLogUploadStatus = undefined
+    } else {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveLogUpload: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${String(stationState.activeLogUploadRequestId)})`
+      )
+    }
+  }
+
   private connectorHasQueuedEvents (
     connectorStatus: ConnectorStatus,
     transactionId?: string
@@ -3153,7 +3168,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Checks if firmware update is in progress per OCPP 2.0.1 Errata idle definition.
    * @param chargingStation - The charging station instance
-   * @returns true if firmware update is in progress (Downloading, Downloaded, Installing, DownloadScheduled, DownloadPaused, InstallScheduled, InstallRebooting, or SignatureVerified)
+   * @returns `true` when {@link OCPP20FirmwareStatusEnumType} is any non-terminal value:
+   *   Downloading, Downloaded, Installing, DownloadScheduled, DownloadPaused,
+   *   InstallScheduled, InstallRebooting, or SignatureVerified.
    */
   private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
@@ -3934,7 +3951,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
 
       await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
-      stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
+      if (stationState.activeLogUploadRequestId === requestId) {
+        stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
+      }
       await this.sendLogStatusNotification(
         chargingStation,
         UploadLogStatusEnumType.Uploaded,
@@ -3945,10 +3964,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
       )
     } finally {
-      if (stationState.activeLogUploadRequestId === requestId) {
-        stationState.activeLogUploadRequestId = undefined
-        stationState.activeLogUploadStatus = undefined
-      }
+      this.clearActiveLogUpload(chargingStation, requestId)
     }
   }
 
