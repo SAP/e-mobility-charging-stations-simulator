@@ -340,10 +340,10 @@ export class AutomaticTransactionGenerator {
     if (connectorStatus == null) {
       return
     }
-    // Fresh AbortController per run: any previous controller (from an
-    // earlier internalStartConnector invocation on the same connector)
-    // is already spent, and we want stopConnector to affect only the
-    // currently-running loop.
+    // Fresh AbortController per run of internalStartConnector so a stale
+    // abort from a previous run cannot short-circuit a new loop. The
+    // previous controller (if any) is aborted first to unblock any
+    // lingering interruptibleSleep from the earlier invocation.
     this.connectorAbortControllers.get(connectorId)?.abort()
     const abortController = new AbortController()
     this.connectorAbortControllers.set(connectorId, abortController)
@@ -354,62 +354,72 @@ export class AutomaticTransactionGenerator {
         (connectorStatus.stopDate?.getTime() ?? 0) - (connectorStatus.startDate?.getTime() ?? 0)
       )}`
     )
-    while (this.connectorsStatus.get(connectorId)?.start === true) {
-      await this.waitChargingStationAvailable(connectorId)
-      await this.waitConnectorAvailable(connectorId)
-      await this.waitRunningTransactionStopped(connectorId)
-      if (!this.canStartConnector(connectorId)) {
-        this.stopConnector(connectorId)
-        break
-      }
-      const wait = secondsToMilliseconds(
-        randomInt(
-          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.minDelayBetweenTwoTransactions ?? 0,
-          (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.maxDelayBetweenTwoTransactions ?? 0) + 1
-        )
-      )
-      logger.info(
-        `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Waiting for ${formatDurationMilliSeconds(wait)}`
-      )
-      await interruptibleSleep(wait, abortController.signal)
-      const start = secureRandom()
-      if (
-        start <
-        (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.probabilityOfStart ??
-          0)
-      ) {
-        connectorStatus.skippedConsecutiveTransactions = 0
-        const startResponse = await this.startTransaction(connectorId)
-        if (startResponse?.accepted === true) {
-          const waitTrxEnd = secondsToMilliseconds(
-            randomInt(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration ??
-                0,
-              (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration ??
-                0) + 1
-            )
-          )
-          logger.info(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Transaction started with id ${this.chargingStation
-              .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
-          )
-          await interruptibleSleep(waitTrxEnd, abortController.signal)
-          await this.stopTransaction(connectorId)
+    try {
+      while (this.connectorsStatus.get(connectorId)?.start === true) {
+        await this.waitChargingStationAvailable(connectorId)
+        await this.waitConnectorAvailable(connectorId)
+        await this.waitRunningTransactionStopped(connectorId)
+        if (!this.canStartConnector(connectorId)) {
+          this.stopConnector(connectorId)
+          break
         }
-      } else {
-        ++connectorStatus.skippedConsecutiveTransactions
-        ++connectorStatus.skippedTransactions
-        logger.info(
-          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Skipped consecutively ${connectorStatus.skippedConsecutiveTransactions.toString()}/${connectorStatus.skippedTransactions.toString()} transaction(s)`
+        const wait = secondsToMilliseconds(
+          randomInt(
+            this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+              ?.minDelayBetweenTwoTransactions ?? 0,
+            (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+              ?.maxDelayBetweenTwoTransactions ?? 0) + 1
+          )
         )
+        logger.info(
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Waiting for ${formatDurationMilliSeconds(wait)}`
+        )
+        await interruptibleSleep(wait, abortController.signal)
+        const start = secureRandom()
+        if (
+          start <
+          (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+            ?.probabilityOfStart ?? 0)
+        ) {
+          connectorStatus.skippedConsecutiveTransactions = 0
+          const startResponse = await this.startTransaction(connectorId)
+          if (startResponse?.accepted === true) {
+            const waitTrxEnd = secondsToMilliseconds(
+              randomInt(
+                this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration ??
+                  0,
+                (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+                  ?.maxDuration ?? 0) + 1
+              )
+            )
+            logger.info(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Transaction started with id ${this.chargingStation
+                .getConnectorStatus(connectorId)
+                ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
+            )
+            await interruptibleSleep(waitTrxEnd, abortController.signal)
+            await this.stopTransaction(connectorId)
+          }
+        } else {
+          ++connectorStatus.skippedConsecutiveTransactions
+          ++connectorStatus.skippedTransactions
+          logger.info(
+            `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Skipped consecutively ${connectorStatus.skippedConsecutiveTransactions.toString()}/${connectorStatus.skippedTransactions.toString()} transaction(s)`
+          )
+        }
+        connectorStatus.lastRunDate = new Date()
       }
-      connectorStatus.lastRunDate = new Date()
+    } finally {
+      // Only clear the entry if it still references the current run's
+      // controller: a concurrent stopConnector→startConnector sequence
+      // may have replaced it, and we must not delete the successor's
+      // controller. Guarantees cleanup on both normal exit and any
+      // rejected await inside the loop (which the caller's .catch swallows).
+      if (this.connectorAbortControllers.get(connectorId) === abortController) {
+        this.connectorAbortControllers.delete(connectorId)
+      }
     }
-    this.connectorAbortControllers.delete(connectorId)
     connectorStatus.stoppedDate = new Date()
     logger.info(
       `${this.logPrefix(
