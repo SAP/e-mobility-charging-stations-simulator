@@ -79,6 +79,7 @@ export class AutomaticTransactionGenerator {
   public started: boolean
 
   private readonly chargingStation: ChargingStation
+  private configurationValidationResult: boolean | undefined
   private readonly connectorAbortControllers: Map<number, AbortController>
   private starting: boolean
   private stopping: boolean
@@ -90,6 +91,7 @@ export class AutomaticTransactionGenerator {
     this.chargingStation = chargingStation
     this.connectorsStatus = new Map<number, Status>()
     this.connectorAbortControllers = new Map<number, AbortController>()
+    this.configurationValidationResult = undefined
     this.initializeConnectorsStatus()
   }
 
@@ -175,6 +177,10 @@ export class AutomaticTransactionGenerator {
     this.stopConnectors()
     this.started = false
     this.stopping = false
+    // Reset the validation cache so a subsequent start() (potentially
+    // with a mutated ATG configuration) re-validates from scratch and
+    // re-emits the diagnostic log line if the new config is invalid.
+    this.configurationValidationResult = undefined
   }
 
   public stopConnector (connectorId: number): void {
@@ -560,15 +566,21 @@ export class AutomaticTransactionGenerator {
   /**
    * Validates min/max invariants on the ATG configuration so a
    * mis-configured template cannot kill the run loop with a
-   * `randomInt(min, max)` RangeError at the first iteration. Returns
-   * `true` when no configuration is present (absence is handled
-   * elsewhere with defaulting to 0).
+   * `randomInt(min, max)` RangeError at the first iteration. The result
+   * is memoized on `configurationValidationResult` so a station with N
+   * connectors emits the diagnostic log line at most once per session
+   * (reset by `stop()`). Returns `true` when no configuration is
+   * present (absence is handled elsewhere with defaulting to 0).
    * @returns `true` when configuration is absent or its min/max
    * invariants hold; `false` when a violation was found and logged.
    */
   private validateConfiguration (): boolean {
+    if (this.configurationValidationResult !== undefined) {
+      return this.configurationValidationResult
+    }
     const config = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
     if (config == null) {
+      this.configurationValidationResult = true
       return true
     }
     const {
@@ -581,14 +593,17 @@ export class AutomaticTransactionGenerator {
       logger.error(
         `${this.logPrefix()} ${moduleName}.validateConfiguration: minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()} > maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
       )
+      this.configurationValidationResult = false
       return false
     }
     if (minDuration > maxDuration) {
       logger.error(
         `${this.logPrefix()} ${moduleName}.validateConfiguration: minDuration=${minDuration.toString()} > maxDuration=${maxDuration.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
       )
+      this.configurationValidationResult = false
       return false
     }
+    this.configurationValidationResult = true
     return true
   }
 
