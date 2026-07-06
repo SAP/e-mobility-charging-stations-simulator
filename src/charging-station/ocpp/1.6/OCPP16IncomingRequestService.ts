@@ -173,7 +173,7 @@ const moduleName = 'OCPP16IncomingRequestService'
  */
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
-  protected readonly csmsName = 'central system'
+  protected readonly csmsName = 'Central System'
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
 
   protected readonly moduleName = moduleName
@@ -1249,7 +1249,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 1.6 GetLocalListVersion request from central system.
+   * Handles OCPP 1.6 GetLocalListVersion request from Central System.
    * Returns the version number of the local authorization list.
    * @param chargingStation - The charging station instance processing the request
    * @returns GetLocalListVersionResponse with list version
@@ -1283,7 +1283,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 1.6 RemoteStartTransaction request from central system
+   * Handles OCPP 1.6 RemoteStartTransaction request from Central System
    * Initiates charging transaction on specified or available connector
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - RemoteStartTransaction request payload with connector and ID tag

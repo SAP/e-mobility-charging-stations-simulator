@@ -855,11 +855,11 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * Sends a StartTransaction request to the central system for the given connector.
+   * Sends a StartTransaction request to the Central System for the given connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier to start the transaction on
    * @param idTag - Optional RFID tag for the transaction
-   * @returns Start transaction response from the central system
+   * @returns Start transaction response from the Central System
    */
   public static async startTransactionOnConnector (
     chargingStation: ChargingStation,
@@ -938,11 +938,11 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * Sends a StopTransaction request to the central system for the given connector.
+   * Sends a StopTransaction request to the Central System for the given connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier with the active transaction
    * @param reason - Optional stop transaction reason
-   * @returns Stop transaction response from the central system
+   * @returns Stop transaction response from the Central System
    */
   public static async stopTransactionOnConnector (
     chargingStation: ChargingStation,

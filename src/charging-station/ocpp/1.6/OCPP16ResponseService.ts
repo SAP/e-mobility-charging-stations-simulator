@@ -126,7 +126,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
   >
 
   protected readonly bootNotificationRequestCommand = OCPP16RequestCommand.BOOT_NOTIFICATION
-  protected readonly csmsName = 'central system'
+  protected readonly csmsName = 'Central System'
   protected readonly moduleName = moduleName
 
   protected payloadValidatorFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
@@ -283,7 +283,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
       const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
         payload.status
-      }' state on the central system`
+      }' state on the Central System`
       payload.status === RegistrationStatusEnumType.REJECTED
         ? logger.warn(logMsg)
         : logger.info(logMsg)
