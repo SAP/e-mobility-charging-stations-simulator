@@ -789,6 +789,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
       stationState.activeFirmwareUpdateAbortController?.abort()
+      stationState.certSigningRetryManager?.cancelRetryTimer()
       this.resetActiveFirmwareUpdateState(stationState)
       this.resetActiveLogUploadState(stationState)
       this.stationsState.delete(chargingStation)
@@ -2101,11 +2102,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Handles OCPP 2.0.1 GetLog request from central system.
    * When a prior upload is in progress, cancels it per N01.FR.12/FR.20
-   * and returns AcceptedCanceled; otherwise simulates a Uploading → Uploaded
+   * and returns AcceptedCanceled; otherwise simulates an Uploading → Uploaded
    * lifecycle via LogStatusNotification messages.
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - GetLog request payload with log type, requestId, and log parameters
-   * @returns GetLogResponse with `Accepted` (no prior upload) or `AcceptedCanceled` (superseded prior upload) status and simulated filename.
+   * @returns GetLogResponse with `Accepted` (no prior upload) or `AcceptedCanceled`
+   *   (superseded prior upload) status and simulated filename.
    */
   private handleRequestGetLog (
     chargingStation: ChargingStation,
