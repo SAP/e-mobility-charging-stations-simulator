@@ -1301,10 +1301,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         connectorId <= chargingStation.getNumberOfConnectors();
         connectorId++
       ) {
+        const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+        const isReservedForOther =
+          connectorStatus?.status === OCPP16ChargePointStatus.Reserved &&
+          !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
         if (
           chargingStation.isConnectorAvailable(connectorId) &&
-          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false &&
-          !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
+          connectorStatus?.transactionStarted === false &&
+          !isReservedForOther
         ) {
           commandPayload.connectorId = connectorId
           break
