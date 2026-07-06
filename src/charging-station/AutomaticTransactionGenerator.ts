@@ -166,6 +166,11 @@ export class AutomaticTransactionGenerator {
   }
 
   public stop (): void {
+    // Reset unconditionally before the started/stopping guards so external
+    // startConnector() callers (bypassing start()) can recover from a
+    // cached-false configurationValidationResult even when this.started
+    // never transitioned to true.
+    this.configurationValidationResult = undefined
     if (!this.started) {
       logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
       return
@@ -178,10 +183,6 @@ export class AutomaticTransactionGenerator {
     this.stopConnectors()
     this.started = false
     this.stopping = false
-    // Reset the validation cache so a subsequent start() (potentially
-    // with a mutated ATG configuration) re-validates from scratch and
-    // re-emits the diagnostic log line if the new config is invalid.
-    this.configurationValidationResult = undefined
   }
 
   public stopConnector (connectorId: number): void {
