@@ -92,6 +92,7 @@ export {
   isJsonObject,
   isNotEmptyArray,
   isNotEmptyString,
+  isRandomIntBoundsValid,
   isValidDate,
   JSONStringify,
   logPrefix,

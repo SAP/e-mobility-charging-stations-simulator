@@ -21,6 +21,7 @@ import {
   convertToDate,
   formatDurationMilliSeconds,
   isEmpty,
+  isRandomIntBoundsValid,
   isValidDate,
   logger,
   logPrefix,
@@ -589,14 +590,14 @@ export class AutomaticTransactionGenerator {
       minDelayBetweenTwoTransactions,
       minDuration,
     } = config
-    if (minDelayBetweenTwoTransactions > maxDelayBetweenTwoTransactions) {
+    if (!isRandomIntBoundsValid(minDelayBetweenTwoTransactions, maxDelayBetweenTwoTransactions)) {
       logger.error(
         `${this.logPrefix()} ${moduleName}.validateConfiguration: minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()} > maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
       )
       this.configurationValidationResult = false
       return false
     }
-    if (minDuration > maxDuration) {
+    if (!isRandomIntBoundsValid(minDuration, maxDuration)) {
       logger.error(
         `${this.logPrefix()} ${moduleName}.validateConfiguration: minDuration=${minDuration.toString()} > maxDuration=${maxDuration.toString()}; randomInt(min, max) would throw RangeError, aborting connector startup`
       )
