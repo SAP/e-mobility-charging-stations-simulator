@@ -911,7 +911,7 @@ interface VersionedSampledValueDispatch {
   signingConfig: SampledValueSigningConfig | undefined
   /**
    * Passed by reference; the closure assigned to `buildVersionedSampledValue`
-   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0 SampledValue
+   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0.1 SampledValue
    * is emitted. Callers rely on the reference identity to detect the mutation.
    */
   signingState: { publicKeyIncluded: boolean }
@@ -924,7 +924,7 @@ interface VersionedSampledValueDispatch {
  * @param chargingStation - Target charging station.
  * @param transactionId - Active transaction identifier.
  * @param context - Optional MeterValue reading context (drives signing
- *   configuration for OCPP 2.0).
+ *   configuration for OCPP 2.0.1).
  * @returns The dispatch bundle.
  */
 const createVersionedSampledValueDispatcher = (
@@ -1519,7 +1519,7 @@ const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
  * @param connectorId - Connector ID to look up templates for
  * @param measurandsKey - Configuration key containing the list of sampled measurands
  * @param measurand - Meter value measurand to match
- * @param evseId - Optional EVSE ID for OCPP 2.0 template lookup
+ * @param evseId - Optional EVSE ID for OCPP 2.0.1 template lookup
  * @param phase - Optional phase to match in the template
  * @returns Matching sampled value template, or undefined if not found
  */

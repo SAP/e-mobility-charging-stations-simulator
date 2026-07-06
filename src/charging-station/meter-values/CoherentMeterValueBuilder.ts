@@ -272,14 +272,9 @@ const resolvePhasedValue = (
       if (family === 'Neutral') return 0
       if (family === 'LineToLine') {
         // Line-to-line voltage is only defined for 3-phase AC
-        // (V_LL = sqrt(3) * V_LN); 1-phase has no L-L pair, and
-        // `numberOfPhases === 2` is unsupported by contract
-        // (`Helpers.getPhaseRotationValue` branches only on {0, 1, 3}).
-        // Return `undefined` on any non-3-phase configuration so the
-        // caller can log-and-skip rather than emit a physically
-        // meaningless value. The sqrt(3) factor comes from the 30-degree
-        // phase separation in a balanced Y system, not from the phase
-        // count itself.
+        // V_LL = sqrt(3) * V_LN in a balanced 3-phase Y system (30-degree
+        // phase separation). L-L is defined only for numberOfPhases === 3;
+        // 1-phase has no L-L pair, 2-phase is unsupported by contract.
         if (numberOfPhases !== 3) return undefined
         return Math.sqrt(3) * sample.voltageV
       }

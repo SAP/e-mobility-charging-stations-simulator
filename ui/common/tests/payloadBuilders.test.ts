@@ -44,7 +44,7 @@ await describe('payloadBuilders', async () => {
       assert.deepStrictEqual(result, { idTag: 'RFID123' })
     })
 
-    await it('should build idToken payload for OCPP 2.0', () => {
+    await it('should build idToken payload for OCPP 2.0.1', () => {
       const result = buildAuthorizePayload('RFID123', OCPPVersion.VERSION_20)
       assert.deepStrictEqual(result, {
         idToken: { idToken: 'RFID123', type: OCPP20IdTokenEnumType.ISO14443 },
@@ -294,7 +294,7 @@ await describe('payloadBuilders', async () => {
       assert.strictEqual((result as Record<string, unknown>).errorCode, undefined)
     })
 
-    await it('should build OCPP 2.0 payload with connectorStatus when evseId omitted', () => {
+    await it('should build OCPP 2.0.1 payload with connectorStatus when evseId omitted', () => {
       const result = buildStatusNotificationPayload(
         connectorId,
         OCPP20ConnectorStatusEnumType.OCCUPIED,
