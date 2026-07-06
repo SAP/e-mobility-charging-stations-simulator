@@ -398,6 +398,8 @@ const getChargingProfilesLimit = (
             logger.debug(debugLogMsg, chargingProfilesLimit)
             return chargingProfilesLimit
           }
+          // Last period: last in array OR next period would exceed the
+          // charging profile duration.
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
