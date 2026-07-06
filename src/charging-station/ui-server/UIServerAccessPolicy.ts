@@ -2,7 +2,6 @@ import type { IncomingMessage } from 'node:http'
 
 import type { UIServerConfiguration } from '../../types/index.js'
 
-import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
 import {
   has,
   isEmpty,
@@ -10,6 +9,7 @@ import {
   isNotEmptyArray,
   normalizeHost,
   normalizeIPAddress,
+  UI_SERVER_ACCESS_POLICY_DEFAULTS,
 } from '../../utils/index.js'
 import { splitHeaderList, splitQuoted } from './UIServerNet.js'
 

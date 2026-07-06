@@ -130,8 +130,7 @@ import {
   ROUTE_NAMES,
 } from '@/core/index.js'
 import { useStationActions } from '@/shared/composables/useStationActions.js'
-import { formatSupervisionUrl } from '@/shared/utils/formatSupervisionUrl.js'
-import { getATGStatus, getConnectorEntries } from '@/shared/utils/stationStatus.js'
+import { formatSupervisionUrl, getATGStatus, getConnectorEntries } from '@/shared/utils/index.js'
 
 import Button from '../buttons/ClassicButton.vue'
 import StateButton from '../buttons/StateButton.vue'

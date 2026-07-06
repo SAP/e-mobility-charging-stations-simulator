@@ -82,7 +82,7 @@ export class UIServerFactory {
         logger.warn(
           `${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`
         )
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- UIHttpServer is @deprecated but remains selectable via configuration until removal
         return new UIHttpServer(uiServerConfiguration, bootstrap)
       }
       case ApplicationProtocol.MCP:

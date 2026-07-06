@@ -1,3 +1,4 @@
+import { secondsToMilliseconds } from 'date-fns'
 /**
  * @file Tests for ChargingStation Configuration Management
  * @description Unit tests for boot notification, config persistence, and WebSocket handling
@@ -8,6 +9,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
+import { Constants } from '../../src/utils/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
@@ -76,7 +78,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - Heartbeat interval should match response interval
-      assert.strictEqual(station.getHeartbeatInterval(), customInterval * 1000)
+      assert.strictEqual(station.getHeartbeatInterval(), secondsToMilliseconds(customInterval))
       assert.strictEqual(station.inPendingState(), true)
     })
 
@@ -215,7 +217,10 @@ await describe('ChargingStation Configuration Management', async () => {
       // Assert - Both should have their respective intervals
       assert.strictEqual(pendingStation.station.inPendingState(), true)
       assert.strictEqual(rejectedStation.station.inRejectedState(), true)
-      assert.strictEqual(pendingStation.station.getHeartbeatInterval(), 60000)
+      assert.strictEqual(
+        pendingStation.station.getHeartbeatInterval(),
+        Constants.DEFAULT_HEARTBEAT_INTERVAL_MS
+      )
       assert.strictEqual(rejectedStation.station.getHeartbeatInterval(), TEST_ONE_HOUR_MS)
 
       // Cleanup
@@ -265,16 +270,16 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - should convert seconds to milliseconds
-      assert.strictEqual(station.getHeartbeatInterval(), 60000)
+      assert.strictEqual(station.getHeartbeatInterval(), Constants.DEFAULT_HEARTBEAT_INTERVAL_MS)
     })
 
-    await it('should return default heartbeat interval when not explicitly configured', () => {
-      // Arrange - use default heartbeat interval (TEST_HEARTBEAT_INTERVAL_SECONDS = 60)
+    await it('should return default heartbeat interval when not set', () => {
+      // Arrange
       const result = createMockChargingStation()
       station = result.station
 
-      // Act & Assert - default 60s * 1000 = 60000ms
-      assert.strictEqual(station.getHeartbeatInterval(), 60000)
+      // Act & Assert - default 60s in ms
+      assert.strictEqual(station.getHeartbeatInterval(), Constants.DEFAULT_HEARTBEAT_INTERVAL_MS)
     })
 
     await it('should return connection timeout in milliseconds', () => {
@@ -337,15 +342,15 @@ await describe('ChargingStation Configuration Management', async () => {
       const result = createMockChargingStation({ heartbeatInterval: 60 })
       station = result.station
       const initialInterval = station.getHeartbeatInterval()
-      assert.strictEqual(initialInterval, 60000)
+      assert.strictEqual(initialInterval, Constants.DEFAULT_HEARTBEAT_INTERVAL_MS)
 
       // Act - simulate configuration change by creating new station with different interval
       const result2 = createMockChargingStation({ heartbeatInterval: 120 })
       const station2 = result2.station
 
       // Assert - different configurations have different intervals
-      assert.strictEqual(station2.getHeartbeatInterval(), 120000)
-      assert.strictEqual(station.getHeartbeatInterval(), 60000) // Original unchanged
+      assert.strictEqual(station2.getHeartbeatInterval(), secondsToMilliseconds(120))
+      assert.strictEqual(station.getHeartbeatInterval(), Constants.DEFAULT_HEARTBEAT_INTERVAL_MS) // Original unchanged
 
       // Cleanup second station
       cleanupChargingStation(station2)

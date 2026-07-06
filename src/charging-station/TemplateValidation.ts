@@ -101,10 +101,7 @@ function transformTemplate (
   validated: Record<string, unknown>,
   filePath: string
 ): ChargingStationTemplate {
-  if (
-    validated.idTagsFile == null ||
-    (typeof validated.idTagsFile === 'string' && !isNotEmptyString(validated.idTagsFile))
-  ) {
+  if (!isNotEmptyString(validated.idTagsFile)) {
     logger.warn(
       `${moduleName}.transformTemplate: Missing id tags file in template file ${filePath}. That can lead to issues with the Automatic Transaction Generator`
     )

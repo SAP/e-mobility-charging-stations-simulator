@@ -48,7 +48,6 @@ import {
   mergeDeepRight,
   once,
   promiseWithTimeout,
-  queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
   sleep,
@@ -56,6 +55,7 @@ import {
   validateIdentifierString,
   validateUUID,
 } from '../../src/utils/index.js'
+import { queueMicrotaskErrorThrowing } from '../../src/utils/Utils.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Utils', async () => {

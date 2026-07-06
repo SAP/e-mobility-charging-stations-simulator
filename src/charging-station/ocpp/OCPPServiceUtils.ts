@@ -91,8 +91,6 @@ import {
 
 const moduleName = 'OCPPServiceUtils'
 
-const SOC_MAXIMUM_VALUE = 100
-
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
   component: OCPP20ComponentName,
@@ -262,7 +260,7 @@ const buildSocMeasurandValue = (
     return null
   }
 
-  const socMaximumValue = SOC_MAXIMUM_VALUE
+  const socMaximumValue = Constants.SOC_MAXIMUM_PERCENT
   const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
   const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
     ? getRandomFloatFluctuatedRounded(
@@ -1210,7 +1208,7 @@ export const buildMeterValue = (
       connectorId,
       convertToInt(socSampledValue.value),
       socMeasurand.template.minimumValue ?? 0,
-      SOC_MAXIMUM_VALUE,
+      Constants.SOC_MAXIMUM_PERCENT,
       socSampledValue.measurand,
       debug
     )

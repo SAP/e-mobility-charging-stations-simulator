@@ -129,10 +129,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         )
         return response
       } catch (error) {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Error processing '${commandName}' request:`,
-          error
-        )
+        this.logRequestHandlerError(chargingStation, moduleName, commandName, error)
         throw error
       }
     }

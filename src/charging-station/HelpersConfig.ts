@@ -307,13 +307,13 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
   let unitDivider = 1
   switch (stationInfo.amperageLimitationUnit) {
     case AmpereUnits.CENTI_AMPERE:
-      unitDivider = 100
+      unitDivider = Constants.UNIT_DIVIDER_CENTI
       break
     case AmpereUnits.DECI_AMPERE:
-      unitDivider = 10
+      unitDivider = Constants.UNIT_DIVIDER_DECI
       break
     case AmpereUnits.MILLI_AMPERE:
-      unitDivider = 1000
+      unitDivider = Constants.UNIT_DIVIDER_KILO
       break
   }
   return unitDivider

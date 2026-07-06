@@ -16,6 +16,11 @@ import type { Formatter } from '../output/formatter.js'
 
 import { createWsAdapter } from './ws-adapter.js'
 
+// POSIX convention: signal-triggered exits use 128 + signal number
+// (see ui/cli/README.md "Exit Codes" table for the canonical mapping)
+const SIGINT_EXIT_CODE = 130
+const SIGTERM_EXIT_CODE = 143
+
 const wsFactory: WebSocketFactory = (url, protocols) =>
   createWsAdapter(new WsWebSocket(url, protocols))
 
@@ -109,9 +114,9 @@ export const registerSignalHandlers = (): void => {
   }
 
   process.on('SIGINT', () => {
-    cleanup(130)
+    cleanup(SIGINT_EXIT_CODE)
   })
   process.on('SIGTERM', () => {
-    cleanup(143)
+    cleanup(SIGTERM_EXIT_CODE)
   })
 }

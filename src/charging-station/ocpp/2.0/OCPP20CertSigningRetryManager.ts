@@ -10,6 +10,7 @@ import {
   OCPP20RequestCommand,
 } from '../../../types/index.js'
 import { computeExponentialBackOffDelay, logger } from '../../../utils/index.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20CertSigningRetryManager'
@@ -90,7 +91,7 @@ export class OCPP20CertSigningRetryManager {
           this.chargingStation,
           OCPP20ComponentName.SecurityCtrlr,
           OCPP20OptionalVariableName.CertSigningWaitMinimum,
-          60
+          OCPP20Constants.DEFAULT_CERT_SIGNING_WAIT_MINIMUM_SECONDS
         )
     )
     const delayMs = computeExponentialBackOffDelay({

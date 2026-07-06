@@ -5,6 +5,7 @@
  * buildSignedOCPP16SampledValue, and periodic meter values.
  */
 
+import { minutesToMilliseconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -456,7 +457,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
         // Act
         OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
 
         // Assert
         assert.ok(capturedMeterValue != null)
@@ -481,7 +482,7 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
 
         // Act
         OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
 
         // Assert
         assert.ok(capturedMeterValue != null)

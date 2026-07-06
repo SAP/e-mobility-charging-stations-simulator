@@ -59,32 +59,33 @@ export function getConnectorEntries (station: ChargingStationData): ConnectorEnt
     }))
 }
 
+// cspell:ignore suspendedev suspendedevse
+const CONNECTOR_STATUS_VARIANT: Readonly<Record<string, StatusVariant>> = Object.freeze({
+  available: 'ok',
+  charging: 'warn',
+  faulted: 'err',
+  finishing: 'warn',
+  occupied: 'warn',
+  preparing: 'warn',
+  suspendedev: 'warn',
+  suspendedevse: 'warn',
+  unavailable: 'err',
+})
+
 /**
  * Maps an OCPP connector status string to a display variant.
  * @param status - The OCPP connector status value
  * @returns The display variant for the status
  */
 export function getConnectorStatusVariant (status?: string): StatusVariant {
-  // cspell:ignore suspendedev suspendedevse
-  switch (status?.toLowerCase()) {
-    case 'available':
-      return 'ok'
-    // Active use states: amber to distinguish from 'available' (green)
-    case 'charging':
-    case 'occupied':
-      return 'warn'
-    case 'faulted':
-    case 'unavailable':
-      return 'err'
-    case 'finishing':
-    case 'preparing':
-    case 'suspendedev':
-    case 'suspendedevse':
-      return 'warn'
-    default:
-      return 'idle'
-  }
+  if (status == null) return 'idle'
+  return CONNECTOR_STATUS_VARIANT[status.toLowerCase()] ?? 'idle'
 }
+
+const WS_STATE_CLOSED = 3
+const WS_STATE_CLOSING = 2
+const WS_STATE_CONNECTING = 0
+const WS_STATE_OPEN = 1
 
 /**
  * Maps a WebSocket ready state to a display variant.
@@ -93,14 +94,14 @@ export function getConnectorStatusVariant (status?: string): StatusVariant {
  */
 export function getWebSocketStateVariant (wsState?: number): StatusVariant {
   switch (wsState) {
-    case 0: // WebSocket.CONNECTING
-      return 'warn'
-    case 1: // WebSocket.OPEN
-      return 'ok'
-    case 2: // WebSocket.CLOSING
-      return 'warn'
-    case 3: // WebSocket.CLOSED
+    case WS_STATE_CLOSED:
       return 'err'
+    case WS_STATE_CLOSING:
+      return 'warn'
+    case WS_STATE_CONNECTING:
+      return 'warn'
+    case WS_STATE_OPEN:
+      return 'ok'
     default:
       return 'idle'
   }

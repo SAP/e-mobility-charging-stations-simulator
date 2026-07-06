@@ -1,7 +1,13 @@
-import { isNotEmptyArray, logger } from '../../../../utils/index.js'
+import { Constants, isNotEmptyArray, logger } from '../../../../utils/index.js'
 import { type AuthConfiguration, AuthenticationError, AuthErrorCode } from '../types/AuthTypes.js'
 
 const moduleName = 'AuthConfigValidator'
+
+const AUTH_CACHE_TTL_MIN_SECONDS = 60
+const AUTH_CACHE_TTL_MAX_SECONDS = Constants.SECONDS_PER_DAY
+const AUTH_CACHE_MIN_ENTRIES = 10
+const AUTH_TIMEOUT_MIN_SECONDS = 5
+const AUTH_TIMEOUT_MAX_SECONDS = 60
 
 /**
  * Warn if no authentication method is enabled in the configuration.
@@ -73,13 +79,13 @@ function validateCacheConfig (config: AuthConfiguration): void {
       )
     }
 
-    if (config.authorizationCacheLifetime < 60) {
+    if (config.authorizationCacheLifetime < AUTH_CACHE_TTL_MIN_SECONDS) {
       logger.warn(
-        `${moduleName}: authorizationCacheLifetime is very short (${String(config.authorizationCacheLifetime)}s). Consider using at least 60s for efficiency.`
+        `${moduleName}: authorizationCacheLifetime is very short (${String(config.authorizationCacheLifetime)}s). Consider using at least ${String(AUTH_CACHE_TTL_MIN_SECONDS)}s for efficiency.`
       )
     }
 
-    if (config.authorizationCacheLifetime > 86400) {
+    if (config.authorizationCacheLifetime > AUTH_CACHE_TTL_MAX_SECONDS) {
       logger.warn(
         `${moduleName}: authorizationCacheLifetime is very long (${String(config.authorizationCacheLifetime)}s). This may lead to stale authorizations.`
       )
@@ -101,7 +107,7 @@ function validateCacheConfig (config: AuthConfiguration): void {
       )
     }
 
-    if (config.maxCacheEntries < 10) {
+    if (config.maxCacheEntries < AUTH_CACHE_MIN_ENTRIES) {
       logger.warn(
         `${moduleName}: maxCacheEntries is very small (${String(config.maxCacheEntries)}). Cache may be ineffective with frequent evictions.`
       )
@@ -172,13 +178,13 @@ function validateTimeout (config: AuthConfiguration): void {
     )
   }
 
-  if (config.authorizationTimeout < 5) {
+  if (config.authorizationTimeout < AUTH_TIMEOUT_MIN_SECONDS) {
     logger.warn(
       `${moduleName}: authorizationTimeout is very short (${String(config.authorizationTimeout)}s). This may cause premature timeouts.`
     )
   }
 
-  if (config.authorizationTimeout > 60) {
+  if (config.authorizationTimeout > AUTH_TIMEOUT_MAX_SECONDS) {
     logger.warn(
       `${moduleName}: authorizationTimeout is very long (${String(config.authorizationTimeout)}s). Users may experience long waits.`
     )

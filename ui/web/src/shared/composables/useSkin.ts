@@ -1,7 +1,12 @@
 import { type SKIN_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
-import { DEFAULT_SKIN, getFromLocalStorage, setToLocalStorage } from '@/core/index.js'
+import {
+  DEFAULT_SKIN,
+  getFromLocalStorage,
+  setToLocalStorage,
+  SKIN_ERROR_RELOAD_COUNT_KEY,
+} from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 // Intentional: registry.ts is pure metadata (ids, labels, loaders) — no behavioral coupling.
 import { type SkinDefinition, skins } from '@/skins/registry.js'
@@ -110,7 +115,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     try {
       await loadSkinStyles(skinId)
       try {
-        sessionStorage.removeItem('skin-error-reload-count')
+        sessionStorage.removeItem(SKIN_ERROR_RELOAD_COUNT_KEY)
       } catch {
         /* sessionStorage unavailable */
       }
@@ -129,7 +134,7 @@ async function performSkinSwitch (skinId: string): Promise<boolean> {
     }
     setToLocalStorage<string>(SKIN_STORAGE_KEY, skinId)
     try {
-      sessionStorage.removeItem('skin-error-reload-count')
+      sessionStorage.removeItem(SKIN_ERROR_RELOAD_COUNT_KEY)
     } catch {
       /* sessionStorage unavailable */
     }

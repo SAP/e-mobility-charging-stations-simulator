@@ -140,7 +140,15 @@ export class OCPP20Constants extends OCPPConstants {
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted }
   ])
 
+  static readonly DEFAULT_CERT_SIGNING_WAIT_MINIMUM_SECONDS = 60
+
   static readonly DEFAULT_CONNECTION_URL = 'ws://localhost'
+
+  static readonly DEFAULT_RETRY_BACKOFF_RANDOM_RANGE_SECONDS = 10
+
+  static readonly DEFAULT_RETRY_BACKOFF_REPEAT_TIMES = 5
+
+  static readonly DEFAULT_RETRY_BACKOFF_WAIT_MINIMUM_SECONDS = 30
 
   static readonly FIRMWARE_INSTALL_DELAY_MS = 5000
   static readonly FIRMWARE_STATUS_DELAY_MS = 2000
