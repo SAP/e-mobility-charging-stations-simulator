@@ -417,7 +417,7 @@ export abstract class AbstractUIServer {
           })
           .catch((error: unknown) => {
             logger.warn(
-              `${this.logPrefix()} ${moduleName}.disposeMetrics: registry cleanup failed`,
+              `${this.logPrefix()} ${moduleName}.stop: metrics registry cleanup failed`,
               error
             )
           })
