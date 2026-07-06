@@ -308,7 +308,7 @@ export class AutomaticTransactionGenerator {
     }
     // Abort the previous controller (if any) first to unblock any
     // lingering interruptibleSleep from an earlier invocation on this
-    // connector before installing the new controller.
+    // connector.
     this.connectorAbortControllers.get(connectorId)?.abort()
     const abortController = new AbortController()
     this.connectorAbortControllers.set(connectorId, abortController)

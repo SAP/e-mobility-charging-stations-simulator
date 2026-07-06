@@ -170,7 +170,7 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
  * @param validate - Ajv validation function for the command
  * @param context - Description of the validation context (e.g. 'request', 'response')
  * @param clonePayload - Whether to clone payload and convert dates before validation
- * @returns True if payload validation succeeds, false otherwise
+ * @returns `true` when payload validation succeeds; `false` otherwise.
  */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const validatePayload = <T extends JsonType>(

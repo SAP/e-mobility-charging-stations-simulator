@@ -214,7 +214,7 @@ export abstract class OCPPRequestService {
    * @param chargingStation - The charging station instance sending the request
    * @param commandName - OCPP command name to validate against
    * @param payload - JSON payload to validate
-   * @returns True if payload validation succeeds, false otherwise
+   * @returns `true` when payload validation succeeds; `false` otherwise.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateRequestPayload<T extends JsonType>(

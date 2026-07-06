@@ -1692,7 +1692,7 @@ export class ChargingStation extends EventEmitter {
               voltageOut / Math.sqrt(3)
             ).toFixed(0)} V L-N); verify template voltageOut intent.`
       logger.warn(
-        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=${voltageOut.toString()} V with AC output matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage).${derivedInfo}${suggestion}`
+        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=${voltageOut.toString()} V matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage).${derivedInfo}${suggestion}`
       )
     }
     if (isNotEmptyArray<number>(stationTemplate.power)) {

@@ -100,7 +100,7 @@ export const createCoherentSession = (
     (voltageOutNominal === Voltage.VOLTAGE_400 || voltageOutNominal === Voltage.VOLTAGE_800)
   ) {
     logger.warn(
-      `${context.logPrefix()} ${moduleName}.createCoherentSession: AC voltageOut=${voltageOutNominal.toString()} V is treated as line-to-neutral (phase voltage) by ACElectricUtils. If this value is meant as line-to-line, coherent power/current will be physically implausible.`
+      `${context.logPrefix()} ${moduleName}.createCoherentSession: voltageOut=${voltageOutNominal.toString()} V matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage). If this value is meant as line-to-line, coherent power/current will be physically implausible.`
     )
   }
 
