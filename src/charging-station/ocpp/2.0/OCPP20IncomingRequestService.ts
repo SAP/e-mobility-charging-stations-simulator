@@ -3698,7 +3698,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
-    // Store the abort controller so a subsequent UpdateFirmware can cancel this in-progress update
+    // Store the abort controller so a subsequent UpdateFirmware can abort this in-progress update
     const abortController = new AbortController()
     const stationState = this.getStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
@@ -3706,181 +3706,189 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
-    // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
-    const now = Date.now()
-    const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
-    if (retrieveTime > now) {
-      await this.sendFirmwareStatusNotification(
-        chargingStation,
-        OCPP20FirmwareStatusEnumType.DownloadScheduled,
-        requestId
-      )
-      await interruptibleSleep(retrieveTime - now, abortController.signal)
-      if (checkAborted()) return
-    }
-
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Downloading,
-      requestId
-    )
-
-    await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
-    if (checkAborted()) return
-
-    // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
-    if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
-      // L01.FR.30: Simulate download retries before reporting DownloadFailed
-      const maxRetries = retries ?? 0
-      const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
-        )
-        await interruptibleSleep(retryDelayMs, abortController.signal)
-        if (checkAborted()) return
+    try {
+      // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
+      const now = Date.now()
+      const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
+      if (retrieveTime > now) {
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.Downloading,
+          OCPP20FirmwareStatusEnumType.DownloadScheduled,
           requestId
         )
-        await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
+        await interruptibleSleep(retrieveTime - now, abortController.signal)
         if (checkAborted()) return
       }
+
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        OCPP20FirmwareStatusEnumType.DownloadFailed,
+        OCPP20FirmwareStatusEnumType.Downloading,
         requestId
       )
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'${maxRetries > 0 ? ` (exhausted ${maxRetries.toString()} retries)` : ''}`
-      )
-      this.clearActiveFirmwareUpdate(chargingStation, requestId)
-      return
-    }
 
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Downloaded,
-      requestId
-    )
-
-    if (signature != null) {
-      await interruptibleSleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS, abortController.signal)
+      await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
       if (checkAborted()) return
 
-      // L01.FR.04: Simulate signature verification
-      const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
-        chargingStation,
-        OCPP20ComponentName.FirmwareCtrlr,
-        OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
-        false
-      )
-
-      if (simulateFailure) {
-        // L01.FR.03: InvalidSignature + SecurityEventNotification
+      // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
+      if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
+        // L01.FR.30: Simulate download retries before reporting DownloadFailed
+        const maxRetries = retries ?? 0
+        const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
+          )
+          await interruptibleSleep(retryDelayMs, abortController.signal)
+          if (checkAborted()) return
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.Downloading,
+            requestId
+          )
+          await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
+          if (checkAborted()) return
+        }
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.InvalidSignature,
+          OCPP20FirmwareStatusEnumType.DownloadFailed,
           requestId
         )
-        this.sendSecurityEventNotification(
-          chargingStation,
-          'InvalidFirmwareSignature',
-          `Firmware signature verification failed for requestId ${requestId.toString()}`
-        )
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'${maxRetries > 0 ? ` (exhausted ${maxRetries.toString()} retries)` : ''}`
         )
-        this.clearActiveFirmwareUpdate(chargingStation, requestId)
         return
       }
 
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        OCPP20FirmwareStatusEnumType.SignatureVerified,
+        OCPP20FirmwareStatusEnumType.Downloaded,
         requestId
       )
-    }
 
-    // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
-    if (installDateTime != null) {
-      const currentTime = Date.now()
-      const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
-      if (installTime > currentTime) {
+      if (signature != null) {
+        await interruptibleSleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS, abortController.signal)
+        if (checkAborted()) return
+
+        // L01.FR.04: Simulate signature verification
+        const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
+          chargingStation,
+          OCPP20ComponentName.FirmwareCtrlr,
+          OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
+          false
+        )
+
+        if (simulateFailure) {
+          // L01.FR.03: InvalidSignature + SecurityEventNotification
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.InvalidSignature,
+            requestId
+          )
+          this.sendSecurityEventNotification(
+            chargingStation,
+            'InvalidFirmwareSignature',
+            `Firmware signature verification failed for requestId ${requestId.toString()}`
+          )
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+          )
+          return
+        }
+
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.InstallScheduled,
+          OCPP20FirmwareStatusEnumType.SignatureVerified,
           requestId
         )
-        await interruptibleSleep(installTime - currentTime, abortController.signal)
-        if (checkAborted()) return
       }
-    }
 
-    // L01.FR.06: Wait for active transactions to end before installing
-    // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
-    const hasActiveTransactionsBeforeInstall = chargingStation
-      .iterateEvses(true)
-      .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
-    if (hasActiveTransactionsBeforeInstall) {
-      const allowNewSessions = OCPP20ServiceUtils.readVariableAsBoolean(
-        chargingStation,
-        OCPP20ComponentName.ChargingStation,
-        'AllowNewSessionsPendingFirmwareUpdate',
-        false
-      )
-      while (
-        !checkAborted() &&
-        chargingStation
-          .iterateEvses(true)
-          .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
-      ) {
-        // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
-        if (!allowNewSessions) {
-          for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
-            if (!this.hasEvseActiveTransactions(evseStatus)) {
-              this.sendEvseStatusNotifications(
-                chargingStation,
-                evseId,
-                OCPP20ConnectorStatusEnumType.Unavailable
-              )
+      // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
+      if (installDateTime != null) {
+        const currentTime = Date.now()
+        const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
+        if (installTime > currentTime) {
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.InstallScheduled,
+            requestId
+          )
+          await interruptibleSleep(installTime - currentTime, abortController.signal)
+          if (checkAborted()) return
+        }
+      }
+
+      // L01.FR.06: Wait for active transactions to end before installing
+      // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
+      const hasActiveTransactionsBeforeInstall = chargingStation
+        .iterateEvses(true)
+        .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
+      if (hasActiveTransactionsBeforeInstall) {
+        const allowNewSessions = OCPP20ServiceUtils.readVariableAsBoolean(
+          chargingStation,
+          OCPP20ComponentName.ChargingStation,
+          'AllowNewSessionsPendingFirmwareUpdate',
+          false
+        )
+        while (
+          !checkAborted() &&
+          chargingStation
+            .iterateEvses(true)
+            .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
+        ) {
+          // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
+          if (!allowNewSessions) {
+            for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+              if (!this.hasEvseActiveTransactions(evseStatus)) {
+                this.sendEvseStatusNotifications(
+                  chargingStation,
+                  evseId,
+                  OCPP20ConnectorStatusEnumType.Unavailable
+                )
+              }
             }
           }
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
+          )
+          await interruptibleSleep(
+            OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS,
+            abortController.signal
+          )
         }
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
-        )
-        await interruptibleSleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS, abortController.signal)
       }
+      if (checkAborted()) return
+
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        OCPP20FirmwareStatusEnumType.Installing,
+        requestId
+      )
+
+      await interruptibleSleep(OCPP20Constants.RESET_DELAY_MS, abortController.signal)
+      if (checkAborted()) return
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        OCPP20FirmwareStatusEnumType.Installed,
+        requestId
+      )
+
+      // Send SecurityEventNotification after a successful firmware update
+      this.sendSecurityEventNotification(
+        chargingStation,
+        'FirmwareUpdated',
+        `Firmware update completed for requestId ${requestId.toString()}`
+      )
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
+      )
+    } finally {
+      // Guarantee cleanup on every exit path (happy, abort, throw): without
+      // this, a thrown await would leave activeFirmwareUpdateAbortController
+      // set and any subsequent UpdateFirmware.req would abort a non-existent
+      // in-progress update while the station stays stuck.
+      this.clearActiveFirmwareUpdate(chargingStation, requestId)
     }
-    if (checkAborted()) return
-
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Installing,
-      requestId
-    )
-
-    await interruptibleSleep(OCPP20Constants.RESET_DELAY_MS, abortController.signal)
-    if (checkAborted()) return
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Installed,
-      requestId
-    )
-
-    // Send SecurityEventNotification after a successful firmware update
-    this.sendSecurityEventNotification(
-      chargingStation,
-      'FirmwareUpdated',
-      `Firmware update completed for requestId ${requestId.toString()}`
-    )
-
-    this.clearActiveFirmwareUpdate(chargingStation, requestId)
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
-    )
   }
 
   /**
