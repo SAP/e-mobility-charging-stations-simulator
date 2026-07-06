@@ -1,5 +1,6 @@
 import type { WebSocket } from 'ws'
 
+import { millisecondsToSeconds } from 'date-fns'
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
 import { createServer, type Http2Server } from 'node:http2'
@@ -26,15 +27,22 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { isEmpty, isNotEmptyArray, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
+import {
+  isEmpty,
+  isLoopback,
+  isNotEmptyArray,
+  isNotEmptyString,
+  logger,
+  logPrefix,
+} from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createUIServerAccessCache,
   resolveUIServerAccess,
   type UIServerAccessCache,
   type UIServerAccessDecision,
+  WILDCARD_HOSTS,
 } from './UIServerAccessPolicy.js'
-import { isLoopback } from './UIServerNet.js'
 import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,
@@ -964,7 +972,7 @@ export abstract class AbstractUIServer {
       provider,
       'simulator_station_data_timestamp_seconds',
       'Unix epoch (seconds) at which the charging station snapshot was emitted.',
-      data => Math.floor(data.timestamp / 1000)
+      data => Math.floor(millisecondsToSeconds(data.timestamp))
     )
 
     addPerStationStatusInfo(
@@ -1141,7 +1149,9 @@ export abstract class AbstractUIServer {
       'simulator_connector_transaction_start_seconds',
       'Unix epoch (seconds) at which the active transaction started on the connector.',
       cs =>
-        cs.transactionStart != null ? Math.floor(cs.transactionStart.getTime() / 1000) : undefined
+        cs.transactionStart != null
+          ? Math.floor(millisecondsToSeconds(cs.transactionStart.getTime()))
+          : undefined
     )
     addConnectorNumeric(
       registry,
@@ -1313,8 +1323,7 @@ export abstract class AbstractUIServer {
     const allowedHosts = accessPolicy?.allowedHosts ?? []
     const trustedProxies = accessPolicy?.trustedProxies ?? []
     const requireTls = accessPolicy?.requireTlsForNonLoopback ?? true
-    const isWildcard =
-      configuredHost === '' || configuredHost === '0.0.0.0' || configuredHost === '::'
+    const isWildcard = WILDCARD_HOSTS.has(configuredHost)
 
     if (isWildcard && isEmpty(allowedHosts)) {
       logger.warn(

@@ -9,10 +9,9 @@ import {
   ConfigurationSection,
   type UIServerConfiguration,
 } from '../../types/index.js'
-import { logger, logPrefix } from '../../utils/index.js'
+import { isLoopback, logger, logPrefix } from '../../utils/index.js'
 import { UIHttpServer } from './UIHttpServer.js'
 import { UIMCPServer } from './UIMCPServer.js'
-import { isLoopback } from './UIServerNet.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 const moduleName = 'UIServerFactory'
@@ -83,7 +82,7 @@ export class UIServerFactory {
         logger.warn(
           `${UIServerFactory.logPrefix(moduleName, 'getUIServerImplementation')} ${logMsg}`
         )
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- UIHttpServer is @deprecated but remains selectable via configuration until removal
         return new UIHttpServer(uiServerConfiguration, bootstrap)
       }
       case ApplicationProtocol.MCP:

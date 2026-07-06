@@ -193,7 +193,7 @@ import { computed, ref } from 'vue'
 
 import { WH_PER_KWH } from '@/core/index.js'
 import { useConnectorActions } from '@/shared/composables/useConnectorActions.js'
-import { getConnectorStatusVariant } from '@/shared/utils/stationStatus.js'
+import { getConnectorStatusVariant } from '@/shared/utils/index.js'
 
 import ActionButton from './ActionButton.vue'
 import SetConnectorStatusDialog from './dialogs/SetConnectorStatusDialog.vue'

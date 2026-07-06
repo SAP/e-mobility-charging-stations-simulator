@@ -9,11 +9,8 @@ export {
 } from './ChargingStationConfigurationUtils.js'
 export { Configuration } from './Configuration.js'
 export {
-  applyConfigurationMigration,
-  coerceConfigurationVersion,
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
-  type FieldError,
   remapDeprecatedKeys,
 } from './ConfigurationMigrations.js'
 export {
@@ -22,8 +19,6 @@ export {
   StationTemplateUrlSchema,
   StorageConfigurationSchema,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
-  UIServerAccessPolicySchema,
-  UIServerAuthenticationSchema,
   UIServerConfigurationSchema,
   UIServerMetricsConfigurationSchema,
   WorkerConfigurationSchema,
@@ -46,11 +41,18 @@ export {
   handleUnhandledRejection,
 } from './ErrorUtils.js'
 export {
-  atomicWriteFile,
-  atomicWriteFileSync,
-  type AtomicWriteOptions,
-  watchJsonFile,
-} from './FileUtils.js'
+  type FieldError,
+  formatFieldErrorsSummary,
+  mapZodIssuesToFieldErrors,
+} from './FieldError.js'
+export { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from './FileUtils.js'
+export {
+  isHostLiteralWithoutPort,
+  isLoopback,
+  LOOPBACK_HOSTNAME,
+  normalizeHost,
+  normalizeIPAddress,
+} from './HostUtils.js'
 export { logger } from './Logger.js'
 export {
   buildAddedMessage,
@@ -96,7 +98,6 @@ export {
   mergeDeepRight,
   once,
   promiseWithTimeout,
-  queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
   sleep,

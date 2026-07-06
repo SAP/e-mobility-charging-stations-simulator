@@ -111,7 +111,7 @@ import {
   watchJsonFile,
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
-import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/index.js'
 import { CoherentMeterValuesManager } from './CoherentMeterValuesManager.js'
 import {
   addConfigurationKey,
@@ -1606,8 +1606,8 @@ export class ChargingStation extends EventEmitter {
     }
     return this.stationInfo?.reconnectExponentialDelay === true
       ? computeExponentialBackOffDelay({
-        baseDelayMs: 100,
-        jitterPercent: 0.2,
+        baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
+        jitterPercent: Constants.DEFAULT_RECONNECT_JITTER_PERCENT,
         retryNumber: this.wsConnectionRetryCount,
       })
       : secondsToMilliseconds(Constants.DEFAULT_WS_RECONNECT_DELAY_SECONDS)
@@ -1652,7 +1652,7 @@ export class ChargingStation extends EventEmitter {
     if (stationInfoPersistentConfiguration) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- pruning the deprecated `infoHash` field from the persisted-configuration snapshot before use
         delete stationInfo.infoHash
         delete (stationInfo as ChargingStationTemplate).numberOfConnectors
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -1683,12 +1683,12 @@ export class ChargingStation extends EventEmitter {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power[powerArrayRandomIndex] * 1000
+          ? stationTemplate.power[powerArrayRandomIndex] * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power[powerArrayRandomIndex]
     } else if (typeof stationTemplate.power === 'number') {
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power * 1000
+          ? stationTemplate.power * Constants.UNIT_DIVIDER_KILO
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
@@ -1954,7 +1954,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const connectorsConfigChanged =
-        this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
+        !isEmpty(this.connectors) && this.connectorsConfigurationHash !== connectorsConfigHash
       if (isEmpty(this.connectors) || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear()
         this.connectorsConfigurationHash = connectorsConfigHash
@@ -2118,7 +2118,7 @@ export class ChargingStation extends EventEmitter {
         'hex'
       )
       const evsesConfigChanged =
-        this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
+        !isEmpty(this.evses) && this.evsesConfigurationHash !== evsesConfigHash
       if (isEmpty(this.evses) || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear()
         this.evsesConfigurationHash = evsesConfigHash
@@ -2783,11 +2783,11 @@ export class ChargingStation extends EventEmitter {
             error
           )
         }
-        // eslint-disable-next-line promise/no-promise-in-callback
+        // eslint-disable-next-line promise/no-promise-in-callback -- exponential-backoff sleep inside a WebSocket callback; failures on the outer send are surfaced separately
         sleep(
           computeExponentialBackOffDelay({
-            baseDelayMs: 100,
-            jitterPercent: 0.2,
+            baseDelayMs: Constants.DEFAULT_EXPONENTIAL_BACKOFF_BASE_DELAY_MS,
+            jitterPercent: Constants.DEFAULT_RECONNECT_JITTER_PERCENT,
             retryNumber: messageIdx ?? 0,
           })
         )

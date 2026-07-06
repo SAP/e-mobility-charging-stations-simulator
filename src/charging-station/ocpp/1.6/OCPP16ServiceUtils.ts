@@ -52,6 +52,7 @@ import {
 } from '../../../types/index.js'
 import {
   clampToSafeTimerValue,
+  Constants,
   convertToBoolean,
   convertToDate,
   convertToInt,
@@ -223,7 +224,9 @@ export class OCPP16ServiceUtils {
     const sampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
     if (sampledValueTemplate != null) {
       const unitDivider =
-        sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+        sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
+          ? Constants.UNIT_DIVIDER_KILO
+          : 1
       meterValue.sampledValue.push(
         buildOCPP16SampledValue(
           sampledValueTemplate,
@@ -294,7 +297,10 @@ export class OCPP16ServiceUtils {
         `Missing MeterValues for default measurand '${OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}' in template on connector id ${connectorId.toString()}`
       )
     }
-    const unitDivider = sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+    const unitDivider =
+      sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR
+        ? Constants.UNIT_DIVIDER_KILO
+        : 1
     const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     meterValue.sampledValue.push(
       buildOCPP16SampledValue(
@@ -849,11 +855,11 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * Sends a StartTransaction request to the central system for the given connector.
+   * Sends a StartTransaction request to the Central System for the given connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier to start the transaction on
    * @param idTag - Optional RFID tag for the transaction
-   * @returns Start transaction response from the central system
+   * @returns Start transaction response from the Central System
    */
   public static async startTransactionOnConnector (
     chargingStation: ChargingStation,
@@ -932,11 +938,11 @@ export class OCPP16ServiceUtils {
   }
 
   /**
-   * Sends a StopTransaction request to the central system for the given connector.
+   * Sends a StopTransaction request to the Central System for the given connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier with the active transaction
    * @param reason - Optional stop transaction reason
-   * @returns Stop transaction response from the central system
+   * @returns Stop transaction response from the Central System
    */
   public static async stopTransactionOnConnector (
     chargingStation: ChargingStation,

@@ -12,18 +12,21 @@ import {
   chargingStationsKey,
   configurationKey,
   DEFAULT_SKIN,
+  DEFAULT_THEME,
   getFromLocalStorage,
   isDev,
   LEGACY_UI_SERVER_CONFIG_KEY,
   setToLocalStorage,
+  SKIN_STORAGE_KEY,
   templatesKey,
+  THEME_STORAGE_KEY,
   UI_SERVER_CONFIGURATION_INDEX_KEY,
   UIClient,
   uiClientKey,
 } from '@/core/index.js'
 import { router } from '@/router/index.js'
-import { SKIN_STORAGE_KEY, useSkin } from '@/shared/composables/useSkin.js'
-import { DEFAULT_THEME, THEME_STORAGE_KEY, useTheme } from '@/shared/composables/useTheme.js'
+import { useSkin } from '@/shared/composables/useSkin.js'
+import { useTheme } from '@/shared/composables/useTheme.js'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
@@ -56,7 +59,7 @@ const initializeApp = async (app: AppType, config: ConfigurationData): Promise<v
   if (getFromLocalStorage<string>(SKIN_STORAGE_KEY, '') === '' && config.skin != null) {
     setToLocalStorage<string>(SKIN_STORAGE_KEY, config.skin)
   }
-  const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? 'classic')
+  const initialSkin = getFromLocalStorage<string>(SKIN_STORAGE_KEY, config.skin ?? DEFAULT_SKIN)
   const switched = await switchSkin(initialSkin)
   if (!switched && initialSkin !== DEFAULT_SKIN) {
     console.warn(`[useSkin] Failed to load skin '${initialSkin}', falling back to default`)

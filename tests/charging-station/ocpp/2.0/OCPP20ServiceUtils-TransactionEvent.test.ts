@@ -14,10 +14,9 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
-import type { EmptyObject } from '../../../../src/types/index.js'
+import type { ConnectorStatus, EmptyObject } from '../../../../src/types/index.js'
 
-import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { addConfigurationKey } from '../../../../src/charging-station/index.js'
 import {
   buildTransactionEvent,
   OCPP20ServiceUtils,

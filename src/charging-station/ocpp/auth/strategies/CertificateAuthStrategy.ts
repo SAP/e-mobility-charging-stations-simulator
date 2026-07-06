@@ -17,10 +17,10 @@ const moduleName = 'CertificateAuthStrategy'
 const CERTIFICATE_VERIFY_DELAY_MS = 100
 
 /**
- * Certificate-based authentication strategy for OCPP 2.0+
+ * Certificate-based authentication strategy for OCPP 2.0.1
  *
  * This strategy handles PKI-based authentication using X.509 certificates.
- * It's primarily designed for OCPP 2.0 where certificate-based authentication
+ * It's primarily designed for OCPP 2.0.1 where certificate-based authentication
  * is supported and can provide higher security than traditional ID token auth.
  *
  * Priority: 3 (lowest - used as fallback or for high-security scenarios)
@@ -76,14 +76,15 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
       const adapter = this.adapter
 
-      // For OCPP 2.0, we can use certificate-based validation
+      // For OCPP 2.0.1, we can use certificate-based validation
       if (this.adapter.ocppVersion === OCPPVersion.VERSION_201) {
         const result = await this.validateCertificateWithOCPP20(request, adapter, config)
         this.updateStatistics(result, startTime)
         return result
       }
 
-      // Should not reach here due to canHandle check, but handle gracefully
+      // Unreachable when the `canHandle` contract holds; defensive fallback
+      // for unsupported OCPP versions.
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
         `Certificate authentication not supported for OCPP ${this.adapter.ocppVersion}`,
@@ -113,15 +114,15 @@ export class CertificateAuthStrategy implements AuthStrategy {
       return false
     }
 
-    // Only supported in OCPP 2.0+
+    // Only supported in OCPP 2.0.1
     if (this.adapter.ocppVersion === OCPPVersion.VERSION_16) {
       return false
     }
 
-    // Certificate authentication must be enabled
+    // Certificate authentication is enabled per configuration.
     const certAuthEnabled = config.certificateAuthEnabled
 
-    // Must have certificate data in the identifier
+    // The identifier carries certificate data.
     const hasCertificateData = this.hasCertificateData(request.identifier)
 
     return certAuthEnabled && hasCertificateData && this.isInitialized
@@ -340,9 +341,9 @@ export class CertificateAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Validate certificate using OCPP 2.0 mechanisms
+   * Validate certificate using OCPP 2.0.1 mechanisms
    * @param request - Authorization request with certificate identifier
-   * @param adapter - OCPP 2.0 adapter for protocol-specific operations
+   * @param adapter - OCPP 2.0.1 adapter for protocol-specific operations
    * @param config - Authentication configuration settings
    * @returns Authorization result indicating certificate validation outcome
    */
@@ -392,7 +393,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         )
       }
     } catch (error) {
-      logger.error(`${moduleName}: OCPP 2.0 certificate validation error:`, error)
+      logger.error(`${moduleName}: OCPP 2.0.1 certificate validation error:`, error)
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
         'Certificate validation error',

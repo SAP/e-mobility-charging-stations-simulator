@@ -738,16 +738,16 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // DeviceDataCtrlr Component
-  // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
+  // Value size family per OCPP 2.0.1 §2.1.20-21: ConfigurationValueSize (SetVariable input cap, 1000), ReportingValueSize (GetVariable output cap, 2500). ValueSize is OCPP 2.1 (broadest umbrella, capped at reporting size).
   [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr,
     OCPP20OptionalVariableName.ConfigurationValueSize
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString(),
+    defaultValue: OCPP20Constants.MAX_CONFIGURATION_VALUE_SIZE.toString(),
     description: 'Maximum size allowed for configuration values when setting.',
-    max: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH,
+    max: OCPP20Constants.MAX_CONFIGURATION_VALUE_SIZE,
     maxLength: 5,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -763,9 +763,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString(),
+    defaultValue: OCPP20Constants.MAX_REPORTING_VALUE_SIZE.toString(),
     description: 'Maximum size of reported values.',
-    max: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH,
+    max: OCPP20Constants.MAX_REPORTING_VALUE_SIZE,
     maxLength: 5,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,
@@ -778,9 +778,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.DeviceDataCtrlr, OCPP20OptionalVariableName.ValueSize)]: {
     component: OCPP20ComponentName.DeviceDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH.toString(),
+    defaultValue: OCPP20Constants.MAX_REPORTING_VALUE_SIZE.toString(),
     description: 'Maximum size for any stored or reported value.',
-    max: OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH,
+    max: OCPP20Constants.MAX_REPORTING_VALUE_SIZE,
     maxLength: 5,
     min: 1,
     mutability: MutabilityEnumType.ReadOnly,

@@ -140,22 +140,34 @@ export class OCPP20Constants extends OCPPConstants {
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted }
   ])
 
+  static readonly DEFAULT_CERT_SIGNING_WAIT_MINIMUM_SECONDS = 60
+
   static readonly DEFAULT_CONNECTION_URL = 'ws://localhost'
+
+  static readonly DEFAULT_RETRY_BACKOFF_RANDOM_RANGE_SECONDS = 10
+
+  static readonly DEFAULT_RETRY_BACKOFF_REPEAT_TIMES = 5
+
+  static readonly DEFAULT_RETRY_BACKOFF_WAIT_MINIMUM_SECONDS = 30
 
   static readonly FIRMWARE_INSTALL_DELAY_MS = 5000
   static readonly FIRMWARE_STATUS_DELAY_MS = 2000
   static readonly FIRMWARE_VERIFY_DELAY_MS = 500
   /**
-   * Default timeout in milliseconds for async OCPP 2.0 handler operations
+   * Default timeout in milliseconds for async OCPP 2.0.1 handler operations
    * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
    */
   static readonly HANDLER_TIMEOUT_MS = 30_000
 
   static readonly LOG_UPLOAD_STEP_DELAY_MS = 1000
 
-  static readonly MAX_SECURITY_EVENT_SEND_ATTEMPTS = 3
+  /** OCPP 2.0.1 §2.1.20: `ConfigurationValueSize` `maxLimit`. Cap on `SetVariableDataType.attributeValue` `string[0..1000]`. */
+  static readonly MAX_CONFIGURATION_VALUE_SIZE = 1000
 
-  static readonly MAX_VARIABLE_VALUE_LENGTH = 2500
+  /** OCPP 2.0.1 §2.1.21: `ReportingValueSize` `maxLimit`. Cap on `GetVariableResult.attributeValue` `string[0..2500]`. */
+  static readonly MAX_REPORTING_VALUE_SIZE = 2500
+
+  static readonly MAX_SECURITY_EVENT_SEND_ATTEMPTS = 3
 
   static readonly OCPP_SEND_LOCAL_LIST_RESPONSE_ACCEPTED: OCPP20SendLocalListResponse =
     Object.freeze({

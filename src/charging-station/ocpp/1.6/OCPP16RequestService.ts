@@ -28,7 +28,7 @@ const moduleName = 'OCPP16RequestService'
 /**
  * OCPP 1.6 Request Service
  *
- * Handles outgoing OCPP 1.6 requests from the charging station to the central system.
+ * Handles outgoing OCPP 1.6 requests from the charging station to the Central System.
  * This service is responsible for:
  * - Building and validating request payloads according to OCPP 1.6 specification
  * - Managing request-response cycles with proper error handling
@@ -71,18 +71,18 @@ export class OCPP16RequestService extends OCPPRequestService {
    * It performs the following operations:
    * - Validates that the requested command is supported by the charging station
    * - Builds and validates the request payload according to OCPP 1.6 schemas
-   * - Sends the request to the central system with proper error handling
+   * - Sends the request to the Central System with proper error handling
    * - Processes responses with comprehensive logging and error recovery
    *
    * The method ensures type safety through generic type parameters while maintaining
    * backward compatibility with the OCPP 1.6 specification.
    * @template RequestType - The expected type of the request parameters
-   * @template ResponseType - The expected type of the response from the central system
+   * @template ResponseType - The expected type of the response from the Central System
    * @param chargingStation - The charging station instance making the request
    * @param commandName - The OCPP 1.6 command to execute (e.g., 'StartTransaction', 'StopTransaction')
    * @param commandParams - Optional parameters specific to the command being executed
    * @param params - Optional request parameters for controlling request behavior
-   * @returns Promise resolving to the typed response from the central system
+   * @returns Promise resolving to the typed response from the Central System
    * @throws {OCPPError} When the command is not supported or validation fails
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -129,10 +129,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         )
         return response
       } catch (error) {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Error processing '${commandName}' request:`,
-          error
-        )
+        this.logRequestHandlerError(chargingStation, moduleName, commandName, error)
         throw error
       }
     }

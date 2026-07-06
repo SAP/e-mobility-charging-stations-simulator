@@ -65,7 +65,20 @@ const baseProfile: EvProfile = {
  * @param overrides - Optional overrides bag for context knobs.
  * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
  * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
+ * @param overrides.evseMeterValues - When defined and `groupUnderEvse !== false`, exposed via
+ *   `getEvseStatus(evseId).MeterValues`. When omitted with `groupUnderEvse === true`,
+ *   `getEvseStatus(evseId).MeterValues` is `undefined` (EVSE grouping present with no
+ *   EVSE-level MeterValues configured).
+ * @param overrides.groupUnderEvse - Explicit EVSE grouping flag. When `true`,
+ *   `getEvseIdByConnectorId` returns 1 regardless of `evseMeterValues`. When
+ *   `undefined`, grouping is implied by `evseMeterValues != null` (backward-compat).
+ *   Set to `false` to force flat-connector layout even with `evseMeterValues` defined.
  * @param overrides.numberOfPhases - Number of AC phases (ignored for DC).
+ * @param overrides.siblingConnectorMeterValues - When defined and grouping is active,
+ *   adds a sibling connector (id 2) under EVSE 1 with the given `MeterValues`. Lets
+ *   tests verify that the coherent path does NOT aggregate sibling-connector
+ *   templates when EVSE-level MeterValues is undefined or empty (documented
+ *   divergence from `getSampledValueTemplate`).
  * @param overrides.voltageOut - Nominal phase voltage.
  * @returns Bundle exposing context, sessions map, station info, and connector status.
  */
@@ -73,7 +86,10 @@ const buildContext = (
   overrides: {
     currentType?: CurrentType
     evseMaxPowerW?: number
+    evseMeterValues?: SampledValueTemplate[]
+    groupUnderEvse?: boolean
     numberOfPhases?: number
+    siblingConnectorMeterValues?: SampledValueTemplate[]
     voltageOut?: number
   } = {}
 ): {
@@ -114,6 +130,34 @@ const buildContext = (
   const context: ICoherentContext = {
     getConnectorMaximumAvailablePower: () => evseMax,
     getConnectorStatus: () => connectorStatus,
+    getEvseIdByConnectorId: () => {
+      // groupUnderEvse takes precedence over evseMeterValues heuristic.
+      // Undefined groupUnderEvse falls back to evseMeterValues != null.
+      if (overrides.groupUnderEvse === true) return 1
+      if (overrides.groupUnderEvse === false) return undefined
+      return overrides.evseMeterValues != null ? 1 : undefined
+    },
+    getEvseStatus: (evseId: number) => {
+      const grouped =
+        overrides.groupUnderEvse === true ||
+        (overrides.groupUnderEvse !== false && overrides.evseMeterValues != null)
+      if (!(grouped && evseId === 1)) return undefined
+      const connectors = new Map<number, ConnectorStatus>([[1, connectorStatus]])
+      if (overrides.siblingConnectorMeterValues != null) {
+        connectors.set(2, {
+          availability: AvailabilityType.Operative,
+          energyActiveImportRegisterValue: 0,
+          MeterValues: overrides.siblingConnectorMeterValues,
+          transactionEnergyActiveImportRegisterValue: 0,
+          transactionId: 2,
+        })
+      }
+      return {
+        availability: AvailabilityType.Operative,
+        connectors,
+        MeterValues: overrides.evseMeterValues,
+      }
+    },
     getNumberOfPhases: () => numberOfPhases,
     getVoltageOut: () => voltageOut,
     logPrefix: () => '[test]',
@@ -1337,6 +1381,495 @@ await describe('CoherentMeterValues', async () => {
           'both surviving samples must be aggregates (no phase qualifier)'
         )
       }
+    })
+  })
+
+  await describe('EVSE-level template fallback', async () => {
+    await it('should emit EVSE-level MeterValues when the connector is grouped under an EVSE with a non-empty MeterValues array', () => {
+      const evseTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [evseTemplate],
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      // Connector-level templates ignored when EVSE-level is defined and non-empty.
+      connectorStatus.MeterValues = [
+        {
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: MeterValueUnit.WATT_HOUR,
+        } as unknown as SampledValueTemplate,
+      ]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'EVSE-level MeterValues (SoC only) must override connector-level (Energy only); connector Energy template must not emit'
+      )
+    })
+
+    await it('should fall back to connector-level MeterValues when no EVSE grouping exists', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // No evseMeterValues override => getEvseIdByConnectorId returns undefined.
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when the connector is not grouped under an EVSE'
+      )
+    })
+
+    await it('should fall back to connector-level MeterValues when EVSE grouping exists but EVSE-level MeterValues array is empty', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // evseMeterValues=[] => getEvseIdByConnectorId returns 1, getEvseStatus(1).MeterValues = [].
+      // resolveTemplates must skip the empty EVSE array and fall back to connector-level.
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [],
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when EVSE grouping exists but the EVSE-level MeterValues array is empty'
+      )
+    })
+
+    await it('should fall back to connector-level MeterValues when EVSE grouping exists but EVSE-level MeterValues is undefined', () => {
+      const connectorTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.STATE_OF_CHARGE,
+        unit: MeterValueUnit.PERCENT,
+      } as unknown as SampledValueTemplate
+      // groupUnderEvse=true + no evseMeterValues => getEvseIdByConnectorId returns 1,
+      // getEvseStatus(1).MeterValues = undefined. resolveTemplates must fall back
+      // to connector-level (guard: isNotEmptyArray(evseTemplates) narrows undefined
+      // and empty-array to false uniformly).
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        groupUnderEvse: true,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [connectorTemplate]
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const measurands = mv.sampledValue.map(
+        sv => (sv as { measurand?: MeterValueMeasurand }).measurand
+      )
+      assert.deepStrictEqual(
+        measurands,
+        [MeterValueMeasurand.STATE_OF_CHARGE],
+        'connector-level MeterValues must emit when EVSE grouping exists but EVSE-level MeterValues is undefined (both undefined and empty-array branches must fall back)'
+      )
+    })
+
+    await it('should NOT aggregate sibling-connector MeterValues when EVSE-level MeterValues is undefined or empty (documented divergence from getSampledValueTemplate)', () => {
+      // Sibling connector under the same EVSE has POWER_ACTIVE_IMPORT template.
+      // Queried connector has empty MeterValues. EVSE-level MeterValues is empty.
+      // Reference `getSampledValueTemplate` would aggregate: emit Power from sibling.
+      // Coherent `resolveTemplates` deliberately does NOT (per-connector template
+      // ownership) so nothing emits.
+      const siblingTemplate: SampledValueTemplate = {
+        measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        unit: MeterValueUnit.WATT,
+      } as unknown as SampledValueTemplate
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        evseMeterValues: [],
+        groupUnderEvse: true,
+        numberOfPhases: 3,
+        siblingConnectorMeterValues: [siblingTemplate],
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = []
+      const mv = buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      assert.strictEqual(
+        mv.sampledValue.length,
+        0,
+        'coherent path must NOT aggregate sibling-connector templates under the same EVSE; reference getSampledValueTemplate would emit sibling Power, coherent must emit nothing per documented one-source-per-connector divergence'
+      )
+    })
+  })
+
+  await describe('powerFactor', async () => {
+    await it('should raise emitted current inversely proportional to powerFactor when set to 0.95', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithPF: EvProfile = { ...flatProfile, powerFactor: 0.95 }
+      const runOnce = (profile: EvProfile): number => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 7400,
+          numberOfPhases: 1,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        return computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        }).currentA
+      }
+      const baselineCurrent = runOnce(flatProfile)
+      const currentWithPF = runOnce(flatProfileWithPF)
+      const expectedRatio = 1 / 0.95
+      const actualRatio = currentWithPF / baselineCurrent
+      assert.ok(
+        Math.abs(actualRatio - expectedRatio) < 0.01,
+        `powerFactor=0.95 must raise current inversely proportional: ratio=${actualRatio.toString()} expected=${expectedRatio.toString()}`
+      )
+    })
+
+    await it('should preserve baseline behavior when powerFactor is absent', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithUnity: EvProfile = { ...flatProfile, powerFactor: 1 }
+      const runOnce = (profile: EvProfile): { currentA: number; powerW: number } => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 22000,
+          numberOfPhases: 3,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const sample = computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        return { currentA: sample.currentA, powerW: sample.powerW }
+      }
+      const baseline = runOnce(flatProfile)
+      const withUnity = runOnce(flatProfileWithUnity)
+      assert.strictEqual(
+        baseline.currentA,
+        withUnity.currentA,
+        'absent powerFactor must produce identical current to powerFactor=1'
+      )
+      assert.strictEqual(
+        baseline.powerW,
+        withUnity.powerW,
+        'absent powerFactor must produce identical power to powerFactor=1'
+      )
+    })
+
+    await it('should ignore powerFactor on DC profiles (no reactive component)', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const flatProfileWithPF: EvProfile = { ...flatProfile, powerFactor: 0.7 }
+      const runOnce = (profile: EvProfile): { currentA: number; powerW: number } => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.DC,
+          evseMaxPowerW: 50000,
+          numberOfPhases: 0,
+          voltageOut: 400,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const sample = computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+        return { currentA: sample.currentA, powerW: sample.powerW }
+      }
+      const baseline = runOnce(flatProfile)
+      const withPF = runOnce(flatProfileWithPF)
+      assert.strictEqual(
+        baseline.currentA,
+        withPF.currentA,
+        'DC powerFactor=0.7 must produce identical current to DC without powerFactor'
+      )
+      assert.strictEqual(
+        baseline.powerW,
+        withPF.powerW,
+        'DC powerFactor=0.7 must produce identical power to DC without powerFactor'
+      )
+    })
+  })
+
+  await describe("rampShape 'sigmoid'", async () => {
+    await it('should pin f(0)=0, f(rampUpDurationMs)=1, and f(midpoint)=0.5 within ±0.01', () => {
+      const sigmoidProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+        rampShape: 'sigmoid',
+      }
+      const rampUpDurationMs = 60000
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 7400,
+        numberOfPhases: 1,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [sigmoidProfile],
+        rampUpDurationMs,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      const powerAtSocConstant = (nowMs: number): number => {
+        session.socPercent = 30
+        return computeCoherentSample(context, connectorStatus, session, {
+          intervalMs: 1,
+          nowMs,
+          rootSeed: 42,
+          voltageNoise: false,
+        }).powerW
+      }
+      const fullPower = powerAtSocConstant(rampUpDurationMs)
+      const atStart = powerAtSocConstant(0)
+      const atQuarter = powerAtSocConstant(rampUpDurationMs / 4)
+      const atMid = powerAtSocConstant(rampUpDurationMs / 2)
+      const atThreeQuarter = powerAtSocConstant((3 * rampUpDurationMs) / 4)
+      const atEnd = powerAtSocConstant(rampUpDurationMs)
+      assert.strictEqual(atStart, 0, 'sigmoid must be 0 at t=0 exactly')
+      assert.ok(
+        Math.abs(atMid / fullPower - 0.5) < 0.01,
+        `sigmoid must be 0.5 at midpoint: got ${(atMid / fullPower).toString()}`
+      )
+      assert.ok(
+        Math.abs(atEnd / fullPower - 1) < 1e-9,
+        `sigmoid must be 1 at t=rampUpDurationMs: got ${(atEnd / fullPower).toString()}`
+      )
+      // Interior curvature: sigmoid diverges from linear at the quarter
+      // points. Linear would emit 0.25 and 0.75 of fullPower; sigmoid
+      // (k=10) emits about 0.07 and 0.93 (analytical value from the
+      // shift-scale logistic with SIGMOID_STEEPNESS=10). The tolerance
+      // 0.05 is well below the ~0.18 gap between sigmoid and linear at
+      // these points, so a silent revert of the sigmoid branch back to
+      // a linear ramp shape would fail this assertion.
+      assert.ok(
+        atQuarter / fullPower < 0.15,
+        `sigmoid must curve below 0.15 at t=rampUpDurationMs/4 (linear would emit 0.25): got ${(atQuarter / fullPower).toString()}`
+      )
+      assert.ok(
+        atThreeQuarter / fullPower > 0.85,
+        `sigmoid must curve above 0.85 at t=3*rampUpDurationMs/4 (linear would emit 0.75): got ${(atThreeQuarter / fullPower).toString()}`
+      )
+    })
+
+    await it('should preserve linear baseline when rampShape is absent or explicit linear', () => {
+      const flatProfile: EvProfile = {
+        ...baseProfile,
+        chargingCurve: [
+          { powerFraction: 1, socPercent: 0 },
+          { powerFraction: 1, socPercent: 100 },
+        ],
+      }
+      const explicitLinearProfile: EvProfile = { ...flatProfile, rampShape: 'linear' }
+      const rampUpDurationMs = 60000
+      const runOnce = (profile: EvProfile): number[] => {
+        const { connectorStatus, context, sessions } = buildContext({
+          currentType: CurrentType.AC,
+          evseMaxPowerW: 7400,
+          numberOfPhases: 1,
+          voltageOut: 230,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [profile],
+          rampUpDurationMs,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        const samples: number[] = []
+        for (const nowMs of [
+          0,
+          rampUpDurationMs / 4,
+          rampUpDurationMs / 2,
+          (rampUpDurationMs * 3) / 4,
+          rampUpDurationMs,
+        ]) {
+          session.socPercent = 30
+          samples.push(
+            computeCoherentSample(context, connectorStatus, session, {
+              intervalMs: 1,
+              nowMs,
+              rootSeed: 42,
+              voltageNoise: false,
+            }).powerW
+          )
+        }
+        return samples
+      }
+      const absentSamples = runOnce(flatProfile)
+      const explicitSamples = runOnce(explicitLinearProfile)
+      assert.deepStrictEqual(
+        absentSamples,
+        explicitSamples,
+        'absent rampShape must produce identical ramp curve to explicit linear'
+      )
+      const fullPower = absentSamples[4]
+      assert.ok(fullPower > 0, 'full power must be reached at t=rampUpDurationMs')
+      const quarterRatio = absentSamples[1] / fullPower
+      const midRatio = absentSamples[2] / fullPower
+      const threeQuarterRatio = absentSamples[3] / fullPower
+      // Tolerance covers the two-decimal rounding applied to the emitted
+      // powerW at each sample (roundedV × roundedCurrent × phases → 2 dp).
+      const rampTolerance = 0.001
+      assert.ok(
+        Math.abs(quarterRatio - 0.25) < rampTolerance,
+        `linear ramp must be 0.25 at t=T/4: got ${quarterRatio.toString()}`
+      )
+      assert.ok(
+        Math.abs(midRatio - 0.5) < rampTolerance,
+        `linear ramp must be 0.5 at midpoint: got ${midRatio.toString()}`
+      )
+      assert.ok(
+        Math.abs(threeQuarterRatio - 0.75) < rampTolerance,
+        `linear ramp must be 0.75 at t=3T/4: got ${threeQuarterRatio.toString()}`
+      )
     })
   })
 })

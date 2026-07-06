@@ -37,7 +37,6 @@ export {
   ApplicationProtocolVersion,
   type ConfigurationData,
   ConfigurationSection,
-  type ElementsPerWorkerType,
   type LogConfiguration,
   type StationTemplateUrl,
   type StorageConfiguration,

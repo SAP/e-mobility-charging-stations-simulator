@@ -62,7 +62,7 @@ import type { OCPP16RequestService } from '../OCPP16RequestService.js'
  */
 export interface TestableOCPP16IncomingRequestService {
   /**
-   * Handles OCPP 1.6 CancelReservation request from central system.
+   * Handles OCPP 1.6 CancelReservation request from Central System.
    * Cancels an existing reservation on the charging station.
    */
   handleRequestCancelReservation: (
@@ -71,7 +71,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => Promise<GenericResponse>
 
   /**
-   * Handles OCPP 1.6 ChangeAvailability request from central system.
+   * Handles OCPP 1.6 ChangeAvailability request from Central System.
    * Changes availability status of a connector or the entire station.
    */
   handleRequestChangeAvailability: (
@@ -80,7 +80,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => Promise<OCPP16ChangeAvailabilityResponse>
 
   /**
-   * Handles OCPP 1.6 ChangeConfiguration request from central system.
+   * Handles OCPP 1.6 ChangeConfiguration request from Central System.
    * Changes the value of a configuration key.
    */
   handleRequestChangeConfiguration: (
@@ -94,7 +94,7 @@ export interface TestableOCPP16IncomingRequestService {
   handleRequestClearCache: (chargingStation: ChargingStation) => ClearCacheResponse
 
   /**
-   * Handles OCPP 1.6 ClearChargingProfile request from central system.
+   * Handles OCPP 1.6 ClearChargingProfile request from Central System.
    * Clears charging profiles matching the specified criteria.
    */
   handleRequestClearChargingProfile: (
@@ -103,7 +103,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16ClearChargingProfileResponse
 
   /**
-   * Handles OCPP 1.6 DataTransfer request from central system.
+   * Handles OCPP 1.6 DataTransfer request from Central System.
    * Processes vendor-specific data transfer messages.
    */
   handleRequestDataTransfer: (
@@ -112,7 +112,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16DataTransferResponse
 
   /**
-   * Handles OCPP 1.6 GetCompositeSchedule request from central system.
+   * Handles OCPP 1.6 GetCompositeSchedule request from Central System.
    * Returns the composite charging schedule for a connector.
    */
   handleRequestGetCompositeSchedule: (
@@ -121,7 +121,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16GetCompositeScheduleResponse
 
   /**
-   * Handles OCPP 1.6 GetConfiguration request from central system.
+   * Handles OCPP 1.6 GetConfiguration request from Central System.
    * Returns configuration keys and their values.
    */
   handleRequestGetConfiguration: (
@@ -130,7 +130,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => GetConfigurationResponse
 
   /**
-   * Handles OCPP 1.6 GetDiagnostics request from central system.
+   * Handles OCPP 1.6 GetDiagnostics request from Central System.
    * Uploads diagnostics data to the specified location.
    */
   handleRequestGetDiagnostics: (
@@ -143,7 +143,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16GetLocalListVersionResponse
 
   /**
-   * Handles OCPP 1.6 RemoteStartTransaction request from central system.
+   * Handles OCPP 1.6 RemoteStartTransaction request from Central System.
    * Initiates charging transaction on specified or available connector.
    */
   handleRequestRemoteStartTransaction: (
@@ -152,7 +152,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => Promise<GenericResponse>
 
   /**
-   * Handles OCPP 1.6 RemoteStopTransaction request from central system.
+   * Handles OCPP 1.6 RemoteStopTransaction request from Central System.
    * Stops an ongoing transaction by transaction ID.
    */
   handleRequestRemoteStopTransaction: (
@@ -161,7 +161,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => GenericResponse
 
   /**
-   * Handles OCPP 1.6 ReserveNow request from central system.
+   * Handles OCPP 1.6 ReserveNow request from Central System.
    * Creates a reservation on a connector for a specific ID tag.
    */
   handleRequestReserveNow: (
@@ -170,7 +170,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => Promise<OCPP16ReserveNowResponse>
 
   /**
-   * Handles OCPP 1.6 Reset request from central system.
+   * Handles OCPP 1.6 Reset request from Central System.
    * Performs immediate or scheduled reset of the charging station.
    */
   handleRequestReset: (
@@ -184,7 +184,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16SendLocalListResponse
 
   /**
-   * Handles OCPP 1.6 SetChargingProfile request from central system.
+   * Handles OCPP 1.6 SetChargingProfile request from Central System.
    * Sets or updates a charging profile on a connector.
    */
   handleRequestSetChargingProfile: (
@@ -193,7 +193,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => SetChargingProfileResponse
 
   /**
-   * Handles OCPP 1.6 TriggerMessage request from central system.
+   * Handles OCPP 1.6 TriggerMessage request from Central System.
    * Triggers the station to send a specific message type.
    */
   handleRequestTriggerMessage: (
@@ -202,7 +202,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => OCPP16TriggerMessageResponse
 
   /**
-   * Handles OCPP 1.6 UnlockConnector request from central system.
+   * Handles OCPP 1.6 UnlockConnector request from Central System.
    * Unlocks a connector and optionally stops any ongoing transaction.
    */
   handleRequestUnlockConnector: (
@@ -211,7 +211,7 @@ export interface TestableOCPP16IncomingRequestService {
   ) => Promise<UnlockConnectorResponse>
 
   /**
-   * Handles OCPP 1.6 UpdateFirmware request from central system.
+   * Handles OCPP 1.6 UpdateFirmware request from Central System.
    * Initiates firmware download and installation simulation.
    */
   handleRequestUpdateFirmware: (

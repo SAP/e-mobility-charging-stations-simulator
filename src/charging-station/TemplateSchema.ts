@@ -23,7 +23,7 @@ const SignedMeterValueSchema = z
   .catchall(z.unknown())
 
 /**
- * UnitOfMeasure — OCPP 2.0 unit-of-measure descriptor.
+ * UnitOfMeasure — OCPP 2.0.1 unit-of-measure descriptor.
  */
 const UnitOfMeasureSchema = z
   .object({
@@ -93,7 +93,7 @@ const EvseTemplateSchema = z.looseObject({
 
 /**
  * ConfigurationKey — OCPP configuration key entry.
- * `key` is z.string() (open set: vendor-specific and OCPP 2.0 namespaced keys are valid).
+ * `key` is z.string() (open set: vendor-specific and OCPP 2.0.1 namespaced keys are valid).
  */
 const ConfigurationKeySchema = z.looseObject({
   key: z.string(),

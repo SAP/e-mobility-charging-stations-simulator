@@ -14,8 +14,8 @@ import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OC
 import {
   AuthorizationStatus,
   OCPPAuthServiceFactory,
-  OCPPAuthServiceImpl,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
+import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,

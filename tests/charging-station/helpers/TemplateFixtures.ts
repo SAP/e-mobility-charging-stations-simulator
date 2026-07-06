@@ -2,7 +2,7 @@
  * @file Shared template fixtures for schema/migration/validation tests.
  */
 
-import { CURRENT_SCHEMA_VERSION } from '../../../src/charging-station/TemplateMigrations.js'
+import { CURRENT_SCHEMA_VERSION } from '../../../src/charging-station/index.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_VENDOR,

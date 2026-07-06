@@ -141,7 +141,7 @@ export const warnOnOCPP16TemplateKeys = (chargingStation: ChargingStation): void
     const resolved = OCPP2_PARAMETER_KEY_MAP.get(entry.key)
     if (resolved != null) {
       logger.warn(
-        `${chargingStation.logPrefix()} Template uses OCPP 1.6 key '${entry.key}', use OCPP 2.0 variable '${resolved}' instead`
+        `${chargingStation.logPrefix()} Template uses OCPP 1.6 key '${entry.key}', use OCPP 2.0.1 variable '${resolved}' instead`
       )
     }
   }

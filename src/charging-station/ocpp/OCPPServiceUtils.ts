@@ -91,8 +91,6 @@ import {
 
 const moduleName = 'OCPPServiceUtils'
 
-const SOC_MAXIMUM_VALUE = 100
-
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
   component: OCPP20ComponentName,
@@ -227,7 +225,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
       }
     } else if (Array.isArray(value)) {
       for (let i = 0; i < value.length; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- iterating an unknown-typed JSON array to normalize Date entries in place
         const item = value[i]
         if (isDate(item)) {
           try {
@@ -262,7 +260,7 @@ const buildSocMeasurandValue = (
     return null
   }
 
-  const socMaximumValue = SOC_MAXIMUM_VALUE
+  const socMaximumValue = Constants.SOC_MAXIMUM_PERCENT
   const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
   const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
     ? getRandomFloatFluctuatedRounded(
@@ -913,7 +911,7 @@ interface VersionedSampledValueDispatch {
   signingConfig: SampledValueSigningConfig | undefined
   /**
    * Passed by reference; the closure assigned to `buildVersionedSampledValue`
-   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0 SampledValue
+   * mutates its `publicKeyIncluded` flag when a signed OCPP 2.0.1 SampledValue
    * is emitted. Callers rely on the reference identity to detect the mutation.
    */
   signingState: { publicKeyIncluded: boolean }
@@ -926,7 +924,7 @@ interface VersionedSampledValueDispatch {
  * @param chargingStation - Target charging station.
  * @param transactionId - Active transaction identifier.
  * @param context - Optional MeterValue reading context (drives signing
- *   configuration for OCPP 2.0).
+ *   configuration for OCPP 2.0.1).
  * @returns The dispatch bundle.
  */
 const createVersionedSampledValueDispatcher = (
@@ -1110,6 +1108,9 @@ const resolveEnabledMeasurands = (
   const enabled = new Set<MeterValueMeasurand>()
   for (const entry of rawValue.split(',')) {
     const trimmed = entry.trim()
+    // Kept as `.length === 0`: entry is already trimmed above; `isEmpty()` here would be
+    // semantically identical (its string branch is `value.trim().length === 0`) — direct
+    // check avoids a redundant re-trim.
     if (trimmed.length === 0) {
       continue
     }
@@ -1207,7 +1208,7 @@ export const buildMeterValue = (
       connectorId,
       convertToInt(socSampledValue.value),
       socMeasurand.template.minimumValue ?? 0,
-      SOC_MAXIMUM_VALUE,
+      Constants.SOC_MAXIMUM_PERCENT,
       socSampledValue.measurand,
       debug
     )
@@ -1250,10 +1251,12 @@ export const buildMeterValue = (
             ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
             : chargingStation.getNumberOfPhases().toString()
         const lineToLineLabel = `L${phase.toString()}-L${nextPhase}` as MeterValuePhase
-        const lineToLineNominalVoltage = roundTo(
-          Math.sqrt(chargingStation.getNumberOfPhases()) * chargingStation.getVoltageOut(),
-          2
-        )
+        // `V_LL = sqrt(3) * V_LN` in a balanced 3-phase Y system; the
+        // sqrt(3) factor comes from the 30-degree phase separation, not
+        // from the phase count itself. Emitting L-L values makes physical
+        // sense only for `numberOfPhases === 3`; single-phase has no L-L
+        // pair, and `numberOfPhases === 2` is unsupported by contract.
+        const lineToLineNominalVoltage = roundTo(Math.sqrt(3) * chargingStation.getVoltageOut(), 2)
         addPhaseVoltageToMeterValue(
           chargingStation,
           connectorId,
@@ -1486,6 +1489,8 @@ const getLimitFromSampledValueTemplateCustomValue = (
     },
     ...options,
   }
+  // Number.parseFloat preserved: NaN sentinel drives the POSITIVE_INFINITY fallback below;
+  // convertToFloat throws on NaN and would break the fallback branch.
   const parsedValue = Number.parseFloat(value ?? '')
   if (options.limitationEnabled) {
     return max(
@@ -1514,7 +1519,7 @@ const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
  * @param connectorId - Connector ID to look up templates for
  * @param measurandsKey - Configuration key containing the list of sampled measurands
  * @param measurand - Meter value measurand to match
- * @param evseId - Optional EVSE ID for OCPP 2.0 template lookup
+ * @param evseId - Optional EVSE ID for OCPP 2.0.1 template lookup
  * @param phase - Optional phase to match in the template
  * @returns Matching sampled value template, or undefined if not found
  */

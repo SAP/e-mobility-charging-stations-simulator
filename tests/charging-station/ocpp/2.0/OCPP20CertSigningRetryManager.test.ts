@@ -3,12 +3,13 @@
  * @description Verifies certificate signing retry lifecycle per OCPP 2.0.1 A02.FR.17-19
  */
 
+import { minutesToMilliseconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
-import { buildConfigKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { buildConfigKey } from '../../../../src/charging-station/index.js'
 import { OCPP20CertSigningRetryManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertSigningRetryManager.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
@@ -112,7 +113,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
 
         // Act
         manager.startRetryTimer()
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
 
         // Assert
@@ -132,7 +133,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
         )
 
         manager.startRetryTimer()
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
 
         assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
@@ -163,7 +164,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
 
         // Act
         manager.cancelRetryTimer()
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
 
         // Assert
@@ -193,7 +194,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
         await flushMicrotasks()
 
         // Assert — no further retry despite Accepted response
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })
@@ -257,7 +258,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
         assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
 
         // Assert — no third retry, max reached
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
         assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       })
@@ -304,7 +305,7 @@ await describe('OCPP20CertSigningRetryManager', async () => {
 
         // Assert
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-        t.mock.timers.tick(60000)
+        t.mock.timers.tick(minutesToMilliseconds(1))
         await flushMicrotasks()
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })

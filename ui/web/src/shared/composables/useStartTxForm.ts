@@ -3,6 +3,7 @@ import { type MaybeRef, readonly, ref, type Ref, toValue } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/core/index.js'
+import { nonEmptyStringOrUndefined } from '@/shared/utils/index.js'
 
 export interface StartTxFormConfig {
   connectorId: string
@@ -58,7 +59,7 @@ export function useStartTxForm (config: StartTxFormConfig): {
     if (pending.value) return false
     pending.value = true
     try {
-      const idTag = formState.value.idTag.length > 0 ? formState.value.idTag : undefined
+      const idTag = nonEmptyStringOrUndefined(formState.value.idTag)
 
       if (formState.value.authorizeIdTag) {
         if (idTag == null) {

@@ -13,7 +13,7 @@ import {
   buildConfigKey,
   deleteConfigurationKey,
   getConfigurationKey,
-} from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+} from '../../../../src/charging-station/index.js'
 import { createTestableVariableManager } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
@@ -1868,7 +1868,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         buildConfigKey(OCPP20ComponentName.ChargingStation, OCPP20VendorVariableName.ConnectionUrl),
         overLongValue
       )
-      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < OCPP20Constants.MAX_VARIABLE_VALUE_LENGTH)
+      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < OCPP20Constants.MAX_REPORTING_VALUE_SIZE)
       setValueSize(station, 1500)
       setReportingValueSize(station, 1400)
       const getRes = manager.getVariables(station, [

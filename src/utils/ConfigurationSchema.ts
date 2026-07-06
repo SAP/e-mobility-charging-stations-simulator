@@ -4,7 +4,6 @@ import type { ResourceLimits } from 'node:worker_threads'
 import { isIP } from 'node:net'
 import { z } from 'zod'
 
-import { isHostLiteralWithoutPort } from '../charging-station/ui-server/UIServerNet.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -14,6 +13,7 @@ import {
 } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'
 import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
+import { isHostLiteralWithoutPort } from './HostUtils.js'
 import { has } from './Utils.js'
 
 // ---------------------------------------------------------------
@@ -88,7 +88,7 @@ export const StorageConfigurationSchema = z
  * `UIServerFactory` so empty placeholders cannot ship under `enabled: false`
  * and become a Basic-Auth bypass on the next boot with `enabled: true`.
  */
-export const UIServerAuthenticationSchema = z
+const UIServerAuthenticationSchema = z
   .object({
     enabled: z.boolean(),
     password: z.string().min(1).optional(),
@@ -128,7 +128,7 @@ export const UI_SERVER_ACCESS_POLICY_DEFAULTS = {
   trustedProxies: [],
 } as const
 
-export const UIServerAccessPolicySchema = z
+const UIServerAccessPolicySchema = z
   .object({
     allowedHosts: z
       .array(

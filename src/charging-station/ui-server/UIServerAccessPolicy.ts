@@ -2,15 +2,16 @@ import type { IncomingMessage } from 'node:http'
 
 import type { UIServerConfiguration } from '../../types/index.js'
 
-import { UI_SERVER_ACCESS_POLICY_DEFAULTS } from '../../utils/ConfigurationSchema.js'
-import { has, isEmpty, isNotEmptyArray } from '../../utils/index.js'
 import {
+  has,
+  isEmpty,
   isLoopback,
+  isNotEmptyArray,
   normalizeHost,
   normalizeIPAddress,
-  splitHeaderList,
-  splitQuoted,
-} from './UIServerNet.js'
+  UI_SERVER_ACCESS_POLICY_DEFAULTS,
+} from '../../utils/index.js'
+import { splitHeaderList, splitQuoted } from './UIServerNet.js'
 
 const FORWARDED_HEADER_NAMES = [
   'forwarded',
@@ -19,7 +20,7 @@ const FORWARDED_HEADER_NAMES = [
   'x-forwarded-proto',
 ] as const
 const SECURE_FORWARDED_PROTOCOLS = new Set(['https', 'wss'])
-const WILDCARD_HOSTS = new Set(['', '0.0.0.0', '::'])
+export const WILDCARD_HOSTS: ReadonlySet<string> = new Set(['', '0.0.0.0', '::'])
 
 /**
  * Reasons a UI server access decision is denied.

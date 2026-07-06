@@ -14,12 +14,13 @@ import {
   CURRENT_CONFIGURATION_SCHEMA_VERSION,
   DEPRECATED_KEY_REMAPPINGS,
   remapDeprecatedKeys,
-} from '../../src/utils/index.js'
+} from '../../src/utils/ConfigurationMigrations.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildLegacyConfiguration,
   buildV0WithDeprecatedKeyCollision,
 } from './helpers/ConfigurationFixtures.js'
+import { TEST_SUPERVISION_URL } from './TestNetworkConstants.js'
 
 await describe('ConfigurationMigrations', async () => {
   afterEach(() => {
@@ -127,7 +128,7 @@ await describe('ConfigurationMigrations', async () => {
         logEnabled: true,
         logFile: '/logs/combined.log',
         stationTemplateURLs: [{ file: 'a.json', numberOfStations: 1 }],
-        supervisionURLs: 'ws://localhost:8080',
+        supervisionURLs: TEST_SUPERVISION_URL,
         workerProcess: 'workerSet',
       })
 
@@ -138,7 +139,7 @@ await describe('ConfigurationMigrations', async () => {
       assert.strictEqual((result.log as Record<string, unknown>).enabled, true)
       assert.strictEqual((result.log as Record<string, unknown>).file, '/logs/combined.log')
       assert.strictEqual((result.worker as Record<string, unknown>).processType, 'workerSet')
-      assert.strictEqual(result.supervisionUrls, 'ws://localhost:8080')
+      assert.strictEqual(result.supervisionUrls, TEST_SUPERVISION_URL)
       assert.ok(Array.isArray(result.stationTemplateUrls))
       assert.strictEqual(result.logEnabled, undefined)
       assert.strictEqual(result.logFile, undefined)

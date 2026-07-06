@@ -2,6 +2,8 @@
 
 import { extractErrorMessage, type ResponsePayload, ServerFailureError } from 'ui-common'
 
+import { nonEmptyStringOrUndefined } from '@/shared/utils/index.js'
+
 export interface FailureInfo {
   payload?: ResponsePayload
   summary: string
@@ -10,10 +12,8 @@ export interface FailureInfo {
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined
 
-const stringField = (rec: Record<string, unknown> | undefined, key: string): string | undefined => {
-  const v = rec?.[key]
-  return typeof v === 'string' && v.length > 0 ? v : undefined
-}
+const stringField = (rec: Record<string, unknown> | undefined, key: string): string | undefined =>
+  nonEmptyStringOrUndefined(rec?.[key])
 
 export const getFailureInfo = (error: unknown): FailureInfo => {
   if (error instanceof ServerFailureError) {

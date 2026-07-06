@@ -48,7 +48,7 @@ export interface GetInstalledCertificatesResult {
 }
 
 /**
- * Interface for OCPP 2.0 Certificate Manager operations
+ * Interface for OCPP 2.0.1 Certificate Manager operations
  * Used for type-safe access to certificate management functionality
  */
 export interface OCPP20CertificateManagerInterface {
@@ -94,9 +94,9 @@ export interface ValidateCertificateX509Result {
 }
 
 /**
- * OCPP 2.0 Certificate Manager
+ * OCPP 2.0.1 Certificate Manager
  *
- * Provides certificate management operations for OCPP 2.0 charging stations:
+ * Provides certificate management operations for OCPP 2.0.1 charging stations:
  * - Store/delete certificates
  * - Compute certificate hashes
  * - Validate certificate format
@@ -342,8 +342,8 @@ export class OCPP20CertificateManager {
         CertificateSigningUseEnumType.ChargingStationCertificate,
         ''
       )
-      // getCertificatePath returns basePath/ChargingStationCertificate/.pem
-      // We need the directory: basePath/ChargingStationCertificate
+      // `getCertificatePath` returns `basePath/ChargingStationCertificate/.pem`;
+      // `dirPath` is its parent directory `basePath/ChargingStationCertificate`.
       const dirPath = resolve(certFilePath, '..')
 
       if (!(await this.pathExists(dirPath))) {
@@ -474,7 +474,7 @@ export class OCPP20CertificateManager {
       const pemCertificates = pem.match(
         /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
       )
-      if (pemCertificates == null || pemCertificates.length === 0) {
+      if (pemCertificates == null || isEmpty(pemCertificates)) {
         return { reason: 'No PEM certificate found', valid: false }
       }
 

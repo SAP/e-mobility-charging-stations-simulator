@@ -1,5 +1,7 @@
 import type { Statistics } from '../../../src/types/index.js'
 
+import { TEST_SUPERVISION_URL } from '../../utils/TestNetworkConstants.js'
+
 /**
  * @param id - Performance record identifier
  * @param name - Charging station name
@@ -26,6 +28,6 @@ export function buildTestStatistics (id: string, name?: string): Statistics {
     id,
     name: name ?? `cs-${id}`,
     statisticsData: statsData,
-    uri: 'ws://localhost:8080',
+    uri: TEST_SUPERVISION_URL,
   }
 }

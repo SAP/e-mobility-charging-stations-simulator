@@ -2,12 +2,13 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
 import { configurationSchema, uiServerConfigSchema } from '../src/config/schema.js'
+import { DEFAULT_HOST, DEFAULT_PORT } from '../src/constants.js'
 
 await describe('config schema validation', async () => {
   await it('should validate a minimal valid config', () => {
     const result = uiServerConfigSchema.safeParse({
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -16,8 +17,8 @@ await describe('config schema validation', async () => {
 
   await it('should reject config with empty protocol', () => {
     const result = uiServerConfigSchema.safeParse({
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: '',
       version: '0.0.1',
     })
@@ -26,8 +27,8 @@ await describe('config schema validation', async () => {
 
   await it('should reject config with protocol not in Protocol enum', () => {
     const result = uiServerConfigSchema.safeParse({
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ws',
       version: '0.0.1',
     })
@@ -36,8 +37,8 @@ await describe('config schema validation', async () => {
 
   await it('should reject config with version not in ProtocolVersion enum', () => {
     const result = uiServerConfigSchema.safeParse({
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '2.0',
     })
@@ -46,7 +47,7 @@ await describe('config schema validation', async () => {
 
   await it('should reject missing required host field', () => {
     const result = uiServerConfigSchema.safeParse({
-      port: 8080,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -55,7 +56,7 @@ await describe('config schema validation', async () => {
 
   await it('should reject invalid port number', () => {
     const result = uiServerConfigSchema.safeParse({
-      host: 'localhost',
+      host: DEFAULT_HOST,
       port: 99999,
     })
     assert.strictEqual(result.success, false)
@@ -64,7 +65,7 @@ await describe('config schema validation', async () => {
   await it('should reject empty host string', () => {
     const result = uiServerConfigSchema.safeParse({
       host: '',
-      port: 8080,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -81,7 +82,7 @@ await describe('config schema validation', async () => {
       },
       host: 'simulator.example.com',
       name: 'My Simulator',
-      port: 8080,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       secure: true,
       version: '0.0.1',
@@ -92,8 +93,8 @@ await describe('config schema validation', async () => {
   await it('should validate configuration with array of servers', () => {
     const result = configurationSchema.safeParse({
       uiServer: [
-        { host: 'server1.example.com', port: 8080, protocol: 'ui', version: '0.0.1' },
-        { host: 'server2.example.com', port: 8080, protocol: 'ui', version: '0.0.1' },
+        { host: 'server1.example.com', port: DEFAULT_PORT, protocol: 'ui', version: '0.0.1' },
+        { host: 'server2.example.com', port: DEFAULT_PORT, protocol: 'ui', version: '0.0.1' },
       ],
     })
     assert.strictEqual(result.success, true)
@@ -101,7 +102,7 @@ await describe('config schema validation', async () => {
 
   await it('should validate configuration with single server', () => {
     const result = configurationSchema.safeParse({
-      uiServer: { host: 'localhost', port: 8080, protocol: 'ui', version: '0.0.1' },
+      uiServer: { host: DEFAULT_HOST, port: DEFAULT_PORT, protocol: 'ui', version: '0.0.1' },
     })
     assert.strictEqual(result.success, true)
   })
@@ -112,8 +113,8 @@ await describe('config schema validation', async () => {
         enabled: true,
         type: 'protocol-basic-auth',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -137,8 +138,8 @@ await describe('config schema validation', async () => {
         type: 'protocol-basic-auth',
         username: '',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -158,8 +159,8 @@ await describe('config schema validation', async () => {
         type: 'protocol-basic-auth',
         username: 'admin',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -179,8 +180,8 @@ await describe('config schema validation', async () => {
         type: 'protocol-basic-auth',
         username: 'a:b',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -202,8 +203,8 @@ await describe('config schema validation', async () => {
         password: 'admin',
         type: 'protocol-basic-auth',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -222,8 +223,8 @@ await describe('config schema validation', async () => {
         type: 'protocol-basic-auth',
         username: 'admin',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -243,8 +244,8 @@ await describe('config schema validation', async () => {
         type: 'protocol-basic-auth',
         username: 'admin',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })
@@ -257,8 +258,8 @@ await describe('config schema validation', async () => {
         enabled: false,
         type: 'protocol-basic-auth',
       },
-      host: 'localhost',
-      port: 8080,
+      host: DEFAULT_HOST,
+      port: DEFAULT_PORT,
       protocol: 'ui',
       version: '0.0.1',
     })

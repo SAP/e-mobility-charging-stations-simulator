@@ -19,7 +19,7 @@
 import type { CoherentSession, EvProfile, ICoherentContext } from './types.js'
 
 import { CurrentType, Voltage } from '../../types/index.js'
-import { Constants, logger } from '../../utils/index.js'
+import { Constants, isEmpty, logger } from '../../utils/index.js'
 import { selectEvProfile } from './EvProfiles.js'
 import { createStreamPrng, hashLabel } from './PRNG.js'
 
@@ -83,7 +83,7 @@ export const createCoherentSession = (
   context: ICoherentContext,
   options: CreateSessionOptions
 ): CoherentSession | undefined => {
-  if (options.profiles.length === 0) {
+  if (isEmpty(options.profiles)) {
     return undefined
   }
   const now = options.now ?? Date.now()

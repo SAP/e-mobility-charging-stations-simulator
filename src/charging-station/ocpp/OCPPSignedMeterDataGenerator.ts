@@ -7,7 +7,7 @@ import {
   MeterValueUnit,
   SigningMethodEnumType,
 } from '../../types/index.js'
-import { roundTo } from '../../utils/index.js'
+import { Constants, roundTo } from '../../utils/index.js'
 
 export interface SignedMeterData extends JsonObject {
   encodingMethod: EncodingMethodEnumType
@@ -53,7 +53,7 @@ export const generateSignedMeterData = (
   const meterValueKwh =
     params.meterValueUnit === MeterValueUnit.KILO_WATT_HOUR
       ? roundTo(params.meterValue, 3)
-      : roundTo(params.meterValue / 1000, 3)
+      : roundTo(params.meterValue / Constants.UNIT_DIVIDER_KILO, 3)
 
   const ocmfPayload = {
     FV: '1.0',

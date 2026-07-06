@@ -10,6 +10,7 @@ import type {
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import {
+  Constants,
   ensureError,
   getErrorMessage,
   logger,
@@ -382,8 +383,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     }
 
     try {
-      // Use provided TTL or default cache lifetime
-      const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
+      const cacheTtl = ttl ?? result.cacheTtl ?? Constants.DEFAULT_REMOTE_AUTH_CACHE_TTL_SECONDS
       this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
         `${moduleName}: Cached result for '${truncateId(identifier)}' (TTL: ${String(cacheTtl)}s)`

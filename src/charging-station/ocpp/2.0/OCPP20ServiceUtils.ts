@@ -65,6 +65,7 @@ import {
   createPayloadConfigs,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 import { mapStopReasonToOCPP20 } from './OCPP20RequestBuilders.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
@@ -126,7 +127,7 @@ export class OCPP20ServiceUtils {
   /**
    * @param chargingStation - Target charging station for EVSE resolution
    * @param commandParams - Status notification parameters
-   * @returns Formatted OCPP 2.0 StatusNotification request payload
+   * @returns Formatted OCPP 2.0.1 StatusNotification request payload
    */
   public static buildStatusNotificationRequest (
     chargingStation: ChargingStation,
@@ -156,7 +157,7 @@ export class OCPP20ServiceUtils {
    * Build meter values for the start of a transaction.
    * @param chargingStation - Target charging station
    * @param transactionId - Transaction identifier
-   * @returns Array of OCPP 2.0 meter values at transaction begin
+   * @returns Array of OCPP 2.0.1 meter values at transaction begin
    */
   static buildTransactionStartedMeterValues (
     chargingStation: ChargingStation,
@@ -236,19 +237,19 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffWaitMinimum,
-      30
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_WAIT_MINIMUM_SECONDS
     )
     const randomRange = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffRandomRange,
-      10
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_RANDOM_RANGE_SECONDS
     )
     const repeatTimes = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20OptionalVariableName.RetryBackOffRepeatTimes,
-      5
+      OCPP20Constants.DEFAULT_RETRY_BACKOFF_REPEAT_TIMES
     )
     return computeExponentialBackOffDelay({
       baseDelayMs: secondsToMilliseconds(waitMinimum),
@@ -259,7 +260,7 @@ export class OCPP20ServiceUtils {
   }
 
   /**
-   * OCPP 2.0 Incoming Request Service validator configurations
+   * OCPP 2.0.1 Incoming Request Service validator configurations
    * @returns Array of validator configuration tuples
    */
   public static createIncomingRequestPayloadConfigs = (): [
@@ -268,7 +269,7 @@ export class OCPP20ServiceUtils {
   ][] => createPayloadConfigs(OCPP20ServiceUtils.incomingRequestSchemaNames, 'Request.json')
 
   /**
-   * Configuration for OCPP 2.0 Incoming Request Response validators
+   * Configuration for OCPP 2.0.1 Incoming Request Response validators
    * @returns Array of validator configuration tuples
    */
   public static createIncomingRequestResponsePayloadConfigs = (): [
@@ -277,10 +278,10 @@ export class OCPP20ServiceUtils {
   ][] => createPayloadConfigs(OCPP20ServiceUtils.incomingRequestSchemaNames, 'Response.json')
 
   /**
-   * Factory options for OCPP 2.0 payload validators
+   * Factory options for OCPP 2.0.1 payload validators
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 2.0 validators
+   * @returns Factory options object for OCPP 2.0.1 validators
    */
   public static createPayloadOptions = (moduleName: string, methodName: string) =>
     PayloadValidatorOptions(
@@ -291,7 +292,7 @@ export class OCPP20ServiceUtils {
     )
 
   /**
-   * OCPP 2.0 Request Service validator configurations
+   * OCPP 2.0.1 Request Service validator configurations
    * @returns Array of validator configuration tuples
    */
   public static createRequestPayloadConfigs = (): [
@@ -300,7 +301,7 @@ export class OCPP20ServiceUtils {
   ][] => createPayloadConfigs(OCPP20ServiceUtils.outgoingRequestSchemaNames, 'Request.json')
 
   /**
-   * OCPP 2.0 Response Service validator configurations
+   * OCPP 2.0.1 Response Service validator configurations
    * @returns Array of validator configuration tuples
    */
   public static createResponsePayloadConfigs = (): [
@@ -1255,7 +1256,7 @@ export class OCPP20ServiceUtils {
       } else {
         transactionId = connectorStatus.transactionId.toString()
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.resolveActiveTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
+          `${chargingStation.logPrefix()} ${moduleName}.resolveActiveTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0.1`
         )
       }
       return { connectorStatus, transactionId }

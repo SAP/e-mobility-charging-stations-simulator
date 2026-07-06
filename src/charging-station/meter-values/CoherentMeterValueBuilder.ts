@@ -35,7 +35,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
 } from '../../types/index.js'
-import { Constants, logger, roundTo } from '../../utils/index.js'
+import { Constants, isEmpty, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
   computeCoherentSample,
@@ -171,7 +171,7 @@ const applyRegisterValuesWithoutPhases = (
   const surviving: SampledValueTemplate[] = []
   for (const family of Map.groupBy(bucket, templateFamilyKey).values()) {
     const perPhaseLN = family.filter(isLineToNeutralTemplate)
-    if (perPhaseLN.length === 0) {
+    if (isEmpty(perPhaseLN)) {
       surviving.push(...family)
       continue
     }
@@ -226,6 +226,15 @@ const applyRegisterValuesWithoutPhases = (
  * @param numberOfPhases - Session phase count.
  * @param connectorStatus - Connector status (for the energy register).
  * @returns Value to emit, or `undefined` if the combination is unsupported.
+ *
+ * Supported measurands: `Current.Import`, `Energy.Active.Import.Register`,
+ * `Power.Active.Import`, `SoC`, `Voltage`. Other OCPP-defined measurands
+ * (notably `Power.Factor`, `Power.Reactive.Import`, `Frequency`,
+ * `Temperature`) return `undefined` so the emission path logs and skips
+ * the template. `EvProfile.powerFactor` scales the AC current/power chain
+ * but is NOT emitted as a `Power.Factor` measurand; templates configuring
+ * these unsupported measurands under coherent mode are skipped with a
+ * warning in `buildCoherentMeterValue`.
  */
 const resolvePhasedValue = (
   measurand: MeterValueMeasurand,
@@ -262,15 +271,11 @@ const resolvePhasedValue = (
     case MeterValueMeasurand.VOLTAGE:
       if (family === 'Neutral') return 0
       if (family === 'LineToLine') {
-        // Line-to-line voltage is only defined for 3-phase AC
-        // (V_LL = sqrt(3) * V_LN); 1-phase has no L-L pair, and
-        // `numberOfPhases === 2` is unsupported by contract
-        // (`Helpers.getPhaseRotationValue` branches only on {0, 1, 3}).
-        // Return `undefined` on any non-3-phase configuration so the
-        // caller can log-and-skip rather than emit a physically
-        // meaningless sqrt(2) * V_LN value.
+        // V_LL = sqrt(3) * V_LN in a balanced 3-phase Y system (30-degree
+        // phase separation). Defined only for numberOfPhases === 3;
+        // 1-phase has no L-L pair, 2-phase is unsupported by contract.
         if (numberOfPhases !== 3) return undefined
-        return Math.sqrt(numberOfPhases) * sample.voltageV
+        return Math.sqrt(3) * sample.voltageV
       }
       return sample.voltageV
     default:
@@ -307,14 +312,21 @@ const resolveUnitDivider = (
   unit != null && KILO_UNIT_BY_MEASURAND.get(measurand) === unit ? Constants.UNIT_DIVIDER_KILO : 1
 
 /**
- * Returns the SampledValueTemplate array configured on the given connector.
+ * Resolves `MeterValues` templates for a connector. EVSE-level
+ * `MeterValues` (when defined and non-empty) override connector-level
+ * definitions for every connector under that EVSE; connector-level
+ * `MeterValues` are used when the connector is not grouped under an
+ * EVSE (flat `Connectors` map station layout) or when the EVSE-level
+ * array is undefined or empty.
  *
- * Reads the connector-level `MeterValues` templates only. Unlike
- * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does NOT
- * fall back to EVSE-level `MeterValues` templates: the {@link ICoherentContext}
- * surface exposes `getConnectorStatus` but not `getEvseStatus`. Adding
- * EVSE-level template inheritance to the coherent path requires extending
- * the context interface with `getEvseStatus`.
+ * NOTE: Unlike
+ * {@link ../ocpp/OCPPServiceUtils.getSampledValueTemplate}, this does
+ * NOT aggregate `MeterValues` across sibling connectors under the
+ * same EVSE when EVSE-level `MeterValues` is undefined or empty. The
+ * coherent path emits templates from exactly one source (EVSE-level
+ * when non-empty, otherwise the queried connector), keeping
+ * per-connector template ownership isolated; the random/fixed path's
+ * cross-connector aggregation is intentionally not replicated.
  * @param context - Charging-station context.
  * @param connectorId - Connector identifier.
  * @returns Templates or `undefined`.
@@ -323,6 +335,13 @@ const resolveTemplates = (
   context: ICoherentContext,
   connectorId: number
 ): SampledValueTemplate[] | undefined => {
+  const evseId = context.getEvseIdByConnectorId(connectorId)
+  if (evseId != null) {
+    const evseTemplates = context.getEvseStatus(evseId)?.MeterValues
+    if (isNotEmptyArray(evseTemplates)) {
+      return evseTemplates
+    }
+  }
   return context.getConnectorStatus(connectorId)?.MeterValues
 }
 
@@ -420,7 +439,7 @@ export const buildCoherentMeterValue = (
         )
         continue
       }
-      // Narrow the OCPP 2.0 `SampledValueTemplate.unit` open-string branch
+      // Narrow the OCPP 2.0.1 `SampledValueTemplate.unit` open-string branch
       // to the closed `MeterValueUnit` union for the Map lookup below; any
       // string outside the enum returns `undefined` from the Map and falls
       // through to divider = 1 (unit-scale emission).

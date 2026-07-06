@@ -1,7 +1,7 @@
 /**
  * OCPP Authentication System
  *
- * Authentication layer for OCPP 1.6 and 2.0 protocols.
+ * Authentication layer for OCPP 1.6 and 2.0.1 protocols.
  * This module provides a consistent API for handling authentication
  * across different OCPP versions, with support for multiple authentication
  * strategies including local lists, remote authorization, and certificate-based auth.
@@ -12,11 +12,7 @@ export { InMemoryLocalAuthListManager } from './cache/InMemoryLocalAuthListManag
 export type {
   AuthCache,
   AuthComponentFactory,
-  AuthStats,
   AuthStrategy,
-  CacheStats,
-  CertificateAuthProvider,
-  CertificateInfo,
   DifferentialAuthEntry,
   LocalAuthEntry,
   LocalAuthListManager,
@@ -24,7 +20,6 @@ export type {
   OCPPAuthService,
 } from './interfaces/OCPPAuthService.js'
 export { OCPPAuthServiceFactory } from './services/OCPPAuthServiceFactory.js'
-export { OCPPAuthServiceImpl } from './services/OCPPAuthServiceImpl.js'
 export {
   type AuthConfiguration,
   AuthContext,

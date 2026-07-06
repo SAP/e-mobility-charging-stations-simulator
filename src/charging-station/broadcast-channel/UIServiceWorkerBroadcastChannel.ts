@@ -1,4 +1,7 @@
-import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService.js'
+// Type-only edge, erased at compile time. A value import through this barrel
+// would pull `UIHttpServer` / `UIMCPServer` / `UIServiceFactory` transitively
+// and close a runtime cycle.
+import type { AbstractUIService } from '../ui-server/index.js'
 
 import {
   type BroadcastChannelResponse,

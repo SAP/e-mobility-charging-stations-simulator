@@ -1,5 +1,5 @@
 /**
- * Testable interface for OCPP 2.0 IncomingRequestService
+ * Testable interface for OCPP 2.0.1 IncomingRequestService
  *
  * This module provides type-safe access to private handler methods for testing purposes.
  * It replaces `as any` casts with a properly typed interface, enabling:
@@ -69,7 +69,7 @@ import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestServi
  * Interface exposing private handler methods of OCPP20IncomingRequestService for testing.
  * Each method signature matches the corresponding private method in the service class.
  */
-export interface TestableOCPP20IncomingRequestService {
+interface TestableOCPP20IncomingRequestService {
   /**
    * Builds report data for the device model report.
    * Used internally by handleRequestGetBaseReport.
@@ -122,7 +122,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20DataTransferResponse
 
   /**
-   * Handles OCPP 2.0 DeleteCertificate request from central system.
+   * Handles OCPP 2.0.1 DeleteCertificate request from central system.
    * Deletes a certificate matching the provided hash data from the charging station.
    */
   handleRequestDeleteCertificate: (
@@ -131,7 +131,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20DeleteCertificateResponse>
 
   /**
-   * Handles OCPP 2.0 GetBaseReport request.
+   * Handles OCPP 2.0.1 GetBaseReport request.
    * Returns device model report based on the requested report base type.
    */
   handleRequestGetBaseReport: (
@@ -140,7 +140,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20GetBaseReportResponse
 
   /**
-   * Handles OCPP 2.0 GetInstalledCertificateIds request from central system.
+   * Handles OCPP 2.0.1 GetInstalledCertificateIds request from central system.
    * Returns list of installed certificates matching the optional filter types.
    */
   handleRequestGetInstalledCertificateIds: (
@@ -171,7 +171,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20GetTransactionStatusResponse
 
   /**
-   * Handles OCPP 2.0 GetVariables request.
+   * Handles OCPP 2.0.1 GetVariables request.
    * Returns values for requested variables from the device model.
    */
   handleRequestGetVariables: (
@@ -180,7 +180,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20GetVariablesResponse
 
   /**
-   * Handles OCPP 2.0 InstallCertificate request from central system.
+   * Handles OCPP 2.0.1 InstallCertificate request from central system.
    * Installs a certificate of the specified type in the charging station.
    */
   handleRequestInstallCertificate: (
@@ -189,7 +189,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20InstallCertificateResponse>
 
   /**
-   * Handles OCPP 2.0 Reset request.
+   * Handles OCPP 2.0.1 Reset request.
    * Performs immediate or scheduled reset of charging station or specific EVSE.
    */
   handleRequestReset: (
@@ -212,7 +212,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20SetNetworkProfileResponse
 
   /**
-   * Handles OCPP 2.0 SetVariables request.
+   * Handles OCPP 2.0.1 SetVariables request.
    * Sets values for requested variables in the device model.
    */
   handleRequestSetVariables: (
@@ -221,7 +221,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => OCPP20SetVariablesResponse
 
   /**
-   * Handles OCPP 2.0 RequestStartTransaction request from central system.
+   * Handles OCPP 2.0.1 RequestStartTransaction request from central system.
    * Initiates charging transaction on specified EVSE with enhanced authorization.
    */
   handleRequestStartTransaction: (
@@ -230,7 +230,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20RequestStartTransactionResponse>
 
   /**
-   * Handles OCPP 2.0 RequestStopTransaction request from central system.
+   * Handles OCPP 2.0.1 RequestStopTransaction request from central system.
    * Validates and returns Accepted/Rejected. Actual stop is performed by event listener.
    */
   handleRequestStopTransaction: (
@@ -313,11 +313,8 @@ export function createTestableIncomingRequestService (
 
 export {
   createTestableRequestService,
-  type SendMessageFn,
   type SendMessageMock,
   type TestableOCPP20RequestService,
-  type TestableRequestServiceOptions,
-  type TestableRequestServiceResult,
 } from './OCPP20RequestServiceTestable.js'
 
 export {
@@ -325,7 +322,4 @@ export {
   type TestableOCPP20ResponseService,
 } from './OCPP20ResponseServiceTestable.js'
 
-export {
-  createTestableVariableManager,
-  type TestableOCPP20VariableManager,
-} from './OCPP20VariableManagerTestable.js'
+export { createTestableVariableManager } from './OCPP20VariableManagerTestable.js'

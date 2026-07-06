@@ -2,7 +2,8 @@
  * @file Shared configuration fixtures for schema/migration/validation tests.
  */
 
-import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/utils/index.js'
+import { Constants, CURRENT_CONFIGURATION_SCHEMA_VERSION } from '../../../src/utils/index.js'
+import { TEST_SUPERVISION_URL } from '../TestNetworkConstants.js'
 
 /**
  * Build a minimal valid configuration at the current schema version.
@@ -60,10 +61,10 @@ export const buildFullConfiguration = (): Record<string, unknown> => ({
     { file: 'full.station-template.json', numberOfStations: 2, provisionedNumberOfStations: 4 },
   ],
   supervisionUrlDistribution: 'charging-station-affinity',
-  supervisionUrls: ['ws://localhost:8080/ocpp'],
+  supervisionUrls: [`${TEST_SUPERVISION_URL}/ocpp`],
   uiServer: {
     enabled: false,
-    options: { host: 'localhost', port: 8080 },
+    options: { host: Constants.DEFAULT_UI_SERVER_HOST, port: Constants.DEFAULT_UI_SERVER_PORT },
     type: 'ws',
     version: '1.1',
   },

@@ -1,4 +1,4 @@
-import { secondsToMilliseconds } from 'date-fns'
+import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
@@ -7,6 +7,9 @@ import { Constants, isEmpty, logger, roundTo, truncateId } from '../../../../uti
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
+
+// Rough heap-footprint estimate per cached entry — not measured; used only for stats display.
+const AVG_ENTRY_SIZE_BYTES = 500 as const
 
 /**
  * Cached authorization entry with expiration
@@ -62,9 +65,6 @@ interface RateLimitStats {
  * - Bounded rate limits map prevents unbounded memory growth
  */
 export class InMemoryAuthCache implements AuthCache {
-  // Implementation-specific safety limit (not mandated by OCPP spec)
-  private static readonly DEFAULT_MAX_ABSOLUTE_LIFETIME_MS = 86_400_000 // 24 hours
-
   /** Cache storage: identifier -> entry */
   private readonly cache = new Map<string, CacheEntry>()
 
@@ -105,14 +105,14 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Create an in-memory auth cache
    * @param options - Cache configuration options
-   * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
-   * @param options.defaultTtl - Default TTL in seconds (default: 3600)
-   * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: 86400000)
+   * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: Constants.DEFAULT_AUTH_CACHE_CLEANUP_INTERVAL_SECONDS, 0 to disable)
+   * @param options.defaultTtl - Default TTL in seconds (default: Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS)
+   * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: Constants.DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS)
    * @param options.maxEntries - Maximum number of cache entries (default: Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
    * @param options.rateLimit - Rate limiting configuration
    * @param options.rateLimit.enabled - Enable rate limiting (default: false)
-   * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
-   * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
+   * @param options.rateLimit.maxRequests - Max requests per window (default: Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_MAX_REQUESTS)
+   * @param options.rateLimit.windowMs - Time window in milliseconds (default: Constants.DEFAULT_AUTH_CACHE_RATE_LIMIT_WINDOW_MS)
    */
   constructor (options?: {
     cleanupIntervalSeconds?: number
@@ -123,7 +123,7 @@ export class InMemoryAuthCache implements AuthCache {
   }) {
     this.defaultTtl = options?.defaultTtl ?? Constants.DEFAULT_AUTH_CACHE_TTL_SECONDS
     this.maxAbsoluteLifetimeMs =
-      options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
+      options?.maxAbsoluteLifetimeMs ?? Constants.DEFAULT_AUTH_CACHE_MAX_ABSOLUTE_LIFETIME_MS
     this.maxEntries = Math.max(1, options?.maxEntries ?? Constants.DEFAULT_AUTH_CACHE_MAX_ENTRIES)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
@@ -236,8 +236,7 @@ export class InMemoryAuthCache implements AuthCache {
     const hitRate = totalAccess > 0 ? (this.stats.hits / totalAccess) * 100 : 0
 
     // Calculate memory usage estimate
-    const avgEntrySize = 500 // Rough estimate: 500 bytes per entry
-    const memoryUsage = this.cache.size * avgEntrySize
+    const memoryUsage = this.cache.size * AVG_ENTRY_SIZE_BYTES
 
     // Clean expired rate limit entries
     this.cleanupExpiredRateLimits()
@@ -339,7 +338,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     const ttlSeconds = ttl ?? this.defaultTtl
-    const maxTtlSeconds = this.maxAbsoluteLifetimeMs / 1000
+    const maxTtlSeconds = millisecondsToSeconds(this.maxAbsoluteLifetimeMs)
     const clampedTtl = Math.min(Math.max(0, ttlSeconds), maxTtlSeconds)
     const now = Date.now()
     const expiresAt = now + secondsToMilliseconds(clampedTtl)

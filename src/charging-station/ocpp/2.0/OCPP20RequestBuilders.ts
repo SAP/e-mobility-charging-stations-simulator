@@ -48,13 +48,13 @@ export const buildOCPP20BootNotificationRequest = (
 })
 
 /**
- * Builds an OCPP 2.0 sampled value from a template and measurement data.
+ * Builds an OCPP 2.0.1 sampled value from a template and measurement data.
  * @param sampledValueTemplate - The sampled value template to use.
  * @param value - The measured value.
  * @param context - The reading context.
  * @param phase - The phase of the measurement.
  * @param signingConfig - Optional signing configuration for generating signedMeterValue.
- * @returns The built OCPP 2.0 sampled value with signing metadata.
+ * @returns The built OCPP 2.0.1 sampled value with signing metadata.
  */
 export function buildOCPP20SampledValue (
   sampledValueTemplate: SampledValueTemplate,

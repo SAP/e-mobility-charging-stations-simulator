@@ -64,7 +64,7 @@ export enum AuthorizationStatus {
 
   INVALID = 'Invalid',
 
-  // OCPP 2.0 specific
+  // OCPP 2.0.1 specific
   NO_CREDIT = 'NoCredit',
 
   NOT_ALLOWED_TYPE_EVSE = 'NotAllowedTypeEVSE',
@@ -81,7 +81,7 @@ export enum AuthorizationStatus {
 export enum IdentifierType {
   BIOMETRIC = 'Biometric',
 
-  // OCPP 2.0 types (mapped from OCPP20IdTokenEnumType)
+  // OCPP 2.0.1 types (mapped from OCPP20IdTokenEnumType)
   CENTRAL = 'Central',
   // Future extensibility
   CERTIFICATE = 'Certificate',
@@ -124,7 +124,7 @@ export interface AuthConfiguration extends JsonObject {
   certificateValidationStrict?: boolean
 
   /**
-   * Disable post-authorize behavior for non-Accepted cached/local list tokens (OCPP 2.0).
+   * Disable post-authorize behavior for non-Accepted cached/local list tokens (OCPP 2.0.1).
    * When true, non-Accepted tokens from cache or local list are accepted locally without
    * triggering a remote AuthorizationRequest (C10.FR.03, C12.FR.05, C14.FR.03).
    * When false, non-Accepted cached/local tokens trigger re-authorization via remote.
@@ -212,7 +212,7 @@ export interface AuthRequest {
   /** Authentication context */
   readonly context: AuthContext
 
-  /** EVSE ID for OCPP 2.0 */
+  /** EVSE ID for OCPP 2.0.1 */
   readonly evseId?: number
 
   /** Identifier to authenticate */
@@ -235,7 +235,7 @@ export interface AuthRequest {
 }
 
 /**
- * Certificate hash data for PKI-based authentication (OCPP 2.0+)
+ * Certificate hash data for PKI-based authentication (OCPP 2.0.1)
  */
 export interface CertificateHashData {
   /** Hash algorithm used (SHA256, SHA384, SHA512, etc.) */
@@ -255,13 +255,13 @@ export interface CertificateHashData {
  * Identifier that works across OCPP versions
  */
 export interface Identifier {
-  /** Additional info for OCPP 2.0 tokens */
+  /** Additional info for OCPP 2.0.1 tokens */
   readonly additionalInfo?: Record<string, string>
 
   /** Certificate hash data for PKI-based authentication */
   readonly certificateHashData?: CertificateHashData
 
-  /** Group identifier for group-based authorization (OCPP 2.0) */
+  /** Group identifier for group-based authorization (OCPP 2.0.1) */
   readonly groupId?: string
 
   /** Parent ID for hierarchical authorization (OCPP 1.6) */
@@ -326,9 +326,9 @@ export const isOCPP16Type = (type: IdentifierType): boolean => {
 }
 
 /**
- * Check if identifier type is OCPP 2.0 compatible
+ * Check if identifier type is OCPP 2.0.1 compatible
  * @param type - Identifier type to check
- * @returns True if OCPP 2.0 type
+ * @returns True if OCPP 2.0.1 type
  */
 export const isOCPP20Type = (type: IdentifierType): boolean => {
   return Object.values(OCPP20IdTokenEnumType).includes(type as unknown as OCPP20IdTokenEnumType)
@@ -355,11 +355,11 @@ export const requiresAdditionalInfo = (type: IdentifierType): boolean => {
  * This allows the authentication system to work seamlessly across OCPP 1.6 and 2.0.
  * @remarks
  * **Edge cases and limitations:**
- * - OCPP 2.0 specific statuses (NOT_AT_THIS_LOCATION, NOT_AT_THIS_TIME, PENDING, UNKNOWN)
+ * - OCPP 2.0.1 specific statuses (NOT_AT_THIS_LOCATION, NOT_AT_THIS_TIME, PENDING, UNKNOWN)
  *   map to INVALID when converting to OCPP 1.6
- * - OCPP 2.0 IdToken types have more granularity than OCPP 1.6 IdTag
- * - Certificate-based auth (IdentifierType.CERTIFICATE) is only available in OCPP 2.0+
- * - When mapping to OCPP 2.0, unsupported types default to Local
+ * - OCPP 2.0.1 IdToken types have more granularity than OCPP 1.6 IdTag
+ * - Certificate-based auth (IdentifierType.CERTIFICATE) is only available in OCPP 2.0.1
+ * - When mapping to OCPP 2.0.1, unsupported types default to Local
  */
 
 /**
@@ -390,8 +390,8 @@ export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): Authorizatio
 }
 
 /**
- * Maps OCPP 2.0 authorization status enum to authorization status
- * @param status - OCPP 2.0 authorization status
+ * Maps OCPP 2.0.1 authorization status enum to authorization status
+ * @param status - OCPP 2.0.1 authorization status
  * @returns Authorization status
  * @example
  * ```typescript
@@ -429,8 +429,8 @@ export const mapOCPP20AuthorizationStatus = (
 }
 
 /**
- * Maps OCPP 2.0 token type to identifier type
- * @param type - OCPP 2.0 token type
+ * Maps OCPP 2.0.1 token type to identifier type
+ * @param type - OCPP 2.0.1 token type
  * @returns Identifier type
  * @example
  * ```typescript
@@ -492,9 +492,9 @@ export const mapToOCPP16Status = (status: AuthorizationStatus): OCPP16Authorizat
 }
 
 /**
- * Maps authorization status to OCPP 2.0 RequestStartStopStatus
+ * Maps authorization status to OCPP 2.0.1 RequestStartStopStatus
  * @param status - Authorization status
- * @returns OCPP 2.0 RequestStartStopStatus
+ * @returns OCPP 2.0.1 RequestStartStopStatus
  * @example
  * ```typescript
  * const ocpp20Status = mapToOCPP20Status(AuthorizationStatus.ACCEPTED)
@@ -519,9 +519,9 @@ export const mapToOCPP20Status = (status: AuthorizationStatus): RequestStartStop
 }
 
 /**
- * Maps identifier type to OCPP 2.0 token type
+ * Maps identifier type to OCPP 2.0.1 token type
  * @param type - Identifier type
- * @returns OCPP 2.0 token type
+ * @returns OCPP 2.0.1 token type
  * @example
  * ```typescript
  * const ocpp20Type = mapToOCPP20TokenType(IdentifierType.CENTRAL)

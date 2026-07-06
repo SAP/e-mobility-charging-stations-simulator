@@ -1,12 +1,15 @@
 import { THEME_IDS } from 'ui-common'
 import { readonly, ref, type Ref } from 'vue'
 
-import { getFromLocalStorage, setToLocalStorage } from '@/core/index.js'
+import {
+  DEFAULT_THEME,
+  getFromLocalStorage,
+  setToLocalStorage,
+  THEME_STORAGE_KEY,
+} from '@/core/index.js'
 import { validateTokenContract } from '@/shared/tokens/contract.js'
 
 export const AVAILABLE_THEMES = THEME_IDS
-export const DEFAULT_THEME: ThemeName = 'tokyo-night-storm'
-export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 
 export type ThemeName = (typeof THEME_IDS)[number]
 
@@ -37,7 +40,7 @@ function applyTheme (themeName: ThemeName): void {
   document.documentElement.classList.add('theme-switching')
   document.documentElement.setAttribute('data-theme', themeName)
   // Force reflow so the theme CSS is resolved before reading color-scheme.
-  // eslint-disable-next-line no-void
+  // eslint-disable-next-line no-void -- reading `offsetHeight` forces a layout reflow so the theme CSS is resolved before `color-scheme` is read; `void` discards the value
   void document.documentElement.offsetHeight
   document.documentElement.setAttribute('data-color-scheme', resolveColorScheme())
   document.documentElement.classList.remove('theme-switching')

@@ -1,5 +1,5 @@
 /**
- * Testable wrapper for OCPP 2.0 RequestService
+ * Testable wrapper for OCPP 2.0.1 RequestService
  *
  * This module provides type-safe testing utilities for OCPP20RequestService.
  * It enables mocking of the protected sendMessage method and provides access

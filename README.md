@@ -364,9 +364,9 @@ type AutomaticTransactionGeneratorConfiguration = {
 
 #### Evses section syntax example
 
-`MeterValues` can be defined at EVSE level or at connector level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
+`MeterValues` can be defined at EVSE-level or at connector-level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
 
-##### MeterValues at EVSE level
+##### MeterValues at EVSE-level
 
 ```json
   "Evses": {
@@ -406,7 +406,7 @@ type AutomaticTransactionGeneratorConfiguration = {
   },
 ```
 
-##### MeterValues at connector level
+##### MeterValues at connector-level
 
 ```json
   "Evses": {
@@ -474,19 +474,21 @@ The EV profile file is a JSON file referenced by the `evProfilesFile` template f
 }
 ```
 
-| Field                  | Type                              | Constraints       | Description                                                                                                                                          |
-| ---------------------- | --------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                   | string                            | non-empty         | Unique profile identifier (used in logs)                                                                                                             |
-| `batteryCapacityWh`    | number                            | > 0               | Battery capacity in Wh. Bounds ΔSoC per ΔE sample                                                                                                    |
-| `maxPowerW`            | number                            | > 0               | Maximum EV acceptance power in W at SoC = 0                                                                                                          |
-| `weight`               | number                            | ≥ 0               | Relative selection weight. Higher weight increases the probability this profile is chosen for a transaction. A weight of 0 disables the profile      |
-| `initialSocPercentMin` | number                            | [0, 100]          | Minimum initial SoC (%) at transaction start. If greater than `initialSocPercentMax`, the two values are swapped and a warning is logged             |
-| `initialSocPercentMax` | number                            | [0, 100]          | Maximum initial SoC (%) at transaction start. See `initialSocPercentMin` for swap-and-warn behavior when bounds are inverted                         |
-| `chargingCurve`        | `{ socPercent, powerFraction }[]` | non-empty, sorted | Piecewise-linear taper of EV acceptance power as a fraction of `maxPowerW`. Must be sorted non-decreasing by `socPercent`. `powerFraction` in [0, 1] |
+| Field                  | Type                              | Constraints        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | --------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                   | string                            | non-empty          | Unique profile identifier (used in logs)                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `batteryCapacityWh`    | number                            | > 0                | Battery capacity in Wh. Bounds ΔSoC per ΔE sample                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `maxPowerW`            | number                            | > 0                | Maximum EV acceptance power in W at SoC = 0                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `weight`               | number                            | ≥ 0                | Relative selection weight. Higher weight increases the probability this profile is chosen for a transaction. A weight of 0 disables the profile                                                                                                                                                                                                                                                                                                                                                     |
+| `initialSocPercentMin` | number                            | [0, 100]           | Minimum initial SoC (%) at transaction start. If greater than `initialSocPercentMax`, the two values are swapped and a warning is logged                                                                                                                                                                                                                                                                                                                                                            |
+| `initialSocPercentMax` | number                            | [0, 100]           | Maximum initial SoC (%) at transaction start. See `initialSocPercentMin` for swap-and-warn behavior when bounds are inverted                                                                                                                                                                                                                                                                                                                                                                        |
+| `powerFactor`          | number                            | [0.5, 1], optional | Optional cos φ between real and apparent power. Absent ⇒ `1` (unity, current behavior preserved). AC only: multiplies the divisor in the per-phase current derivation `I = P / (V · phases · powerFactor)`, so `I` rises inversely proportional to `powerFactor` for a given delivered active power. Ignored on DC profiles (`P = V·I` has no reactive component). Lower bound `0.5` blocks configuration values that would drive the divisor toward zero; real onboard chargers sit at `0.98..1.0` |
+| `rampShape`            | `'linear'` \| `'sigmoid'`         | optional           | Optional ramp-up shape between session start and full-power acceptance. Absent ⇒ `'linear'` (current behavior preserved). `'sigmoid'` selects an S-shaped logistic pinned at `f(0) = 0` and `f(rampUpDurationMs) = 1` that models CCS/CHAdeMO handshake and pre-charge behavior more faithfully                                                                                                                                                                                                     |
+| `chargingCurve`        | `{ socPercent, powerFraction }[]` | non-empty, sorted  | Piecewise-linear taper of EV acceptance power as a fraction of `maxPowerW`. Must be sorted non-decreasing by `socPercent`. `powerFraction` in [0, 1]                                                                                                                                                                                                                                                                                                                                                |
 
 A template file is available at [src/assets/ev-profiles-template.json](./src/assets/ev-profiles-template.json).
 
-**Template resolution scope.** When `coherentMeterValues` is `true`, the coherent generator reads `MeterValues` templates from the connector-level definition only. EVSE-level `MeterValues` inheritance is not applied, so define per-connector `MeterValues` inside each connector entry.
+**Template resolution scope.** When `coherentMeterValues` is `true`, EVSE-level `MeterValues` (when defined and non-empty) override connector-level definitions for every connector under that EVSE; connector-level `MeterValues` are used when the connector is not grouped under an EVSE (flat `Connectors` map station layout) or when the EVSE-level array is undefined or empty. Note: the coherent generator emits templates from exactly one source (EVSE-level or the queried connector) - unlike the random/fixed path's `getSampledValueTemplate`, it does not aggregate `MeterValues` across sibling connectors under the same EVSE.
 
 **Phase-qualified measurands.** When a connector template carries a `phase` field, the coherent generator emits one `SampledValue` per matching template with phase-aware values:
 
@@ -623,6 +625,7 @@ make SUBMODULES_INIT=true
 
 #### C. Authorization
 
+- :white_check_mark: Authorize
 - :white_check_mark: ClearCache
 
 #### D. LocalAuthorizationListManagement

@@ -5,6 +5,7 @@
 
 import type { IncomingMessage } from 'node:http'
 
+import { minutesToMilliseconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { Readable } from 'node:stream'
 import { afterEach, describe, it } from 'node:test'
@@ -113,7 +114,7 @@ await describe('UIServerSecurity', async () => {
     })
 
     await it('should reject new IPs when at max tracked capacity', () => {
-      limiter = createRateLimiter(10, 60000, 3)
+      limiter = createRateLimiter(10, minutesToMilliseconds(1), 3)
 
       assert.strictEqual(limiter('192.168.1.1'), true)
       assert.strictEqual(limiter('192.168.1.2'), true)
@@ -122,7 +123,7 @@ await describe('UIServerSecurity', async () => {
     })
 
     await it('should allow existing IPs when at max capacity', () => {
-      limiter = createRateLimiter(10, 60000, 2)
+      limiter = createRateLimiter(10, minutesToMilliseconds(1), 2)
 
       assert.strictEqual(limiter('192.168.1.1'), true)
       assert.strictEqual(limiter('192.168.1.2'), true)

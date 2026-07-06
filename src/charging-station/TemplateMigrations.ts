@@ -130,7 +130,7 @@ function migrateV0ToV1 (template: Record<string, unknown>): Record<string, unkno
       if (key != null) {
         template[key] = template[deprecatedKey]
       }
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- deleting the deprecated key that was just remapped to its canonical destination
       delete template[deprecatedKey]
     }
   }

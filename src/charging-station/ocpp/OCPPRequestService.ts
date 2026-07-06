@@ -139,6 +139,18 @@ export abstract class OCPPRequestService {
     }
   }
 
+  protected logRequestHandlerError (
+    chargingStation: ChargingStation,
+    subclassModuleName: string,
+    commandName: RequestCommand,
+    error: unknown
+  ): void {
+    logger.error(
+      `${chargingStation.logPrefix()} ${subclassModuleName}.requestHandler: Error processing '${commandName}' request:`,
+      error
+    )
+  }
+
   protected async sendMessage (
     chargingStation: ChargingStation,
     messageId: string,
@@ -294,7 +306,7 @@ export abstract class OCPPRequestService {
       (chargingStation.inPendingState() &&
         (params.triggerMessage === true || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- stable outer-this reference captured for nested Promise executor and its response-handler closures
       const self = this
       // Send a message through wsConnection
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {

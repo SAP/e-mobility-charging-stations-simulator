@@ -90,9 +90,7 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
   startDelay: DEFAULT_WORKER_START_DELAY_MS,
 }
 
-const defaultPersistState = true
-
-export const DEFAULT_PERSIST_STATE = defaultPersistState
+const DEFAULT_PERSIST_STATE = true as const
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
@@ -195,7 +193,7 @@ export class Configuration {
   }
 
   public static getPersistState (): boolean {
-    return Configuration.getConfigurationData()?.persistState ?? defaultPersistState
+    return Configuration.getConfigurationData()?.persistState ?? DEFAULT_PERSIST_STATE
   }
 
   public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {

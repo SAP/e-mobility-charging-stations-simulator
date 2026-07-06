@@ -10,7 +10,6 @@ import { isMainThread } from 'node:worker_threads'
 import { availableParallelism, type MessageHandler } from 'poolifier'
 
 import type { IBootstrap } from './IBootstrap.js'
-import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError, TimeoutError } from '../exception/index.js'
@@ -58,7 +57,7 @@ import {
 } from '../worker/index.js'
 import { readStateFile, reconstructTemplateIndexes, writeStateFile } from './BootstrapStateUtils.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
-import { UIServerFactory } from './ui-server/UIServerFactory.js'
+import { type AbstractUIServer, UIServerFactory } from './ui-server/index.js'
 
 const moduleName = 'Bootstrap'
 
@@ -342,7 +341,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         ChargingStationWorkerMessageEvents.performanceStatistics,
         this.workerEventPerformanceStatistics
       )
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- isAsyncFunction inspects the method's constructor tag only; no `this` binding is required
       if (isAsyncFunction(this.workerImplementation?.start)) {
         await this.workerImplementation.start()
       } else {
@@ -754,7 +753,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventPerformanceStatistics = (data: Statistics): void => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- isAsyncFunction inspects the method's constructor tag only; no `this` binding is required
     if (isAsyncFunction(this.storage?.storePerformanceStatistics)) {
       ;(
         this.storage.storePerformanceStatistics as (

@@ -1,13 +1,17 @@
-import { type SKIN_IDS } from 'ui-common'
+import { type SKIN_IDS, type THEME_IDS } from 'ui-common'
 
 // Local UI project constants
 
 export const ASYNC_COMPONENT_DELAY_MS = 200
 export const DEFAULT_SKIN: (typeof SKIN_IDS)[number] = 'modern'
+export const DEFAULT_THEME: (typeof THEME_IDS)[number] = 'tokyo-night-storm'
 export const ASYNC_COMPONENT_TIMEOUT_MS = 10_000
 export const EMPTY_VALUE_PLACEHOLDER = 'Ø'
 export const MAX_SKIN_ERROR_RELOADS = 2
 export const MAX_STATIONS_PER_ADD = 100
+export const SKIN_ERROR_RELOAD_COUNT_KEY = 'skin-error-reload-count'
+export const SKIN_STORAGE_KEY = 'ecs-ui-skin'
+export const THEME_STORAGE_KEY = 'ecs-ui-theme'
 export const WH_PER_KWH = 1000
 
 export const ROUTE_NAMES = {

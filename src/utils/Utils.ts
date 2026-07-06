@@ -195,14 +195,14 @@ export const formatDurationMilliSeconds = (duration: number): string => {
   if (duration < 0) {
     throw new RangeError('Duration cannot be negative')
   }
-  const days = Math.floor(duration / (24 * 3600 * 1000))
+  const days = Math.floor(duration / Constants.MS_PER_DAY)
   const hours = Math.floor(millisecondsToHours(duration) - days * 24)
   const minutes = Math.floor(
     millisecondsToMinutes(duration) - days * 24 * 60 - hoursToMinutes(hours)
   )
   const seconds = Math.floor(
     millisecondsToSeconds(duration) -
-      days * 24 * 3600 -
+      days * Constants.SECONDS_PER_DAY -
       hoursToSeconds(hours) -
       minutesToSeconds(minutes)
   )
@@ -385,7 +385,7 @@ export const clone = <T>(object: T): T => {
 
 type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// eslint-disable-next-line @typescript-eslint/no-empty-function -- intentional no-op async lambda used only to capture its constructor for isAsyncFunction
 const AsyncFunctionConstructor = (async () => {}).constructor
 
 /**
@@ -418,14 +418,15 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
   `${str.slice(0, pos)}${subStr}${str.slice(pos)}`
 
 /**
- * Generalized exponential back-off: baseDelayMs × 2^min(retryNumber, maxRetries) + jitter.
+ * Generalized exponential back-off: baseDelayMs × 2^min(retryNumber, maxRetries) + jitter,
+ * clamped to [0, Constants.MAX_SETINTERVAL_DELAY_MS] for setTimeout/setInterval safety.
  * @param options - back-off configuration
  * @param options.baseDelayMs - base delay in milliseconds
  * @param options.retryNumber - current retry attempt (0-based)
  * @param options.maxRetries - stop doubling after this many retries (default: unlimited)
  * @param options.jitterMs - maximum fixed random jitter in milliseconds (default: 0)
  * @param options.jitterPercent - proportional jitter as fraction of computed delay, e.g. 0.2 = 20% (default: 0)
- * @returns delay in milliseconds
+ * @returns delay in milliseconds, guaranteed within [0, Constants.MAX_SETINTERVAL_DELAY_MS]
  */
 export const computeExponentialBackOffDelay = (options: {
   baseDelayMs: number
@@ -443,7 +444,7 @@ export const computeExponentialBackOffDelay = (options: {
   } else if (jitterMs != null && jitterMs > 0) {
     jitter = secureRandom() * jitterMs
   }
-  return delay + jitter
+  return clampToSafeTimerValue(delay + jitter)
 }
 
 /**

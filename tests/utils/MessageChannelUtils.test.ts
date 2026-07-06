@@ -24,6 +24,7 @@ import {
   createMockChargingStation,
 } from '../charging-station/helpers/StationHelpers.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_SUPERVISION_URL } from './TestNetworkConstants.js'
 
 await describe('MessageChannelUtils', async () => {
   let station: ChargingStation
@@ -39,7 +40,7 @@ await describe('MessageChannelUtils', async () => {
     // Add wsConnectionUrl getter needed by MessageChannelUtils builders
     Object.defineProperty(station, 'wsConnectionUrl', {
       configurable: true,
-      get: () => new URL('ws://localhost:8080/CS-TEST-00001'),
+      get: () => new URL(`${TEST_SUPERVISION_URL}/CS-TEST-00001`),
     })
   })
 
@@ -55,7 +56,7 @@ await describe('MessageChannelUtils', async () => {
     assert.notStrictEqual(message.data, undefined)
     assert.strictEqual(message.data.started, true)
     assert.strictEqual(message.data.stationInfo.chargingStationId, 'CS-TEST-00001')
-    assert.strictEqual(message.data.supervisionUrl, 'ws://localhost:8080/CS-TEST-00001')
+    assert.strictEqual(message.data.supervisionUrl, `${TEST_SUPERVISION_URL}/CS-TEST-00001`)
     assert.strictEqual(typeof message.data.timestamp, 'number')
   })
 
@@ -79,7 +80,7 @@ await describe('MessageChannelUtils', async () => {
 
     assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.stopped)
     assert.notStrictEqual(message.data, undefined)
-    assert.strictEqual(message.data.supervisionUrl, 'ws://localhost:8080/CS-TEST-00001')
+    assert.strictEqual(message.data.supervisionUrl, `${TEST_SUPERVISION_URL}/CS-TEST-00001`)
   })
 
   await it('should build updated message with correct event', () => {
@@ -122,7 +123,7 @@ await describe('MessageChannelUtils', async () => {
           },
         ],
       ]),
-      uri: 'ws://localhost:8080',
+      uri: TEST_SUPERVISION_URL,
     }
 
     const message = buildPerformanceStatisticsMessage(statistics)
@@ -154,7 +155,7 @@ await describe('MessageChannelUtils', async () => {
           },
         ],
       ]),
-      uri: 'ws://localhost:8080',
+      uri: TEST_SUPERVISION_URL,
     }
 
     const message = buildPerformanceStatisticsMessage(statistics)
@@ -172,13 +173,13 @@ await describe('MessageChannelUtils', async () => {
       name: 'station-name',
       statisticsData: new Map(),
       updatedAt,
-      uri: 'ws://localhost:8080',
+      uri: TEST_SUPERVISION_URL,
     }
 
     const message = buildPerformanceStatisticsMessage(statistics)
 
     assert.strictEqual(message.data.createdAt, createdAt)
     assert.strictEqual(message.data.updatedAt, updatedAt)
-    assert.strictEqual(message.data.uri, 'ws://localhost:8080')
+    assert.strictEqual(message.data.uri, TEST_SUPERVISION_URL)
   })
 })

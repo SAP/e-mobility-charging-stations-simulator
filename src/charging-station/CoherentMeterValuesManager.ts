@@ -13,12 +13,12 @@
 import type { ChargingStation } from './ChargingStation.js'
 
 import { BaseError } from '../exception/index.js'
-import { logger } from '../utils/index.js'
+import { isEmpty, logger } from '../utils/index.js'
 import { getEvProfilesFile } from './Helpers.js'
-import { disposeCoherentSessionRuntime } from './meter-values/CoherentSampleComputer.js'
 import {
   type CoherentSession,
   createCoherentSession,
+  disposeCoherentSessionRuntime,
   type EvProfilesFile,
   loadEvProfilesFile,
   resolveRootSeed,
@@ -154,7 +154,7 @@ export class CoherentMeterValuesManager {
     if (this.chargingStation.stationInfo?.coherentMeterValues !== true) {
       return undefined
     }
-    if (this.evProfiles == null || this.evProfiles.profiles.length === 0) {
+    if (this.evProfiles == null || isEmpty(this.evProfiles.profiles)) {
       return undefined
     }
     const session = createCoherentSession(this.chargingStation, {

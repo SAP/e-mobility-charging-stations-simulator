@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs'
 import { z } from 'zod'
 
 import { BaseError } from '../../exception/index.js'
-import { getErrorMessage, logger } from '../../utils/index.js'
+import { getErrorMessage, isEmpty, logger } from '../../utils/index.js'
 import { type EvProfile, type EvProfilesFile, EvProfilesFileSchema } from './types.js'
 
 const moduleName = 'EvProfiles'
@@ -106,7 +106,7 @@ export const interpolateChargingCurve = (
   curve: { powerFraction: number; socPercent: number }[],
   socPercent: number
 ): number => {
-  if (curve.length === 0) {
+  if (isEmpty(curve)) {
     return 1
   }
   if (process.env.NODE_ENV !== 'production') {
