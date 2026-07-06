@@ -3153,7 +3153,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Checks if firmware update is in progress per OCPP 2.0.1 Errata idle definition.
    * @param chargingStation - The charging station instance
-   * @returns true if firmware update is in progress (Downloading, Downloaded, or Installing)
+   * @returns true if firmware update is in progress (Downloading, Downloaded, Installing, DownloadScheduled, DownloadPaused, InstallScheduled, InstallRebooting, or SignatureVerified)
    */
   private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
