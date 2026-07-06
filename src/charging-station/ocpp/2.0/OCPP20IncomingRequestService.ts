@@ -440,7 +440,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         request: OCPP20GetLogRequest,
         response: OCPP20GetLogResponse
       ) => {
-        if (response.status === LogStatusEnumType.Accepted) {
+        if (
+          response.status === LogStatusEnumType.Accepted ||
+          response.status === LogStatusEnumType.AcceptedCanceled
+        ) {
           this.simulateLogUploadLifecycle(chargingStation, request.requestId).catch(
             (error: unknown) => {
               logger.error(
@@ -1314,8 +1317,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return
     }
     if (stationState.activeLogUploadRequestId === requestId) {
-      stationState.activeLogUploadRequestId = undefined
-      stationState.activeLogUploadStatus = undefined
+      this.resetActiveLogUploadState(stationState)
     } else {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.clearActiveLogUpload: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${String(stationState.activeLogUploadRequestId)})`
@@ -2113,6 +2115,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Received GetLog request with requestId ${requestId.toString()} for logType '${logType}'`
     )
+
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState?.activeLogUploadRequestId != null) {
+      const previousRequestId = stationState.activeLogUploadRequestId
+      this.resetActiveLogUploadState(stationState)
+      this.sendLogStatusNotification(
+        chargingStation,
+        UploadLogStatusEnumType.AcceptedCanceled,
+        previousRequestId
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Failed to send AcceptedCanceled for superseded requestId ${previousRequestId.toString()}:`,
+          error
+        )
+      })
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Canceled previous log upload (requestId ${previousRequestId.toString()})`
+      )
+      return {
+        filename: 'simulator-log.txt',
+        status: LogStatusEnumType.AcceptedCanceled,
+      }
+    }
 
     return {
       filename: 'simulator-log.txt',
@@ -3286,6 +3311,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     stationState.activeFirmwareUpdateRequestId = undefined
   }
 
+  private resetActiveLogUploadState (stationState: OCPP20StationState): void {
+    stationState.activeLogUploadRequestId = undefined
+    stationState.activeLogUploadStatus = undefined
+  }
+
   /**
    * Reset connector status on start transaction error
    * @param chargingStation - The charging station instance
@@ -3953,16 +3983,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
       if (stationState.activeLogUploadRequestId === requestId) {
         stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
-      }
-      await this.sendLogStatusNotification(
-        chargingStation,
-        UploadLogStatusEnumType.Uploaded,
-        requestId
-      )
+        await this.sendLogStatusNotification(
+          chargingStation,
+          UploadLogStatusEnumType.Uploaded,
+          requestId
+        )
 
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
-      )
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
+        )
+      }
     } finally {
       this.clearActiveLogUpload(chargingStation, requestId)
     }
