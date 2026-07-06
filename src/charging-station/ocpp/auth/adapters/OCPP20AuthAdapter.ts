@@ -38,10 +38,10 @@ import {
 const moduleName = 'OCPP20AuthAdapter'
 
 /**
- * OCPP 2.0 Authentication Adapter
+ * OCPP 2.0.1 Authentication Adapter
  *
- * Handles authentication for OCPP 2.0/2.1 charging stations by translating
- * between auth types and OCPP 2.0 specific types and protocols.
+ * Handles authentication for OCPP 2.0.1 charging stations by translating
+ * between auth types and OCPP 2.0.1 specific types and protocols.
  */
 export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   readonly ocppVersion = OCPPVersion.VERSION_201
@@ -49,11 +49,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   constructor (private readonly chargingStation: ChargingStation) {}
 
   /**
-   * Perform remote authorization using OCPP 2.0 Authorize request.
+   * Perform remote authorization using OCPP 2.0.1 Authorize request.
    * @param identifier - Identifier containing the IdToken to authorize
    * @param connectorId - EVSE/connector ID for the authorization context
    * @param transactionId - Optional existing transaction ID for ongoing transactions
-   * @returns Authorization result with status, method, and OCPP 2.0 specific metadata
+   * @returns Authorization result with status, method, and OCPP 2.0.1 specific metadata
    */
   async authorizeRemote (
     identifier: Identifier,
@@ -64,7 +64,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier '${truncateId(identifier.value)}' via OCPP 2.0 Authorize`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier '${truncateId(identifier.value)}' via OCPP 2.0.1 Authorize`
       )
 
       const isRemoteAuth = this.isRemoteAvailable()
@@ -89,7 +89,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
         return {
           additionalInfo: {
             connectorId,
-            error: 'Invalid token format for OCPP 2.0',
+            error: 'Invalid token format for OCPP 2.0.1',
             transactionId,
           },
           isOffline: false,
@@ -154,15 +154,15 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Convert identifier to OCPP 2.0 IdToken
-   * @param identifier - Identifier to convert to OCPP 2.0 format
-   * @returns OCPP 2.0 IdTokenType with mapped type and additionalInfo
+   * Convert identifier to OCPP 2.0.1 IdToken
+   * @param identifier - Identifier to convert to OCPP 2.0.1 format
+   * @returns OCPP 2.0.1 IdTokenType with mapped type and additionalInfo
    */
   convertFromIdentifier (identifier: Identifier): OCPP20IdTokenType {
-    // Map type back to OCPP 2.0 type
+    // Map type back to OCPP 2.0.1 type
     const ocpp20Type = mapToOCPP20TokenType(identifier.type)
 
-    // Convert additionalInfo back to OCPP 2.0 format
+    // Convert additionalInfo back to OCPP 2.0.1 format
     const additionalInfo: AdditionalInfoType[] | undefined = identifier.additionalInfo
       ? Object.entries(identifier.additionalInfo)
         .filter(([key]) => key.startsWith('info_'))
@@ -187,8 +187,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Convert OCPP 2.0 IdToken to identifier
-   * @param identifier - OCPP 2.0 IdToken or raw string identifier
+   * Convert OCPP 2.0.1 IdToken to identifier
+   * @param identifier - OCPP 2.0.1 IdToken or raw string identifier
    * @param additionalData - Optional metadata to include in the identifier
    * @returns Identifier with normalized type and metadata
    */
@@ -233,17 +233,17 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Convert authorization result to OCPP 2.0 response format
+   * Convert authorization result to OCPP 2.0.1 response format
    * @param result - Authorization result to convert
-   * @returns OCPP 2.0 RequestStartStopStatusEnumType for transaction responses
+   * @returns OCPP 2.0.1 RequestStartStopStatusEnumType for transaction responses
    */
   convertToOCPP20Response (result: AuthorizationResult): RequestStartStopStatusEnumType {
     return mapToOCPP20Status(result.status)
   }
 
   /**
-   * Create authorization request from OCPP 2.0 context
-   * @param idTokenOrString - OCPP 2.0 IdToken or raw string identifier
+   * Create authorization request from OCPP 2.0.1 context
+   * @param idTokenOrString - OCPP 2.0.1 IdToken or raw string identifier
    * @param connectorId - Optional EVSE/connector ID for the request
    * @param transactionId - Optional transaction ID for ongoing transactions
    * @param context - Optional context string (e.g., 'start', 'stop', 'remote_start')
@@ -295,7 +295,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * @returns Configuration schema object for OCPP 2.0 authorization settings
+   * @returns Configuration schema object for OCPP 2.0.1 authorization settings
    */
   getConfigurationSchema (): JsonObject {
     return {
@@ -309,7 +309,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
           minimum: 1,
           type: 'number',
         },
-        // OCPP 2.0 specific variables
+        // OCPP 2.0.1 specific variables
         authorizeRemoteStart: {
           description: 'Enable remote authorization via RequestStartTransaction',
           type: 'boolean',
@@ -337,7 +337,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * @returns Always undefined — OCPP 2.0 defines capacity via LocalAuthListCtrlr.Storage (bytes), not entry count
+   * @returns Always undefined — OCPP 2.0.1 defines capacity via LocalAuthListCtrlr.Storage (bytes), not entry count
    */
   getMaxLocalAuthListEntries (): number | undefined {
     return undefined
@@ -352,7 +352,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
       isOnline: this.chargingStation.inAcceptedState(),
       localAuthEnabled: true, // Configuration dependent
       ocppVersion: this.ocppVersion,
-      remoteAuthEnabled: true, // Always available in OCPP 2.0
+      remoteAuthEnabled: true, // Always available in OCPP 2.0.1
       stationId: this.chargingStation.stationInfo?.chargingStationId,
       supportsIdTokenTypes: [
         OCPP20IdTokenEnumType.Central,
@@ -367,7 +367,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Check if remote authorization is available for OCPP 2.0
+   * Check if remote authorization is available for OCPP 2.0.1
    * @returns True if remote authorization is available and enabled
    */
   isRemoteAvailable (): boolean {
@@ -390,22 +390,22 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Check if identifier is valid for OCPP 2.0
-   * @param identifier - Identifier to validate against OCPP 2.0 rules
-   * @returns True if identifier meets OCPP 2.0 format requirements (max 36 chars, valid type)
+   * Check if identifier is valid for OCPP 2.0.1
+   * @param identifier - Identifier to validate against OCPP 2.0.1 rules
+   * @returns True if identifier meets OCPP 2.0.1 format requirements (max 36 chars, valid type)
    */
   isValidIdentifier (identifier: Identifier): boolean {
-    // OCPP 2.0 idToken validation
+    // OCPP 2.0.1 idToken validation
     if (!identifier.value || typeof identifier.value !== 'string') {
       return false
     }
 
-    // Check length (OCPP 2.0 spec: max 36 characters)
+    // Check length (OCPP 2.0.1 spec: max 36 characters)
     if (isEmpty(identifier.value) || identifier.value.length > 36) {
       return false
     }
 
-    // OCPP 2.0 supports multiple identifier types
+    // OCPP 2.0.1 supports multiple identifier types
     const validTypes = [
       IdentifierType.ID_TAG,
       IdentifierType.CENTRAL,
@@ -422,9 +422,9 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   }
 
   /**
-   * Validate adapter configuration for OCPP 2.0
+   * Validate adapter configuration for OCPP 2.0.1
    * @param config - Authentication configuration to validate
-   * @returns Promise resolving to true if configuration is valid for OCPP 2.0 operations
+   * @returns Promise resolving to true if configuration is valid for OCPP 2.0.1 operations
    */
   validateConfiguration (config: AuthConfiguration): boolean {
     try {

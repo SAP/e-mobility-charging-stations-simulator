@@ -16,7 +16,7 @@ import { IdentifierType } from '../types/AuthTypes.js'
 const MAX_IDTAG_LENGTH = 20
 
 /**
- * Maximum length for OCPP 2.0 IdToken
+ * Maximum length for OCPP 2.0.1 IdToken
  */
 const MAX_IDTOKEN_LENGTH = 36
 
@@ -72,9 +72,9 @@ function sanitizeIdTag (idTag: unknown): string {
 }
 
 /**
- * Sanitize IdToken for OCPP 2.0 (max 36 characters)
+ * Sanitize IdToken for OCPP 2.0.1 (max 36 characters)
  * @param idToken - Raw IdToken input to sanitize (may be any type)
- * @returns Trimmed and truncated IdToken string conforming to OCPP 2.0 length limit, or empty string for non-string input
+ * @returns Trimmed and truncated IdToken string conforming to OCPP 2.0.1 length limit, or empty string for non-string input
  */
 function sanitizeIdToken (idToken: unknown): string {
   // Return empty string for non-string input
@@ -161,7 +161,7 @@ function validateIdentifier (identifier: unknown): boolean {
   // Check length constraints based on identifier type
   switch (typedIdentifier.type) {
     case IdentifierType.BIOMETRIC:
-    // Fallthrough intentional: all these OCPP 2.0 types share the same validation
+    // Fallthrough intentional: all these OCPP 2.0.1 types share the same validation
     case IdentifierType.CENTRAL:
     case IdentifierType.CERTIFICATE:
     case IdentifierType.E_MAID:
@@ -172,7 +172,7 @@ function validateIdentifier (identifier: unknown): boolean {
     case IdentifierType.MAC_ADDRESS:
     case IdentifierType.MOBILE_APP:
     case IdentifierType.NO_AUTHORIZATION:
-      // OCPP 2.0 types - use IdToken max length
+      // OCPP 2.0.1 types - use IdToken max length
       return (
         isNotEmptyString(typedIdentifier.value) &&
         typedIdentifier.value.length <= MAX_IDTOKEN_LENGTH
