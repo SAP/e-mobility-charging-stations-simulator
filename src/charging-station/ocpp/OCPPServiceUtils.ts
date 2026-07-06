@@ -1075,6 +1075,15 @@ const createVersionedSampledValueDispatcher = (
 const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
 const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
 
+const getOrCreateWarnedMeasurands = (chargingStation: ChargingStation): Set<string> => {
+  let warned = warnedInvalidMeasurands.get(chargingStation)
+  if (warned == null) {
+    warned = new Set<string>()
+    warnedInvalidMeasurands.set(chargingStation, warned)
+  }
+  return warned
+}
+
 /**
  * Resolves the set of measurands enabled by the configured OCPP variable.
  *
@@ -1127,11 +1136,7 @@ const resolveEnabledMeasurands = (
       enabled.add(trimmed as MeterValueMeasurand)
       continue
     }
-    let warned = warnedInvalidMeasurands.get(chargingStation)
-    if (warned == null) {
-      warned = new Set<string>()
-      warnedInvalidMeasurands.set(chargingStation, warned)
-    }
+    const warned = getOrCreateWarnedMeasurands(chargingStation)
     if (!warned.has(trimmed)) {
       warned.add(trimmed)
       logger.warn(
