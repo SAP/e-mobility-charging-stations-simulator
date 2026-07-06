@@ -3360,7 +3360,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         clearInterval(monitorInterval)
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   /**
@@ -3381,7 +3381,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         })
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
