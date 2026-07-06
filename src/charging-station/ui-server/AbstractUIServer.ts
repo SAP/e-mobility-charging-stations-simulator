@@ -1275,7 +1275,7 @@ export abstract class AbstractUIServer {
     this.metricsScrapeChain = this.metricsScrapeChain
       .catch((error: unknown) => {
         logger.warn(
-          `${this.logPrefix()} ${moduleName}.runMetricsScrape: previous scrape errored; chain reset to continue serving next scrape`,
+          `${this.logPrefix()} ${moduleName}.runMetricsScrape: previous scrape errored; absorbing rejection so next scrape can proceed`,
           error
         )
       })
