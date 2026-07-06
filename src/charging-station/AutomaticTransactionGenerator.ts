@@ -382,8 +382,6 @@ export class AutomaticTransactionGenerator {
       // Gate all post-loop bookkeeping on ownership of the current
       // controller entry: a concurrent stopConnector→startConnector may
       // have already installed a successor and reset connectorStatus.
-      // Writing stoppedDate unconditionally would corrupt the new run's
-      // status object (shared reference in connectorsStatus).
       const isOwner = this.connectorAbortControllers.get(connectorId) === abortController
       if (isOwner) {
         this.connectorAbortControllers.delete(connectorId)
@@ -400,6 +398,10 @@ export class AutomaticTransactionGenerator {
           connectorStatus
         )
         this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
+      } else {
+        logger.debug(
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Exiting displaced loop — a successor controller is already installed`
+        )
       }
     }
   }
