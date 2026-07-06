@@ -320,7 +320,10 @@ export class AutomaticTransactionGenerator {
       )}`
     )
     try {
-      while (this.connectorsStatus.get(connectorId)?.start === true) {
+      while (
+        this.connectorsStatus.get(connectorId)?.start === true &&
+        !abortController.signal.aborted
+      ) {
         await this.waitChargingStationAvailable(connectorId, abortController.signal)
         await this.waitConnectorAvailable(connectorId, abortController.signal)
         await this.waitRunningTransactionStopped(connectorId, abortController.signal)
@@ -618,13 +621,15 @@ export class AutomaticTransactionGenerator {
     connectorId: number,
     signal: AbortSignal
   ): Promise<void> {
-    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
     let logged = false
-    while (connectorStatus?.transactionStarted === true && !signal.aborted) {
+    while (
+      this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true &&
+      !signal.aborted
+    ) {
       if (!logged) {
         logger.info(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${connectorStatus.transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
+          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${this.chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
         )
         logged = true
       }
