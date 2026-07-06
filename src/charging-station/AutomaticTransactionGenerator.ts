@@ -37,6 +37,35 @@ import {
 
 const moduleName = 'AutomaticTransactionGenerator'
 
+/**
+ * Sleeps for the specified duration or resolves early when the signal aborts.
+ * Both the setTimeout handle and the 'abort' listener are cleaned up on
+ * whichever path resolves the promise first so the caller cannot leak
+ * a pending Timeout or a stale abort listener.
+ * @param milliSeconds - Duration to sleep in milliseconds.
+ * @param signal - AbortSignal that resolves the promise early on abort.
+ * @returns Promise that resolves when the timer fires or the signal aborts.
+ */
+const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): Promise<void> =>
+  new Promise(resolve => {
+    if (signal.aborted) {
+      resolve()
+      return
+    }
+    /**
+     *
+     */
+    function onAbort (): void {
+      clearTimeout(timeout)
+      resolve()
+    }
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, milliSeconds)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
     string,
@@ -47,6 +76,7 @@ export class AutomaticTransactionGenerator {
   public started: boolean
 
   private readonly chargingStation: ChargingStation
+  private readonly connectorAbortControllers: Map<number, AbortController>
   private starting: boolean
   private stopping: boolean
 
@@ -56,6 +86,7 @@ export class AutomaticTransactionGenerator {
     this.stopping = false
     this.chargingStation = chargingStation
     this.connectorsStatus = new Map<number, Status>()
+    this.connectorAbortControllers = new Map<number, AbortController>()
     this.initializeConnectorsStatus()
   }
 
@@ -150,6 +181,12 @@ export class AutomaticTransactionGenerator {
     const connectorStatus = this.connectorsStatus.get(connectorId)
     if (connectorStatus?.start === true) {
       connectorStatus.start = false
+      // Wake the internalStartConnector loop out of its interruptible
+      // sleeps so it observes start=false immediately rather than waiting
+      // for the next transaction wait (up to maxDuration seconds) to
+      // elapse. The controller is created per run of internalStartConnector
+      // and lives in connectorAbortControllers keyed by connectorId.
+      this.connectorAbortControllers.get(connectorId)?.abort()
     } else if (connectorStatus?.start === false) {
       logger.warn(
         `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Already stopped on connector`
@@ -290,6 +327,13 @@ export class AutomaticTransactionGenerator {
     if (connectorStatus == null) {
       return
     }
+    // Fresh AbortController per run: any previous controller (from an
+    // earlier internalStartConnector invocation on the same connector)
+    // is already spent, and we want stopConnector to affect only the
+    // currently-running loop.
+    this.connectorAbortControllers.get(connectorId)?.abort()
+    const abortController = new AbortController()
+    this.connectorAbortControllers.set(connectorId, abortController)
     logger.info(
       `${this.logPrefix(
         connectorId
@@ -316,7 +360,7 @@ export class AutomaticTransactionGenerator {
       logger.info(
         `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Waiting for ${formatDurationMilliSeconds(wait)}`
       )
-      await sleep(wait)
+      await interruptibleSleep(wait, abortController.signal)
       const start = secureRandom()
       if (
         start <
@@ -342,7 +386,7 @@ export class AutomaticTransactionGenerator {
               .getConnectorStatus(connectorId)
               ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
           )
-          await sleep(waitTrxEnd)
+          await interruptibleSleep(waitTrxEnd, abortController.signal)
           await this.stopTransaction(connectorId)
         }
       } else {
@@ -354,6 +398,7 @@ export class AutomaticTransactionGenerator {
       }
       connectorStatus.lastRunDate = new Date()
     }
+    this.connectorAbortControllers.delete(connectorId)
     connectorStatus.stoppedDate = new Date()
     logger.info(
       `${this.logPrefix(
