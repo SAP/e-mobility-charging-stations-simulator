@@ -1927,6 +1927,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation.stationInfo.firmwareUpgrade.failureStatus
       return
     }
+    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP16FirmwareStatusNotificationRequest,
+      OCPP16FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      status: OCPP16FirmwareStatus.Installed,
+    })
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installed
+    }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
       await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
