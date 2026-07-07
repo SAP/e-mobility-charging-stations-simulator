@@ -63,7 +63,7 @@ import {
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   VendorParametersKey,
-  type Voltage,
+  Voltage,
   WebSocketCloseEventStatusCode,
   type WSError,
   type WsOptions,
@@ -987,7 +987,6 @@ export class ChargingStation extends EventEmitter {
       options
     )
 
-    // Handle WebSocket message
     this.wsConnection.on('message', data => {
       this.onMessage(data).catch((error: unknown) =>
         logger.error(
@@ -996,11 +995,8 @@ export class ChargingStation extends EventEmitter {
         )
       )
     })
-    // Handle WebSocket error
     this.wsConnection.on('error', this.onError.bind(this))
-    // Handle WebSocket close
     this.wsConnection.on('close', this.onClose.bind(this))
-    // Handle WebSocket open
     this.wsConnection.on('open', () => {
       this.onOpen().catch((error: unknown) =>
         logger.error(
@@ -1009,9 +1005,7 @@ export class ChargingStation extends EventEmitter {
         )
       )
     })
-    // Handle WebSocket ping
     this.wsConnection.on('ping', this.onPing.bind(this))
-    // Handle WebSocket pong
     this.wsConnection.on('pong', this.onPong.bind(this))
   }
 
@@ -1076,17 +1070,13 @@ export class ChargingStation extends EventEmitter {
 
   /** Restarts the periodic heartbeat to the central server. */
   public restartHeartbeat (): void {
-    // Stop heartbeat
     this.stopHeartbeat()
-    // Start heartbeat
     this.startHeartbeat()
   }
 
   /** Restarts the WebSocket ping interval. */
   public restartWebSocketPing (): void {
-    // Stop WebSocket ping
     this.stopWebSocketPing()
-    // Start WebSocket ping
     this.startWebSocketPing()
   }
 
@@ -1159,7 +1149,6 @@ export class ChargingStation extends EventEmitter {
                     this.idTagsCache.deleteIdTags(idTagsFile)
                   }
                   OCPPAuthServiceFactory.clearInstance(this)
-                  // Initialize
                   this.initialize()
                   // Restart the ATG
                   const ATGStarted = this.automaticTransactionGenerator?.started
@@ -1684,6 +1673,28 @@ export class ChargingStation extends EventEmitter {
     stationInfo.templateName = buildTemplateName(this.templateFile)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
+    if (
+      this.getCurrentOutType(stationInfo) === CurrentType.AC &&
+      (stationInfo.voltageOut === Voltage.VOLTAGE_400 ||
+        stationInfo.voltageOut === Voltage.VOLTAGE_800)
+    ) {
+      const voltageOut = stationInfo.voltageOut
+      const derivedInfo =
+        this.getNumberOfPhases(stationInfo) === 3
+          ? ` In 3-phase Y systems the derived line-to-line = sqrt(3) * ${voltageOut.toString()} = ${(
+              Math.sqrt(3) * voltageOut
+            ).toFixed(0)} V.`
+          : ''
+      const suggestion =
+        voltageOut === Voltage.VOLTAGE_400
+          ? ` If you intended 400 V line-to-line, set voltageOut=${Voltage.VOLTAGE_230.toString()} V (standard L-N enum value for EU 3-phase).`
+          : ` No standard L-N enum value exists for ${voltageOut.toString()} V line-to-line (~${(
+              voltageOut / Math.sqrt(3)
+            ).toFixed(0)} V L-N); verify template voltageOut intent.`
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.getStationInfoFromTemplate: voltageOut=${voltageOut.toString()} V matches a line-to-line nominal value; the simulator treats voltageOut as line-to-neutral (phase voltage).${derivedInfo}${suggestion}`
+      )
+    }
     if (isNotEmptyArray<number>(stationTemplate.power)) {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
@@ -1799,7 +1810,6 @@ export class ChargingStation extends EventEmitter {
         request
       )}`
     )
-    // Process the message
     await this.ocppIncomingRequestService.incomingRequestHandler(
       this,
       messageId,
@@ -2326,11 +2336,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private internalStopMessageSequence (): void {
-    // Stop WebSocket ping
     this.stopWebSocketPing()
-    // Stop heartbeat
     this.stopHeartbeat()
-    // Stop the ATG
     if (this.automaticTransactionGenerator?.started === true) {
       this.stopAutomaticTransactionGenerator()
     }
@@ -2386,7 +2393,6 @@ export class ChargingStation extends EventEmitter {
       request = JSON.parse(data.toString()) as ErrorResponse | IncomingRequest | Response
       if (Array.isArray(request)) {
         ;[messageType] = request
-        // Check the type of message
         switch (messageType) {
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
@@ -2473,13 +2479,11 @@ export class ChargingStation extends EventEmitter {
               errorCallback(ocppError, false)
             }
           } else {
-            // Remove the request from the cache in case of error at response handling
             this.requests.delete(messageId)
           }
           break
         case MessageType.CALL_MESSAGE:
           ;[, , commandName] = request as IncomingRequest
-          // Send error
           await this.ocppRequestService.sendError(this, messageId, ocppError, commandName)
           break
       }
@@ -2519,7 +2523,6 @@ export class ChargingStation extends EventEmitter {
       )
       let registrationRetryCount = 0
       if (!this.inAcceptedState()) {
-        // Send BootNotification
         do {
           await this.ocppRequestService.requestHandler<
             BootNotificationRequest,
@@ -2832,15 +2835,12 @@ export class ChargingStation extends EventEmitter {
         skipBufferingOnError: true,
       })
     }
-    // Start WebSocket ping
     if (this.wsPingSetInterval == null) {
       this.startWebSocketPing()
     }
-    // Start heartbeat
     if (this.heartbeatSetInterval == null) {
       this.startHeartbeat()
     }
-    // Initialize connectors status
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
       await sendAndSetConnectorStatus(this, {
         connectorId,
@@ -2858,7 +2858,6 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo.firmwareStatus = FirmwareStatus.Installed
     }
 
-    // Start the ATG
     if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
       this.startAutomaticTransactionGenerator(undefined, ATGStopAbsoluteDuration)
     }
@@ -2906,7 +2905,6 @@ export class ChargingStation extends EventEmitter {
     stopTransactions?: boolean
   ): Promise<void> {
     this.internalStopMessageSequence()
-    // Stop ongoing transactions
     stopTransactions && (await stopRunningTransactions(this, reason))
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
       await sendAndSetConnectorStatus(this, {

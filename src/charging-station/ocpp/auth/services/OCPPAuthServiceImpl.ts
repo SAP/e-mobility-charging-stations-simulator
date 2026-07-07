@@ -63,7 +63,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.strategies = new Map()
     this.strategyPriority = ['local', 'remote', 'certificate']
 
-    // Initialize metrics tracking
     this.metrics = {
       cacheHits: 0,
       cacheMisses: 0,
@@ -76,7 +75,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       totalResponseTime: 0,
     }
 
-    // Initialize default configuration
     this.config = this.createDefaultConfiguration()
 
     // Note: Adapter and strategies will be initialized async via initialize()
@@ -91,7 +89,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const startTime = Date.now()
     let lastError: Error | undefined
 
-    // Update request metrics
     this.metrics.totalRequests++
 
     logger.debug(
@@ -132,7 +129,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
         const duration = Date.now() - startTime
 
-        // Update metrics based on result
         this.updateMetricsForResult(result, strategyName, duration)
 
         logger.info(
@@ -173,7 +169,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const duration = Date.now() - startTime
     const errorMessage = lastError?.message ?? 'All authentication strategies failed'
 
-    // Update failure metrics
     this.metrics.failedAuth++
     this.metrics.totalResponseTime += duration
 
@@ -436,7 +431,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @returns True if at least one strategy can handle the identifier type, false otherwise
    */
   public isSupported (identifier: Identifier): boolean {
-    // Create a minimal request to check applicability
     const testRequest: AuthRequest = {
       allowOffline: false,
       connectorId: 1,
@@ -461,7 +455,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return false
     }
 
-    // Check if adapter reports remote availability
     if (this.adapter) {
       try {
         if (this.adapter.isRemoteAvailable()) {
@@ -538,13 +531,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @throws {OCPPError} If configuration validation fails
    */
   public updateConfiguration (config: Partial<AuthConfiguration>): void {
-    // Merge new config with existing
     const newConfiguration = { ...this.config, ...config }
 
-    // Validate merged configuration
     AuthConfigValidator.validate(newConfiguration)
 
-    // Apply validated configuration
     this.config = newConfiguration
 
     logger.info(
@@ -667,7 +657,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       ].includes(error.code)
     }
 
-    // Check for specific error patterns that indicate critical issues
     const criticalPatterns = [
       'SECURITY_VIOLATION',
       'CERTIFICATE_EXPIRED',
@@ -691,21 +680,18 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   ): void {
     this.metrics.totalResponseTime += duration
 
-    // Track successful vs failed authentication
     if (result.status === AuthorizationStatus.ACCEPTED) {
       this.metrics.successfulAuth++
     } else {
       this.metrics.failedAuth++
     }
 
-    // Track strategy usage
     if (strategyName === 'local') {
       this.metrics.localAuthCount++
     } else if (strategyName === 'remote') {
       this.metrics.remoteAuthCount++
     }
 
-    // Track cache hits/misses based on method
     if (result.method === AuthenticationMethod.CACHE) {
       this.metrics.cacheHits++
     } else if (

@@ -41,7 +41,7 @@ export class OCPP20CertSigningRetryManager {
     }
     this.retryCount = 0
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.cancelRetryTimer: Retry timer cancelled`
+      `${this.chargingStation.logPrefix()} ${moduleName}.cancelRetryTimer: Retry timer canceled`
     )
   }
 

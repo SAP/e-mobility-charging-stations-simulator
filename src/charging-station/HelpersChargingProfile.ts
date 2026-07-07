@@ -335,7 +335,6 @@ const getChargingProfilesLimit = (
     if (!canProceedChargingProfile(chargingProfile, currentDate, chargingStation.logPrefix())) {
       continue
     }
-    // Check if the charging profile is active
     if (
       isWithinInterval(currentDate, {
         end: addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration),
@@ -360,7 +359,6 @@ const getChargingProfilesLimit = (
 
           chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn)
         }
-        // Check if the first schedule period startPeriod property is equal to 0
 
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(
@@ -368,7 +366,6 @@ const getChargingProfilesLimit = (
           )
           continue
         }
-        // Handle only one schedule period
 
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
           const chargingProfilesLimit: ChargingProfilesLimit = {
@@ -401,7 +398,8 @@ const getChargingProfilesLimit = (
             logger.debug(debugLogMsg, chargingProfilesLimit)
             return chargingProfilesLimit
           }
-          // Handle the last schedule period within the charging profile duration
+          // Last period: last in array OR next period would exceed the
+          // charging profile duration.
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&

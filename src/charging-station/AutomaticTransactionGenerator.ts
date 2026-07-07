@@ -20,12 +20,13 @@ import {
   Constants,
   convertToDate,
   formatDurationMilliSeconds,
+  interruptibleSleep,
   isEmpty,
   isValidDate,
+  isValidRandomIntBounds,
   logger,
   logPrefix,
   secureRandom,
-  sleep,
 } from '../utils/index.js'
 import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
@@ -47,6 +48,8 @@ export class AutomaticTransactionGenerator {
   public started: boolean
 
   private readonly chargingStation: ChargingStation
+  private configurationValidationResult: boolean | undefined
+  private readonly connectorAbortControllers: Map<number, AbortController>
   private starting: boolean
   private stopping: boolean
 
@@ -56,6 +59,8 @@ export class AutomaticTransactionGenerator {
     this.stopping = false
     this.chargingStation = chargingStation
     this.connectorsStatus = new Map<number, Status>()
+    this.connectorAbortControllers = new Map<number, AbortController>()
+    this.configurationValidationResult = undefined
     this.initializeConnectorsStatus()
   }
 
@@ -112,6 +117,9 @@ export class AutomaticTransactionGenerator {
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
+      if (!this.validateConfiguration()) {
+        return
+      }
       this.internalStartConnector(connectorId, stopAbsoluteDuration).catch((error: unknown) =>
         logger.error(
           `${this.logPrefix(connectorId)} ${moduleName}.startConnector: Error while starting connector:`,
@@ -126,6 +134,10 @@ export class AutomaticTransactionGenerator {
   }
 
   public stop (): void {
+    // Reset before the guards so external startConnector() callers can
+    // recover from a cached-false state via stop() even when start()
+    // was never called.
+    this.configurationValidationResult = undefined
     if (!this.started) {
       logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
       return
@@ -150,6 +162,10 @@ export class AutomaticTransactionGenerator {
     const connectorStatus = this.connectorsStatus.get(connectorId)
     if (connectorStatus?.start === true) {
       connectorStatus.start = false
+      // Wake internalStartConnector out of its interruptible sleeps so
+      // it observes start=false immediately rather than after the
+      // current wait (up to maxDuration seconds) expires.
+      this.connectorAbortControllers.get(connectorId)?.abort()
     } else if (connectorStatus?.start === false) {
       logger.warn(
         `${this.logPrefix(connectorId)} ${moduleName}.stopConnector: Already stopped on connector`
@@ -290,6 +306,12 @@ export class AutomaticTransactionGenerator {
     if (connectorStatus == null) {
       return
     }
+    // Abort the previous controller (if any) first to unblock any
+    // lingering interruptibleSleep from an earlier invocation on this
+    // connector.
+    this.connectorAbortControllers.get(connectorId)?.abort()
+    const abortController = new AbortController()
+    this.connectorAbortControllers.set(connectorId, abortController)
     logger.info(
       `${this.logPrefix(
         connectorId
@@ -297,76 +319,91 @@ export class AutomaticTransactionGenerator {
         (connectorStatus.stopDate?.getTime() ?? 0) - (connectorStatus.startDate?.getTime() ?? 0)
       )}`
     )
-    while (this.connectorsStatus.get(connectorId)?.start === true) {
-      await this.waitChargingStationAvailable(connectorId)
-      await this.waitConnectorAvailable(connectorId)
-      await this.waitRunningTransactionStopped(connectorId)
-      if (!this.canStartConnector(connectorId)) {
-        this.stopConnector(connectorId)
-        break
-      }
-      const wait = secondsToMilliseconds(
-        randomInt(
-          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.minDelayBetweenTwoTransactions ?? 0,
-          (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.maxDelayBetweenTwoTransactions ?? 0) + 1
-        )
-      )
-      logger.info(
-        `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Waiting for ${formatDurationMilliSeconds(wait)}`
-      )
-      await sleep(wait)
-      const start = secureRandom()
-      if (
-        start <
-        (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.probabilityOfStart ??
-          0)
+    try {
+      while (
+        this.connectorsStatus.get(connectorId)?.start === true &&
+        !abortController.signal.aborted
       ) {
-        connectorStatus.skippedConsecutiveTransactions = 0
-        // Start transaction
-        const startResponse = await this.startTransaction(connectorId)
-        if (startResponse?.accepted === true) {
-          // Wait until end of transaction
-          const waitTrxEnd = secondsToMilliseconds(
-            randomInt(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration ??
-                0,
-              (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration ??
-                0) + 1
-            )
-          )
-          logger.info(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Transaction started with id ${this.chargingStation
-              .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
-          )
-          await sleep(waitTrxEnd)
-          await this.stopTransaction(connectorId)
+        await this.waitChargingStationAvailable(connectorId, abortController.signal)
+        await this.waitConnectorAvailable(connectorId, abortController.signal)
+        await this.waitRunningTransactionStopped(connectorId, abortController.signal)
+        if (!this.canStartConnector(connectorId)) {
+          this.stopConnector(connectorId)
+          break
         }
-      } else {
-        ++connectorStatus.skippedConsecutiveTransactions
-        ++connectorStatus.skippedTransactions
+        const wait = secondsToMilliseconds(
+          randomInt(
+            this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+              ?.minDelayBetweenTwoTransactions ?? 0,
+            (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+              ?.maxDelayBetweenTwoTransactions ?? 0) + 1
+          )
+        )
         logger.info(
-          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Skipped consecutively ${connectorStatus.skippedConsecutiveTransactions.toString()}/${connectorStatus.skippedTransactions.toString()} transaction(s)`
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Waiting for ${formatDurationMilliSeconds(wait)}`
+        )
+        await interruptibleSleep(wait, abortController.signal)
+        const start = secureRandom()
+        if (
+          start <
+          (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+            ?.probabilityOfStart ?? 0)
+        ) {
+          connectorStatus.skippedConsecutiveTransactions = 0
+          const startResponse = await this.startTransaction(connectorId)
+          if (startResponse?.accepted === true) {
+            const waitTrxEnd = secondsToMilliseconds(
+              randomInt(
+                this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration ??
+                  0,
+                (this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+                  ?.maxDuration ?? 0) + 1
+              )
+            )
+            logger.info(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Transaction started with id ${this.chargingStation
+                .getConnectorStatus(connectorId)
+                ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
+            )
+            await interruptibleSleep(waitTrxEnd, abortController.signal)
+            await this.stopTransaction(connectorId)
+          }
+        } else {
+          ++connectorStatus.skippedConsecutiveTransactions
+          ++connectorStatus.skippedTransactions
+          logger.info(
+            `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Skipped consecutively ${connectorStatus.skippedConsecutiveTransactions.toString()}/${connectorStatus.skippedTransactions.toString()} transaction(s)`
+          )
+        }
+        connectorStatus.lastRunDate = new Date()
+      }
+    } finally {
+      // Gate all post-loop bookkeeping on ownership of the current
+      // controller entry: a concurrent stopConnector→startConnector may
+      // have already installed a successor and reset connectorStatus.
+      const isOwner = this.connectorAbortControllers.get(connectorId) === abortController
+      if (isOwner) {
+        this.connectorAbortControllers.delete(connectorId)
+        connectorStatus.stoppedDate = new Date()
+        logger.info(
+          `${this.logPrefix(
+            connectorId
+          )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
+            connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
+          )}`
+        )
+        logger.debug(
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
+          connectorStatus
+        )
+        this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
+      } else {
+        logger.debug(
+          `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Exited displaced loop — a successor controller is already installed`
         )
       }
-      connectorStatus.lastRunDate = new Date()
     }
-    connectorStatus.stoppedDate = new Date()
-    logger.info(
-      `${this.logPrefix(
-        connectorId
-      )} ${moduleName}.internalStartConnector: Stopped on connector and lasted for ${formatDurationMilliSeconds(
-        connectorStatus.stoppedDate.getTime() - (connectorStatus.startDate?.getTime() ?? 0)
-      )}`
-    )
-    logger.debug(
-      `${this.logPrefix(connectorId)} ${moduleName}.internalStartConnector: Stopped with connector status: %j`,
-      connectorStatus
-    )
-    this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   private readonly logPrefix = (connectorId?: number): string => {
@@ -508,9 +545,55 @@ export class AutomaticTransactionGenerator {
     return result
   }
 
-  private async waitChargingStationAvailable (connectorId: number): Promise<void> {
+  /**
+   * Validates min/max invariants on the ATG configuration so a
+   * mis-configured template cannot kill the run loop with a
+   * `randomInt(min, max + 1)` RangeError at the first iteration.
+   * Memoized per `start()` cycle; reset by `stop()`. Returns `true`
+   * when no configuration is present (absence is handled elsewhere
+   * with defaulting to 0).
+   * @returns `true` when configuration is absent or its min/max
+   * invariants hold; `false` when a violation was found and logged.
+   */
+  private validateConfiguration (): boolean {
+    if (this.configurationValidationResult !== undefined) {
+      return this.configurationValidationResult
+    }
+    const config = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+    if (config == null) {
+      this.configurationValidationResult = true
+      return true
+    }
+    const {
+      maxDelayBetweenTwoTransactions,
+      maxDuration,
+      minDelayBetweenTwoTransactions,
+      minDuration,
+    } = config
+    if (!isValidRandomIntBounds(minDelayBetweenTwoTransactions, maxDelayBetweenTwoTransactions)) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDelayBetweenTwoTransactions=${minDelayBetweenTwoTransactions.toString()}, maxDelayBetweenTwoTransactions=${maxDelayBetweenTwoTransactions.toString()} — aborting connector startup`
+      )
+      this.configurationValidationResult = false
+      return false
+    }
+    if (!isValidRandomIntBounds(minDuration, maxDuration)) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.validateConfiguration: invalid bounds minDuration=${minDuration.toString()}, maxDuration=${maxDuration.toString()} — aborting connector startup`
+      )
+      this.configurationValidationResult = false
+      return false
+    }
+    this.configurationValidationResult = true
+    return true
+  }
+
+  private async waitChargingStationAvailable (
+    connectorId: number,
+    signal: AbortSignal
+  ): Promise<void> {
     let logged = false
-    while (!this.chargingStation.isChargingStationAvailable()) {
+    while (!this.chargingStation.isChargingStationAvailable() && !signal.aborted) {
       if (!logged) {
         logger.info(
           `${this.logPrefix(
@@ -519,13 +602,13 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 
-  private async waitConnectorAvailable (connectorId: number): Promise<void> {
+  private async waitConnectorAvailable (connectorId: number, signal: AbortSignal): Promise<void> {
     let logged = false
-    while (!this.chargingStation.isConnectorAvailable(connectorId)) {
+    while (!this.chargingStation.isConnectorAvailable(connectorId) && !signal.aborted) {
       if (!logged) {
         logger.info(
           `${this.logPrefix(
@@ -534,22 +617,28 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 
-  private async waitRunningTransactionStopped (connectorId: number): Promise<void> {
-    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
+  private async waitRunningTransactionStopped (
+    connectorId: number,
+    signal: AbortSignal
+  ): Promise<void> {
     let logged = false
-    while (connectorStatus?.transactionStarted === true) {
+    while (
+      this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true &&
+      !signal.aborted
+    ) {
       if (!logged) {
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
         logger.info(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${connectorStatus.transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
+          `${this.logPrefix(connectorId)} ${moduleName}.waitRunningTransactionStopped: Transaction loop waiting for started transaction ${transactionId?.toString()} on connector ${connectorId.toString()} to be stopped`
         )
         logged = true
       }
-      await sleep(Constants.DEFAULT_ATG_WAIT_TIME_MS)
+      await interruptibleSleep(Constants.DEFAULT_ATG_WAIT_TIME_MS, signal)
     }
   }
 }

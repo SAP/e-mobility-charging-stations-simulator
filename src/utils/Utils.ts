@@ -164,6 +164,34 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
 }
 
 /**
+ * Sleeps for the specified duration or resolves early when the signal
+ * aborts. Both the `setTimeout` handle and the `'abort'` listener are
+ * cleaned up on whichever path resolves the promise first so the caller
+ * cannot leak a pending `Timeout` or a stale listener. Resolves (does
+ * not reject) on abort — callers observe the abort by rechecking their
+ * own loop condition after the promise settles.
+ * @param milliSeconds - Duration to sleep in milliseconds.
+ * @param signal - `AbortSignal` that resolves the promise early on abort.
+ * @returns Promise that resolves when the timer fires or the signal aborts.
+ */
+export const interruptibleSleep = (milliSeconds: number, signal: AbortSignal): Promise<void> =>
+  new Promise(resolve => {
+    if (signal.aborted) {
+      resolve()
+      return
+    }
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, milliSeconds)
+    const onAbort = (): void => {
+      clearTimeout(timeout)
+      resolve()
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+
+/**
  * Races a promise against a timeout. Resolves/rejects with the promise result
  * if it settles before the deadline, otherwise rejects with a timeout error.
  * The timer is always cleaned up when the promise settles first.
@@ -230,6 +258,23 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
   }
   return false
 }
+
+/**
+ * Predicate for a min/max pair intended as input to
+ * `randomInt(minValue, maxValue + 1)` (from `node:crypto`). Rejects
+ * `NaN`, `Infinity`, non-integer floats, negative values, and ranges
+ * where `maxValue - minValue >= 2^48 - 1` — all of which would cause
+ * `randomInt` to throw `RangeError`.
+ * @param minValue - Lower bound (inclusive; must be a safe integer >= 0).
+ * @param maxValue - Upper bound (inclusive; must be a safe integer >= minValue).
+ * @returns `true` when the bounds are safe; `false` otherwise.
+ */
+export const isValidRandomIntBounds = (minValue: number, maxValue: number): boolean =>
+  Number.isSafeInteger(minValue) &&
+  Number.isSafeInteger(maxValue) &&
+  minValue >= 0 &&
+  minValue <= maxValue &&
+  maxValue - minValue < 2 ** 48 - 1
 
 export const convertToDate = (
   value: Date | null | number | string | undefined
