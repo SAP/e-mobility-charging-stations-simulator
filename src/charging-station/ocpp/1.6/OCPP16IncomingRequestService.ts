@@ -117,6 +117,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isValidRandomIntBounds,
   logger,
   sleep,
   truncateId,
@@ -590,6 +591,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             )
           })
         } else {
+          // Unref: fire-and-forget deferred firmware update must not
+          // block node.js exit.
           setTimeout(() => {
             this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
               logger.error(
@@ -597,7 +600,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 error
               )
             })
-          }, retrieveDate.getTime() - now)
+          }, retrieveDate.getTime() - now).unref()
         }
       }
     )
@@ -1301,10 +1304,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         connectorId <= chargingStation.getNumberOfConnectors();
         connectorId++
       ) {
+        const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+        const isReservedForOther =
+          connectorStatus?.status === OCPP16ChargePointStatus.Reserved &&
+          !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
         if (
           chargingStation.isConnectorAvailable(connectorId) &&
-          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false &&
-          !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
+          connectorStatus?.transactionStarted === false &&
+          !isReservedForOther
         ) {
           commandPayload.connectorId = connectorId
           break
@@ -1828,6 +1835,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     minDelay = 15
   ): Promise<void> {
     if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
+      return
+    }
+    if (!isValidRandomIntBounds(minDelay, maxDelay)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: invalid bounds minDelay=${minDelay.toString()}, maxDelay=${maxDelay.toString()} — aborting firmware update simulation`
+      )
       return
     }
     for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {

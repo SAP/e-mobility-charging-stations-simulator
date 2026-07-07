@@ -99,7 +99,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
             response = incomingRequestHandler(chargingStation, commandPayload) as ResType
           }
         } catch (error) {
-          // Log
           logger.error(
             `${chargingStation.logPrefix()} ${this.moduleName}.incomingRequestHandler: Handle incoming request error:`,
             error
@@ -123,7 +122,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
         commandPayload
       )
     }
-    // Send the built response
     await chargingStation.ocppRequestService.sendResponse(
       chargingStation,
       messageId,
@@ -136,8 +134,18 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     }
   }
 
+  /**
+   * Stops the incoming-request service for the given charging station.
+   * @param chargingStation - Target charging station.
+   */
   public abstract stop (chargingStation: ChargingStation): void
 
+  /**
+   * Whether the given incoming-request command is supported for this station.
+   * @param chargingStation - Target charging station.
+   * @param commandName - OCPP incoming-request command name.
+   * @returns `true` when the command is supported.
+   */
   protected abstract isIncomingRequestCommandSupported (
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand
@@ -155,7 +163,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
    * @param chargingStation - The charging station instance processing the request
    * @param commandName - OCPP command name to validate against
    * @param payload - JSON payload to validate
-   * @returns True if payload validation succeeds, false otherwise
+   * @returns `true` when payload validation succeeds; `false` otherwise.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateIncomingRequestPayload<T extends JsonType>(

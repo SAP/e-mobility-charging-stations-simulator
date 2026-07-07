@@ -61,6 +61,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  isValidRandomIntBounds,
   JSONStringify,
   logger,
   logPrefix,
@@ -170,7 +171,7 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
  * @param validate - Ajv validation function for the command
  * @param context - Description of the validation context (e.g. 'request', 'response')
  * @param clonePayload - Whether to clone payload and convert dates before validation
- * @returns True if payload validation succeeds, false otherwise
+ * @returns `true` when payload validation succeeds; `false` otherwise.
  */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const validatePayload = <T extends JsonType>(
@@ -262,12 +263,20 @@ const buildSocMeasurandValue = (
 
   const socMaximumValue = Constants.SOC_MAXIMUM_PERCENT
   const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
-  const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
-    ? getRandomFloatFluctuatedRounded(
+  let socSampledValueTemplateValue: number
+  if (isNotEmptyString(socSampledValueTemplate.value)) {
+    socSampledValueTemplateValue = getRandomFloatFluctuatedRounded(
       convertToInt(socSampledValueTemplate.value),
       socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
     )
-    : randomInt(socMinimumValue, socMaximumValue + 1)
+  } else if (isValidRandomIntBounds(socMinimumValue, socMaximumValue)) {
+    socSampledValueTemplateValue = randomInt(socMinimumValue, socMaximumValue + 1)
+  } else {
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.buildSocMeasurandValue: invalid SoC bounds socMinimumValue=${socMinimumValue.toString()}, socMaximumValue=${socMaximumValue.toString()} — skipping SoC measurand`
+    )
+    return null
+  }
 
   return {
     template: socSampledValueTemplate,
@@ -1066,6 +1075,15 @@ const createVersionedSampledValueDispatcher = (
 const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
 const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
 
+const getOrCreateWarnedMeasurands = (chargingStation: ChargingStation): Set<string> => {
+  let warned = warnedInvalidMeasurands.get(chargingStation)
+  if (warned == null) {
+    warned = new Set<string>()
+    warnedInvalidMeasurands.set(chargingStation, warned)
+  }
+  return warned
+}
+
 /**
  * Resolves the set of measurands enabled by the configured OCPP variable.
  *
@@ -1118,11 +1136,7 @@ const resolveEnabledMeasurands = (
       enabled.add(trimmed as MeterValueMeasurand)
       continue
     }
-    let warned = warnedInvalidMeasurands.get(chargingStation)
-    if (warned == null) {
-      warned = new Set<string>()
-      warnedInvalidMeasurands.set(chargingStation, warned)
-    }
+    const warned = getOrCreateWarnedMeasurands(chargingStation)
     if (!warned.has(trimmed)) {
       warned.add(trimmed)
       logger.warn(

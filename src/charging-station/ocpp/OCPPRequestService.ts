@@ -76,6 +76,14 @@ export abstract class OCPPRequestService {
     return OCPPRequestService.instances.get(this) as T
   }
 
+  /**
+   * Sends an OCPP request and awaits its response.
+   * @param chargingStation - Target charging station.
+   * @param commandName - OCPP request command name.
+   * @param commandParams - Optional request payload.
+   * @param params - Optional request behavior parameters.
+   * @returns Response payload from the Central System.
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
@@ -91,7 +99,6 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand | RequestCommand
   ): Promise<ResponseType> {
     try {
-      // Send error message
       return await this.internalSendMessage(
         chargingStation,
         messageId,
@@ -117,7 +124,6 @@ export abstract class OCPPRequestService {
     commandName: IncomingRequestCommand
   ): Promise<ResponseType> {
     try {
-      // Send response message
       return await this.internalSendMessage(
         chargingStation,
         messageId,
@@ -208,7 +214,7 @@ export abstract class OCPPRequestService {
    * @param chargingStation - The charging station instance sending the request
    * @param commandName - OCPP command name to validate against
    * @param payload - JSON payload to validate
-   * @returns True if payload validation succeeds, false otherwise
+   * @returns `true` when payload validation succeeds; `false` otherwise.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateRequestPayload<T extends JsonType>(
@@ -256,7 +262,6 @@ export abstract class OCPPRequestService {
       }
       // Request
       case MessageType.CALL_MESSAGE:
-        // Build request
         this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType)
         messageToSend = JSON.stringify([
           messageType,
@@ -267,7 +272,6 @@ export abstract class OCPPRequestService {
         break
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
-        // Build response
         this.validateIncomingRequestResponsePayload(
           chargingStation,
           commandName,
@@ -301,14 +305,13 @@ export abstract class OCPPRequestService {
         chargingStation.inRejectedState()) &&
         commandName === RequestCommand.BOOT_NOTIFICATION) ||
       (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        (chargingStation.inUnknownState() || chargingStation.inPendingState())) ||
+        chargingStation.inUnknownState()) ||
       chargingStation.inAcceptedState() ||
       (chargingStation.inPendingState() &&
         (params.triggerMessage === true || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias -- stable outer-this reference captured for nested Promise executor and its response-handler closures
       const self = this
-      // Send a message through wsConnection
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
@@ -322,7 +325,6 @@ export abstract class OCPPRequestService {
               MessageType.CALL_RESULT_MESSAGE
             )
           }
-          // Handle the request's response
           self.ocppResponseService
             .responseHandler(
               chargingStation,
@@ -383,7 +385,6 @@ export abstract class OCPPRequestService {
             params.skipBufferingOnError === true &&
             messageType === MessageType.CALL_MESSAGE
           ) {
-            // Remove request from the cache
             chargingStation.requests.delete(messageId)
           }
           reject(ocppError)
@@ -399,7 +400,6 @@ export abstract class OCPPRequestService {
           messageType,
           commandName
         )
-        // Check if wsConnection opened
         if (chargingStation.isWebSocketConnectionOpened()) {
           const beginId = PerformanceStatistics.beginMeasure(commandName)
           const sendTimeout = setTimeout(() => {

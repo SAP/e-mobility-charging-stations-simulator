@@ -143,12 +143,12 @@ import {
   generateUUID,
   getErrorMessage,
   handleIncomingRequestError,
+  interruptibleSleep,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
   promiseWithTimeout,
-  sleep,
   truncateId,
   validateUUID,
 } from '../../../utils/index.js'
@@ -258,6 +258,9 @@ const buildRejectedResponse = (
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
+  activeLogUploadAbortController?: AbortController
+  activeLogUploadRequestId?: number
+  activeLogUploadStatus?: UploadLogStatusEnumType
   certSigningRetryManager?: OCPP20CertSigningRetryManager
   isDrainingSecurityEvents: boolean
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
@@ -437,7 +440,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         request: OCPP20GetLogRequest,
         response: OCPP20GetLogResponse
       ) => {
-        if (response.status === LogStatusEnumType.Accepted) {
+        if (
+          response.status === LogStatusEnumType.Accepted ||
+          response.status === LogStatusEnumType.AcceptedCanceled
+        ) {
           this.simulateLogUploadLifecycle(chargingStation, request.requestId).catch(
             (error: unknown) => {
               logger.error(
@@ -561,10 +567,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
-            const firmwareStatus = this.hasFirmwareUpdateInProgress(chargingStation)
-              ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
-              : OCPP20FirmwareStatusEnumType.Idle
-            const stationState = this.getStationState(chargingStation)
+            const stationState = this.stationsState.get(chargingStation)
+            const requestId = stationState?.activeFirmwareUpdateRequestId
+            const firmwareStatus =
+              requestId != null && this.hasFirmwareUpdateInProgress(chargingStation)
+                ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
+                : OCPP20FirmwareStatusEnumType.Idle
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
@@ -572,7 +580,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               >(
                 chargingStation,
                 OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                { requestId: stationState.activeFirmwareUpdateRequestId, status: firmwareStatus },
+                { requestId, status: firmwareStatus },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
               .catch(errorHandler)
@@ -588,7 +596,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               )
               .catch(errorHandler)
             break
-          case MessageTriggerEnumType.LogStatusNotification:
+          case MessageTriggerEnumType.LogStatusNotification: {
+            const stationState = this.stationsState.get(chargingStation)
+            const requestId = stationState?.activeLogUploadRequestId
+            const logStatus =
+              requestId != null
+                ? (stationState?.activeLogUploadStatus ?? UploadLogStatusEnumType.Uploading)
+                : UploadLogStatusEnumType.Idle
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20LogStatusNotificationRequest,
@@ -596,11 +610,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               >(
                 chargingStation,
                 OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-                { status: UploadLogStatusEnumType.Idle },
+                { requestId, status: logStatus },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
               .catch(errorHandler)
             break
+          }
           case MessageTriggerEnumType.MeterValues:
             this.triggerMeterValues(chargingStation, evse, errorHandler)
             break
@@ -615,7 +630,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   public getCertSigningRetryManager (
     chargingStation: ChargingStation
   ): OCPP20CertSigningRetryManager {
-    const state = this.getStationState(chargingStation)
+    const state = this.getOrCreateStationState(chargingStation)
     state.certSigningRetryManager ??= new OCPP20CertSigningRetryManager(chargingStation)
     return state.certSigningRetryManager
   }
@@ -774,6 +789,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
       stationState.activeFirmwareUpdateAbortController?.abort()
+      stationState.activeLogUploadAbortController?.abort()
+      stationState.certSigningRetryManager?.cancelRetryTimer()
+      this.resetActiveFirmwareUpdateState(stationState)
+      this.resetActiveLogUploadState(stationState)
       this.stationsState.delete(chargingStation)
     }
     try {
@@ -1282,10 +1301,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private clearActiveFirmwareUpdate (chargingStation: ChargingStation, requestId: number): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null) {
+      return
+    }
     if (stationState.activeFirmwareUpdateRequestId === requestId) {
-      stationState.activeFirmwareUpdateAbortController = undefined
-      stationState.activeFirmwareUpdateRequestId = undefined
+      this.resetActiveFirmwareUpdateState(stationState)
+    } else if (stationState.activeFirmwareUpdateRequestId != null) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveFirmwareUpdate: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${stationState.activeFirmwareUpdateRequestId.toString()})`
+      )
+    }
+  }
+
+  private clearActiveLogUpload (chargingStation: ChargingStation, requestId: number): void {
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null) {
+      return
+    }
+    if (stationState.activeLogUploadRequestId === requestId) {
+      this.resetActiveLogUploadState(stationState)
+    } else if (stationState.activeLogUploadRequestId != null) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.clearActiveLogUpload: Ignoring completion for superseded requestId ${requestId.toString()} (active: ${stationState.activeLogUploadRequestId.toString()})`
+      )
     }
   }
 
@@ -1372,20 +1411,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       .catch(errorHandler)
   }
 
-  private getRestoredConnectorStatus (
-    chargingStation: ChargingStation,
-    connectorId: number
-  ): OCPP20ConnectorStatusEnumType {
-    const stationState = this.getStationState(chargingStation)
-    const saved = stationState.preInoperativeConnectorStatuses.get(connectorId)
-    if (saved != null) {
-      stationState.preInoperativeConnectorStatuses.delete(connectorId)
-      return saved
-    }
-    return OCPP20ConnectorStatusEnumType.Available
-  }
-
-  private getStationState (chargingStation: ChargingStation): OCPP20StationState {
+  private getOrCreateStationState (chargingStation: ChargingStation): OCPP20StationState {
     let state = this.stationsState.get(chargingStation)
     if (state == null) {
       state = {
@@ -1397,6 +1423,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.stationsState.set(chargingStation, state)
     }
     return state
+  }
+
+  private getRestoredConnectorStatus (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): OCPP20ConnectorStatusEnumType {
+    const stationState = this.getOrCreateStationState(chargingStation)
+    const saved = stationState.preInoperativeConnectorStatuses.get(connectorId)
+    if (saved != null) {
+      stationState.preInoperativeConnectorStatuses.delete(connectorId)
+      return saved
+    }
+    return OCPP20ConnectorStatusEnumType.Available
   }
 
   private handleConnectorChangeAvailability (
@@ -1970,7 +2009,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const cached = stationState.reportDataCache.get(commandPayload.requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
     if (!cached && isNotEmptyArray(reportData)) {
@@ -2063,12 +2102,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   /**
    * Handles OCPP 2.0.1 GetLog request from central system.
-   * Accepts the log upload request and simulates the log upload lifecycle
-   * by sending LogStatusNotification messages through a state machine:
-   * Uploading → Uploaded
+   * When a prior upload is in progress, cancels it per N01.FR.12/FR.20
+   * and returns AcceptedCanceled; otherwise simulates an Uploading → Uploaded
+   * lifecycle via LogStatusNotification messages.
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - GetLog request payload with log type, requestId, and log parameters
-   * @returns GetLogResponse with Accepted status and simulated filename
+   * @returns GetLogResponse with `Accepted` (no prior upload) or `AcceptedCanceled`
+   *   (superseded prior upload) status and simulated filename.
    */
   private handleRequestGetLog (
     chargingStation: ChargingStation,
@@ -2079,6 +2119,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Received GetLog request with requestId ${requestId.toString()} for logType '${logType}'`
     )
+
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState?.activeLogUploadRequestId != null) {
+      const previousRequestId = stationState.activeLogUploadRequestId
+      stationState.activeLogUploadAbortController?.abort()
+      this.resetActiveLogUploadState(stationState)
+      this.sendLogStatusNotification(
+        chargingStation,
+        UploadLogStatusEnumType.AcceptedCanceled,
+        previousRequestId
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Failed to send AcceptedCanceled for superseded requestId ${previousRequestId.toString()}:`,
+          error
+        )
+      })
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Canceled previous log upload (requestId ${previousRequestId.toString()})`
+      )
+      return {
+        filename: 'simulator-log.txt',
+        status: LogStatusEnumType.AcceptedCanceled,
+      }
+    }
 
     return {
       filename: 'simulator-log.txt',
@@ -3085,12 +3149,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Cancel any in-progress firmware update; respond with AcceptedCanceled so the new request starts fresh
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     if (stationState.activeFirmwareUpdateAbortController != null) {
       const previousRequestId = stationState.activeFirmwareUpdateRequestId
       stationState.activeFirmwareUpdateAbortController.abort()
-      stationState.activeFirmwareUpdateAbortController = undefined
-      stationState.activeFirmwareUpdateRequestId = undefined
+      this.resetActiveFirmwareUpdateState(stationState)
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update (requestId ${String(previousRequestId)})`
       )
@@ -3135,7 +3198,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Checks if firmware update is in progress per OCPP 2.0.1 Errata idle definition.
    * @param chargingStation - The charging station instance
-   * @returns true if firmware update is in progress (Downloading, Downloaded, or Installing)
+   * @returns `true` when {@link OCPP20FirmwareStatusEnumType} is any non-terminal value:
+   *   Downloading, Downloaded, Installing, DownloadScheduled, DownloadPaused,
+   *   InstallScheduled, InstallRebooting, or SignatureVerified.
    */
   private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
@@ -3246,6 +3311,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private resetActiveFirmwareUpdateState (stationState: OCPP20StationState): void {
+    stationState.activeFirmwareUpdateAbortController = undefined
+    stationState.activeFirmwareUpdateRequestId = undefined
+  }
+
+  private resetActiveLogUploadState (stationState: OCPP20StationState): void {
+    stationState.activeLogUploadAbortController = undefined
+    stationState.activeLogUploadRequestId = undefined
+    stationState.activeLogUploadStatus = undefined
+  }
+
   /**
    * Reset connector status on start transaction error
    * @param chargingStation - The charging station instance
@@ -3272,7 +3348,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - Optional EVSE ID to scope the save; if omitted, saves all EVSEs
    */
   private savePreInoperativeStatuses (chargingStation: ChargingStation, evseId?: number): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const evseIds =
       evseId != null && evseId > 0
         ? [evseId]
@@ -3319,6 +3395,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: Executing EVSE ${evseId.toString()} reset${hasActiveTransactions ? ' after transaction termination' : ''}`
       )
+      // Unref: fire-and-forget pending EVSE reset must not block
+      // node.js exit.
       setTimeout(() => {
         const evse = chargingStation.getEvseStatus(evseId)
         if (evse) {
@@ -3337,7 +3415,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: EVSE ${evseId.toString()} reset completed`
           )
         }
-      }, OCPP20Constants.RESET_DELAY_MS)
+      }, OCPP20Constants.RESET_DELAY_MS).unref()
     })
   }
 
@@ -3347,6 +3425,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    */
   private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
+    // Unref: idle-monitor poll must not block node.js exit; the interval
+    // self-clears once the EVSE is idle or its state is gone.
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
@@ -3360,7 +3440,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         clearInterval(monitorInterval)
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   /**
@@ -3368,6 +3448,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    */
   private scheduleResetOnIdle (chargingStation: ChargingStation): void {
+    // Unref: idle-monitor poll must not block node.js exit; the interval
+    // self-clears once the station reports idle.
     const monitorInterval = setInterval(() => {
       if (this.isChargingStationIdle(chargingStation)) {
         clearInterval(monitorInterval)
@@ -3381,7 +3463,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         })
       }
-    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS).unref()
   }
 
   private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
@@ -3515,7 +3597,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
     const { reportBase, requestId } = request
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     const cached = stationState.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
@@ -3559,7 +3641,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private sendQueuedSecurityEvents (chargingStation: ChargingStation): void {
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     if (
       stationState.isDrainingSecurityEvents ||
       !chargingStation.isWebSocketConnectionOpened() ||
@@ -3611,9 +3693,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
           queue.unshift({ ...event, retryCount })
           stationState.isDrainingSecurityEvents = false
+          // Unref: fire-and-forget retry must not block node.js exit.
           setTimeout(() => {
             this.sendQueuedSecurityEvents(chargingStation)
-          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS)
+          }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS).unref()
         })
     }
     drainNextEvent()
@@ -3663,7 +3746,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendSecurityEventNotification: [SecurityEvent] type=${type}${techInfo != null ? `, techInfo=${techInfo}` : ''}`
     )
-    this.getStationState(chargingStation).securityEventQueue.push({
+    this.getOrCreateStationState(chargingStation).securityEventQueue.push({
       timestamp: new Date(),
       type,
       ...(techInfo !== undefined && { techInfo }),
@@ -3690,189 +3773,197 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
-    // Store the abort controller so a subsequent UpdateFirmware can cancel this in-progress update
+    // Store the abort controller so a subsequent UpdateFirmware can abort this in-progress update
     const abortController = new AbortController()
-    const stationState = this.getStationState(chargingStation)
+    const stationState = this.getOrCreateStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
     stationState.activeFirmwareUpdateRequestId = requestId
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
-    // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
-    const now = Date.now()
-    const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
-    if (retrieveTime > now) {
-      await this.sendFirmwareStatusNotification(
-        chargingStation,
-        OCPP20FirmwareStatusEnumType.DownloadScheduled,
-        requestId
-      )
-      await sleep(retrieveTime - now)
-      if (checkAborted()) return
-    }
-
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Downloading,
-      requestId
-    )
-
-    await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
-    if (checkAborted()) return
-
-    // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
-    if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
-      // L01.FR.30: Simulate download retries before reporting DownloadFailed
-      const maxRetries = retries ?? 0
-      const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
-        )
-        await sleep(retryDelayMs)
-        if (checkAborted()) return
+    try {
+      // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
+      const now = Date.now()
+      const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
+      if (retrieveTime > now) {
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.Downloading,
+          OCPP20FirmwareStatusEnumType.DownloadScheduled,
           requestId
         )
-        await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
+        await interruptibleSleep(retrieveTime - now, abortController.signal)
         if (checkAborted()) return
       }
+
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        OCPP20FirmwareStatusEnumType.DownloadFailed,
+        OCPP20FirmwareStatusEnumType.Downloading,
         requestId
       )
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'${maxRetries > 0 ? ` (exhausted ${maxRetries.toString()} retries)` : ''}`
-      )
-      this.clearActiveFirmwareUpdate(chargingStation, requestId)
-      return
-    }
 
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Downloaded,
-      requestId
-    )
-
-    if (signature != null) {
-      await sleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS)
+      await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
       if (checkAborted()) return
 
-      // L01.FR.04: Simulate signature verification
-      const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
-        chargingStation,
-        OCPP20ComponentName.FirmwareCtrlr,
-        OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
-        false
-      )
-
-      if (simulateFailure) {
-        // L01.FR.03: InvalidSignature + SecurityEventNotification
+      // Empty or malformed firmware location: simulate the L01.FR.30 download retries, then emit DownloadFailed and stop
+      if (isEmpty(location) || !this.isValidFirmwareLocation(location)) {
+        // L01.FR.30: Simulate download retries before reporting DownloadFailed
+        const maxRetries = retries ?? 0
+        const retryDelayMs = secondsToMilliseconds(retryInterval ?? 0)
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
+          )
+          await interruptibleSleep(retryDelayMs, abortController.signal)
+          if (checkAborted()) return
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.Downloading,
+            requestId
+          )
+          await interruptibleSleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS, abortController.signal)
+          if (checkAborted()) return
+        }
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.InvalidSignature,
+          OCPP20FirmwareStatusEnumType.DownloadFailed,
           requestId
         )
-        this.sendSecurityEventNotification(
-          chargingStation,
-          'InvalidFirmwareSignature',
-          `Firmware signature verification failed for requestId ${requestId.toString()}`
-        )
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'${maxRetries > 0 ? ` (exhausted ${maxRetries.toString()} retries)` : ''}`
         )
-        this.clearActiveFirmwareUpdate(chargingStation, requestId)
         return
       }
 
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        OCPP20FirmwareStatusEnumType.SignatureVerified,
+        OCPP20FirmwareStatusEnumType.Downloaded,
         requestId
       )
-    }
 
-    // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
-    if (installDateTime != null) {
-      const currentTime = Date.now()
-      const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
-      if (installTime > currentTime) {
+      if (signature != null) {
+        await interruptibleSleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS, abortController.signal)
+        if (checkAborted()) return
+
+        // L01.FR.04: Simulate signature verification
+        const simulateFailure = OCPP20ServiceUtils.readVariableAsBoolean(
+          chargingStation,
+          OCPP20ComponentName.FirmwareCtrlr,
+          OCPP20VendorVariableName.SimulateSignatureVerificationFailure,
+          false
+        )
+
+        if (simulateFailure) {
+          // L01.FR.03: InvalidSignature + SecurityEventNotification
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.InvalidSignature,
+            requestId
+          )
+          this.sendSecurityEventNotification(
+            chargingStation,
+            'InvalidFirmwareSignature',
+            `Firmware signature verification failed for requestId ${requestId.toString()}`
+          )
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+          )
+          return
+        }
+
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          OCPP20FirmwareStatusEnumType.InstallScheduled,
+          OCPP20FirmwareStatusEnumType.SignatureVerified,
           requestId
         )
-        await sleep(installTime - currentTime)
-        if (checkAborted()) return
       }
-    }
 
-    // L01.FR.06: Wait for active transactions to end before installing
-    // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
-    const hasActiveTransactionsBeforeInstall = chargingStation
-      .iterateEvses(true)
-      .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
-    if (hasActiveTransactionsBeforeInstall) {
-      const allowNewSessions = OCPP20ServiceUtils.readVariableAsBoolean(
-        chargingStation,
-        OCPP20ComponentName.ChargingStation,
-        'AllowNewSessionsPendingFirmwareUpdate',
-        false
-      )
-      while (
-        !checkAborted() &&
-        chargingStation
-          .iterateEvses(true)
-          .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
-      ) {
-        // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
-        if (!allowNewSessions) {
-          for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
-            if (!this.hasEvseActiveTransactions(evseStatus)) {
-              this.sendEvseStatusNotifications(
-                chargingStation,
-                evseId,
-                OCPP20ConnectorStatusEnumType.Unavailable
-              )
+      // Delay the install until installDateTime; inform the CSMS via InstallScheduled first
+      if (installDateTime != null) {
+        const currentTime = Date.now()
+        const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
+        if (installTime > currentTime) {
+          await this.sendFirmwareStatusNotification(
+            chargingStation,
+            OCPP20FirmwareStatusEnumType.InstallScheduled,
+            requestId
+          )
+          await interruptibleSleep(installTime - currentTime, abortController.signal)
+          if (checkAborted()) return
+        }
+      }
+
+      // L01.FR.06: Wait for active transactions to end before installing
+      // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
+      const hasActiveTransactionsBeforeInstall = chargingStation
+        .iterateEvses(true)
+        .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
+      if (hasActiveTransactionsBeforeInstall) {
+        const allowNewSessions = OCPP20ServiceUtils.readVariableAsBoolean(
+          chargingStation,
+          OCPP20ComponentName.ChargingStation,
+          'AllowNewSessionsPendingFirmwareUpdate',
+          false
+        )
+        while (
+          !checkAborted() &&
+          chargingStation
+            .iterateEvses(true)
+            .some(({ evseStatus }) => this.hasEvseActiveTransactions(evseStatus))
+        ) {
+          // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
+          if (!allowNewSessions) {
+            for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+              if (!this.hasEvseActiveTransactions(evseStatus)) {
+                this.sendEvseStatusNotifications(
+                  chargingStation,
+                  evseId,
+                  OCPP20ConnectorStatusEnumType.Unavailable
+                )
+              }
             }
           }
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
+          )
+          await interruptibleSleep(
+            OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS,
+            abortController.signal
+          )
         }
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
-        )
-        await sleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS)
       }
+      if (checkAborted()) return
+
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        OCPP20FirmwareStatusEnumType.Installing,
+        requestId
+      )
+
+      await interruptibleSleep(OCPP20Constants.RESET_DELAY_MS, abortController.signal)
+      if (checkAborted()) return
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        OCPP20FirmwareStatusEnumType.Installed,
+        requestId
+      )
+
+      // Send SecurityEventNotification after a successful firmware update
+      this.sendSecurityEventNotification(
+        chargingStation,
+        'FirmwareUpdated',
+        `Firmware update completed for requestId ${requestId.toString()}`
+      )
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
+      )
+    } finally {
+      // Guarantee cleanup on every exit path (happy, abort, throw): without
+      // this, a thrown await would leave activeFirmwareUpdateAbortController
+      // set and any subsequent UpdateFirmware.req would abort a non-existent
+      // in-progress update while the station stays stuck.
+      this.clearActiveFirmwareUpdate(chargingStation, requestId)
     }
-    if (checkAborted()) return
-
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Installing,
-      requestId
-    )
-
-    await sleep(OCPP20Constants.RESET_DELAY_MS)
-    if (checkAborted()) return
-    await this.sendFirmwareStatusNotification(
-      chargingStation,
-      OCPP20FirmwareStatusEnumType.Installed,
-      requestId
-    )
-
-    // Send SecurityEventNotification after a successful firmware update
-    this.sendSecurityEventNotification(
-      chargingStation,
-      'FirmwareUpdated',
-      `Firmware update completed for requestId ${requestId.toString()}`
-    )
-
-    this.clearActiveFirmwareUpdate(chargingStation, requestId)
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
-    )
   }
 
   /**
@@ -3885,22 +3976,34 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     requestId: number
   ): Promise<void> {
-    await this.sendLogStatusNotification(
-      chargingStation,
-      UploadLogStatusEnumType.Uploading,
-      requestId
-    )
+    const stationState = this.getOrCreateStationState(chargingStation)
+    const abortController = new AbortController()
+    stationState.activeLogUploadAbortController = abortController
+    stationState.activeLogUploadRequestId = requestId
+    stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploading
+    try {
+      await this.sendLogStatusNotification(
+        chargingStation,
+        UploadLogStatusEnumType.Uploading,
+        requestId
+      )
 
-    await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
-    await this.sendLogStatusNotification(
-      chargingStation,
-      UploadLogStatusEnumType.Uploaded,
-      requestId
-    )
+      await interruptibleSleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS, abortController.signal)
+      if (!abortController.signal.aborted && stationState.activeLogUploadRequestId === requestId) {
+        stationState.activeLogUploadStatus = UploadLogStatusEnumType.Uploaded
+        await this.sendLogStatusNotification(
+          chargingStation,
+          UploadLogStatusEnumType.Uploaded,
+          requestId
+        )
 
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
-    )
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
+        )
+      }
+    } finally {
+      this.clearActiveLogUpload(chargingStation, requestId)
+    }
   }
 
   /**

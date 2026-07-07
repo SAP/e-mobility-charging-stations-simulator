@@ -56,7 +56,7 @@ await describe('OCPPServiceOperations', async () => {
   })
 
   await describe('stopTransactionOnConnector', async () => {
-    await it('should send StopTransaction for OCPP 1.6 stations and return accepted: true', async () => {
+    await it('should send StatusNotification(Finishing) then StopTransaction for OCPP 1.6 stations (matches remote-stop message sequence)', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
         Promise.resolve({ idTagInfo: { status: 'Accepted' } })
@@ -67,10 +67,15 @@ await describe('OCPPServiceOperations', async () => {
 
       assert.strictEqual(result.accepted, true)
       assert.ok(
-        requestHandler.mock.calls.length >= 1,
-        'request handler should have been called at least once'
+        requestHandler.mock.calls.length >= 2,
+        'request handler should have been called at least twice (StatusNotification + StopTransaction)'
       )
-      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'StopTransaction')
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1], 'StatusNotification')
+      assert.strictEqual(
+        (requestHandler.mock.calls[0].arguments[2] as { status: string }).status,
+        'Finishing'
+      )
+      assert.strictEqual(requestHandler.mock.calls[1].arguments[1], 'StopTransaction')
     })
 
     await it('should send TransactionEvent(Ended) for OCPP 2.0 stations and return accepted: true', async () => {
