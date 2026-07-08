@@ -140,6 +140,20 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 const moduleName = 'OCPP16IncomingRequestService'
 
 /**
+ * Per-station lifecycle state carried on {@link OCPP16IncomingRequestService}.
+ *
+ * As of #1963 this interface is intentionally empty. Companion PRs will
+ * populate this interface with their own fields:
+ * - #1971 (GetDiagnostics supersession): `activeDiagnosticsAbortController`,
+ *   `activeDiagnosticsRequestId`;
+ * - #1972 (deferred firmware `setTimeout` cancel): firmware timer handle;
+ * - #1973 (trigger cross-check): `activeDiagnosticsRequestId` (shared with
+ *   #1971), `activeFirmwareUpdateRequestId`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- populated by companion PRs #1971 / #1972 / #1973
+interface OCPP16StationState {}
+
+/**
  * OCPP 1.6 Incoming Request Service - handles and processes all incoming requests
  * from the Central System (CS) to the Charging Station (CP) using OCPP 1.6 protocol.
  *
@@ -173,7 +187,7 @@ const moduleName = 'OCPP16IncomingRequestService'
  * @see {@link handleRequestRemoteStartTransaction} Example request handler
  */
 
-export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
+export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCPP16StationState> {
   protected readonly csmsName = 'Central System'
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
 
@@ -607,11 +621,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Stops the incoming request service for the given charging station.
-   * @param chargingStation - Target charging station
+   * @returns Fresh empty state — companion PRs (#1971 / #1972 / #1973)
+   *   populate fields via declaration merging on {@link OCPP16StationState}.
    */
-  public override stop (chargingStation: ChargingStation): void {
-    /* no-op for OCPP 1.6 */
+  protected override createStationState (): OCPP16StationState {
+    return {}
   }
 
   /**
@@ -625,6 +639,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandName: IncomingRequestCommand
   ): boolean {
     return isIncomingRequestCommandSupported(chargingStation, commandName)
+  }
+
+  /**
+   * Companion PRs (#1971 / #1972 / #1973) will populate this method with
+   * release logic paired with the {@link OCPP16StationState} fields they
+   * add. They MUST follow the abort-before-clear ordering documented on
+   * {@link OCPP20IncomingRequestService.resetStationState}: abort in-flight
+   * signals BEFORE clearing controller references, cancel timers BEFORE
+   * the base template deletes the entry.
+   * @param _stationState - Per-station state (currently empty; unused).
+   */
+  protected override resetStationState (_stationState: OCPP16StationState): void {
+    /* no-op: OCPP 1.6 carries no state fields yet (see companion PRs) */
   }
 
   private composeCompositeSchedule (
