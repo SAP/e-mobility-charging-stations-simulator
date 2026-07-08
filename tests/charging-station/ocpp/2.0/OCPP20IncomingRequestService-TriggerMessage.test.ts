@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
+  OCPP20FirmwareStatusNotificationRequest,
   OCPP20MeterValuesRequest,
   OCPP20StatusNotificationRequest,
   OCPP20TriggerMessageRequest,
@@ -19,6 +20,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   MessageTriggerEnumType,
+  OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
   OCPP20ReadingContextEnumType,
@@ -650,5 +652,143 @@ await describe('F06 - TriggerMessage', async () => {
 
       assert.strictEqual(rejectingMock.mock.callCount(), 1)
     })
+  })
+
+  await describe('F06 - FirmwareStatusNotification trigger last-sent semantics (L01.FR.20/25/26, L02.FR.14/16/17)', async () => {
+    let incomingRequestServiceForListener: OCPP20IncomingRequestService
+    let mockStation: MockChargingStation
+    let requestHandlerMock: ReturnType<typeof mock.fn>
+    let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
+    beforeEach(() => {
+      ;({ mockStation, requestHandlerMock } = createTriggerMessageStation())
+      incomingRequestServiceForListener = new OCPP20IncomingRequestService()
+      testableService = createTestableIncomingRequestService(incomingRequestServiceForListener)
+    })
+
+    /**
+     * Emit TRIGGER_MESSAGE(FirmwareStatusNotification) with an Accepted response and
+     * capture the resulting requestHandler payload.
+     * @returns The captured request handler payload and the options object it was invoked with
+     */
+    function captureTriggeredFirmwareStatusPayload (): {
+      options: RequestParams
+      payload: OCPP20FirmwareStatusNotificationRequest
+    } {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.FirmwareStatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        OCPP20FirmwareStatusNotificationRequest,
+        RequestParams
+      ]
+      const [, command, payload, options] = args
+      assert.strictEqual(command, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION)
+      return { options, payload }
+    }
+
+    /**
+     * Persist a last-sent FirmwareStatusNotification via the real code path, then
+     * reset the mock's call history so subsequent capture assertions see only the
+     * trigger-fired emission.
+     * @param status - The FirmwareStatusNotification status to persist
+     * @param requestId - The requestId to persist
+     */
+    async function seedLastFirmwareStatusNotification (
+      status: OCPP20FirmwareStatusEnumType,
+      requestId: number
+    ): Promise<void> {
+      await testableService.sendFirmwareStatusNotification(mockStation, status, requestId)
+      requestHandlerMock.mock.resetCalls()
+    }
+
+    await it('should emit { requestId, status: DownloadFailed } after DownloadFailed (L01.FR.26)', async () => {
+      await seedLastFirmwareStatusNotification(OCPP20FirmwareStatusEnumType.DownloadFailed, 42)
+
+      const { options, payload } = captureTriggeredFirmwareStatusPayload()
+
+      assert.deepStrictEqual(payload, {
+        requestId: 42,
+        status: OCPP20FirmwareStatusEnumType.DownloadFailed,
+      })
+      assert.strictEqual(options.skipBufferingOnError, true)
+      assert.strictEqual(options.triggerMessage, true)
+    })
+
+    await it('should emit { requestId, status: InvalidSignature } after InvalidSignature (L01.FR.26)', async () => {
+      await seedLastFirmwareStatusNotification(OCPP20FirmwareStatusEnumType.InvalidSignature, 7)
+
+      const { payload } = captureTriggeredFirmwareStatusPayload()
+
+      assert.deepStrictEqual(payload, {
+        requestId: 7,
+        status: OCPP20FirmwareStatusEnumType.InvalidSignature,
+      })
+    })
+
+    await it('should emit { requestId, status: InstallationFailed } after InstallationFailed (L01.FR.26)', async () => {
+      await seedLastFirmwareStatusNotification(OCPP20FirmwareStatusEnumType.InstallationFailed, 99)
+
+      const { payload } = captureTriggeredFirmwareStatusPayload()
+
+      assert.deepStrictEqual(payload, {
+        requestId: 99,
+        status: OCPP20FirmwareStatusEnumType.InstallationFailed,
+      })
+    })
+
+    await it('should emit { status: Idle } after Installed (L01.FR.25 regression)', async () => {
+      await seedLastFirmwareStatusNotification(OCPP20FirmwareStatusEnumType.Installed, 42)
+
+      const { payload } = captureTriggeredFirmwareStatusPayload()
+
+      assert.deepStrictEqual(payload, { status: OCPP20FirmwareStatusEnumType.Idle })
+      assert.strictEqual(payload.requestId, undefined)
+    })
+
+    await it('should emit { status: Idle } on a fresh station (no notification ever sent)', () => {
+      const { payload } = captureTriggeredFirmwareStatusPayload()
+
+      assert.deepStrictEqual(payload, { status: OCPP20FirmwareStatusEnumType.Idle })
+      assert.strictEqual(payload.requestId, undefined)
+    })
+
+    const nonInstalledStatuses: OCPP20FirmwareStatusEnumType[] = [
+      OCPP20FirmwareStatusEnumType.DownloadFailed,
+      OCPP20FirmwareStatusEnumType.DownloadPaused,
+      OCPP20FirmwareStatusEnumType.DownloadScheduled,
+      OCPP20FirmwareStatusEnumType.Downloaded,
+      OCPP20FirmwareStatusEnumType.Downloading,
+      OCPP20FirmwareStatusEnumType.InstallRebooting,
+      OCPP20FirmwareStatusEnumType.InstallScheduled,
+      OCPP20FirmwareStatusEnumType.InstallVerificationFailed,
+      OCPP20FirmwareStatusEnumType.InstallationFailed,
+      OCPP20FirmwareStatusEnumType.Installing,
+      OCPP20FirmwareStatusEnumType.InvalidSignature,
+      OCPP20FirmwareStatusEnumType.SignatureVerified,
+    ]
+    for (const [index, status] of nonInstalledStatuses.entries()) {
+      const requestId = 1000 + index
+      await it(`should echo { requestId: ${requestId.toString()}, status: ${status} } (L01.FR.20 & L01.FR.26)`, async () => {
+        await seedLastFirmwareStatusNotification(status, requestId)
+
+        const { payload } = captureTriggeredFirmwareStatusPayload()
+
+        assert.strictEqual(payload.status, status)
+        assert.strictEqual(payload.requestId, requestId)
+      })
+    }
   })
 })

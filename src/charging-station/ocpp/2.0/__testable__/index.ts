@@ -27,6 +27,8 @@ import type {
   OCPP20DataTransferResponse,
   OCPP20DeleteCertificateRequest,
   OCPP20DeleteCertificateResponse,
+  OCPP20FirmwareStatusEnumType,
+  OCPP20FirmwareStatusNotificationResponse,
   OCPP20GetBaseReportRequest,
   OCPP20GetBaseReportResponse,
   OCPP20GetInstalledCertificateIdsRequest,
@@ -259,6 +261,12 @@ interface TestableOCPP20IncomingRequestService {
     presentedIdToken: OCPP20IdTokenType,
     presentedGroupIdToken?: OCPP20IdTokenType
   ) => boolean
+
+  sendFirmwareStatusNotification: (
+    chargingStation: ChargingStation,
+    status: OCPP20FirmwareStatusEnumType,
+    requestId: number
+  ) => Promise<OCPP20FirmwareStatusNotificationResponse>
 }
 
 /**
@@ -308,6 +316,7 @@ export function createTestableIncomingRequestService (
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
     handleRequestUpdateFirmware: serviceImpl.handleRequestUpdateFirmware.bind(service),
     isAuthorizedToStopTransaction: serviceImpl.isAuthorizedToStopTransaction.bind(service),
+    sendFirmwareStatusNotification: serviceImpl.sendFirmwareStatusNotification.bind(service),
   }
 }
 

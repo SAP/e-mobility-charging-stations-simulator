@@ -262,6 +262,11 @@ const FIRMWARE_STAGE_FAILURE_STATUS = {
   install: OCPP20FirmwareStatusEnumType.InstallationFailed,
 } as const satisfies Record<Exclude<FirmwareStage, 'installed'>, OCPP20FirmwareStatusEnumType>
 
+interface LastFirmwareStatusNotification {
+  requestId: number
+  status: OCPP20FirmwareStatusEnumType
+}
+
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
@@ -270,6 +275,7 @@ interface OCPP20StationState {
   activeLogUploadStatus?: UploadLogStatusEnumType
   certSigningRetryManager?: OCPP20CertSigningRetryManager
   isDrainingSecurityEvents: boolean
+  lastFirmwareStatusNotification?: LastFirmwareStatusNotification
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
   securityEventQueue: QueuedSecurityEvent[]
@@ -574,22 +580,24 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
-            const stationState = this.stationsState.get(chargingStation)
-            const requestId = stationState?.activeFirmwareUpdateRequestId
-            const firmwareStatus =
-              requestId != null && this.hasFirmwareUpdateInProgress(chargingStation)
-                ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
-                : OCPP20FirmwareStatusEnumType.Idle
+            // L01.FR.25 & L02.FR.16 — last-sent = Installed → { status: Idle }.
+            // L01.FR.26 & L02.FR.17 — last-sent ≠ Installed → { requestId, status: <last-sent> }.
+            // L01.FR.20 & L02.FR.14 — requestId mandatory unless status = Idle.
+            // Fresh station (no notification ever sent): Idle (spec-silent precondition,
+            // consistent with FirmwareStatusEnumType.Idle §3.33 "trigger-only" restriction).
+            const lastSent = this.stationsState.get(chargingStation)?.lastFirmwareStatusNotification
+            const payload: OCPP20FirmwareStatusNotificationRequest =
+              lastSent == null || lastSent.status === OCPP20FirmwareStatusEnumType.Installed
+                ? { status: OCPP20FirmwareStatusEnumType.Idle }
+                : { requestId: lastSent.requestId, status: lastSent.status }
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(
-                chargingStation,
-                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                { requestId, status: firmwareStatus },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, payload, {
+                skipBufferingOnError: true,
+                triggerMessage: true,
+              })
               .catch(errorHandler)
             break
           }
@@ -3536,6 +3544,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
     if (chargingStation.stationInfo != null) {
       chargingStation.stationInfo.firmwareStatus = status
+    }
+    // L01.FR.26 & L02.FR.17 last-sent projection: persistent source of truth for the
+    // trigger case, distinct from `stationInfo.firmwareStatus` (state-machine field reset by #1976).
+    this.getOrCreateStationState(chargingStation).lastFirmwareStatusNotification = {
+      requestId,
+      status,
     }
     return chargingStation.ocppRequestService.requestHandler<
       OCPP20FirmwareStatusNotificationRequest,
