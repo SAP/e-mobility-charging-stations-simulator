@@ -255,6 +255,13 @@ const buildRejectedResponse = (
   ...(transactionId != null && { transactionId }),
 })
 
+type FirmwareStage = 'download' | 'install' | 'installed'
+
+const FIRMWARE_STAGE_FAILURE_STATUS = {
+  download: OCPP20FirmwareStatusEnumType.DownloadFailed,
+  install: OCPP20FirmwareStatusEnumType.InstallationFailed,
+} as const satisfies Record<Exclude<FirmwareStage, 'installed'>, OCPP20FirmwareStatusEnumType>
+
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
@@ -3781,6 +3788,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
+    // Lifecycle-stage tracker for the finally-block terminal-status reset
+    // (issue #1969): advances only on actual lifecycle advancement, never on
+    // error/abort branches.
+    //   'download'  → still in the download/verify stage (initial)
+    //   'install'   → Installing notification succeeded, install stage entered
+    //   'installed' → Installed notification succeeded, lifecycle reached success
+    let stage: FirmwareStage = 'download'
+
     try {
       // Delay the download until retrieveDateTime; inform the CSMS via DownloadScheduled first
       const now = Date.now()
@@ -3938,6 +3953,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20FirmwareStatusEnumType.Installing,
         requestId
       )
+      stage = 'install'
 
       await interruptibleSleep(OCPP20Constants.RESET_DELAY_MS, abortController.signal)
       if (checkAborted()) return
@@ -3946,6 +3962,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20FirmwareStatusEnumType.Installed,
         requestId
       )
+      stage = 'installed'
 
       // Send SecurityEventNotification after a successful firmware update
       this.sendSecurityEventNotification(
@@ -3958,6 +3975,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
       )
     } finally {
+      // Reset stationInfo.firmwareStatus to a coherent terminal value when the
+      // lifecycle exits before reaching Installed (issue #1969): otherwise any
+      // consumer that does not cross-check activeFirmwareUpdateRequestId would
+      // observe a stale in-progress value. FirmwareStatusEnumType.Idle is
+      // SHALL-restricted to TriggerMessage-triggered notifications, so as a
+      // persistent local state Idle only fits the pre-install baseline: clean
+      // download-phase abort → Idle; clean install-phase abort → InstallationFailed
+      // (spec-recognized for cancellation per L01.FR.24 Note). No
+      // FirmwareStatusNotification is emitted from finally (L01.FR.24 Note MAY
+      // makes the terminal notification optional; L02.FR.15 omits the clause).
+      // Guards (`successorClaimed`, `isExplicitTerminal`) mirror
+      // `clearActiveFirmwareUpdate`'s requestId-supersession pattern and
+      // preserve any explicit terminal already emitted from inside try.
+      const activeRequestId = this.stationsState.get(chargingStation)?.activeFirmwareUpdateRequestId
+      const successorClaimed = activeRequestId != null && activeRequestId !== requestId
+      const currentStatus = chargingStation.stationInfo?.firmwareStatus
+      const isExplicitTerminal =
+        currentStatus === OCPP20FirmwareStatusEnumType.DownloadFailed ||
+        currentStatus === OCPP20FirmwareStatusEnumType.InstallationFailed ||
+        currentStatus === OCPP20FirmwareStatusEnumType.InvalidSignature
+      if (
+        stage !== 'installed' &&
+        !successorClaimed &&
+        !isExplicitTerminal &&
+        chargingStation.stationInfo != null
+      ) {
+        chargingStation.stationInfo.firmwareStatus =
+          abortController.signal.aborted && stage === 'download'
+            ? OCPP20FirmwareStatusEnumType.Idle
+            : FIRMWARE_STAGE_FAILURE_STATUS[stage]
+      }
       // Guarantee cleanup on every exit path (happy, abort, throw): without
       // this, a thrown await would leave activeFirmwareUpdateAbortController
       // set and any subsequent UpdateFirmware.req would abort a non-existent
