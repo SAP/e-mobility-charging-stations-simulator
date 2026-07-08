@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { GetDiagnosticsRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
@@ -17,6 +18,7 @@ import {
   type OCPP16UpdateFirmwareRequest,
   type OCPP16UpdateFirmwareResponse,
 } from '../../../../src/types/index.js'
+import { Constants, logger } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   standardCleanup,
@@ -266,6 +268,284 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       await flushMicrotasks()
 
       // Assert: test passes if no unhandled rejection was thrown
+    })
+  })
+
+  // #1972: deferred UpdateFirmware timer lifecycle on OCPP16StationState
+  await describe('UPDATE_FIRMWARE deferred timer lifecycle', async () => {
+    interface OCPP16StationStateShape {
+      deferredFirmwareUpdateTimer?: NodeJS.Timeout
+    }
+
+    interface PlumbingAccess {
+      stationsState: WeakMap<ChargingStation, OCPP16StationStateShape>
+    }
+
+    const asPlumbing = (service: OCPP16IncomingRequestService): PlumbingAccess =>
+      service as unknown as PlumbingAccess
+
+    let listenerService: OCPP16IncomingRequestService
+    let updateFirmwareMock: ReturnType<typeof mock.fn>
+
+    beforeEach(() => {
+      listenerService = new OCPP16IncomingRequestService()
+      updateFirmwareMock = mock.method(
+        listenerService as unknown as {
+          updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
+        },
+        'updateFirmwareSimulation',
+        mock.fn(async () => Promise.resolve())
+      )
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should store the deferred timer handle on OCPP16StationState when retrieveDate is in the future', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-store')
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 60_000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          request,
+          response
+        )
+
+        const state = asPlumbing(listenerService).stationsState.get(station)
+        assert.notStrictEqual(state, undefined)
+        assert.notStrictEqual(state?.deferredFirmwareUpdateTimer, undefined)
+      })
+    })
+
+    await it('should cancel the deferred timer on stop() and never fire updateFirmwareSimulation', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-stop')
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 60_000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          request,
+          response
+        )
+
+        const plumbing = asPlumbing(listenerService)
+        assert.strictEqual(plumbing.stationsState.has(station), true)
+
+        listenerService.stop(station)
+        assert.strictEqual(plumbing.stationsState.has(station), false)
+
+        t.mock.timers.tick(120_000)
+        await flushMicrotasks()
+
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 0)
+      })
+    })
+
+    await it('should self-clear the deferred timer handle when the callback fires on schedule', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-self-clear')
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 100),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          request,
+          response
+        )
+
+        const plumbing = asPlumbing(listenerService)
+        assert.notStrictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+
+        t.mock.timers.tick(200)
+        await flushMicrotasks()
+
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 1)
+        assert.strictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+      })
+    })
+
+    await it('should cancel the previous deferred timer when re-scheduled before it fires', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-reschedule')
+      const firstRequest: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 60_000),
+      }
+      const secondRequest: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 30_000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          firstRequest,
+          response
+        )
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          secondRequest,
+          response
+        )
+
+        t.mock.timers.tick(31_000)
+        await flushMicrotasks()
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 1)
+
+        t.mock.timers.tick(60_000)
+        await flushMicrotasks()
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 1)
+      })
+    })
+
+    await it('should isolate deferred timers between stations - stop(A) must not cancel B', async t => {
+      // Arrange
+      const { station: stationA } = createOCPP16ListenerStation('listener-timer-iso-a')
+      const { station: stationB } = createOCPP16ListenerStation('listener-timer-iso-b')
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 60_000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          stationA,
+          request,
+          response
+        )
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          stationB,
+          request,
+          response
+        )
+
+        const plumbing = asPlumbing(listenerService)
+        assert.strictEqual(plumbing.stationsState.has(stationA), true)
+        assert.strictEqual(plumbing.stationsState.has(stationB), true)
+
+        listenerService.stop(stationA)
+        assert.strictEqual(plumbing.stationsState.has(stationA), false)
+        assert.strictEqual(plumbing.stationsState.has(stationB), true)
+        assert.notStrictEqual(
+          plumbing.stationsState.get(stationB)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+
+        t.mock.timers.tick(70_000)
+        await flushMicrotasks()
+
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 1)
+      })
+    })
+
+    await it('should self-clear the deferred timer handle even when updateFirmwareSimulation rejects', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-defer-reject')
+      const rejectingMock = mock.method(
+        listenerService as unknown as {
+          updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
+        },
+        'updateFirmwareSimulation',
+        mock.fn(async () => Promise.reject(new Error('deferred firmware simulation error')))
+      )
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 100),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          request,
+          response
+        )
+
+        t.mock.timers.tick(200)
+        await flushMicrotasks()
+        await flushMicrotasks()
+
+        assert.strictEqual(rejectingMock.mock.callCount(), 1)
+        assert.strictEqual(
+          asPlumbing(listenerService).stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+      })
+    })
+
+    await it('should clamp retrieveDate delay to Node setTimeout 32-bit maximum and warn', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-clamp')
+      const warnSpy = t.mock.method(logger, 'warn')
+      // MAX_SETINTERVAL_DELAY_MS + 1000 ms drift buffer: Date.now() is not
+      // mocked, so a 1 s cushion avoids flake if the listener re-samples
+      // Date.now() a few ms later and delayMs drops to exactly MAX.
+      const request: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + Constants.MAX_SETINTERVAL_DELAY_MS + 1000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          request,
+          response
+        )
+
+        assert.strictEqual(warnSpy.mock.callCount(), 1)
+        const warnMessage = warnSpy.mock.calls[0].arguments[0] as unknown as string
+        assert.match(
+          warnMessage,
+          new RegExp(
+            `exceeds ${Constants.MAX_SETINTERVAL_DELAY_MS.toString()} ms, clamping to ${Constants.MAX_SETINTERVAL_DELAY_MS.toString()} ms`
+          )
+        )
+        assert.notStrictEqual(
+          asPlumbing(listenerService).stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+      })
     })
   })
 })
