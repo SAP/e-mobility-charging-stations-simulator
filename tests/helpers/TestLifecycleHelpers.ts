@@ -30,6 +30,7 @@ import { mock } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { MockChargingStationOptions } from '../charging-station/helpers/StationHelpers.js'
 
+import { OCPP20VariableManager } from '../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { createMockChargingStation } from '../charging-station/helpers/StationHelpers.js'
 import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/MockCaches.js'
 
@@ -346,6 +347,7 @@ export function standardCleanup (): void {
   }
   MockSharedLRUCache.resetInstance()
   MockIdTagsCache.resetInstance()
+  OCPP20VariableManager.getInstance().resetRuntimeOverrides()
 }
 
 /**

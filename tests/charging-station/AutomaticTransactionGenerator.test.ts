@@ -15,13 +15,14 @@
  */
 
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { AutomaticTransactionGenerator } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
-import { type StartTransactionResult } from '../../src/types/index.js'
+import { ChargingStationEvents, type StartTransactionResult } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './helpers/StationHelpers.js'
@@ -126,6 +127,68 @@ function resetATGInstances (): void {
     instances: Map<string, AutomaticTransactionGenerator>
   }
   atgClass.instances.clear()
+}
+
+/**
+ * Overrides the mock station's ATG configuration for a single test with the
+ * given min/max bounds so validateConfiguration can be steered to pass or fail.
+ * @param station - The mock station to reconfigure
+ * @param bounds - Partial ATG bounds; unspecified fields keep valid defaults
+ */
+function setATGBounds (
+  station: ChargingStation,
+  bounds: Partial<{
+    maxDelayBetweenTwoTransactions: number
+    maxDuration: number
+    minDelayBetweenTwoTransactions: number
+    minDuration: number
+  }>
+): void {
+  const stationExt = station as unknown as {
+    getAutomaticTransactionGeneratorConfiguration: () => Record<string, unknown>
+  }
+  stationExt.getAutomaticTransactionGeneratorConfiguration = () => ({
+    ...Constants.DEFAULT_ATG_CONFIGURATION,
+    enable: true,
+    idTagDistribution: 'random',
+    requireAuthorize: false,
+    stopAfterHours: 1,
+    ...bounds,
+  })
+}
+
+/**
+ * Wires a real Node.js EventEmitter onto the mock station's on/off/emit/
+ * emitChargingStationEvent/listenerCount methods so tests can exercise the
+ * ATG constructor's ChargingStationEvents.updated subscription (issue #1965).
+ * The shared mock defaults these to no-ops; overriding here keeps the blast
+ * radius local to this test file.
+ *
+ * **Must be called before `getDefinedATG`** (and therefore before any
+ * `AutomaticTransactionGenerator.getInstance` call for this station) so that
+ * the ATG constructor's `station.on(...)` call binds to the real emitter.
+ * Calling this after ATG construction silently leaves the listener on the
+ * no-op stub and the cache-invalidation assertions will fail.
+ * @param station - The mock station to wire
+ * @returns The underlying EventEmitter for test assertions
+ */
+function wireEventEmitter (station: ChargingStation): EventEmitter {
+  const emitter = new EventEmitter()
+  const stationExt = station as unknown as {
+    emit: EventEmitter['emit']
+    emitChargingStationEvent: (event: string, ...args: unknown[]) => void
+    listenerCount: EventEmitter['listenerCount']
+    off: EventEmitter['off']
+    on: EventEmitter['on']
+  }
+  stationExt.on = emitter.on.bind(emitter)
+  stationExt.off = emitter.off.bind(emitter)
+  stationExt.emit = emitter.emit.bind(emitter)
+  stationExt.listenerCount = emitter.listenerCount.bind(emitter)
+  stationExt.emitChargingStationEvent = (event, ...args): void => {
+    emitter.emit(event, ...args)
+  }
+  return emitter
 }
 
 await describe('AutomaticTransactionGenerator', async () => {
@@ -265,6 +328,123 @@ await describe('AutomaticTransactionGenerator', async () => {
       assert.strictEqual(connectorStatus.startTransactionRequests, 1)
       assert.strictEqual(connectorStatus.acceptedStartTransactionRequests, 0)
       assert.strictEqual(connectorStatus.rejectedStartTransactionRequests, 1)
+    })
+  })
+
+  await describe('configurationValidationResult cache invalidation (issue #1965)', async () => {
+    /**
+     * @param atg - ATG instance
+     * @returns validation result via the private method
+     */
+    function validateConfiguration (atg: AutomaticTransactionGenerator): boolean {
+      return (atg as unknown as { validateConfiguration: () => boolean }).validateConfiguration()
+    }
+
+    /**
+     * @param atg - ATG instance
+     * @returns the current memoized cache value
+     */
+    function readCache (atg: AutomaticTransactionGenerator): boolean | undefined {
+      return (atg as unknown as { configurationValidationResult: boolean | undefined })
+        .configurationValidationResult
+    }
+
+    await it('should invalidate the cache on ChargingStationEvents.updated', () => {
+      const station = createStationForATG()
+      const emitter = wireEventEmitter(station)
+      const atg = getDefinedATG(station)
+      setATGBounds(station, {
+        maxDelayBetweenTwoTransactions: 5,
+        minDelayBetweenTwoTransactions: 100,
+      })
+
+      assert.strictEqual(validateConfiguration(atg), false)
+      assert.strictEqual(readCache(atg), false)
+
+      setATGBounds(station, {})
+      emitter.emit(ChargingStationEvents.updated)
+
+      assert.strictEqual(readCache(atg), undefined)
+      assert.strictEqual(validateConfiguration(atg), true)
+      assert.strictEqual(readCache(atg), true)
+    })
+
+    await it('should recover startConnector after ChargingStationEvents.updated invalidates a cached-false decision', () => {
+      const station = createStationForATG()
+      const emitter = wireEventEmitter(station)
+      const atg = getDefinedATG(station)
+      mockInternalStartConnector(atg)
+      setATGBounds(station, {
+        maxDelayBetweenTwoTransactions: 5,
+        minDelayBetweenTwoTransactions: 100,
+      })
+
+      atg.startConnector(1)
+      assert.strictEqual(readCache(atg), false)
+
+      setATGBounds(station, {})
+      emitter.emit(ChargingStationEvents.updated)
+
+      atg.startConnector(1)
+      assert.strictEqual(readCache(atg), true)
+    })
+
+    await it('should still clear the cache on stop() (redundant with event-driven invalidation)', () => {
+      const station = createStationForATG()
+      wireEventEmitter(station)
+      const atg = getDefinedATG(station)
+      mockInternalStartConnector(atg)
+      setATGBounds(station, {})
+      atg.start()
+
+      assert.strictEqual(readCache(atg), true)
+
+      atg.stop()
+
+      assert.strictEqual(readCache(atg), undefined)
+    })
+
+    await it('should be idempotent under sequential updated events', () => {
+      const station = createStationForATG()
+      const emitter = wireEventEmitter(station)
+      const atg = getDefinedATG(station)
+      setATGBounds(station, {})
+
+      assert.strictEqual(validateConfiguration(atg), true)
+
+      assert.doesNotThrow(() => {
+        emitter.emit(ChargingStationEvents.updated)
+        emitter.emit(ChargingStationEvents.updated)
+      })
+
+      assert.strictEqual(readCache(atg), undefined)
+      assert.strictEqual(validateConfiguration(atg), true)
+    })
+
+    await it('should not leak listeners across deleteInstance/getInstance cycles', () => {
+      const station = createStationForATG()
+      const emitter = wireEventEmitter(station)
+
+      const atg1 = getDefinedATG(station)
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 1)
+
+      AutomaticTransactionGenerator.deleteInstance(station)
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 0)
+
+      const atg2 = getDefinedATG(station)
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 1)
+      assert.notStrictEqual(atg1, atg2)
+
+      for (let i = 0; i < 5; i++) {
+        AutomaticTransactionGenerator.deleteInstance(station)
+        getDefinedATG(station)
+      }
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 1)
+
+      AutomaticTransactionGenerator.deleteInstance(station)
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 0)
+      assert.strictEqual(AutomaticTransactionGenerator.deleteInstance(station), false)
+      assert.strictEqual(emitter.listenerCount(ChargingStationEvents.updated), 0)
     })
   })
 })

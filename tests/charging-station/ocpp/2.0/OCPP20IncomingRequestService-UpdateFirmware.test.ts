@@ -885,5 +885,437 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         })
       })
     })
+
+    await describe('stationInfo.firmwareStatus reset on exit (issue #1969)', async () => {
+      await it('should reset stationInfo.firmwareStatus to Idle on clean abort mid-download (L01.FR.24)', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const testable = createTestableIncomingRequestService(service)
+
+        const firstRequest: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/v1.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 200,
+        }
+        const firstResponse: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            firstRequest,
+            firstResponse
+          )
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          const secondRequest: OCPP20UpdateFirmwareRequest = {
+            firmware: {
+              location: 'https://firmware.example.com/v2.bin',
+              retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            },
+            requestId: 201,
+          }
+          const secondResponse = testable.handleRequestUpdateFirmware(
+            trackingStation,
+            secondRequest
+          )
+          assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.AcceptedCanceled)
+          await flushMicrotasks()
+
+          assert.strictEqual(
+            trackingStation.stationInfo.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Idle
+          )
+        })
+      })
+
+      await it('should reset stationInfo.firmwareStatus to InstallationFailed on clean abort mid-install (Idle TriggerMessage-only; L01.FR.24 MAY)', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const testable = createTestableIncomingRequestService(service)
+
+        const firstRequest: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/v1.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 210,
+        }
+        const firstResponse: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            firstRequest,
+            firstResponse
+          )
+          await flushMicrotasks()
+          // Downloading emitted; advance past FIRMWARE_STATUS_DELAY_MS to reach Installing
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 3)
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.Installing
+          )
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Installing
+          )
+
+          const secondRequest: OCPP20UpdateFirmwareRequest = {
+            firmware: {
+              location: 'https://firmware.example.com/v2.bin',
+              retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            },
+            requestId: 211,
+          }
+          const secondResponse = testable.handleRequestUpdateFirmware(
+            trackingStation,
+            secondRequest
+          )
+          assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.AcceptedCanceled)
+          await flushMicrotasks()
+
+          assert.strictEqual(
+            trackingStation.stationInfo.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.InstallationFailed
+          )
+        })
+      })
+
+      await it('should reset stationInfo.firmwareStatus to DownloadFailed on exception during download', async t => {
+        const {
+          requestHandlerMock,
+          sentRequests,
+          station: trackingStation,
+        } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+
+        // Reject on the 2nd FirmwareStatusNotification (Downloaded) to force a throw in the download stage
+        requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
+          const payload = args[2] as { requestId?: number; status?: OCPP20FirmwareStatusEnumType }
+          sentRequests.push({
+            command: args[1] as OCPP20RequestCommand,
+            payload,
+          })
+          if (payload.status === OCPP20FirmwareStatusEnumType.Downloaded) {
+            return Promise.reject(new Error('simulated download failure'))
+          }
+          return Promise.resolve({})
+        })
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 220,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+          await flushMicrotasks()
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.DownloadFailed
+          )
+        })
+      })
+
+      await it('should reset stationInfo.firmwareStatus to InstallationFailed on exception during install', async t => {
+        const {
+          requestHandlerMock,
+          sentRequests,
+          station: trackingStation,
+        } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+
+        // Reject on the Installed FirmwareStatusNotification: Installing already succeeded so stage='install'
+        requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
+          const payload = args[2] as { requestId?: number; status?: OCPP20FirmwareStatusEnumType }
+          sentRequests.push({
+            command: args[1] as OCPP20RequestCommand,
+            payload,
+          })
+          if (payload.status === OCPP20FirmwareStatusEnumType.Installed) {
+            return Promise.reject(new Error('simulated install failure'))
+          }
+          return Promise.resolve({})
+        })
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 230,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+          await flushMicrotasks()
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.Installing
+          )
+          t.mock.timers.tick(1000)
+          await flushMicrotasks()
+
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.InstallationFailed
+          )
+        })
+      })
+
+      await it('should leave stationInfo.firmwareStatus as Installed on happy-path completion', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 240,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+          await flushMicrotasks()
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          t.mock.timers.tick(1000)
+          await flushMicrotasks()
+
+          assert.strictEqual(sentRequests[3].payload.status, OCPP20FirmwareStatusEnumType.Installed)
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Installed
+          )
+        })
+      })
+
+      await it('should NOT clobber a successor lifecycle firmwareStatus (supersession-with-emit race)', async t => {
+        // Locks the finally-block requestId-guard invariant: when T1 wakes up
+        // after a superseder T2 has claimed activeFirmwareUpdateRequestId,
+        // T1's finally must NOT overwrite T2's status. Mirrors the production
+        // path where the constructor's UPDATE_FIRMWARE listener launches T2
+        // on the AcceptedCanceled branch.
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const testable = createTestableIncomingRequestService(service)
+
+        const firstRequest: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/v1.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 250,
+        }
+        const firstResponse: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            firstRequest,
+            firstResponse
+          )
+          await flushMicrotasks()
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          const secondRequest: OCPP20UpdateFirmwareRequest = {
+            firmware: {
+              location: 'https://firmware.example.com/v2.bin',
+              retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            },
+            requestId: 251,
+          }
+          // Production sequence: handleRequestUpdateFirmware aborts T1 + returns
+          // AcceptedCanceled, then the base class emits UPDATE_FIRMWARE which
+          // launches T2's lifecycle. Replicate the emit here.
+          const secondResponse = testable.handleRequestUpdateFirmware(
+            trackingStation,
+            secondRequest
+          )
+          assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.AcceptedCanceled)
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            secondRequest,
+            secondResponse
+          )
+          await flushMicrotasks()
+
+          // T2 wrote firmwareStatus='Downloading' synchronously at its start.
+          // T1's finally saw activeFirmwareUpdateRequestId === 251 !== 250 and
+          // skipped its reset. Without the guard, T1 would have written Idle.
+          assert.notStrictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Idle
+          )
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+        })
+      })
+
+      await it('should preserve InvalidSignature when signature verification fails (no clobber in finally)', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'true',
+            component: { name: OCPP20ComponentName.FirmwareCtrlr },
+            variable: { name: 'SimulateSignatureVerificationFailure' },
+          },
+        ])
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            signature: 'dGVzdA==',
+          },
+          requestId: 260,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+          await flushMicrotasks()
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          t.mock.timers.tick(500)
+          await flushMicrotasks()
+
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.InvalidSignature
+          )
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.InvalidSignature
+          )
+        })
+      })
+
+      await it('should preserve DownloadFailed after retries-exhausted exit (L01.FR.30 idempotence)', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'not-a-valid-url',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 270,
+          retries: 1,
+          retryInterval: 2,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+          await flushMicrotasks()
+          // Initial Downloading delay + retry interval + retry Downloading + retry delay
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+
+          const lastFirmwareNotification = sentRequests
+            .filter(req => req.command === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION)
+            .at(-1)
+          assert.strictEqual(
+            lastFirmwareNotification?.payload.status,
+            OCPP20FirmwareStatusEnumType.DownloadFailed
+          )
+          assert.strictEqual(
+            trackingStation.stationInfo?.firmwareStatus,
+            OCPP20FirmwareStatusEnumType.DownloadFailed
+          )
+        })
+      })
+    })
   })
 })
