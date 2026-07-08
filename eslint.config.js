@@ -151,6 +151,32 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.ts', 'tests/**/*.ts'],
+    ignores: ['src/charging-station/ocpp/OCPPIncomingRequestService.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          message:
+            'Direct mutation of `stationsState` from outside `OCPPIncomingRequestService` is forbidden. Use `getOrCreateStationState` for lazy-init and the base `stop()` template for eviction. See the INVARIANT JSDoc on `OCPPIncomingRequestService.stationsState`.',
+          selector:
+            'MemberExpression[object.type="MemberExpression"][object.property.name="stationsState"][property.name=/^(?:set|delete|clear)$/]',
+        },
+        {
+          message:
+            'Aliasing `stationsState` to a local binding is forbidden — the alias bypasses the INVARIANT enforcement. Use `getOrCreateStationState(...)` / `.stationsState.get(...)` / `.stationsState.has(...)` inline.',
+          selector:
+            'VariableDeclarator[init.type="MemberExpression"][init.property.name="stationsState"]',
+        },
+        {
+          message:
+            'Destructuring `stationsState` is forbidden — the destructured reference bypasses the INVARIANT enforcement. Use inline `.stationsState.get(...)` / `.has(...)` instead.',
+          selector: 'ObjectPattern > Property[key.name="stationsState"]',
+        },
+      ],
+    },
+  },
+  {
     files: ['tests/utils/Utils.test.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-member-access': 'off',
