@@ -62,12 +62,26 @@ export class AutomaticTransactionGenerator {
     this.connectorAbortControllers = new Map<number, AbortController>()
     this.configurationValidationResult = undefined
     this.initializeConnectorsStatus()
+    // Event-driven cache invalidation via ChargingStationEvents.updated —
+    // ATG must track any in-flight config change (e.g. the templateFileWatcher
+    // reload path in ChargingStation.start()) between successive
+    // validateConfiguration retries (issue #1965). The clear is O(1); the
+    // next call re-parses four numeric bounds. stop() still clears the
+    // cache as a safety net.
+    this.chargingStation.on(ChargingStationEvents.updated, this.onUpdated)
   }
 
   public static deleteInstance (chargingStation: ChargingStation): boolean {
     const hashId = chargingStation.stationInfo?.hashId
     if (hashId == null) {
       return false
+    }
+    const instance = AutomaticTransactionGenerator.instances.get(hashId)
+    if (instance != null) {
+      // Symmetric cleanup: constructor subscribed, deleteInstance unsubscribes
+      // so the retired instance is not retained by the charging station's
+      // listener array across a getInstance/deleteInstance churn cycle.
+      instance.chargingStation.off(ChargingStationEvents.updated, instance.onUpdated)
     }
     return AutomaticTransactionGenerator.instances.delete(hashId)
   }
@@ -413,6 +427,10 @@ export class AutomaticTransactionGenerator {
         connectorId != null ? ` on connector #${connectorId.toString()}` : ''
       }:`
     )
+  }
+
+  private readonly onUpdated = (): void => {
+    this.configurationValidationResult = undefined
   }
 
   private setStartConnectorStatus (

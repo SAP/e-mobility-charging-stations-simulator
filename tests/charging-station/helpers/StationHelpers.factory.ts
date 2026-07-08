@@ -479,6 +479,8 @@ export function createMockChargingStation (
       ...ocppRequestService,
     },
 
+    off: () => station,
+
     on: () => station,
 
     once: () => station,
