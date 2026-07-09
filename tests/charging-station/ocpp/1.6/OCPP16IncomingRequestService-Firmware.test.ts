@@ -356,6 +356,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
   await describe('UPDATE_FIRMWARE deferred timer lifecycle', async () => {
     interface OCPP16StationStateShape {
       deferredFirmwareUpdateTimer?: NodeJS.Timeout
+      stopped?: boolean
     }
 
     interface PlumbingAccess {
@@ -429,7 +430,12 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
         assert.strictEqual(plumbing.stationsState.has(station), true)
 
         listenerService.stop(station)
-        assert.strictEqual(plumbing.stationsState.has(station), false)
+        assert.strictEqual(plumbing.stationsState.has(station), true)
+        assert.strictEqual(plumbing.stationsState.get(station)?.stopped, true)
+        assert.strictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
 
         t.mock.timers.tick(120_000)
         await flushMicrotasks()
@@ -541,7 +547,12 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
         assert.strictEqual(plumbing.stationsState.has(stationB), true)
 
         listenerService.stop(stationA)
-        assert.strictEqual(plumbing.stationsState.has(stationA), false)
+        assert.strictEqual(plumbing.stationsState.has(stationA), true)
+        assert.strictEqual(plumbing.stationsState.get(stationA)?.stopped, true)
+        assert.strictEqual(
+          plumbing.stationsState.get(stationA)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
         assert.strictEqual(plumbing.stationsState.has(stationB), true)
         assert.notStrictEqual(
           plumbing.stationsState.get(stationB)?.deferredFirmwareUpdateTimer,

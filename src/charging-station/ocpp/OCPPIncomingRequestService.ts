@@ -19,31 +19,36 @@ import { type Ajv, createAjv, validatePayload } from './OCPPServiceUtils.js'
  *
  * Provides shared plumbing for per-station lifecycle state:
  * - a protected {@link WeakMap} keyed by {@link ChargingStation};
- * - a lazy-init getter (`getOrCreateStationState`);
- * - a concrete `stop()` template that resets and drops the entry.
+ * - a lazy-init getter (`getOrCreateStationState`) that returns the
+ *   sealed stopped state instead of resurrecting a fresh entry after
+ *   {@link stop};
+ * - a concrete `stop()` template that resets and marks the entry
+ *   `stopped: true`, preserving the WeakMap entry so late dispatch
+ *   observes the marker and drops.
  *
  * Subclass contract:
  * - `createStationState` — factory returning the initial state object.
  * - `resetStationState` — releases any resources held by the state
  *   (abort controllers, timer handles, retry managers).
  *
- * The `stop()` template owns the ordering invariant (reset before delete)
+ * The `stop()` template owns the ordering invariant (reset before mark)
  * and the "only-if-present" guard. Subclasses that need additional
  * lifecycle cleanup should override `stop()` and call `super.stop()`
  * first; override `resetStationState` (not `stop()`) for state-field
  * reset logic.
  * @template TStationState - Concrete per-station state shape.
- * The default `object` bound is load-bearing: it allows the bare
+ * The default `{ stopped?: boolean }` bound is load-bearing: the bare
  * `OCPPIncomingRequestService` reference in the static singleton
- * registry ({@link OCPPIncomingRequestService.instances}) and in the
- * `getInstance<T extends OCPPIncomingRequestService>` constraint to
- * resolve to `OCPPIncomingRequestService<object>`. Removing the default
- * would break both declarations with `TS2314` (generic type requires
- * type arguments). The bound also matches the `WeakMap` value-type
- * requirement (values must be non-primitive).
+ * registry ({@link OCPPIncomingRequestService.instances}) and the
+ * `getInstance<T extends OCPPIncomingRequestService>` constraint
+ * resolve to `OCPPIncomingRequestService<{ stopped?: boolean }>`;
+ * removing the default breaks both with `TS2314`. The bound also
+ * matches the `WeakMap` value-type requirement (values must be
+ * non-primitive) and carries the marker field consumed by {@link stop}
+ * and {@link getOrCreateStationState}.
  */
 export abstract class OCPPIncomingRequestService<
-  TStationState extends object = object
+  TStationState extends { stopped?: boolean } = { stopped?: boolean }
 > extends EventEmitter {
   private static readonly instances = new Map<
     new () => OCPPIncomingRequestService,
@@ -188,24 +193,33 @@ export abstract class OCPPIncomingRequestService<
    * Stops the incoming-request service for the given charging station.
    *
    * Template method: subclasses SHOULD NOT override the template steps
-   * (WeakMap lookup, reset, delete) — override {@link resetStationState}
-   * for field-level cleanup. Subclasses MAY override to add
-   * lifecycle-scoped side effects (e.g. clearing external caches keyed
-   * on the station); such overrides MUST call `super.stop()` first so
-   * the reset-then-delete ordering is preserved.
+   * (WeakMap lookup, reset, mark stopped) — override
+   * {@link resetStationState} for field-level cleanup. Subclasses MAY
+   * override to add lifecycle-scoped side effects (e.g. clearing
+   * external caches keyed on the station); such overrides MUST call
+   * `super.stop()` first so the reset-then-mark ordering is preserved.
    *
-   * Exception behavior: if {@link resetStationState} throws, `WeakMap`
-   * eviction is skipped and a subsequent `stop()` re-invokes the hook
-   * on the same state. Any subclass extension after `super.stop()` is
-   * also skipped, as the throw propagates. Matches pre-refactor
-   * semantics exactly.
+   * The WeakMap entry is NOT deleted — it is marked `stopped: true`
+   * after {@link resetStationState} releases its resources.
+   * Deletion would re-enable resurrection via
+   * {@link getOrCreateStationState} lazy-init on any late handler
+   * dispatch. Keeping the sealed entry lets
+   * {@link getOrCreateStationState} return the sealed state and
+   * `stationsState.get(cs)` null-guarded callers observe the marker
+   * and drop. The WeakMap entry is naturally collected when the
+   * {@link ChargingStation} reference is dropped.
+   *
+   * Exception behavior: if {@link resetStationState} throws, the
+   * `stopped` mark is NOT set and a subsequent `stop()` re-invokes the
+   * hook on the same state. Any subclass extension after `super.stop()`
+   * is also skipped, as the throw propagates.
    * @param chargingStation - Target charging station.
    */
   public stop (chargingStation: ChargingStation): void {
     const stationState = this.stationsState.get(chargingStation)
     if (stationState != null) {
       this.resetStationState(stationState)
-      this.stationsState.delete(chargingStation)
+      stationState.stopped = true
     }
   }
 
@@ -219,12 +233,30 @@ export abstract class OCPPIncomingRequestService<
   /**
    * Returns the state entry for `chargingStation`, creating one on first
    * access via {@link createStationState}. Subsequent calls return the
-   * same reference until {@link stop} evicts the entry.
+   * same reference for the station's active lifecycle.
+   *
+   * Once {@link stop} has marked the entry `stopped: true`,
+   * this method returns the sealed stopped state instead of
+   * lazy-init'ing a fresh entry. `.stopped` is written only from
+   * {@link stop}, so the guard is unreachable on the pre-stop happy
+   * path. Callers that need "silent-drop on stop" semantics MUST NOT
+   * rely on this guard alone — they use `stationsState.get(cs)` with
+   * an inline `stopped === true` null-guard and return early, because
+   * writes performed through this getter still land on the sealed
+   * object (harmless but wasteful).
    * @param chargingStation - Target charging station.
-   * @returns The lazily-initialized per-station state.
+   * @returns The lazily-initialized per-station state, or the sealed
+   *   stopped state after {@link stop}.
+   * @see OCPP20IncomingRequestService.sendNotifyReportRequest for the
+   *   consume-only null-guard pattern.
+   * @see OCPP20IncomingRequestService.sendSecurityEventNotification for
+   *   the lifecycle-entry pattern where creation is required.
    */
   protected getOrCreateStationState (chargingStation: ChargingStation): TStationState {
     let state = this.stationsState.get(chargingStation)
+    if (state?.stopped === true) {
+      return state
+    }
     if (state == null) {
       state = this.createStationState()
       this.stationsState.set(chargingStation, state)
@@ -246,12 +278,12 @@ export abstract class OCPPIncomingRequestService<
   /**
    * Hook method paired with the {@link stop} template: releases
    * resources held by the per-station state (abort controllers, timer
-   * handles, retry managers, etc.) prior to eviction from
-   * {@link stationsState}.
+   * handles, retry managers, etc.) prior to the template marking the
+   * entry `stopped: true` in {@link stationsState}.
    *
-   * Implementations MAY throw; on throw the base template skips
-   * `WeakMap` eviction and a subsequent `stop()` re-invokes this hook
-   * on the same partially-reset state. Implementations MUST therefore
+   * Implementations MAY throw; on throw the base template skips the
+   * `stopped` mark and a subsequent `stop()` re-invokes this hook on
+   * the same partially-reset state. Implementations MUST therefore
    * tolerate re-entry on a partially-reset state (idempotent field
    * clears + optional-chained aborts satisfy this). See {@link stop}
    * for the full exception-behavior contract.

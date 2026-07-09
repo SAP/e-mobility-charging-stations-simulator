@@ -171,7 +171,7 @@ interface OCPP16StationState {
    *    carry a `requestId`, so the temporal position tells the CSMS
    *    which upload it belonged to).
    * 2. {@link OCPP16IncomingRequestService.resetStationState} on
-   *    `stop()`, following the cancel-before-delete ordering documented
+   *    `stop()`, following the cancel-before-mark ordering documented
    *    on {@link OCPP20IncomingRequestService.resetStationState}.
    */
   activeDiagnosticsAbortController?: AbortController
@@ -226,6 +226,12 @@ interface OCPP16StationState {
    *    invocation before the first completes.
    */
   firmwareUpdateInProgress?: boolean
+  /**
+   * `true` after {@link OCPPIncomingRequestService.stop} has released
+   * per-station resources via {@link resetStationState}. Never
+   * set from OCPP 1.6 code directly.
+   */
+  stopped?: boolean
 }
 
 /**
@@ -745,15 +751,17 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
 
   /**
    * Release resources held by the per-station state. Called by the
-   * inherited `stop()` template BEFORE the base deletes the WeakMap
-   * entry. Follow the cancel-before-delete ordering documented on
+   * inherited `stop()` template BEFORE the base marks the WeakMap
+   * entry `stopped: true`. Follow the abort-before-clear /
+   * cancel-before-mark ordering documented on
    * {@link OCPP20IncomingRequestService.resetStationState}: abort
    * in-flight signals and cancel timers BEFORE the base template
-   * deletes the state entry. The AbortController reference itself
-   * is left in place — WeakMap eviction reclaims the state object,
-   * and any still-unwinding handler's identity-guarded `finally`
+   * marks the entry `stopped: true`. The AbortController reference
+   * itself is left in place — the sealed stopped state persists in
+   * the WeakMap until GC reclaims the ChargingStation, and any
+   * still-unwinding handler's identity-guarded `finally`
    * (see {@link OCPP16StationState.activeDiagnosticsAbortController})
-   * clears the fields on the now-orphaned object without racing a
+   * clears the fields on the sealed object without racing a
    * successor.
    * @param stationState - Per-station state to release.
    */

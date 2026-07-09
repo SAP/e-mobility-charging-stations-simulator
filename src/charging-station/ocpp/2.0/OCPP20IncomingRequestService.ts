@@ -279,6 +279,20 @@ interface OCPP20StationState {
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
   securityEventQueue: QueuedSecurityEvent[]
+  /**
+   * `setTimeout` handle for the pending {@link sendQueuedSecurityEvents}
+   * retry. Stored so {@link resetStationState} can cancel it before the
+   * base template marks the entry `stopped: true`. Released by
+   * {@link cancelSecurityEventRetryTimer} on stop, re-schedule, or
+   * self-clear when the callback fires.
+   */
+  securityEventRetryTimer?: NodeJS.Timeout
+  /**
+   * `true` after {@link OCPPIncomingRequestService.stop} has released
+   * per-station resources via {@link resetStationState}. Never set from
+   * OCPP 2.0.1 code directly.
+   */
+  stopped?: boolean
 }
 
 interface QueuedSecurityEvent {
@@ -666,12 +680,26 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     )
   }
 
+  /**
+   * Returns the cert-signing retry manager for the given station,
+   * lazily creating it on first access.
+   * @param chargingStation - Target charging station.
+   * @returns The retry manager, or `undefined` when the station has
+   *   been stopped so callers must optional-chain the result.
+   */
   public getCertSigningRetryManager (
     chargingStation: ChargingStation
-  ): OCPP20CertSigningRetryManager {
-    const state = this.getOrCreateStationState(chargingStation)
-    state.certSigningRetryManager ??= new OCPP20CertSigningRetryManager(chargingStation)
-    return state.certSigningRetryManager
+  ): OCPP20CertSigningRetryManager | undefined {
+    // Return undefined when the state is sealed stopped: a
+    // fresh manager would schedule a non-`.unref()`'d retry
+    // `setTimeout` holding the ChargingStation reference. Callers
+    // must optional-chain the return.
+    const stationState = this.getOrCreateStationState(chargingStation)
+    if (stationState.stopped === true) {
+      return undefined
+    }
+    stationState.certSigningRetryManager ??= new OCPP20CertSigningRetryManager(chargingStation)
+    return stationState.certSigningRetryManager
   }
 
   /**
@@ -1072,20 +1100,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   /**
-   * Reset per-station lifecycle state prior to WeakMap eviction.
+   * Reset per-station lifecycle state prior to the base template
+   * marking the entry `stopped: true`.
    *
    * ORDERING INVARIANT (preserved bit-for-bit from the pre-refactor
    * `stop()` body): abort in-flight signals BEFORE clearing the fields
    * that hold their controllers (otherwise the subsequent `?.abort()`
    * short-circuits on the nulled field and the in-flight operation is
-   * never signaled to cancel), and cancel the retry timer BEFORE the
-   * base template deletes the state entry.
+   * never signaled to cancel), and cancel the retry timers BEFORE the
+   * base template marks the entry `stopped: true`.
    * @param stationState - Per-station state to reset.
    */
   protected override resetStationState (stationState: OCPP20StationState): void {
     stationState.activeFirmwareUpdateAbortController?.abort()
     stationState.activeLogUploadAbortController?.abort()
     stationState.certSigningRetryManager?.cancelRetryTimer()
+    this.cancelSecurityEventRetryTimer(stationState)
     this.resetActiveFirmwareUpdateState(stationState)
     this.resetActiveLogUploadState(stationState)
   }
@@ -1375,6 +1405,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
 
     return reportData
+  }
+
+  /**
+   * Cancels a pending {@link sendQueuedSecurityEvents} retry
+   * `setTimeout` and clears the stored handle. No-op when no retry is
+   * pending.
+   * @param stationState - Per-station state carrying the retry handle.
+   */
+  private cancelSecurityEventRetryTimer (stationState: OCPP20StationState): void {
+    if (stationState.securityEventRetryTimer != null) {
+      clearTimeout(stationState.securityEventRetryTimer)
+      delete stationState.securityEventRetryTimer
+    }
   }
 
   private clearActiveFirmwareUpdate (chargingStation: ChargingStation, requestId: number): void {
@@ -1760,8 +1803,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain stored successfully`
       )
-      // A02.FR.20: Cancel retry timer when CertificateSignedRequest is received and accepted
-      this.getCertSigningRetryManager(chargingStation).cancelRetryTimer()
+      // A02.FR.20: Cancel retry timer when CertificateSignedRequest is received and accepted.
+      // Optional-chain: `getCertSigningRetryManager` returns undefined
+      // when the station has been stopped.
+      this.getCertSigningRetryManager(chargingStation)?.cancelRetryTimer()
       return {
         status: GenericStatus.Accepted,
       }
@@ -3665,8 +3710,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     request: OCPP20GetBaseReportRequest,
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
+    // Silent-drop late `.on(GET_BASE_REPORT).catch(...)` dispatch when
+    // no state entry exists or the entry is sealed stopped.
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null || stationState.stopped === true) {
+      return
+    }
     const { reportBase, requestId } = request
-    const stationState = this.getOrCreateStationState(chargingStation)
     const cached = stationState.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
@@ -3710,7 +3760,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   private sendQueuedSecurityEvents (chargingStation: ChargingStation): void {
-    const stationState = this.getOrCreateStationState(chargingStation)
+    // Silent-drop when no state entry exists or the entry is sealed
+    // stopped: covers a fired-before-cancel race on the unref'd retry
+    // setTimeout scheduled below.
+    const stationState = this.stationsState.get(chargingStation)
+    if (stationState == null || stationState.stopped === true) {
+      return
+    }
     if (
       stationState.isDrainingSecurityEvents ||
       !chargingStation.isWebSocketConnectionOpened() ||
@@ -3724,7 +3780,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       `${chargingStation.logPrefix()} ${moduleName}.sendQueuedSecurityEvents: Draining ${queue.length.toString()} queued security event(s)`
     )
     const drainNextEvent = (): void => {
-      if (!isNotEmptyArray(queue) || !chargingStation.isWebSocketConnectionOpened()) {
+      if (
+        stationState.stopped === true ||
+        !isNotEmptyArray(queue) ||
+        !chargingStation.isWebSocketConnectionOpened()
+      ) {
         stationState.isDrainingSecurityEvents = false
         return
       }
@@ -3747,6 +3807,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           return undefined
         })
         .catch((error: unknown) => {
+          if (stationState.stopped === true) {
+            return
+          }
           const retryCount = (event.retryCount ?? 0) + 1
           if (retryCount >= OCPP20Constants.MAX_SECURITY_EVENT_SEND_ATTEMPTS) {
             logger.warn(
@@ -3762,8 +3825,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           )
           queue.unshift({ ...event, retryCount })
           stationState.isDrainingSecurityEvents = false
-          // Unref: fire-and-forget retry must not block node.js exit.
-          setTimeout(() => {
+          // Store the retry handle on `stationState` so
+          // `resetStationState` can cancel it on `stop()`.
+          // Cancel any previously scheduled retry first. Unref:
+          // fire-and-forget retry must not block node.js exit.
+          this.cancelSecurityEventRetryTimer(stationState)
+          stationState.securityEventRetryTimer = setTimeout(() => {
+            // Self-clear before the recursive call: a subsequent retry
+            // must not observe a stale reference.
+            delete stationState.securityEventRetryTimer
             this.sendQueuedSecurityEvents(chargingStation)
           }, OCPP20Constants.SECURITY_EVENT_RETRY_DELAY_MS).unref()
         })
@@ -3812,10 +3882,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     type: string,
     techInfo?: string
   ): void {
+    // Lifecycle-entry: state may not exist yet on the first invalid-cert
+    // request. Drop only when already sealed stopped.
+    const stationState = this.getOrCreateStationState(chargingStation)
+    if (stationState.stopped === true) {
+      return
+    }
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.sendSecurityEventNotification: [SecurityEvent] type=${type}${techInfo != null ? `, techInfo=${techInfo}` : ''}`
     )
-    this.getOrCreateStationState(chargingStation).securityEventQueue.push({
+    stationState.securityEventQueue.push({
       timestamp: new Date(),
       type,
       ...(techInfo !== undefined && { techInfo }),
@@ -3842,9 +3918,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
+    const stationState = this.getOrCreateStationState(chargingStation)
+    // Silent-drop late `.on(UPDATE_FIRMWARE).catch(...)` dispatch after
+    // `stop()`: the sealed state must not drive the async lifecycle
+    // nor clobber `activeFirmwareUpdateAbortController`.
+    if (stationState.stopped === true) {
+      return
+    }
     // Store the abort controller so a subsequent UpdateFirmware can abort this in-progress update
     const abortController = new AbortController()
-    const stationState = this.getOrCreateStationState(chargingStation)
     stationState.activeFirmwareUpdateAbortController = abortController
     stationState.activeFirmwareUpdateRequestId = requestId
 
@@ -4087,6 +4169,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     requestId: number
   ): Promise<void> {
     const stationState = this.getOrCreateStationState(chargingStation)
+    // Silent-drop late `.on(GET_LOG).catch(...)` dispatch after
+    // `stop()`; symmetric with `simulateFirmwareUpdateLifecycle`.
+    if (stationState.stopped === true) {
+      return
+    }
     const abortController = new AbortController()
     stationState.activeLogUploadAbortController = abortController
     stationState.activeLogUploadRequestId = requestId

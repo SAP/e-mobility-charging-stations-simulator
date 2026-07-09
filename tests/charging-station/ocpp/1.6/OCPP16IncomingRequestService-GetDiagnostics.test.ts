@@ -43,6 +43,7 @@ import {
 interface OCPP16StationStateShape {
   activeDiagnosticsAbortController?: AbortController
   diagnosticsUploadInProgress?: boolean
+  stopped?: boolean
 }
 
 interface PlumbingAccess {
@@ -211,7 +212,7 @@ await describe('OCPP16IncomingRequestService — GetDiagnostics supersession', a
     assert.strictEqual(finalState?.diagnosticsUploadInProgress, undefined)
   })
 
-  await it('should abort activeDiagnosticsAbortController and delete the WeakMap entry on stop()', () => {
+  await it('should abort activeDiagnosticsAbortController and mark the WeakMap entry stopped on stop()', () => {
     // Arrange — pre-populate an in-flight lifecycle, then stop.
     const { incomingRequestService, station } = context
     const plumbing = asPlumbing(incomingRequestService)
@@ -223,14 +224,16 @@ await describe('OCPP16IncomingRequestService — GetDiagnostics supersession', a
     // Act
     incomingRequestService.stop(station)
 
-    // Assert — cancel-before-delete ordering: the signal must fire before the
-    // base template deletes the WeakMap entry, and the entry must be gone.
+    // Assert — cancel-before-mark ordering: the signal must fire before the
+    // base template marks the entry stopped, and the entry must be preserved
+    // and sealed.
     assert.strictEqual(
       inflightController.signal.aborted,
       true,
       'stop() must signal the in-flight diagnostics AbortController'
     )
-    assert.strictEqual(plumbing.stationsState.has(station), false)
+    assert.strictEqual(plumbing.stationsState.has(station), true)
+    assert.strictEqual(plumbing.stationsState.get(station)?.stopped, true)
   })
 
   await it('should not install activeDiagnosticsAbortController for non-FTP locations', async () => {
