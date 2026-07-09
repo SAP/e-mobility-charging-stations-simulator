@@ -12,13 +12,14 @@ import type { GetDiagnosticsRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import {
+  ConfigurationSection,
   OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
   OCPP16StandardParametersKey,
   type OCPP16UpdateFirmwareRequest,
   type OCPP16UpdateFirmwareResponse,
 } from '../../../../src/types/index.js'
-import { Constants, logger } from '../../../../src/utils/index.js'
+import { Configuration, Constants, logger } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   standardCleanup,
@@ -101,6 +102,79 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(Object.keys(response).length, 0)
     })
+
+    await it('should clear diagnosticsUploadInProgress in the finally block when the FTP branch returns early on missing log file', async t => {
+      // Arrange: enable FirmwareManagement so the FTP branch is entered,
+      // then force the early return path inside the try block by returning
+      // a log configuration with no file. This exercises the finally clause
+      // through a non-throwing exit path.
+      const { incomingRequestService, station, testableService } = context
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,FirmwareManagement'
+      )
+      t.mock.method(Configuration, 'getConfigurationSection', (section: ConfigurationSection) => {
+        if (section === ConfigurationSection.log) {
+          return { file: undefined }
+        }
+        return {}
+      })
+
+      const request: GetDiagnosticsRequest = {
+        location: 'ftp://localhost/diagnostics',
+      }
+
+      // Act
+      const response = await testableService.handleRequestGetDiagnostics(station, request)
+
+      // Assert
+      assert.strictEqual(Object.keys(response).length, 0)
+      const plumbing = incomingRequestService as unknown as {
+        stationsState: WeakMap<ChargingStation, { diagnosticsUploadInProgress?: boolean }>
+      }
+      assert.strictEqual(
+        plumbing.stationsState.get(station)?.diagnosticsUploadInProgress,
+        undefined
+      )
+    })
+
+    await it('should skip the diagnostics FTP upload when diagnosticsUploadInProgress is already set (concurrent invocation safety)', async t => {
+      // Regression guard: two concurrent GetDiagnostics.req arriving via
+      // the base-class dispatcher's fire-and-forget WebSocket message
+      // handling must not spawn concurrent FTP uploads racing on the same
+      // ${chargingStationId}_logs.tar.gz archive filename or emit
+      // duplicate DiagnosticsStatusNotification progress messages to the
+      // CSMS.
+
+      // Arrange
+      const { incomingRequestService, station, testableService } = context
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,FirmwareManagement'
+      )
+      const plumbing = incomingRequestService as unknown as {
+        getOrCreateStationState: (cs: ChargingStation) => { diagnosticsUploadInProgress?: boolean }
+        stationsState: WeakMap<ChargingStation, { diagnosticsUploadInProgress?: boolean }>
+      }
+      plumbing.getOrCreateStationState(station).diagnosticsUploadInProgress = true
+      const warnSpy = t.mock.method(logger, 'warn')
+
+      // Act
+      const response = await testableService.handleRequestGetDiagnostics(station, {
+        location: 'ftp://localhost/diagnostics',
+      })
+
+      // Assert
+      assert.strictEqual(Object.keys(response).length, 0)
+      assert.strictEqual(plumbing.stationsState.get(station)?.diagnosticsUploadInProgress, true)
+      const warnMessages = warnSpy.mock.calls.map(call => call.arguments[0] as unknown as string)
+      assert.ok(
+        warnMessages.some(m => m.includes('a diagnostics upload lifecycle is already in flight')),
+        `expected an "already in flight" warning, got: ${JSON.stringify(warnMessages)}`
+      )
+    })
   })
 
   // §6.4: UpdateFirmware
@@ -142,7 +216,42 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       assert.strictEqual(Object.keys(response).length, 0)
     })
 
-    await it('should return empty response when firmware update is already in progress', () => {
+    await it('should return empty response and log the "already in progress" warning when firmwareUpdateInProgress is set', t => {
+      // Arrange
+      const { incomingRequestService, station, testableService } = context
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,FirmwareManagement'
+      )
+      const plumbing = incomingRequestService as unknown as {
+        getOrCreateStationState: (cs: ChargingStation) => { firmwareUpdateInProgress?: boolean }
+      }
+      plumbing.getOrCreateStationState(station).firmwareUpdateInProgress = true
+      const warnSpy = t.mock.method(logger, 'warn')
+
+      // Act
+      const response = testableService.handleRequestUpdateFirmware(station, {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(),
+      })
+
+      // Assert
+      assert.strictEqual(Object.keys(response).length, 0)
+      const warnMessages = warnSpy.mock.calls.map(call => call.arguments[0] as unknown as string)
+      assert.ok(
+        warnMessages.some(m => m.includes('firmware update is already in progress')),
+        `expected an "already in progress" warning, got: ${JSON.stringify(warnMessages)}`
+      )
+    })
+
+    await it('should NOT log the "already in progress" warning when stationInfo.firmwareStatus is stale but firmwareUpdateInProgress is unset', t => {
+      // Regression guard: a stale stationInfo.firmwareStatus left at
+      // Downloading / Downloaded / Installing by a prior exception unwind
+      // must not suppress a legitimate new UpdateFirmware.req. The
+      // authoritative predicate is firmwareUpdateInProgress on the
+      // per-station state, not stationInfo.
+
       // Arrange
       const { station, testableService } = context
       upsertConfigurationKey(
@@ -153,6 +262,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       if (station.stationInfo != null) {
         station.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading
       }
+      const warnSpy = t.mock.method(logger, 'warn')
 
       // Act
       const response = testableService.handleRequestUpdateFirmware(station, {
@@ -161,8 +271,12 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       })
 
       // Assert
-      assert.notStrictEqual(response, undefined)
       assert.strictEqual(Object.keys(response).length, 0)
+      const warnMessages = warnSpy.mock.calls.map(call => call.arguments[0] as unknown as string)
+      assert.ok(
+        warnMessages.every(m => !m.includes('firmware update is already in progress')),
+        `expected no "already in progress" warning, got: ${JSON.stringify(warnMessages)}`
+      )
     })
   })
 
@@ -271,7 +385,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     })
   })
 
-  // #1972: deferred UpdateFirmware timer lifecycle on OCPP16StationState
+  // Deferred UpdateFirmware timer lifecycle on OCPP16StationState
   await describe('UPDATE_FIRMWARE deferred timer lifecycle', async () => {
     interface OCPP16StationStateShape {
       deferredFirmwareUpdateTimer?: NodeJS.Timeout

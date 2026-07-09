@@ -1,8 +1,8 @@
 /**
  * @file Tests for OCPPIncomingRequestService per-station state plumbing (#1963)
  * @description Unit tests for the shared WeakMap + lazy-init + stop() template
- *   in `OCPPIncomingRequestService`, plus the OCPP 1.6 no-op `resetStationState`
- *   contract that companion PRs (#1971, #1972, #1973) will replace.
+ *   in `OCPPIncomingRequestService` and for the OCPP 1.6 `resetStationState`
+ *   contract.
  *
  * The OCPP 2.0.1 5-statement ordering invariant (abort firmware → abort log →
  * cancel retry → resetActiveFirmwareUpdateState → resetActiveLogUploadState)
