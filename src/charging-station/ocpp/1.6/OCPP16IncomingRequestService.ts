@@ -107,7 +107,9 @@ import {
   type UnlockConnectorResponse,
 } from '../../../types/index.js'
 import {
+  clampToSafeTimerValue,
   Configuration,
+  Constants,
   convertToDate,
   convertToInt,
   convertToIntOrNaN,
@@ -138,6 +140,30 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
+
+/**
+ * Per-station lifecycle state carried on {@link OCPP16IncomingRequestService}.
+ *
+ * Populated incrementally as companion PRs land. Fields currently
+ * present:
+ * - `deferredFirmwareUpdateTimer` (#1972).
+ *
+ * Companion PRs still pending will add their own fields:
+ * - #1971 (GetDiagnostics supersession): `activeDiagnosticsAbortController`,
+ *   `activeDiagnosticsRequestId`;
+ * - #1973 (trigger cross-check): `activeDiagnosticsRequestId` (shared with
+ *   #1971), `activeFirmwareUpdateRequestId`.
+ */
+interface OCPP16StationState {
+  /**
+   * `setTimeout` handle for the deferred `updateFirmwareSimulation`
+   * scheduled by the `UPDATE_FIRMWARE` event listener when the incoming
+   * request carries a future `retrieveDate`. Released by
+   * {@link OCPP16IncomingRequestService.cancelDeferredFirmwareUpdate}
+   * on stop, supersession, or normal fire (#1972).
+   */
+  deferredFirmwareUpdateTimer?: NodeJS.Timeout
+}
 
 /**
  * OCPP 1.6 Incoming Request Service - handles and processes all incoming requests
@@ -173,7 +199,7 @@ const moduleName = 'OCPP16IncomingRequestService'
  * @see {@link handleRequestRemoteStartTransaction} Example request handler
  */
 
-export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
+export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCPP16StationState> {
   protected readonly csmsName = 'Central System'
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
 
@@ -591,27 +617,47 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             )
           })
         } else {
-          // Unref: fire-and-forget deferred firmware update must not
-          // block node.js exit.
-          setTimeout(() => {
+          // Fire-and-forget deferred update: setTimeout(...).unref() keeps
+          // the pending timer from blocking node.js exit. The handle is
+          // stored on OCPP16StationState so stop() cancels it via
+          // resetStationState (#1972); the schedule site supersedes any
+          // prior pending timer via the same helper, and the callback
+          // clears the handle before the awaited simulation so
+          // resetStationState never targets a fired timer.
+          const stationState = this.getOrCreateStationState(chargingStation)
+          this.cancelDeferredFirmwareUpdate(stationState)
+          // Clamp via canonical helper: a retrieveDate beyond
+          // Constants.MAX_SETINTERVAL_DELAY_MS would otherwise be silently
+          // reduced to 1 ms by Node and fire immediately.
+          const delayMs = retrieveDate.getTime() - now
+          const scheduleDelayMs = clampToSafeTimerValue(delayMs)
+          if (scheduleDelayMs !== delayMs) {
+            logger.warn(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware retrieveDate delay ${delayMs.toString()} ms exceeds ${Constants.MAX_SETINTERVAL_DELAY_MS.toString()} ms, clamping to ${scheduleDelayMs.toString()} ms`
+            )
+          }
+          stationState.deferredFirmwareUpdateTimer = setTimeout(() => {
+            delete stationState.deferredFirmwareUpdateTimer
             this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware simulation error:`,
                 error
               )
             })
-          }, retrieveDate.getTime() - now).unref()
+          }, scheduleDelayMs).unref()
         }
       }
     )
   }
 
   /**
-   * Stops the incoming request service for the given charging station.
-   * @param chargingStation - Target charging station
+   * @returns Fresh state with all optional {@link OCPP16StationState}
+   *   fields unset. Fields are lazily assigned by the request handlers
+   *   that own them (see {@link OCPP16StationState}); companion PRs
+   *   (#1971 / #1973) will populate their own fields on first use.
    */
-  public override stop (chargingStation: ChargingStation): void {
-    /* no-op for OCPP 1.6 */
+  protected override createStationState (): OCPP16StationState {
+    return {}
   }
 
   /**
@@ -625,6 +671,35 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandName: IncomingRequestCommand
   ): boolean {
     return isIncomingRequestCommandSupported(chargingStation, commandName)
+  }
+
+  /**
+   * Release resources held by the per-station state. Called by the
+   * inherited `stop()` template BEFORE the base deletes the WeakMap
+   * entry. Follow the abort-before-clear / cancel-before-delete
+   * ordering documented on
+   * {@link OCPP20IncomingRequestService.resetStationState}: abort
+   * in-flight signals BEFORE clearing controller references, cancel
+   * timers BEFORE the base template deletes the entry.
+   *
+   * Companion PRs (#1971 GetDiagnostics supersession, #1973 trigger
+   * cross-check) will extend this method with their own field releases.
+   * @param stationState - Per-station state to release.
+   */
+  protected override resetStationState (stationState: OCPP16StationState): void {
+    this.cancelDeferredFirmwareUpdate(stationState)
+  }
+
+  /**
+   * Cancels the deferred `updateFirmwareSimulation` timer and clears
+   * the handle (#1972). No-op when no timer is pending.
+   * @param stationState - Per-station state carrying the timer handle.
+   */
+  private cancelDeferredFirmwareUpdate (stationState: OCPP16StationState): void {
+    if (stationState.deferredFirmwareUpdateTimer != null) {
+      clearTimeout(stationState.deferredFirmwareUpdateTimer)
+      delete stationState.deferredFirmwareUpdateTimer
+    }
   }
 
   private composeCompositeSchedule (

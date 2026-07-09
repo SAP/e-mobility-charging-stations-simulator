@@ -1072,6 +1072,10 @@ const createVersionedSampledValueDispatcher = (
 // Kept off the class API to avoid touching `ChargingStation` for a
 // warn-once diagnostic; the WeakMap's semantics match the intent — one
 // bag of already-warned entries per station, freed with the station.
+// Distinct pattern from the class-scoped lifecycle-state WeakMap on
+// `OCPPIncomingRequestService.stationsState`: no `stop()` lifecycle, no
+// abort semantics, no `resetStationState` hook — a diagnostic side-effect
+// cache freed only by GC.
 const warnedInvalidMeasurands = new WeakMap<ChargingStation, Set<string>>()
 const KNOWN_MEASURANDS: ReadonlySet<string> = new Set<string>(Object.values(MeterValueMeasurand))
 

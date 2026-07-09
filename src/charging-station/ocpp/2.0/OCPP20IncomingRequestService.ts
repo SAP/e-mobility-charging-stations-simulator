@@ -262,6 +262,11 @@ const FIRMWARE_STAGE_FAILURE_STATUS = {
   install: OCPP20FirmwareStatusEnumType.InstallationFailed,
 } as const satisfies Record<Exclude<FirmwareStage, 'installed'>, OCPP20FirmwareStatusEnumType>
 
+interface LastFirmwareStatusNotification {
+  requestId: number
+  status: OCPP20FirmwareStatusEnumType
+}
+
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
@@ -270,6 +275,7 @@ interface OCPP20StationState {
   activeLogUploadStatus?: UploadLogStatusEnumType
   certSigningRetryManager?: OCPP20CertSigningRetryManager
   isDrainingSecurityEvents: boolean
+  lastFirmwareStatusNotification?: LastFirmwareStatusNotification
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
   securityEventQueue: QueuedSecurityEvent[]
@@ -282,7 +288,33 @@ interface QueuedSecurityEvent {
   type: string
 }
 
-export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
+/**
+ * OCPP 2.0.1 incoming-request service.
+ *
+ * Extends {@link OCPPIncomingRequestService} with `OCPP20StationState` and
+ * layers OCPP 2.0.1 variable-manager cleanup on top of the base `stop()`
+ * template.
+ *
+ * A future OCPP 2.1 service SHOULD extend this class
+ * (`class OCPP21IncomingRequestService extends OCPP20IncomingRequestService`)
+ * because OCPP 2.1 is an extension of OCPP 2.0.1 with minor exceptions
+ * (`OCPP-2.1_edition1_part0_introduction.md`). Subclassing inherits
+ * `OCPP20StationState`, `resetStationState`, and the `stop()` override
+ * unchanged (subject to dynamic dispatch on `this` — TypeScript inherits
+ * methods, not textual copies).
+ *
+ * To layer 2.1-specific lifecycle logic: override `stop()` calling
+ * `super.stop()` first, or override `resetStationState` calling
+ * `super.resetStationState(state)` first. Adding new state fields
+ * requires either widening this class's generic parameter (currently
+ * fixed to `OCPP20StationState`) in a preparatory refactor — which will
+ * need an `as unknown as T` cast in `createStationState` because
+ * TypeScript cannot prove a concrete literal satisfies an arbitrary
+ * `T extends OCPP20StationState` (TS2352) — or a subclass-side
+ * narrowed accessor. Subclass override of `createStationState` is
+ * preferable when only a fixed subclass shape is needed.
+ */
+export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCPP20StationState> {
   protected readonly csmsName = 'CSMS'
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
 
@@ -294,8 +326,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
     OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
   ]
-
-  private readonly stationsState = new WeakMap<ChargingStation, OCPP20StationState>()
 
   public constructor () {
     super(OCPPVersion.VERSION_201)
@@ -574,22 +604,24 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
-            const stationState = this.stationsState.get(chargingStation)
-            const requestId = stationState?.activeFirmwareUpdateRequestId
-            const firmwareStatus =
-              requestId != null && this.hasFirmwareUpdateInProgress(chargingStation)
-                ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
-                : OCPP20FirmwareStatusEnumType.Idle
+            // L01.FR.25 & L02.FR.16 — last-sent = Installed → { status: Idle }.
+            // L01.FR.26 & L02.FR.17 — last-sent ≠ Installed → { requestId, status: <last-sent> }.
+            // L01.FR.20 & L02.FR.14 — requestId mandatory unless status = Idle.
+            // Fresh station (no notification ever sent): Idle (spec-silent precondition,
+            // consistent with FirmwareStatusEnumType.Idle §3.33 "trigger-only" restriction).
+            const lastSent = this.stationsState.get(chargingStation)?.lastFirmwareStatusNotification
+            const payload: OCPP20FirmwareStatusNotificationRequest =
+              lastSent == null || lastSent.status === OCPP20FirmwareStatusEnumType.Installed
+                ? { status: OCPP20FirmwareStatusEnumType.Idle }
+                : { requestId: lastSent.requestId, status: lastSent.status }
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(
-                chargingStation,
-                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                { requestId, status: firmwareStatus },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, payload, {
+                skipBufferingOnError: true,
+                triggerMessage: true,
+              })
               .catch(errorHandler)
             break
           }
@@ -789,19 +821,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Stop the incoming request service and clean up per-station state.
+   * Stop and clean up per-station state.
+   *
+   * Extends the base template with OCPP 2.0.1 variable-manager cleanup,
+   * which runs unconditionally to match pre-refactor behavior even when
+   * no {@link stationsState} entry exists.
+   *
+   * If `super.stop()` throws (via `resetStationState`), the
+   * variable-manager cleanup below is skipped — matches the pre-refactor
+   * semantics where the state-reset block was also outside the try/catch.
    * @param chargingStation - Target charging station to stop
    */
   public override stop (chargingStation: ChargingStation): void {
-    const stationState = this.stationsState.get(chargingStation)
-    if (stationState != null) {
-      stationState.activeFirmwareUpdateAbortController?.abort()
-      stationState.activeLogUploadAbortController?.abort()
-      stationState.certSigningRetryManager?.cancelRetryTimer()
-      this.resetActiveFirmwareUpdateState(stationState)
-      this.resetActiveLogUploadState(stationState)
-      this.stationsState.delete(chargingStation)
-    }
+    super.stop(chargingStation)
     try {
       const variableManager = OCPP20VariableManager.getInstance()
       const stationId = chargingStation.stationInfo?.hashId
@@ -813,6 +845,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing per-station state:`,
         error
       )
+    }
+  }
+
+  /**
+   * @returns A fresh `OCPP20StationState` with the four required fields
+   *   initialized (empty `Map` for `preInoperativeConnectorStatuses` and
+   *   `reportDataCache`, empty array for `securityEventQueue`,
+   *   `isDrainingSecurityEvents: false`). The seven optional
+   *   lifecycle-owned fields (`activeFirmwareUpdate*`,
+   *   `activeLogUpload*`, `certSigningRetryManager`,
+   *   `lastFirmwareStatusNotification`) start absent and are assigned
+   *   lazily by handlers.
+   */
+  protected override createStationState (): OCPP20StationState {
+    return {
+      isDrainingSecurityEvents: false,
+      preInoperativeConnectorStatuses: new Map(),
+      reportDataCache: new Map(),
+      securityEventQueue: [],
     }
   }
 
@@ -1018,6 +1069,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandName: IncomingRequestCommand
   ): boolean {
     return isIncomingRequestCommandSupported(chargingStation, commandName)
+  }
+
+  /**
+   * Reset per-station lifecycle state prior to WeakMap eviction.
+   *
+   * ORDERING INVARIANT (preserved bit-for-bit from the pre-refactor
+   * `stop()` body): abort in-flight signals BEFORE clearing the fields
+   * that hold their controllers (otherwise the subsequent `?.abort()`
+   * short-circuits on the nulled field and the in-flight operation is
+   * never signaled to cancel), and cancel the retry timer BEFORE the
+   * base template deletes the state entry.
+   * @param stationState - Per-station state to reset.
+   */
+  protected override resetStationState (stationState: OCPP20StationState): void {
+    stationState.activeFirmwareUpdateAbortController?.abort()
+    stationState.activeLogUploadAbortController?.abort()
+    stationState.certSigningRetryManager?.cancelRetryTimer()
+    this.resetActiveFirmwareUpdateState(stationState)
+    this.resetActiveLogUploadState(stationState)
   }
 
   private async authorizeToken (
@@ -1416,20 +1486,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         { skipBufferingOnError: true, triggerMessage: true }
       )
       .catch(errorHandler)
-  }
-
-  private getOrCreateStationState (chargingStation: ChargingStation): OCPP20StationState {
-    let state = this.stationsState.get(chargingStation)
-    if (state == null) {
-      state = {
-        isDrainingSecurityEvents: false,
-        preInoperativeConnectorStatuses: new Map(),
-        reportDataCache: new Map(),
-        securityEventQueue: [],
-      }
-      this.stationsState.set(chargingStation, state)
-    }
-    return state
   }
 
   private getRestoredConnectorStatus (
@@ -3536,6 +3592,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
     if (chargingStation.stationInfo != null) {
       chargingStation.stationInfo.firmwareStatus = status
+    }
+    // L01.FR.26 & L02.FR.17 last-sent projection: persistent source of truth for the
+    // trigger case, distinct from `stationInfo.firmwareStatus` (state-machine field reset by #1976).
+    this.getOrCreateStationState(chargingStation).lastFirmwareStatusNotification = {
+      requestId,
+      status,
     }
     return chargingStation.ocppRequestService.requestHandler<
       OCPP20FirmwareStatusNotificationRequest,
