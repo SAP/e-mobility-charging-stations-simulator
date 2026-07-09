@@ -153,6 +153,29 @@ const moduleName = 'OCPP16IncomingRequestService'
  */
 interface OCPP16StationState {
   /**
+   * `AbortController` scoped to the in-flight diagnostics FTP upload
+   * spawned by the FTP branch of `handleRequestGetDiagnostics`. Set
+   * synchronously with `diagnosticsUploadInProgress = true` at entry;
+   * released by the handler's `finally` clause via identity guard
+   * (comparison against the local variable) so a superseding
+   * request that has already overwritten the state reference is not
+   * clobbered by the superseded handler's late cleanup. Aborted from
+   * two sites:
+   * 1. `handleRequestGetDiagnostics`'s FTP-branch entry guard when a
+   *    superseding request arrives while a prior lifecycle is still
+   *    in flight. The `abort` listener closes the `basic-ftp` client,
+   *    which rejects the pending `uploadFrom` promise with
+   *    `User closed client during task`; the outer catch then emits
+   *    the terminal `DiagnosticsStatusNotification(UploadFailed)` per
+   *    OCPP 1.6 §4.4 / §7.24 (uncorrelated terminal — §6.17 does not
+   *    carry a `requestId`, so the temporal position tells the CSMS
+   *    which upload it belonged to).
+   * 2. {@link OCPP16IncomingRequestService.resetStationState} on
+   *    `stop()`, following the cancel-before-delete ordering documented
+   *    on {@link OCPP20IncomingRequestService.resetStationState}.
+   */
+  activeDiagnosticsAbortController?: AbortController
+  /**
    * `setTimeout` handle for a deferred `updateFirmwareSimulation`
    * scheduled by the `UPDATE_FIRMWARE` event listener when the incoming
    * request carries a future `retrieveDate`. Released by
@@ -169,13 +192,19 @@ interface OCPP16StationState {
    *    `stationInfo.diagnosticsStatus` left at `Uploading` after an
    *    exception unwind does not leak to the CSMS, per OCPP 1.6 §4.4 /
    *    §7.24 (Idle when not busy uploading diagnostics).
-   * 2. `handleRequestGetDiagnostics`'s FTP-branch entry guard:
-   *    early-returns the empty `GetDiagnostics.conf` payload when a
-   *    prior lifecycle is still in flight, preventing concurrent FTP
-   *    uploads from racing on the same
-   *    `${chargingStationId}_logs.tar.gz` archive filename and
-   *    emitting duplicate `DiagnosticsStatusNotification` progress
-   *    messages to the CSMS.
+   * 2. `handleRequestGetDiagnostics`'s FTP-branch entry guard: indicates
+   *    that a prior lifecycle is still in flight and therefore must be
+   *    aborted before the new one claims the state. The abort path
+   *    piggybacks on `activeDiagnosticsAbortController`; the flag stays
+   *    `true` synchronously across the abort-then-install handoff so
+   *    the trigger cross-check above cannot observe a false idle window
+   *    during supersession. Once the superseding handler resolves
+   *    (normally, via early return, or via exception) its
+   *    identity-guarded `finally` clears the flag — the superseded
+   *    handler's terminal `UploadFailed` emission may still be in
+   *    flight after that point, and a trigger arriving during that
+   *    narrow window will observe `Idle` (transport already closed by
+   *    `ftpClient?.close()`, per §4.4 "not busy uploading").
    */
   diagnosticsUploadInProgress?: boolean
   /**
@@ -679,7 +708,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             )
           }
           stationState.deferredFirmwareUpdateTimer = setTimeout(() => {
-            delete stationState.deferredFirmwareUpdateTimer
+            stationState.deferredFirmwareUpdateTimer = undefined
             this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware simulation error:`,
@@ -717,14 +746,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   /**
    * Release resources held by the per-station state. Called by the
    * inherited `stop()` template BEFORE the base deletes the WeakMap
-   * entry. Follow the abort-before-clear / cancel-before-delete
-   * ordering documented on
+   * entry. Follow the cancel-before-delete ordering documented on
    * {@link OCPP20IncomingRequestService.resetStationState}: abort
-   * in-flight signals BEFORE clearing controller references, cancel
-   * timers BEFORE the base template deletes the entry.
+   * in-flight signals and cancel timers BEFORE the base template
+   * deletes the state entry. The AbortController reference itself
+   * is left in place — WeakMap eviction reclaims the state object,
+   * and any still-unwinding handler's identity-guarded `finally`
+   * (see {@link OCPP16StationState.activeDiagnosticsAbortController})
+   * clears the fields on the now-orphaned object without racing a
+   * successor.
    * @param stationState - Per-station state to release.
    */
   protected override resetStationState (stationState: OCPP16StationState): void {
+    stationState.activeDiagnosticsAbortController?.abort()
     this.cancelDeferredFirmwareUpdate(stationState)
   }
 
@@ -736,7 +770,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   private cancelDeferredFirmwareUpdate (stationState: OCPP16StationState): void {
     if (stationState.deferredFirmwareUpdateTimer != null) {
       clearTimeout(stationState.deferredFirmwareUpdateTimer)
-      delete stationState.deferredFirmwareUpdateTimer
+      stationState.deferredFirmwareUpdateTimer = undefined
     }
   }
 
@@ -1246,11 +1280,30 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       let ftpClient: Client | undefined
       const stationState = this.getOrCreateStationState(chargingStation)
       if (stationState.diagnosticsUploadInProgress === true) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: skipped, a diagnostics upload lifecycle is already in flight`
+        // Supersede the in-flight lifecycle: abort it so its
+        // `basic-ftp` client is closed and its awaited `uploadFrom`
+        // promise rejects with `User closed client during task`, which
+        // the outer catch converts into a terminal
+        // `DiagnosticsStatusNotification(UploadFailed)` per OCPP 1.6
+        // §4.4 / §7.24. The `finally` clause of the superseded handler
+        // is identity-guarded and therefore will not clobber the state
+        // fields this new lifecycle is about to claim.
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Canceled previous diagnostics upload`
         )
-        return OCPP16Constants.OCPP_RESPONSE_EMPTY
+        stationState.activeDiagnosticsAbortController?.abort()
       }
+      const abortController = new AbortController()
+      // `basic-ftp` v6 does not natively consume `AbortSignal`; the
+      // documented interruption path is `Client.close()`, which invokes
+      // `FtpContext.close()` and rejects the pending task with
+      // `User closed client during task`.
+      // See `basic-ftp` `Client.js` / `FtpContext.js`.
+      const abortListener = (): void => {
+        ftpClient?.close()
+      }
+      abortController.signal.addEventListener('abort', abortListener, { once: true })
+      stationState.activeDiagnosticsAbortController = abortController
       stationState.diagnosticsUploadInProgress = true
       try {
         const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
@@ -1355,7 +1408,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           ) ?? errorResponse
         )
       } finally {
-        delete stationState.diagnosticsUploadInProgress
+        abortController.signal.removeEventListener('abort', abortListener)
+        if (stationState.activeDiagnosticsAbortController === abortController) {
+          stationState.activeDiagnosticsAbortController = undefined
+          stationState.diagnosticsUploadInProgress = undefined
+        }
       }
     } else {
       logger.warn(
@@ -2083,7 +2140,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
       }
     } finally {
-      delete stationState.firmwareUpdateInProgress
+      stationState.firmwareUpdateInProgress = undefined
     }
   }
 }

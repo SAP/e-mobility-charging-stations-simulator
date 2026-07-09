@@ -1,7 +1,11 @@
 /**
  * @file Tests for OCPP16IncomingRequestService firmware handlers
- * @description Unit tests for OCPP 1.6 GetDiagnostics (§6.1) and UpdateFirmware (§6.4)
- *   incoming request handlers
+ * @description Unit tests for OCPP 1.6 GetDiagnostics (§6.1) guard and
+ *   early-exit paths (feature-profile guard, non-FTP protocol, missing
+ *   log file, finally cleanup on early exit), and UpdateFirmware (§6.4)
+ *   incoming request handlers. Supersession semantics for GetDiagnostics
+ *   are covered in
+ *   {@link file://./OCPP16IncomingRequestService-GetDiagnostics.test.ts}.
  */
 
 import assert from 'node:assert/strict'
@@ -136,43 +140,6 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       assert.strictEqual(
         plumbing.stationsState.get(station)?.diagnosticsUploadInProgress,
         undefined
-      )
-    })
-
-    await it('should skip the diagnostics FTP upload when diagnosticsUploadInProgress is already set (concurrent invocation safety)', async t => {
-      // Regression guard: two concurrent GetDiagnostics.req arriving via
-      // the base-class dispatcher's fire-and-forget WebSocket message
-      // handling must not spawn concurrent FTP uploads racing on the same
-      // ${chargingStationId}_logs.tar.gz archive filename or emit
-      // duplicate DiagnosticsStatusNotification progress messages to the
-      // CSMS.
-
-      // Arrange
-      const { incomingRequestService, station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core,FirmwareManagement'
-      )
-      const plumbing = incomingRequestService as unknown as {
-        getOrCreateStationState: (cs: ChargingStation) => { diagnosticsUploadInProgress?: boolean }
-        stationsState: WeakMap<ChargingStation, { diagnosticsUploadInProgress?: boolean }>
-      }
-      plumbing.getOrCreateStationState(station).diagnosticsUploadInProgress = true
-      const warnSpy = t.mock.method(logger, 'warn')
-
-      // Act
-      const response = await testableService.handleRequestGetDiagnostics(station, {
-        location: 'ftp://localhost/diagnostics',
-      })
-
-      // Assert
-      assert.strictEqual(Object.keys(response).length, 0)
-      assert.strictEqual(plumbing.stationsState.get(station)?.diagnosticsUploadInProgress, true)
-      const warnMessages = warnSpy.mock.calls.map(call => call.arguments[0] as unknown as string)
-      assert.ok(
-        warnMessages.some(m => m.includes('a diagnostics upload lifecycle is already in flight')),
-        `expected an "already in flight" warning, got: ${JSON.stringify(warnMessages)}`
       )
     })
   })
