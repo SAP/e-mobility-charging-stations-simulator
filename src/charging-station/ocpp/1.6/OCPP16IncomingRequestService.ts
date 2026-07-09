@@ -144,25 +144,94 @@ const moduleName = 'OCPP16IncomingRequestService'
 /**
  * Per-station lifecycle state carried on {@link OCPP16IncomingRequestService}.
  *
- * Populated incrementally as companion PRs land. Fields currently
- * present:
- * - `deferredFirmwareUpdateTimer` (#1972).
- *
- * Companion PRs still pending will add their own fields:
- * - #1971 (GetDiagnostics supersession): `activeDiagnosticsAbortController`,
- *   `activeDiagnosticsRequestId`;
- * - #1973 (trigger cross-check): `activeDiagnosticsRequestId` (shared with
- *   #1971), `activeFirmwareUpdateRequestId`.
+ * OCPP 1.6 core-profile `GetDiagnostics.req` and `UpdateFirmware.req`
+ * payloads do not carry a `requestId` (unlike OCPP 2.0.1 `GetLog` /
+ * `UpdateFirmware`, and unlike the OCPP 1.6 Security-Extension
+ * `SignedUpdateFirmware` variant which the simulator does not
+ * implement), so lifecycle progress is tracked with boolean flags
+ * rather than requestId-presence sentinels.
  */
 interface OCPP16StationState {
   /**
-   * `setTimeout` handle for the deferred `updateFirmwareSimulation`
+   * `AbortController` scoped to the in-flight diagnostics FTP upload
+   * spawned by the FTP branch of `handleRequestGetDiagnostics`. Set
+   * synchronously with `diagnosticsUploadInProgress = true` at entry;
+   * released by the handler's `finally` clause via identity guard
+   * (comparison against the local variable) so a superseding
+   * request that has already overwritten the state reference is not
+   * clobbered by the superseded handler's late cleanup. Aborted from
+   * two sites:
+   * 1. `handleRequestGetDiagnostics`'s FTP-branch entry guard when a
+   *    superseding request arrives while a prior lifecycle is still
+   *    in flight. The `abort` listener closes the `basic-ftp` client,
+   *    which rejects the pending `uploadFrom` promise with
+   *    `User closed client during task`; the outer catch then emits
+   *    the terminal `DiagnosticsStatusNotification(UploadFailed)` per
+   *    OCPP 1.6 §4.4 / §7.24 (uncorrelated terminal — §6.17 does not
+   *    carry a `requestId`, so the temporal position tells the CSMS
+   *    which upload it belonged to).
+   * 2. {@link OCPP16IncomingRequestService.resetStationState} on
+   *    `stop()`, following the cancel-before-mark ordering documented
+   *    on {@link OCPP20IncomingRequestService.resetStationState}.
+   */
+  activeDiagnosticsAbortController?: AbortController
+  /**
+   * `setTimeout` handle for a deferred `updateFirmwareSimulation`
    * scheduled by the `UPDATE_FIRMWARE` event listener when the incoming
    * request carries a future `retrieveDate`. Released by
    * {@link OCPP16IncomingRequestService.cancelDeferredFirmwareUpdate}
-   * on stop, supersession, or normal fire (#1972).
+   * on stop, supersession, or normal fire.
    */
   deferredFirmwareUpdateTimer?: NodeJS.Timeout
+  /**
+   * `true` while a diagnostics upload lifecycle is active (from the
+   * FTP upload branch of `handleRequestGetDiagnostics` entry to its
+   * terminal status emission or exception unwind). Read at two sites:
+   * 1. The `TriggerMessage(DiagnosticsStatusNotification)` case: emits
+   *    `Idle` unless the flag is set, so a stale
+   *    `stationInfo.diagnosticsStatus` left at `Uploading` after an
+   *    exception unwind does not leak to the CSMS, per OCPP 1.6 §4.4 /
+   *    §7.24 (Idle when not busy uploading diagnostics).
+   * 2. `handleRequestGetDiagnostics`'s FTP-branch entry guard: indicates
+   *    that a prior lifecycle is still in flight and therefore must be
+   *    aborted before the new one claims the state. The abort path
+   *    piggybacks on `activeDiagnosticsAbortController`; the flag stays
+   *    `true` synchronously across the abort-then-install handoff so
+   *    the trigger cross-check above cannot observe a false idle window
+   *    during supersession. Once the superseding handler resolves
+   *    (normally, via early return, or via exception) its
+   *    identity-guarded `finally` clears the flag — the superseded
+   *    handler's terminal `UploadFailed` emission may still be in
+   *    flight after that point, and a trigger arriving during that
+   *    narrow window will observe `Idle` (transport already closed by
+   *    `ftpClient?.close()`, per §4.4 "not busy uploading").
+   */
+  diagnosticsUploadInProgress?: boolean
+  /**
+   * `true` while a firmware update lifecycle is active (from
+   * `updateFirmwareSimulation` entry to its terminal status emission
+   * or exception unwind). Read at three sites:
+   * 1. The `TriggerMessage(FirmwareStatusNotification)` case: emits
+   *    `Idle` unless the flag is set and `stationInfo.firmwareStatus`
+   *    is in the §4.5 / §7.25 pass-through set, so a stale non-terminal
+   *    status left by an exception unwind does not leak to the CSMS.
+   * 2. `handleRequestUpdateFirmware`'s re-entry guard: warn-logs and
+   *    returns the empty `UpdateFirmware.conf` payload when a
+   *    concurrent request arrives (OCPP 1.6 `UpdateFirmware.conf` has
+   *    no fields to signal rejection to the CSMS).
+   * 3. `updateFirmwareSimulation`'s entry guard: early-returns before
+   *    the try/finally when a prior lifecycle is still in flight,
+   *    preventing duplicate `FirmwareStatusNotification` progress
+   *    messages if the base-class event dispatcher fans out a second
+   *    invocation before the first completes.
+   */
+  firmwareUpdateInProgress?: boolean
+  /**
+   * `true` after {@link OCPPIncomingRequestService.stop} has released
+   * per-station resources via {@link resetStationState}. Never
+   * set from OCPP 1.6 code directly.
+   */
+  stopped?: boolean
 }
 
 /**
@@ -423,7 +492,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               )
               .catch(errorHandler)
             break
-          case OCPP16MessageTrigger.DiagnosticsStatusNotification:
+          case OCPP16MessageTrigger.DiagnosticsStatusNotification: {
+            // §4.4 + §7.24: Idle when not busy uploading diagnostics.
+            // Cross-check the per-station lifecycle flag so a stale
+            // stationInfo.diagnosticsStatus (e.g. left at 'Uploading'
+            // after an exception unwind of the FTP path) does not
+            // leak to the CSMS.
+            const diagnosticsInProgress =
+              this.stationsState.get(chargingStation)?.diagnosticsUploadInProgress === true
+            const diagnosticsStatus = chargingStation.stationInfo?.diagnosticsStatus
+            const diagnosticsTriggerStatus =
+              diagnosticsInProgress && diagnosticsStatus === OCPP16DiagnosticsStatus.Uploading
+                ? OCPP16DiagnosticsStatus.Uploading
+                : OCPP16DiagnosticsStatus.Idle
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP16DiagnosticsStatusNotificationRequest,
@@ -431,21 +512,28 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               >(
                 chargingStation,
                 OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-                {
-                  // §4.4 + §7.24: Idle when not busy uploading diagnostics
-                  status:
-                    chargingStation.stationInfo?.diagnosticsStatus ===
-                    OCPP16DiagnosticsStatus.Uploading
-                      ? OCPP16DiagnosticsStatus.Uploading
-                      : OCPP16DiagnosticsStatus.Idle,
-                },
-                {
-                  triggerMessage: true,
-                }
+                { status: diagnosticsTriggerStatus },
+                { triggerMessage: true }
               )
               .catch(errorHandler)
             break
-          case OCPP16MessageTrigger.FirmwareStatusNotification:
+          }
+          case OCPP16MessageTrigger.FirmwareStatusNotification: {
+            // §4.5 + §7.25: Idle when not busy downloading/installing
+            // firmware. Cross-check the per-station lifecycle flag so
+            // a stale stationInfo.firmwareStatus (e.g. left at
+            // 'Downloading' after an exception unwind of
+            // updateFirmwareSimulation) does not leak to the CSMS.
+            const firmwareInProgress =
+              this.stationsState.get(chargingStation)?.firmwareUpdateInProgress === true
+            const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
+            const firmwareTriggerStatus =
+              firmwareInProgress &&
+              (firmwareStatus === OCPP16FirmwareStatus.Downloading ||
+                firmwareStatus === OCPP16FirmwareStatus.Downloaded ||
+                firmwareStatus === OCPP16FirmwareStatus.Installing)
+                ? firmwareStatus
+                : OCPP16FirmwareStatus.Idle
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP16FirmwareStatusNotificationRequest,
@@ -453,23 +541,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               >(
                 chargingStation,
                 OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                {
-                  // §4.5 + §7.25: Idle when not busy downloading/installing firmware
-                  status:
-                    chargingStation.stationInfo?.firmwareStatus ===
-                      OCPP16FirmwareStatus.Downloading ||
-                    chargingStation.stationInfo?.firmwareStatus ===
-                      OCPP16FirmwareStatus.Downloaded ||
-                    chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Installing
-                      ? chargingStation.stationInfo.firmwareStatus
-                      : OCPP16FirmwareStatus.Idle,
-                },
-                {
-                  triggerMessage: true,
-                }
+                { status: firmwareTriggerStatus },
+                { triggerMessage: true }
               )
               .catch(errorHandler)
             break
+          }
           case OCPP16MessageTrigger.Heartbeat:
             chargingStation.ocppRequestService
               .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
@@ -620,10 +697,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           // Fire-and-forget deferred update: setTimeout(...).unref() keeps
           // the pending timer from blocking node.js exit. The handle is
           // stored on OCPP16StationState so stop() cancels it via
-          // resetStationState (#1972); the schedule site supersedes any
-          // prior pending timer via the same helper, and the callback
-          // clears the handle before the awaited simulation so
-          // resetStationState never targets a fired timer.
+          // resetStationState; the schedule site supersedes any prior
+          // pending timer via the same helper, and the callback clears
+          // the handle before the awaited simulation so resetStationState
+          // never targets a fired timer.
           const stationState = this.getOrCreateStationState(chargingStation)
           this.cancelDeferredFirmwareUpdate(stationState)
           // Clamp via canonical helper: a retrieveDate beyond
@@ -637,7 +714,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             )
           }
           stationState.deferredFirmwareUpdateTimer = setTimeout(() => {
-            delete stationState.deferredFirmwareUpdateTimer
+            stationState.deferredFirmwareUpdateTimer = undefined
             this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware simulation error:`,
@@ -653,8 +730,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
   /**
    * @returns Fresh state with all optional {@link OCPP16StationState}
    *   fields unset. Fields are lazily assigned by the request handlers
-   *   that own them (see {@link OCPP16StationState}); companion PRs
-   *   (#1971 / #1973) will populate their own fields on first use.
+   *   that own them (see {@link OCPP16StationState}).
    */
   protected override createStationState (): OCPP16StationState {
     return {}
@@ -675,30 +751,34 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
 
   /**
    * Release resources held by the per-station state. Called by the
-   * inherited `stop()` template BEFORE the base deletes the WeakMap
-   * entry. Follow the abort-before-clear / cancel-before-delete
-   * ordering documented on
+   * inherited `stop()` template BEFORE the base marks the WeakMap
+   * entry `stopped: true`. Follow the abort-before-clear /
+   * cancel-before-mark ordering documented on
    * {@link OCPP20IncomingRequestService.resetStationState}: abort
-   * in-flight signals BEFORE clearing controller references, cancel
-   * timers BEFORE the base template deletes the entry.
-   *
-   * Companion PRs (#1971 GetDiagnostics supersession, #1973 trigger
-   * cross-check) will extend this method with their own field releases.
+   * in-flight signals and cancel timers BEFORE the base template
+   * marks the entry `stopped: true`. The AbortController reference
+   * itself is left in place — the sealed stopped state persists in
+   * the WeakMap until GC reclaims the ChargingStation, and any
+   * still-unwinding handler's identity-guarded `finally`
+   * (see {@link OCPP16StationState.activeDiagnosticsAbortController})
+   * clears the fields on the sealed object without racing a
+   * successor.
    * @param stationState - Per-station state to release.
    */
   protected override resetStationState (stationState: OCPP16StationState): void {
+    stationState.activeDiagnosticsAbortController?.abort()
     this.cancelDeferredFirmwareUpdate(stationState)
   }
 
   /**
    * Cancels the deferred `updateFirmwareSimulation` timer and clears
-   * the handle (#1972). No-op when no timer is pending.
+   * the handle. No-op when no timer is pending.
    * @param stationState - Per-station state carrying the timer handle.
    */
   private cancelDeferredFirmwareUpdate (stationState: OCPP16StationState): void {
     if (stationState.deferredFirmwareUpdateTimer != null) {
       clearTimeout(stationState.deferredFirmwareUpdateTimer)
-      delete stationState.deferredFirmwareUpdateTimer
+      stationState.deferredFirmwareUpdateTimer = undefined
     }
   }
 
@@ -1206,6 +1286,33 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     const uri = new URL(location)
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client | undefined
+      const stationState = this.getOrCreateStationState(chargingStation)
+      if (stationState.diagnosticsUploadInProgress === true) {
+        // Supersede the in-flight lifecycle: abort it so its
+        // `basic-ftp` client is closed and its awaited `uploadFrom`
+        // promise rejects with `User closed client during task`, which
+        // the outer catch converts into a terminal
+        // `DiagnosticsStatusNotification(UploadFailed)` per OCPP 1.6
+        // §4.4 / §7.24. The `finally` clause of the superseded handler
+        // is identity-guarded and therefore will not clobber the state
+        // fields this new lifecycle is about to claim.
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Canceled previous diagnostics upload`
+        )
+        stationState.activeDiagnosticsAbortController?.abort()
+      }
+      const abortController = new AbortController()
+      // `basic-ftp` v6 does not natively consume `AbortSignal`; the
+      // documented interruption path is `Client.close()`, which invokes
+      // `FtpContext.close()` and rejects the pending task with
+      // `User closed client during task`.
+      // See `basic-ftp` `Client.js` / `FtpContext.js`.
+      const abortListener = (): void => {
+        ftpClient?.close()
+      }
+      abortController.signal.addEventListener('abort', abortListener, { once: true })
+      stationState.activeDiagnosticsAbortController = abortController
+      stationState.diagnosticsUploadInProgress = true
       try {
         const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
           ConfigurationSection.log
@@ -1308,6 +1415,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             { errorResponse }
           ) ?? errorResponse
         )
+      } finally {
+        abortController.signal.removeEventListener('abort', abortListener)
+        if (stationState.activeDiagnosticsAbortController === abortController) {
+          stationState.activeDiagnosticsAbortController = undefined
+          stationState.diagnosticsUploadInProgress = undefined
+        }
       }
     } else {
       logger.warn(
@@ -1845,11 +1958,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
     commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate) ?? new Date()
-    if (
-      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloading ||
-      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloaded ||
-      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Installing
-    ) {
+    if (this.stationsState.get(chargingStation)?.firmwareUpdateInProgress === true) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       )
@@ -1918,116 +2027,128 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       )
       return
     }
-    for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-      if (connectorStatus.transactionStarted === false) {
-        await sendAndSetConnectorStatus(chargingStation, {
-          connectorId,
-          status: OCPP16ChargePointStatus.Unavailable,
-        } as OCPP16StatusNotificationRequest)
-      }
-    }
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP16FirmwareStatusNotificationRequest,
-      OCPP16FirmwareStatusNotificationResponse
-    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-      status: OCPP16FirmwareStatus.Downloading,
-    })
-    if (chargingStation.stationInfo != null) {
-      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading
-    }
-    if (
-      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
-      OCPP16FirmwareStatus.DownloadFailed
-    ) {
-      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16FirmwareStatusNotificationRequest,
-        OCPP16FirmwareStatusNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: chargingStation.stationInfo.firmwareUpgrade.failureStatus,
-      })
-      chargingStation.stationInfo.firmwareStatus =
-        chargingStation.stationInfo.firmwareUpgrade.failureStatus
+    const stationState = this.getOrCreateStationState(chargingStation)
+    if (stationState.firmwareUpdateInProgress === true) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: skipped, a firmware update lifecycle is already in flight`
+      )
       return
     }
-    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP16FirmwareStatusNotificationRequest,
-      OCPP16FirmwareStatusNotificationResponse
-    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-      status: OCPP16FirmwareStatus.Downloaded,
-    })
-    if (chargingStation.stationInfo != null) {
-      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded
-    }
-    let wasTransactionsStarted = false
-    let transactionsStarted: boolean
-    do {
-      const runningTransactions = chargingStation.getNumberOfRunningTransactions()
-      if (runningTransactions > 0) {
-        const waitTime = secondsToMilliseconds(15)
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${runningTransactions.toString()} transaction(s) in progress, waiting ${formatDurationMilliSeconds(
-            waitTime
-          )} before continuing firmware update simulation`
-        )
-        await sleep(waitTime)
-        transactionsStarted = true
-        wasTransactionsStarted = true
-      } else {
-        for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
-          if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
-            await sendAndSetConnectorStatus(chargingStation, {
-              connectorId,
-              status: OCPP16ChargePointStatus.Unavailable,
-            } as OCPP16StatusNotificationRequest)
-          }
+    stationState.firmwareUpdateInProgress = true
+    try {
+      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+        if (connectorStatus.transactionStarted === false) {
+          await sendAndSetConnectorStatus(chargingStation, {
+            connectorId,
+            status: OCPP16ChargePointStatus.Unavailable,
+          } as OCPP16StatusNotificationRequest)
         }
-        transactionsStarted = false
       }
-    } while (transactionsStarted)
-    !wasTransactionsStarted &&
-      (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1))))
-    if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
-      return
-    }
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP16FirmwareStatusNotificationRequest,
-      OCPP16FirmwareStatusNotificationResponse
-    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-      status: OCPP16FirmwareStatus.Installing,
-    })
-    if (chargingStation.stationInfo != null) {
-      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing
-    }
-    if (
-      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
-      OCPP16FirmwareStatus.InstallationFailed
-    ) {
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: OCPP16FirmwareStatus.Downloading,
+      })
+      if (chargingStation.stationInfo != null) {
+        chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading
+      }
+      if (
+        chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
+        OCPP16FirmwareStatus.DownloadFailed
+      ) {
+        await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16FirmwareStatusNotificationRequest,
+          OCPP16FirmwareStatusNotificationResponse
+        >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+          status: chargingStation.stationInfo.firmwareUpgrade.failureStatus,
+        })
+        chargingStation.stationInfo.firmwareStatus =
+          chargingStation.stationInfo.firmwareUpgrade.failureStatus
+        return
+      }
       await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
       >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: chargingStation.stationInfo.firmwareUpgrade.failureStatus,
+        status: OCPP16FirmwareStatus.Downloaded,
       })
-      chargingStation.stationInfo.firmwareStatus =
-        chargingStation.stationInfo.firmwareUpgrade.failureStatus
-      return
-    }
-    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP16FirmwareStatusNotificationRequest,
-      OCPP16FirmwareStatusNotificationResponse
-    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-      status: OCPP16FirmwareStatus.Installed,
-    })
-    if (chargingStation.stationInfo != null) {
-      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installed
-    }
-    if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
+      if (chargingStation.stationInfo != null) {
+        chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded
+      }
+      let wasTransactionsStarted = false
+      let transactionsStarted: boolean
+      do {
+        const runningTransactions = chargingStation.getNumberOfRunningTransactions()
+        if (runningTransactions > 0) {
+          const waitTime = secondsToMilliseconds(15)
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${runningTransactions.toString()} transaction(s) in progress, waiting ${formatDurationMilliSeconds(
+              waitTime
+            )} before continuing firmware update simulation`
+          )
+          await sleep(waitTime)
+          transactionsStarted = true
+          wasTransactionsStarted = true
+        } else {
+          for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+            if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
+              await sendAndSetConnectorStatus(chargingStation, {
+                connectorId,
+                status: OCPP16ChargePointStatus.Unavailable,
+              } as OCPP16StatusNotificationRequest)
+            }
+          }
+          transactionsStarted = false
+        }
+      } while (transactionsStarted)
+      !wasTransactionsStarted &&
+        (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1))))
+      if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
+        return
+      }
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: OCPP16FirmwareStatus.Installing,
+      })
+      if (chargingStation.stationInfo != null) {
+        chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing
+      }
+      if (
+        chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
+        OCPP16FirmwareStatus.InstallationFailed
+      ) {
+        await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16FirmwareStatusNotificationRequest,
+          OCPP16FirmwareStatusNotificationResponse
+        >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+          status: chargingStation.stationInfo.firmwareUpgrade.failureStatus,
+        })
+        chargingStation.stationInfo.firmwareStatus =
+          chargingStation.stationInfo.firmwareUpgrade.failureStatus
+        return
+      }
       await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
-      await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: OCPP16FirmwareStatus.Installed,
+      })
+      if (chargingStation.stationInfo != null) {
+        chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installed
+      }
+      if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
+        await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
+        await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
+      }
+    } finally {
+      stationState.firmwareUpdateInProgress = undefined
     }
   }
 }
