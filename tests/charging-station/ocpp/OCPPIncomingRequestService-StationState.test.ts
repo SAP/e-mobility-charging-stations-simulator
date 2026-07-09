@@ -1,13 +1,17 @@
 /**
  * @file Tests for OCPPIncomingRequestService per-station state plumbing (#1963)
  * @description Unit tests for the shared WeakMap + lazy-init + stop() template
- *   in `OCPPIncomingRequestService` and for the OCPP 1.6 `resetStationState`
- *   contract.
+ *   in `OCPPIncomingRequestService`, the OCPP 1.6 `resetStationState` contract,
+ *   and the post-stop resurrection guard: `stop()` marks the entry
+ *   `stopped: true` instead of evicting the WeakMap entry, and
+ *   `getOrCreateStationState` returns the sealed stopped state on late
+ *   dispatch instead of lazy-init'ing a fresh entry.
  *
- * The OCPP 2.0.1 5-statement ordering invariant (abort firmware → abort log →
- * cancel retry → resetActiveFirmwareUpdateState → resetActiveLogUploadState)
- * is enforced by three independent mechanisms verified out-of-band from these
- * tests: (1) JSDoc rationale on `OCPP20IncomingRequestService.resetStationState`
+ * The OCPP 2.0.1 6-statement ordering invariant (abort firmware → abort log →
+ * cancel cert signing retry → cancel security-event retry →
+ * resetActiveFirmwareUpdateState → resetActiveLogUploadState) is enforced by
+ * three independent mechanisms verified out-of-band from these tests: (1)
+ * JSDoc rationale on `OCPP20IncomingRequestService.resetStationState`
  * documenting the `?.abort()` short-circuit consequence of reordering, (2) the
  * `no-restricted-syntax` ESLint rule preventing direct `stationsState`
  * mutations from subclass code, and (3) byte-identical preservation of the
@@ -23,9 +27,11 @@ import { OCPP16IncomingRequestService } from '../../../src/charging-station/ocpp
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../helpers/StationHelpers.js'
 
-type OCPP16StationStateShape = Record<string, unknown>
+interface OCPP16StationStateShape {
+  stopped?: boolean
+}
 
-interface PlumbingAccess<T extends object> {
+interface PlumbingAccess<T extends { stopped?: boolean }> {
   createStationState: () => T
   getOrCreateStationState: (chargingStation: ChargingStation) => T
   resetStationState: (state: T) => void
@@ -70,13 +76,29 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
     assert.strictEqual(plumbing.stationsState.get(stationA), first)
   })
 
-  await it('should delete the WeakMap entry after stop()', () => {
-    plumbing.getOrCreateStationState(stationA)
+  await it('should mark stopped and preserve the WeakMap entry after stop()', () => {
+    const state = plumbing.getOrCreateStationState(stationA)
     assert.strictEqual(plumbing.stationsState.has(stationA), true)
+    assert.strictEqual(state.stopped, undefined)
 
     service.stop(stationA)
 
-    assert.strictEqual(plumbing.stationsState.has(stationA), false)
+    assert.strictEqual(plumbing.stationsState.has(stationA), true)
+    assert.strictEqual(plumbing.stationsState.get(stationA), state)
+    assert.strictEqual(state.stopped, true)
+  })
+
+  await it('should return the sealed stopped state from getOrCreateStationState after stop(), without re-invoking createStationState', () => {
+    const first = plumbing.getOrCreateStationState(stationA)
+
+    service.stop(stationA)
+
+    const createSpy: ReturnType<typeof mock.fn> = mock.method(plumbing, 'createStationState')
+    const afterStop = plumbing.getOrCreateStationState(stationA)
+
+    assert.strictEqual(afterStop, first)
+    assert.strictEqual(afterStop.stopped, true)
+    assert.strictEqual(createSpy.mock.callCount(), 0)
   })
 
   await it('should invoke resetStationState exactly once with the current state on stop()', () => {
@@ -105,9 +127,12 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
 
     service.stop(stationA)
 
-    assert.strictEqual(plumbing.stationsState.has(stationA), false)
+    assert.strictEqual(plumbing.stationsState.has(stationA), true)
+    assert.strictEqual(plumbing.stationsState.get(stationA), stateA)
+    assert.strictEqual(stateA.stopped, true)
     assert.strictEqual(plumbing.stationsState.has(stationB), true)
     assert.strictEqual(plumbing.stationsState.get(stationB), stateB)
+    assert.strictEqual(stateB.stopped, undefined)
   })
 
   await it('should not mutate state in the OCPP 1.6 default resetStationState', () => {
@@ -121,7 +146,7 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
     assert.strictEqual(plumbing.stationsState.get(stationA), state)
   })
 
-  await it('should not delete the WeakMap entry when resetStationState throws, and re-invoke on subsequent stop()', () => {
+  await it('should not mark stopped when resetStationState throws, and re-invoke on subsequent stop()', () => {
     const state = plumbing.getOrCreateStationState(stationA)
     const failure = new Error('reset failed')
     let shouldThrow = true
@@ -139,12 +164,15 @@ await describe('OCPPIncomingRequestService — per-station state plumbing', asyn
     )
     assert.strictEqual(plumbing.stationsState.has(stationA), true)
     assert.strictEqual(plumbing.stationsState.get(stationA), state)
+    assert.strictEqual(state.stopped, undefined)
 
     shouldThrow = false
     service.stop(stationA)
 
     assert.strictEqual(resetSpy.mock.callCount(), 2)
     assert.strictEqual(resetSpy.mock.calls[1].arguments[0], state)
-    assert.strictEqual(plumbing.stationsState.has(stationA), false)
+    assert.strictEqual(plumbing.stationsState.has(stationA), true)
+    assert.strictEqual(plumbing.stationsState.get(stationA), state)
+    assert.strictEqual(state.stopped, true)
   })
 })

@@ -361,9 +361,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseSignCertificate: SignCertificate response received, status: ${payload.status}`
     )
     if (payload.status === GenericStatus.Accepted) {
+      // Optional-chain: `getCertSigningRetryManager` returns undefined
+      // when the station has been stopped.
       OCPP20IncomingRequestService.getInstance()
         .getCertSigningRetryManager(chargingStation)
-        .startRetryTimer(requestPayload.certificateType)
+        ?.startRetryTimer(requestPayload.certificateType)
     }
   }
 
