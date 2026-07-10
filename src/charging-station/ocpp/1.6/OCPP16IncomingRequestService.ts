@@ -702,6 +702,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           // the handle before the awaited simulation so resetStationState
           // never targets a fired timer.
           const stationState = this.getOrCreateStationState(chargingStation)
+          // Silent-drop late `.on(UPDATE_FIRMWARE, ...)` dispatch after
+          // `stop()`: the sealed state must not acquire a new
+          // `deferredFirmwareUpdateTimer` write.
+          if (stationState.stopped === true) {
+            return
+          }
           this.cancelDeferredFirmwareUpdate(stationState)
           // Clamp via canonical helper: a retrieveDate beyond
           // Constants.MAX_SETINTERVAL_DELAY_MS would otherwise be silently
