@@ -444,6 +444,59 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       })
     })
 
+    await it('should not schedule a deferred timer when UPDATE_FIRMWARE fires after stop() sealed the state', async t => {
+      // Arrange
+      const { station } = createOCPP16ListenerStation('listener-timer-post-stop-schedule')
+      const firstRequest: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 60_000),
+      }
+      const secondRequest: OCPP16UpdateFirmwareRequest = {
+        location: 'ftp://localhost/firmware.bin',
+        retrieveDate: new Date(Date.now() + 90_000),
+      }
+      const response: OCPP16UpdateFirmwareResponse = {}
+
+      // Act & Assert
+      await withMockTimers(t, ['setTimeout'], async () => {
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          firstRequest,
+          response
+        )
+        listenerService.stop(station)
+        const plumbing = asPlumbing(listenerService)
+        assert.strictEqual(plumbing.stationsState.get(station)?.stopped, true)
+        assert.strictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+
+        listenerService.emit(
+          OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+          station,
+          secondRequest,
+          response
+        )
+
+        assert.strictEqual(plumbing.stationsState.get(station)?.stopped, true)
+        assert.strictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+
+        t.mock.timers.tick(120_000)
+        await flushMicrotasks()
+
+        assert.strictEqual(updateFirmwareMock.mock.callCount(), 0)
+        assert.strictEqual(
+          plumbing.stationsState.get(station)?.deferredFirmwareUpdateTimer,
+          undefined
+        )
+      })
+    })
+
     await it('should self-clear the deferred timer handle when the callback fires on schedule', async t => {
       // Arrange
       const { station } = createOCPP16ListenerStation('listener-timer-self-clear')
