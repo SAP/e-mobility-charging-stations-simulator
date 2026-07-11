@@ -21,7 +21,7 @@ import {
   OCPPVersion,
   UpdateFirmwareStatusEnumType,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { Constants, logger } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
   standardCleanup,
@@ -34,6 +34,20 @@ import {
   createMockStationWithRequestTracking,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
+
+interface FirmwareUpdatePlumbing {
+  clearActiveFirmwareUpdate: (chargingStation: ChargingStation, requestId: number) => void
+  getOrCreateStationState: (chargingStation: ChargingStation) => FirmwareUpdateStateShape
+  stationsState: WeakMap<ChargingStation, FirmwareUpdateStateShape>
+}
+
+interface FirmwareUpdateStateShape {
+  activeFirmwareUpdateAbortController?: AbortController
+  activeFirmwareUpdateRequestId?: number
+}
+
+const asPlumbing = (service: OCPP20IncomingRequestService): FirmwareUpdatePlumbing =>
+  service as unknown as FirmwareUpdatePlumbing
 
 await describe('L01/L02 - UpdateFirmware', async () => {
   let station: ChargingStation
@@ -281,17 +295,10 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       assert.strictEqual(simulateMock.mock.callCount(), 0)
     })
 
-    await it('should handle simulateFirmwareUpdateLifecycle rejection gracefully', async () => {
-      mock.method(
-        service as unknown as {
-          simulateFirmwareUpdateLifecycle: (
-            chargingStation: ChargingStation,
-            requestId: number,
-            firmware: FirmwareType
-          ) => Promise<void>
-        },
-        'simulateFirmwareUpdateLifecycle',
-        async () => Promise.reject(new Error('firmware lifecycle error'))
+    await it('should handle simulateFirmwareUpdateLifecycle rejection gracefully', async t => {
+      const errorMock = t.mock.method(logger, 'error')
+      simulateMock.mock.mockImplementation(async () =>
+        Promise.reject(new Error('firmware lifecycle error'))
       )
 
       const request: OCPP20UpdateFirmwareRequest = {
@@ -308,6 +315,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
 
       await flushMicrotasks()
+      assert.strictEqual(errorMock.mock.callCount(), 1)
     })
 
     await it('should cancel previous firmware update when new one arrives', async t => {
@@ -1316,6 +1324,42 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           )
         })
       })
+    })
+  })
+
+  await describe('clearActiveFirmwareUpdate', async () => {
+    await it('should log at debug and preserve state for a superseded (non-matching) requestId', t => {
+      // Arrange
+      const service = new OCPP20IncomingRequestService()
+      const plumbing = asPlumbing(service)
+      const debugMock = t.mock.method(logger, 'debug')
+      const state = plumbing.getOrCreateStationState(station)
+      state.activeFirmwareUpdateRequestId = 200
+
+      // Act: a stale/superseded completion for requestId 199
+      plumbing.clearActiveFirmwareUpdate(station, 199)
+
+      // Assert: else-branch fired the debug log and left state untouched
+      assert.strictEqual(debugMock.mock.callCount(), 1)
+      assert.strictEqual(state.activeFirmwareUpdateRequestId, 200)
+    })
+
+    await it('should reset state and not log for a matching requestId', t => {
+      // Arrange
+      const service = new OCPP20IncomingRequestService()
+      const plumbing = asPlumbing(service)
+      const debugMock = t.mock.method(logger, 'debug')
+      const state = plumbing.getOrCreateStationState(station)
+      state.activeFirmwareUpdateAbortController = new AbortController()
+      state.activeFirmwareUpdateRequestId = 200
+
+      // Act: the active firmware update completes cleanly
+      plumbing.clearActiveFirmwareUpdate(station, 200)
+
+      // Assert: state cleared, no "Ignoring" debug log
+      assert.strictEqual(state.activeFirmwareUpdateRequestId, undefined)
+      assert.strictEqual(state.activeFirmwareUpdateAbortController, undefined)
+      assert.strictEqual(debugMock.mock.callCount(), 0)
     })
   })
 })
