@@ -48,7 +48,7 @@ importers:
         specifier: 0.40.4
         version: 0.40.4
       mongodb:
-        specifier: ^7.4.0
+        specifier: ^7.5.0
         version: 7.5.0
       poolifier:
         specifier: ^5.3.2
@@ -76,7 +76,7 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0
       '@commitlint/cli':
-        specifier: ^21.2.0
+        specifier: ^21.2.1
         version: 21.2.1(@types/node@24.13.3)(conventional-commits-parser@7.0.1)(typescript@6.0.3)
       '@commitlint/config-conventional':
         specifier: ^21.2.0
@@ -91,7 +91,7 @@ importers:
         specifier: ^6.6.15
         version: 6.6.15(better-sqlite3@11.10.0)(mariadb@3.4.5)
       '@types/node':
-        specifier: ^24.13.2
+        specifier: ^24.13.3
         version: 24.13.3
       '@types/semver':
         specifier: ^7.7.1
@@ -253,7 +253,7 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.23.0)(yaml@2.9.0))
       vue-tsc:
-        specifier: ^3.3.6
+        specifier: ^3.3.7
         version: 3.3.7(typescript@6.0.3)
 
 packages:
