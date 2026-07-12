@@ -261,17 +261,17 @@ await describe('Utils', async () => {
     assert.notDeepStrictEqual(randomFloat, getRandomFloat())
     assert.throws(
       () => {
-        getRandomFloat(0, 1)
+        getRandomFloat(1, 0)
       },
       { message: /Invalid interval/ }
     )
     assert.throws(
       () => {
-        getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)
+        getRandomFloat(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)
       },
       { message: /Invalid interval/ }
     )
-    randomFloat = getRandomFloat(0, -Number.MAX_VALUE)
+    randomFloat = getRandomFloat(-Number.MAX_VALUE, 0)
     assert.strictEqual(randomFloat >= -Number.MAX_VALUE, true)
     assert.strictEqual(randomFloat <= 0, true)
   })
@@ -806,7 +806,7 @@ await describe('Utils', async () => {
   })
 
   await it('should generate random float rounded to specified scale', () => {
-    const result = getRandomFloatRounded(10, 0, 2)
+    const result = getRandomFloatRounded(0, 10, 2)
     assert.strictEqual(result >= 0, true)
     assert.strictEqual(result <= 10, true)
     // Check rounding to 2 decimal places
@@ -815,7 +815,7 @@ await describe('Utils', async () => {
       assert.strictEqual(decimalStr.split('.')[1].length <= 2, true)
     }
     // Default scale
-    const defaultScale = getRandomFloatRounded(10, 0)
+    const defaultScale = getRandomFloatRounded(0, 10)
     assert.strictEqual(defaultScale >= 0, true)
     assert.strictEqual(defaultScale <= 10, true)
   })

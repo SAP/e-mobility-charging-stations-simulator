@@ -356,12 +356,13 @@ export const convertToBoolean = (value: unknown): boolean => {
 }
 
 /**
- * Generates a cryptographically secure random float in the [min, max] range
- * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`
- * @param min - The minimum value (inclusive). Defaults to `0`
- * @returns A float in the [min, max] range
+ * Generates a cryptographically secure random float in the [min, max] range.
+ * @param min - The minimum value (inclusive). Defaults to `0`.
+ * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`.
+ * @returns A float in the [min, max] range.
+ * @throws {RangeError} If `max < min` or either bound is not finite.
  */
-export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
+export const getRandomFloat = (min = 0, max = Number.MAX_VALUE): number => {
   if (max < min) {
     throw new RangeError('Invalid interval')
   }
@@ -395,10 +396,26 @@ export const roundTo = (numberValue: number, scale: number): number => {
   return roundedScaled / factor
 }
 
-export const getRandomFloatRounded = (max = Number.MAX_VALUE, min = 0, scale = 2): number => {
-  return roundTo(getRandomFloat(max, min), scale)
+/**
+ * Generates a cryptographically secure random float in the [min, max] range, rounded to the given scale.
+ * @param min - The minimum value (inclusive). Defaults to `0`.
+ * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`.
+ * @param scale - The number of decimal places to round to. Defaults to `2`.
+ * @returns A float in the [min, max] range, rounded to `scale` decimal places.
+ * @throws {RangeError} If `max < min` or either bound is not finite.
+ */
+export const getRandomFloatRounded = (min = 0, max = Number.MAX_VALUE, scale = 2): number => {
+  return roundTo(getRandomFloat(min, max), scale)
 }
 
+/**
+ * Generates a cryptographically secure random float fluctuating around `staticValue` by up to `fluctuationPercent`, rounded to the given scale.
+ * @param staticValue - The center value to fluctuate around.
+ * @param fluctuationPercent - The maximum fluctuation as a percentage in the [0, 100] range.
+ * @param scale - The number of decimal places to round to. Defaults to `2`.
+ * @returns A float within `fluctuationPercent` of `staticValue`, rounded to `scale` decimal places.
+ * @throws {RangeError} If `fluctuationPercent` is outside the [0, 100] range.
+ */
 export const getRandomFloatFluctuatedRounded = (
   staticValue: number,
   fluctuationPercent: number,
@@ -417,7 +434,7 @@ export const getRandomFloatFluctuatedRounded = (
   const lowerValue = staticValue * (1 - fluctuationRatio)
   const max = Math.max(upperValue, lowerValue)
   const min = Math.min(upperValue, lowerValue)
-  return getRandomFloatRounded(max, min, scale)
+  return getRandomFloatRounded(min, max, scale)
 }
 
 export const extractTimeSeriesValues = (timeSeries: CircularBuffer<TimestampedData>): number[] => {
