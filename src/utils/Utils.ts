@@ -360,13 +360,13 @@ export const convertToBoolean = (value: unknown): boolean => {
  * @param min - The minimum value (inclusive). Defaults to `0`.
  * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`.
  * @returns A float in the [min, max] range.
- * @throws {RangeError} If `max < min` or either bound is not finite.
+ * @throws {RangeError} If `max < min` or the interval width (`max - min`) is not finite.
  */
 export const getRandomFloat = (min = 0, max = Number.MAX_VALUE): number => {
   if (max < min) {
     throw new RangeError('Invalid interval')
   }
-  if (!Number.isFinite(max) || !Number.isFinite(min)) {
+  if (!Number.isFinite(max - min)) {
     throw new RangeError('Invalid interval')
   }
   return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min
@@ -402,7 +402,7 @@ export const roundTo = (numberValue: number, scale: number): number => {
  * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`.
  * @param scale - The number of decimal places to round to. Defaults to `2`.
  * @returns A float in the [min, max] range, rounded to `scale` decimal places.
- * @throws {RangeError} If `max < min` or either bound is not finite.
+ * @throws {RangeError} If `max < min` or the interval width (`max - min`) is not finite.
  */
 export const getRandomFloatRounded = (min = 0, max = Number.MAX_VALUE, scale = 2): number => {
   return roundTo(getRandomFloat(min, max), scale)
@@ -415,6 +415,7 @@ export const getRandomFloatRounded = (min = 0, max = Number.MAX_VALUE, scale = 2
  * @param scale - The number of decimal places to round to. Defaults to `2`.
  * @returns A float within `fluctuationPercent` of `staticValue`, rounded to `scale` decimal places.
  * @throws {RangeError} If `fluctuationPercent` is outside the [0, 100] range.
+ * @throws {RangeError} If a non-zero `fluctuationPercent` derives a non-finite interval width (e.g. `staticValue` near `Number.MAX_VALUE`).
  */
 export const getRandomFloatFluctuatedRounded = (
   staticValue: number,

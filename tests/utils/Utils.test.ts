@@ -271,9 +271,16 @@ await describe('Utils', async () => {
       },
       { message: /Invalid interval/ }
     )
+    assert.throws(
+      () => {
+        getRandomFloat(-Number.MAX_VALUE, Number.MAX_VALUE)
+      },
+      { message: /Invalid interval/ }
+    )
     randomFloat = getRandomFloat(-Number.MAX_VALUE, 0)
     assert.strictEqual(randomFloat >= -Number.MAX_VALUE, true)
     assert.strictEqual(randomFloat <= 0, true)
+    assert.strictEqual(getRandomFloat(5, 5), 5)
   })
 
   await it('should extract numeric values from timestamped circular buffer', () => {
@@ -838,6 +845,17 @@ await describe('Utils', async () => {
     const negResult = getRandomFloatFluctuatedRounded(-100, 10)
     assert.strictEqual(negResult >= -110, true)
     assert.strictEqual(negResult <= -90, true)
+    // Non-finite derived interval width throws via delegation to getRandomFloat
+    assert.throws(
+      () => {
+        getRandomFloatFluctuatedRounded(Number.MAX_VALUE, 10)
+      },
+      { message: /Invalid interval/ }
+    )
+    // Zero fluctuation returns early without delegating, so it never reaches the width guard
+    assert.doesNotThrow(() => {
+      getRandomFloatFluctuatedRounded(Number.MAX_VALUE, 0)
+    })
   })
 
   await it('should detect Cloud Foundry environment from VCAP_APPLICATION', () => {
