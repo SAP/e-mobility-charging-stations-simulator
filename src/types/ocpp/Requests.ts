@@ -1,8 +1,10 @@
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { OCPPError } from '../../exception/index.js'
-import type { JsonType } from '../JsonType.js'
+import type { JsonObject, JsonType } from '../JsonType.js'
+import type { OCPP16ChargePointErrorCode } from './1.6/ChargePointErrorCode.js'
 import type { OCPP16MeterValuesRequest } from './1.6/MeterValues.js'
 import type { OCPP20MeterValuesRequest } from './2.0/MeterValues.js'
+import type { ConnectorStatusEnum } from './ConnectorStatusEnum.js'
 import type { MessageType } from './MessageType.js'
 
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js'
@@ -97,6 +99,22 @@ export type MessageTrigger = MessageTriggerEnumType | OCPP16MessageTrigger
 export type MeterValuesRequest = OCPP16MeterValuesRequest | OCPP20MeterValuesRequest
 
 export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void
+
+/**
+ * Cross-version (OCPP 1.6/2.0.1) input for a StatusNotification request, looser than the per-version
+ * wire types it is built into. `connectorStatus` (2.0.1) takes precedence over `status` (1.6).
+ */
+export interface StatusNotificationOptions extends JsonObject {
+  connectorId: number
+  connectorStatus?: ConnectorStatusEnum
+  errorCode?: OCPP16ChargePointErrorCode
+  evseId?: number
+  info?: string
+  status?: ConnectorStatusEnum
+  timestamp?: Date
+  vendorErrorCode?: string
+  vendorId?: string
+}
 
 export type StatusNotificationRequest =
   OCPP16StatusNotificationRequest | OCPP20StatusNotificationRequest

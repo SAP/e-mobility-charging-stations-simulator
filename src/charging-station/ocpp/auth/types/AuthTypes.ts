@@ -331,7 +331,7 @@ export const isOCPP16Type = (type: IdentifierType): boolean => {
  * @returns True if OCPP 2.0.1 type
  */
 export const isOCPP20Type = (type: IdentifierType): boolean => {
-  return Object.values(OCPP20IdTokenEnumType).includes(type as unknown as OCPP20IdTokenEnumType)
+  return (Object.values(OCPP20IdTokenEnumType) as string[]).includes(type)
 }
 
 /**

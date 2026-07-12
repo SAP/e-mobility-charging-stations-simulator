@@ -377,4 +377,23 @@ await describe('OCPP20IncomingRequestService — post-stop resurrection guard', 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
   })
+
+  await describe('resetStationState abort-on-stop', async () => {
+    await it('should abort in-flight firmware and log upload controllers on stop()', () => {
+      const station = createStation('reset-abort')
+      const state = plumbing.getOrCreateStationState(station)
+      const firmwareController = new AbortController()
+      const logController = new AbortController()
+      state.activeFirmwareUpdateAbortController = firmwareController
+      state.activeLogUploadAbortController = logController
+
+      service.stop(station)
+
+      assert.strictEqual(firmwareController.signal.aborted, true)
+      assert.strictEqual(logController.signal.aborted, true)
+      assert.strictEqual(state.activeFirmwareUpdateAbortController, undefined)
+      assert.strictEqual(state.activeLogUploadAbortController, undefined)
+      assert.strictEqual(state.stopped, true)
+    })
+  })
 })

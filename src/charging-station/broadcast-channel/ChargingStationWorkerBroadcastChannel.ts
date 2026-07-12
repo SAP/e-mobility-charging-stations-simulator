@@ -36,7 +36,7 @@ import {
   ResponseStatus,
   StandardParametersKey,
   type StartTransactionResponse,
-  type StatusNotificationRequest,
+  type StatusNotificationOptions,
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
@@ -471,16 +471,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorId' field is required`
       )
     }
-    const payload = requestPayload as Record<string, unknown>
-    if (payload.connectorStatus == null && payload.status == null) {
+    const options = requestPayload as StatusNotificationOptions
+    if (options.connectorStatus == null && options.status == null) {
       throw new BaseError(
         `${this.chargingStation.logPrefix()} ${moduleName}.handleStatusNotification: 'connectorStatus' or 'status' field is required`
       )
     }
-    await sendAndSetConnectorStatus(
-      this.chargingStation,
-      requestPayload as unknown as StatusNotificationRequest
-    )
+    await sendAndSetConnectorStatus(this.chargingStation, options)
   }
 
   private async handleStopTransaction (

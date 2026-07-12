@@ -459,7 +459,7 @@ const buildEnergyMeasurandValue = (
       ),
       energyTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
     )
-    : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
+    : getRandomFloatRounded(connectorMinimumEnergyRounded, connectorMaximumEnergyRounded)
 
   return {
     template: energyTemplate,
@@ -616,22 +616,22 @@ const buildPowerMeasurandValue = (
           phase1Value ??
           defaultFluctuatedPowerPerPhase ??
           getRandomFloatRounded(
-            connectorMaximumPowerPerPhase / unitDivider,
-            connectorMinimumPowerPerPhase / unitDivider
+            connectorMinimumPowerPerPhase / unitDivider,
+            connectorMaximumPowerPerPhase / unitDivider
           )
         powerValues.L2 =
           phase2Value ??
           defaultFluctuatedPowerPerPhase ??
           getRandomFloatRounded(
-            connectorMaximumPowerPerPhase / unitDivider,
-            connectorMinimumPowerPerPhase / unitDivider
+            connectorMinimumPowerPerPhase / unitDivider,
+            connectorMaximumPowerPerPhase / unitDivider
           )
         powerValues.L3 =
           phase3Value ??
           defaultFluctuatedPowerPerPhase ??
           getRandomFloatRounded(
-            connectorMaximumPowerPerPhase / unitDivider,
-            connectorMinimumPowerPerPhase / unitDivider
+            connectorMinimumPowerPerPhase / unitDivider,
+            connectorMaximumPowerPerPhase / unitDivider
           )
       } else {
         powerValues.L1 = isNotEmptyString(powerTemplate.value)
@@ -648,8 +648,8 @@ const buildPowerMeasurandValue = (
             powerTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
           : getRandomFloatRounded(
-            connectorMaximumPower / unitDivider,
-            connectorMinimumPower / unitDivider
+            connectorMinimumPower / unitDivider,
+            connectorMaximumPower / unitDivider
           )
         powerValues.L2 = 0
         powerValues.L3 = 0
@@ -671,8 +671,8 @@ const buildPowerMeasurandValue = (
           powerTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
         )
         : getRandomFloatRounded(
-          connectorMaximumPower / unitDivider,
-          connectorMinimumPower / unitDivider
+          connectorMinimumPower / unitDivider,
+          connectorMaximumPower / unitDivider
         )
       break
     default: {
@@ -823,15 +823,15 @@ const buildCurrentMeasurandValue = (
         currentValues.L1 =
           phase1Value ??
           defaultFluctuatedAmperagePerPhase ??
-          getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
+          getRandomFloatRounded(connectorMinimumAmperage, connectorMaximumAmperage)
         currentValues.L2 =
           phase2Value ??
           defaultFluctuatedAmperagePerPhase ??
-          getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
+          getRandomFloatRounded(connectorMinimumAmperage, connectorMaximumAmperage)
         currentValues.L3 =
           phase3Value ??
           defaultFluctuatedAmperagePerPhase ??
-          getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
+          getRandomFloatRounded(connectorMinimumAmperage, connectorMaximumAmperage)
       } else {
         currentValues.L1 = isNotEmptyString(currentTemplate.value)
           ? getRandomFloatFluctuatedRounded(
@@ -846,7 +846,7 @@ const buildCurrentMeasurandValue = (
             ),
             currentTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
-          : getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
+          : getRandomFloatRounded(connectorMinimumAmperage, connectorMaximumAmperage)
         currentValues.L2 = 0
         currentValues.L3 = 0
       }
@@ -874,7 +874,7 @@ const buildCurrentMeasurandValue = (
           ),
           currentTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
         )
-        : getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage)
+        : getRandomFloatRounded(connectorMinimumAmperage, connectorMaximumAmperage)
       break
     default: {
       const errorMsg = `MeterValues measurand ${

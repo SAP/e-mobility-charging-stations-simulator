@@ -12,9 +12,11 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
+  OCPP16ChargePointStatus,
   OCPP20ConnectorStatusEnumType,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
+  type StatusNotificationOptions,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -140,6 +142,41 @@ await describe('OCPP20ServiceUtils', async () => {
       const result = OCPP20ServiceUtils.buildStatusNotificationRequest(mockStation, input)
 
       assert.strictEqual(result.connectorStatus, OCPP20ConnectorStatusEnumType.Faulted)
+    })
+
+    await it('should throw OCPPError when connectorStatus and status are both missing', () => {
+      const input: StatusNotificationOptions = {
+        connectorId: 1,
+        evseId: 1,
+      }
+
+      assert.throws(
+        () => {
+          OCPP20ServiceUtils.buildStatusNotificationRequest(mockStation, input)
+        },
+        (error: unknown) => {
+          assert.ok(error instanceof OCPPError)
+          return true
+        }
+      )
+    })
+
+    await it('should throw OCPPError when connectorStatus is not a valid OCPP 2.0.1 status', () => {
+      const input: StatusNotificationOptions = {
+        connectorId: 1,
+        connectorStatus: OCPP16ChargePointStatus.Preparing,
+        evseId: 1,
+      }
+
+      assert.throws(
+        () => {
+          OCPP20ServiceUtils.buildStatusNotificationRequest(mockStation, input)
+        },
+        (error: unknown) => {
+          assert.ok(error instanceof OCPPError)
+          return true
+        }
+      )
     })
   })
 })

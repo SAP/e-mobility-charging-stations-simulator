@@ -10,7 +10,7 @@ import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
-  type OCPP20ConnectorStatusEnumType,
+  OCPP20ConnectorStatusEnumType,
   type OCPP20EVSEType,
   type OCPP20GetVariableResultType,
   OCPP20IdTokenEnumType,
@@ -34,6 +34,7 @@ import {
   ReasonCodeEnumType,
   RequestCommand,
   type StartTransactionResult,
+  type StatusNotificationOptions,
   type StopTransactionReason,
   type StopTransactionResult,
   type UUIDv4,
@@ -70,6 +71,11 @@ import { mapStopReasonToOCPP20 } from './OCPP20RequestBuilders.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'
+
+export const isOCPP20ConnectorStatus = (
+  status: ConnectorStatusEnum
+): status is OCPP20ConnectorStatusEnumType =>
+  Object.values(OCPP20ConnectorStatusEnumType).some(value => value === status)
 
 export interface RejectionReason {
   additionalInfo: string
@@ -126,17 +132,16 @@ export class OCPP20ServiceUtils {
 
   /**
    * @param chargingStation - Target charging station for EVSE resolution
-   * @param commandParams - Status notification parameters
+   * @param commandParams - StatusNotification input; `connectorStatus` takes precedence over `status`
    * @returns Formatted OCPP 2.0.1 StatusNotification request payload
+   * @throws {OCPPError} When the EVSE id cannot be resolved or the connector status is missing/not a valid OCPP 2.0.1 status
    */
   public static buildStatusNotificationRequest (
     chargingStation: ChargingStation,
-    commandParams: OCPP20StatusNotificationRequest
+    commandParams: StatusNotificationOptions
   ): OCPP20StatusNotificationRequest {
-    const params = commandParams as Record<string, unknown>
-    const connectorId = params.connectorId as number
-    const connectorStatus = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
-    const evseId = params.evseId as number | undefined
+    const { connectorId, evseId } = commandParams
+    const connectorStatus = commandParams.connectorStatus ?? commandParams.status
     const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
     if (resolvedEvseId === undefined) {
       throw new OCPPError(
@@ -145,9 +150,16 @@ export class OCPP20ServiceUtils {
         RequestCommand.STATUS_NOTIFICATION
       )
     }
+    if (connectorStatus == null || !isOCPP20ConnectorStatus(connectorStatus)) {
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Cannot build status notification payload: invalid connector status for connector ${connectorId.toString()}`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
+    }
     return {
       connectorId,
-      connectorStatus: connectorStatus as OCPP20ConnectorStatusEnumType,
+      connectorStatus,
       evseId: resolvedEvseId,
       timestamp: new Date(),
     } satisfies OCPP20StatusNotificationRequest
@@ -813,7 +825,7 @@ export class OCPP20ServiceUtils {
       )
 
       const response = await chargingStation.ocppRequestService.requestHandler<
-        OCPP20TransactionEventRequest,
+        OCPP20TransactionEventOptions,
         OCPP20TransactionEventResponse
       >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, {
         connectorId,
@@ -821,7 +833,7 @@ export class OCPP20ServiceUtils {
         transactionId,
         triggerReason,
         ...options,
-      } as unknown as OCPP20TransactionEventRequest)
+      })
 
       return response
     } catch (error) {

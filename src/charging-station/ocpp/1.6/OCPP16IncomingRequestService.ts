@@ -85,7 +85,6 @@ import {
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
-  type OCPP16StatusNotificationRequest,
   type OCPP16StatusNotificationResponse,
   OCPP16StopTransactionReason,
   OCPP16SupportedFeatureProfiles,
@@ -103,6 +102,7 @@ import {
   type ResetRequest,
   type SetChargingProfileRequest,
   type SetChargingProfileResponse,
+  type StatusNotificationOptions,
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
 } from '../../../types/index.js'
@@ -639,14 +639,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           case OCPP16MessageTrigger.StatusNotification:
             if (connectorId != null) {
               chargingStation.ocppRequestService
-                .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+                .requestHandler<StatusNotificationOptions, OCPP16StatusNotificationResponse>(
                   chargingStation,
                   OCPP16RequestCommand.STATUS_NOTIFICATION,
                   {
                     connectorId,
                     status: chargingStation.getConnectorStatus(connectorId)
                       ?.status as OCPP16ChargePointStatus,
-                  } as unknown as OCPP16StatusNotificationRequest,
+                  },
                   {
                     triggerMessage: true,
                   }
@@ -655,16 +655,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
             } else {
               for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
                 chargingStation.ocppRequestService
-                  .requestHandler<
-                    OCPP16StatusNotificationRequest,
-                    OCPP16StatusNotificationResponse
-                  >(
+                  .requestHandler<StatusNotificationOptions, OCPP16StatusNotificationResponse>(
                     chargingStation,
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
                     {
                       connectorId,
                       status: connectorStatus.status as OCPP16ChargePointStatus,
-                    } as unknown as OCPP16StatusNotificationRequest,
+                    },
                     {
                       triggerMessage: true,
                     }
@@ -945,7 +942,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: chargePointStatus,
-      } as OCPP16StatusNotificationRequest)
+      })
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
     }
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED
@@ -1942,7 +1939,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: OCPP16ChargePointStatus.Available,
-    } as OCPP16StatusNotificationRequest)
+    })
     chargingStation.unlockConnector(connectorId)
     return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
   }
@@ -2047,7 +2044,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
           await sendAndSetConnectorStatus(chargingStation, {
             connectorId,
             status: OCPP16ChargePointStatus.Unavailable,
-          } as OCPP16StatusNotificationRequest)
+          })
         }
       }
       await chargingStation.ocppRequestService.requestHandler<
@@ -2104,7 +2101,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
               await sendAndSetConnectorStatus(chargingStation, {
                 connectorId,
                 status: OCPP16ChargePointStatus.Unavailable,
-              } as OCPP16StatusNotificationRequest)
+              })
             }
           }
           transactionsStarted = false

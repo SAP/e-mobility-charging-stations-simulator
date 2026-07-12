@@ -107,7 +107,6 @@ import {
   type OCPP20SetNetworkProfileResponse,
   type OCPP20SetVariablesRequest,
   type OCPP20SetVariablesResponse,
-  type OCPP20StatusNotificationRequest,
   type OCPP20StatusNotificationResponse,
   OCPP20TransactionEventEnumType,
   type OCPP20TriggerMessageRequest,
@@ -129,6 +128,7 @@ import {
   ResetStatusEnumType,
   SetNetworkProfileStatusEnumType,
   SetVariableStatusEnumType,
+  type StatusNotificationOptions,
   StopTransactionReason,
   TriggerMessageStatusEnumType,
   UnlockStatusEnumType,
@@ -185,7 +185,7 @@ import {
 } from './OCPP20CertificateManager.js'
 import { OCPP20CertSigningRetryManager } from './OCPP20CertSigningRetryManager.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import { isOCPP20ConnectorStatus, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
 
@@ -197,6 +197,21 @@ const moduleName = 'OCPP20IncomingRequestService'
 // §2.1.18 DeviceDataCtrlr.BytesPerMessage(instance:GetReport); both are ReadOnly
 // device capability declarations with no spec-defined ceiling.
 const MAX_ITEMS_PER_REPORT_MESSAGE = 100 as const
+
+// V2GCertificateChain has no InstallCertificateUse counterpart, so it collapses onto V2GRootCertificate.
+const getCertificateIdUseToInstallCertificateUse: Readonly<
+  Record<GetCertificateIdUseEnumType, InstallCertificateUseEnumType>
+> = Object.freeze({
+  [GetCertificateIdUseEnumType.CSMSRootCertificate]:
+    InstallCertificateUseEnumType.CSMSRootCertificate,
+  [GetCertificateIdUseEnumType.ManufacturerRootCertificate]:
+    InstallCertificateUseEnumType.ManufacturerRootCertificate,
+  [GetCertificateIdUseEnumType.MORootCertificate]: InstallCertificateUseEnumType.MORootCertificate,
+  [GetCertificateIdUseEnumType.V2GCertificateChain]:
+    InstallCertificateUseEnumType.V2GRootCertificate,
+  [GetCertificateIdUseEnumType.V2GRootCertificate]:
+    InstallCertificateUseEnumType.V2GRootCertificate,
+})
 
 interface StationInfoReportField {
   property: 'chargePointModel' | 'chargePointSerialNumber' | 'chargePointVendor' | 'firmwareVersion'
@@ -1580,7 +1595,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       connectorStatus: resolvedStatus,
-    } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+    }).catch((error: unknown) => {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleConnectorChangeAvailability: Error sending status notification for connector ${connectorId.toString()}:`,
         error
@@ -2163,12 +2178,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
 
     try {
-      const filterTypes = certificateType?.map(ct => {
-        if (ct === GetCertificateIdUseEnumType.V2GCertificateChain) {
-          return InstallCertificateUseEnumType.V2GRootCertificate
-        }
-        return ct as unknown as InstallCertificateUseEnumType
-      })
+      const filterTypes = certificateType?.map(ct => getCertificateIdUseToInstallCertificateUse[ct])
 
       const methodResult = chargingStation.certificateManager.getInstalledCertificates(
         chargingStation.stationInfo?.hashId ?? '',
@@ -3185,7 +3195,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         connectorId,
         connectorStatus: ConnectorStatusEnum.Available,
         evseId,
-      } as unknown as OCPP20StatusNotificationRequest)
+      })
 
       chargingStation.unlockConnector(connectorId)
       return { status: UnlockStatusEnumType.Unlocked }
@@ -3470,12 +3480,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         for (const [connectorId, connector] of evseStatus.connectors) {
           if (
             connector.status != null &&
+            isOCPP20ConnectorStatus(connector.status) &&
             !stationState.preInoperativeConnectorStatuses.has(connectorId)
           ) {
-            stationState.preInoperativeConnectorStatuses.set(
-              connectorId,
-              connector.status as unknown as OCPP20ConnectorStatusEnumType
-            )
+            stationState.preInoperativeConnectorStatuses.set(connectorId, connector.status)
           }
         }
       }
@@ -3594,7 +3602,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         connectorStatus: status,
-      } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+      }).catch((error: unknown) => {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.sendAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
           error
@@ -3620,7 +3628,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         sendAndSetConnectorStatus(chargingStation, {
           connectorId,
           connectorStatus: status,
-        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+        }).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.sendEvseStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
             error
@@ -3847,7 +3855,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         connectorStatus: restoredStatus,
-      } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+      }).catch((error: unknown) => {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.sendRestoredAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
           error
@@ -3867,7 +3875,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         sendAndSetConnectorStatus(chargingStation, {
           connectorId,
           connectorStatus: restoredStatus,
-        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
+        }).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.sendRestoredEvseStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
             error
@@ -4247,14 +4255,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     )) {
       const resolvedStatus = connectorStatus.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+        .requestHandler<StatusNotificationOptions, OCPP20StatusNotificationResponse>(
           chargingStation,
           OCPP20RequestCommand.STATUS_NOTIFICATION,
           {
             connectorId,
             connectorStatus: resolvedStatus,
             evseId,
-          } as unknown as OCPP20StatusNotificationRequest,
+          },
           { skipBufferingOnError: true, triggerMessage: true }
         )
         .catch(errorHandler)
@@ -4320,14 +4328,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
       const resolvedStatus = connectorStatus?.status ?? ConnectorStatusEnum.Available
       chargingStation.ocppRequestService
-        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+        .requestHandler<StatusNotificationOptions, OCPP20StatusNotificationResponse>(
           chargingStation,
           OCPP20RequestCommand.STATUS_NOTIFICATION,
           {
             connectorId: evse.connectorId,
             connectorStatus: resolvedStatus,
             evseId: evse.id,
-          } as unknown as OCPP20StatusNotificationRequest,
+          },
           { skipBufferingOnError: true, triggerMessage: true }
         )
         .catch(errorHandler)
