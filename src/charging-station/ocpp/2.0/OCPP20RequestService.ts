@@ -14,10 +14,10 @@ import {
   OCPP20RequestCommand,
   OCPP20RequiredVariableName,
   type OCPP20SignCertificateRequest,
-  type OCPP20StatusNotificationRequest,
   type OCPP20TransactionEventOptions,
   OCPPVersion,
   type RequestParams,
+  type StatusNotificationOptions,
 } from '../../../types/index.js'
 import { generateUUID, getErrorMessage, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
@@ -27,6 +27,10 @@ import { OCPP20Constants } from './OCPP20Constants.js'
 import { buildTransactionEvent, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20RequestService'
+
+interface SignCertificateOptions extends JsonObject {
+  certificateType?: CertificateSigningUseEnumType
+}
 
 /**
  * OCPP 2.0.1 Request Service
@@ -112,7 +116,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         const requestPayload =
           params?.rawPayload === true
             ? (commandParams as RequestType)
-            : this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams)
+            : this.buildRequestPayload(chargingStation, commandName, commandParams)
         const messageId = generateUUID()
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
@@ -139,12 +143,11 @@ export class OCPP20RequestService extends OCPPRequestService {
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  private buildRequestPayload<Request extends JsonType>(
+  private buildRequestPayload (
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     commandParams?: JsonType
-  ): Request {
+  ): JsonType {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building '${commandName}' payload`
     )
@@ -160,9 +163,9 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION:
       case OCPP20RequestCommand.NOTIFY_REPORT:
       case OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION:
-        return commandParams as unknown as Request
+        return commandParams ?? OCPP20Constants.OCPP_REQUEST_EMPTY
       case OCPP20RequestCommand.HEARTBEAT:
-        return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
+        return OCPP20Constants.OCPP_REQUEST_EMPTY
       case OCPP20RequestCommand.SIGN_CERTIFICATE: {
         let csr: string
         try {
@@ -186,26 +189,26 @@ export class OCPP20RequestService extends OCPPRequestService {
           )
         }
 
-        const certificateType = (commandParams as JsonObject | undefined)?.certificateType as
-          CertificateSigningUseEnumType | undefined
+        const certificateType = (commandParams as SignCertificateOptions | undefined)
+          ?.certificateType
 
         const requestPayload: OCPP20SignCertificateRequest = {
           csr,
           ...(certificateType != null && { certificateType }),
         }
 
-        return requestPayload as unknown as Request
+        return requestPayload
       }
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return OCPP20ServiceUtils.buildStatusNotificationRequest(
           chargingStation,
-          commandParams as unknown as OCPP20StatusNotificationRequest
-        ) as unknown as Request
+          commandParams as StatusNotificationOptions
+        )
       case OCPP20RequestCommand.TRANSACTION_EVENT:
         return buildTransactionEvent(
           chargingStation,
-          commandParams as unknown as OCPP20TransactionEventOptions
-        ) as unknown as Request
+          commandParams as OCPP20TransactionEventOptions
+        )
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`

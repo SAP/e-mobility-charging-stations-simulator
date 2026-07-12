@@ -103,7 +103,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         const requestPayload =
           params?.rawPayload === true
             ? (commandParams as RequestType)
-            : this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams)
+            : this.buildRequestPayload(chargingStation, commandName, commandParams)
         const messageId = generateUUID()
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
@@ -114,7 +114,7 @@ export class OCPP16RequestService extends OCPPRequestService {
             await sendAndSetConnectorStatus(chargingStation, {
               connectorId: (commandParams as OCPP16StartTransactionRequest).connectorId,
               status: OCPP16ChargePointStatus.Preparing,
-            } as OCPP16StatusNotificationRequest)
+            })
             break
         }
         const response = (await this.sendMessage(
@@ -158,12 +158,11 @@ export class OCPP16RequestService extends OCPPRequestService {
    * @param commandParams - Optional parameters provided by the caller for payload construction
    * @returns The fully constructed and validated request payload ready for transmission
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  private buildRequestPayload<Request extends JsonType>(
+  private buildRequestPayload (
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
-  ): Request {
+  ): JsonType {
     let connectorId: number | undefined
     let energyActiveImportRegister: number
     logger.debug(
@@ -175,9 +174,9 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
       case OCPP16RequestCommand.METER_VALUES:
-        return commandParams as unknown as Request
+        return commandParams ?? OCPP16Constants.OCPP_REQUEST_EMPTY
       case OCPP16RequestCommand.HEARTBEAT:
-        return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
+        return OCPP16Constants.OCPP_REQUEST_EMPTY
     }
     assertIsJsonObject(
       commandParams,
@@ -193,7 +192,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         return {
           idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
           ...params,
-        } as unknown as Request
+        }
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
           idTag: OCPP16Constants.OCPP_DEFAULT_IDTAG,
@@ -215,12 +214,12 @@ export class OCPP16RequestService extends OCPPRequestService {
             )?.reservationId,
           }),
           ...params,
-        } as unknown as Request
+        }
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return OCPP16ServiceUtils.buildStatusNotificationRequest({
           errorCode: ChargePointErrorCode.NO_ERROR,
           ...params,
-        } as OCPP16StatusNotificationRequest) as unknown as Request
+        } as OCPP16StatusNotificationRequest)
       case OCPP16RequestCommand.STOP_TRANSACTION:
         ;(chargingStation.stationInfo?.transactionDataMeterValues === true ||
           OCPP16ServiceUtils.isSigningEnabled(chargingStation)) &&
@@ -272,7 +271,7 @@ export class OCPP16RequestService extends OCPPRequestService {
             timestamp: new Date(),
             ...(transactionData != null && { transactionData }),
             ...params,
-          } as unknown as Request
+          }
         }
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().

@@ -291,11 +291,11 @@ export abstract class OCPPIncomingRequestService<
    */
   protected abstract resetStationState (stationState: TStationState): void
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- bridges contravariant handler signatures into IncomingRequestHandler
-  protected toRequestHandler<P extends JsonType, R extends JsonType>(
-    handler: (chargingStation: ChargingStation, commandPayload: P) => Promise<R> | R
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- P bridges contravariant handler payload signatures into IncomingRequestHandler
+  protected toRequestHandler<P extends JsonType>(
+    handler: (chargingStation: ChargingStation, commandPayload: P) => JsonType | Promise<JsonType>
   ): IncomingRequestHandler {
-    return handler as unknown as IncomingRequestHandler
+    return handler as IncomingRequestHandler
   }
 
   /**

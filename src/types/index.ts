@@ -394,6 +394,7 @@ export {
   type RequestParams,
   type ResponseCallback,
   type ResponseType,
+  type StatusNotificationOptions,
   type StatusNotificationRequest,
 } from './ocpp/Requests.js'
 export {

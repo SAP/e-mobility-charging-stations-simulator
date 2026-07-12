@@ -271,7 +271,7 @@ export interface OCPP20MessageContentType extends JsonObject {
  * Optional parameters for building and sending TransactionEvent requests.
  * Aligned with OCPP 2.0.1 TransactionEvent.req optional fields.
  */
-export interface OCPP20TransactionEventOptions {
+export interface OCPP20TransactionEventOptions extends JsonObject {
   cableMaxCurrent?: number
   chargingState?: OCPP20ChargingStateEnumType
   connectorId?: number
