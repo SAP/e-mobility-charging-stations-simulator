@@ -26,7 +26,6 @@ import {
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
-  type OCPP16StatusNotificationRequest,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
   OCPPVersion,
@@ -503,7 +502,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: OCPP16ChargePointStatus.Charging,
-      } as OCPP16StatusNotificationRequest)
+      })
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Transaction with id ${payload.transactionId.toString()} STARTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -589,7 +588,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         await sendAndSetConnectorStatus(chargingStation, {
           connectorId: transactionConnectorId,
           status: OCPP16ChargePointStatus.Finishing,
-        } as OCPP16StatusNotificationRequest)
+        })
       }
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
       if (transactionConnectorStatus != null) {

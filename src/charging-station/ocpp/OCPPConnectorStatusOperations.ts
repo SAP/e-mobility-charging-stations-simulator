@@ -5,10 +5,9 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
-  type OCPP16ChargePointErrorCode,
   OCPPVersion,
   RequestCommand,
-  type StatusNotificationRequest,
+  type StatusNotificationOptions,
   type StatusNotificationResponse,
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
@@ -18,20 +17,18 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 /**
  * Sends a StatusNotification request and updates the connector status locally.
  * @param chargingStation - Target charging station
- * @param commandParams - Status notification parameters including connector ID and status
+ * @param commandParams - Cross-version StatusNotification input; `connectorStatus` (OCPP 2.0.1) takes precedence over `status` (OCPP 1.6)
  * @param options - Optional settings to control whether the request is actually sent
  * @param options.send - Whether to actually send the status notification
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
-  commandParams: StatusNotificationRequest,
+  commandParams: StatusNotificationOptions,
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
-  const params = commandParams as Record<string, unknown>
-  const connectorId = params.connectorId as number
-  const status = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
-  const errorCode = params.errorCode as OCPP16ChargePointErrorCode | undefined
+  const { connectorId, errorCode } = commandParams
+  const status = commandParams.connectorStatus ?? commandParams.status
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   if (connectorStatus == null) {
     return
@@ -39,7 +36,7 @@ export const sendAndSetConnectorStatus = async (
   if (options.send) {
     checkConnectorStatusTransition(chargingStation, connectorId, status)
     await chargingStation.ocppRequestService.requestHandler<
-      StatusNotificationRequest,
+      StatusNotificationOptions,
       StatusNotificationResponse
     >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
   }
@@ -70,7 +67,7 @@ export const sendPostTransactionStatus = async (
     connectorId,
     connectorStatus: status,
     status,
-  } as unknown as StatusNotificationRequest)
+  })
 }
 
 /**
@@ -91,19 +88,19 @@ export const restoreConnectorStatus = async (
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: ConnectorStatusEnum.Reserved,
-    } as unknown as StatusNotificationRequest)
+    })
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: ConnectorStatusEnum.Available,
-    } as unknown as StatusNotificationRequest)
+    })
   }
 }
 
 const checkConnectorStatusTransition = (
   chargingStation: ChargingStation,
   connectorId: number,
-  status: ConnectorStatusEnum
+  status: ConnectorStatusEnum | undefined
 ): boolean => {
   const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
   let chargingStationTransitions: readonly { from?: ConnectorStatusEnum; to: ConnectorStatusEnum }[]
@@ -137,7 +134,10 @@ const checkConnectorStatusTransition = (
       } connector id ${connectorId.toString()} status transition from '${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         chargingStation.getConnectorStatus(connectorId)?.status
-      }' to '${status}' is not allowed`
+      }' to '${
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        status
+      }' is not allowed`
     )
   }
   return transitionAllowed

@@ -58,7 +58,6 @@ import {
   type Response,
   StandardParametersKey,
   type Status,
-  type StatusNotificationRequest,
   type StopTransactionReason,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
@@ -345,7 +344,7 @@ export class ChargingStation extends EventEmitter {
       {
         connectorId: reservation.connectorId,
         status: ConnectorStatusEnum.Reserved,
-      } as unknown as StatusNotificationRequest,
+      },
       { send: reservation.connectorId !== 0 }
     )
   }
@@ -1038,7 +1037,7 @@ export class ChargingStation extends EventEmitter {
           {
             connectorId: reservation.connectorId,
             status: ConnectorStatusEnum.Available,
-          } as unknown as StatusNotificationRequest,
+          },
           { send: reservation.connectorId !== 0 }
         )
         delete connectorStatus.reservation
@@ -2846,7 +2845,7 @@ export class ChargingStation extends EventEmitter {
         connectorId,
         ...(evseId != null && { evseId }),
         status: getBootConnectorStatus(this, connectorId, connectorStatus),
-      } as unknown as StatusNotificationRequest)
+      })
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
@@ -2911,7 +2910,7 @@ export class ChargingStation extends EventEmitter {
         connectorId,
         ...(evseId != null && { evseId }),
         status: ConnectorStatusEnum.Unavailable,
-      } as unknown as StatusNotificationRequest)
+      })
       delete connectorStatus.status
     }
   }

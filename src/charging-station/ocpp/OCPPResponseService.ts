@@ -131,7 +131,7 @@ export abstract class OCPPResponseService {
       requestPayload: R
     ) => Promise<void> | void
   ): ResponseHandler {
-    return handler as unknown as ResponseHandler
+    return handler as ResponseHandler
   }
 
   /**

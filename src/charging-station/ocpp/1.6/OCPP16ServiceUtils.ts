@@ -365,7 +365,7 @@ export class OCPP16ServiceUtils {
         await sendAndSetConnectorStatus(chargingStation, {
           connectorId,
           status: chargePointStatus,
-        } as OCPP16StatusNotificationRequest)
+        })
       }
       responses.push(response)
     }
@@ -791,7 +791,7 @@ export class OCPP16ServiceUtils {
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       status: OCPP16ChargePointStatus.Finishing,
-    } as OCPP16StatusNotificationRequest)
+    })
     const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
       chargingStation,
       connectorId,
@@ -954,7 +954,7 @@ export class OCPP16ServiceUtils {
       await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: OCPP16ChargePointStatus.Finishing,
-      } as OCPP16StatusNotificationRequest)
+      })
     }
     const rawTransactionId = chargingStation.getConnectorStatus(connectorId)?.transactionId
     const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined

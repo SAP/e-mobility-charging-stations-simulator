@@ -16,12 +16,7 @@ import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
 } from '../../../src/charging-station/ocpp/OCPPConnectorStatusOperations.js'
-import {
-  ConnectorStatusEnum,
-  type OCPP16StatusNotificationRequest,
-  type OCPP20StatusNotificationRequest,
-  OCPPVersion,
-} from '../../../src/types/index.js'
+import { ConnectorStatusEnum, OCPPVersion } from '../../../src/types/index.js'
 import {
   createStationWithRequestHandler,
   standardCleanup,
@@ -40,7 +35,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
       await sendAndSetConnectorStatus(station, {
         connectorId: 1,
         status: ConnectorStatusEnum.Occupied,
-      } as unknown as OCPP16StatusNotificationRequest)
+      })
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
@@ -52,7 +47,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
       await sendAndSetConnectorStatus(station, {
         connectorId: 99,
         status: ConnectorStatusEnum.Occupied,
-      } as unknown as OCPP16StatusNotificationRequest)
+      })
 
       assert.strictEqual(requestHandler.mock.calls.length, 0)
     })
@@ -65,7 +60,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
         {
           connectorId: 1,
           status: ConnectorStatusEnum.Occupied,
-        } as unknown as OCPP16StatusNotificationRequest,
+        },
         {
           send: false,
         }
@@ -83,7 +78,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
       await sendAndSetConnectorStatus(station, {
         connectorId: 1,
         status: ConnectorStatusEnum.Unavailable,
-      } as unknown as OCPP16StatusNotificationRequest)
+      })
 
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Unavailable)
     })
@@ -96,7 +91,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
       await sendAndSetConnectorStatus(station, {
         connectorId: 1,
         status: ConnectorStatusEnum.Occupied,
-      } as unknown as OCPP16StatusNotificationRequest)
+      })
 
       assert.strictEqual(emitSpy.mock.calls.length, 1)
     })
@@ -110,7 +105,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
         connectorId: 1,
         connectorStatus: ConnectorStatusEnum.Occupied,
         evseId: 1,
-      } as unknown as OCPP20StatusNotificationRequest)
+      })
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
@@ -122,7 +117,7 @@ await describe('OCPPConnectorStatusOperations', async () => {
       await sendAndSetConnectorStatus(station, {
         connectorId: 1,
         status: ConnectorStatusEnum.Occupied,
-      } as unknown as OCPP16StatusNotificationRequest)
+      })
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
     })
