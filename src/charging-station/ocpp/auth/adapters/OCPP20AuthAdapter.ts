@@ -424,7 +424,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   /**
    * Validate adapter configuration for OCPP 2.0.1
    * @param config - Authentication configuration to validate
-   * @returns Promise resolving to true if configuration is valid for OCPP 2.0.1 operations
+   * @returns `true` if configuration is valid for OCPP 2.0.1 operations
    */
   validateConfiguration (config: AuthConfiguration): boolean {
     try {
