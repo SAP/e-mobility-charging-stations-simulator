@@ -690,6 +690,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           case MessageTriggerEnumType.StatusNotification:
             this.triggerStatusNotification(chargingStation, evse, errorHandler)
             break
+          case MessageTriggerEnumType.TransactionEvent:
+            this.triggerTransactionEvent(chargingStation, evse, errorHandler)
+            break
         }
       }
     )
@@ -3099,6 +3102,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           return { status: TriggerMessageStatusEnumType.Accepted }
         }
 
+        case MessageTriggerEnumType.TransactionEvent: {
+          const evseValidation = this.validateTriggerMessageEvse(chargingStation, evse)
+          if (evseValidation != null) {
+            return evseValidation
+          }
+          if (isEmpty(this.resolveActiveTransactionConnectors(chargingStation, evse))) {
+            return {
+              status: TriggerMessageStatusEnumType.Rejected,
+              statusInfo: {
+                additionalInfo: 'No active transaction to trigger a TransactionEvent for',
+                reasonCode: ReasonCodeEnumType.TxNotFound,
+              },
+            }
+          }
+          return { status: TriggerMessageStatusEnumType.Accepted }
+        }
+
         default:
           logger.warn(
             `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Unsupported message trigger '${requestedMessage}'`
@@ -3458,6 +3478,46 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
+  }
+
+  /**
+   * Resolve the connectors carrying an active transaction within the trigger
+   * scope. When an EVSE is specified, only that EVSE's connectors are
+   * considered; when the EVSE field is absent, all EVSEs are considered
+   * (F06.FR.11 — "for all allowed evse values").
+   *
+   * The predicate requires `transactionStarted === true` and deliberately
+   * excludes `transactionPending` connectors (unlike the looser
+   * {@link OCPP20ServiceUtils.resolveActiveTransaction}): only a started
+   * transaction yields `chargingState = Charging`, which F06.FR.07 and the
+   * OCPP 2.0.1 conformance test cases TC_F_13/TC_F_14 mandate for the triggered
+   * TransactionEventRequest.
+   * @param chargingStation - Target charging station.
+   * @param evse - Optional EVSE scope from the TriggerMessageRequest.
+   * @returns The `{ connectorId, transactionId }` pair of each active transaction within the trigger scope.
+   * @see {@link hasEvseActiveTransactions} for the looser presence-only predicate used elsewhere.
+   */
+  private resolveActiveTransactionConnectors (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse']
+  ): { connectorId: number; transactionId: string }[] {
+    const targetEvseId = evse?.id != null && evse.id > 0 ? evse.id : undefined
+    const activeConnectors: { connectorId: number; transactionId: string }[] = []
+    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors(
+      true
+    )) {
+      if (
+        (targetEvseId == null || evseId === targetEvseId) &&
+        connectorStatus.transactionStarted === true &&
+        connectorStatus.transactionId != null
+      ) {
+        activeConnectors.push({
+          connectorId,
+          transactionId: connectorStatus.transactionId.toString(),
+        })
+      }
+    }
+    return activeConnectors
   }
 
   /**
@@ -4341,6 +4401,67 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)
+    }
+  }
+
+  /**
+   * Sends a triggered TransactionEventRequest for each in-scope transaction
+   * (F06.FR.07). Each event carries `eventType = Updated`, `triggerReason =
+   * Trigger`, the transaction's `chargingState` (derived by
+   * `buildTransactionEvent`), and a `meterValue` built from the
+   * SampledDataCtrlr.TxUpdatedMeasurands allow-list. When `evse` is absent the
+   * send is broadcast to every EVSE with an active transaction (F06.FR.11).
+   * @param chargingStation - Target charging station.
+   * @param evse - Optional target EVSE from the TriggerMessage payload.
+   * @param errorHandler - Handler for downstream request-emission errors.
+   */
+  private triggerTransactionEvent (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse'],
+    errorHandler: (error: unknown) => void
+  ): void {
+    const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
+    const txUpdatedMeasurandsKey = buildConfigKey(
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20RequiredVariableName.TxUpdatedMeasurands
+    )
+    for (const { connectorId, transactionId } of this.resolveActiveTransactionConnectors(
+      chargingStation,
+      evse
+    )) {
+      // F06.FR.10: a message marked Accepted SHALL be sent. A meterValue build
+      // failure must not suppress the event: `meterValue` is `0..*` while the
+      // `chargingState` (populated by buildTransactionEvent for Updated events)
+      // is the F06.FR.07-mandatory core, so omit the meterValue field on failure.
+      let eventPayload: { meterValue?: [OCPP20MeterValue] } = {}
+      try {
+        const meterValue = buildMeterValue(
+          chargingStation,
+          transactionId,
+          txUpdatedInterval,
+          txUpdatedMeasurandsKey,
+          OCPP20ReadingContextEnumType.TRIGGER
+        ) as OCPP20MeterValue
+        // OCPP 2.0.1 `MeterValueType.sampledValue` cardinality is `1..*`, while
+        // `TransactionEventRequest.meterValue` is `0..*`: when TxUpdatedMeasurands
+        // yields no sampled values, omit the `meterValue` field entirely rather
+        // than send an empty-wrapper schema violation.
+        if (isNotEmptyArray(meterValue.sampledValue)) {
+          eventPayload = { meterValue: [meterValue] }
+        }
+      } catch (error) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.triggerTransactionEvent: ${getErrorMessage(error)}`
+        )
+      }
+      OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.Trigger,
+        connectorId,
+        transactionId,
+        eventPayload
+      ).catch(errorHandler)
     }
   }
 

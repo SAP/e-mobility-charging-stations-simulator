@@ -7,31 +7,44 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
+  EvseStatus,
   OCPP20FirmwareStatusNotificationRequest,
   OCPP20MeterValuesRequest,
   OCPP20StatusNotificationRequest,
+  OCPP20TransactionEventOptions,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
   RequestParams,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
+import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { buildTransactionEvent } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   MessageTriggerEnumType,
+  OCPP20ChargingStateEnumType,
+  OCPP20ComponentName,
   OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20MeasurandEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
   TriggerMessageStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 
@@ -220,21 +233,6 @@ await describe('F06 - TriggerMessage', async () => {
 
     beforeEach(() => {
       ;({ mockStation } = createTriggerMessageStation())
-    })
-
-    await it('should return NotImplemented for TransactionEvent trigger', () => {
-      const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.TransactionEvent,
-      }
-
-      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
-        mockStation,
-        request
-      )
-
-      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
-      assert.notStrictEqual(response.statusInfo, undefined)
-      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
 
     await it('should return NotImplemented for PublishFirmwareStatusNotification trigger', () => {
@@ -790,5 +788,285 @@ await describe('F06 - TriggerMessage', async () => {
         assert.strictEqual(payload.requestId, requestId)
       })
     }
+  })
+
+  await describe('F06 - TransactionEvent trigger (F06.FR.05/07/08/11)', async () => {
+    let listenerService: OCPP20IncomingRequestService
+    let mockStation: MockChargingStation
+    let requestHandlerMock: ReturnType<typeof mock.fn>
+    let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
+    beforeEach(() => {
+      ;({ mockStation, requestHandlerMock } = createTriggerMessageStation())
+      listenerService = new OCPP20IncomingRequestService()
+      testableService = createTestableIncomingRequestService(listenerService)
+    })
+
+    /**
+     * Seed an active transaction on the connector of the given EVSE and
+     * configure TxUpdatedMeasurands so a triggered TransactionEvent carries a
+     * non-empty meterValue. In the 3-EVSE fixture, EVSE id equals connector id.
+     * @param evseId - EVSE (and connector) id to seed.
+     * @param transactionId - Transaction id to assign.
+     */
+    function seedActiveTransaction (evseId: number, transactionId: string): void {
+      const evseStatus = mockStation.getEvseStatus(evseId)
+      if (evseStatus != null) {
+        evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      }
+      setupConnectorWithTransaction(mockStation, evseId, {
+        energyImport: 1234,
+        transactionId,
+      })
+      addConfigurationKey(
+        mockStation,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20RequiredVariableName.TxUpdatedMeasurands
+        ),
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+        undefined,
+        { save: false }
+      )
+    }
+
+    /**
+     * Emit an Accepted TRIGGER_MESSAGE(TransactionEvent) and return the captured
+     * TransactionEvent payloads sent to the request handler.
+     * @param evse - Optional EVSE scope for the trigger request.
+     * @returns The captured TransactionEvent request payloads.
+     */
+    function emitTransactionEventTrigger (
+      evse?: OCPP20TriggerMessageRequest['evse']
+    ): OCPP20TransactionEventOptions[] {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+        ...(evse != null && { evse }),
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      return requestHandlerMock.mock.calls
+        .map(
+          call =>
+            call.arguments as [
+              unknown,
+              OCPP20RequestCommand,
+              OCPP20TransactionEventOptions,
+              RequestParams
+            ]
+        )
+        .filter(([, command]) => command === OCPP20RequestCommand.TRANSACTION_EVENT)
+        .map(([, , payload]) => payload)
+    }
+
+    await it('should register a single TRIGGER_MESSAGE event listener in the constructor', () => {
+      assert.strictEqual(
+        listenerService.listenerCount(OCPP20IncomingRequestCommand.TRIGGER_MESSAGE),
+        1
+      )
+    })
+
+    await it('should return Accepted when a specified EVSE has an active transaction (F06.FR.05)', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
+    })
+
+    await it('should treat evse.id === 0 as broadcast scope and Accept when a transaction is active (F06.FR.11)', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        evse: { id: 0 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+    })
+
+    await it('should return Accepted when EVSE is omitted and a transaction is active (F06.FR.11)', () => {
+      seedActiveTransaction(2, 'txn-evse-2')
+
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+    })
+
+    await it('should return Rejected (not NotImplemented) when no transaction is active (F06.FR.08)', () => {
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.TxNotFound)
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        response.statusInfo.additionalInfo,
+        'No active transaction to trigger a TransactionEvent for'
+      )
+    })
+
+    await it('should return Rejected when the specified EVSE has no active transaction', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        evse: { id: 2 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+    })
+
+    await it('should return Rejected with UnknownEvse for a non-existent EVSE', () => {
+      const response = testableService.handleRequestTriggerMessage(mockStation, {
+        evse: { id: 999 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      })
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnknownEvse)
+    })
+
+    await it('should emit one TransactionEvent(Updated, Trigger) for a specified EVSE (F06.FR.07)', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+
+      const payloads = emitTransactionEventTrigger({ id: 1 })
+
+      assert.strictEqual(payloads.length, 1)
+      const payload = payloads[0]
+      assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
+      assert.strictEqual(payload.transactionId, 'txn-evse-1')
+      assert.strictEqual(payload.connectorId, 1)
+      const meterValue = payload.meterValue
+      if (meterValue == null) {
+        assert.fail('Expected meterValue with TxUpdatedMeasurands to be defined')
+      }
+      assert.strictEqual(meterValue.length, 1)
+      assert.strictEqual(
+        meterValue[0].sampledValue[0].measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(
+        meterValue[0].sampledValue[0].context,
+        OCPP20ReadingContextEnumType.TRIGGER
+      )
+      // F06.FR.07: building the emitted params yields transactionInfo.chargingState.
+      const built = buildTransactionEvent(mockStation, payload)
+      assert.strictEqual(built.transactionInfo.chargingState, OCPP20ChargingStateEnumType.Charging)
+    })
+
+    await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', () => {
+      // Active transaction but no TxUpdatedMeasurands configured: buildMeterValue
+      // yields no sampledValue, yet an Accepted trigger MUST still send the event
+      // with the mandatory chargingState (F06.FR.07/FR.10), meterValue omitted.
+      setupConnectorWithTransaction(mockStation, 1, {
+        energyImport: 1234,
+        transactionId: 'txn-evse-1',
+      })
+
+      const payloads = emitTransactionEventTrigger({ id: 1 })
+
+      assert.strictEqual(payloads.length, 1)
+      const payload = payloads[0]
+      assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
+      assert.strictEqual(payload.meterValue, undefined)
+      const built = buildTransactionEvent(mockStation, payload)
+      assert.strictEqual(built.transactionInfo.chargingState, OCPP20ChargingStateEnumType.Charging)
+    })
+
+    await it('should still emit a TransactionEvent when the meterValue build throws (F06.FR.10)', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+      // Force buildMeterValue to throw: it resolves the connector via
+      // getConnectorIdByTransactionId (which sendTransactionEvent does not use),
+      // so the build fails while the event send stays reachable.
+      mock.method(mockStation, 'getConnectorIdByTransactionId', () => {
+        throw new Error('meterValue build failure')
+      })
+
+      const payloads = emitTransactionEventTrigger({ id: 1 })
+
+      assert.strictEqual(payloads.length, 1)
+      const payload = payloads[0]
+      assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
+      assert.strictEqual(payload.meterValue, undefined)
+    })
+
+    await it('should emit a TransactionEvent for every EVSE with an active transaction when EVSE is omitted (F06.FR.11)', () => {
+      seedActiveTransaction(1, 'txn-evse-1')
+      seedActiveTransaction(3, 'txn-evse-3')
+
+      const payloads = emitTransactionEventTrigger()
+
+      assert.strictEqual(payloads.length, 2)
+      const observedTransactions = new Set(payloads.map(payload => payload.transactionId))
+      assert.deepStrictEqual([...observedTransactions].sort(), ['txn-evse-1', 'txn-evse-3'])
+      for (const payload of payloads) {
+        assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
+        assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
+      }
+    })
+
+    await it('should emit no TransactionEvent when no transaction is active', () => {
+      const payloads = emitTransactionEventTrigger()
+
+      assert.strictEqual(payloads.length, 0)
+    })
+
+    await it('should handle a request handler rejection gracefully via errorHandler', async () => {
+      const rejectingMock = mock.fn(async () => Promise.reject(new Error('test error')))
+      const { station: rejectStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        ocppRequestService: {
+          requestHandler: rejectingMock,
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const rejectEvseStatus = rejectStation.getEvseStatus(1)
+      if (rejectEvseStatus != null) {
+        rejectEvseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      }
+      setupConnectorWithTransaction(rejectStation, 1, {
+        energyImport: 1234,
+        transactionId: 'txn-evse-1',
+      })
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        rejectStation,
+        { evse: { id: 1 }, requestedMessage: MessageTriggerEnumType.TransactionEvent },
+        { status: TriggerMessageStatusEnumType.Accepted }
+      )
+
+      await flushMicrotasks()
+
+      assert.strictEqual(rejectingMock.mock.callCount(), 1)
+    })
   })
 })
