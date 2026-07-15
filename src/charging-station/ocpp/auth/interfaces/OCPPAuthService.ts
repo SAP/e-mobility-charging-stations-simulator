@@ -136,7 +136,7 @@ export interface AuthStrategy {
    * Check if this strategy can handle the given request
    * @param request - Authentication request
    * @param config - Current configuration
-   * @returns True if strategy can handle the request
+   * @returns `true` if strategy can handle the request
    */
   canHandle(request: AuthRequest, config: AuthConfiguration): boolean
 

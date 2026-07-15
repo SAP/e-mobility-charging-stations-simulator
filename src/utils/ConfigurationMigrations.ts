@@ -126,7 +126,7 @@ const deleteAtPath = (target: Record<string, unknown>, path: string): void => {
  * @param value - value to write at the leaf
  * @param source - originating deprecated key (for error messages)
  * @param fieldErrors - error accumulator
- * @returns true on write or no-op, false when an error is recorded
+ * @returns `true` on write or no-op, `false` when an error is recorded
  */
 const setAtPath = (
   target: Record<string, unknown>,

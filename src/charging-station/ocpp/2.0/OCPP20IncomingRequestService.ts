@@ -3288,7 +3288,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   /**
    * Checks if a specific EVSE has any active transactions.
    * @param evse - The EVSE to check
-   * @returns true if any connector on the EVSE has an active transaction
+   * @returns `true` if any connector on the EVSE has an active transaction
    */
   private hasEvseActiveTransactions (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
@@ -3302,7 +3302,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   /**
    * Checks if a specific EVSE has any non-expired reservations.
    * @param evse - The EVSE to check
-   * @returns true if any connector on the EVSE has a pending reservation
+   * @returns `true` if any connector on the EVSE has a pending reservation
    */
   private hasEvsePendingReservations (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
@@ -3395,7 +3395,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * Idle means: no active transactions, no firmware update in progress, no pending reservations.
    * Note: Log uploads and cable lock state are not tracked in the simulator.
    * @param chargingStation - The charging station instance
-   * @returns true if charging station is idle
+   * @returns `true` if charging station is idle
    */
   private isChargingStationIdle (chargingStation: ChargingStation): boolean {
     return (
@@ -3410,7 +3410,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * Idle means: no active transactions on EVSE, no firmware update in progress, no pending reservations on EVSE.
    * @param chargingStation - The charging station instance
    * @param evse - The EVSE to check
-   * @returns true if EVSE is idle
+   * @returns `true` if EVSE is idle
    */
   private isEvseIdle (chargingStation: ChargingStation, evse: EvseStatus): boolean {
     return (
@@ -4456,7 +4456,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param chargingStation - The charging station instance
    * @param chargingProfile - The charging profile to validate
    * @param evseId - EVSE identifier
-   * @returns True if purpose validation passes, false otherwise
+   * @returns `true` if purpose validation passes, `false` otherwise
    */
   private validateChargingProfilePurpose (
     chargingStation: ChargingStation,
@@ -4525,7 +4525,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * @param scheduleIndex - Index of the schedule in the profile's schedule array
    * @param chargingProfile - The parent charging profile
    * @param evseId - EVSE identifier
-   * @returns True if schedule is valid, false otherwise
+   * @returns `true` if schedule is valid, `false` otherwise
    */
   private validateChargingSchedule (
     chargingStation: ChargingStation,

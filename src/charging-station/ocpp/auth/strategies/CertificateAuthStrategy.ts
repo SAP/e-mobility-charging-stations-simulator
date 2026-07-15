@@ -106,7 +106,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * Check if this strategy can handle the given request
    * @param request - Authorization request to evaluate for certificate-based handling
    * @param config - Authentication configuration with certificate settings
-   * @returns True if the request contains valid certificate data and certificate auth is enabled
+   * @returns `true` if the request contains valid certificate data and certificate auth is enabled
    */
   canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Only handle certificate-based authentication
@@ -205,7 +205,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
   /**
    * Check if the identifier contains certificate data
    * @param identifier - Identifier to check for certificate hash data
-   * @returns True if all required certificate hash fields are present and non-empty
+   * @returns `true` if all required certificate hash fields are present and non-empty
    */
   private hasCertificateData (identifier: Identifier): boolean {
     const certData = identifier.certificateHashData
@@ -223,7 +223,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * Simulate certificate validation (in real implementation, this would involve crypto operations)
    * @param request - Authorization request containing certificate data to validate
    * @param config - Authentication configuration with validation strictness settings
-   * @returns True if the certificate passes simulated validation checks
+   * @returns `true` if the certificate passes simulated validation checks
    */
   private async simulateCertificateValidation (
     request: AuthRequest,
