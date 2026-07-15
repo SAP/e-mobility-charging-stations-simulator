@@ -28,7 +28,7 @@ export interface TestableOCPP20VariableManager {
    * Validates whether a component is supported by the charging station.
    * @param chargingStation - The charging station instance
    * @param component - The component to validate
-   * @returns true if the component is valid/supported
+   * @returns `true` if the component is valid/supported
    */
   isComponentValid: (chargingStation: ChargingStation, component: ComponentType) => boolean
 
@@ -36,7 +36,7 @@ export interface TestableOCPP20VariableManager {
    * Checks whether a variable is supported for the given component.
    * @param component - The component containing the variable
    * @param variable - The variable to check
-   * @returns true if the variable is supported
+   * @returns `true` if the variable is supported
    */
   isVariableSupported: (component: ComponentType, variable: VariableType) => boolean
 }

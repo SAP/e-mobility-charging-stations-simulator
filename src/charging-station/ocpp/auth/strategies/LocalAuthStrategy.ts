@@ -175,7 +175,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Check if this strategy can handle the authentication request
    * @param request - Authorization request to evaluate
    * @param config - Authentication configuration with local auth settings
-   * @returns True if local list, cache, or offline authorization is enabled
+   * @returns `true` if local list, cache, or offline authorization is enabled
    */
   public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Can handle if local list is enabled OR cache is enabled OR offline is allowed
@@ -299,7 +299,7 @@ export class LocalAuthStrategy implements AuthStrategy {
   /**
    * Check if identifier is in local authorization list
    * @param identifier - Unique identifier string to look up
-   * @returns True if the identifier exists in the local authorization list
+   * @returns `true` if the identifier exists in the local authorization list
    */
   public isInLocalList (identifier: string): boolean {
     if (!this.localAuthListManager) {
@@ -510,7 +510,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * When DisablePostAuthorize is true or not configured, local results are returned as-is.
    * @param result - Authorization result from cache or local list
    * @param config - Authentication configuration with disablePostAuthorize setting
-   * @returns True if the result should be discarded to trigger remote re-authorization
+   * @returns `true` if the result should be discarded to trigger remote re-authorization
    */
   private shouldTriggerPostAuthorize (
     result: AuthorizationResult,

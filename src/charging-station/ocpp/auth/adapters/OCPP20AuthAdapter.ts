@@ -368,7 +368,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
 
   /**
    * Check if remote authorization is available for OCPP 2.0.1
-   * @returns True if remote authorization is available and enabled
+   * @returns `true` if remote authorization is available and enabled
    */
   isRemoteAvailable (): boolean {
     try {
@@ -392,7 +392,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   /**
    * Check if identifier is valid for OCPP 2.0.1
    * @param identifier - Identifier to validate against OCPP 2.0.1 rules
-   * @returns True if identifier meets OCPP 2.0.1 format requirements (max 36 chars, valid type)
+   * @returns `true` if identifier meets OCPP 2.0.1 format requirements (max 36 chars, valid type)
    */
   isValidIdentifier (identifier: Identifier): boolean {
     // OCPP 2.0.1 idToken validation
@@ -424,7 +424,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
   /**
    * Validate adapter configuration for OCPP 2.0.1
    * @param config - Authentication configuration to validate
-   * @returns Promise resolving to true if configuration is valid for OCPP 2.0.1 operations
+   * @returns `true` if configuration is valid for OCPP 2.0.1 operations
    */
   validateConfiguration (config: AuthConfiguration): boolean {
     try {
@@ -460,7 +460,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
 
   /**
    * Check if offline authorization is allowed
-   * @returns True if offline authorization is enabled
+   * @returns `true` if offline authorization is enabled
    */
   private getOfflineAuthorizationConfig (): boolean {
     try {

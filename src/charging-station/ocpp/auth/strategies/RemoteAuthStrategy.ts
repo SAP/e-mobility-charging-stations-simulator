@@ -185,7 +185,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Check if this strategy can handle the authentication request
    * @param request - Authorization request to evaluate
    * @param config - Authentication configuration with remote authorization settings
-   * @returns True if an adapter is available and remote auth is enabled
+   * @returns `true` if an adapter is available and remote auth is enabled
    */
   public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Can handle if we have an adapter
@@ -341,7 +341,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Test connectivity to remote authorization service
-   * @returns True if the OCPP adapter can reach its remote service
+   * @returns `true` if the OCPP adapter can reach its remote service
    */
   public testConnectivity (): boolean {
     if (!this.isInitialized || this.adapter == null) {
@@ -399,7 +399,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Check if remote authorization service is available
    * @param adapter - OCPP adapter to check for remote service availability
    * @param _config - Authentication configuration (unused)
-   * @returns True if the remote service responds
+   * @returns `true` if the remote service responds
    */
   private checkRemoteAvailability (adapter: OCPPAuthAdapter, _config: AuthConfiguration): boolean {
     try {

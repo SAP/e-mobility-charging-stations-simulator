@@ -832,7 +832,7 @@ export class ChargingStation extends EventEmitter {
    * @param reservationId - The reservation ID to check
    * @param idTag - Optional ID tag for user reservation check
    * @param connectorId - Optional connector ID to check availability
-   * @returns True if the connector can accept a reservation
+   * @returns `true` if the connector can accept a reservation
    */
   public isConnectorReservable (
     reservationId: number,
