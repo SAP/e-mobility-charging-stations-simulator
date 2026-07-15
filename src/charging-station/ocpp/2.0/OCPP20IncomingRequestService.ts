@@ -4652,7 +4652,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     chargingStation: ChargingStation,
     evse: OCPP20TriggerMessageRequest['evse']
   ): OCPP20TriggerMessageResponse | undefined {
-    if (evse?.id === undefined || evse.id <= 0) {
+    if (evse?.id == null || evse.id <= 0) {
       return undefined
     }
     if (!chargingStation.hasEvses) {
