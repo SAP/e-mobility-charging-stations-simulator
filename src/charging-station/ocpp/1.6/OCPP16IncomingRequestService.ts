@@ -595,14 +595,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
                   .catch(errorHandler)
               }
             } else {
-              for (
-                let connectorId = 1;
-                connectorId <= chargingStation.getNumberOfConnectors();
-                connectorId++
-              ) {
-                const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+              for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(
+                true
+              )) {
                 if (
-                  connectorStatus?.transactionStarted === true &&
+                  connectorStatus.transactionStarted === true &&
                   connectorStatus.transactionId != null
                 ) {
                   const transactionId = convertToInt(connectorStatus.transactionId)
@@ -1019,12 +1016,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         chargingStation.getNumberOfRunningTransactions() > 0 &&
         valueChanged
       ) {
-        for (
-          let connectorId = 1;
-          connectorId <= chargingStation.getNumberOfConnectors();
-          connectorId++
-        ) {
-          if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
+        for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
+          if (connectorStatus.transactionStarted === true) {
             OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
             OCPP16ServiceUtils.startUpdatedMeterValues(
               chargingStation,
@@ -1169,12 +1162,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         )
       }
       const allChargingProfiles: OCPP16ChargingProfile[] = []
-      for (let id = 0; id <= chargingStation.getNumberOfConnectors(); id++) {
-        if (chargingStation.hasConnector(id)) {
-          allChargingProfiles.push(
-            ...(getConnectorChargingProfiles(chargingStation, id) as OCPP16ChargingProfile[])
-          )
-        }
+      for (const { connectorId: aggregatedConnectorId } of chargingStation.iterateConnectors()) {
+        allChargingProfiles.push(
+          ...(getConnectorChargingProfiles(
+            chargingStation,
+            aggregatedConnectorId
+          ) as OCPP16ChargingProfile[])
+        )
       }
       if (isEmpty(allChargingProfiles)) {
         return OCPP16Constants.OCPP_RESPONSE_REJECTED
@@ -1490,18 +1484,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
     if (commandPayload.connectorId == null) {
-      for (
-        let connectorId = 1;
-        connectorId <= chargingStation.getNumberOfConnectors();
-        connectorId++
-      ) {
-        const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors(true)) {
         const isReservedForOther =
-          connectorStatus?.status === OCPP16ChargePointStatus.Reserved &&
+          connectorStatus.status === OCPP16ChargePointStatus.Reserved &&
           !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
         if (
           chargingStation.isConnectorAvailable(connectorId) &&
-          connectorStatus?.transactionStarted === false &&
+          connectorStatus.transactionStarted === false &&
           !isReservedForOther
         ) {
           commandPayload.connectorId = connectorId

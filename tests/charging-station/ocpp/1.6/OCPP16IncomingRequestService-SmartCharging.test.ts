@@ -7,7 +7,9 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
+  OCPP16ChargingProfile,
   OCPP16ClearChargingProfileRequest,
   OCPP16GetCompositeScheduleRequest,
   SetChargingProfileRequest,
@@ -24,9 +26,23 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   ChargingProfileFixtures,
   createOCPP16IncomingRequestTestContext,
+  createOCPP16NonContiguousConnectorsContext,
   type OCPP16IncomingRequestTestContext,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
+
+const attachComposableProfile = (
+  station: ChargingStation,
+  connectorId: number,
+  profile: OCPP16ChargingProfile
+): void => {
+  profile.chargingSchedule.startSchedule = new Date()
+  profile.chargingSchedule.duration = 3600
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus != null) {
+    connectorStatus.chargingProfiles = [profile]
+  }
+}
 
 await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
   let context: OCPP16IncomingRequestTestContext
@@ -365,6 +381,61 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
 
       // Assert
       assert.strictEqual(response.status, GenericStatus.Rejected)
+    })
+
+    // @spec §9.2 — connector-0 aggregation scans every connector (skipZero=false).
+    // On a non-contiguous layout {1, 3}, getNumberOfConnectors() returns 2 (a COUNT)
+    // while connector 3 lives beyond it, so a numeric 1..count loop would miss its
+    // profile and reject the connector-0 composite schedule.
+    await it('should include a profile from a connector whose id exceeds the connector count in the connector-0 composite schedule', () => {
+      // Arrange
+      const { station, testableService } = createOCPP16NonContiguousConnectorsContext()
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,SmartCharging'
+      )
+      attachComposableProfile(station, 3, ChargingProfileFixtures.createTxDefaultProfile())
+      const request: OCPP16GetCompositeScheduleRequest = { connectorId: 0, duration: 3600 }
+
+      // Act
+      const response = testableService.handleRequestGetCompositeSchedule(station, request)
+
+      // Assert — connector 3's profile is aggregated (old loop missed it → Rejected)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(response.connectorId, 0)
+    })
+
+    // @spec §9.2 — connector-0 aggregation must iterate connector 0 itself
+    // (skipZero=false). A ChargePointMaxProfile on connector 0 is not re-concatenated
+    // for other connectors by getConnectorChargingProfiles (that concat pulls only
+    // connector-0 TX_DEFAULT profiles), so switching this site to skipZero=true would
+    // drop it and this test would fail.
+    await it('should include a station-wide (connector-0) ChargePointMaxProfile in the connector-0 composite schedule', () => {
+      // Arrange
+      const { station, testableService } = createOCPP16IncomingRequestTestContext({
+        connectorsCount: 2,
+      })
+      upsertConfigurationKey(
+        station,
+        OCPP16StandardParametersKey.SupportedFeatureProfiles,
+        'Core,SmartCharging'
+      )
+      for (const connectorId of [1, 2]) {
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.chargingProfiles = []
+        }
+      }
+      attachComposableProfile(station, 0, ChargingProfileFixtures.createChargePointMaxProfile())
+      const request: OCPP16GetCompositeScheduleRequest = { connectorId: 0, duration: 3600 }
+
+      // Act
+      const response = testableService.handleRequestGetCompositeSchedule(station, request)
+
+      // Assert — connector-0 profile is included (would be dropped under skipZero=true)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(response.connectorId, 0)
     })
   })
 })
