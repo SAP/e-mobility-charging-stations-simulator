@@ -16,7 +16,7 @@ import {
   ResponseStatus,
   UIRequestOrigin,
 } from '../../../../src/types/index.js'
-import { logger } from '../../../../src/utils/index.js'
+import { Constants, logger } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
 import {
@@ -402,6 +402,63 @@ await describe('AbstractUIService', async () => {
 
     assert.notStrictEqual(service, undefined)
     if (service != null) {
+      service.stop()
+    }
+  })
+
+  await it('should complete a broadcast request with a failure when responses time out', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { service } = createServiceContext()
+
+    try {
+      // Broadcast to the single known station; no worker ever replies.
+      await registerTransportStopRequest(service)
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 1)
+
+      t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+      // The request is released instead of hanging, and a failure is emitted.
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+      expectSingleLog(
+        mocks,
+        'warn',
+        /Failed broadcast response completed without response handler/,
+        {
+          hashIdsSucceeded: [],
+          origin: UIRequestOrigin.TRANSPORT,
+          procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+          status: ResponseStatus.FAILURE,
+          uuid: TEST_UUID,
+        }
+      )
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should not fire the request timeout once the request is released', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { service } = createServiceContext()
+
+    try {
+      await registerTransportStopRequest(service)
+      // Simulate the normal completion path releasing the request.
+      service.deleteBroadcastChannelRequest(TEST_UUID)
+
+      t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+      // Timer was cleared: no timeout response is emitted after release.
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+    } finally {
       service.stop()
     }
   })

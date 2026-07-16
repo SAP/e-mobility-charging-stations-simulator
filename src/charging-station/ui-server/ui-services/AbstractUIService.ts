@@ -24,6 +24,7 @@ import {
 } from '../../../types/index.js'
 import {
   Configuration,
+  Constants,
   ensureError,
   getErrorMessage,
   isNotEmptyArray,
@@ -60,6 +61,7 @@ interface BroadcastChannelRequestContext {
   readonly expectedResponses: number
   readonly origin: UIRequestOrigin
   readonly procedureName: BroadcastChannelProcedureName
+  readonly timeout: NodeJS.Timeout
 }
 
 export abstract class AbstractUIService {
@@ -146,6 +148,10 @@ export abstract class AbstractUIService {
   }
 
   public deleteBroadcastChannelRequest (uuid: UUIDv4): void {
+    const requestContext = this.broadcastChannelRequests.get(uuid)
+    if (requestContext != null) {
+      clearTimeout(requestContext.timeout)
+    }
     this.broadcastChannelRequests.delete(uuid)
   }
 
@@ -226,6 +232,9 @@ export abstract class AbstractUIService {
 
   public stop (): void {
     this.stopped = true
+    for (const requestContext of this.broadcastChannelRequests.values()) {
+      clearTimeout(requestContext.timeout)
+    }
     this.broadcastChannelRequests.clear()
     this.uiServiceWorkerBroadcastChannel.close()
   }
@@ -482,16 +491,25 @@ export abstract class AbstractUIService {
         'hashIds array in the request payload does not contain any valid charging station hashId'
       )
     }
+    // Safety-net timeout: if not all expected worker responses arrive (e.g. a
+    // targeted station is deleted while the request is in flight), complete the
+    // request with a failure instead of leaving the caller waiting forever.
+    // See issue #2018.
+    const timeout = setTimeout(() => {
+      this.uiServiceWorkerBroadcastChannel.completeExpiredRequest(uuid)
+    }, Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+    timeout.unref()
     this.broadcastChannelRequests.set(uuid, {
       expectedResponses: expectedNumberOfResponses,
       origin: context.origin,
       procedureName,
+      timeout,
     })
     // Rollback expected-response accounting if dispatch to the worker channel throws.
     try {
       this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
     } catch (error) {
-      this.broadcastChannelRequests.delete(uuid)
+      this.deleteBroadcastChannelRequest(uuid)
       throw error
     }
   }

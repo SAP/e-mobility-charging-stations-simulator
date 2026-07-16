@@ -9,6 +9,7 @@ import {
   type MessageEvent,
   type ResponsePayload,
   ResponseStatus,
+  type UUIDv4,
 } from '../../types/index.js'
 import { isNotEmptyArray, logger } from '../../utils/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
@@ -31,6 +32,26 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     this.onmessage = this.responseHandler.bind(this) as (message: unknown) => void
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void
     this.responses = new Map<string, Responses>()
+  }
+
+  /**
+   * Completes a broadcast request whose safety-net timeout fired before all
+   * expected worker responses arrived (e.g. a targeted station was deleted
+   * mid-flight), so the caller is not left waiting forever, then releases the
+   * aggregation state. See issue #2018.
+   * @param uuid - Request identifier.
+   */
+  public completeExpiredRequest (uuid: UUIDv4): void {
+    if (this.uiService.getBroadcastChannelExpectedResponses(uuid) === 0) {
+      // Already completed and released by the normal response path.
+      return
+    }
+    try {
+      this.uiService.sendResponse(uuid, this.buildTimeoutResponsePayload(uuid))
+    } finally {
+      this.responses.delete(uuid)
+      this.uiService.deleteBroadcastChannelRequest(uuid)
+    }
   }
 
   private buildResponsePayload (uuid: string): ResponsePayload {
@@ -73,6 +94,21 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
           })
           .filter((response): response is BroadcastChannelResponsePayload => response != null),
       }),
+    }
+  }
+
+  private buildTimeoutResponsePayload (uuid: UUIDv4): ResponsePayload {
+    const responses = this.responses.get(uuid)
+    const responsesReceived = responses?.responsesReceived ?? 0
+    const responsesExpected =
+      responses?.responsesExpected ?? this.uiService.getBroadcastChannelExpectedResponses(uuid)
+    return {
+      errorMessage: `Timed out waiting for charging station responses (received ${responsesReceived.toString()} of ${responsesExpected.toString()})`,
+      hashIdsSucceeded: (responses?.responses ?? [])
+        .filter(response => response.status === ResponseStatus.SUCCESS)
+        .map(response => response.hashId)
+        .filter((hashId): hashId is string => hashId != null),
+      status: ResponseStatus.FAILURE,
     }
   }
 
