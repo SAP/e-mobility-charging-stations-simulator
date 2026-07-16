@@ -48,14 +48,17 @@ await describe('ChargingStation Resilience', async () => {
       assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
     })
 
-    await it('should not reconnect on normal WebSocket close', () => {
+    await it('should mark the WebSocket closed on a normal close code (1000)', () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       const mocks = result.mocks
       station.started = true
 
-      // Act - Simulate normal close (code 1000 = normal closure)
+      // Act - Simulate a server-initiated normal close (code 1000). Post-#2016 a
+      // close the station did not request re-dials like real hardware; that
+      // reconnect is verified end-to-end against a live broker, since onClose is
+      // not wired in this lightweight mock station.
       mocks.webSocket.simulateClose(1000, 'Normal closure')
 
       // Assert - WebSocket should be closed

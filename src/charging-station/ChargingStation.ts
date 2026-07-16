@@ -223,6 +223,7 @@ export class ChargingStation extends EventEmitter {
   private stopping: boolean
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
 
@@ -232,6 +233,7 @@ export class ChargingStation extends EventEmitter {
     this.starting = false
     this.stopping = false
     this.wsConnection = null
+    this.wsConnectionClosedByRequest = false
     this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
@@ -358,9 +360,18 @@ export class ChargingStation extends EventEmitter {
     this.setIntervalFlushMessageBuffer()
   }
 
-  /** Closes the WebSocket connection to the central server. */
-  public closeWSConnection (): void {
+  /**
+   * Closes the WebSocket connection to the central server.
+   * @param byRequest - Whether this close was explicitly requested (e.g. the UI
+   *   disconnect action). A requested close is terminal: onClose will not
+   *   auto-reconnect. Other self-initiated closes (e.g. certificate rotation)
+   *   leave it unset and re-dial like a server-initiated drop. See issue #2016.
+   */
+  public closeWSConnection (byRequest = false): void {
     if (this.isWebSocketConnectionOpened()) {
+      if (byRequest) {
+        this.wsConnectionClosedByRequest = true
+      }
       this.wsConnection?.close()
     }
   }
@@ -2345,6 +2356,11 @@ export class ChargingStation extends EventEmitter {
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
+    // Capture and clear the requested-close marker set by a closeWSConnection()
+    // called with byRequest (the UI disconnect action) before deciding whether
+    // to re-dial.
+    const closedByRequest = this.wsConnectionClosedByRequest
+    this.wsConnectionClosedByRequest = false
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
@@ -2354,7 +2370,6 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.wsConnectionRetryCount = 0
         break
       // Abnormal close
       default:
@@ -2363,19 +2378,27 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.started &&
-          this.reconnect()
-            .then(() => {
-              this.emitChargingStationEvent(ChargingStationEvents.updated)
-              return undefined
-            })
-            .catch((error: unknown) =>
-              logger.error(
-                `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
-                error
-              )
-            )
         break
+    }
+    // Any close that was not explicitly requested, while the station is still
+    // started, means the CSMS or a proxy dropped the connection (or an internal
+    // close that wants a fresh dial, e.g. certificate rotation): re-dial like
+    // real hardware, whether the close was clean or abnormal. Only an explicitly
+    // requested close (the UI disconnect action) stays terminal. See issue #2016.
+    if (this.started && !closedByRequest) {
+      this.reconnect()
+        .then(() => {
+          this.emitChargingStationEvent(ChargingStationEvents.updated)
+          return undefined
+        })
+        .catch((error: unknown) =>
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
+            error
+          )
+        )
+    } else {
+      this.wsConnectionRetryCount = 0
     }
   }
 

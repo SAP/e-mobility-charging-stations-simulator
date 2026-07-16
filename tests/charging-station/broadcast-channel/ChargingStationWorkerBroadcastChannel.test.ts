@@ -530,6 +530,21 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       assert.strictEqual(sentRequests[0].command, RequestCommand.GET_15118_EV_CERTIFICATE)
     })
 
+    await it('should dispatch CLOSE_CONNECTION as a requested (terminal) close', async t => {
+      const { station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+      const closeSpy = t.mock.method(station, 'closeWSConnection', () => undefined)
+
+      await testable.commandHandler(BroadcastChannelProcedureName.CLOSE_CONNECTION, {})
+
+      // The UI disconnect must close with byRequest=true so onClose treats it as
+      // terminal and does not auto-reconnect (see issue #2016).
+      assert.strictEqual(closeSpy.mock.calls.length, 1)
+      assert.deepStrictEqual(closeSpy.mock.calls[0].arguments, [true])
+    })
+
     await it('should dispatch GET_CERTIFICATE_STATUS through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
