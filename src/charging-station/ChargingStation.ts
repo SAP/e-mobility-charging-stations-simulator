@@ -362,12 +362,13 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Closes the WebSocket connection to the central server.
-   * @param byRequest - Whether this close was explicitly requested (e.g. the UI
-   *   disconnect action). A requested close is terminal: onClose will not
+   * @param options - Close options.
+   * @param options.byRequest - Whether this close was explicitly requested (e.g.
+   *   the UI disconnect action). A requested close is terminal: onClose will not
    *   auto-reconnect. Other self-initiated closes (e.g. certificate rotation)
-   *   leave it unset and re-dial like a server-initiated drop. See issue #2016.
+   *   leave it unset and re-dial like a server-initiated drop.
    */
-  public closeWSConnection (byRequest = false): void {
+  public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
     if (this.isWebSocketConnectionOpened()) {
       if (byRequest) {
         this.wsConnectionClosedByRequest = true
@@ -2380,11 +2381,11 @@ export class ChargingStation extends EventEmitter {
         )
         break
     }
-    // Any close that was not explicitly requested, while the station is still
-    // started, means the CSMS or a proxy dropped the connection (or an internal
-    // close that wants a fresh dial, e.g. certificate rotation): re-dial like
-    // real hardware, whether the close was clean or abnormal. Only an explicitly
-    // requested close (the UI disconnect action) stays terminal. See issue #2016.
+    // Any close we did not explicitly request, while the station is still
+    // started, means the server dropped the connection (or an internal close
+    // that wants a fresh dial, e.g. certificate rotation): re-dial like real
+    // hardware, clean or abnormal. Only an explicitly requested close (the UI
+    // disconnect action) stays terminal.
     if (this.started && !closedByRequest) {
       this.reconnect()
         .then(() => {

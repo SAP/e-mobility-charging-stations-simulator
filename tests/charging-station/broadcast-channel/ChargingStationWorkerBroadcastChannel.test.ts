@@ -539,10 +539,10 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       await testable.commandHandler(BroadcastChannelProcedureName.CLOSE_CONNECTION, {})
 
-      // The UI disconnect must close with byRequest=true so onClose treats it as
-      // terminal and does not auto-reconnect (see issue #2016).
+      // The UI disconnect must close with byRequest so onClose treats it as
+      // terminal and does not auto-reconnect.
       assert.strictEqual(closeSpy.mock.calls.length, 1)
-      assert.deepStrictEqual(closeSpy.mock.calls[0].arguments, [true])
+      assert.deepStrictEqual(closeSpy.mock.calls[0].arguments, [{ byRequest: true }])
     })
 
     await it('should dispatch GET_CERTIFICATE_STATUS through commandHandler', async () => {
