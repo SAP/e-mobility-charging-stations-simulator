@@ -293,7 +293,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
 
   /**
    * Check if remote authorization is available
-   * @returns True if remote authorization is enabled and station is online
+   * @returns `true` if remote authorization is enabled and station is online
    */
   isRemoteAvailable (): boolean {
     try {
@@ -316,7 +316,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   /**
    * Check if identifier is valid for OCPP 1.6
    * @param identifier - Identifier to validate
-   * @returns True if identifier has valid ID_TAG type and length within OCPP 1.6 limits
+   * @returns `true` if identifier has valid ID_TAG type and length within OCPP 1.6 limits
    */
   isValidIdentifier (identifier: Identifier): boolean {
     // OCPP 1.6 idTag validation
@@ -340,7 +340,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
   /**
    * Validate adapter configuration for OCPP 1.6
    * @param config - Auth configuration to validate
-   * @returns True if configuration has valid auth methods and timeout values
+   * @returns `true` if configuration has valid auth methods and timeout values
    */
   validateConfiguration (config: AuthConfiguration): boolean {
     try {
@@ -375,7 +375,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
 
   /**
    * Check if offline transactions are allowed for unknown IDs
-   * @returns True if offline transactions are allowed for unknown IDs
+   * @returns `true` if offline transactions are allowed for unknown IDs
    */
   private getOfflineTransactionConfig (): boolean {
     try {

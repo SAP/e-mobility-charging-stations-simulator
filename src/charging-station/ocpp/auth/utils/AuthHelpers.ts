@@ -118,7 +118,7 @@ function getStatusMessage (status: AuthorizationStatus): string {
 /**
  * Check whether an authorization result represents a permanent failure.
  * @param result - Authorization result to evaluate
- * @returns True if BLOCKED, EXPIRED, or INVALID
+ * @returns `true` if BLOCKED, EXPIRED, or INVALID
  */
 function isPermanentFailure (result: AuthorizationResult): boolean {
   return [
@@ -131,7 +131,7 @@ function isPermanentFailure (result: AuthorizationResult): boolean {
 /**
  * Check whether an authorization result is still valid (ACCEPTED and not expired).
  * @param result - Authorization result to evaluate
- * @returns True if ACCEPTED and expiry date has not passed
+ * @returns `true` if ACCEPTED and expiry date has not passed
  */
 function isResultValid (result: AuthorizationResult): boolean {
   if (result.status !== AuthorizationStatus.ACCEPTED) {
@@ -149,7 +149,7 @@ function isResultValid (result: AuthorizationResult): boolean {
 /**
  * Check whether an authorization result represents a temporary failure.
  * @param result - Authorization result to evaluate
- * @returns True if PENDING or UNKNOWN
+ * @returns `true` if PENDING or UNKNOWN
  */
 function isTemporaryFailure (result: AuthorizationResult): boolean {
   if (result.status === AuthorizationStatus.PENDING) {

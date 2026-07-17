@@ -310,7 +310,7 @@ export class AuthenticationError extends Error {
 /**
  * Check if identifier type is certificate-based
  * @param type - Identifier type to check
- * @returns True if certificate-based
+ * @returns `true` if certificate-based
  */
 export const isCertificateBased = (type: IdentifierType): boolean => {
   return type === IdentifierType.CERTIFICATE
@@ -319,7 +319,7 @@ export const isCertificateBased = (type: IdentifierType): boolean => {
 /**
  * Check if identifier type is OCPP 1.6 compatible
  * @param type - Identifier type to check
- * @returns True if OCPP 1.6 type
+ * @returns `true` if OCPP 1.6 type
  */
 export const isOCPP16Type = (type: IdentifierType): boolean => {
   return type === IdentifierType.ID_TAG
@@ -328,7 +328,7 @@ export const isOCPP16Type = (type: IdentifierType): boolean => {
 /**
  * Check if identifier type is OCPP 2.0.1 compatible
  * @param type - Identifier type to check
- * @returns True if OCPP 2.0.1 type
+ * @returns `true` if OCPP 2.0.1 type
  */
 export const isOCPP20Type = (type: IdentifierType): boolean => {
   return (Object.values(OCPP20IdTokenEnumType) as string[]).includes(type)
@@ -337,7 +337,7 @@ export const isOCPP20Type = (type: IdentifierType): boolean => {
 /**
  * Check if identifier type requires additional information
  * @param type - Identifier type to check
- * @returns True if additional info is required
+ * @returns `true` if additional info is required
  */
 export const requiresAdditionalInfo = (type: IdentifierType): boolean => {
   return [

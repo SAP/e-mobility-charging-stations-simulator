@@ -25,21 +25,64 @@ import {
   OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
+  OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   OCPP16StandardParametersKey,
   OCPP16TriggerMessageStatus,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, logger } from '../../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import {
+  createOCPP16EvseBackedContext,
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
+  createOCPP16NonContiguousConnectorsContext,
   type OCPP16IncomingRequestTestContext,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
+
+const enableConnectorMeterValues = (station: ChargingStation, connectorId: number): void => {
+  const connectorStatus = station.getConnectorStatus(connectorId)
+  if (connectorStatus != null) {
+    connectorStatus.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
+  }
+}
+
+const setRecordingRequestHandler = (station: ChargingStation): ReturnType<typeof mock.fn> => {
+  const handler = mock.fn(async () => Promise.resolve({}))
+  ;(
+    station.ocppRequestService as unknown as {
+      requestHandler: (...args: unknown[]) => Promise<unknown>
+    }
+  ).requestHandler = handler
+  return handler
+}
+
+const meterValuesBroadcastConnectorIds = (handler: ReturnType<typeof mock.fn>): number[] =>
+  handler.mock.calls
+    .map(call => call.arguments as [unknown, OCPP16RequestCommand, { connectorId?: number }])
+    .filter(([, command]) => command === OCPP16RequestCommand.METER_VALUES)
+    .map(([, , payload]) => payload.connectorId)
+    .filter((connectorId): connectorId is number => connectorId != null)
+    .sort((a, b) => a - b)
+
+const emitAcceptedTrigger = (
+  service: OCPP16IncomingRequestService,
+  station: ChargingStation,
+  request: OCPP16TriggerMessageRequest
+): void => {
+  const response: OCPP16TriggerMessageResponse = {
+    status: OCPP16TriggerMessageStatus.ACCEPTED,
+  }
+  service.emit(OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, station, request, response)
+}
 
 await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   let context: OCPP16IncomingRequestTestContext
@@ -118,6 +161,58 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
 
       // Assert
       assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
+    })
+  })
+
+  await describe('MeterValues broadcast (no connectorId, station-wide scan)', async () => {
+    await it('should broadcast MeterValues for both contiguous transacting connectors', async () => {
+      const { incomingRequestService, station } = createOCPP16IncomingRequestTestContext({
+        connectorsCount: 2,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      setupConnectorWithTransaction(station, 2, { transactionId: 200 })
+      enableConnectorMeterValues(station, 1)
+      enableConnectorMeterValues(station, 2)
+      const handler = setRecordingRequestHandler(station)
+
+      emitAcceptedTrigger(incomingRequestService, station, {
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      })
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(meterValuesBroadcastConnectorIds(handler), [1, 2])
+    })
+
+    await it('should broadcast MeterValues for a transacting connector whose id exceeds the connector count', async () => {
+      const { incomingRequestService, station } = createOCPP16NonContiguousConnectorsContext()
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      setupConnectorWithTransaction(station, 3, { transactionId: 300 })
+      enableConnectorMeterValues(station, 1)
+      enableConnectorMeterValues(station, 3)
+      const handler = setRecordingRequestHandler(station)
+
+      emitAcceptedTrigger(incomingRequestService, station, {
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      })
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(meterValuesBroadcastConnectorIds(handler), [1, 3])
+    })
+
+    await it('should broadcast MeterValues for transacting connectors spread across EVSEs', async () => {
+      const { incomingRequestService, station } = createOCPP16EvseBackedContext()
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      setupConnectorWithTransaction(station, 3, { transactionId: 300 })
+      enableConnectorMeterValues(station, 1)
+      enableConnectorMeterValues(station, 3)
+      const handler = setRecordingRequestHandler(station)
+
+      emitAcceptedTrigger(incomingRequestService, station, {
+        requestedMessage: OCPP16MessageTrigger.MeterValues,
+      })
+      await flushMicrotasks()
+
+      assert.deepStrictEqual(meterValuesBroadcastConnectorIds(handler), [1, 3])
     })
   })
 

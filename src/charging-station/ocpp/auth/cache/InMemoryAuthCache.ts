@@ -371,7 +371,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Check if identifier has exceeded rate limit
    * @param identifier - Identifier to check
-   * @returns true if within rate limit, false if exceeded
+   * @returns `true` if within rate limit, `false` if exceeded
    */
   private checkRateLimit (identifier: string): boolean {
     if (!this.rateLimit.enabled) {

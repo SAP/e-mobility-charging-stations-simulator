@@ -428,7 +428,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Check if authentication is supported for given identifier type
    * @param identifier - Identifier to check for support
-   * @returns True if at least one strategy can handle the identifier type, false otherwise
+   * @returns `true` if at least one strategy can handle the identifier type, `false` otherwise
    */
   public isSupported (identifier: Identifier): boolean {
     const testRequest: AuthRequest = {
@@ -447,7 +447,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Test connectivity to remote authorization service
-   * @returns True if remote authorization service is reachable
+   * @returns `true` if remote authorization service is reachable
    */
   public testConnectivity (): boolean {
     const remoteStrategy = this.strategies.get('remote')
@@ -645,7 +645,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Check if an error should stop the authentication chain
    * @param error - Error to evaluate for criticality
-   * @returns True if the error should halt authentication attempts, false to continue trying other strategies
+   * @returns `true` if the error should halt authentication attempts, `false` to continue trying other strategies
    */
   private isCriticalError (error: Error): boolean {
     // Critical errors that should stop trying other strategies

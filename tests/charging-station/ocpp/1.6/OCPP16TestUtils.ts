@@ -11,6 +11,8 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   ChargingStationInfo,
   ConfigurationKey,
+  ConnectorStatus,
+  EvseStatus,
   JsonObject,
   OCPP16ChargingProfile,
   OCPP16ChargingSchedulePeriod,
@@ -38,6 +40,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import {
+  createConnectorStatus,
   createMockChargingStation,
   type MockChargingStation,
   type MockOCPPRequestService,
@@ -116,6 +119,33 @@ export function createMeterValuesTemplate (entries: OCPP16SampledValue[]): Sampl
 }
 
 /**
+ * Create an EVSE-backed OCPP 1.6 incoming-request test context where connectors span
+ * two EVSEs with a non-contiguous global id gap: EVSE 1 → connector 1, EVSE 2 →
+ * connector 3. `getNumberOfConnectors()` returns 2 while connector 3 lives beyond that
+ * count, exercising station-wide scans across EVSEs.
+ * @returns Context whose EVSE-backed station exposes connectors {0, 1, 3}.
+ */
+export function createOCPP16EvseBackedContext (): OCPP16IncomingRequestTestContext {
+  const incomingRequestService = new OCPP16IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
+  const { station } = createMockChargingStation({
+    connectorsCount: 2,
+    evseConfiguration: { evsesCount: 2 },
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_16,
+    },
+    websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+  })
+  const evse2 = (station as unknown as { evses: Map<number, EvseStatus> }).evses.get(2)
+  if (evse2 != null) {
+    evse2.connectors.delete(2)
+    evse2.connectors.set(3, createConnectorStatus(3))
+  }
+  return { incomingRequestService, station, testableService }
+}
+
+/**
  * Create a standard OCPP 1.6 incoming request test context with service,
  * testable wrapper, and mock charging station.
  * @param options - Optional overrides for base name, connectors, and station info
@@ -169,6 +199,19 @@ export function createOCPP16ListenerStation (baseName: string): {
     websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
   })
   return { requestHandlerMock, station }
+}
+
+/**
+ * Create an OCPP 1.6 incoming-request test context whose station has non-contiguous
+ * connector ids {1, 3} (connector 2 dropped from a 3-connector flat layout).
+ * `getNumberOfConnectors()` then returns 2 (a COUNT) while the highest connector id is
+ * 3 — the exact condition a `1..getNumberOfConnectors()` numeric loop mishandles.
+ * @returns Context whose flat station exposes connectors {0, 1, 3}.
+ */
+export function createOCPP16NonContiguousConnectorsContext (): OCPP16IncomingRequestTestContext {
+  const context = createOCPP16IncomingRequestTestContext({ connectorsCount: 3 })
+  ;(context.station as unknown as { connectors: Map<number, ConnectorStatus> }).connectors.delete(2)
+  return context
 }
 
 /**
