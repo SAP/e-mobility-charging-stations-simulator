@@ -90,10 +90,6 @@ const waitForPersistedId = async (
 await describe('ChargingStation keeps its identity across a reset', async () => {
   afterEach(() => {
     standardCleanup()
-    // The real ChargingStation uses the real SharedLRUCache singleton (not the
-    // mock standardCleanup resets); clear it so a cached template cannot bleed
-    // between tests.
-    SharedLRUCache.getInstance().clear()
     for (const root of tmpRoots.splice(0)) {
       rmSync(root, { force: true, recursive: true })
     }
@@ -217,9 +213,10 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
 
     await station.reset()
 
-    // A plain reset() reuses the warm template cache, whose in-place OCPP-key
-    // mutation still carries the URL; the retained-options mirror is not exercised
-    // on this path (see the cache-cold reload test below).
+    // A plain reset() reuses the warm template cache. The station's OCPP
+    // Configuration is an independent clone, so setSupervisionUrl's key mutation no longer
+    // persists in the cached template; on reinitialization the URL is re-seeded from the
+    // retained-options mirror (as in the cache-cold reload test below).
     assert.strictEqual(station.wsConnectionUrl.host, 'localhost:7777')
   })
 
@@ -237,8 +234,8 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     // Invalidate the cached template exactly as the template-reload path does (the
     // watcher calls deleteChargingStationTemplate before initialize), forcing the
     // OCPP key absent on reinitialization so it is re-seeded from configuredSupervisionUrl.
-    // This is the only path where the retained-options mirror is load-bearing: a
-    // warm-cache reset passes via the cached mutation and would not guard it.
+    // The warm-cache reset (above) also re-seeds from the retained-options
+    // mirror; this test additionally covers the explicit template-reload (cache-cold) path.
     SharedLRUCache.getInstance().clear()
     internalsOf(station).initialize(internalsOf(station).creationOptions)
 
