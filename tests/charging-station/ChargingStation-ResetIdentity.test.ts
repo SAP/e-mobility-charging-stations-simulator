@@ -13,6 +13,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -22,6 +23,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 // The identity logic lives in initialize(); the identity tests call it directly
@@ -40,16 +42,24 @@ const identityOf = (station: ChargingStation): string | undefined =>
 const tmpRoots: string[] = []
 
 // Fresh template under its own temp station-templates dir, so each test's
-// persisted config lands in an isolated sibling configurations dir.
-const makeTemplate = (): string => {
+// persisted config lands in an isolated sibling configurations dir. Optional
+// overrides are merged into the template's top-level fields (e.g. to enable the
+// OCPP-config supervision URL mechanism).
+const makeTemplate = (overrides?: Record<string, boolean | number | string>): string => {
   const root = mkdtempSync(join(tmpdir(), 'cs-reset-identity-'))
   tmpRoots.push(root)
   mkdirSync(join(root, 'station-templates'), { recursive: true })
   const file = join(root, 'station-templates', 'virtual-simple.station-template.json')
-  copyFileSync(
-    join(process.cwd(), 'src/assets/station-templates/virtual-simple.station-template.json'),
-    file
+  const source = join(
+    process.cwd(),
+    'src/assets/station-templates/virtual-simple.station-template.json'
   )
+  if (overrides == null) {
+    copyFileSync(source, file)
+  } else {
+    const template = JSON.parse(readFileSync(source, 'utf8')) as Record<string, unknown>
+    writeFileSync(file, JSON.stringify({ ...template, ...overrides }, null, 2))
+  }
   return file
 }
 
@@ -80,12 +90,16 @@ const waitForPersistedId = async (
 await describe('ChargingStation keeps its identity across a reset', async () => {
   afterEach(() => {
     standardCleanup()
+    // The real ChargingStation uses the real SharedLRUCache singleton (not the
+    // mock standardCleanup resets); clear it so a cached template cannot bleed
+    // between tests.
+    SharedLRUCache.getInstance().clear()
     for (const root of tmpRoots.splice(0)) {
       rmSync(root, { force: true, recursive: true })
     }
   })
 
-  await it('non-persistent: identity is kept only when the creation options are re-applied', () => {
+  await it('should keep identity only when the creation options are re-applied (non-persistent)', () => {
     const options: ChargingStationOptions = {
       autoStart: false,
       baseName: 'TEST-RESET-ID',
@@ -106,7 +120,7 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     assert.strictEqual(identityOf(station), 'TEST-RESET-ID')
   })
 
-  await it('persistent: identity is kept without re-applying the creation options', async () => {
+  await it('should keep identity without re-applying the creation options (persistent)', async () => {
     const templateFile = makeTemplate()
     const station = new ChargingStation(1, templateFile, {
       autoStart: false,
@@ -132,7 +146,7 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
   // reset() passes nothing. stop/start are stubbed so reset() neither tears down
   // nor dials a socket, and the reset delay is zeroed.
   for (const persistentConfiguration of [false, true]) {
-    await it(`reset re-applies the creation options to initialize() only when non-persistent (persistent=${persistentConfiguration.toString()})`, async t => {
+    await it(`should re-apply the creation options to initialize() only when non-persistent (persistent=${persistentConfiguration.toString()})`, async t => {
       const station = new ChargingStation(1, makeTemplate(), {
         autoStart: false,
         baseName: 'TEST-RESET-WIRING',
@@ -161,7 +175,7 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     })
   }
 
-  await it('setSupervisionUrl keeps the new URL across a reset via the retained options', () => {
+  await it('should keep the setSupervisionUrl URL across a reset via the retained options', () => {
     const station = new ChargingStation(1, makeTemplate(), {
       autoStart: false,
       persistentConfiguration: false,
@@ -177,5 +191,34 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     // ...so re-applying them on reset keeps it instead of the creation-time URL.
     internalsOf(station).initialize(internalsOf(station).creationOptions)
     assert.strictEqual(station.stationInfo?.supervisionUrls, 'ws://localhost:8888/')
+  })
+
+  await it('should keep an OCPP-config supervision URL across a reset (non-persistent)', async t => {
+    // supervisionUrlOcppConfiguration routes the URL through an OCPP config key
+    // rather than stationInfo.supervisionUrls, and must be a template field to
+    // survive the reset rebuild. This is the branch the setSupervisionUrl mirror
+    // comment reasons about, and the only retention path otherwise untested.
+    const station = new ChargingStation(
+      1,
+      makeTemplate({
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey: 'ConnectionUrl',
+      }),
+      { autoStart: false, persistentConfiguration: false, supervisionUrls: 'ws://localhost:9999/' }
+    )
+    station.setSupervisionUrl('ws://localhost:7777/')
+    if (station.stationInfo != null) {
+      station.stationInfo.resetTime = 0
+    }
+    // Stub stop/start so the real reset() re-initializes without tearing down or
+    // dialing a socket.
+    const internals = station as unknown as { start: () => void; stop: () => Promise<void> }
+    t.mock.method(internals, 'stop', () => Promise.resolve())
+    t.mock.method(internals, 'start', () => undefined)
+
+    await station.reset()
+
+    // The OCPP key is re-seeded from the retained URL, so the station dials it.
+    assert.strictEqual(station.wsConnectionUrl.host, 'localhost:7777')
   })
 })
