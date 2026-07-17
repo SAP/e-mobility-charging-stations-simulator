@@ -1627,7 +1627,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getOcppConfigurationFromTemplate (): ChargingStationOcppConfiguration | undefined {
-    return this.getTemplateFromFile()?.Configuration
+    return clone(this.getTemplateFromFile()?.Configuration)
   }
 
   private getPowerDivider (): number {
