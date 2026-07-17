@@ -223,6 +223,7 @@ export class ChargingStation extends EventEmitter {
   private stopping: boolean
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
 
@@ -232,6 +233,7 @@ export class ChargingStation extends EventEmitter {
     this.starting = false
     this.stopping = false
     this.wsConnection = null
+    this.wsConnectionClosedByRequest = false
     this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
@@ -358,9 +360,18 @@ export class ChargingStation extends EventEmitter {
     this.setIntervalFlushMessageBuffer()
   }
 
-  /** Closes the WebSocket connection to the central server. */
-  public closeWSConnection (): void {
+  /**
+   * Closes the WebSocket connection to the central server.
+   * @param options - Close options
+   * @param options.byRequest - Whether the close is requested (the UI disconnect
+   *   action); a requested close is terminal (onClose does not reconnect), any
+   *   other close (e.g. certificate rotation) reconnects like a server-initiated drop
+   */
+  public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
     if (this.isWebSocketConnectionOpened()) {
+      if (byRequest) {
+        this.wsConnectionClosedByRequest = true
+      }
       this.wsConnection?.close()
     }
   }
@@ -2345,6 +2356,10 @@ export class ChargingStation extends EventEmitter {
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
+    // Capture and clear the requested-close marker before deciding whether to
+    // reconnect.
+    const closedByRequest = this.wsConnectionClosedByRequest
+    this.wsConnectionClosedByRequest = false
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
@@ -2354,7 +2369,6 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.wsConnectionRetryCount = 0
         break
       // Abnormal close
       default:
@@ -2363,19 +2377,26 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.started &&
-          this.reconnect()
-            .then(() => {
-              this.emitChargingStationEvent(ChargingStationEvents.updated)
-              return undefined
-            })
-            .catch((error: unknown) =>
-              logger.error(
-                `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
-                error
-              )
-            )
         break
+    }
+    // Reconnect on any close we did not request while still started: a
+    // server-initiated drop, or an internal close wanting a fresh connection
+    // (e.g. certificate rotation), clean or abnormal. Only a requested close
+    // stays terminal.
+    if (this.started && !closedByRequest) {
+      this.reconnect()
+        .then(() => {
+          this.emitChargingStationEvent(ChargingStationEvents.updated)
+          return undefined
+        })
+        .catch((error: unknown) =>
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
+            error
+          )
+        )
+    } else {
+      this.wsConnectionRetryCount = 0
     }
   }
 

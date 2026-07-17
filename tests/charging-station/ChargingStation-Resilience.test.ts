@@ -48,20 +48,6 @@ await describe('ChargingStation Resilience', async () => {
       assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
     })
 
-    await it('should not reconnect on normal WebSocket close', () => {
-      // Arrange
-      const result = createMockChargingStation({ connectorsCount: 1 })
-      station = result.station
-      const mocks = result.mocks
-      station.started = true
-
-      // Act - Simulate normal close (code 1000 = normal closure)
-      mocks.webSocket.simulateClose(1000, 'Normal closure')
-
-      // Assert - WebSocket should be closed
-      assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
-    })
-
     await it('should track connection retry count', () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 1 })
