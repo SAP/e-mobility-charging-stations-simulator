@@ -214,8 +214,7 @@ export abstract class AbstractUIServer {
         break
       default:
         throw new BaseError(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
+          `Unsupported application protocol version ${String(this.uiServerConfiguration.version)} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
     if ('requestTimeout' in this.httpServer) {
@@ -249,7 +248,13 @@ export abstract class AbstractUIServer {
   }
 
   public deleteChargingStationData (hashId: string): boolean {
-    return this.chargingStations.delete(hashId)
+    const deleted = this.chargingStations.delete(hashId)
+    // Reconcile in-flight broadcast requests so any that were waiting on the
+    // departed station complete truthfully instead of hanging.
+    for (const uiService of this.uiServices.values()) {
+      uiService.reconcileDeletedStation(hashId)
+    }
+    return deleted
   }
 
   public getBootstrap (): IBootstrap {
@@ -258,6 +263,10 @@ export abstract class AbstractUIServer {
 
   public getChargingStationData (hashId: string): ChargingStationData | undefined {
     return this.chargingStations.get(hashId)
+  }
+
+  public getChargingStationHashIds (): string[] {
+    return [...this.chargingStations.keys()]
   }
 
   public getChargingStationsCount (): number {
