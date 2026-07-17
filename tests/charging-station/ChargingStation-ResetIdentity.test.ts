@@ -24,11 +24,12 @@ import type { ChargingStationOptions } from '../../src/types/index.js'
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-// A reset re-runs initialize(); the identity logic lives there, so the tests
-// call initialize() directly instead of going through reset()'s stop/sleep/start.
+// The identity logic lives in initialize(); the identity tests call it directly
+// to avoid reset()'s stop/sleep/start (which would dial a socket). A separate
+// test drives reset() with those stubbed to guard the reset -> initialize wiring.
 interface StationInternals {
+  creationOptions?: ChargingStationOptions
   initialize: (options?: ChargingStationOptions) => void
-  options?: ChargingStationOptions
 }
 const internalsOf = (station: ChargingStation): StationInternals =>
   station as unknown as StationInternals
@@ -101,7 +102,7 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     assert.notStrictEqual(identityOf(station), 'TEST-RESET-ID')
 
     // Re-applying the retained creation options restores the configured identity.
-    internalsOf(station).initialize(internalsOf(station).options)
+    internalsOf(station).initialize(internalsOf(station).creationOptions)
     assert.strictEqual(identityOf(station), 'TEST-RESET-ID')
   })
 
@@ -124,5 +125,57 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     // non-persistent station needs the retained options.
     internalsOf(station).initialize()
     assert.strictEqual(identityOf(station), 'TEST-PERSIST-ID')
+  })
+
+  // reset() forwards the creation options to initialize() only for a
+  // non-persistent station; a persistent one restores from its saved config, so
+  // reset() passes nothing. stop/start are stubbed so reset() neither tears down
+  // nor dials a socket, and the reset delay is zeroed.
+  for (const persistentConfiguration of [false, true]) {
+    await it(`reset re-applies the creation options to initialize() only when non-persistent (persistent=${persistentConfiguration.toString()})`, async t => {
+      const station = new ChargingStation(1, makeTemplate(), {
+        autoStart: false,
+        baseName: 'TEST-RESET-WIRING',
+        fixedName: true,
+        persistentConfiguration,
+        supervisionUrls: 'ws://localhost:9999/',
+      })
+      if (station.stationInfo != null) {
+        station.stationInfo.resetTime = 0
+      }
+      const internals = station as unknown as StationInternals & {
+        start: () => void
+        stop: () => Promise<void>
+      }
+      t.mock.method(internals, 'stop', () => Promise.resolve())
+      t.mock.method(internals, 'start', () => undefined)
+      const initializeSpy = t.mock.method(internals, 'initialize', () => undefined)
+
+      await station.reset()
+
+      assert.strictEqual(initializeSpy.mock.calls.length, 1)
+      assert.strictEqual(
+        initializeSpy.mock.calls[0].arguments[0],
+        persistentConfiguration ? undefined : internals.creationOptions
+      )
+    })
+  }
+
+  await it('setSupervisionUrl keeps the new URL across a reset via the retained options', () => {
+    const station = new ChargingStation(1, makeTemplate(), {
+      autoStart: false,
+      persistentConfiguration: false,
+      supervisionUrls: 'ws://localhost:9999/',
+    })
+    station.setSupervisionUrl('ws://localhost:8888/')
+
+    // The runtime URL is mirrored into the retained options...
+    assert.strictEqual(
+      internalsOf(station).creationOptions?.supervisionUrls,
+      'ws://localhost:8888/'
+    )
+    // ...so re-applying them on reset keeps it instead of the creation-time URL.
+    internalsOf(station).initialize(internalsOf(station).creationOptions)
+    assert.strictEqual(station.stationInfo?.supervisionUrls, 'ws://localhost:8888/')
   })
 })
