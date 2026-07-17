@@ -26,8 +26,10 @@ import {
 } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_ID_TAG } from '../../ChargingStationTestConstants.js'
 import {
+  createOCPP16EvseBackedContext,
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
+  createOCPP16NonContiguousConnectorsContext,
   type OCPP16IncomingRequestTestContext,
 } from './OCPP16TestUtils.js'
 
@@ -180,6 +182,27 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     assert.strictEqual(request.connectorId, 2)
   })
 
+  // @spec §5.11 — connector selection with no connectorId is implementation-defined;
+  // this simulator preserves lowest-available-first. Guards the first-match scan's
+  // iteration-order determinism: a non-ascending iterateConnectors() yield would flip
+  // the selected connector.
+  await it('should auto-select the lowest-id connector when several are available', async () => {
+    // Arrange
+    const { station, testableService } = createOCPP16IncomingRequestTestContext({
+      connectorsCount: 3,
+    })
+    const request: RemoteStartTransactionRequest = {
+      idTag: TEST_ID_TAG,
+    }
+
+    // Act
+    const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+    // Assert — connectors 1, 2, 3 all available → connector 1 (lowest) is selected
+    assert.strictEqual(response.status, GenericStatus.Accepted)
+    assert.strictEqual(request.connectorId, 1)
+  })
+
   // @spec §5.11 — All connectors Inoperative, no connectorId specified
   await it('should reject remote start transaction when all connectors are inoperative and no connectorId specified', async () => {
     // Arrange
@@ -202,6 +225,46 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Assert
     assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  // --- Auto-selection across non-contiguous / EVSE-backed layouts ---
+
+  await describe('auto-selection station-wide connector scan (§5.11)', async () => {
+    // On a non-contiguous layout {1, 3}, getNumberOfConnectors() returns 2 (a COUNT)
+    // while connector 3 lives beyond it, so a numeric 1..count loop never reaches it.
+    await it('should auto-select an available connector whose id exceeds the connector count', async () => {
+      // Arrange
+      const { station, testableService } = createOCPP16NonContiguousConnectorsContext()
+      const connector1 = station.getConnectorStatus(1)
+      if (connector1 != null) {
+        connector1.availability = AvailabilityType.Inoperative
+      }
+      const request: RemoteStartTransactionRequest = { idTag: TEST_ID_TAG }
+
+      // Act
+      const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+      // Assert — connector 3 is selected (old loop never reached id 3)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(request.connectorId, 3)
+    })
+
+    await it('should auto-select an available connector living in a second EVSE beyond the connector count', async () => {
+      // Arrange
+      const { station, testableService } = createOCPP16EvseBackedContext()
+      const connector1 = station.getConnectorStatus(1)
+      if (connector1 != null) {
+        connector1.availability = AvailabilityType.Inoperative
+      }
+      const request: RemoteStartTransactionRequest = { idTag: TEST_ID_TAG }
+
+      // Act
+      const response = await testableService.handleRequestRemoteStartTransaction(station, request)
+
+      // Assert — connector 3 (EVSE 2) is reached and selected
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(request.connectorId, 3)
+    })
   })
 
   // --- Transaction state ---

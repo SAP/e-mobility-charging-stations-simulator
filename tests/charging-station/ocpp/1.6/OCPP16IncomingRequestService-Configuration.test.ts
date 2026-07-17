@@ -5,20 +5,27 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   ChangeConfigurationRequest,
   GetConfigurationRequest,
 } from '../../../../src/types/index.js'
 
+import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   OCPP16ConfigurationStatus,
   OCPP16StandardParametersKey,
 } from '../../../../src/types/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
+  setupConnectorWithTransaction,
+  standardCleanup,
+} from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  createOCPP16EvseBackedContext,
   createOCPP16IncomingRequestTestContext,
+  createOCPP16NonContiguousConnectorsContext,
   type OCPP16IncomingRequestTestContext,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
@@ -108,6 +115,66 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
 
     // Assert
     assert.strictEqual(response.status, OCPP16ConfigurationStatus.NOT_SUPPORTED)
+  })
+
+  // @spec §5.4 — MeterValueSampleInterval restart scans connectors station-wide.
+  // On a non-contiguous layout {1, 3}, getNumberOfConnectors() returns 2 (a COUNT)
+  // while connector 3 lives beyond it, so a numeric 1..count loop would skip it.
+  await it('should restart updated MeterValues for every transacting connector, including the id beyond the connector count', () => {
+    // Arrange
+    const { station, testableService } = createOCPP16NonContiguousConnectorsContext()
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 3, { transactionId: 300 })
+    const startSpy = mock.method(OCPP16ServiceUtils, 'startUpdatedMeterValues', () => {
+      /* no-op: isolate the loop under test from interval side effects */
+    })
+    mock.method(OCPP16ServiceUtils, 'stopUpdatedMeterValues', () => {
+      /* no-op */
+    })
+
+    // Act
+    const response = testableService.handleRequestChangeConfiguration(station, {
+      key: OCPP16StandardParametersKey.MeterValueSampleInterval,
+      value: '30',
+    })
+
+    // Assert — both connector 1 and connector 3 are restarted (old loop skipped 3)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED)
+    const restartedConnectorIds = startSpy.mock.calls
+      .map(call => (call.arguments as [ChargingStation, number, number])[1])
+      .sort((a, b) => a - b)
+    assert.deepStrictEqual(restartedConnectorIds, [1, 3])
+  })
+
+  // @spec §5.4 — the same station-wide restart scan must reach connectors spread
+  // across EVSEs. getNumberOfConnectors() is a COUNT unrelated to the max id, so a
+  // numeric 1..count loop cannot enumerate connector 3 living in a second EVSE.
+  await it('should restart updated MeterValues for transacting connectors spread across EVSEs', () => {
+    // Arrange
+    const { station, testableService } = createOCPP16EvseBackedContext()
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    setupConnectorWithTransaction(station, 3, { transactionId: 300 })
+    const startSpy = mock.method(OCPP16ServiceUtils, 'startUpdatedMeterValues', () => {
+      /* no-op: isolate the loop under test from interval side effects */
+    })
+    mock.method(OCPP16ServiceUtils, 'stopUpdatedMeterValues', () => {
+      /* no-op */
+    })
+
+    // Act
+    const response = testableService.handleRequestChangeConfiguration(station, {
+      key: OCPP16StandardParametersKey.MeterValueSampleInterval,
+      value: '30',
+    })
+
+    // Assert — both EVSE-backed connectors are restarted (old loop missed EVSE 2)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED)
+    const restartedConnectorIds = startSpy.mock.calls
+      .map(call => (call.arguments as [ChargingStation, number, number])[1])
+      .sort((a, b) => a - b)
+    assert.deepStrictEqual(restartedConnectorIds, [1, 3])
   })
 
   // ---------------------------------------------------------------------------
