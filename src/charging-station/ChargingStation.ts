@@ -1116,6 +1116,17 @@ export class ChargingStation extends EventEmitter {
     supervisionUser?: string,
     supervisionPassword?: string
   ): void {
+    const applyCredentials = (target: {
+      supervisionPassword?: string
+      supervisionUser?: string
+    }): void => {
+      if (supervisionUser != null) {
+        target.supervisionUser = supervisionUser
+      }
+      if (supervisionPassword != null) {
+        target.supervisionPassword = supervisionPassword
+      }
+    }
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
@@ -1126,12 +1137,7 @@ export class ChargingStation extends EventEmitter {
       this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     }
     if (this.stationInfo != null) {
-      if (supervisionUser != null) {
-        this.stationInfo.supervisionUser = supervisionUser
-      }
-      if (supervisionPassword != null) {
-        this.stationInfo.supervisionPassword = supervisionPassword
-      }
+      applyCredentials(this.stationInfo)
       // Mirror the update into the retained creation options so a later reset()
       // re-applies this URL, not the creation-time one. This must run for BOTH
       // branches above, OCPP-config mode included: a non-persistent station does
@@ -1143,12 +1149,7 @@ export class ChargingStation extends EventEmitter {
       // original options.
       if (this.creationOptions != null) {
         this.creationOptions.supervisionUrls = url
-        if (supervisionUser != null) {
-          this.creationOptions.supervisionUser = supervisionUser
-        }
-        if (supervisionPassword != null) {
-          this.creationOptions.supervisionPassword = supervisionPassword
-        }
+        applyCredentials(this.creationOptions)
       }
       this.saveStationInfo()
       this.emitChargingStationEvent(ChargingStationEvents.updated)
