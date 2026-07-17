@@ -1138,17 +1138,14 @@ export class ChargingStation extends EventEmitter {
     }
     if (this.stationInfo != null) {
       applyCredentials(this.stationInfo)
-      // Mirror the update into the retained creation options so a later reset()
-      // or template reload re-applies this URL, not the creation-time one. Must
-      // run for BOTH branches, OCPP-config mode included: a non-persistent station
-      // does not persist its supervisionUrlOcppKey, so when the template cache is
-      // invalidated (reload, or any cache-cold reinitialization) the key is absent
-      // and re-seeded from configuredSupervisionUrl — derived from
-      // stationInfo.supervisionUrls, which setChargingStationOptions() writes from
-      // these options. Without this mirror the reload would restore the
-      // creation-time URL. (A plain reset() reuses the warm template cache, whose
-      // in-place key mutation already carries the URL.) In-memory only: a full
-      // restart returns to the original options.
+      // Mirror the update into the retained creation options so a later reset() or
+      // template reload re-applies this URL, not the creation-time one — for BOTH
+      // branches above. On a cache-cold reinitialization (reload) a non-persistent
+      // station's supervisionUrlOcppKey is absent and re-seeded from
+      // configuredSupervisionUrl (i.e. stationInfo.supervisionUrls, written from
+      // these options), so without the mirror the reload would restore the old URL.
+      // (A warm reset() reuses the cached template whose in-place key mutation
+      // already carries it.) In-memory only: a full restart reverts to the originals.
       if (this.creationOptions != null) {
         this.creationOptions.supervisionUrls = url
         applyCredentials(this.creationOptions)
