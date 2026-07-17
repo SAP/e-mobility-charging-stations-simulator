@@ -249,10 +249,10 @@ export class ChargingStation extends EventEmitter {
     this.connectorsConfigurationHash = ''
     this.evsesConfigurationHash = ''
     this.templateFileHash = ''
-    // Retain the creation options so a reset or template-file reload can
-    // re-apply them; otherwise the station reverts to the template defaults
-    // (losing its fixed identity and supervision URL). See issue #2017.
-    this.options = options
+    // Kept so a reset or template reload can re-apply the configured identity
+    // and supervision URL. Cloned so the in-place update in setSupervisionUrl
+    // stays off the shared worker data.
+    this.options = clone(options)
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))
@@ -1118,11 +1118,9 @@ export class ChargingStation extends EventEmitter {
       if (supervisionPassword != null) {
         this.stationInfo.supervisionPassword = supervisionPassword
       }
-      // Keep the retained creation-options snapshot in sync with these runtime
-      // changes so a subsequent reset() re-applies them — a reset reboots the
-      // station into its current configured state rather than reverting to the
-      // creation-time configuration. The snapshot is in-memory only, so a full
-      // simulator restart still reverts to the original options. See issue #2017.
+      // Update the kept options too, so a later reset re-applies this new URL
+      // rather than the creation-time one. This lives only in memory, so a full
+      // simulator restart still returns to the original options.
       if (this.options != null) {
         this.options.supervisionUrls = url
         if (supervisionUser != null) {
