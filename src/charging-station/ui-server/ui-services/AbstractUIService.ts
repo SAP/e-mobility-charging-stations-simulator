@@ -51,6 +51,17 @@ export interface BroadcastChannelResponseLogContext {
   readonly uuid: UUIDv4
 }
 
+/**
+ * Outcome of recording a worker response against an in-flight broadcast
+ * request (see {@link AbstractUIService.recordBroadcastChannelResponse}):
+ * - `completed`: the responding station was the last outstanding one.
+ * - `outstanding`: recorded, but other stations are still expected.
+ * - `untracked`: the request is unknown/released or the station is not an
+ *   outstanding responder (late, duplicate or reconciled-away reply) and must
+ *   be dropped without aggregation.
+ */
+export type BroadcastChannelResponseOutcome = 'completed' | 'outstanding' | 'untracked'
+
 interface AddChargingStationsRequestPayload extends RequestPayload {
   numberOfStations: number
   options?: ChargingStationOptions
@@ -58,10 +69,10 @@ interface AddChargingStationsRequestPayload extends RequestPayload {
 }
 
 interface BroadcastChannelRequestContext {
-  readonly expectedResponses: number
   readonly origin: UIRequestOrigin
+  readonly outstandingHashIds: Set<string>
   readonly procedureName: BroadcastChannelProcedureName
-  readonly timeout: NodeJS.Timeout
+  readonly timeout: ReturnType<typeof setTimeout>
 }
 
 export abstract class AbstractUIService {
@@ -155,12 +166,53 @@ export abstract class AbstractUIService {
     this.broadcastChannelRequests.delete(uuid)
   }
 
-  public getBroadcastChannelExpectedResponses (uuid: UUIDv4): number {
-    return this.broadcastChannelRequests.get(uuid)?.expectedResponses ?? 0
+  public getBroadcastChannelOutstandingResponseCount (uuid: UUIDv4): number {
+    return this.broadcastChannelRequests.get(uuid)?.outstandingHashIds.size ?? 0
   }
 
   public logPrefix = (modName: string, methodName: string): string => {
     return this.uiServer.logPrefix(modName, methodName, this.version)
+  }
+
+  public reconcileDeletedStation (hashId: string): void {
+    for (const [uuid, requestContext] of this.broadcastChannelRequests) {
+      // A DELETE_CHARGING_STATIONS request deletes its own targets: each target
+      // still posts its command reply, which is the reliable completion source.
+      // The `deleted` worker event that drives this reconciliation is posted on
+      // a different transport and can arrive before that reply, so reconciling
+      // here would complete the request as a failure against an empty response
+      // set and then drop the genuine reply as untracked. A DELETE target
+      // removed by an external cause mid-flight (so it never sends its own
+      // reply), and a worker that dies mid-delete, are both completed only via
+      // the safety-net timeout: reconcile cannot tell an external deletion from
+      // a self-delete, and treating either as a synthetic success would move
+      // completion off the authoritative reply. This is a bounded latency cost,
+      // never a hang or a false result.
+      if (requestContext.procedureName === BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS) {
+        continue
+      }
+      if (
+        requestContext.outstandingHashIds.delete(hashId) &&
+        requestContext.outstandingHashIds.size === 0
+      ) {
+        this.uiServiceWorkerBroadcastChannel.completeReconciledRequest(uuid)
+      }
+    }
+  }
+
+  public recordBroadcastChannelResponse (
+    uuid: UUIDv4,
+    hashId: string | undefined
+  ): BroadcastChannelResponseOutcome {
+    const requestContext = this.broadcastChannelRequests.get(uuid)
+    if (
+      requestContext == null ||
+      hashId == null ||
+      !requestContext.outstandingHashIds.delete(hashId)
+    ) {
+      return 'untracked'
+    }
+    return requestContext.outstandingHashIds.size === 0 ? 'completed' : 'outstanding'
   }
 
   public async requestHandler (
@@ -465,47 +517,54 @@ export abstract class AbstractUIService {
     payload: BroadcastChannelRequestPayload,
     context: UIRequestContext
   ): void {
-    if (isNotEmptyArray(payload.hashIds)) {
-      payload.hashIds = payload.hashIds
-        .map(hashId => {
-          if (this.uiServer.hasChargingStationData(hashId)) {
-            return hashId
-          }
-          logger.warn(
-            `${this.logPrefix(
-              moduleName,
-              'sendBroadcastChannelRequest'
-            )} Charging station with hashId '${hashId}' not found`
-          )
-          return undefined
-        })
-        .filter((hashId): hashId is string => hashId != null)
-    } else {
-      delete payload.hashIds
+    // An explicitly supplied hashIds array (even empty) means the caller targets
+    // specific stations: it must resolve to at least one live station, otherwise
+    // the request fails rather than silently broadcasting to every station.
+    if (Array.isArray(payload.hashIds)) {
+      payload.hashIds = payload.hashIds.filter(hashId => {
+        if (this.uiServer.hasChargingStationData(hashId)) {
+          return true
+        }
+        logger.warn(
+          `${this.logPrefix(
+            moduleName,
+            'sendBroadcastChannelRequest'
+          )} Charging station with hashId '${hashId}' not found`
+        )
+        return false
+      })
+      if (!isNotEmptyArray(payload.hashIds)) {
+        throw new BaseError(
+          'hashIds array in the request payload does not contain any valid charging station hashId'
+        )
+      }
     }
-    const expectedNumberOfResponses = Array.isArray(payload.hashIds)
-      ? payload.hashIds.length
-      : this.uiServer.getChargingStationsCount()
-    if (expectedNumberOfResponses === 0) {
-      throw new BaseError(
-        'hashIds array in the request payload does not contain any valid charging station hashId'
-      )
+    // Snapshot the set of stations expected to respond: the validated explicit
+    // targets, or the live station set for a broadcast. Completion tracks this
+    // set rather than a frozen count, so a station deleted mid-flight can be
+    // reconciled instead of hanging the request.
+    const outstandingHashIds = new Set(
+      isNotEmptyArray<string>(payload.hashIds)
+        ? payload.hashIds
+        : this.uiServer.getChargingStationHashIds()
+    )
+    if (outstandingHashIds.size === 0) {
+      throw new BaseError('No charging station is available to handle the broadcast request')
     }
     // Safety-net timeout: if not all expected worker responses arrive (e.g. a
     // targeted station is deleted while the request is in flight), complete the
     // request with a failure instead of leaving the caller waiting forever.
-    // See issue #2018.
     const timeout = setTimeout(() => {
       this.uiServiceWorkerBroadcastChannel.completeExpiredRequest(uuid)
     }, Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
     timeout.unref()
     this.broadcastChannelRequests.set(uuid, {
-      expectedResponses: expectedNumberOfResponses,
       origin: context.origin,
+      outstandingHashIds,
       procedureName,
       timeout,
     })
-    // Rollback expected-response accounting if dispatch to the worker channel throws.
+    // Rollback the outstanding-response tracking if dispatch to the worker channel throws.
     try {
       this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
     } catch (error) {

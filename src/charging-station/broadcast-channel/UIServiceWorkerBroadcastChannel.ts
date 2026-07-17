@@ -16,14 +16,8 @@ import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'UIServiceWorkerBroadcastChannel'
 
-interface Responses {
-  responses: BroadcastChannelResponsePayload[]
-  responsesExpected: number
-  responsesReceived: number
-}
-
 export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
-  private readonly responses: Map<string, Responses>
+  private readonly responses: Map<UUIDv4, BroadcastChannelResponsePayload[]>
   private readonly uiService: AbstractUIService
 
   constructor (uiService: AbstractUIService) {
@@ -31,18 +25,18 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     this.uiService = uiService
     this.onmessage = this.responseHandler.bind(this) as (message: unknown) => void
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void
-    this.responses = new Map<string, Responses>()
+    this.responses = new Map<UUIDv4, BroadcastChannelResponsePayload[]>()
   }
 
   /**
    * Completes a broadcast request whose safety-net timeout fired before all
    * expected worker responses arrived (e.g. a targeted station was deleted
    * mid-flight), so the caller is not left waiting forever, then releases the
-   * aggregation state. See issue #2018.
+   * aggregation state.
    * @param uuid - Request identifier.
    */
   public completeExpiredRequest (uuid: UUIDv4): void {
-    if (this.uiService.getBroadcastChannelExpectedResponses(uuid) === 0) {
+    if (this.uiService.getBroadcastChannelOutstandingResponseCount(uuid) === 0) {
       // Already completed and released by the normal response path.
       return
     }
@@ -54,8 +48,19 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     }
   }
 
-  private buildResponsePayload (uuid: string): ResponsePayload {
-    const responsesArray = this.responses.get(uuid)?.responses ?? []
+  /**
+   * Completes a broadcast request whose last outstanding responder was a
+   * station deleted mid-flight: the surviving stations have all replied, so
+   * the request is completed with the truthful aggregated payload (the deleted
+   * station simply absent) instead of hanging.
+   * @param uuid - Request identifier.
+   */
+  public completeReconciledRequest (uuid: UUIDv4): void {
+    this.completeRequest(uuid)
+  }
+
+  private buildResponsePayload (uuid: UUIDv4): ResponsePayload {
+    const responsesArray = this.responses.get(uuid) ?? []
     const responsesStatus =
       isNotEmptyArray(responsesArray) &&
       responsesArray.every(response => response.status === ResponseStatus.SUCCESS)
@@ -64,8 +69,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     return {
       hashIdsSucceeded: responsesArray
         .map(response => {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (response?.hashId != null && response?.status === ResponseStatus.SUCCESS) {
+          if (response.hashId != null && response.status === ResponseStatus.SUCCESS) {
             return response.hashId
           }
           return undefined
@@ -75,8 +79,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: responsesArray
           .map(response => {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            if (response?.hashId != null && response?.status === ResponseStatus.FAILURE) {
+            if (response.hashId != null && response.status === ResponseStatus.FAILURE) {
               return response.hashId
             }
             return undefined
@@ -86,8 +89,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: responsesArray
           .map(response => {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            if (response?.status === ResponseStatus.FAILURE) {
+            if (response.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined
@@ -98,17 +100,27 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   }
 
   private buildTimeoutResponsePayload (uuid: UUIDv4): ResponsePayload {
-    const responses = this.responses.get(uuid)
-    const responsesReceived = responses?.responsesReceived ?? 0
+    const responsesArray = this.responses.get(uuid) ?? []
+    const responsesReceived = responsesArray.length
     const responsesExpected =
-      responses?.responsesExpected ?? this.uiService.getBroadcastChannelExpectedResponses(uuid)
+      responsesReceived + this.uiService.getBroadcastChannelOutstandingResponseCount(uuid)
     return {
       errorMessage: `Timed out waiting for charging station responses (received ${responsesReceived.toString()} of ${responsesExpected.toString()})`,
-      hashIdsSucceeded: (responses?.responses ?? [])
+      hashIdsSucceeded: responsesArray
         .filter(response => response.status === ResponseStatus.SUCCESS)
         .map(response => response.hashId)
         .filter((hashId): hashId is string => hashId != null),
       status: ResponseStatus.FAILURE,
+    }
+  }
+
+  private completeRequest (uuid: UUIDv4): void {
+    // Always release aggregation state, even if downstream sendResponse throws.
+    try {
+      this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
+    } finally {
+      this.responses.delete(uuid)
+      this.uiService.deleteBroadcastChannelRequest(uuid)
     }
   }
 
@@ -128,35 +140,38 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       return
     }
     const [uuid, responsePayload] = validatedMessageEvent.data as BroadcastChannelResponse
-    if (!this.responses.has(uuid)) {
-      this.responses.set(uuid, {
-        responses: [responsePayload],
-        responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
-        responsesReceived: 1,
-      })
-    } else {
-      const responses = this.responses.get(uuid)
-      if (responses != null) {
-        if (responses.responsesReceived < responses.responsesExpected) {
-          ++responses.responsesReceived
-          responses.responses.push(responsePayload)
-        } else {
-          logger.debug(
-            `${this.uiService.logPrefix(moduleName, 'responseHandler')} Received response after all expected responses:`,
-            { responsePayload, uuid }
-          )
-        }
+    const outcome = this.uiService.recordBroadcastChannelResponse(uuid, responsePayload.hashId)
+    if (outcome === 'untracked') {
+      if (
+        responsePayload.hashId == null &&
+        this.uiService.getBroadcastChannelOutstandingResponseCount(uuid) > 0
+      ) {
+        // Reply for a still-tracked request but without a hashId, so it cannot
+        // be matched to an outstanding responder; completion is left to the
+        // remaining replies and the safety-net timeout. Logged distinctly from a
+        // late/duplicate drop to make such a stall diagnosable.
+        logger.debug(
+          `${this.uiService.logPrefix(moduleName, 'responseHandler')} Dropping broadcast response without hashId for a tracked request:`,
+          { responsePayload, uuid }
+        )
+        return
       }
+      // Late, duplicate or reconciled-away reply for an already-released or
+      // unexpected station: drop it so it cannot re-complete the request.
+      logger.debug(
+        `${this.uiService.logPrefix(moduleName, 'responseHandler')} Dropping untracked broadcast response:`,
+        { responsePayload, uuid }
+      )
+      return
     }
     const responses = this.responses.get(uuid)
-    if (responses != null && responses.responsesReceived >= responses.responsesExpected) {
-      // Always release aggregation state, even if downstream sendResponse throws.
-      try {
-        this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
-      } finally {
-        this.responses.delete(uuid)
-        this.uiService.deleteBroadcastChannelRequest(uuid)
-      }
+    if (responses == null) {
+      this.responses.set(uuid, [responsePayload])
+    } else {
+      responses.push(responsePayload)
+    }
+    if (outcome === 'completed') {
+      this.completeRequest(uuid)
     }
   }
 }

@@ -8,6 +8,11 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { UIServiceWorkerBroadcastChannel } from '../../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIService } from '../../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
+import type {
+  BroadcastChannelResponse,
+  BroadcastChannelResponsePayload,
+  UUIDv4,
+} from '../../../../src/types/index.js'
 
 import {
   BroadcastChannelProcedureName,
@@ -17,8 +22,8 @@ import {
   UIRequestOrigin,
 } from '../../../../src/types/index.js'
 import { Constants, logger } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
+import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_HASH_ID, TEST_HASH_ID_2, TEST_UUID, TEST_UUID_2 } from '../UIServerTestConstants.js'
 import {
   createMockChargingStationData,
   createMockUIServerConfiguration,
@@ -52,6 +57,43 @@ const registerTransportStopRequest = async (service: AbstractUIService): Promise
   await service.requestHandler(
     createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {})
   )
+}
+
+const registerTransportStopRequestFor = async (
+  service: AbstractUIService,
+  uuid: UUIDv4,
+  hashIds: string[]
+): Promise<void> => {
+  await service.requestHandler(
+    createProtocolRequest(uuid, ProcedureName.STOP_CHARGING_STATION, { hashIds })
+  )
+}
+
+const registerTransportDeleteRequest = async (
+  service: AbstractUIService,
+  hashIds: string[]
+): Promise<void> => {
+  await service.requestHandler(
+    createProtocolRequest(TEST_UUID, ProcedureName.DELETE_CHARGING_STATIONS, { hashIds })
+  )
+}
+
+/**
+ * Deliver a worker broadcast-channel response into the service's aggregation
+ * path, mirroring what a charging station worker posts back on the channel.
+ * @param service - UI service whose worker broadcast channel receives the reply.
+ * @param responsePayload - The per-station response payload to deliver.
+ * @param uuid - Request identifier the reply belongs to (defaults to TEST_UUID).
+ */
+const emitWorkerResponse = (
+  service: AbstractUIService,
+  responsePayload: BroadcastChannelResponsePayload,
+  uuid: UUIDv4 = TEST_UUID
+): void => {
+  const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as {
+    onmessage: (message: { data: BroadcastChannelResponse }) => void
+  }
+  channel.onmessage({ data: [uuid, responsePayload] })
 }
 
 await describe('AbstractUIService', async () => {
@@ -166,7 +208,7 @@ await describe('AbstractUIService', async () => {
 
     assert.notStrictEqual(service, undefined)
     if (service != null) {
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
       service.stop()
     }
   })
@@ -182,7 +224,7 @@ await describe('AbstractUIService', async () => {
     assert.notStrictEqual(service, undefined)
     if (service != null) {
       service.stop()
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
     }
   })
 
@@ -363,7 +405,7 @@ await describe('AbstractUIService', async () => {
       if (response != null) {
         assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
       }
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
     } finally {
       service.stop()
     }
@@ -407,7 +449,195 @@ await describe('AbstractUIService', async () => {
   })
 
   await it('should complete a broadcast request with a failure when responses time out', async t => {
-    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { service } = createServiceContext()
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        // Broadcast to the single known station; no worker ever replies.
+        await registerTransportStopRequest(service)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        // The request is released instead of hanging, and a failure is emitted.
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+        expectSingleLog(
+          mocks,
+          'warn',
+          /Failed broadcast response completed without response handler/,
+          {
+            hashIdsSucceeded: [],
+            origin: UIRequestOrigin.TRANSPORT,
+            procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+            status: ResponseStatus.FAILURE,
+            uuid: TEST_UUID,
+          }
+        )
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should report partial successes when a broadcast request times out', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        // Broadcast to two stations; only the first ever replies.
+        await registerTransportStopRequest(service)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 2)
+        emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        // The timeout payload reports the station that did reply successfully.
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+        expectSingleLog(
+          mocks,
+          'warn',
+          /Failed broadcast response completed without response handler/,
+          {
+            hashIdsSucceeded: [TEST_HASH_ID],
+            origin: UIRequestOrigin.TRANSPORT,
+            procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+            status: ResponseStatus.FAILURE,
+            uuid: TEST_UUID,
+          }
+        )
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should not fire the request timeout once the request is released', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { service } = createServiceContext()
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        await registerTransportStopRequest(service)
+        // Simulate the normal completion path releasing the request.
+        service.deleteBroadcastChannelRequest(TEST_UUID)
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        // Timer was cleared: no timeout response is emitted after release.
+        assert.strictEqual(mocks.warn.mock.calls.length, 0)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should clear the safety-net timeout when broadcast dispatch throws', async t => {
+    const { service } = createServiceContext()
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+    t.mock.method(channel, 'sendRequest', () => {
+      throw new Error('dispatch failed')
+    })
+    const completeExpiredSpy = t.mock.method(channel, 'completeExpiredRequest')
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        const response = await service.requestHandler(
+          createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {})
+        )
+        assert.strictEqual(response?.[1].status, ResponseStatus.FAILURE)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        // The rollback cleared the timer, so its callback never runs.
+        assert.strictEqual(completeExpiredSpy.mock.calls.length, 0)
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should clear pending safety-net timeouts on service stop', async t => {
+    const { service } = createServiceContext()
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+    const completeExpiredSpy = t.mock.method(channel, 'completeExpiredRequest')
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      await registerTransportStopRequest(service)
+      service.stop()
+
+      t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+      // Stop cleared the timer, so its callback never runs.
+      assert.strictEqual(completeExpiredSpy.mock.calls.length, 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    })
+  })
+
+  await it('should complete a broadcast request truthfully when an outstanding station is deleted', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+    const completeExpiredSpy = t.mock.method(channel, 'completeExpiredRequest')
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        // Broadcast to two stations; only the first replies.
+        await registerTransportStopRequest(service)
+        emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+        // Deleting the other targeted station reconciles the request: the
+        // surviving reply is reported, the deleted station is dropped.
+        server.deleteChargingStationData(TEST_HASH_ID_2)
+
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+        expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+          hashIdsSucceeded: [TEST_HASH_ID],
+          origin: UIRequestOrigin.TRANSPORT,
+          procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+          status: ResponseStatus.SUCCESS,
+          uuid: TEST_UUID,
+        })
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        // Reconciliation cleared the safety-net timer.
+        assert.strictEqual(completeExpiredSpy.mock.calls.length, 0)
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should drop a late broadcast response instead of re-completing the request', async t => {
     const mocks = {
       debug: t.mock.method(logger, 'debug', () => undefined),
       warn: t.mock.method(logger, 'warn', () => undefined),
@@ -415,33 +645,283 @@ await describe('AbstractUIService', async () => {
     const { service } = createServiceContext()
 
     try {
-      // Broadcast to the single known station; no worker ever replies.
       await registerTransportStopRequest(service)
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 1)
+      // The single targeted station replies and the request completes.
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      const debugCallsAfterCompletion = mocks.debug.mock.calls.length
+      assert.strictEqual(debugCallsAfterCompletion, 1)
 
-      t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+      // A late duplicate reply for the released request must be dropped.
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
 
-      // The request is released instead of hanging, and a failure is emitted.
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
-      expectSingleLog(
-        mocks,
-        'warn',
-        /Failed broadcast response completed without response handler/,
-        {
-          hashIdsSucceeded: [],
-          origin: UIRequestOrigin.TRANSPORT,
-          procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-          status: ResponseStatus.FAILURE,
-          uuid: TEST_UUID,
-        }
-      )
+      assert.strictEqual(mocks.debug.mock.calls.length, debugCallsAfterCompletion + 1)
+      const [lastMessage] = mocks.debug.mock.calls.at(-1)?.arguments ?? []
+      if (typeof lastMessage !== 'string') {
+        assert.fail('Expected debug log message to be a string')
+      }
+      assert.match(lastMessage, /Dropping untracked broadcast response/)
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
     } finally {
       service.stop()
     }
   })
 
-  await it('should not fire the request timeout once the request is released', async t => {
-    t.mock.timers.enable({ apis: ['setTimeout'] })
+  await it('should not re-complete an already-released request when its timeout fires', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { service } = createServiceContext()
+    const channel = Reflect.get(
+      service,
+      'uiServiceWorkerBroadcastChannel'
+    ) as UIServiceWorkerBroadcastChannel
+
+    try {
+      await registerTransportStopRequest(service)
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+      const debugCallsAfterCompletion = mocks.debug.mock.calls.length
+
+      // A timeout callback racing after normal completion must be a no-op.
+      channel.completeExpiredRequest(TEST_UUID)
+
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+      assert.strictEqual(mocks.debug.mock.calls.length, debugCallsAfterCompletion)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should reject a broadcast request that targets only unknown stations', async () => {
+    const { service } = createServiceContext()
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, {
+          hashIds: ['unknown-station'],
+        })
+      )
+
+      assert.notStrictEqual(response, undefined)
+      if (response != null) {
+        assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
+        assert.match(response[1].errorMessage as string, /does not contain any valid/)
+      }
+      // The request was never tracked: nothing to complete or time out.
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should reject a broadcast request with an empty hashIds array instead of broadcasting', async () => {
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+
+    try {
+      const response = await service.requestHandler(
+        createProtocolRequest(TEST_UUID, ProcedureName.STOP_CHARGING_STATION, { hashIds: [] })
+      )
+
+      assert.notStrictEqual(response, undefined)
+      if (response != null) {
+        assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
+        assert.match(response[1].errorMessage as string, /does not contain any valid/)
+      }
+      // An empty explicit target does not degrade to broadcasting to every station.
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should complete a self-target DELETE via its worker reply when deleted first', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+
+    try {
+      await registerTransportDeleteRequest(service, [TEST_HASH_ID])
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+      // The `deleted` worker event arrives before the DELETE reply: reconcile
+      // must not complete the request, leaving it to the station's own reply.
+      server.deleteChargingStationData(TEST_HASH_ID)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      assert.strictEqual(mocks.debug.mock.calls.length, 0)
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+        hashIdsSucceeded: [TEST_HASH_ID],
+        origin: UIRequestOrigin.TRANSPORT,
+        procedureName: BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should fail a self-target DELETE via the timeout when the reply never arrives', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      try {
+        await registerTransportDeleteRequest(service, [TEST_HASH_ID])
+        server.deleteChargingStationData(TEST_HASH_ID)
+        // Reconcile skipped the DELETE; the safety-net timeout is the backstop.
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+        t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+        expectSingleLog(
+          mocks,
+          'warn',
+          /Failed broadcast response completed without response handler/,
+          {
+            hashIdsSucceeded: [],
+            origin: UIRequestOrigin.TRANSPORT,
+            procedureName: BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
+            status: ResponseStatus.FAILURE,
+            uuid: TEST_UUID,
+          }
+        )
+      } finally {
+        service.stop()
+      }
+    })
+  })
+
+  await it('should keep a broadcast request in-flight when reconcile does not empty the set', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+
+    try {
+      // Broadcast STOP to both stations, then delete one before any reply.
+      await registerTransportStopRequest(service)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 2)
+
+      server.deleteChargingStationData(TEST_HASH_ID)
+      // The deleted station is dropped, but the request stays in-flight.
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      assert.strictEqual(mocks.debug.mock.calls.length, 0)
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID_2, status: ResponseStatus.SUCCESS })
+
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+        hashIdsSucceeded: [TEST_HASH_ID_2],
+        origin: UIRequestOrigin.TRANSPORT,
+        procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID,
+      })
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should reconcile two concurrent in-flight requests on a single station deletion', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+
+    try {
+      await registerTransportStopRequestFor(service, TEST_UUID, [TEST_HASH_ID, TEST_HASH_ID_2])
+      await registerTransportStopRequestFor(service, TEST_UUID_2, [TEST_HASH_ID, TEST_HASH_ID_2])
+      // Each request receives the second station's reply, leaving TEST_HASH_ID outstanding on both.
+      emitWorkerResponse(
+        service,
+        { hashId: TEST_HASH_ID_2, status: ResponseStatus.SUCCESS },
+        TEST_UUID
+      )
+      emitWorkerResponse(
+        service,
+        { hashId: TEST_HASH_ID_2, status: ResponseStatus.SUCCESS },
+        TEST_UUID_2
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID_2), 1)
+
+      // Deleting the shared station reconciles BOTH requests in one iteration
+      // (the Map is mutated as each completes).
+      server.deleteChargingStationData(TEST_HASH_ID)
+
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID_2), 0)
+      assert.strictEqual(mocks.debug.mock.calls.length, 2)
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should skip a DELETE while reconciling a coexisting non-DELETE on the same deleted station', async t => {
+    const mocks = {
+      debug: t.mock.method(logger, 'debug', () => undefined),
+      warn: t.mock.method(logger, 'warn', () => undefined),
+    }
+    const { server, service } = createServiceContext()
+    server.setChargingStationData(TEST_HASH_ID_2, createMockChargingStationData(TEST_HASH_ID_2))
+
+    try {
+      // A DELETE (TEST_UUID) and a STOP (TEST_UUID_2) both target the two stations.
+      await registerTransportDeleteRequest(service, [TEST_HASH_ID, TEST_HASH_ID_2])
+      await registerTransportStopRequestFor(service, TEST_UUID_2, [TEST_HASH_ID, TEST_HASH_ID_2])
+      // Each receives the second station's reply, leaving TEST_HASH_ID outstanding on both.
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID_2, status: ResponseStatus.SUCCESS })
+      emitWorkerResponse(
+        service,
+        { hashId: TEST_HASH_ID_2, status: ResponseStatus.SUCCESS },
+        TEST_UUID_2
+      )
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID_2), 1)
+
+      // One reconcile pass on the shared station: the DELETE is skipped, the STOP completes.
+      server.deleteChargingStationData(TEST_HASH_ID)
+
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID_2), 0)
+      expectSingleLog(mocks, 'debug', /Broadcast response completed without response handler/, {
+        hashIdsSucceeded: [TEST_HASH_ID_2],
+        origin: UIRequestOrigin.TRANSPORT,
+        procedureName: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+        status: ResponseStatus.SUCCESS,
+        uuid: TEST_UUID_2,
+      })
+      assert.strictEqual(mocks.warn.mock.calls.length, 0)
+
+      // The DELETE still completes truthfully via its own reply.
+      emitWorkerResponse(service, { hashId: TEST_HASH_ID, status: ResponseStatus.SUCCESS })
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+    } finally {
+      service.stop()
+    }
+  })
+
+  await it('should drop a hashId-less reply for a tracked request and log it distinctly', async t => {
     const mocks = {
       debug: t.mock.method(logger, 'debug', () => undefined),
       warn: t.mock.method(logger, 'warn', () => undefined),
@@ -450,14 +930,17 @@ await describe('AbstractUIService', async () => {
 
     try {
       await registerTransportStopRequest(service)
-      // Simulate the normal completion path releasing the request.
-      service.deleteBroadcastChannelRequest(TEST_UUID)
+      // A reply without a hashId cannot be matched to an outstanding responder.
+      emitWorkerResponse(service, { hashId: undefined, status: ResponseStatus.SUCCESS })
 
-      t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
-
-      // Timer was cleared: no timeout response is emitted after release.
-      assert.strictEqual(mocks.warn.mock.calls.length, 0)
-      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
+      // The request stays in-flight (completion deferred to the timeout), and
+      // the drop is logged distinctly from an untracked/late drop.
+      assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+      expectSingleLog(
+        mocks,
+        'debug',
+        /Dropping broadcast response without hashId for a tracked request/
+      )
     } finally {
       service.stop()
     }
