@@ -213,6 +213,7 @@ export class ChargingStation extends EventEmitter {
   private configuredSupervisionUrl!: URL
   private readonly connectors: Map<number, ConnectorStatus>
   private connectorsConfigurationHash: string
+  private readonly creationOptions?: ChargingStationOptions
   private readonly evses: Map<number, EvseStatus>
   private evsesConfigurationHash: string
   private flushingMessageBuffer: boolean
@@ -226,6 +227,20 @@ export class ChargingStation extends EventEmitter {
   private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
+
+  /**
+   * Creation options to re-apply when re-initializing on a reset or template
+   * reload. Only a non-persistent station needs them: a persistent one restores
+   * its identity and configuration from its saved file, which stays the source
+   * of truth, so re-applying the creation options would needlessly override it.
+   * @returns The retained creation options when the station is non-persistent,
+   *   `undefined` otherwise.
+   */
+  private get reinitializationOptions (): ChargingStationOptions | undefined {
+    return this.stationInfo?.stationInfoPersistentConfiguration === false
+      ? this.creationOptions
+      : undefined
+  }
 
   constructor (index: number, templateFile: string, options?: ChargingStationOptions) {
     super()
@@ -250,6 +265,10 @@ export class ChargingStation extends EventEmitter {
     this.connectorsConfigurationHash = ''
     this.evsesConfigurationHash = ''
     this.templateFileHash = ''
+    // Kept so a reset or template reload can re-apply the configured identity
+    // and supervision URL. Cloned so the in-place update in setSupervisionUrl
+    // stays off the shared worker data.
+    this.creationOptions = clone(options)
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))
@@ -1074,7 +1093,7 @@ export class ChargingStation extends EventEmitter {
     }
     await sleep(this.stationInfo?.resetTime ?? 0)
     OCPPAuthServiceFactory.clearInstance(this)
-    this.initialize()
+    this.initialize(this.reinitializationOptions)
     this.start()
   }
 
@@ -1108,6 +1127,17 @@ export class ChargingStation extends EventEmitter {
     supervisionUser?: string,
     supervisionPassword?: string
   ): void {
+    const applyCredentials = (target: {
+      supervisionPassword?: string
+      supervisionUser?: string
+    }): void => {
+      if (supervisionUser != null) {
+        target.supervisionUser = supervisionUser
+      }
+      if (supervisionPassword != null) {
+        target.supervisionPassword = supervisionPassword
+      }
+    }
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
@@ -1118,11 +1148,18 @@ export class ChargingStation extends EventEmitter {
       this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     }
     if (this.stationInfo != null) {
-      if (supervisionUser != null) {
-        this.stationInfo.supervisionUser = supervisionUser
-      }
-      if (supervisionPassword != null) {
-        this.stationInfo.supervisionPassword = supervisionPassword
+      applyCredentials(this.stationInfo)
+      // Mirror the update into the retained creation options so a later reset() or
+      // template reload re-applies this URL, not the creation-time one — for BOTH
+      // branches above. On a cache-cold reinitialization (reload) a non-persistent
+      // station's supervisionUrlOcppKey is absent and re-seeded from
+      // configuredSupervisionUrl (i.e. stationInfo.supervisionUrls, written from
+      // these options), so without the mirror the reload would restore the old URL.
+      // (A warm reset() reuses the cached template whose in-place key mutation
+      // already carries it.) In-memory only: a full restart reverts to the originals.
+      if (this.creationOptions != null) {
+        this.creationOptions.supervisionUrls = url
+        applyCredentials(this.creationOptions)
       }
       this.saveStationInfo()
       this.emitChargingStationEvent(ChargingStationEvents.updated)
@@ -1159,7 +1196,7 @@ export class ChargingStation extends EventEmitter {
                     this.idTagsCache.deleteIdTags(idTagsFile)
                   }
                   OCPPAuthServiceFactory.clearInstance(this)
-                  this.initialize()
+                  this.initialize(this.reinitializationOptions)
                   // Restart the ATG
                   const ATGStarted = this.automaticTransactionGenerator?.started
                   if (ATGStarted === true) {
