@@ -193,11 +193,10 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     assert.strictEqual(station.stationInfo?.supervisionUrls, 'ws://localhost:8888/')
   })
 
-  await it('should keep an OCPP-config supervision URL across a reset (non-persistent)', async t => {
+  await it('should keep an OCPP-config supervision URL across a warm-cache reset (non-persistent)', async t => {
     // supervisionUrlOcppConfiguration routes the URL through an OCPP config key
     // rather than stationInfo.supervisionUrls, and must be a template field to
-    // survive the reset rebuild. This is the branch the setSupervisionUrl mirror
-    // comment reasons about, and the only retention path otherwise untested.
+    // survive the reset rebuild.
     const station = new ChargingStation(
       1,
       makeTemplate({
@@ -218,7 +217,31 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
 
     await station.reset()
 
-    // The OCPP key is re-seeded from the retained URL, so the station dials it.
+    // A plain reset() reuses the warm template cache, whose in-place OCPP-key
+    // mutation still carries the URL; the retained-options mirror is not exercised
+    // on this path (see the cache-cold reload test below).
+    assert.strictEqual(station.wsConnectionUrl.host, 'localhost:7777')
+  })
+
+  await it('should re-seed an OCPP-config supervision URL from the retained options on template reload (non-persistent)', () => {
+    const station = new ChargingStation(
+      1,
+      makeTemplate({
+        supervisionUrlOcppConfiguration: true,
+        supervisionUrlOcppKey: 'ConnectionUrl',
+      }),
+      { autoStart: false, persistentConfiguration: false, supervisionUrls: 'ws://localhost:9999/' }
+    )
+    station.setSupervisionUrl('ws://localhost:7777/')
+
+    // Invalidate the cached template exactly as the template-reload path does (the
+    // watcher calls deleteChargingStationTemplate before initialize), forcing the
+    // OCPP key absent on reinitialization so it is re-seeded from configuredSupervisionUrl.
+    // This is the only path where the retained-options mirror is load-bearing: a
+    // warm-cache reset passes via the cached mutation and would not guard it.
+    SharedLRUCache.getInstance().clear()
+    internalsOf(station).initialize(internalsOf(station).creationOptions)
+
     assert.strictEqual(station.wsConnectionUrl.host, 'localhost:7777')
   })
 })
