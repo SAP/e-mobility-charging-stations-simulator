@@ -362,11 +362,10 @@ export class ChargingStation extends EventEmitter {
 
   /**
    * Closes the WebSocket connection to the central server.
-   * @param options - Close options.
-   * @param options.byRequest - Whether this close was explicitly requested (e.g.
-   *   the UI disconnect action). A requested close is terminal: onClose will not
-   *   auto-reconnect. Other self-initiated closes (e.g. certificate rotation)
-   *   leave it unset and re-dial like a server-initiated drop.
+   * @param options - Close options
+   * @param options.byRequest - Whether the close is requested (the UI disconnect
+   *   action); a requested close is terminal (onClose does not reconnect), any
+   *   other close (e.g. certificate rotation) reconnects like a server-initiated drop
    */
   public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
     if (this.isWebSocketConnectionOpened()) {
@@ -2357,9 +2356,8 @@ export class ChargingStation extends EventEmitter {
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
-    // Capture and clear the requested-close marker set by a closeWSConnection()
-    // called with byRequest (the UI disconnect action) before deciding whether
-    // to re-dial.
+    // Capture and clear the requested-close marker before deciding whether to
+    // reconnect.
     const closedByRequest = this.wsConnectionClosedByRequest
     this.wsConnectionClosedByRequest = false
     switch (code) {
@@ -2381,11 +2379,10 @@ export class ChargingStation extends EventEmitter {
         )
         break
     }
-    // Any close we did not explicitly request, while the station is still
-    // started, means the server dropped the connection (or an internal close
-    // that wants a fresh dial, e.g. certificate rotation): re-dial like real
-    // hardware, clean or abnormal. Only an explicitly requested close (the UI
-    // disconnect action) stays terminal.
+    // Reconnect on any close we did not request while still started: a
+    // server-initiated drop, or an internal close wanting a fresh connection
+    // (e.g. certificate rotation), clean or abnormal. Only a requested close
+    // stays terminal.
     if (this.started && !closedByRequest) {
       this.reconnect()
         .then(() => {

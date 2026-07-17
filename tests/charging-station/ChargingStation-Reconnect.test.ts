@@ -1,8 +1,8 @@
 /**
  * @file Tests the reconnect decision made when a charging station's WebSocket closes.
- * @description The station re-dials after any close it did not itself request
+ * @description The station reconnects after any close it did not itself request
  * (a server-initiated drop, clean or abnormal) while still started, and stays
- * disconnected after an operator-requested close.
+ * disconnected after a requested close.
  */
 import assert from 'node:assert/strict'
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
@@ -58,7 +58,7 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
     }
   })
 
-  await it('re-dials after a server-initiated normal close while started', () => {
+  await it('should reconnect after a server-initiated normal close while started', () => {
     const { reconnectCount, station } = makeStation()
 
     ;(station as unknown as StationInternals).onClose(
@@ -69,7 +69,7 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
     assert.strictEqual(reconnectCount(), 1)
   })
 
-  await it('stays disconnected after an operator-requested close', () => {
+  await it('should stay disconnected after a requested close', () => {
     const { reconnectCount, station } = makeStation()
     const internals = station as unknown as StationInternals
     // An open socket lets closeWSConnection record the request before onClose runs.

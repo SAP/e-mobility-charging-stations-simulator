@@ -129,7 +129,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.CLOSE_CONNECTION,
         () => {
-          // Operator-requested disconnect: terminal, must not auto-reconnect.
+          // Requested disconnect (UI action): terminal, must not auto-reconnect.
           this.chargingStation.closeWSConnection({ byRequest: true })
         },
       ],
