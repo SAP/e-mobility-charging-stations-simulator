@@ -235,7 +235,7 @@ export class ChargingStation extends EventEmitter {
    * @returns The retained creation options when the station is non-persistent,
    *   `undefined` otherwise.
    */
-  private get reinitializeOptions (): ChargingStationOptions | undefined {
+  private get reinitializationOptions (): ChargingStationOptions | undefined {
     return this.stationInfo?.stationInfoPersistentConfiguration === false
       ? this.creationOptions
       : undefined
@@ -1082,7 +1082,7 @@ export class ChargingStation extends EventEmitter {
     }
     await sleep(this.stationInfo?.resetTime ?? 0)
     OCPPAuthServiceFactory.clearInstance(this)
-    this.initialize(this.reinitializeOptions)
+    this.initialize(this.reinitializationOptions)
     this.start()
   }
 
@@ -1139,14 +1139,16 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo != null) {
       applyCredentials(this.stationInfo)
       // Mirror the update into the retained creation options so a later reset()
-      // re-applies this URL, not the creation-time one. This must run for BOTH
-      // branches above, OCPP-config mode included: a non-persistent station does
-      // not save its supervisionUrlOcppKey, so on reset the key is re-seeded from
-      // configuredSupervisionUrl, itself derived from stationInfo.supervisionUrls,
-      // which setChargingStationOptions() force-writes from these options. Mirroring
-      // only in the non-OCPP branch would drop the new URL for non-persistent
-      // OCPP-config stations. In-memory only: a full restart returns to the
-      // original options.
+      // or template reload re-applies this URL, not the creation-time one. Must
+      // run for BOTH branches, OCPP-config mode included: a non-persistent station
+      // does not persist its supervisionUrlOcppKey, so when the template cache is
+      // invalidated (reload, or any cache-cold reinitialization) the key is absent
+      // and re-seeded from configuredSupervisionUrl — derived from
+      // stationInfo.supervisionUrls, which setChargingStationOptions() writes from
+      // these options. Without this mirror the reload would restore the
+      // creation-time URL. (A plain reset() reuses the warm template cache, whose
+      // in-place key mutation already carries the URL.) In-memory only: a full
+      // restart returns to the original options.
       if (this.creationOptions != null) {
         this.creationOptions.supervisionUrls = url
         applyCredentials(this.creationOptions)
@@ -1186,7 +1188,7 @@ export class ChargingStation extends EventEmitter {
                     this.idTagsCache.deleteIdTags(idTagsFile)
                   }
                   OCPPAuthServiceFactory.clearInstance(this)
-                  this.initialize(this.reinitializeOptions)
+                  this.initialize(this.reinitializationOptions)
                   // Restart the ATG
                   const ATGStarted = this.automaticTransactionGenerator?.started
                   if (ATGStarted === true) {
