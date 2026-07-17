@@ -4495,9 +4495,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       return false
     }
 
-    if (chargingStation.hasEvses && evseId > chargingStation.getNumberOfEvses()) {
+    if (chargingStation.hasEvses && !chargingStation.hasEvse(evseId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} exceeds available EVSEs (${chargingStation.getNumberOfEvses().toString()})`
+        `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} does not exist`
       )
       return false
     }
