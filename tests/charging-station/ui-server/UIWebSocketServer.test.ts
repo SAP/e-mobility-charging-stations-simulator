@@ -10,10 +10,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it, type TestContext } from 'node:test'
 
 import type { UIServiceWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
-import type { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import type {
-  BroadcastChannelResponse,
-  BroadcastChannelResponsePayload,
   ChargingStationData,
   ProtocolResponse,
   TemplateStatistics,
@@ -46,7 +43,9 @@ import {
   createMockUIServerConfigurationWithAuth,
   createMockUIService,
   createMockUIWebSocket,
+  createProtocolRequest,
   drainResponses,
+  emitWorkerResponse,
   extractGaugeValue,
   MockServerResponse,
   MockUIServiceMode,
@@ -138,7 +137,7 @@ const createInFlightServer = (t: TestContext): TestableUIWebSocketServer => {
 }
 
 const connectClient = (server: TestableUIWebSocketServer): MockWebSocket => {
-  const ws = createMockUIWebSocket('ui0.0.1')
+  const ws = createMockUIWebSocket()
   const wsServer = server.getWebSocketServer() as {
     emit: (event: string, ...args: unknown[]) => boolean
   }
@@ -151,18 +150,7 @@ const sendClientRequest = (
   uuid: UUIDv4,
   procedureName: ProcedureName = ProcedureName.STOP_CHARGING_STATION
 ): void => {
-  ws.emit('message', Buffer.from(JSON.stringify([uuid, procedureName, {}])))
-}
-
-const deliverWorkerResponse = (
-  service: AbstractUIService,
-  uuid: UUIDv4,
-  responsePayload: BroadcastChannelResponsePayload
-): void => {
-  const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as {
-    onmessage: (message: { data: BroadcastChannelResponse }) => void
-  }
-  channel.onmessage({ data: [uuid, responsePayload] })
+  ws.emit('message', Buffer.from(JSON.stringify(createProtocolRequest(uuid, procedureName))))
 }
 
 const parseSentResponse = (ws: MockWebSocket, index = 0): ProtocolResponse => {
@@ -567,7 +555,7 @@ await describe('UIWebSocketServer', async () => {
           )
           assert.strictEqual(ws1.sentMessages.length, 0)
 
-          deliverWorkerResponse(service, TEST_UUID, {
+          emitWorkerResponse(service, {
             hashId: TEST_HASH_ID,
             status: ResponseStatus.SUCCESS,
           })
@@ -627,7 +615,7 @@ await describe('UIWebSocketServer', async () => {
           const ws = connectClient(server)
 
           sendClientRequest(ws, TEST_UUID)
-          deliverWorkerResponse(service, TEST_UUID, {
+          emitWorkerResponse(service, {
             hashId: TEST_HASH_ID,
             status: ResponseStatus.SUCCESS,
           })
