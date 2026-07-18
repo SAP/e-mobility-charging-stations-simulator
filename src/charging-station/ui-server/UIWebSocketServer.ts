@@ -307,9 +307,14 @@ export class UIWebSocketServer extends AbstractUIServer {
   private rejectInFlightRequestId (ws: WebSocket, requestId: UUIDv4): void {
     const error = new BaseError(`UI protocol request id '${requestId}' is already in-flight`)
     logger.error(`${this.logPrefix(moduleName, 'start.ws.onmessage')} ${error.message}`)
+    if (ws.readyState !== WebSocket.OPEN) {
+      return
+    }
     // Answer on the current socket only: the response handler keyed by this id
     // belongs to the in-flight request and must survive to receive its reply.
-    if (ws.readyState === WebSocket.OPEN) {
+    // The send is guarded because this runs in the synchronous 'message'
+    // listener, where an uncaught throw would escape unhandled.
+    try {
       ws.send(
         JSONStringify(
           this.buildProtocolResponse(requestId, {
@@ -319,6 +324,14 @@ export class UIWebSocketServer extends AbstractUIServer {
           undefined,
           MapStringifyFormat.object
         )
+      )
+    } catch (sendError) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'start.ws.onmessage'
+        )} Error at rejecting in-flight duplicate request id '${requestId}':`,
+        sendError
       )
     }
   }
