@@ -96,6 +96,7 @@ import {
   getMessageTypeString,
   getWebSocketCloseEventStatusString,
   handleFileException,
+  interruptibleSleep,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
@@ -214,6 +215,10 @@ export class ChargingStation extends EventEmitter {
   private readonly connectors: Map<number, ConnectorStatus>
   private connectorsConfigurationHash: string
   private readonly creationOptions?: ChargingStationOptions
+  // Tripped by delete() to cancel a pending reset(). Kept distinct from
+  // started/stopping (which reset() itself toggles through stop()) so a station
+  // deleted during the reset window is not resurrected and reconnected.
+  private readonly deleteAbortController: AbortController
   private readonly evses: Map<number, EvseStatus>
   private evsesConfigurationHash: string
   private flushingMessageBuffer: boolean
@@ -247,6 +252,7 @@ export class ChargingStation extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
+    this.deleteAbortController = new AbortController()
     this.wsConnection = null
     this.wsConnectionClosedByRequest = false
     this.wsConnectionRetryCount = 0
@@ -422,6 +428,9 @@ export class ChargingStation extends EventEmitter {
    * @param deleteConfiguration - Whether to delete the persisted configuration file
    */
   public async delete (deleteConfiguration = true): Promise<void> {
+    // Cancel any pending reset() so a station deleted during its reset window is
+    // not re-initialized and reconnected to the CSMS.
+    this.deleteAbortController.abort()
     if (this.started) {
       try {
         await this.stop()
@@ -1091,7 +1100,12 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} ${moduleName}.reset: Error during reset stop phase:`, e)
       return
     }
-    await sleep(this.stationInfo?.resetTime ?? 0)
+    await interruptibleSleep(this.stationInfo?.resetTime ?? 0, this.deleteAbortController.signal)
+    // A delete() during the reset window aborts the sleep above; bail out before
+    // re-initializing so a deleted station is not re-initialized or reconnected.
+    if (this.deleteAbortController.signal.aborted) {
+      return
+    }
     OCPPAuthServiceFactory.clearInstance(this)
     this.initialize(this.reinitializationOptions)
     this.start()
