@@ -11,6 +11,7 @@ import type { AbstractUIService } from '../../../../src/charging-station/ui-serv
 import type {
   BroadcastChannelResponse,
   BroadcastChannelResponsePayload,
+  ChargingStationData,
   UUIDv4,
 } from '../../../../src/types/index.js'
 
@@ -95,6 +96,34 @@ const emitWorkerResponse = (
   }
   channel.onmessage({ data: [uuid, responsePayload] })
 }
+
+/**
+ * Build charging station data with an explicit `templateIndex` under `hashId`,
+ * to exercise identity-collision dedup deterministically.
+ * @param hashId - Deterministic content hash shared by colliding twins.
+ * @param templateIndex - Stable per-instance discriminator within a template.
+ * @param timestamp - Registry merge timestamp in milliseconds.
+ * @param templateName - Owning template name; differs for identity-clone template files.
+ * @returns Charging station data for the described identity.
+ */
+const createStationDataWithIndex = (
+  hashId: string,
+  templateIndex: number,
+  timestamp: number,
+  templateName = 'collision-template'
+): ChargingStationData =>
+  createMockChargingStationData(hashId, {
+    stationInfo: {
+      baseName: 'collision-base',
+      chargePointModel: 'TestModel',
+      chargePointVendor: 'TestVendor',
+      chargingStationId: hashId,
+      hashId,
+      templateIndex,
+      templateName,
+    },
+    timestamp,
+  })
 
 await describe('AbstractUIService', async () => {
   afterEach(() => {
@@ -961,5 +990,93 @@ await describe('AbstractUIService', async () => {
     if (service != null) {
       service.stop()
     }
+  })
+
+  await describe('AbstractUIServer identity-collision dedup (issue #2026)', async () => {
+    await it('should reject a twin whose hashId collides with a different templateIndex', () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      const hashId = 'collision-hash'
+      assert.strictEqual(
+        server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 1000)),
+        'set'
+      )
+      assert.strictEqual(
+        server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 2, 2000)),
+        'collision'
+      )
+      assert.strictEqual(server.getChargingStationData(hashId)?.stationInfo.templateIndex, 1)
+      assert.strictEqual(server.getChargingStationsCount(), 1)
+    })
+
+    await it('should reject an identity-clone twin sharing hashId and templateIndex but a different templateName', () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      const hashId = 'clone-file-hash'
+      assert.strictEqual(
+        server.setChargingStationData(
+          hashId,
+          createStationDataWithIndex(hashId, 1, 1000, 'template-a')
+        ),
+        'set'
+      )
+      assert.strictEqual(
+        server.setChargingStationData(
+          hashId,
+          createStationDataWithIndex(hashId, 1, 2000, 'template-b')
+        ),
+        'collision'
+      )
+      assert.strictEqual(
+        server.getChargingStationData(hashId)?.stationInfo.templateName,
+        'template-a'
+      )
+      assert.strictEqual(server.getChargingStationsCount(), 1)
+    })
+
+    await it('should still update the registry for a restart re-emit with a newer timestamp', () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      const hashId = 'restart-hash'
+      assert.strictEqual(
+        server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 1000)),
+        'set'
+      )
+      assert.strictEqual(
+        server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 2000)),
+        'set'
+      )
+      assert.strictEqual(server.getChargingStationData(hashId)?.timestamp, 2000)
+    })
+
+    await it('should drop a stale same-identity re-emit with an older timestamp', () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      const hashId = 'stale-hash'
+      server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 2000))
+      assert.strictEqual(
+        server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 1000)),
+        'stale'
+      )
+      assert.strictEqual(server.getChargingStationData(hashId)?.timestamp, 2000)
+    })
+
+    await it('should not report false success for a targeted broadcast after a twin collision', async () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
+      const service = server.getUIService(ProtocolVersion['0.0.1'])
+      if (service == null) {
+        assert.fail('Expected UI service to be registered')
+      }
+      const hashId = 'broadcast-collision-hash'
+      server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 1, 1000))
+      server.setChargingStationData(hashId, createStationDataWithIndex(hashId, 2, 2000))
+      try {
+        await registerTransportStopRequestFor(service, TEST_UUID, [hashId])
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+        emitWorkerResponse(service, { hashId, status: ResponseStatus.SUCCESS }, TEST_UUID)
+        assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+        assert.strictEqual(server.getChargingStationsCount(), 1)
+        assert.strictEqual(server.getChargingStationData(hashId)?.stationInfo.templateIndex, 1)
+      } finally {
+        service.stop()
+      }
+    })
   })
 })

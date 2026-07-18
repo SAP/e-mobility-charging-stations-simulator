@@ -52,6 +52,19 @@ import {
 import { getUsernameAndPasswordFromAuthorizationToken, HttpMethod } from './UIServerUtils.js'
 
 /**
+ * Outcome of {@link AbstractUIServer.setChargingStationData}:
+ * - `set`: stored (new `hashId`, or a newer/equal-timestamp update of the same
+ *   physical station identity, including a legitimate restart re-emit).
+ * - `stale`: an older-timestamp update of the same physical station identity;
+ *   dropped.
+ * - `collision`: a different physical station identity — a distinct
+ *   `(templateName, templateIndex)` pair — already maps to this deterministic
+ *   `hashId`; rejected without overwriting so the registered station is not
+ *   silently shadowed (the caller surfaces the rejected twin).
+ */
+export type SetChargingStationDataOutcome = 'collision' | 'set' | 'stale'
+
+/**
  * Outcome of {@link AbstractUIServer.runRequestPrologue}.
  *
  * Discriminated by `ok`. On `ok: true` the caller proceeds to authentication
@@ -333,13 +346,23 @@ export abstract class AbstractUIServer {
    */
   public abstract sendResponse (response: ProtocolResponse): void
 
-  public setChargingStationData (hashId: string, data: ChargingStationData): boolean {
+  public setChargingStationData (
+    hashId: string,
+    data: ChargingStationData
+  ): SetChargingStationDataOutcome {
     const cachedData = this.chargingStations.get(hashId)
+    if (
+      cachedData != null &&
+      (cachedData.stationInfo.templateName !== data.stationInfo.templateName ||
+        cachedData.stationInfo.templateIndex !== data.stationInfo.templateIndex)
+    ) {
+      return 'collision'
+    }
     if (cachedData == null || data.timestamp >= cachedData.timestamp) {
       this.chargingStations.set(hashId, data)
-      return true
+      return 'set'
     }
-    return false
+    return 'stale'
   }
 
   public setChargingStationTemplates (templates: string[] | undefined): void {
