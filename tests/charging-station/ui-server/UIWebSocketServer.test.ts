@@ -165,8 +165,14 @@ const deliverWorkerResponse = (
   channel.onmessage({ data: [uuid, responsePayload] })
 }
 
-const parseSentResponse = (ws: MockWebSocket, index = 0): ProtocolResponse =>
-  JSON.parse(ws.sentMessages[index] ?? '') as ProtocolResponse
+const parseSentResponse = (ws: MockWebSocket, index = 0): ProtocolResponse => {
+  if (index >= ws.sentMessages.length) {
+    assert.fail(
+      `parseSentResponse: no message at index ${index.toString()} (sentMessages.length=${ws.sentMessages.length.toString()})`
+    )
+  }
+  return JSON.parse(ws.sentMessages[index]) as ProtocolResponse
+}
 
 await describe('UIWebSocketServer', async () => {
   afterEach(() => {
