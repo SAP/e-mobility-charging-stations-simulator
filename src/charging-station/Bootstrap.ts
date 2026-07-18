@@ -730,7 +730,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
         `${this.logPrefix()} ${moduleName}.workerEventAdded: Rejected charging station ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           data.stationInfo.chargingStationId
-        } (hashId: ${data.stationInfo.hashId}, templateIndex: ${data.stationInfo.templateIndex.toString()}): a different station identity already maps to this hashId; the added station is orphaned from the UI registry`
+        } (hashId: ${data.stationInfo.hashId}, templateName: ${data.stationInfo.templateName}, templateIndex: ${data.stationInfo.templateIndex.toString()}): a different station identity already maps to this hashId; the added station is orphaned from the UI registry`
       )
       return
     }

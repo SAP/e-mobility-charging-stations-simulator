@@ -103,12 +103,14 @@ const emitWorkerResponse = (
  * @param hashId - Deterministic content hash shared by colliding twins.
  * @param templateIndex - Stable per-instance discriminator within a template.
  * @param timestamp - Registry merge timestamp in milliseconds.
+ * @param templateName - Owning template name; differs for identity-clone template files.
  * @returns Charging station data for the described identity.
  */
 const createStationDataWithIndex = (
   hashId: string,
   templateIndex: number,
-  timestamp: number
+  timestamp: number,
+  templateName = 'collision-template'
 ): ChargingStationData =>
   createMockChargingStationData(hashId, {
     stationInfo: {
@@ -118,7 +120,7 @@ const createStationDataWithIndex = (
       chargingStationId: hashId,
       hashId,
       templateIndex,
-      templateName: 'collision-template',
+      templateName,
     },
     timestamp,
   })
@@ -1003,6 +1005,30 @@ await describe('AbstractUIService', async () => {
         'collision'
       )
       assert.strictEqual(server.getChargingStationData(hashId)?.stationInfo.templateIndex, 1)
+      assert.strictEqual(server.getChargingStationsCount(), 1)
+    })
+
+    await it('should reject an identity-clone twin sharing hashId and templateIndex but a different templateName', () => {
+      const server = new TestableUIWebSocketServer(createMockUIServerConfiguration())
+      const hashId = 'clone-file-hash'
+      assert.strictEqual(
+        server.setChargingStationData(
+          hashId,
+          createStationDataWithIndex(hashId, 1, 1000, 'template-a')
+        ),
+        'set'
+      )
+      assert.strictEqual(
+        server.setChargingStationData(
+          hashId,
+          createStationDataWithIndex(hashId, 1, 2000, 'template-b')
+        ),
+        'collision'
+      )
+      assert.strictEqual(
+        server.getChargingStationData(hashId)?.stationInfo.templateName,
+        'template-a'
+      )
       assert.strictEqual(server.getChargingStationsCount(), 1)
     })
 

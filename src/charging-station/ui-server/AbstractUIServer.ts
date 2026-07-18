@@ -54,11 +54,13 @@ import { getUsernameAndPasswordFromAuthorizationToken, HttpMethod } from './UISe
 /**
  * Outcome of {@link AbstractUIServer.setChargingStationData}:
  * - `set`: stored (new `hashId`, or a newer/equal-timestamp update of the same
- *   physical station, including a legitimate restart re-emit).
- * - `stale`: an older-timestamp update of the same physical station; dropped.
- * - `collision`: a distinct physical station (different `templateIndex`) already
- *   maps to this deterministic `hashId`; rejected without overwriting so neither
- *   twin is silently shadowed or orphaned.
+ *   physical station identity, including a legitimate restart re-emit).
+ * - `stale`: an older-timestamp update of the same physical station identity;
+ *   dropped.
+ * - `collision`: a different physical station identity — a distinct
+ *   `(templateName, templateIndex)` pair — already maps to this deterministic
+ *   `hashId`; rejected without overwriting so the registered station is not
+ *   silently shadowed (the caller surfaces the rejected twin).
  */
 export type SetChargingStationDataOutcome = 'collision' | 'set' | 'stale'
 
@@ -351,7 +353,8 @@ export abstract class AbstractUIServer {
     const cachedData = this.chargingStations.get(hashId)
     if (
       cachedData != null &&
-      cachedData.stationInfo.templateIndex !== data.stationInfo.templateIndex
+      (cachedData.stationInfo.templateName !== data.stationInfo.templateName ||
+        cachedData.stationInfo.templateIndex !== data.stationInfo.templateIndex)
     ) {
       return 'collision'
     }
