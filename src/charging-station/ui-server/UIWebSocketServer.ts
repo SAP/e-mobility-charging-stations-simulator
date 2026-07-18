@@ -6,13 +6,16 @@ import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import type { IBootstrap } from '../IBootstrap.js'
 
+import { BaseError } from '../../exception/index.js'
 import {
   MapStringifyFormat,
   type ProtocolNotification,
   type ProtocolRequest,
   type ProtocolResponse,
+  ResponseStatus,
   ServerNotification,
   type UIServerConfiguration,
+  type UUIDv4,
   WebSocketCloseEventStatusCode,
 } from '../../types/index.js'
 import {
@@ -153,6 +156,15 @@ export class UIWebSocketServer extends AbstractUIServer {
           return
         }
         const [requestId] = request
+        // Client-supplied request ids are validated for format only. Reject a
+        // still-in-flight duplicate instead of overwriting the prior request's
+        // response handler (cross-delivered reply) and broadcast tracking
+        // (leaked safety-net timer); a completed request releases its handler,
+        // so a legitimate sequential reuse of the same id is still accepted.
+        if (this.hasResponseHandler(requestId)) {
+          this.rejectInFlightRequestId(ws, requestId)
+          return
+        }
         this.responseHandlers.set(requestId, ws)
         this.uiServices
           .get(version)
@@ -289,6 +301,25 @@ export class UIWebSocketServer extends AbstractUIServer {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message)
       }
+    }
+  }
+
+  private rejectInFlightRequestId (ws: WebSocket, requestId: UUIDv4): void {
+    const error = new BaseError(`UI protocol request id '${requestId}' is already in-flight`)
+    logger.error(`${this.logPrefix(moduleName, 'start.ws.onmessage')} ${error.message}`)
+    // Answer on the current socket only: the response handler keyed by this id
+    // belongs to the in-flight request and must survive to receive its reply.
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSONStringify(
+          this.buildProtocolResponse(requestId, {
+            errorMessage: error.message,
+            status: ResponseStatus.FAILURE,
+          }),
+          undefined,
+          MapStringifyFormat.object
+        )
+      )
     }
   }
 
