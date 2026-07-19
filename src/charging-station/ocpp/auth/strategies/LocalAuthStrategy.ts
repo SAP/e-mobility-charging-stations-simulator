@@ -12,7 +12,7 @@ import {
   AuthenticationError,
   AuthenticationMethod,
   AuthErrorCode,
-  AuthorizationStatus,
+  AuthResultStatus,
   enhanceAuthResult,
 } from '../types/AuthTypes.js'
 
@@ -395,7 +395,7 @@ export class LocalAuthStrategy implements AuthStrategy {
           expiryDate: entry.expiryDate,
           isOffline: false,
           method: AuthenticationMethod.LOCAL_LIST,
-          status: AuthorizationStatus.EXPIRED,
+          status: AuthResultStatus.EXPIRED,
           timestamp: new Date(),
         }
       }
@@ -446,14 +446,14 @@ export class LocalAuthStrategy implements AuthStrategy {
         additionalInfo: { reason: 'Transaction stop - offline mode' },
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
     }
 
     // For unknown IDs, check configuration
     if (config.allowOfflineTxForUnknownId) {
-      const status = config.unknownIdAuthorization ?? AuthorizationStatus.ACCEPTED
+      const status = config.unknownIdAuthorization ?? AuthResultStatus.ACCEPTED
 
       return {
         additionalInfo: { reason: 'Unknown ID allowed in offline mode' },
@@ -469,7 +469,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       additionalInfo: { reason: 'Unknown ID not allowed in offline mode' },
       isOffline: true,
       method: AuthenticationMethod.OFFLINE_FALLBACK,
-      status: AuthorizationStatus.INVALID,
+      status: AuthResultStatus.INVALID,
       timestamp: new Date(),
     }
   }
@@ -479,26 +479,26 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param status - Status string from local auth list entry
    * @returns Authorization status corresponding to the entry status
    */
-  private mapEntryStatus (status: string): AuthorizationStatus {
+  private mapEntryStatus (status: string): AuthResultStatus {
     switch (status.toLowerCase()) {
       case 'accepted':
       case 'authorized':
       case 'valid':
-        return AuthorizationStatus.ACCEPTED
+        return AuthResultStatus.ACCEPTED
       case 'blocked':
       case 'disabled':
-        return AuthorizationStatus.BLOCKED
+        return AuthResultStatus.BLOCKED
       case 'concurrent':
       case 'concurrent_tx':
-        return AuthorizationStatus.CONCURRENT_TX
+        return AuthResultStatus.CONCURRENT_TX
       case 'expired':
-        return AuthorizationStatus.EXPIRED
+        return AuthResultStatus.EXPIRED
       case 'invalid':
       case 'unauthorized':
-        return AuthorizationStatus.INVALID
+        return AuthResultStatus.INVALID
       default:
         logger.warn(`${moduleName}: Unknown entry status: ${status}, defaulting to INVALID`)
-        return AuthorizationStatus.INVALID
+        return AuthResultStatus.INVALID
     }
   }
 
@@ -516,6 +516,6 @@ export class LocalAuthStrategy implements AuthStrategy {
     result: AuthorizationResult,
     config: AuthConfiguration
   ): boolean {
-    return result.status !== AuthorizationStatus.ACCEPTED && config.disablePostAuthorize !== true
+    return result.status !== AuthResultStatus.ACCEPTED && config.disablePostAuthorize !== true
   }
 }

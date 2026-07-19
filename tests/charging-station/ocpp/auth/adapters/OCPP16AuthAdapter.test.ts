@@ -13,7 +13,7 @@ import {
   type AuthConfiguration,
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPP16AuthorizationStatus, OCPPVersion } from '../../../../../src/types/index.js'
@@ -154,7 +154,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1, 123)
 
-      assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.status, AuthResultStatus.ACCEPTED)
       assert.notStrictEqual(result.method, undefined)
       assert.strictEqual(result.isOffline, false)
       assert.ok(result.timestamp instanceof Date)
@@ -171,7 +171,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1)
 
-      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result.status, AuthResultStatus.INVALID)
       assert.notStrictEqual(result.additionalInfo?.error, undefined)
     })
   })

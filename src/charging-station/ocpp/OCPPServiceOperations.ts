@@ -17,7 +17,7 @@ import { OCPP20ServiceUtils } from './2.0/OCPP20ServiceUtils.js'
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus as AuthStatus,
+  AuthResultStatus as AuthStatus,
   IdentifierType,
   OCPPAuthServiceFactory,
 } from './auth/index.js'

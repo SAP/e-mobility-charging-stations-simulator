@@ -14,7 +14,7 @@ import { LocalAuthStrategy } from '../../../../src/charging-station/ocpp/auth/st
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/index.js'
@@ -82,7 +82,7 @@ await describe('OCPP Authentication', async () => {
       assert.ok(result.timestamp instanceof Date)
       assert.strictEqual(typeof result.isOffline, 'boolean')
       // Status should be one of the valid authorization statuses
-      assert.ok(Object.values(AuthorizationStatus).includes(result.status))
+      assert.ok(Object.values(AuthResultStatus).includes(result.status))
     })
 
     await it('should handle multiple auth contexts', async () => {
@@ -137,7 +137,7 @@ await describe('OCPP Authentication', async () => {
       assert.notStrictEqual(result, undefined)
       assert.ok(result.timestamp instanceof Date)
       assert.strictEqual(typeof result.isOffline, 'boolean')
-      assert.ok(Object.values(AuthorizationStatus).includes(result.status))
+      assert.ok(Object.values(AuthResultStatus).includes(result.status))
     })
 
     await it('should handle all auth contexts', async () => {
@@ -183,7 +183,7 @@ await describe('OCPP Authentication', async () => {
 
       // Should return a result (not throw) with non-ACCEPTED status
       assert.notStrictEqual(result, undefined)
-      assert.notStrictEqual(result.status, AuthorizationStatus.ACCEPTED)
+      assert.notStrictEqual(result.status, AuthResultStatus.ACCEPTED)
     })
   })
 

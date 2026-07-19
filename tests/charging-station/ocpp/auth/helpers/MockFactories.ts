@@ -20,8 +20,8 @@ import {
   AuthContext,
   AuthenticationMethod,
   type AuthorizationResult,
-  AuthorizationStatus,
   type AuthRequest,
+  AuthResultStatus,
   type Identifier,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -68,7 +68,7 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
 /**
  * Create a mock AuthorizationResult with configurable properties.
  *
- * Supports all AuthorizationStatus values: ACCEPTED, INVALID, BLOCKED, EXPIRED, CONCURRENT_TX.
+ * Supports all AuthResultStatus values: ACCEPTED, INVALID, BLOCKED, EXPIRED, CONCURRENT_TX.
  * @param overrides - Partial AuthorizationResult properties to override defaults
  * @returns Mock AuthorizationResult with specified properties (defaults to ACCEPTED from local list)
  * @example
@@ -77,17 +77,17 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
  * const accepted = createMockAuthorizationResult()
  *
  * // Rejected with INVALID status
- * const rejected = createMockAuthorizationResult({ status: AuthorizationStatus.INVALID })
+ * const rejected = createMockAuthorizationResult({ status: AuthResultStatus.INVALID })
  *
  * // Blocked with custom method
  * const blocked = createMockAuthorizationResult({
- *   status: AuthorizationStatus.BLOCKED,
+ *   status: AuthResultStatus.BLOCKED,
  *   method: AuthenticationMethod.REMOTE_AUTHORIZATION
  * })
  *
  * // Expired with custom expiry date
  * const expired = createMockAuthorizationResult({
- *   status: AuthorizationStatus.EXPIRED,
+ *   status: AuthResultStatus.EXPIRED,
  *   expiryDate: new Date(Date.now() - 1000)
  * })
  * ```
@@ -95,14 +95,14 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
 export const createMockAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
 ): AuthorizationResult => {
-  const status = overrides?.status ?? AuthorizationStatus.ACCEPTED
+  const status = overrides?.status ?? AuthResultStatus.ACCEPTED
   return {
     isOffline: false,
     method: AuthenticationMethod.LOCAL_LIST,
     status,
     timestamp: new Date(),
     // For expired status, include a default expiryDate in the past
-    ...(status === AuthorizationStatus.EXPIRED && { expiryDate: new Date(Date.now() - 1000) }),
+    ...(status === AuthResultStatus.EXPIRED && { expiryDate: new Date(Date.now() - 1000) }),
     ...overrides,
   }
 }
@@ -234,7 +234,7 @@ export const expectAcceptedAuthorization = (
   result: AuthorizationResult,
   expectedMethod?: AuthenticationMethod
 ): void => {
-  assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+  assert.strictEqual(result.status, AuthResultStatus.ACCEPTED)
   assert.ok(result.timestamp instanceof Date)
   if (expectedMethod !== undefined) {
     assert.strictEqual(result.method, expectedMethod)
@@ -248,10 +248,10 @@ export const expectAcceptedAuthorization = (
  */
 export const expectRejectedAuthorization = (
   result: AuthorizationResult,
-  expectedStatus: AuthorizationStatus = AuthorizationStatus.INVALID
+  expectedStatus: AuthResultStatus = AuthResultStatus.INVALID
 ): void => {
   assert.strictEqual(result.status, expectedStatus)
-  assert.notStrictEqual(result.status, AuthorizationStatus.ACCEPTED)
+  assert.notStrictEqual(result.status, AuthResultStatus.ACCEPTED)
   assert.ok(result.timestamp instanceof Date)
 }
 

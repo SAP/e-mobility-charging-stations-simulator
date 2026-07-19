@@ -12,7 +12,7 @@ import type { AuthCache } from '../../../../src/charging-station/ocpp/auth/inter
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
-  AuthorizationStatus,
+  AuthResultStatus,
   OCPPAuthServiceFactory,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
@@ -74,7 +74,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
     // Assert
     const cached = authCache.get(TEST_TOKEN_ISO14443)
     assert.ok(cached != null, 'AuthorizeResponse should update the cache')
-    assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+    assert.strictEqual(cached.status, AuthResultStatus.ACCEPTED)
   })
 
   await it('C10.FR.01 - should cache non-Accepted status through utility helper', () => {
@@ -90,7 +90,7 @@ await describe('OCPP20ServiceUtils.updateAuthorizationCache', async () => {
 
     const cached = authCache.get('BLOCKED_TOKEN_001')
     assert.ok(cached != null, 'Blocked status should be cached per C10.FR.01')
-    assert.strictEqual(cached.status, AuthorizationStatus.BLOCKED)
+    assert.strictEqual(cached.status, AuthResultStatus.BLOCKED)
   })
 
   await it('should handle auth service initialization failure gracefully', () => {

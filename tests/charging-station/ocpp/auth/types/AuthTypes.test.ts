@@ -9,7 +9,7 @@ import {
   AuthContext,
   AuthenticationError,
   AuthErrorCode,
-  AuthorizationStatus,
+  AuthResultStatus,
   type Identifier,
   IdentifierType,
   isCertificateBased,
@@ -68,27 +68,27 @@ await describe('AuthTypes', async () => {
     await describe('OCPP 1.6 Status Mapping', async () => {
       await it('should map OCPP 1.6 ACCEPTED to ACCEPTED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.ACCEPTED)
-        assert.strictEqual(result, AuthorizationStatus.ACCEPTED)
+        assert.strictEqual(result, AuthResultStatus.ACCEPTED)
       })
 
       await it('should map OCPP 1.6 BLOCKED to BLOCKED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.BLOCKED)
-        assert.strictEqual(result, AuthorizationStatus.BLOCKED)
+        assert.strictEqual(result, AuthResultStatus.BLOCKED)
       })
 
       await it('should map OCPP 1.6 EXPIRED to EXPIRED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.EXPIRED)
-        assert.strictEqual(result, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result, AuthResultStatus.EXPIRED)
       })
 
       await it('should map OCPP 1.6 INVALID to INVALID', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.INVALID)
-        assert.strictEqual(result, AuthorizationStatus.INVALID)
+        assert.strictEqual(result, AuthResultStatus.INVALID)
       })
 
       await it('should map OCPP 1.6 CONCURRENT_TX to CONCURRENT_TX', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.CONCURRENT_TX)
-        assert.strictEqual(result, AuthorizationStatus.CONCURRENT_TX)
+        assert.strictEqual(result, AuthResultStatus.CONCURRENT_TX)
       })
     })
 
@@ -121,31 +121,31 @@ await describe('AuthTypes', async () => {
 
     await describe('Auth to OCPP 1.6 Status Mapping', async () => {
       await it('should map ACCEPTED to OCPP 1.6 ACCEPTED', () => {
-        const result = mapToOCPP16Status(AuthorizationStatus.ACCEPTED)
+        const result = mapToOCPP16Status(AuthResultStatus.ACCEPTED)
         assert.strictEqual(result, OCPP16AuthorizationStatus.ACCEPTED)
       })
 
       await it('should map BLOCKED to OCPP 1.6 BLOCKED', () => {
-        const result = mapToOCPP16Status(AuthorizationStatus.BLOCKED)
+        const result = mapToOCPP16Status(AuthResultStatus.BLOCKED)
         assert.strictEqual(result, OCPP16AuthorizationStatus.BLOCKED)
       })
 
       await it('should map EXPIRED to OCPP 1.6 EXPIRED', () => {
-        const result = mapToOCPP16Status(AuthorizationStatus.EXPIRED)
+        const result = mapToOCPP16Status(AuthResultStatus.EXPIRED)
         assert.strictEqual(result, OCPP16AuthorizationStatus.EXPIRED)
       })
 
       await it('should map unsupported statuses to OCPP 1.6 INVALID', () => {
         assert.strictEqual(
-          mapToOCPP16Status(AuthorizationStatus.PENDING),
+          mapToOCPP16Status(AuthResultStatus.PENDING),
           OCPP16AuthorizationStatus.INVALID
         )
         assert.strictEqual(
-          mapToOCPP16Status(AuthorizationStatus.UNKNOWN),
+          mapToOCPP16Status(AuthResultStatus.UNKNOWN),
           OCPP16AuthorizationStatus.INVALID
         )
         assert.strictEqual(
-          mapToOCPP16Status(AuthorizationStatus.NOT_AT_THIS_LOCATION),
+          mapToOCPP16Status(AuthResultStatus.NOT_AT_THIS_LOCATION),
           OCPP16AuthorizationStatus.INVALID
         )
       })
@@ -153,21 +153,21 @@ await describe('AuthTypes', async () => {
 
     await describe('Auth to OCPP 2.0 Status Mapping', async () => {
       await it('should map ACCEPTED to OCPP 2.0 Accepted', () => {
-        const result = mapToOCPP20Status(AuthorizationStatus.ACCEPTED)
+        const result = mapToOCPP20Status(AuthResultStatus.ACCEPTED)
         assert.strictEqual(result, RequestStartStopStatusEnumType.Accepted)
       })
 
       await it('should map rejection statuses to OCPP 2.0 Rejected', () => {
         assert.strictEqual(
-          mapToOCPP20Status(AuthorizationStatus.BLOCKED),
+          mapToOCPP20Status(AuthResultStatus.BLOCKED),
           RequestStartStopStatusEnumType.Rejected
         )
         assert.strictEqual(
-          mapToOCPP20Status(AuthorizationStatus.INVALID),
+          mapToOCPP20Status(AuthResultStatus.INVALID),
           RequestStartStopStatusEnumType.Rejected
         )
         assert.strictEqual(
-          mapToOCPP20Status(AuthorizationStatus.EXPIRED),
+          mapToOCPP20Status(AuthResultStatus.EXPIRED),
           RequestStartStopStatusEnumType.Rejected
         )
       })

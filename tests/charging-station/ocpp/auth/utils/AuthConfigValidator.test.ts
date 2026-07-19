@@ -9,7 +9,7 @@ import { afterEach, describe, it } from 'node:test'
 import {
   type AuthConfiguration,
   AuthenticationError,
-  AuthorizationStatus,
+  AuthResultStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthConfigValidator } from '../../../../../src/charging-station/ocpp/auth/utils/AuthConfigValidator.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
@@ -32,7 +32,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.doesNotThrow(() => {
@@ -53,7 +53,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -74,7 +74,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -95,7 +95,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -116,7 +116,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: -1,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -137,7 +137,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 0,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -158,7 +158,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000.5,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -179,7 +179,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -200,7 +200,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -221,7 +221,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.throws(() => {
@@ -242,7 +242,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.doesNotThrow(() => {
@@ -263,7 +263,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 1,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.doesNotThrow(() => {
@@ -284,7 +284,7 @@ await describe('AuthConfigValidator', async () => {
         localPreAuthorize: false,
         maxCacheEntries: 10000,
         offlineAuthorizationEnabled: true,
-        unknownIdAuthorization: AuthorizationStatus.INVALID,
+        unknownIdAuthorization: AuthResultStatus.INVALID,
       }
 
       assert.doesNotThrow(() => {

@@ -2,8 +2,8 @@ import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
-  AuthorizationStatus,
   AuthRequest,
+  AuthResultStatus,
   Identifier,
   IdentifierType,
 } from '../types/AuthTypes.js'
@@ -483,7 +483,7 @@ export interface OCPPAuthService {
    */
   updateCacheEntry(
     identifier: string,
-    status: AuthorizationStatus,
+    status: AuthResultStatus,
     expiryDate?: Date | string,
     identifierType?: IdentifierType
   ): void

@@ -27,7 +27,7 @@ import { getErrorMessage, isEmpty, logger, truncateId } from '../../../../utils/
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
@@ -77,7 +77,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
           },
           isOffline: false,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: AuthorizationStatus.INVALID,
+          status: AuthResultStatus.INVALID,
           timestamp: new Date(),
         }
       }
@@ -94,7 +94,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
           },
           isOffline: false,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: AuthorizationStatus.INVALID,
+          status: AuthResultStatus.INVALID,
           timestamp: new Date(),
         }
       }
@@ -147,7 +147,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter<OCPP20IdTokenType> {
         },
         isOffline: false,
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: AuthorizationStatus.INVALID,
+        status: AuthResultStatus.INVALID,
         timestamp: new Date(),
       }
     }

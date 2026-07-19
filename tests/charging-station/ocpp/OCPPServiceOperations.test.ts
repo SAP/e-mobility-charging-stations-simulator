@@ -11,7 +11,7 @@ import { afterEach, describe, it } from 'node:test'
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   OCPPAuthServiceFactory,
 } from '../../../src/charging-station/ocpp/auth/index.js'
 import {
@@ -301,7 +301,7 @@ await describe('OCPPServiceOperations', async () => {
       })
       injectMockAuthService(station, {
         authorize: () =>
-          Promise.resolve(createMockAuthorizationResult({ status: AuthorizationStatus.INVALID })),
+          Promise.resolve(createMockAuthorizationResult({ status: AuthResultStatus.INVALID })),
       })
 
       // Act
@@ -319,7 +319,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -339,7 +339,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -362,7 +362,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.CACHE,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -387,7 +387,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -409,7 +409,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -434,7 +434,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.BLOCKED,
+              status: AuthResultStatus.BLOCKED,
             })
           ),
       })
@@ -454,7 +454,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -476,7 +476,7 @@ await describe('OCPPServiceOperations', async () => {
           Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.OFFLINE_FALLBACK,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           ),
       })
@@ -515,7 +515,7 @@ await describe('OCPPServiceOperations', async () => {
           return Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.LOCAL_LIST,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           )
         },

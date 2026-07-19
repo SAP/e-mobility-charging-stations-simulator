@@ -28,8 +28,8 @@ import {
   AuthContext,
   AuthenticationMethod,
   type AuthorizationResult,
-  AuthorizationStatus,
   type AuthRequest,
+  AuthResultStatus,
   type Identifier,
   IdentifierType,
 } from '../types/AuthTypes.js'
@@ -192,7 +192,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       },
       isOffline: false,
       method: AuthenticationMethod.NONE,
-      status: AuthorizationStatus.INVALID,
+      status: AuthResultStatus.INVALID,
       timestamp: new Date(),
     }
   }
@@ -470,7 +470,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   public updateCacheEntry (
     identifier: string,
-    status: AuthorizationStatus,
+    status: AuthResultStatus,
     expiryDate?: Date | string,
     identifierType?: IdentifierType
   ): void {
@@ -600,7 +600,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       ocppVersion: this.chargingStation.stationInfo?.ocppVersion,
       offlineAuthorizationEnabled: true,
       remoteAuthorization: true,
-      unknownIdAuthorization: AuthorizationStatus.INVALID,
+      unknownIdAuthorization: AuthResultStatus.INVALID,
     }
   }
 
@@ -680,7 +680,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   ): void {
     this.metrics.totalResponseTime += duration
 
-    if (result.status === AuthorizationStatus.ACCEPTED) {
+    if (result.status === AuthResultStatus.ACCEPTED) {
       this.metrics.successfulAuth++
     } else {
       this.metrics.failedAuth++

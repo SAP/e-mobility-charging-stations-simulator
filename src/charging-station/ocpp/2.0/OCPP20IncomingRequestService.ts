@@ -162,7 +162,7 @@ import {
 } from '../../index.js'
 import {
   AuthContext,
-  AuthorizationStatus,
+  AuthResultStatus,
   type DifferentialAuthEntry,
   type LocalAuthEntry,
   mapOCPP20TokenType,
@@ -1158,13 +1158,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       timestamp: new Date(),
     })
 
-    if (authResult.status !== AuthorizationStatus.ACCEPTED) {
+    if (authResult.status !== AuthResultStatus.ACCEPTED) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.authorizeToken: ${tokenLabel} '${truncateId(tokenValue)}' is not authorized`
       )
     }
 
-    return authResult.status === AuthorizationStatus.ACCEPTED
+    return authResult.status === AuthResultStatus.ACCEPTED
   }
 
   private buildReportData (
