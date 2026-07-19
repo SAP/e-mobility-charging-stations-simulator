@@ -1048,6 +1048,12 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('pong', this.onPong.bind(this))
   }
 
+  /**
+   * Records a request statistic for the given command, but only when statistics
+   * collection is enabled on the station (`stationInfo.enableStatistics`).
+   * @param command - OCPP command the statistic is recorded against.
+   * @param messageType - Message type of the recorded exchange.
+   */
   public recordRequestStatistic (
     command: IncomingRequestCommand | RequestCommand,
     messageType: MessageType
