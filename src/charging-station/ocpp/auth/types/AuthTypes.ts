@@ -54,7 +54,7 @@ export enum AuthErrorCode {
 /**
  * Authorization status combining OCPP 1.6 and 2.0 statuses
  */
-export enum AuthorizationStatus {
+export enum AuthResultStatus {
   // Common statuses across versions
   ACCEPTED = 'Accepted',
   BLOCKED = 'Blocked',
@@ -154,7 +154,7 @@ export interface AuthConfiguration extends JsonObject {
   remoteAuthorization?: boolean
 
   /** Default authorization status for unknown IDs */
-  unknownIdAuthorization?: AuthorizationStatus
+  unknownIdAuthorization?: AuthResultStatus
 }
 
 /**
@@ -193,7 +193,7 @@ export interface AuthorizationResult {
   }
 
   /** Authorization status */
-  readonly status: AuthorizationStatus
+  readonly status: AuthResultStatus
 
   /** Timestamp of authorization */
   readonly timestamp: Date
@@ -369,23 +369,23 @@ export const requiresAdditionalInfo = (type: IdentifierType): boolean => {
  * @example
  * ```typescript
  * const status = mapOCPP16Status(OCPP16AuthorizationStatus.ACCEPTED)
- * // Returns: AuthorizationStatus.ACCEPTED
+ * // Returns: AuthResultStatus.ACCEPTED
  * ```
  */
-export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): AuthorizationStatus => {
+export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): AuthResultStatus => {
   switch (status) {
     case OCPP16AuthorizationStatus.ACCEPTED:
-      return AuthorizationStatus.ACCEPTED
+      return AuthResultStatus.ACCEPTED
     case OCPP16AuthorizationStatus.BLOCKED:
-      return AuthorizationStatus.BLOCKED
+      return AuthResultStatus.BLOCKED
     case OCPP16AuthorizationStatus.CONCURRENT_TX:
-      return AuthorizationStatus.CONCURRENT_TX
+      return AuthResultStatus.CONCURRENT_TX
     case OCPP16AuthorizationStatus.EXPIRED:
-      return AuthorizationStatus.EXPIRED
+      return AuthResultStatus.EXPIRED
     case OCPP16AuthorizationStatus.INVALID:
-      return AuthorizationStatus.INVALID
+      return AuthResultStatus.INVALID
     default:
-      return AuthorizationStatus.INVALID
+      return AuthResultStatus.INVALID
   }
 }
 
@@ -396,35 +396,35 @@ export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): Authorizatio
  * @example
  * ```typescript
  * const status = mapOCPP20AuthorizationStatus(OCPP20AuthorizationStatusEnumType.Accepted)
- * // Returns: AuthorizationStatus.ACCEPTED
+ * // Returns: AuthResultStatus.ACCEPTED
  * ```
  */
 export const mapOCPP20AuthorizationStatus = (
   status: OCPP20AuthorizationStatusEnumType
-): AuthorizationStatus => {
+): AuthResultStatus => {
   switch (status) {
     case OCPP20AuthorizationStatusEnumType.Accepted:
-      return AuthorizationStatus.ACCEPTED
+      return AuthResultStatus.ACCEPTED
     case OCPP20AuthorizationStatusEnumType.Blocked:
-      return AuthorizationStatus.BLOCKED
+      return AuthResultStatus.BLOCKED
     case OCPP20AuthorizationStatusEnumType.ConcurrentTx:
-      return AuthorizationStatus.CONCURRENT_TX
+      return AuthResultStatus.CONCURRENT_TX
     case OCPP20AuthorizationStatusEnumType.Expired:
-      return AuthorizationStatus.EXPIRED
+      return AuthResultStatus.EXPIRED
     case OCPP20AuthorizationStatusEnumType.Invalid:
-      return AuthorizationStatus.INVALID
+      return AuthResultStatus.INVALID
     case OCPP20AuthorizationStatusEnumType.NoCredit:
-      return AuthorizationStatus.NO_CREDIT
+      return AuthResultStatus.NO_CREDIT
     case OCPP20AuthorizationStatusEnumType.NotAllowedTypeEVSE:
-      return AuthorizationStatus.NOT_ALLOWED_TYPE_EVSE
+      return AuthResultStatus.NOT_ALLOWED_TYPE_EVSE
     case OCPP20AuthorizationStatusEnumType.NotAtThisLocation:
-      return AuthorizationStatus.NOT_AT_THIS_LOCATION
+      return AuthResultStatus.NOT_AT_THIS_LOCATION
     case OCPP20AuthorizationStatusEnumType.NotAtThisTime:
-      return AuthorizationStatus.NOT_AT_THIS_TIME
+      return AuthResultStatus.NOT_AT_THIS_TIME
     case OCPP20AuthorizationStatusEnumType.Unknown:
-      return AuthorizationStatus.UNKNOWN
+      return AuthResultStatus.UNKNOWN
     default:
-      return AuthorizationStatus.INVALID
+      return AuthResultStatus.INVALID
   }
 }
 
@@ -467,25 +467,25 @@ export const mapOCPP20TokenType = (type: OCPP20IdTokenEnumType): IdentifierType 
  * @returns OCPP 1.6 authorization status
  * @example
  * ```typescript
- * const ocpp16Status = mapToOCPP16Status(AuthorizationStatus.ACCEPTED)
+ * const ocpp16Status = mapToOCPP16Status(AuthResultStatus.ACCEPTED)
  * // Returns: OCPP16AuthorizationStatus.ACCEPTED
  * ```
  */
-export const mapToOCPP16Status = (status: AuthorizationStatus): OCPP16AuthorizationStatus => {
+export const mapToOCPP16Status = (status: AuthResultStatus): OCPP16AuthorizationStatus => {
   switch (status) {
-    case AuthorizationStatus.ACCEPTED:
+    case AuthResultStatus.ACCEPTED:
       return OCPP16AuthorizationStatus.ACCEPTED
-    case AuthorizationStatus.BLOCKED:
+    case AuthResultStatus.BLOCKED:
       return OCPP16AuthorizationStatus.BLOCKED
-    case AuthorizationStatus.CONCURRENT_TX:
+    case AuthResultStatus.CONCURRENT_TX:
       return OCPP16AuthorizationStatus.CONCURRENT_TX
-    case AuthorizationStatus.EXPIRED:
+    case AuthResultStatus.EXPIRED:
       return OCPP16AuthorizationStatus.EXPIRED
-    case AuthorizationStatus.INVALID:
-    case AuthorizationStatus.NOT_AT_THIS_LOCATION:
-    case AuthorizationStatus.NOT_AT_THIS_TIME:
-    case AuthorizationStatus.PENDING:
-    case AuthorizationStatus.UNKNOWN:
+    case AuthResultStatus.INVALID:
+    case AuthResultStatus.NOT_AT_THIS_LOCATION:
+    case AuthResultStatus.NOT_AT_THIS_TIME:
+    case AuthResultStatus.PENDING:
+    case AuthResultStatus.UNKNOWN:
     default:
       return OCPP16AuthorizationStatus.INVALID
   }
@@ -497,22 +497,22 @@ export const mapToOCPP16Status = (status: AuthorizationStatus): OCPP16Authorizat
  * @returns OCPP 2.0.1 RequestStartStopStatus
  * @example
  * ```typescript
- * const ocpp20Status = mapToOCPP20Status(AuthorizationStatus.ACCEPTED)
+ * const ocpp20Status = mapToOCPP20Status(AuthResultStatus.ACCEPTED)
  * // Returns: RequestStartStopStatusEnumType.Accepted
  * ```
  */
-export const mapToOCPP20Status = (status: AuthorizationStatus): RequestStartStopStatusEnumType => {
+export const mapToOCPP20Status = (status: AuthResultStatus): RequestStartStopStatusEnumType => {
   switch (status) {
-    case AuthorizationStatus.ACCEPTED:
+    case AuthResultStatus.ACCEPTED:
       return RequestStartStopStatusEnumType.Accepted
-    case AuthorizationStatus.BLOCKED:
-    case AuthorizationStatus.CONCURRENT_TX:
-    case AuthorizationStatus.EXPIRED:
-    case AuthorizationStatus.INVALID:
-    case AuthorizationStatus.NOT_AT_THIS_LOCATION:
-    case AuthorizationStatus.NOT_AT_THIS_TIME:
-    case AuthorizationStatus.PENDING:
-    case AuthorizationStatus.UNKNOWN:
+    case AuthResultStatus.BLOCKED:
+    case AuthResultStatus.CONCURRENT_TX:
+    case AuthResultStatus.EXPIRED:
+    case AuthResultStatus.INVALID:
+    case AuthResultStatus.NOT_AT_THIS_LOCATION:
+    case AuthResultStatus.NOT_AT_THIS_TIME:
+    case AuthResultStatus.PENDING:
+    case AuthResultStatus.UNKNOWN:
     default:
       return RequestStartStopStatusEnumType.Rejected
   }

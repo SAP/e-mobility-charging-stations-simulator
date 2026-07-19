@@ -46,6 +46,7 @@ import {
   getErrorMessage,
   isAsyncFunction,
   isEmpty,
+  isOCPP20x,
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
@@ -414,9 +415,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       )
     }
     const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
-    const isOcpp2 =
-      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+    const isOcpp2 = isOCPP20x(this.chargingStation.stationInfo?.ocppVersion)
     const interval = isOcpp2
       ? OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
       : (() => {

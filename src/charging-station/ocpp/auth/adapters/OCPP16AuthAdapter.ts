@@ -28,7 +28,7 @@ import {
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
   mapOCPP16Status,
   mapToOCPP16Status,
@@ -118,7 +118,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter<string> {
         },
         isOffline: false,
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: AuthorizationStatus.INVALID,
+        status: AuthResultStatus.INVALID,
         timestamp: new Date(),
       }
     }

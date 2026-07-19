@@ -6,8 +6,9 @@ import { describe, it } from 'node:test'
 import type { WebSocketFactory } from '../src/client/types.js'
 import type { ResponsePayload } from '../src/types/UIProtocol.js'
 
-import { ServerFailureError, WebSocketClient } from '../src/client/WebSocketClient.js'
+import { WebSocketClient } from '../src/client/WebSocketClient.js'
 import { DEFAULT_HOST, DEFAULT_PORT } from '../src/constants.js'
+import { ServerFailureError } from '../src/errors.js'
 import {
   AuthenticationType,
   ProcedureName,

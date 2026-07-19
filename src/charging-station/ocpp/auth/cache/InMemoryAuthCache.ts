@@ -4,7 +4,7 @@ import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
 import { Constants, isEmpty, logger, roundTo, truncateId } from '../../../../utils/index.js'
-import { AuthorizationStatus } from '../types/AuthTypes.js'
+import { AuthResultStatus } from '../types/AuthTypes.js'
 
 const moduleName = 'InMemoryAuthCache'
 
@@ -192,7 +192,7 @@ export class InMemoryAuthCache implements AuthCache {
     if (now >= authCacheEntry.expiresAt) {
       this.stats.expired++
       // Transition to EXPIRED status instead of deleting (C10.FR.08)
-      authCacheEntry.result = { ...authCacheEntry.result, status: AuthorizationStatus.EXPIRED }
+      authCacheEntry.result = { ...authCacheEntry.result, status: AuthResultStatus.EXPIRED }
       // Apply absolute lifetime cap to expired-transition TTL refresh (default-TTL entries only)
       if (!authCacheEntry.hasExplicitTtl) {
         const absoluteDeadline = authCacheEntry.createdAt + this.maxAbsoluteLifetimeMs
@@ -293,13 +293,13 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     for (const [key, entry] of this.cache.entries()) {
       if (now >= entry.expiresAt) {
-        if (entry.result.status === AuthorizationStatus.EXPIRED) {
+        if (entry.result.status === AuthResultStatus.EXPIRED) {
           // Already transitioned by get() — delete on second expiration cycle
           this.cache.delete(key)
           this.lruOrder.delete(key)
         } else {
           // First expiration — transition to EXPIRED status (consistent with get() C10.FR.08 semantics)
-          entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
+          entry.result = { ...entry.result, status: AuthResultStatus.EXPIRED }
           if (!entry.hasExplicitTtl) {
             const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
             if (absoluteDeadline > now) {
@@ -439,7 +439,7 @@ export class InMemoryAuthCache implements AuthCache {
     for (const [identifier, accessTime] of this.lruOrder.entries()) {
       const authCacheEntry = this.cache.get(identifier)
       if (
-        authCacheEntry?.result.status !== AuthorizationStatus.ACCEPTED &&
+        authCacheEntry?.result.status !== AuthResultStatus.ACCEPTED &&
         accessTime < candidateTime
       ) {
         candidateTime = accessTime

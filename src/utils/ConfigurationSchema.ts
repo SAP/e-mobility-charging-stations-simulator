@@ -14,7 +14,7 @@ import {
 import { WorkerProcessType } from '../worker/index.js'
 import { CURRENT_CONFIGURATION_SCHEMA_VERSION } from './ConfigurationMigrations.js'
 import { isHostLiteralWithoutPort } from './HostUtils.js'
-import { has } from './Utils.js'
+import { has, isNotEmptyArray } from './Utils.js'
 
 // ---------------------------------------------------------------
 // Sub-schemas
@@ -165,17 +165,10 @@ const UIServerAccessPolicySchema = z
       .optional(),
   })
   .strict()
-  .refine(
-    value =>
-      !(
-        value.allowLoopbackProxy === true &&
-        (value.trustedProxies == null || value.trustedProxies.length === 0)
-      ),
-    {
-      message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
-      path: ['trustedProxies'],
-    }
-  )
+  .refine(value => !(value.allowLoopbackProxy === true && !isNotEmptyArray(value.trustedProxies)), {
+    message: "'allowLoopbackProxy' requires at least one entry in 'trustedProxies'",
+    path: ['trustedProxies'],
+  })
 
 /**
  * UIServerListenOptionsObjectSchema — typed object layer for `node:net`

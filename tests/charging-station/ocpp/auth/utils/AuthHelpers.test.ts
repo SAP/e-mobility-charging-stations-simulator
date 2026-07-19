@@ -9,7 +9,7 @@ import {
   AuthContext,
   AuthenticationMethod,
   type AuthorizationResult,
-  AuthorizationStatus,
+  AuthResultStatus,
   type Identifier,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -98,11 +98,11 @@ await describe('AuthHelpers', async () => {
   await describe('createRejectedResult', async () => {
     await it('should create rejected result without reason', () => {
       const result = AuthHelpers.createRejectedResult(
-        AuthorizationStatus.BLOCKED,
+        AuthResultStatus.BLOCKED,
         AuthenticationMethod.LOCAL_LIST
       )
 
-      assert.strictEqual(result.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result.status, AuthResultStatus.BLOCKED)
       assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
       assert.strictEqual(result.isOffline, false)
       assert.ok(result.timestamp instanceof Date)
@@ -111,12 +111,12 @@ await describe('AuthHelpers', async () => {
 
     await it('should create rejected result with reason', () => {
       const result = AuthHelpers.createRejectedResult(
-        AuthorizationStatus.EXPIRED,
+        AuthResultStatus.EXPIRED,
         AuthenticationMethod.REMOTE_AUTHORIZATION,
         'Token expired on 2024-01-01'
       )
 
-      assert.strictEqual(result.status, AuthorizationStatus.EXPIRED)
+      assert.strictEqual(result.status, AuthResultStatus.EXPIRED)
       assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
       assert.deepStrictEqual(result.additionalInfo, { reason: 'Token expired on 2024-01-01' })
     })
@@ -156,70 +156,70 @@ await describe('AuthHelpers', async () => {
   await describe('getStatusMessage', async () => {
     await it('should return message for ACCEPTED status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.ACCEPTED),
+        AuthHelpers.getStatusMessage(AuthResultStatus.ACCEPTED),
         'Authorization accepted'
       )
     })
 
     await it('should return message for BLOCKED status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.BLOCKED),
+        AuthHelpers.getStatusMessage(AuthResultStatus.BLOCKED),
         'Identifier is blocked'
       )
     })
 
     await it('should return message for EXPIRED status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.EXPIRED),
+        AuthHelpers.getStatusMessage(AuthResultStatus.EXPIRED),
         'Authorization has expired'
       )
     })
 
     await it('should return message for INVALID status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.INVALID),
+        AuthHelpers.getStatusMessage(AuthResultStatus.INVALID),
         'Invalid identifier'
       )
     })
 
     await it('should return message for CONCURRENT_TX status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.CONCURRENT_TX),
+        AuthHelpers.getStatusMessage(AuthResultStatus.CONCURRENT_TX),
         'Concurrent transaction in progress'
       )
     })
 
     await it('should return message for NOT_AT_THIS_LOCATION status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_LOCATION),
+        AuthHelpers.getStatusMessage(AuthResultStatus.NOT_AT_THIS_LOCATION),
         'Not authorized at this location'
       )
     })
 
     await it('should return message for NOT_AT_THIS_TIME status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_TIME),
+        AuthHelpers.getStatusMessage(AuthResultStatus.NOT_AT_THIS_TIME),
         'Not authorized at this time'
       )
     })
 
     await it('should return message for PENDING status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.PENDING),
+        AuthHelpers.getStatusMessage(AuthResultStatus.PENDING),
         'Authorization pending'
       )
     })
 
     await it('should return message for UNKNOWN status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.UNKNOWN),
+        AuthHelpers.getStatusMessage(AuthResultStatus.UNKNOWN),
         'Unknown authorization status'
       )
     })
 
     await it('should return generic message for unknown status', () => {
       assert.strictEqual(
-        AuthHelpers.getStatusMessage(AuthorizationStatus.NO_CREDIT),
+        AuthHelpers.getStatusMessage(AuthResultStatus.NO_CREDIT),
         'Authorization failed'
       )
     })
@@ -230,7 +230,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
         timestamp: new Date(),
       }
 
@@ -241,7 +241,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.EXPIRED,
+        status: AuthResultStatus.EXPIRED,
         timestamp: new Date(),
       }
 
@@ -252,7 +252,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.INVALID,
+        status: AuthResultStatus.INVALID,
         timestamp: new Date(),
       }
 
@@ -263,7 +263,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
 
@@ -274,7 +274,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.PENDING,
+        status: AuthResultStatus.PENDING,
         timestamp: new Date(),
       }
 
@@ -287,7 +287,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
         timestamp: new Date(),
       }
 
@@ -298,7 +298,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
 
@@ -310,7 +310,7 @@ await describe('AuthHelpers', async () => {
         expiryDate: new Date(Date.now() - 1000),
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
 
@@ -322,7 +322,7 @@ await describe('AuthHelpers', async () => {
         expiryDate: new Date(Date.now() + 10000),
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
 
@@ -335,7 +335,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.PENDING,
+        status: AuthResultStatus.PENDING,
         timestamp: new Date(),
       }
 
@@ -346,7 +346,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.UNKNOWN,
+        status: AuthResultStatus.UNKNOWN,
         timestamp: new Date(),
       }
 
@@ -357,7 +357,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
         timestamp: new Date(),
       }
 
@@ -368,7 +368,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date(),
       }
 
@@ -387,25 +387,25 @@ await describe('AuthHelpers', async () => {
         {
           isOffline: false,
           method: AuthenticationMethod.LOCAL_LIST,
-          status: AuthorizationStatus.BLOCKED,
+          status: AuthResultStatus.BLOCKED,
           timestamp: new Date(),
         },
         {
           isOffline: false,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: AuthorizationStatus.ACCEPTED,
+          status: AuthResultStatus.ACCEPTED,
           timestamp: new Date(),
         },
         {
           isOffline: false,
           method: AuthenticationMethod.CERTIFICATE_BASED,
-          status: AuthorizationStatus.ACCEPTED,
+          status: AuthResultStatus.ACCEPTED,
           timestamp: new Date(),
         },
       ]
 
       const merged = AuthHelpers.mergeAuthResults(results)
-      assert.strictEqual(merged?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(merged?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(merged.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
@@ -414,19 +414,19 @@ await describe('AuthHelpers', async () => {
         {
           isOffline: false,
           method: AuthenticationMethod.LOCAL_LIST,
-          status: AuthorizationStatus.BLOCKED,
+          status: AuthResultStatus.BLOCKED,
           timestamp: new Date(),
         },
         {
           isOffline: true,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: AuthorizationStatus.EXPIRED,
+          status: AuthResultStatus.EXPIRED,
           timestamp: new Date(),
         },
       ]
 
       const merged = AuthHelpers.mergeAuthResults(results)
-      assert.strictEqual(merged?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(merged?.status, AuthResultStatus.BLOCKED)
       assert.strictEqual(merged.method, AuthenticationMethod.LOCAL_LIST)
       assert.strictEqual(merged.isOffline, true)
       assert.deepStrictEqual(merged.additionalInfo, {
@@ -447,7 +447,7 @@ await describe('AuthHelpers', async () => {
           content: 'Welcome',
           format: OCPP20MessageFormatEnumType.ASCII,
         },
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: new Date('2024-01-01T00:00:00Z'),
       }
 
@@ -459,7 +459,7 @@ await describe('AuthHelpers', async () => {
         hasPersonalMessage: true,
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
         timestamp: '2024-01-01T00:00:00.000Z',
       })
     })
@@ -468,7 +468,7 @@ await describe('AuthHelpers', async () => {
       const result: AuthorizationResult = {
         isOffline: true,
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
         timestamp: new Date('2024-06-15T12:30:45Z'),
       }
 
@@ -480,7 +480,7 @@ await describe('AuthHelpers', async () => {
         hasPersonalMessage: false,
         isOffline: true,
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
         timestamp: '2024-06-15T12:30:45.000Z',
       })
     })

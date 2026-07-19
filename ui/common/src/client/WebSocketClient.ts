@@ -8,8 +8,6 @@ import { AuthenticationType, ResponseStatus } from '../types/UIProtocol.js'
 import { randomUUID, validateUUID } from '../utils/UUID.js'
 import { WebSocketReadyState } from './types.js'
 
-export { ServerFailureError } from '../errors.js'
-
 export class WebSocketClient {
   public get connected (): boolean {
     return this.ws?.readyState === WebSocketReadyState.OPEN

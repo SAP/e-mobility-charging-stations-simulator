@@ -16,12 +16,11 @@ import {
   type OCPP20SignCertificateRequest,
   type OCPP20TransactionEventOptions,
   OCPPVersion,
-  type RequestParams,
   type StatusNotificationOptions,
 } from '../../../types/index.js'
-import { generateUUID, getErrorMessage, logger } from '../../../utils/index.js'
+import { getErrorMessage, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
+import { createPayloadValidatorMap } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { buildTransactionEvent, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -66,84 +65,15 @@ export class OCPP20RequestService extends OCPPRequestService {
    * @param ocppResponseService - The response service instance for handling OCPP 2.0.1 responses
    */
   public constructor (ocppResponseService: OCPPResponseService) {
-    super(OCPPVersion.VERSION_201, ocppResponseService)
+    super(OCPPVersion.VERSION_201, ocppResponseService, moduleName)
     this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),
       OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
-    this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
 
-  /**
-   * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
-   *
-   * This method serves as the main entry point for all outgoing OCPP 2.0.1 requests to the CSMS.
-   * It performs advanced operations including:
-   * - Validates that the requested command is supported by the charging station configuration
-   * - Builds and validates request payloads according to strict OCPP 2.0.1 schemas
-   * - Handles OCPP 2.0.1-specific features like component/variable management and enhanced security
-   * - Sends requests with comprehensive error handling and detailed logging
-   * - Processes responses with full support for OCPP 2.0.1's enhanced status reporting
-   * - Manages advanced OCPP 2.0.1 concepts like EVSE management and transaction UUIDs
-   *
-   * The method ensures full compliance with OCPP 2.0.1 specification while providing
-   * enhanced type safety and detailed error reporting for debugging and monitoring.
-   * @template RequestType - The expected type of the request parameters
-   * @template ResponseType - The expected type of the response from the CSMS
-   * @param chargingStation - The charging station instance making the request
-   * @param commandName - The OCPP 2.0.1 command to execute (e.g., 'Authorize', 'TransactionEvent')
-   * @param commandParams - Optional parameters specific to the command being executed
-   * @param params - Optional request parameters for controlling request behavior
-   * @returns Promise resolving to the typed response from the CSMS
-   * @throws {OCPPError} When the command is not supported, validation fails, or CSMS returns an error
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: OCPP20RequestCommand,
-    commandParams?: RequestType,
-    params?: RequestParams
-  ): Promise<ResponseType> {
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
-    )
-    if (isRequestCommandSupported(chargingStation, commandName)) {
-      try {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
-        )
-        const requestPayload =
-          params?.rawPayload === true
-            ? (commandParams as RequestType)
-            : this.buildRequestPayload(chargingStation, commandName, commandParams)
-        const messageId = generateUUID()
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
-        )
-        const response = (await this.sendMessage(
-          chargingStation,
-          messageId,
-          requestPayload,
-          commandName,
-          params
-        )) as ResponseType
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: '${commandName}' request completed successfully`
-        )
-        return response
-      } catch (error) {
-        this.logRequestHandlerError(chargingStation, moduleName, commandName, error)
-        throw error
-      }
-    }
-    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-    const errorMsg = `Unsupported OCPP command ${commandName}`
-    logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
-    throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
-  }
-
-  private buildRequestPayload (
+  protected buildRequestPayload (
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     commandParams?: JsonType

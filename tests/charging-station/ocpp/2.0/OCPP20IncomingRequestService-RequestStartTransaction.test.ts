@@ -23,7 +23,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   OCPPAuthServiceFactory,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
@@ -122,7 +122,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         Promise.resolve(
           createMockAuthorizationResult({
             method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.INVALID,
+            status: AuthResultStatus.INVALID,
           })
         ),
     })
@@ -159,7 +159,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
           return Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           )
         }
@@ -167,7 +167,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         return Promise.resolve(
           createMockAuthorizationResult({
             method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.BLOCKED,
+            status: AuthResultStatus.BLOCKED,
           })
         )
       },

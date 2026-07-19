@@ -305,11 +305,6 @@ export const TemplateSchema = BaseTemplateSchema.superRefine((template, ctx) => 
   }
 })
 
-/**
- * StrictTemplateSchema — rejects unknown keys. For CI strict mode.
- */
-export const StrictTemplateSchema = BaseTemplateSchema.strict()
-
 // ---------------------------------------------------------------
 // Exported sub-schemas for reuse
 // ---------------------------------------------------------------

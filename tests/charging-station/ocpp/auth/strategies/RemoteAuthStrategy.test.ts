@@ -15,7 +15,7 @@ import { RemoteAuthStrategy } from '../../../../../src/charging-station/ocpp/aut
 import {
   AuthenticationMethod,
   type AuthorizationResult,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
@@ -123,7 +123,7 @@ await describe('RemoteAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
@@ -147,7 +147,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'CACHE_TAG')
-      assert.strictEqual(cachedValue?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cachedValue?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(cachedTtl, 300)
     })
 
@@ -165,7 +165,7 @@ await describe('RemoteAuthStrategy', async () => {
           resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.BLOCKED,
+              status: AuthResultStatus.BLOCKED,
             })
           )
         })
@@ -180,7 +180,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'BLOCKED_TAG')
-      assert.strictEqual(cachedValue?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(cachedValue?.status, AuthResultStatus.BLOCKED)
       assert.strictEqual(cachedTtl, 300)
     })
 
@@ -198,7 +198,7 @@ await describe('RemoteAuthStrategy', async () => {
           resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.EXPIRED,
+              status: AuthResultStatus.EXPIRED,
             })
           )
         })
@@ -213,7 +213,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'EXPIRED_TAG')
-      assert.strictEqual(cachedValue?.status, AuthorizationStatus.EXPIRED)
+      assert.strictEqual(cachedValue?.status, AuthResultStatus.EXPIRED)
       assert.strictEqual(cachedTtl, 300)
     })
 
@@ -231,7 +231,7 @@ await describe('RemoteAuthStrategy', async () => {
           resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.INVALID,
+              status: AuthResultStatus.INVALID,
             })
           )
         })
@@ -246,7 +246,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, TEST_ID_TAG_INVALID)
-      assert.strictEqual(cachedValue?.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(cachedValue?.status, AuthResultStatus.INVALID)
       assert.strictEqual(cachedTtl, 300)
     })
 
@@ -270,7 +270,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       assert.strictEqual(cachedKey, 'ACCEPTED_TAG')
-      assert.strictEqual(cachedValue?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cachedValue?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(cachedTtl, 300)
     })
 
@@ -331,7 +331,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
     })
 
     await it('C13.FR.01.T01 - should not cache identifier that is in local auth list', async () => {

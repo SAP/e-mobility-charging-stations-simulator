@@ -12,7 +12,7 @@ import { CertificateAuthStrategy } from '../../../../../src/charging-station/ocp
 import {
   AuthenticationMethod,
   type AuthorizationResult,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/index.js'
@@ -191,7 +191,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.CERTIFICATE_BASED)
     })
 
@@ -213,7 +213,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthResultStatus.BLOCKED)
     })
 
     await it('should reject revoked certificates', async () => {
@@ -234,7 +234,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthResultStatus.BLOCKED)
     })
 
     await it('should handle missing certificate data', async () => {
@@ -249,7 +249,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result?.status, AuthResultStatus.INVALID)
     })
 
     await it('should handle invalid hash algorithm', async () => {
@@ -270,7 +270,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result?.status, AuthResultStatus.INVALID)
     })
 
     await it('should handle invalid hash format', async () => {
@@ -291,7 +291,7 @@ await describe('CertificateAuthStrategy', async () => {
       const result = await strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result?.status, AuthResultStatus.INVALID)
     })
   })
 

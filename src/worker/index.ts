@@ -10,7 +10,6 @@ export { WorkerFactory } from './WorkerFactory.js'
 export {
   type WorkerData,
   type WorkerDataError,
-  WorkerEvents,
   type WorkerMessage,
   WorkerMessageEvents,
   WorkerProcessType,

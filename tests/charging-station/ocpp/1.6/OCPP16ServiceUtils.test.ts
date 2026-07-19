@@ -12,7 +12,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
-  AuthorizationStatus,
+  AuthResultStatus,
   OCPPAuthServiceFactory,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
@@ -662,7 +662,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null)
-      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cached.status, AuthResultStatus.ACCEPTED)
     })
 
     await it('should update auth cache with rejected status', () => {
@@ -686,7 +686,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null)
-      assert.strictEqual(cached.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(cached.status, AuthResultStatus.BLOCKED)
     })
 
     await it('should set TTL from expiryDate when in future', () => {
@@ -712,7 +712,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null, 'Cache entry should exist with future TTL')
-      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cached.status, AuthResultStatus.ACCEPTED)
     })
 
     await it('should skip caching when expiryDate is in the past', () => {
@@ -761,7 +761,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const authCache = getTestAuthCache(authService)
       const cached = authCache.get(TEST_ID_TAG)
       assert.ok(cached != null, 'Cache entry should exist without TTL')
-      assert.strictEqual(cached.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cached.status, AuthResultStatus.ACCEPTED)
     })
   })
 })

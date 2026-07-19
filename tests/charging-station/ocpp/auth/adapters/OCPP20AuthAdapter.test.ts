@@ -13,7 +13,7 @@ import {
   type AuthConfiguration,
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import {
@@ -222,7 +222,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1, 'tx_123')
 
-      assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
       assert.strictEqual(result.isOffline, false)
       assert.ok(result.timestamp instanceof Date)
@@ -233,7 +233,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1)
 
-      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result.status, AuthResultStatus.INVALID)
       assert.notStrictEqual(result.additionalInfo?.error, undefined)
     })
   })
@@ -344,9 +344,9 @@ await describe('OCPP20AuthAdapter', async () => {
 
     await it('should convert rejection statuses to OCPP 2.0 Rejected', () => {
       const statuses = [
-        AuthorizationStatus.BLOCKED,
-        AuthorizationStatus.INVALID,
-        AuthorizationStatus.EXPIRED,
+        AuthResultStatus.BLOCKED,
+        AuthResultStatus.INVALID,
+        AuthResultStatus.EXPIRED,
       ]
 
       for (const status of statuses) {

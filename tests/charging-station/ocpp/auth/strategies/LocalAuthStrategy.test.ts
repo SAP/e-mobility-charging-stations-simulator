@@ -14,7 +14,7 @@ import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
@@ -121,7 +121,7 @@ await describe('LocalAuthStrategy', async () => {
       const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
     })
 
@@ -141,7 +141,7 @@ await describe('LocalAuthStrategy', async () => {
       const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
@@ -156,7 +156,7 @@ await describe('LocalAuthStrategy', async () => {
       const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.OFFLINE_FALLBACK)
       assert.strictEqual(result.isOffline, true)
     })

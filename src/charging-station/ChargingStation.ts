@@ -100,6 +100,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   JSONStringify,
   logger,
   logPrefix,
@@ -1048,6 +1049,21 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Records a request statistic for the given command, but only when statistics
+   * collection is enabled on the station (`stationInfo.enableStatistics`).
+   * @param command - OCPP command the statistic is recorded against.
+   * @param messageType - Message type of the recorded exchange.
+   */
+  public recordRequestStatistic (
+    command: IncomingRequestCommand | RequestCommand,
+    messageType: MessageType
+  ): void {
+    if (this.stationInfo?.enableStatistics === true) {
+      this.performanceStatistics?.addRequestStatistic(command, messageType)
+    }
+  }
+
+  /**
    * Removes a reservation and restores the connector to its previous status.
    * @param reservation - The reservation to remove
    * @param reason - The reason for removing the reservation
@@ -1653,10 +1669,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getReconnectDelay (): number {
-    if (
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-    ) {
+    if (isOCPP20x(this.stationInfo?.ocppVersion)) {
       return OCPP20ServiceUtils.computeReconnectDelay(this, this.wsConnectionRetryCount)
     }
     return this.stationInfo?.reconnectExponentialDelay === true
@@ -1863,9 +1876,7 @@ export class ChargingStation extends EventEmitter {
         commandPayload
       )
     }
-    if (this.stationInfo?.enableStatistics === true) {
-      this.performanceStatistics?.addRequestStatistic(commandName, messageType)
-    }
+    this.recordRequestStatistic(commandName, messageType)
     logger.debug(
       `${this.logPrefix()} ${moduleName}.handleIncomingMessage: << Command '${commandName}' received request payload: ${JSON.stringify(
         request
