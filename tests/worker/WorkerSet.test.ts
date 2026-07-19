@@ -26,7 +26,7 @@ interface WorkerSetElementView {
 }
 
 interface WorkerSetInternals {
-  elementMap: Map<PropertyKey, WorkerSetElementView>
+  elementMap: Map<string, WorkerSetElementView>
   promiseResponseMap: Map<unknown, unknown>
   workerSet: Set<WorkerSetElementView>
 }
