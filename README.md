@@ -196,8 +196,6 @@ But the modifications to test have to be done to the files in the build target d
 - **dynamicPool** (experimental):
   Dynamically sized worker pool executing a fixed total number of simulated charging stations
 
-Deleting a charging station terminates its hosting worker thread once that worker no longer hosts any charging station, without disrupting sibling charging stations sharing the worker. This element-granular termination applies to the `workerSet` process type only; in `fixedPool`/`dynamicPool` modes worker threads are a bounded, reused resource (`poolMinSize`..`poolMaxSize`) and are not terminated per deleted charging station.
-
 ### Charging station template configuration
 
 **src/assets/station-templates/\<name\>.json**:
