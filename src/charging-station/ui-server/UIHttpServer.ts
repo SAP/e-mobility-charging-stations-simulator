@@ -43,12 +43,15 @@ export class UIHttpServer extends AbstractUIServer {
 
   private readonly acceptsGzip: Map<UUIDv4, boolean>
 
+  private readonly secureResponses: Map<UUIDv4, boolean>
+
   public constructor (
     protected override readonly uiServerConfiguration: UIServerConfiguration,
     bootstrap: IBootstrap
   ) {
     super(uiServerConfiguration, bootstrap)
     this.acceptsGzip = new Map<UUIDv4, boolean>()
+    this.secureResponses = new Map<UUIDv4, boolean>()
   }
 
   public sendRequest (request: ProtocolRequest): void {
@@ -74,6 +77,7 @@ export class UIHttpServer extends AbstractUIServer {
             'Content-Encoding': 'gzip',
             'Content-Type': 'application/json',
             Vary: 'Accept-Encoding',
+            ...this.getSecurityHeaders(this.secureResponses.get(uuid) === true),
           })
           const gzip = this.createGzipStream()
           gzip.on('error', (error: Error) => {
@@ -93,6 +97,7 @@ export class UIHttpServer extends AbstractUIServer {
           res
             .writeHead(this.responseStatusToStatusCode(payload.status), {
               'Content-Type': 'application/json',
+              ...this.getSecurityHeaders(this.secureResponses.get(uuid) === true),
             })
             .end(body)
         }
@@ -109,6 +114,7 @@ export class UIHttpServer extends AbstractUIServer {
     } finally {
       this.responseHandlers.delete(uuid)
       this.acceptsGzip.delete(uuid)
+      this.secureResponses.delete(uuid)
     }
   }
 
@@ -170,14 +176,14 @@ export class UIHttpServer extends AbstractUIServer {
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
     const prologue = this.runRequestPrologue(req)
     if (!prologue.ok) {
-      this.renderDenial(res, prologue)
+      this.renderDenial(req, res, prologue)
       return
     }
     if (this.tryServeMetrics(req, res)) {
       return
     }
     if (!this.authenticate(req)) {
-      this.renderDenial(res, this.getUnauthorizedDenial())
+      this.renderDenial(req, res, this.getUnauthorizedDenial())
       return
     }
 
@@ -185,9 +191,11 @@ export class UIHttpServer extends AbstractUIServer {
     this.responseHandlers.set(uuid, res)
     const acceptEncoding = req.headers['accept-encoding'] ?? ''
     this.acceptsGzip.set(uuid, /\bgzip\b/.test(acceptEncoding))
+    this.secureResponses.set(uuid, this.isSecureRequest(req))
     res.on('close', () => {
       this.responseHandlers.delete(uuid)
       this.acceptsGzip.delete(uuid)
+      this.secureResponses.delete(uuid)
     })
 
     try {
@@ -226,7 +234,7 @@ export class UIHttpServer extends AbstractUIServer {
 
       this.handleRequestBody(req, res, uuid, version, procedureName).catch((error: unknown) => {
         if (error instanceof PayloadTooLargeError) {
-          this.renderDenial(res, {
+          this.renderDenial(req, res, {
             reasonPhrase: getReasonPhrase(StatusCodes.REQUEST_TOO_LONG),
             status: StatusCodes.REQUEST_TOO_LONG,
           })

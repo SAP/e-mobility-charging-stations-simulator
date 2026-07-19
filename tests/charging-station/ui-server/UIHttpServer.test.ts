@@ -7,7 +7,7 @@ import type { IncomingMessage } from 'node:http'
 
 import assert from 'node:assert/strict'
 import { Readable } from 'node:stream'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, type mock } from 'node:test'
 import { gunzipSync, type Gzip } from 'node:zlib'
 
 import type { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
@@ -70,6 +70,10 @@ class TestableUIHttpServer extends UIHttpServer {
     return [...this.responseHandlers.keys()]
   }
 
+  public getSecureResponses (): Map<UUIDv4, boolean> {
+    return Reflect.get(this, 'secureResponses')
+  }
+
   public getUIService (version: ProtocolVersion): AbstractUIService | undefined {
     return this.uiServices.get(version)
   }
@@ -83,6 +87,10 @@ class TestableUIHttpServer extends UIHttpServer {
 
   public setAcceptsGzip (uuid: UUIDv4, value: boolean): void {
     this.getAcceptsGzip().set(uuid, value)
+  }
+
+  public setSecureResponse (uuid: UUIDv4, value: boolean): void {
+    this.getSecureResponses().set(uuid, value)
   }
 
   protected override createGzipStream (): Gzip {
@@ -715,6 +723,207 @@ await describe('UIHttpServer', async () => {
       assert.strictEqual(res.destroyed, true)
       assert.strictEqual(res.ended, false)
       assert.strictEqual(errorMock.mock.calls.length, 1)
+    })
+  })
+
+  await describe('Strict-Transport-Security header (issue #1980)', async () => {
+    const HSTS_VALUE = 'max-age=31536000; includeSubDomains'
+
+    const createHstsServer = (strictTransportSecurity: false | string): TestableUIHttpServer =>
+      new TestableUIHttpServer(
+        createMockUIServerConfiguration({
+          securityHeaders: { strictTransportSecurity },
+          type: ApplicationProtocol.HTTP,
+        })
+      )
+
+    const emitDenial = (
+      t: { mock: { method: typeof mock.method } },
+      accessPolicy: UIServerConfiguration['accessPolicy'],
+      reqOverrides: Partial<IncomingMessage>
+    ): MockServerResponse => {
+      const gatedServer = new TestableUIHttpServer(
+        createMockUIServerConfiguration({
+          accessPolicy,
+          options: { host: 'localhost', port: 0 },
+          securityHeaders: { strictTransportSecurity: HSTS_VALUE },
+          type: ApplicationProtocol.HTTP,
+        })
+      )
+      const httpServer = Reflect.get(gatedServer, 'httpServer') as {
+        listen: (...args: unknown[]) => unknown
+        removeAllListeners: () => void
+      }
+      t.mock.method(httpServer, 'listen', () => httpServer)
+      const req = createMockIncomingMessage({
+        complete: true,
+        url: '/ui/ui0.0.1/listChargingStations',
+        ...reqOverrides,
+      })
+      const res = new MockServerResponse()
+      try {
+        gatedServer.start()
+        gatedServer.emitRequest(req, res)
+      } finally {
+        httpServer.removeAllListeners()
+        gatedServer.stop()
+      }
+      return res
+    }
+
+    await it('should emit the configured HSTS value on a secure success response', () => {
+      const hstsServer = createHstsServer(HSTS_VALUE)
+      const res = new MockServerResponse()
+
+      hstsServer.addResponseHandler(TEST_UUID, res)
+      hstsServer.setSecureResponse(TEST_UUID, true)
+      hstsServer.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      assert.strictEqual(res.headers['Strict-Transport-Security'], HSTS_VALUE)
+    })
+
+    await it('should emit the configured HSTS value on a secure gzip-compressed success response', async () => {
+      const hstsServer = createHstsServer(HSTS_VALUE)
+      const res = new MockServerResponse()
+
+      hstsServer.addResponseHandler(TEST_UUID, res)
+      hstsServer.setAcceptsGzip(TEST_UUID, true)
+      hstsServer.setSecureResponse(TEST_UUID, true)
+      hstsServer.sendResponse([TEST_UUID, createLargePayload()])
+
+      await awaitFinish(res)
+
+      assert.strictEqual(res.headers['Content-Encoding'], 'gzip')
+      assert.strictEqual(res.headers['Strict-Transport-Security'], HSTS_VALUE)
+    })
+
+    await it('should omit the HSTS header on a non-secure (plaintext) success response', () => {
+      const hstsServer = createHstsServer(HSTS_VALUE)
+      const res = new MockServerResponse()
+
+      hstsServer.addResponseHandler(TEST_UUID, res)
+      hstsServer.setSecureResponse(TEST_UUID, false)
+      hstsServer.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
+    })
+
+    await it('should emit the configured HSTS value on a secure success response over a trusted-proxy https connection', async () => {
+      const proxyServer = new TestableUIHttpServer(
+        createMockUIServerConfiguration({
+          accessPolicy: {
+            allowedHosts: ['gateway.example.com'],
+            allowedOrigins: [],
+            allowLoopbackProxy: false,
+            requireTlsForNonLoopback: true,
+            trustedProxies: ['203.0.113.10'],
+          },
+          options: { host: 'localhost', port: 0 },
+          securityHeaders: { strictTransportSecurity: HSTS_VALUE },
+          type: ApplicationProtocol.HTTP,
+        })
+      )
+      proxyServer.mockListen()
+      const req = Readable.from([Buffer.from('{}')]) as unknown as IncomingMessage
+      Object.assign(req, {
+        complete: true,
+        headers: { host: 'gateway.example.com', 'x-forwarded-proto': 'https' },
+        headersDistinct: {},
+        method: 'POST',
+        rawHeaders: [],
+        socket: { encrypted: false, remoteAddress: '203.0.113.10' },
+        url: `/ui/${ProtocolVersion['0.0.1']}/listChargingStations`,
+      })
+      const res = new MockServerResponse()
+
+      try {
+        proxyServer.start()
+        proxyServer.emitRequest(req, res)
+        await awaitFinish(res)
+      } finally {
+        proxyServer.stop()
+      }
+
+      assert.strictEqual(res.statusCode, 200)
+      assert.strictEqual(res.headers['Strict-Transport-Security'], HSTS_VALUE)
+    })
+
+    await it('should emit the configured HSTS value on a denial over a direct TLS connection', t => {
+      const res = emitDenial(
+        t,
+        { allowedHosts: ['gateway.example.com'], requireTlsForNonLoopback: true },
+        {
+          headers: { host: 'not-allowed.example.com' },
+          socket: { encrypted: true, remoteAddress: '203.0.113.10' } as never,
+        }
+      )
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.headers['Strict-Transport-Security'], HSTS_VALUE)
+    })
+
+    await it('should emit the configured HSTS value on a denial over a trusted-proxy https connection', t => {
+      const res = emitDenial(
+        t,
+        {
+          allowedHosts: ['gateway.example.com'],
+          requireTlsForNonLoopback: true,
+          trustedProxies: ['203.0.113.10'],
+        },
+        {
+          headers: { host: 'not-allowed.example.com', 'x-forwarded-proto': 'https' },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }
+      )
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.headers['Strict-Transport-Security'], HSTS_VALUE)
+    })
+
+    await it('should omit the HSTS header on a denial over a non-secure (plaintext) connection', t => {
+      const res = emitDenial(
+        t,
+        { allowedHosts: ['gateway.example.com'], requireTlsForNonLoopback: true },
+        {
+          headers: { host: 'gateway.example.com' },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }
+      )
+
+      assert.strictEqual(res.statusCode, 403)
+      assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
+    })
+
+    await it('should omit the HSTS header by default (unset) even over secure transport', () => {
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setSecureResponse(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
+    })
+
+    await it('should omit the HSTS header when configured false even over secure transport', () => {
+      const hstsServer = createHstsServer(false)
+      const res = new MockServerResponse()
+
+      hstsServer.addResponseHandler(TEST_UUID, res)
+      hstsServer.setSecureResponse(TEST_UUID, true)
+      hstsServer.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
+    })
+
+    await it('should omit the HSTS header when configured empty string even over secure transport', () => {
+      const hstsServer = createHstsServer('')
+      const res = new MockServerResponse()
+
+      hstsServer.addResponseHandler(TEST_UUID, res)
+      hstsServer.setSecureResponse(TEST_UUID, true)
+      hstsServer.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
     })
   })
 })
