@@ -2610,6 +2610,15 @@ export function isReadOnly (variableMetadata: VariableMetadata): boolean {
 }
 
 /**
+ * Check if variable metadata is volatile.
+ * @param variableMetadata - Variable metadata entry.
+ * @returns `true` when persistence is Volatile.
+ */
+export function isVolatile (variableMetadata: VariableMetadata): boolean {
+  return variableMetadata.persistence === PersistenceEnumType.Volatile
+}
+
+/**
  * Check if variable metadata is write-only.
  * @param variableMetadata - Variable metadata entry.
  * @returns `true` when mutability is WriteOnly.
