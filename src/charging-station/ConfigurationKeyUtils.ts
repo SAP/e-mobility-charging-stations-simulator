@@ -4,11 +4,10 @@ import {
   type ConfigurationKey,
   type ConfigurationKeyType,
   OCPP20ComponentName,
-  OCPPVersion,
   StandardParametersKey,
   VendorParametersKey,
 } from '../types/index.js'
-import { logger } from '../utils/index.js'
+import { isOCPP20x, logger } from '../utils/index.js'
 
 export const buildConfigKey = (component: string, variable: string, instance?: string): string => {
   const base = `${component}.${variable}`
@@ -122,7 +121,7 @@ const resolveKey = (
   key: ConfigurationKeyType
 ): ConfigurationKeyType => {
   const version = chargingStation.stationInfo?.ocppVersion
-  if (version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201) {
+  if (isOCPP20x(version)) {
     return OCPP2_PARAMETER_KEY_MAP.get(key) ?? key
   }
   return key
@@ -130,7 +129,7 @@ const resolveKey = (
 
 export const warnOnOCPP16TemplateKeys = (chargingStation: ChargingStation): void => {
   const version = chargingStation.stationInfo?.ocppVersion
-  if (version !== OCPPVersion.VERSION_20 && version !== OCPPVersion.VERSION_201) {
+  if (!isOCPP20x(version)) {
     return
   }
   const keys = chargingStation.ocppConfiguration?.configurationKey

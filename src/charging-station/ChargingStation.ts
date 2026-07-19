@@ -100,6 +100,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   JSONStringify,
   logger,
   logPrefix,
@@ -1653,10 +1654,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getReconnectDelay (): number {
-    if (
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-    ) {
+    if (isOCPP20x(this.stationInfo?.ocppVersion)) {
       return OCPP20ServiceUtils.computeReconnectDelay(this, this.wsConnectionRetryCount)
     }
     return this.stationInfo?.reconnectExponentialDelay === true

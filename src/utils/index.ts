@@ -93,6 +93,7 @@ export {
   isJsonObject,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   isValidDate,
   isValidRandomIntBounds,
   JSONStringify,

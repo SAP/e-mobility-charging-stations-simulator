@@ -28,6 +28,7 @@ import {
   getErrorMessage,
   isEmpty,
   isNotEmptyArray,
+  isOCPP20x,
   JSONStringify,
   logger,
 } from '../../utils/index.js'
@@ -188,7 +189,7 @@ export class UIMCPServer extends AbstractUIServer {
       if (expectedVersion === OCPPVersion.VERSION_16) {
         return s.version !== OCPPVersion.VERSION_16
       }
-      return s.version !== OCPPVersion.VERSION_20 && s.version !== OCPPVersion.VERSION_201
+      return !isOCPP20x(s.version)
     })
     if (isNotEmptyArray(mismatched)) {
       const ids = mismatched.map(s => s.hashId).join(', ')

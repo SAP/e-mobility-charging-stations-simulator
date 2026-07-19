@@ -18,6 +18,7 @@ import {
   type JsonObject,
   MapStringifyFormat,
   MessageType,
+  OCPPVersion,
   type TimestampedData,
   type UUIDv4,
   WebSocketCloseEventStatusString,
@@ -115,6 +116,9 @@ export const isEmpty = (value: unknown): boolean => {
   if (isPlainObject(value)) return Object.keys(value).length === 0
   return false
 }
+
+export const isOCPP20x = (version: OCPPVersion | undefined): boolean =>
+  version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const mergeDeepRight = <T extends object, S extends object>(target: T, source: S): T => {
