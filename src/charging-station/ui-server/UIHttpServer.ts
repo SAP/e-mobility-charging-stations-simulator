@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
-import { createGzip } from 'node:zlib'
+import { createGzip, type Gzip } from 'node:zlib'
 
 import type { IBootstrap } from '../IBootstrap.js'
 
@@ -32,6 +32,10 @@ import { HttpMethod, isProtocolAndVersionSupported } from './UIServerUtils.js'
 const moduleName = 'UIHttpServer'
 
 /**
+ * Broadcast/fan-out commands defer their HTTP response until the aggregated
+ * per-station outcome arrives, aligning with the WebSocket and MCP
+ * transports, instead of synthesizing an immediate success; only
+ * synchronous, non-broadcast procedures respond inline.
  * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
  */
 export class UIHttpServer extends AbstractUIServer {
@@ -71,7 +75,18 @@ export class UIHttpServer extends AbstractUIServer {
             'Content-Type': 'application/json',
             Vary: 'Accept-Encoding',
           })
-          const gzip = createGzip()
+          const gzip = this.createGzipStream()
+          gzip.on('error', (error: Error) => {
+            logger.error(
+              `${this.logPrefix(moduleName, 'sendResponse')} Error at compressing response id '${uuid}':`,
+              error
+            )
+            // pipe() does not forward the gzip (source) 'error' to res, so this
+            // handler is required: an unhandled compression error would otherwise
+            // crash the process. Destroy without an error argument because the
+            // headers are already sent, so nothing can be signaled to the client.
+            res.destroy()
+          })
           gzip.pipe(res)
           gzip.end(body)
         } else {
@@ -105,6 +120,15 @@ export class UIHttpServer extends AbstractUIServer {
     this.httpServer.on('request', this.requestListener.bind(this))
   }
 
+  /**
+   * Overridable gzip transform factory; a test seam for exercising the
+   * compression error branch.
+   * @returns The gzip transform used to compress the response body.
+   */
+  protected createGzipStream (): Gzip {
+    return createGzip()
+  }
+
   private async handleRequestBody (
     req: IncomingMessage,
     res: ServerResponse,
@@ -134,10 +158,12 @@ export class UIHttpServer extends AbstractUIServer {
     const protocolResponse = await service.requestHandler(
       this.buildProtocolRequest(uuid, procedureName, requestPayload)
     )
+    // A non-null response is a synchronous, non-broadcast procedure: respond
+    // now. A null response is a deferred broadcast: keep the request open so
+    // the later aggregated sendResponse writes the real per-station outcome,
+    // bounded by the safety-net timeout, instead of synthesizing success.
     if (protocolResponse != null) {
       this.sendResponse(protocolResponse)
-    } else {
-      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.SUCCESS }))
     }
   }
 
