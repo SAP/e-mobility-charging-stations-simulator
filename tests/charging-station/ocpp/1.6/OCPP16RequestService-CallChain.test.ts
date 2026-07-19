@@ -113,6 +113,31 @@ await describe('OCPP 1.6 Request Call Chain — requestHandler → buildRequestP
     })
   })
 
+  await describe('preRequestHook — OCPP 1.6 StartTransaction connector status transition', async () => {
+    await it('should set the connector status to Preparing before sending StartTransaction', async () => {
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.strictEqual(connectorStatus?.status, OCPP16ChargePointStatus.Available)
+
+      await requestService.requestHandler(station, OCPP16RequestCommand.START_TRANSACTION, {
+        connectorId: 1,
+        idTag: 'TEST001',
+      })
+
+      assert.strictEqual(station.getConnectorStatus(1)?.status, OCPP16ChargePointStatus.Preparing)
+    })
+
+    await it('should not change the connector status for a command without a pre-request hook', async () => {
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.strictEqual(connectorStatus?.status, OCPP16ChargePointStatus.Available)
+
+      await requestService.requestHandler(station, OCPP16RequestCommand.AUTHORIZE, {
+        idTag: 'TEST001',
+      })
+
+      assert.strictEqual(station.getConnectorStatus(1)?.status, OCPP16ChargePointStatus.Available)
+    })
+  })
+
   await describe('HEARTBEAT — no builder, empty payload', async () => {
     await it('should send empty payload for Heartbeat', async () => {
       await requestService.requestHandler(station, OCPP16RequestCommand.HEARTBEAT)

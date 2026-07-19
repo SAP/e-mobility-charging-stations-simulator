@@ -24,13 +24,19 @@ import {
 import {
   ensureError,
   formatDurationMilliSeconds,
+  generateUUID,
   getErrorMessage,
   getMessageTypeString,
   handleSendMessageError,
   logger,
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { type Ajv, createAjv, validatePayload } from './OCPPServiceUtils.js'
+import {
+  type Ajv,
+  createAjv,
+  isRequestCommandSupported,
+  validatePayload,
+} from './OCPPServiceUtils.js'
 
 const defaultRequestParams: RequestParams = {
   skipBufferingOnError: false,
@@ -47,15 +53,22 @@ export abstract class OCPPRequestService {
   >()
 
   protected readonly ajv: Ajv
+  protected readonly moduleName: string
   protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly ocppResponseService: OCPPResponseService
   private readonly version: OCPPVersion
 
-  protected constructor (version: OCPPVersion, ocppResponseService: OCPPResponseService) {
+  protected constructor (
+    version: OCPPVersion,
+    ocppResponseService: OCPPResponseService,
+    moduleName: string
+  ) {
     this.version = version
+    this.moduleName = moduleName
     this.ajv = createAjv()
     this.ocppResponseService = ocppResponseService
     this.requestHandler = this.requestHandler.bind(this)
+    this.buildRequestPayload = this.buildRequestPayload.bind(this)
     this.sendMessage = this.sendMessage.bind(this)
     this.sendResponse = this.sendResponse.bind(this)
     this.sendError = this.sendError.bind(this)
@@ -85,12 +98,50 @@ export abstract class OCPPRequestService {
    * @returns Response payload from the Central System.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
+  public async requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     commandParams?: ReqType,
     params?: RequestParams
-  ): Promise<ResType>
+  ): Promise<ResType> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: Processing '${commandName}' request`
+    )
+    if (isRequestCommandSupported(chargingStation, commandName)) {
+      try {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: Building request payload for '${commandName}'`
+        )
+        const requestPayload =
+          params?.rawPayload === true
+            ? (commandParams as ReqType)
+            : this.buildRequestPayload(chargingStation, commandName, commandParams)
+        const messageId = generateUUID()
+        logger.debug(
+          `${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
+        )
+        await this.preRequestHook(chargingStation, commandName, commandParams)
+        const response = (await this.sendMessage(
+          chargingStation,
+          messageId,
+          requestPayload,
+          commandName,
+          params
+        )) as ResType
+        logger.debug(
+          `${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: '${commandName}' request completed successfully`
+        )
+        return response
+      } catch (error) {
+        this.logRequestHandlerError(chargingStation, this.moduleName, commandName, error)
+        throw error
+      }
+    }
+    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
+    const errorMsg = `Unsupported OCPP command ${commandName}`
+    logger.error(`${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: ${errorMsg}`)
+    throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
 
   public async sendError (
     chargingStation: ChargingStation,
@@ -145,6 +196,12 @@ export abstract class OCPPRequestService {
     }
   }
 
+  protected abstract buildRequestPayload (
+    chargingStation: ChargingStation,
+    commandName: RequestCommand,
+    commandParams?: JsonType
+  ): JsonType
+
   protected logRequestHandlerError (
     chargingStation: ChargingStation,
     subclassModuleName: string,
@@ -155,6 +212,22 @@ export abstract class OCPPRequestService {
       `${chargingStation.logPrefix()} ${subclassModuleName}.requestHandler: Error processing '${commandName}' request:`,
       error
     )
+  }
+
+  /**
+   * Pre-request actions hook run after message id generation and before the
+   * request is sent. Base implementation is a no-op; overridden per OCPP
+   * version that needs a version-specific step (e.g. OCPP 1.6 StartTransaction).
+   * @param _chargingStation - Target charging station.
+   * @param _commandName - OCPP request command name.
+   * @param _commandParams - Optional request payload.
+   */
+  protected preRequestHook (
+    _chargingStation: ChargingStation,
+    _commandName: RequestCommand,
+    _commandParams?: JsonType
+  ): Promise<void> | void {
+    /* No-op by default */
   }
 
   protected async sendMessage (

@@ -14,12 +14,11 @@ import {
   type OCPP16StartTransactionRequest,
   type OCPP16StatusNotificationRequest,
   OCPPVersion,
-  type RequestParams,
 } from '../../../types/index.js'
-import { assertIsJsonObject, generateUUID, logger } from '../../../utils/index.js'
+import { assertIsJsonObject, logger } from '../../../utils/index.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
-import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
+import { createPayloadValidatorMap } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -55,88 +54,12 @@ export class OCPP16RequestService extends OCPPRequestService {
    * @param ocppResponseService - The response service instance for handling responses
    */
   public constructor (ocppResponseService: OCPPResponseService) {
-    super(OCPPVersion.VERSION_16, ocppResponseService)
+    super(OCPPVersion.VERSION_16, ocppResponseService, moduleName)
     this.payloadValidatorFunctions = createPayloadValidatorMap(
       OCPP16ServiceUtils.createRequestPayloadConfigs(),
       OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
-    this.buildRequestPayload = this.buildRequestPayload.bind(this)
-  }
-
-  /**
-   * Handles OCPP 1.6 request processing with full validation and error handling
-   *
-   * This method serves as the main entry point for all outgoing OCPP 1.6 requests.
-   * It performs the following operations:
-   * - Validates that the requested command is supported by the charging station
-   * - Builds and validates the request payload according to OCPP 1.6 schemas
-   * - Sends the request to the Central System with proper error handling
-   * - Processes responses with comprehensive logging and error recovery
-   *
-   * The method ensures type safety through generic type parameters while maintaining
-   * backward compatibility with the OCPP 1.6 specification.
-   * @template RequestType - The expected type of the request parameters
-   * @template ResponseType - The expected type of the response from the Central System
-   * @param chargingStation - The charging station instance making the request
-   * @param commandName - The OCPP 1.6 command to execute (e.g., 'StartTransaction', 'StopTransaction')
-   * @param commandParams - Optional parameters specific to the command being executed
-   * @param params - Optional request parameters for controlling request behavior
-   * @returns Promise resolving to the typed response from the Central System
-   * @throws {OCPPError} When the command is not supported or validation fails
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: OCPP16RequestCommand,
-    commandParams?: RequestType,
-    params?: RequestParams
-  ): Promise<ResponseType> {
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
-    )
-    if (isRequestCommandSupported(chargingStation, commandName)) {
-      try {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
-        )
-        const requestPayload =
-          params?.rawPayload === true
-            ? (commandParams as RequestType)
-            : this.buildRequestPayload(chargingStation, commandName, commandParams)
-        const messageId = generateUUID()
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
-        )
-        // Pre request actions hook
-        switch (commandName) {
-          case OCPP16RequestCommand.START_TRANSACTION:
-            await sendAndSetConnectorStatus(chargingStation, {
-              connectorId: (commandParams as OCPP16StartTransactionRequest).connectorId,
-              status: OCPP16ChargePointStatus.Preparing,
-            })
-            break
-        }
-        const response = (await this.sendMessage(
-          chargingStation,
-          messageId,
-          requestPayload,
-          commandName,
-          params
-        )) as ResponseType
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: '${commandName}' request completed successfully`
-        )
-        return response
-      } catch (error) {
-        this.logRequestHandlerError(chargingStation, moduleName, commandName, error)
-        throw error
-      }
-    }
-    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-    const errorMsg = `Unsupported OCPP command ${commandName}`
-    logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
-    throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
   }
 
   /**
@@ -158,7 +81,7 @@ export class OCPP16RequestService extends OCPPRequestService {
    * @param commandParams - Optional parameters provided by the caller for payload construction
    * @returns The fully constructed and validated request payload ready for transmission
    */
-  private buildRequestPayload (
+  protected buildRequestPayload (
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
@@ -281,6 +204,28 @@ export class OCPP16RequestService extends OCPPRequestService {
         )
         throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, params)
       }
+    }
+  }
+
+  /**
+   * Runs the OCPP 1.6 pre-request actions hook: for StartTransaction it sends
+   * and sets the connector status to Preparing before the request is sent.
+   * @param chargingStation - The charging station instance making the request
+   * @param commandName - The OCPP 1.6 command being sent
+   * @param commandParams - Optional parameters provided by the caller
+   */
+  protected override async preRequestHook (
+    chargingStation: ChargingStation,
+    commandName: OCPP16RequestCommand,
+    commandParams?: JsonType
+  ): Promise<void> {
+    switch (commandName) {
+      case OCPP16RequestCommand.START_TRANSACTION:
+        await sendAndSetConnectorStatus(chargingStation, {
+          connectorId: (commandParams as OCPP16StartTransactionRequest).connectorId,
+          status: OCPP16ChargePointStatus.Preparing,
+        })
+        break
     }
   }
 }
