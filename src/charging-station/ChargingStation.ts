@@ -1048,6 +1048,15 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('pong', this.onPong.bind(this))
   }
 
+  public recordRequestStatistic (
+    command: IncomingRequestCommand | RequestCommand,
+    messageType: MessageType
+  ): void {
+    if (this.stationInfo?.enableStatistics === true) {
+      this.performanceStatistics?.addRequestStatistic(command, messageType)
+    }
+  }
+
   /**
    * Removes a reservation and restores the connector to its previous status.
    * @param reservation - The reservation to remove
@@ -1861,9 +1870,7 @@ export class ChargingStation extends EventEmitter {
         commandPayload
       )
     }
-    if (this.stationInfo?.enableStatistics === true) {
-      this.performanceStatistics?.addRequestStatistic(commandName, messageType)
-    }
+    this.recordRequestStatistic(commandName, messageType)
     logger.debug(
       `${this.logPrefix()} ${moduleName}.handleIncomingMessage: << Command '${commandName}' received request payload: ${JSON.stringify(
         request

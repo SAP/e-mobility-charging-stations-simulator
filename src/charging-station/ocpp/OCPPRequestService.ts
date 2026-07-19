@@ -392,12 +392,7 @@ export abstract class OCPPRequestService {
          * @param requestPayload - The original request payload
          */
         const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
-          if (chargingStation.stationInfo?.enableStatistics === true) {
-            chargingStation.performanceStatistics?.addRequestStatistic(
-              commandName,
-              MessageType.CALL_RESULT_MESSAGE
-            )
-          }
+          chargingStation.recordRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE)
           self.ocppResponseService
             .responseHandler(
               chargingStation,
@@ -422,11 +417,8 @@ export abstract class OCPPRequestService {
          * @param requestStatistic - Whether to record request statistics
          */
         const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
-          if (requestStatistic && chargingStation.stationInfo?.enableStatistics === true) {
-            chargingStation.performanceStatistics?.addRequestStatistic(
-              commandName,
-              MessageType.CALL_ERROR_MESSAGE
-            )
+          if (requestStatistic) {
+            chargingStation.recordRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE)
           }
           logger.error(
             `${chargingStation.logPrefix()} Error occurred at ${getMessageTypeString(
@@ -463,9 +455,7 @@ export abstract class OCPPRequestService {
           reject(ocppError)
         }
 
-        if (chargingStation.stationInfo?.enableStatistics === true) {
-          chargingStation.performanceStatistics?.addRequestStatistic(commandName, messageType)
-        }
+        chargingStation.recordRequestStatistic(commandName, messageType)
         const messageToSend = this.buildMessageToSend(
           chargingStation,
           messageId,
