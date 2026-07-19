@@ -19,7 +19,7 @@ export class WorkerFactory {
     workerScript: string,
     workerProcessType: WorkerProcessType,
     workerOptions?: WorkerOptions,
-    elementKey?: (element: R) => PropertyKey
+    elementKey?: (element: R) => string
   ): WorkerAbstract<D, R> {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')

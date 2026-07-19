@@ -54,8 +54,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return this.workerSet.size
   }
 
-  private readonly elementKey?: (element: R) => PropertyKey
-  private readonly elementMap: Map<PropertyKey, WorkerSetElement>
+  private readonly elementKey?: (element: R) => string
+  private readonly elementMap: Map<string, WorkerSetElement>
   private readonly promiseResponseMap: Map<UUIDv4, ResponseWrapper<R>>
 
   private started: boolean
@@ -72,7 +72,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   constructor (
     workerScript: string,
     workerOptions: WorkerOptions,
-    elementKey?: (element: R) => PropertyKey
+    elementKey?: (element: R) => string
   ) {
     super(workerScript, workerOptions)
     if (this.workerOptions.elementsPerWorker == null) {
@@ -86,7 +86,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     this.workerSet = new Set<WorkerSetElement>()
     this.promiseResponseMap = new Map<UUIDv4, ResponseWrapper<R>>()
-    this.elementMap = new Map<PropertyKey, WorkerSetElement>()
+    this.elementMap = new Map<string, WorkerSetElement>()
     this.elementKey = elementKey
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
@@ -123,7 +123,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /** @inheritDoc */
-  public async removeElement (elementKey: PropertyKey): Promise<void> {
+  public async removeElement (elementKey: string): Promise<void> {
     const workerSetElement = this.elementMap.get(elementKey)
     if (workerSetElement == null) {
       return
@@ -133,8 +133,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       --workerSetElement.numberOfWorkerElements
     }
     // Terminate only at zero elements with no in-flight addition, so siblings
-    // are never disrupted. The worker 'exit' handler performs pending-promise
-    // rejection and set/map cleanup, so they are not duplicated here.
+    // are never disrupted. terminateWorker owns the pending-promise rejection
+    // and set/map cleanup.
     if (
       workerSetElement.numberOfWorkerElements === 0 &&
       !this.hasPendingElementForWorker(workerSetElement)
@@ -260,6 +260,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     })
     const workerSetElement: WorkerSetElement = {
       numberOfWorkerElements: 0,
+      terminating: false,
       worker,
     }
     this.workerSet.add(workerSetElement)
@@ -271,7 +272,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (
-        workerSetElement.terminating !== true &&
+        !workerSetElement.terminating &&
         workerSetElement.numberOfWorkerElements <
           (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
       ) {
@@ -341,35 +342,36 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
   }
 
+  // terminate() fulfils once the worker has exited, so waiting on the 'exit'
+  // event afterwards is redundant and would deadlock if the event fired before
+  // its listener was attached. A rejected terminate() is surfaced but not
+  // rethrown: the element removal still succeeds. Cleanup is idempotent with the
+  // 'exit' handler.
   private async terminateWorker (workerSetElement: WorkerSetElement): Promise<void> {
     workerSetElement.terminating = true
-    const worker = workerSetElement.worker
-    const waitWorkerExit = new Promise<void>(resolve => {
-      worker.once('exit', () => {
-        resolve()
-      })
-    })
-    worker.unref()
-    await worker.terminate()
-    await waitWorkerExit
+    workerSetElement.worker.unref()
+    try {
+      await workerSetElement.worker.terminate()
+    } catch (error) {
+      this.safeEmit(WorkerSetEvents.error, error)
+    } finally {
+      this.rejectPendingPromiseForWorker(workerSetElement, new Error('Worker terminated'))
+      this.removeWorkerSetElement(workerSetElement)
+    }
   }
 
-  // Keep numberOfWorkerElements equal to the number of distinct element keys on
-  // a worker: increment only for a new key, and on a re-add of a key onto a
-  // different worker, release the previous worker first. Without a selector the
-  // count is a plain tally.
+  // A worker hosts each distinct element key at most once, so count only new
+  // keys; re-adding a key already tracked on the same worker is a no-op.
+  // Duplicate live keys cannot land on different workers (identities are
+  // deduplicated upstream). Without a selector the count is a plain tally.
   private trackAddedWorkerElement (workerSetElement: WorkerSetElement, element: R): void {
     if (this.elementKey == null) {
       ++workerSetElement.numberOfWorkerElements
       return
     }
     const key = this.elementKey(element)
-    const previousWorkerSetElement = this.elementMap.get(key)
-    if (previousWorkerSetElement === workerSetElement) {
+    if (this.elementMap.get(key) === workerSetElement) {
       return
-    }
-    if (previousWorkerSetElement != null && previousWorkerSetElement.numberOfWorkerElements > 0) {
-      --previousWorkerSetElement.numberOfWorkerElements
     }
     ++workerSetElement.numberOfWorkerElements
     this.elementMap.set(key, workerSetElement)

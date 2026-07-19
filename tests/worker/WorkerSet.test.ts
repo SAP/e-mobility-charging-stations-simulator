@@ -21,7 +21,8 @@ interface TestElement extends WorkerData {
 
 interface WorkerSetElementView {
   numberOfWorkerElements: number
-  worker: { threadId: number }
+  terminating: boolean
+  worker: { terminate: () => Promise<number>; threadId: number }
 }
 
 interface WorkerSetInternals {
@@ -200,5 +201,40 @@ await describe('WorkerSet', async () => {
     await workerSet.stop()
 
     await assert.rejects(pendingAddition)
+  })
+
+  await it('should resolve and clean up when worker.terminate() rejects', async () => {
+    workerSet = createWorkerSet(1)
+    await workerSet.start()
+    await workerSet.addElement({ id: 'cs-1' })
+    const [hostingWorker] = [...internalsOf(workerSet).workerSet]
+    const realTerminate = hostingWorker.worker.terminate.bind(hostingWorker.worker)
+    hostingWorker.worker.terminate = () => Promise.reject(new Error('ERR_WORKER_NOT_RUNNING'))
+
+    // A rejected terminate() must not hang or reject removeElement; the element
+    // is still removed and the worker record cleaned up.
+    await workerSet.removeElement('cs-1')
+
+    assert.strictEqual(workerSet.size, 0)
+    assert.strictEqual(internalsOf(workerSet).elementMap.size, 0)
+    await realTerminate()
+  })
+
+  await it('should reject an in-flight addition when its worker terminate() rejects on stop', async () => {
+    workerSet = createWorkerSet(1)
+    await workerSet.start()
+    const pendingAddition = workerSet.addElement({ hold: true, id: 'cs-1' })
+    await flushMicrotasks()
+    const [hostingWorker] = [...internalsOf(workerSet).workerSet]
+    const realTerminate = hostingWorker.worker.terminate.bind(hostingWorker.worker)
+    hostingWorker.worker.terminate = () => Promise.reject(new Error('ERR_WORKER_NOT_RUNNING'))
+
+    await workerSet.stop()
+
+    // terminateWorker's cleanup rejects the pending addition even though the
+    // worker never emitted 'exit'.
+    await assert.rejects(pendingAddition)
+    assert.strictEqual(internalsOf(workerSet).promiseResponseMap.size, 0)
+    await realTerminate()
   })
 })
