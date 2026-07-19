@@ -67,5 +67,6 @@ export interface WorkerOptions extends Record<string, unknown> {
 
 export interface WorkerSetElement {
   numberOfWorkerElements: number
+  terminating: boolean
   worker: Worker
 }

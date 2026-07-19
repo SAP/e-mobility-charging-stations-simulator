@@ -54,6 +54,17 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
     return response
   }
 
+  /**
+   * @inheritDoc
+   * @remarks
+   * No-op: poolifier exposes no safe primitive to evict a single element from a
+   * pool worker without destroying the worker and its siblings. Pool worker
+   * threads are a bounded, reused resource (≤ `poolMaxSize`).
+   */
+  public removeElement (): Promise<void> {
+    return Promise.resolve()
+  }
+
   /** @inheritDoc */
   public start (): void {
     this.pool.start()
