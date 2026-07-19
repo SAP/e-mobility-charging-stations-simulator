@@ -40,12 +40,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       // Already completed and released by the normal response path.
       return
     }
-    try {
-      this.uiService.sendResponse(uuid, this.buildTimeoutResponsePayload(uuid))
-    } finally {
-      this.responses.delete(uuid)
-      this.uiService.deleteBroadcastChannelRequest(uuid)
-    }
+    this.releaseRequest(uuid, this.buildTimeoutResponsePayload(uuid))
   }
 
   /**
@@ -115,13 +110,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   }
 
   private completeRequest (uuid: UUIDv4): void {
-    // Always release aggregation state, even if downstream sendResponse throws.
-    try {
-      this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
-    } finally {
-      this.responses.delete(uuid)
-      this.uiService.deleteBroadcastChannelRequest(uuid)
-    }
+    this.releaseRequest(uuid, this.buildResponsePayload(uuid))
   }
 
   private messageErrorHandler (messageEvent: MessageEvent): void {
@@ -129,6 +118,22 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       `${this.uiService.logPrefix(moduleName, 'messageErrorHandler')} Error at handling message:`,
       messageEvent
     )
+  }
+
+  /**
+   * Sends the given response payload for a broadcast request and always
+   * releases its aggregation state afterwards, even if the downstream
+   * sendResponse throws.
+   * @param uuid - Request identifier.
+   * @param responsePayload - Aggregated response payload to send.
+   */
+  private releaseRequest (uuid: UUIDv4, responsePayload: ResponsePayload): void {
+    try {
+      this.uiService.sendResponse(uuid, responsePayload)
+    } finally {
+      this.responses.delete(uuid)
+      this.uiService.deleteBroadcastChannelRequest(uuid)
+    }
   }
 
   private responseHandler (messageEvent: MessageEvent): void {
