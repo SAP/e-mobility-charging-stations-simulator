@@ -83,7 +83,7 @@ jobs:
         uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
@@ -136,7 +136,7 @@ jobs:
           fetch-depth: 0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
@@ -187,7 +187,7 @@ jobs:
         uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
@@ -242,7 +242,7 @@ jobs:
         uses: actions/dependency-review-action@v5.0.0
       - uses: pnpm/action-setup@v6
       - name: Setup node ${{ matrix.node }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'

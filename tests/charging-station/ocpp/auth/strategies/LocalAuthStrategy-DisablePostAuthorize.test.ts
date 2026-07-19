@@ -8,7 +8,7 @@ import { afterEach, describe, it } from 'node:test'
 import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
@@ -33,7 +33,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
       })
       const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,
@@ -53,7 +53,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
 
       // Assert
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthResultStatus.BLOCKED)
       assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
@@ -61,7 +61,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
       })
       const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,
@@ -105,7 +105,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       const result = strategy.authenticate(request, config)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthResultStatus.BLOCKED)
       assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
     })
   })
@@ -115,7 +115,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       // Arrange
       const blockedResult = createMockAuthorizationResult({
         method: AuthenticationMethod.CACHE,
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
       })
       const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,

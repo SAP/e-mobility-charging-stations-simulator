@@ -2,8 +2,8 @@ import type { JsonObject, OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
-  AuthorizationStatus,
   AuthRequest,
+  AuthResultStatus,
   Identifier,
   IdentifierType,
 } from '../types/AuthTypes.js'
@@ -136,7 +136,7 @@ export interface AuthStrategy {
    * Check if this strategy can handle the given request
    * @param request - Authentication request
    * @param config - Current configuration
-   * @returns True if strategy can handle the request
+   * @returns `true` if strategy can handle the request
    */
   canHandle(request: AuthRequest, config: AuthConfiguration): boolean
 
@@ -483,7 +483,7 @@ export interface OCPPAuthService {
    */
   updateCacheEntry(
     identifier: string,
-    status: AuthorizationStatus,
+    status: AuthResultStatus,
     expiryDate?: Date | string,
     identifierType?: IdentifierType
   ): void

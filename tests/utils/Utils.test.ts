@@ -14,7 +14,7 @@ import { satisfies } from 'semver'
 import type { TimestampedData } from '../../src/types/index.js'
 
 import { JSRuntime, runtime } from '../../scripts/runtime.js'
-import { MapStringifyFormat, MessageType } from '../../src/types/index.js'
+import { MapStringifyFormat, MessageType, OCPPVersion } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
 import {
   clampToSafeTimerValue,
@@ -42,6 +42,7 @@ import {
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   isValidDate,
   JSONStringify,
   logPrefix,
@@ -467,6 +468,13 @@ await describe('Utils', async () => {
     assert.strictEqual(isEmpty(new Set()), true)
     assert.strictEqual(isEmpty(new WeakMap()), false)
     assert.strictEqual(isEmpty(new WeakSet()), false)
+  })
+
+  await it('should detect OCPP 2.0.x versions', () => {
+    assert.strictEqual(isOCPP20x(OCPPVersion.VERSION_20), true)
+    assert.strictEqual(isOCPP20x(OCPPVersion.VERSION_201), true)
+    assert.strictEqual(isOCPP20x(OCPPVersion.VERSION_16), false)
+    assert.strictEqual(isOCPP20x(undefined), false)
   })
 
   await it('should detect non-empty strings correctly', () => {

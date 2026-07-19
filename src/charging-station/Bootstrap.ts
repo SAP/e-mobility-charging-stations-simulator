@@ -559,7 +559,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           }),
         },
         workerStartDelay: workerConfiguration.startDelay,
-      }
+      },
+      (stationInfo: ChargingStationInfo) => stationInfo.hashId
     )
   }
 
@@ -724,7 +725,17 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
-    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+    const outcome = this.uiServer.setChargingStationData(data.stationInfo.hashId, data)
+    if (outcome === 'collision') {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.workerEventAdded: Rejected charging station ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          data.stationInfo.chargingStationId
+        } (hashId: ${data.stationInfo.hashId}, templateName: ${data.stationInfo.templateName}, templateIndex: ${data.stationInfo.templateIndex.toString()}): a different station identity already maps to this hashId; the added station is orphaned from the UI registry`
+      )
+      return
+    }
+    if (outcome === 'set') {
       this.uiServer.scheduleClientNotification()
     }
     logger.info(
@@ -736,6 +747,15 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
+    this.workerImplementation?.removeElement(data.stationInfo.hashId).catch((error: unknown) => {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.workerEventDeleted: Error while terminating the emptied worker of charging station ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          data.stationInfo.chargingStationId
+        } (hashId: ${data.stationInfo.hashId}):`,
+        error
+      )
+    })
     if (this.uiServer.deleteChargingStationData(data.stationInfo.hashId)) {
       this.uiServer.scheduleClientNotification()
     }
@@ -773,7 +793,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventStarted = (data: ChargingStationData): void => {
-    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data) === 'set') {
       this.uiServer.scheduleClientNotification()
     }
     const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)
@@ -789,7 +809,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventStopped = (data: ChargingStationData): void => {
-    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data) === 'set') {
       this.uiServer.scheduleClientNotification()
     }
     const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)
@@ -805,7 +825,7 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventUpdated = (data: ChargingStationData): void => {
-    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data) === 'set') {
       this.uiServer.scheduleClientNotification()
     }
   }

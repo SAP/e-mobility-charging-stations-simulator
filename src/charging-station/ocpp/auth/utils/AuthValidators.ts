@@ -23,7 +23,7 @@ const MAX_IDTOKEN_LENGTH = 36
 /**
  * Validate cache TTL value
  * @param ttl - Cache time-to-live duration in seconds, or undefined for optional parameter
- * @returns True if the TTL is undefined or a valid non-negative finite number, false otherwise
+ * @returns `true` if the TTL is undefined or a valid non-negative finite number, `false` otherwise
  */
 function isValidCacheTTL (ttl: number | undefined): boolean {
   if (ttl === undefined) {
@@ -36,7 +36,7 @@ function isValidCacheTTL (ttl: number | undefined): boolean {
 /**
  * Validate connector ID
  * @param connectorId - Charging connector identifier (0 or positive integer), or undefined for optional parameter
- * @returns True if the connector ID is undefined or a valid non-negative integer, false otherwise
+ * @returns `true` if the connector ID is undefined or a valid non-negative integer, `false` otherwise
  */
 function isValidConnectorId (connectorId: number | undefined): boolean {
   if (connectorId === undefined) {
@@ -49,7 +49,7 @@ function isValidConnectorId (connectorId: number | undefined): boolean {
 /**
  * Validate that a string is a valid identifier value
  * @param value - Authentication identifier string to validate (idTag or IdToken value)
- * @returns True if the value is a non-empty string with at least one non-whitespace character, false otherwise
+ * @returns `true` if the value is a non-empty string with at least one non-whitespace character, `false` otherwise
  */
 function isValidIdentifierValue (value: string): boolean {
   return isNotEmptyString(value)
@@ -90,7 +90,7 @@ function sanitizeIdToken (idToken: unknown): string {
 /**
  * Validate authentication configuration
  * @param config - Authentication configuration object to validate (may be any type)
- * @returns True if the configuration has valid required fields and constraints, false otherwise
+ * @returns `true` if the configuration has valid required fields and constraints, `false` otherwise
  */
 function validateAuthConfiguration (config: unknown): boolean {
   if (!config || typeof config !== 'object') {
@@ -144,7 +144,7 @@ function validateAuthConfiguration (config: unknown): boolean {
 /**
  * Validate identifier format and constraints
  * @param identifier - Identifier object to validate (may be any type)
- * @returns True if the identifier has a valid type and value within OCPP length constraints, false otherwise
+ * @returns `true` if the identifier has a valid type and value within OCPP length constraints, `false` otherwise
  */
 function validateIdentifier (identifier: unknown): boolean {
   // Check if identifier itself is valid

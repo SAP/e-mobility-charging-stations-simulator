@@ -1,6 +1,6 @@
 import type { Worker } from 'node:worker_threads'
 
-import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier'
+import { type ThreadPoolOptions } from 'poolifier'
 
 export enum WorkerMessageEvents {
   addedWorkerElement = 'addedWorkerElement',
@@ -50,13 +50,6 @@ export interface WorkerDataError extends WorkerData {
   stack?: string
 }
 
-export const WorkerEvents = {
-  ...PoolEvents,
-  ...WorkerSetEvents,
-} as const
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export type WorkerEvents = PoolEvent | WorkerSetEvents
-
 export interface WorkerMessage<T extends WorkerData> {
   data: T
   event: WorkerMessageEvents
@@ -74,5 +67,6 @@ export interface WorkerOptions extends Record<string, unknown> {
 
 export interface WorkerSetElement {
   numberOfWorkerElements: number
+  terminating: boolean
   worker: Worker
 }

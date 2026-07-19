@@ -12,7 +12,7 @@ import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/au
 import {
   AuthContext,
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   type Identifier,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -238,7 +238,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result.status, AuthResultStatus.INVALID)
       assert.strictEqual(result.method, AuthenticationMethod.NONE)
     })
   })
@@ -336,7 +336,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result.status, AuthResultStatus.INVALID)
     })
   })
 

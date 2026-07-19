@@ -331,7 +331,7 @@ export class Configuration {
     }
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
-        if ((filename?.trim().length ?? 0) === 0 || event !== 'change') {
+        if (!isNotEmptyString(filename) || event !== 'change') {
           return
         }
         if (Configuration.configurationFileReloading) {

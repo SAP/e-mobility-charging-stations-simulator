@@ -10,7 +10,7 @@ import type { AuthorizationResult } from '../../../../../src/charging-station/oc
 import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { standardCleanup, withMockTimers } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
@@ -50,7 +50,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
 
     beforeEach(() => {
       mockResult = createMockAuthorizationResult({
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
       })
     })
 
@@ -64,7 +64,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       const cachedResult = cache.get(identifier)
 
       assert.notStrictEqual(cachedResult, undefined)
-      assert.strictEqual(cachedResult?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(cachedResult?.status, AuthResultStatus.ACCEPTED)
       assert.deepStrictEqual(cachedResult.timestamp, mockResult.timestamp)
     })
 
@@ -175,7 +175,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
         const result = cache.get(identifier)
 
         assert.notStrictEqual(result, undefined)
-        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result?.status, AuthResultStatus.EXPIRED)
       })
     })
 
@@ -209,7 +209,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
 
         const result = cacheWithShortTTL.get('token')
         assert.notStrictEqual(result, undefined)
-        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result?.status, AuthResultStatus.EXPIRED)
       })
     })
 
@@ -507,7 +507,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
 
       const result = cache.get('token')
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
+      assert.strictEqual(result?.status, AuthResultStatus.EXPIRED)
     })
 
     await it('should handle very large TTL values', () => {
@@ -523,25 +523,25 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
     await it('should cache ACCEPTED authorization results', () => {
       const mockResult = createMockAuthorizationResult({
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
       })
 
       cache.set('valid-token', mockResult)
       const result = cache.get('valid-token')
 
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
     await it('should handle BLOCKED authorization results', () => {
       const mockResult = createMockAuthorizationResult({
-        status: AuthorizationStatus.BLOCKED,
+        status: AuthResultStatus.BLOCKED,
       })
 
       cache.set('blocked-token', mockResult)
       const result = cache.get('blocked-token')
 
-      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthResultStatus.BLOCKED)
     })
 
     await it('should preserve authorization result metadata', () => {
@@ -550,7 +550,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
           customField: 'test-value',
           reason: 'test-reason',
         },
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
       })
 
       cache.set('token', mockResult)
@@ -570,7 +570,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       const mockResult = createMockAuthorizationResult({
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
-        status: AuthorizationStatus.ACCEPTED,
+        status: AuthResultStatus.ACCEPTED,
       })
 
       cache.set('offline-token', mockResult)
@@ -592,8 +592,8 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
         rateLimit: { enabled: false },
       })
 
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-      const blocked = createMockAuthorizationResult({ status: AuthorizationStatus.BLOCKED })
+      const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
+      const blocked = createMockAuthorizationResult({ status: AuthResultStatus.BLOCKED })
 
       lruCache.set('valid-token', accepted)
       lruCache.set('blocked-token', blocked)
@@ -609,7 +609,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
       const newResult = lruCache.get('new-token')
 
       assert.notStrictEqual(validResult, undefined)
-      assert.strictEqual(validResult?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(validResult?.status, AuthResultStatus.ACCEPTED)
       assert.strictEqual(blockedResult, undefined)
       assert.notStrictEqual(newResult, undefined)
     })
@@ -621,7 +621,7 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
         rateLimit: { enabled: false },
       })
 
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
 
       lruCache.set('token-a', accepted)
       lruCache.set('token-b', accepted)
@@ -651,18 +651,18 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
           rateLimit: { enabled: false },
         })
 
-        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
         shortCache.set('token', accepted)
 
         t.mock.timers.tick(50)
         const midResult = shortCache.get('token')
         assert.notStrictEqual(midResult, undefined)
-        assert.strictEqual(midResult?.status, AuthorizationStatus.ACCEPTED)
+        assert.strictEqual(midResult?.status, AuthResultStatus.ACCEPTED)
 
         t.mock.timers.tick(50)
         const lateResult = shortCache.get('token')
         assert.notStrictEqual(lateResult, undefined)
-        assert.strictEqual(lateResult?.status, AuthorizationStatus.ACCEPTED)
+        assert.strictEqual(lateResult?.status, AuthResultStatus.ACCEPTED)
       })
     })
 
@@ -674,13 +674,13 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
           rateLimit: { enabled: false },
         })
 
-        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
         shortCache.set('token', accepted)
 
         t.mock.timers.tick(200)
         const result = shortCache.get('token')
         assert.notStrictEqual(result, undefined)
-        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result?.status, AuthResultStatus.EXPIRED)
       })
     })
   })
@@ -694,14 +694,14 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
           rateLimit: { enabled: false },
         })
 
-        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
         shortCache.set('token', accepted)
 
         t.mock.timers.tick(10)
 
         const result = shortCache.get('token')
         assert.notStrictEqual(result, undefined)
-        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result?.status, AuthResultStatus.EXPIRED)
       })
     })
 
@@ -713,19 +713,19 @@ await describe('InMemoryAuthCache - OCPP 2.0.1 Authorization Cache Conformance',
           rateLimit: { enabled: false },
         })
 
-        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        const accepted = createMockAuthorizationResult({ status: AuthResultStatus.ACCEPTED })
         shortCache.set('token', accepted)
 
         t.mock.timers.tick(10)
 
         // First access transitions to EXPIRED
         const first = shortCache.get('token')
-        assert.strictEqual(first?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(first?.status, AuthResultStatus.EXPIRED)
 
         // Second access should still return the entry (now with refreshed TTL as EXPIRED)
         const second = shortCache.get('token')
         assert.notStrictEqual(second, undefined)
-        assert.strictEqual(second?.status, AuthorizationStatus.EXPIRED)
+        assert.strictEqual(second?.status, AuthResultStatus.EXPIRED)
 
         const stats = shortCache.getStats()
         assert.strictEqual(stats.totalEntries, 1)

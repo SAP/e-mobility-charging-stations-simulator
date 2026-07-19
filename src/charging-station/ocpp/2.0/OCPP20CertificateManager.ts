@@ -329,7 +329,7 @@ export class OCPP20CertificateManager {
    * @param stationHashId - Charging station unique identifier
    * @param certificateHashData - Certificate hash data to check against stored CS certificates
    * @param hashAlgorithm - Optional hash algorithm override (defaults to certificateHashData.hashAlgorithm)
-   * @returns true if the hash matches a stored ChargingStationCertificate, false otherwise
+   * @returns `true` if the hash matches a stored ChargingStationCertificate, `false` otherwise
    */
   public async isChargingStationCertificateHash (
     stationHashId: string,
@@ -443,7 +443,7 @@ export class OCPP20CertificateManager {
   /**
    * Validates PEM certificate format
    * @param pemData - PEM data to validate
-   * @returns true if valid PEM certificate format, false otherwise
+   * @returns `true` if valid PEM certificate format, `false` otherwise
    */
   public validateCertificateFormat (pemData: unknown): boolean {
     if (pemData == null || typeof pemData !== 'string') {
@@ -678,7 +678,7 @@ export class OCPP20CertificateManager {
 /**
  * Type guard to check if a charging station has a certificate manager
  * @param chargingStation - The charging station to check
- * @returns true if the charging station has a certificate manager
+ * @returns `true` if the charging station has a certificate manager
  */
 export function hasCertificateManager (
   chargingStation: ChargingStation

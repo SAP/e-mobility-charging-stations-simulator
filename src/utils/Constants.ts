@@ -155,6 +155,13 @@ export class Constants {
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT_MS = 60_000
   static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT_MS = 30_000
+  /**
+   * Safety-net timeout for a UI broadcast-channel request: if the expected
+   * worker responses have not all arrived within this window (e.g. a targeted
+   * station was deleted mid-flight), the request is completed with a failure
+   * instead of hanging forever.
+   */
+  static readonly UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS = 60_000
   /** Divider between base units (A) and centi units (cA). */
   static readonly UNIT_DIVIDER_CENTI = 100
 

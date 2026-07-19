@@ -2594,7 +2594,7 @@ export function getVariableMetadata (
 /**
  * Check if variable metadata is persistent.
  * @param variableMetadata - Variable metadata entry.
- * @returns True when persistence is Persistent.
+ * @returns `true` when persistence is Persistent.
  */
 export function isPersistent (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.persistence === PersistenceEnumType.Persistent
@@ -2603,16 +2603,25 @@ export function isPersistent (variableMetadata: VariableMetadata): boolean {
 /**
  * Check if variable metadata is read-only.
  * @param variableMetadata - Variable metadata entry.
- * @returns True when mutability is ReadOnly.
+ * @returns `true` when mutability is ReadOnly.
  */
 export function isReadOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.ReadOnly
 }
 
 /**
+ * Check if variable metadata is volatile.
+ * @param variableMetadata - Variable metadata entry.
+ * @returns `true` when persistence is Volatile.
+ */
+export function isVolatile (variableMetadata: VariableMetadata): boolean {
+  return variableMetadata.persistence === PersistenceEnumType.Volatile
+}
+
+/**
  * Check if variable metadata is write-only.
  * @param variableMetadata - Variable metadata entry.
- * @returns True when mutability is WriteOnly.
+ * @returns `true` when mutability is WriteOnly.
  */
 export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.WriteOnly

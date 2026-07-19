@@ -46,6 +46,13 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
    */
   public abstract addElement (elementData: D): Promise<R>
   /**
+   * Removes a task element from the worker pool/set, terminating its hosting
+   * worker once that worker no longer hosts any element. Sibling elements
+   * sharing the worker are left running.
+   * @param elementKey - Identity key of the element to remove
+   */
+  public abstract removeElement (elementKey: string): Promise<void>
+  /**
    * Starts the worker pool/set.
    */
   public abstract start (): Promise<void> | void

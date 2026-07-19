@@ -6,7 +6,6 @@ import {
   type ComponentType,
   DataEnumType,
   GetVariableStatusEnumType,
-  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
@@ -14,7 +13,6 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20SetVariableDataType,
   type OCPP20SetVariableResultType,
-  PersistenceEnumType,
   ReasonCodeEnumType,
   SetVariableStatusEnumType,
   type VariableType,
@@ -33,6 +31,10 @@ import {
   buildCaseInsensitiveCompositeKey,
   enforceReportingValueSize,
   getVariableMetadata,
+  isPersistent,
+  isReadOnly,
+  isVolatile,
+  isWriteOnly,
   resolveValue,
   validateValue,
   VARIABLE_REGISTRY,
@@ -251,10 +253,10 @@ export class OCPP20VariableManager {
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
       // Enforce persistent non-write-only variables across components
-      if (variableMetadata.persistence !== PersistenceEnumType.Persistent) {
+      if (!isPersistent(variableMetadata)) {
         continue
       }
-      if (variableMetadata.mutability === MutabilityEnumType.WriteOnly) {
+      if (isWriteOnly(variableMetadata)) {
         continue
       }
       // Instance-scoped persistent variables are also auto-created when defaultValue is defined
@@ -387,7 +389,8 @@ export class OCPP20VariableManager {
       variable.instance ?? component.instance
     )
     if (
-      variableMetadata?.mutability === MutabilityEnumType.WriteOnly &&
+      variableMetadata != null &&
+      isWriteOnly(variableMetadata) &&
       resolvedAttributeType === AttributeEnumType.Actual
     ) {
       return this.rejectGet(
@@ -428,7 +431,7 @@ export class OCPP20VariableManager {
 
     if (resolvedAttributeType === AttributeEnumType.MinSet) {
       if (
-        variableMetadata.min === undefined &&
+        variableMetadata.min == null &&
         this.getMinSetOverrides(stationId).get(variableKey) == null
       ) {
         return this.rejectGet(
@@ -442,7 +445,7 @@ export class OCPP20VariableManager {
       }
       const minValue =
         this.getMinSetOverrides(stationId).get(variableKey) ??
-        (variableMetadata.min !== undefined ? variableMetadata.min.toString() : '')
+        (variableMetadata.min != null ? variableMetadata.min.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
@@ -453,7 +456,7 @@ export class OCPP20VariableManager {
     }
     if (resolvedAttributeType === AttributeEnumType.MaxSet) {
       if (
-        variableMetadata.max === undefined &&
+        variableMetadata.max == null &&
         this.getMaxSetOverrides(stationId).get(variableKey) == null
       ) {
         return this.rejectGet(
@@ -467,7 +470,7 @@ export class OCPP20VariableManager {
       }
       const maxValue =
         this.getMaxSetOverrides(stationId).get(variableKey) ??
-        (variableMetadata.max !== undefined ? variableMetadata.max.toString() : '')
+        (variableMetadata.max != null ? variableMetadata.max.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
@@ -626,10 +629,7 @@ export class OCPP20VariableManager {
 
     let value = resolveValue(chargingStation, variableMetadata)
 
-    if (
-      variableMetadata.persistence === PersistenceEnumType.Persistent &&
-      variableMetadata.mutability !== MutabilityEnumType.WriteOnly
-    ) {
+    if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
       const configurationKeyName = computeConfigurationKeyName(variableMetadata)
       let cfg = getConfigurationKey(chargingStation, configurationKeyName)
 
@@ -651,10 +651,7 @@ export class OCPP20VariableManager {
       }
     }
 
-    if (
-      variableMetadata.persistence === PersistenceEnumType.Volatile &&
-      variableMetadata.mutability !== MutabilityEnumType.ReadOnly
-    ) {
+    if (isVolatile(variableMetadata) && !isReadOnly(variableMetadata)) {
       const stationId = this.getStationId(chargingStation)
       const override = this.getRuntimeOverrides(stationId).get(compositeKey)
       if (override != null) {
@@ -737,7 +734,7 @@ export class OCPP20VariableManager {
       variable.name
     )
     if (invalidVariables.has(variableKey) && resolvedAttributeType === AttributeEnumType.Actual) {
-      if (variableMetadata.mutability !== MutabilityEnumType.WriteOnly) {
+      if (!isWriteOnly(variableMetadata)) {
         return this.rejectSet(
           variable,
           component,
@@ -821,7 +818,7 @@ export class OCPP20VariableManager {
       if (resolvedAttributeType === AttributeEnumType.MinSet) {
         const currentMax =
           this.getMaxSetOverrides(stationId).get(variableKey) ??
-          (variableMetadata.max !== undefined ? variableMetadata.max.toString() : undefined)
+          (variableMetadata.max != null ? variableMetadata.max.toString() : undefined)
         if (currentMax != null && intValue > convertToIntOrNaN(currentMax)) {
           return this.rejectSet(
             variable,
@@ -836,7 +833,7 @@ export class OCPP20VariableManager {
       } else {
         const currentMin =
           this.getMinSetOverrides(stationId).get(variableKey) ??
-          (variableMetadata.min !== undefined ? variableMetadata.min.toString() : undefined)
+          (variableMetadata.min != null ? variableMetadata.min.toString() : undefined)
         if (currentMin != null && intValue < convertToIntOrNaN(currentMin)) {
           return this.rejectSet(
             variable,
@@ -857,7 +854,7 @@ export class OCPP20VariableManager {
       }
     }
 
-    if (variableMetadata.mutability === MutabilityEnumType.ReadOnly) {
+    if (isReadOnly(variableMetadata)) {
       return this.rejectSet(
         variable,
         component,
@@ -1001,10 +998,7 @@ export class OCPP20VariableManager {
     const configurationKeyName = computeConfigurationKeyName(variableMetadata)
     const previousValue = getConfigurationKey(chargingStation, configurationKeyName)?.value
 
-    if (
-      variableMetadata.persistence === PersistenceEnumType.Persistent &&
-      variableMetadata.mutability !== MutabilityEnumType.WriteOnly
-    ) {
+    if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
       const configKey = getConfigurationKey(chargingStation, configurationKeyName)
       if (configKey == null) {
         addConfigurationKey(chargingStation, configurationKeyName, attributeValue, undefined, {
@@ -1034,7 +1028,7 @@ export class OCPP20VariableManager {
       chargingStation.restartWebSocketPing()
     }
     // Apply volatile runtime override generically (single location)
-    if (variableMetadata.persistence === PersistenceEnumType.Volatile) {
+    if (isVolatile(variableMetadata)) {
       this.getRuntimeOverrides(stationId).set(variableKey, attributeValue)
     }
 

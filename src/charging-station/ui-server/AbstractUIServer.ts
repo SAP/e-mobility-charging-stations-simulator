@@ -52,6 +52,19 @@ import {
 import { getUsernameAndPasswordFromAuthorizationToken, HttpMethod } from './UIServerUtils.js'
 
 /**
+ * Outcome of {@link AbstractUIServer.setChargingStationData}:
+ * - `set`: stored (new `hashId`, or a newer/equal-timestamp update of the same
+ *   physical station identity, including a legitimate restart re-emit).
+ * - `stale`: an older-timestamp update of the same physical station identity;
+ *   dropped.
+ * - `collision`: a different physical station identity — a distinct
+ *   `(templateName, templateIndex)` pair — already maps to this deterministic
+ *   `hashId`; rejected without overwriting so the registered station is not
+ *   silently shadowed (the caller surfaces the rejected twin).
+ */
+export type SetChargingStationDataOutcome = 'collision' | 'set' | 'stale'
+
+/**
  * Outcome of {@link AbstractUIServer.runRequestPrologue}.
  *
  * Discriminated by `ok`. On `ok: true` the caller proceeds to authentication
@@ -214,8 +227,7 @@ export abstract class AbstractUIServer {
         break
       default:
         throw new BaseError(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
+          `Unsupported application protocol version ${String(this.uiServerConfiguration.version)} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
     if ('requestTimeout' in this.httpServer) {
@@ -249,7 +261,13 @@ export abstract class AbstractUIServer {
   }
 
   public deleteChargingStationData (hashId: string): boolean {
-    return this.chargingStations.delete(hashId)
+    const deleted = this.chargingStations.delete(hashId)
+    // Reconcile in-flight broadcast requests so any that were waiting on the
+    // departed station complete truthfully instead of hanging.
+    for (const uiService of this.uiServices.values()) {
+      uiService.reconcileDeletedStation(hashId)
+    }
+    return deleted
   }
 
   public getBootstrap (): IBootstrap {
@@ -258,6 +276,10 @@ export abstract class AbstractUIServer {
 
   public getChargingStationData (hashId: string): ChargingStationData | undefined {
     return this.chargingStations.get(hashId)
+  }
+
+  public getChargingStationHashIds (): string[] {
+    return [...this.chargingStations.keys()]
   }
 
   public getChargingStationsCount (): number {
@@ -324,13 +346,23 @@ export abstract class AbstractUIServer {
    */
   public abstract sendResponse (response: ProtocolResponse): void
 
-  public setChargingStationData (hashId: string, data: ChargingStationData): boolean {
+  public setChargingStationData (
+    hashId: string,
+    data: ChargingStationData
+  ): SetChargingStationDataOutcome {
     const cachedData = this.chargingStations.get(hashId)
+    if (
+      cachedData != null &&
+      (cachedData.stationInfo.templateName !== data.stationInfo.templateName ||
+        cachedData.stationInfo.templateIndex !== data.stationInfo.templateIndex)
+    ) {
+      return 'collision'
+    }
     if (cachedData == null || data.timestamp >= cachedData.timestamp) {
       this.chargingStations.set(hashId, data)
-      return true
+      return 'set'
     }
-    return false
+    return 'stale'
   }
 
   public setChargingStationTemplates (templates: string[] | undefined): void {

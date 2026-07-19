@@ -10,7 +10,7 @@ import type {
 
 import { OCPPVersion } from '../../../../types/index.js'
 import { isNotEmptyString, logger, sleep } from '../../../../utils/index.js'
-import { AuthenticationMethod, AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
+import { AuthenticationMethod, AuthResultStatus, IdentifierType } from '../types/AuthTypes.js'
 
 const moduleName = 'CertificateAuthStrategy'
 
@@ -67,7 +67,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
           `${moduleName}: Certificate validation failed: ${String(certValidation.reason)}`
         )
         return this.createFailureResult(
-          AuthorizationStatus.INVALID,
+          AuthResultStatus.INVALID,
           certValidation.reason ?? 'Certificate validation failed',
           request.identifier,
           startTime
@@ -86,7 +86,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
       // Unreachable when the `canHandle` contract holds; defensive fallback
       // for unsupported OCPP versions.
       return this.createFailureResult(
-        AuthorizationStatus.INVALID,
+        AuthResultStatus.INVALID,
         `Certificate authentication not supported for OCPP ${this.adapter.ocppVersion}`,
         request.identifier,
         startTime
@@ -94,7 +94,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     } catch (error) {
       logger.error(`${moduleName}: Certificate authorization error:`, error)
       return this.createFailureResult(
-        AuthorizationStatus.INVALID,
+        AuthResultStatus.INVALID,
         'Certificate authorization failed',
         request.identifier,
         startTime
@@ -106,7 +106,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * Check if this strategy can handle the given request
    * @param request - Authorization request to evaluate for certificate-based handling
    * @param config - Authentication configuration with certificate settings
-   * @returns True if the request contains valid certificate data and certificate auth is enabled
+   * @returns `true` if the request contains valid certificate data and certificate auth is enabled
    */
   canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Only handle certificate-based authentication
@@ -181,7 +181,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @returns Authorization result with failure status and diagnostic information
    */
   private createFailureResult (
-    status: AuthorizationStatus,
+    status: AuthResultStatus,
     reason: string,
     identifier: Identifier,
     startTime: number
@@ -205,7 +205,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
   /**
    * Check if the identifier contains certificate data
    * @param identifier - Identifier to check for certificate hash data
-   * @returns True if all required certificate hash fields are present and non-empty
+   * @returns `true` if all required certificate hash fields are present and non-empty
    */
   private hasCertificateData (identifier: Identifier): boolean {
     const certData = identifier.certificateHashData
@@ -223,7 +223,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * Simulate certificate validation (in real implementation, this would involve crypto operations)
    * @param request - Authorization request containing certificate data to validate
    * @param config - Authentication configuration with validation strictness settings
-   * @returns True if the certificate passes simulated validation checks
+   * @returns `true` if the certificate passes simulated validation checks
    */
   private async simulateCertificateValidation (
     request: AuthRequest,
@@ -275,7 +275,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
    * @param startTime - Request start timestamp for response time calculation
    */
   private updateStatistics (result: AuthorizationResult, startTime: number): void {
-    if (result.status === AuthorizationStatus.ACCEPTED) {
+    if (result.status === AuthResultStatus.ACCEPTED) {
       this.stats.successfulAuths++
     } else {
       this.stats.failedAuths++
@@ -375,7 +375,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
           expiryDate: this.calculateCertificateExpiry(request.identifier),
           isOffline: false,
           method: AuthenticationMethod.CERTIFICATE_BASED,
-          status: AuthorizationStatus.ACCEPTED,
+          status: AuthResultStatus.ACCEPTED,
           timestamp: new Date(),
         }
 
@@ -386,7 +386,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         return successResult
       } else {
         return this.createFailureResult(
-          AuthorizationStatus.BLOCKED,
+          AuthResultStatus.BLOCKED,
           'Certificate validation failed',
           request.identifier,
           startTime
@@ -395,7 +395,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     } catch (error) {
       logger.error(`${moduleName}: OCPP 2.0.1 certificate validation error:`, error)
       return this.createFailureResult(
-        AuthorizationStatus.INVALID,
+        AuthResultStatus.INVALID,
         'Certificate validation error',
         request.identifier,
         startTime

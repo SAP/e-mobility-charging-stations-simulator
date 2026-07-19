@@ -9,7 +9,7 @@ import type {
 } from '../types/AuthTypes.js'
 
 import { isEmpty, truncateId } from '../../../../utils/index.js'
-import { AuthorizationStatus } from '../types/AuthTypes.js'
+import { AuthResultStatus } from '../types/AuthTypes.js'
 
 /**
  * @param expiryDate - Expiry timestamp to compute TTL from
@@ -62,7 +62,7 @@ function createAuthRequest (
  * @returns AuthorizationResult with isOffline=false
  */
 function createRejectedResult (
-  status: AuthorizationStatus,
+  status: AuthResultStatus,
   method: AuthenticationMethod,
   reason?: string
 ): AuthorizationResult {
@@ -90,25 +90,25 @@ function formatAuthError (error: Error, identifier: Identifier): string {
  * @param status - Authorization status to describe
  * @returns Descriptive message for the status
  */
-function getStatusMessage (status: AuthorizationStatus): string {
+function getStatusMessage (status: AuthResultStatus): string {
   switch (status) {
-    case AuthorizationStatus.ACCEPTED:
+    case AuthResultStatus.ACCEPTED:
       return 'Authorization accepted'
-    case AuthorizationStatus.BLOCKED:
+    case AuthResultStatus.BLOCKED:
       return 'Identifier is blocked'
-    case AuthorizationStatus.CONCURRENT_TX:
+    case AuthResultStatus.CONCURRENT_TX:
       return 'Concurrent transaction in progress'
-    case AuthorizationStatus.EXPIRED:
+    case AuthResultStatus.EXPIRED:
       return 'Authorization has expired'
-    case AuthorizationStatus.INVALID:
+    case AuthResultStatus.INVALID:
       return 'Invalid identifier'
-    case AuthorizationStatus.NOT_AT_THIS_LOCATION:
+    case AuthResultStatus.NOT_AT_THIS_LOCATION:
       return 'Not authorized at this location'
-    case AuthorizationStatus.NOT_AT_THIS_TIME:
+    case AuthResultStatus.NOT_AT_THIS_TIME:
       return 'Not authorized at this time'
-    case AuthorizationStatus.PENDING:
+    case AuthResultStatus.PENDING:
       return 'Authorization pending'
-    case AuthorizationStatus.UNKNOWN:
+    case AuthResultStatus.UNKNOWN:
       return 'Unknown authorization status'
     default:
       return 'Authorization failed'
@@ -118,23 +118,21 @@ function getStatusMessage (status: AuthorizationStatus): string {
 /**
  * Check whether an authorization result represents a permanent failure.
  * @param result - Authorization result to evaluate
- * @returns True if BLOCKED, EXPIRED, or INVALID
+ * @returns `true` if BLOCKED, EXPIRED, or INVALID
  */
 function isPermanentFailure (result: AuthorizationResult): boolean {
-  return [
-    AuthorizationStatus.BLOCKED,
-    AuthorizationStatus.EXPIRED,
-    AuthorizationStatus.INVALID,
-  ].includes(result.status)
+  return [AuthResultStatus.BLOCKED, AuthResultStatus.EXPIRED, AuthResultStatus.INVALID].includes(
+    result.status
+  )
 }
 
 /**
  * Check whether an authorization result is still valid (ACCEPTED and not expired).
  * @param result - Authorization result to evaluate
- * @returns True if ACCEPTED and expiry date has not passed
+ * @returns `true` if ACCEPTED and expiry date has not passed
  */
 function isResultValid (result: AuthorizationResult): boolean {
-  if (result.status !== AuthorizationStatus.ACCEPTED) {
+  if (result.status !== AuthResultStatus.ACCEPTED) {
     return false
   }
 
@@ -149,14 +147,14 @@ function isResultValid (result: AuthorizationResult): boolean {
 /**
  * Check whether an authorization result represents a temporary failure.
  * @param result - Authorization result to evaluate
- * @returns True if PENDING or UNKNOWN
+ * @returns `true` if PENDING or UNKNOWN
  */
 function isTemporaryFailure (result: AuthorizationResult): boolean {
-  if (result.status === AuthorizationStatus.PENDING) {
+  if (result.status === AuthResultStatus.PENDING) {
     return true
   }
 
-  if (result.status === AuthorizationStatus.UNKNOWN) {
+  if (result.status === AuthResultStatus.UNKNOWN) {
     return true
   }
 
@@ -173,7 +171,7 @@ function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult 
     return undefined
   }
 
-  const acceptedResult = results.find(r => r.status === AuthorizationStatus.ACCEPTED)
+  const acceptedResult = results.find(r => r.status === AuthResultStatus.ACCEPTED)
   if (acceptedResult) {
     return acceptedResult
   }

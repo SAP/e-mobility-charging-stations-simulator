@@ -1962,7 +1962,7 @@ export const PayloadValidatorOptions = (
  * @returns Parsed JSON schema object
  * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
  */
-export function parseJsonSchemaFile<T extends JsonType> (
+function parseJsonSchemaFile<T extends JsonType> (
   relativePath: string,
   ocppVersion: OCPPVersion,
   moduleName?: string,

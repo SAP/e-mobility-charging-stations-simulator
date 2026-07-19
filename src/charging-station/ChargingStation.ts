@@ -96,9 +96,11 @@ import {
   getMessageTypeString,
   getWebSocketCloseEventStatusString,
   handleFileException,
+  interruptibleSleep,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   JSONStringify,
   logger,
   logPrefix,
@@ -213,6 +215,11 @@ export class ChargingStation extends EventEmitter {
   private configuredSupervisionUrl!: URL
   private readonly connectors: Map<number, ConnectorStatus>
   private connectorsConfigurationHash: string
+  private readonly creationOptions?: ChargingStationOptions
+  // Tripped by delete() to cancel a pending reset(). Kept distinct from
+  // started/stopping (which reset() itself toggles through stop()) so a station
+  // deleted during the reset window is not resurrected and reconnected.
+  private readonly deleteAbortController: AbortController
   private readonly evses: Map<number, EvseStatus>
   private evsesConfigurationHash: string
   private flushingMessageBuffer: boolean
@@ -223,15 +230,32 @@ export class ChargingStation extends EventEmitter {
   private stopping: boolean
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
+
+  /**
+   * Creation options to re-apply when re-initializing on a reset or template
+   * reload. Only a non-persistent station needs them: a persistent one restores
+   * its identity and configuration from its saved file, which stays the source
+   * of truth, so re-applying the creation options would needlessly override it.
+   * @returns The retained creation options when the station is non-persistent,
+   *   `undefined` otherwise.
+   */
+  private get reinitializationOptions (): ChargingStationOptions | undefined {
+    return this.stationInfo?.stationInfoPersistentConfiguration === false
+      ? this.creationOptions
+      : undefined
+  }
 
   constructor (index: number, templateFile: string, options?: ChargingStationOptions) {
     super()
     this.started = false
     this.starting = false
     this.stopping = false
+    this.deleteAbortController = new AbortController()
     this.wsConnection = null
+    this.wsConnectionClosedByRequest = false
     this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
@@ -248,6 +272,10 @@ export class ChargingStation extends EventEmitter {
     this.connectorsConfigurationHash = ''
     this.evsesConfigurationHash = ''
     this.templateFileHash = ''
+    // Kept so a reset or template reload can re-apply the configured identity
+    // and supervision URL. Cloned so the in-place update in setSupervisionUrl
+    // stays off the shared worker data.
+    this.creationOptions = clone(options)
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))
@@ -358,9 +386,18 @@ export class ChargingStation extends EventEmitter {
     this.setIntervalFlushMessageBuffer()
   }
 
-  /** Closes the WebSocket connection to the central server. */
-  public closeWSConnection (): void {
+  /**
+   * Closes the WebSocket connection to the central server.
+   * @param options - Close options
+   * @param options.byRequest - Whether the close is requested (the UI disconnect
+   *   action); a requested close is terminal (onClose does not reconnect), any
+   *   other close (e.g. certificate rotation) reconnects like a server-initiated drop
+   */
+  public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
     if (this.isWebSocketConnectionOpened()) {
+      if (byRequest) {
+        this.wsConnectionClosedByRequest = true
+      }
       this.wsConnection?.close()
     }
   }
@@ -392,6 +429,9 @@ export class ChargingStation extends EventEmitter {
    * @param deleteConfiguration - Whether to delete the persisted configuration file
    */
   public async delete (deleteConfiguration = true): Promise<void> {
+    // Cancel any pending reset() so a station deleted during its reset window is
+    // not re-initialized and reconnected to the CSMS.
+    this.deleteAbortController.abort()
     if (this.started) {
       try {
         await this.stop()
@@ -832,7 +872,7 @@ export class ChargingStation extends EventEmitter {
    * @param reservationId - The reservation ID to check
    * @param idTag - Optional ID tag for user reservation check
    * @param connectorId - Optional connector ID to check availability
-   * @returns True if the connector can accept a reservation
+   * @returns `true` if the connector can accept a reservation
    */
   public isConnectorReservable (
     reservationId: number,
@@ -1009,6 +1049,21 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Records a request statistic for the given command, but only when statistics
+   * collection is enabled on the station (`stationInfo.enableStatistics`).
+   * @param command - OCPP command the statistic is recorded against.
+   * @param messageType - Message type of the recorded exchange.
+   */
+  public recordRequestStatistic (
+    command: IncomingRequestCommand | RequestCommand,
+    messageType: MessageType
+  ): void {
+    if (this.stationInfo?.enableStatistics === true) {
+      this.performanceStatistics?.addRequestStatistic(command, messageType)
+    }
+  }
+
+  /**
    * Removes a reservation and restores the connector to its previous status.
    * @param reservation - The reservation to remove
    * @param reason - The reason for removing the reservation
@@ -1061,9 +1116,14 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} ${moduleName}.reset: Error during reset stop phase:`, e)
       return
     }
-    await sleep(this.stationInfo?.resetTime ?? 0)
+    await interruptibleSleep(this.stationInfo?.resetTime ?? 0, this.deleteAbortController.signal)
+    // A delete() during the reset window aborts the sleep above; bail out before
+    // re-initializing so a deleted station is not re-initialized or reconnected.
+    if (this.deleteAbortController.signal.aborted) {
+      return
+    }
     OCPPAuthServiceFactory.clearInstance(this)
-    this.initialize()
+    this.initialize(this.reinitializationOptions)
     this.start()
   }
 
@@ -1097,6 +1157,17 @@ export class ChargingStation extends EventEmitter {
     supervisionUser?: string,
     supervisionPassword?: string
   ): void {
+    const applyCredentials = (target: {
+      supervisionPassword?: string
+      supervisionUser?: string
+    }): void => {
+      if (supervisionUser != null) {
+        target.supervisionUser = supervisionUser
+      }
+      if (supervisionPassword != null) {
+        target.supervisionPassword = supervisionPassword
+      }
+    }
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
@@ -1107,11 +1178,18 @@ export class ChargingStation extends EventEmitter {
       this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
     }
     if (this.stationInfo != null) {
-      if (supervisionUser != null) {
-        this.stationInfo.supervisionUser = supervisionUser
-      }
-      if (supervisionPassword != null) {
-        this.stationInfo.supervisionPassword = supervisionPassword
+      applyCredentials(this.stationInfo)
+      // Mirror the update into the retained creation options so a later reset() or
+      // template reload re-applies this URL, not the creation-time one — for BOTH
+      // branches above. On a cache-cold reinitialization (reload) a non-persistent
+      // station's supervisionUrlOcppKey is absent and re-seeded from
+      // configuredSupervisionUrl (i.e. stationInfo.supervisionUrls, written from
+      // these options), so without the mirror the reload would restore the old URL.
+      // (A warm reset() reuses the cached template whose in-place key mutation
+      // already carries it.) In-memory only: a full restart reverts to the originals.
+      if (this.creationOptions != null) {
+        this.creationOptions.supervisionUrls = url
+        applyCredentials(this.creationOptions)
       }
       this.saveStationInfo()
       this.emitChargingStationEvent(ChargingStationEvents.updated)
@@ -1148,7 +1226,7 @@ export class ChargingStation extends EventEmitter {
                     this.idTagsCache.deleteIdTags(idTagsFile)
                   }
                   OCPPAuthServiceFactory.clearInstance(this)
-                  this.initialize()
+                  this.initialize(this.reinitializationOptions)
                   // Restart the ATG
                   const ATGStarted = this.automaticTransactionGenerator?.started
                   if (ATGStarted === true) {
@@ -1579,7 +1657,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getOcppConfigurationFromTemplate (): ChargingStationOcppConfiguration | undefined {
-    return this.getTemplateFromFile()?.Configuration
+    return clone(this.getTemplateFromFile()?.Configuration)
   }
 
   private getPowerDivider (): number {
@@ -1591,10 +1669,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getReconnectDelay (): number {
-    if (
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-    ) {
+    if (isOCPP20x(this.stationInfo?.ocppVersion)) {
       return OCPP20ServiceUtils.computeReconnectDelay(this, this.wsConnectionRetryCount)
     }
     return this.stationInfo?.reconnectExponentialDelay === true
@@ -1801,9 +1876,7 @@ export class ChargingStation extends EventEmitter {
         commandPayload
       )
     }
-    if (this.stationInfo?.enableStatistics === true) {
-      this.performanceStatistics?.addRequestStatistic(commandName, messageType)
-    }
+    this.recordRequestStatistic(commandName, messageType)
     logger.debug(
       `${this.logPrefix()} ${moduleName}.handleIncomingMessage: << Command '${commandName}' received request payload: ${JSON.stringify(
         request
@@ -2345,6 +2418,10 @@ export class ChargingStation extends EventEmitter {
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
+    // Capture and clear the requested-close marker before deciding whether to
+    // reconnect.
+    const closedByRequest = this.wsConnectionClosedByRequest
+    this.wsConnectionClosedByRequest = false
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
@@ -2354,7 +2431,6 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.wsConnectionRetryCount = 0
         break
       // Abnormal close
       default:
@@ -2363,19 +2439,26 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.started &&
-          this.reconnect()
-            .then(() => {
-              this.emitChargingStationEvent(ChargingStationEvents.updated)
-              return undefined
-            })
-            .catch((error: unknown) =>
-              logger.error(
-                `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
-                error
-              )
-            )
         break
+    }
+    // Reconnect on any close we did not request while still started: a
+    // server-initiated drop, or an internal close wanting a fresh connection
+    // (e.g. certificate rotation), clean or abnormal. Only a requested close
+    // stays terminal.
+    if (this.started && !closedByRequest) {
+      this.reconnect()
+        .then(() => {
+          this.emitChargingStationEvent(ChargingStationEvents.updated)
+          return undefined
+        })
+        .catch((error: unknown) =>
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.onClose: Error while reconnecting:`,
+            error
+          )
+        )
+    } else {
+      this.wsConnectionRetryCount = 0
     }
   }
 

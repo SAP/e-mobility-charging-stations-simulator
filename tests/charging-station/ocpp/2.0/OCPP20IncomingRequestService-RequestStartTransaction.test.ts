@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
+  EvseStatus,
   OCPP20ChargingProfileType,
   OCPP20ChargingRateUnitEnumType,
   OCPP20RequestStartTransactionRequest,
@@ -22,7 +23,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AuthenticationMethod,
-  AuthorizationStatus,
+  AuthResultStatus,
   OCPPAuthServiceFactory,
 } from '../../../../src/charging-station/ocpp/auth/index.js'
 import {
@@ -55,6 +56,10 @@ import {
   resetLimits,
   resetReportingValueSize,
 } from './OCPP20TestUtils.js'
+
+// EVSE map access to build a non-contiguous EVSE layout; typed boundary cast (no `as any`).
+const evsesOf = (station: ChargingStation): Map<number, EvseStatus> =>
+  (station as unknown as { evses: Map<number, EvseStatus> }).evses
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
   let mockStation: ChargingStation
@@ -117,7 +122,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         Promise.resolve(
           createMockAuthorizationResult({
             method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.INVALID,
+            status: AuthResultStatus.INVALID,
           })
         ),
     })
@@ -154,7 +159,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
           return Promise.resolve(
             createMockAuthorizationResult({
               method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-              status: AuthorizationStatus.ACCEPTED,
+              status: AuthResultStatus.ACCEPTED,
             })
           )
         }
@@ -162,7 +167,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         return Promise.resolve(
           createMockAuthorizationResult({
             method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.BLOCKED,
+            status: AuthResultStatus.BLOCKED,
           })
         )
       },
@@ -408,6 +413,51 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest),
       { message: /EVSE 999 does not exist on charging station/ }
     )
+  })
+
+  // RequestStartTransaction may carry a TxProfile for the target EVSE (OCPP 2.0.1
+  // part 2 F01.FR.08-10 / F02.FR.16-18). validateChargingProfile must reject it by EVSE
+  // existence, not by count: getNumberOfEvses() counts EVSEs (excluding EVSE 0) and is not
+  // a maximum id, so a count-based guard false-rejects existing but non-contiguous EVSEs.
+  // Existence-based rejection mirrors K01.FR.28 (conformance test TC_K_14_CS).
+  await it('should accept a charging profile for an existing non-contiguous EVSE', async () => {
+    // Arrange: remove EVSE 2 so EVSE ids are non-contiguous {0, 1, 3}. getNumberOfEvses()
+    // then reports 2 while the existing target id is 3 — the exact shape a count-based guard
+    // wrongly rejects but an existence check accepts.
+    evsesOf(mockStation).delete(2)
+    assert.strictEqual(mockStation.getNumberOfEvses(), 2)
+    assert.strictEqual(mockStation.hasEvse(3), true)
+
+    const chargingProfile: OCPP20ChargingProfileType = {
+      chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
+      chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
+      chargingSchedule: [
+        {
+          chargingRateUnit: 'A' as OCPP20ChargingRateUnitEnumType,
+          chargingSchedulePeriod: [
+            {
+              limit: 30,
+              startPeriod: 0,
+            },
+          ],
+          id: 1,
+        },
+      ],
+      id: 1,
+      stackLevel: 0,
+    }
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, {
+      chargingProfile,
+      evseId: 3,
+      idToken: {
+        idToken: 'NON_CONTIGUOUS_EVSE_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 322,
+    })
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // FR: F01.FR.09, F01.FR.10
