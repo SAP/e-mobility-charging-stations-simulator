@@ -54,6 +54,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return this.workerSet.size
   }
 
+  private readonly elementKey?: (element: R) => PropertyKey
+  private readonly elementMap: Map<PropertyKey, WorkerSetElement>
   private readonly promiseResponseMap: Map<UUIDv4, ResponseWrapper<R>>
 
   private started: boolean
@@ -64,8 +66,14 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
    * Creates a new `WorkerSet`.
    * @param workerScript - Path to the worker script file
    * @param workerOptions - Worker set configuration options
+   * @param elementKey - Optional selector deriving an element's identity key
+   *   from its `addElement` response, enabling element-granular removal
    */
-  constructor (workerScript: string, workerOptions: WorkerOptions) {
+  constructor (
+    workerScript: string,
+    workerOptions: WorkerOptions,
+    elementKey?: (element: R) => PropertyKey
+  ) {
     super(workerScript, workerOptions)
     if (this.workerOptions.elementsPerWorker == null) {
       throw new TypeError('Elements per worker is not defined')
@@ -78,6 +86,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     this.workerSet = new Set<WorkerSetElement>()
     this.promiseResponseMap = new Map<UUIDv4, ResponseWrapper<R>>()
+    this.elementMap = new Map<PropertyKey, WorkerSetElement>()
+    this.elementKey = elementKey
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
     }
@@ -113,6 +123,27 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   /** @inheritDoc */
+  public async removeElement (elementKey: PropertyKey): Promise<void> {
+    const workerSetElement = this.elementMap.get(elementKey)
+    if (workerSetElement == null) {
+      return
+    }
+    this.elementMap.delete(elementKey)
+    if (workerSetElement.numberOfWorkerElements > 0) {
+      --workerSetElement.numberOfWorkerElements
+    }
+    // Terminate only at zero elements with no in-flight addition, so siblings
+    // are never disrupted. The worker 'exit' handler performs pending-promise
+    // rejection and set/map cleanup, so they are not duplicated here.
+    if (
+      workerSetElement.numberOfWorkerElements === 0 &&
+      !this.hasPendingElementForWorker(workerSetElement)
+    ) {
+      await this.terminateWorker(workerSetElement)
+    }
+  }
+
+  /** @inheritDoc */
   public async start (): Promise<void> {
     this.addWorkerSetElement()
     // Add worker set element sequentially to optimize memory at startup
@@ -126,15 +157,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   /** @inheritDoc */
   public async stop (): Promise<void> {
     for (const workerSetElement of this.workerSet) {
-      const worker = workerSetElement.worker
-      const waitWorkerExit = new Promise<void>(resolve => {
-        worker.once('exit', () => {
-          resolve()
-        })
-      })
-      worker.unref()
-      await worker.terminate()
-      await waitWorkerExit
+      await this.terminateWorker(workerSetElement)
     }
     for (const [uuid, responseWrapper] of this.promiseResponseMap) {
       try {
@@ -179,6 +202,9 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
             ++workerSetElement.numberOfWorkerElements
+            if (this.elementKey != null) {
+              this.elementMap.set(this.elementKey(data), workerSetElement)
+            }
             this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
@@ -276,6 +302,15 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return workerSetElementFound
   }
 
+  private hasPendingElementForWorker (workerSetElement: WorkerSetElement): boolean {
+    for (const responseWrapper of this.promiseResponseMap.values()) {
+      if (responseWrapper.workerSetElement === workerSetElement) {
+        return true
+      }
+    }
+    return false
+  }
+
   private rejectPendingPromiseForWorker (workerSetElement: WorkerSetElement, reason: unknown): void {
     for (const [uuid, responseWrapper] of this.promiseResponseMap) {
       if (responseWrapper.workerSetElement === workerSetElement) {
@@ -294,6 +329,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     if (workerSetElement == null) {
       return
     }
+    for (const [key, mappedWorkerSetElement] of this.elementMap) {
+      if (mappedWorkerSetElement === workerSetElement) {
+        this.elementMap.delete(key)
+      }
+    }
     this.workerSet.delete(workerSetElement)
   }
 
@@ -301,5 +341,17 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     if (this.emitter != null && this.emitter.listenerCount(event) > 0) {
       this.emitter.emit(event, ...args)
     }
+  }
+
+  private async terminateWorker (workerSetElement: WorkerSetElement): Promise<void> {
+    const worker = workerSetElement.worker
+    const waitWorkerExit = new Promise<void>(resolve => {
+      worker.once('exit', () => {
+        resolve()
+      })
+    })
+    worker.unref()
+    await worker.terminate()
+    await waitWorkerExit
   }
 }

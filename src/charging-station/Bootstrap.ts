@@ -559,7 +559,8 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
           }),
         },
         workerStartDelay: workerConfiguration.startDelay,
-      }
+      },
+      (stationInfo: ChargingStationInfo) => stationInfo.hashId
     )
   }
 
@@ -746,6 +747,15 @@ export class Bootstrap extends EventEmitter implements IBootstrap {
   }
 
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
+    this.workerImplementation?.removeElement(data.stationInfo.hashId).catch((error: unknown) => {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.workerEventDeleted: Error while terminating the emptied worker of charging station ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          data.stationInfo.chargingStationId
+        } (hashId: ${data.stationInfo.hashId}):`,
+        error
+      )
+    })
     if (this.uiServer.deleteChargingStationData(data.stationInfo.hashId)) {
       this.uiServer.scheduleClientNotification()
     }

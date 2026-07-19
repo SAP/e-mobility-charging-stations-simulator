@@ -18,7 +18,8 @@ export class WorkerFactory {
   public static getWorkerImplementation<D extends WorkerData, R extends WorkerData>(
     workerScript: string,
     workerProcessType: WorkerProcessType,
-    workerOptions?: WorkerOptions
+    workerOptions?: WorkerOptions,
+    elementKey?: (element: R) => PropertyKey
   ): WorkerAbstract<D, R> {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
@@ -30,7 +31,7 @@ export class WorkerFactory {
       case WorkerProcessType.fixedPool:
         return new WorkerFixedPool<D, R>(workerScript, resolvedOptions)
       case WorkerProcessType.workerSet:
-        return new WorkerSet<D, R>(workerScript, resolvedOptions)
+        return new WorkerSet<D, R>(workerScript, resolvedOptions, elementKey)
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Worker implementation type '${workerProcessType}' not found`)
