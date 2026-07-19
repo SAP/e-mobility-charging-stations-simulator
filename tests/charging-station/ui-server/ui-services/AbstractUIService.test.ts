@@ -8,12 +8,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { UIServiceWorkerBroadcastChannel } from '../../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIService } from '../../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
-import type {
-  BroadcastChannelResponse,
-  BroadcastChannelResponsePayload,
-  ChargingStationData,
-  UUIDv4,
-} from '../../../../src/types/index.js'
+import type { ChargingStationData, UUIDv4 } from '../../../../src/types/index.js'
 
 import {
   BroadcastChannelProcedureName,
@@ -29,6 +24,7 @@ import {
   createMockChargingStationData,
   createMockUIServerConfiguration,
   createProtocolRequest,
+  emitWorkerResponse,
   expectSingleLog,
   TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
@@ -77,24 +73,6 @@ const registerTransportDeleteRequest = async (
   await service.requestHandler(
     createProtocolRequest(TEST_UUID, ProcedureName.DELETE_CHARGING_STATIONS, { hashIds })
   )
-}
-
-/**
- * Deliver a worker broadcast-channel response into the service's aggregation
- * path, mirroring what a charging station worker posts back on the channel.
- * @param service - UI service whose worker broadcast channel receives the reply.
- * @param responsePayload - The per-station response payload to deliver.
- * @param uuid - Request identifier the reply belongs to (defaults to TEST_UUID).
- */
-const emitWorkerResponse = (
-  service: AbstractUIService,
-  responsePayload: BroadcastChannelResponsePayload,
-  uuid: UUIDv4 = TEST_UUID
-): void => {
-  const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as {
-    onmessage: (message: { data: BroadcastChannelResponse }) => void
-  }
-  channel.onmessage({ data: [uuid, responsePayload] })
 }
 
 /**

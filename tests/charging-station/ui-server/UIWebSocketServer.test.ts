@@ -7,14 +7,17 @@ import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 
 import assert from 'node:assert/strict'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, describe, it, type TestContext } from 'node:test'
 
+import type { UIServiceWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type {
   ChargingStationData,
+  ProtocolResponse,
   TemplateStatistics,
   UIServerConfiguration,
   UUIDv4,
 } from '../../../src/types/index.js'
+import type { MockWebSocket } from '../mocks/MockWebSocket.js'
 
 import {
   ApplicationProtocol,
@@ -23,11 +26,16 @@ import {
   OCPP16AvailabilityType,
   OCPPVersion,
   ProcedureName,
+  ProtocolVersion,
   ResponseStatus,
 } from '../../../src/types/index.js'
-import { logger } from '../../../src/utils/index.js'
-import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { TEST_UUID } from './UIServerTestConstants.js'
+import { Constants, logger } from '../../../src/utils/index.js'
+import {
+  createLoggerMocks,
+  standardCleanup,
+  withMockTimers,
+} from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_HASH_ID, TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import {
   awaitFinish,
   createMockIncomingMessage,
@@ -35,7 +43,9 @@ import {
   createMockUIServerConfigurationWithAuth,
   createMockUIService,
   createMockUIWebSocket,
+  createProtocolRequest,
   drainResponses,
+  emitWorkerResponse,
   extractGaugeValue,
   MockServerResponse,
   MockUIServiceMode,
@@ -112,6 +122,45 @@ const buildSimpleStation = (hashId: string): ChargingStationData =>
     timestamp: 1_700_000_000_000,
     wsState: 1,
   }) as unknown as ChargingStationData
+
+const createInFlightServer = (t: TestContext): TestableUIWebSocketServer => {
+  const server = new TestableUIWebSocketServer(
+    createMockUIServerConfiguration({
+      options: { host: '127.0.0.1', port: 0 },
+      type: ApplicationProtocol.WS,
+    })
+  )
+  server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
+  server.addStation(buildSimpleStation(TEST_HASH_ID))
+  server.mockListen(t)
+  return server
+}
+
+const connectClient = (server: TestableUIWebSocketServer): MockWebSocket => {
+  const ws = createMockUIWebSocket()
+  const wsServer = server.getWebSocketServer() as {
+    emit: (event: string, ...args: unknown[]) => boolean
+  }
+  wsServer.emit('connection', ws, createMockIncomingMessage())
+  return ws
+}
+
+const sendClientRequest = (
+  ws: MockWebSocket,
+  uuid: UUIDv4,
+  procedureName: ProcedureName = ProcedureName.STOP_CHARGING_STATION
+): void => {
+  ws.emit('message', Buffer.from(JSON.stringify(createProtocolRequest(uuid, procedureName))))
+}
+
+const parseSentResponse = (ws: MockWebSocket, index = 0): ProtocolResponse => {
+  if (index >= ws.sentMessages.length) {
+    assert.fail(
+      `parseSentResponse: no message at index ${index.toString()} (sentMessages.length=${ws.sentMessages.length.toString()})`
+    )
+  }
+  return JSON.parse(ws.sentMessages[index]) as ProtocolResponse
+}
 
 await describe('UIWebSocketServer', async () => {
   afterEach(() => {
@@ -457,6 +506,135 @@ await describe('UIWebSocketServer', async () => {
         /* already stopped */
       }
     }
+  })
+
+  await describe('in-flight request id collision (issue #2029)', async () => {
+    await it('should reject a duplicate in-flight request id and keep the first request isolated', async t => {
+      const server = createInFlightServer(t)
+      await withMockTimers(t, ['setTimeout'], () => {
+        try {
+          server.start()
+          const service = server.getUIService(ProtocolVersion['0.0.1'])
+          if (service == null) {
+            assert.fail('Expected UI service to be registered')
+          }
+          const channel = Reflect.get(
+            service,
+            'uiServiceWorkerBroadcastChannel'
+          ) as UIServiceWorkerBroadcastChannel
+          const completeExpiredSpy = t.mock.method(channel, 'completeExpiredRequest')
+
+          const ws1 = connectClient(server)
+          const ws2 = connectClient(server)
+
+          sendClientRequest(ws1, TEST_UUID)
+          assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
+          assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+
+          sendClientRequest(ws2, TEST_UUID)
+
+          assert.strictEqual(ws2.sentMessages.length, 1)
+          const rejection = parseSentResponse(ws2)
+          assert.strictEqual(rejection[0], TEST_UUID)
+          assert.strictEqual(rejection[1].status, ResponseStatus.FAILURE)
+          const { errorMessage } = rejection[1]
+          if (typeof errorMessage !== 'string') {
+            assert.fail('the rejection payload must carry a string errorMessage')
+          }
+          assert.match(errorMessage, /in-flight/)
+
+          assert.strictEqual(
+            server.hasResponseHandler(TEST_UUID),
+            true,
+            'the in-flight request handler must survive the duplicate'
+          )
+          assert.strictEqual(
+            service.getBroadcastChannelOutstandingResponseCount(TEST_UUID),
+            1,
+            'the duplicate must not overwrite the broadcast tracking'
+          )
+          assert.strictEqual(ws1.sentMessages.length, 0)
+
+          emitWorkerResponse(service, {
+            hashId: TEST_HASH_ID,
+            status: ResponseStatus.SUCCESS,
+          })
+          assert.strictEqual(ws1.sentMessages.length, 1, 'the first request receives its own reply')
+          const reply = parseSentResponse(ws1)
+          assert.strictEqual(reply[0], TEST_UUID)
+          assert.strictEqual(reply[1].status, ResponseStatus.SUCCESS)
+          assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+          assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 0)
+
+          t.mock.timers.tick(Constants.UI_SERVER_BROADCAST_CHANNEL_REQUEST_TIMEOUT_MS)
+          assert.strictEqual(
+            completeExpiredSpy.mock.calls.length,
+            0,
+            'no orphaned safety-net timer fires against the wrong context'
+          )
+        } finally {
+          server.stop()
+        }
+      })
+    })
+
+    await it('should not reject concurrent in-flight requests that use distinct ids', async t => {
+      const server = createInFlightServer(t)
+      await withMockTimers(t, ['setTimeout'], () => {
+        try {
+          server.start()
+          const service = server.getUIService(ProtocolVersion['0.0.1'])
+          if (service == null) {
+            assert.fail('Expected UI service to be registered')
+          }
+          const ws = connectClient(server)
+
+          sendClientRequest(ws, TEST_UUID)
+          sendClientRequest(ws, TEST_UUID_2)
+
+          assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
+          assert.strictEqual(server.hasResponseHandler(TEST_UUID_2), true)
+          assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+          assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID_2), 1)
+          assert.strictEqual(ws.sentMessages.length, 0, 'no distinct id is rejected')
+        } finally {
+          server.stop()
+        }
+      })
+    })
+
+    await it('should accept a sequential reuse of a request id after the prior request completed', async t => {
+      const server = createInFlightServer(t)
+      await withMockTimers(t, ['setTimeout'], () => {
+        try {
+          server.start()
+          const service = server.getUIService(ProtocolVersion['0.0.1'])
+          if (service == null) {
+            assert.fail('Expected UI service to be registered')
+          }
+          const ws = connectClient(server)
+
+          sendClientRequest(ws, TEST_UUID)
+          emitWorkerResponse(service, {
+            hashId: TEST_HASH_ID,
+            status: ResponseStatus.SUCCESS,
+          })
+          assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+          assert.strictEqual(ws.sentMessages.length, 1)
+
+          sendClientRequest(ws, TEST_UUID)
+          assert.strictEqual(
+            server.hasResponseHandler(TEST_UUID),
+            true,
+            'a completed id can be reused sequentially'
+          )
+          assert.strictEqual(service.getBroadcastChannelOutstandingResponseCount(TEST_UUID), 1)
+          assert.strictEqual(ws.sentMessages.length, 1, 'the accepted reuse is not rejected')
+        } finally {
+          server.stop()
+        }
+      })
+    })
   })
 
   await describe('metrics endpoint when uiServer.type=ws (issue #1917)', async () => {

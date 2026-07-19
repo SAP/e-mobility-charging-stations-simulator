@@ -10,8 +10,13 @@ import assert from 'node:assert/strict'
 import { EventEmitter, once } from 'node:events'
 
 import type { IBootstrap } from '../../../src/charging-station/IBootstrap.js'
-import type { BroadcastChannelResponseLogContext } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import type {
+  AbstractUIService,
+  BroadcastChannelResponseLogContext,
+} from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
+import type {
+  BroadcastChannelResponse,
+  BroadcastChannelResponsePayload,
   ChargingStationData,
   ProcedureName,
   ProtocolRequest,
@@ -32,6 +37,7 @@ import {
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
+import { TEST_UUID } from './UIServerTestConstants.js'
 
 export const createMockBootstrap = (): IBootstrap => ({
   addChargingStation: () => Promise.resolve(undefined),
@@ -566,4 +572,22 @@ export const expectSingleLog = (
   if (contextShape != null) {
     assert.deepStrictEqual(context, contextShape)
   }
+}
+
+/**
+ * Deliver a worker broadcast-channel response into the service's aggregation
+ * path, mirroring what a charging station worker posts back on the channel.
+ * @param service - UI service whose worker broadcast channel receives the reply.
+ * @param responsePayload - The per-station response payload to deliver.
+ * @param uuid - Request identifier the reply belongs to (defaults to TEST_UUID).
+ */
+export const emitWorkerResponse = (
+  service: AbstractUIService,
+  responsePayload: BroadcastChannelResponsePayload,
+  uuid: UUIDv4 = TEST_UUID
+): void => {
+  const channel = Reflect.get(service, 'uiServiceWorkerBroadcastChannel') as {
+    onmessage: (message: { data: BroadcastChannelResponse }) => void
+  }
+  channel.onmessage({ data: [uuid, responsePayload] })
 }
