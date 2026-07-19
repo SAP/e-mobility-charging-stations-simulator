@@ -27,6 +27,7 @@ import {
   Constants,
   ensureError,
   getErrorMessage,
+  isEmpty,
   isNotEmptyArray,
   JSONStringify,
   logger,
@@ -193,7 +194,7 @@ export abstract class AbstractUIService {
       }
       if (
         requestContext.outstandingHashIds.delete(hashId) &&
-        requestContext.outstandingHashIds.size === 0
+        isEmpty(requestContext.outstandingHashIds)
       ) {
         this.uiServiceWorkerBroadcastChannel.completeReconciledRequest(uuid)
       }
@@ -212,7 +213,7 @@ export abstract class AbstractUIService {
     ) {
       return 'untracked'
     }
-    return requestContext.outstandingHashIds.size === 0 ? 'completed' : 'outstanding'
+    return isEmpty(requestContext.outstandingHashIds) ? 'completed' : 'outstanding'
   }
 
   public async requestHandler (
@@ -548,7 +549,7 @@ export abstract class AbstractUIService {
         ? payload.hashIds
         : this.uiServer.getChargingStationHashIds()
     )
-    if (outstandingHashIds.size === 0) {
+    if (isEmpty(outstandingHashIds)) {
       throw new BaseError('No charging station is available to handle the broadcast request')
     }
     // Safety-net timeout: if not all expected worker responses arrive (e.g. a
