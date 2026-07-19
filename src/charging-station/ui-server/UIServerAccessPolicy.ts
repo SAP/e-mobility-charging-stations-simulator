@@ -7,6 +7,7 @@ import {
   isEmpty,
   isLoopback,
   isNotEmptyArray,
+  isNotEmptyString,
   normalizeHost,
   normalizeIPAddress,
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
@@ -320,7 +321,7 @@ const pickForwardedValue = (
 }
 
 const nonEmpty = (value: string | undefined): string | undefined =>
-  value == null || value.trim() === '' ? undefined : value
+  isNotEmptyString(value) ? value : undefined
 
 // RFC 7239 §6: "unknown" and obfuscated node identifiers ("_" + token chars).
 // Optional ":port" suffix is stripped before comparison.
