@@ -133,7 +133,7 @@ export abstract class OCPPRequestService {
         )
         return response
       } catch (error) {
-        this.logRequestHandlerError(chargingStation, this.moduleName, commandName, error)
+        this.logRequestHandlerError(chargingStation, commandName, error)
         throw error
       }
     }
@@ -204,12 +204,11 @@ export abstract class OCPPRequestService {
 
   protected logRequestHandlerError (
     chargingStation: ChargingStation,
-    subclassModuleName: string,
     commandName: RequestCommand,
     error: unknown
   ): void {
     logger.error(
-      `${chargingStation.logPrefix()} ${subclassModuleName}.requestHandler: Error processing '${commandName}' request:`,
+      `${chargingStation.logPrefix()} ${this.moduleName}.requestHandler: Error processing '${commandName}' request:`,
       error
     )
   }
