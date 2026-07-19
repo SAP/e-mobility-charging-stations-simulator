@@ -201,10 +201,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         const { reject, resolve, workerSetElement } = responseWrapper
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
-            ++workerSetElement.numberOfWorkerElements
-            if (this.elementKey != null) {
-              this.elementMap.set(this.elementKey(data), workerSetElement)
-            }
+            this.trackAddedWorkerElement(workerSetElement, data)
             this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
@@ -274,8 +271,9 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     let chosenWorkerSetElement: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (
+        workerSetElement.terminating !== true &&
         workerSetElement.numberOfWorkerElements <
-        (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
+          (this.workerOptions.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER)
       ) {
         chosenWorkerSetElement = workerSetElement
         break
@@ -294,7 +292,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   private getWorkerSetElementByWorker (worker: Worker): undefined | WorkerSetElement {
     let workerSetElementFound: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
-      if (workerSetElement.worker.threadId === worker.threadId) {
+      if (workerSetElement.worker === worker) {
         workerSetElementFound = workerSetElement
         break
       }
@@ -344,6 +342,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   private async terminateWorker (workerSetElement: WorkerSetElement): Promise<void> {
+    workerSetElement.terminating = true
     const worker = workerSetElement.worker
     const waitWorkerExit = new Promise<void>(resolve => {
       worker.once('exit', () => {
@@ -353,5 +352,26 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     worker.unref()
     await worker.terminate()
     await waitWorkerExit
+  }
+
+  // Keep numberOfWorkerElements equal to the number of distinct element keys on
+  // a worker: increment only for a new key, and on a re-add of a key onto a
+  // different worker, release the previous worker first. Without a selector the
+  // count is a plain tally.
+  private trackAddedWorkerElement (workerSetElement: WorkerSetElement, element: R): void {
+    if (this.elementKey == null) {
+      ++workerSetElement.numberOfWorkerElements
+      return
+    }
+    const key = this.elementKey(element)
+    const previousWorkerSetElement = this.elementMap.get(key)
+    if (previousWorkerSetElement === workerSetElement) {
+      return
+    }
+    if (previousWorkerSetElement != null && previousWorkerSetElement.numberOfWorkerElements > 0) {
+      --previousWorkerSetElement.numberOfWorkerElements
+    }
+    ++workerSetElement.numberOfWorkerElements
+    this.elementMap.set(key, workerSetElement)
   }
 }
