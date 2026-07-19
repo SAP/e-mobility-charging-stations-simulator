@@ -11,7 +11,6 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   EvseStatus,
   OCPP20ChargingProfileType,
-  OCPP20ChargingRateUnitEnumType,
   OCPP20RequestStartTransactionRequest,
   OCPP20RequestStartTransactionResponse,
   OCPP20TransactionEventOptions,
@@ -30,6 +29,7 @@ import {
   AttributeEnumType,
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
+  OCPP20ChargingRateUnitEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
@@ -278,7 +278,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as OCPP20ChargingRateUnitEnumType,
+          chargingRateUnit: OCPP20ChargingRateUnitEnumType.A,
           chargingSchedulePeriod: [
             {
               limit: 30,
@@ -319,7 +319,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as OCPP20ChargingRateUnitEnumType,
+          chargingRateUnit: OCPP20ChargingRateUnitEnumType.A,
           chargingSchedulePeriod: [
             {
               limit: 25,
@@ -361,7 +361,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as OCPP20ChargingRateUnitEnumType,
+          chargingRateUnit: OCPP20ChargingRateUnitEnumType.A,
           chargingSchedulePeriod: [
             {
               limit: 32,
@@ -433,7 +433,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as OCPP20ChargingRateUnitEnumType,
+          chargingRateUnit: OCPP20ChargingRateUnitEnumType.A,
           chargingSchedulePeriod: [
             {
               limit: 30,
