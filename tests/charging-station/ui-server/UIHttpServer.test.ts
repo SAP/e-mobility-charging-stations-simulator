@@ -15,7 +15,12 @@ import type { ResponsePayload, UIServerConfiguration, UUIDv4 } from '../../../sr
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
 import { DEFAULT_COMPRESSION_THRESHOLD_BYTES } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
-import { ApplicationProtocol, ProtocolVersion, ResponseStatus } from '../../../src/types/index.js'
+import {
+  ApplicationProtocol,
+  ProcedureName,
+  ProtocolVersion,
+  ResponseStatus,
+} from '../../../src/types/index.js'
 import { Constants, logger } from '../../../src/utils/index.js'
 import {
   createLoggerMocks,
@@ -386,7 +391,7 @@ await describe('UIHttpServer', async () => {
         const res = new MockServerResponse()
 
         broadcastServer.emitRequest(
-          buildProcedureRequest('stopChargingStation', {
+          buildProcedureRequest(ProcedureName.STOP_CHARGING_STATION, {
             hashIds: [TEST_HASH_ID, TEST_HASH_ID_2],
           }),
           res
@@ -428,7 +433,7 @@ await describe('UIHttpServer', async () => {
         const res = new MockServerResponse()
 
         broadcastServer.emitRequest(
-          buildProcedureRequest('stopChargingStation', {
+          buildProcedureRequest(ProcedureName.STOP_CHARGING_STATION, {
             hashIds: [TEST_HASH_ID, TEST_HASH_ID_2],
           }),
           res
@@ -471,7 +476,7 @@ await describe('UIHttpServer', async () => {
 
         broadcastServer.emitRequest(
           buildProcedureRequest(
-            'stopChargingStation',
+            ProcedureName.STOP_CHARGING_STATION,
             { hashIds: [TEST_HASH_ID] },
             { 'accept-encoding': 'gzip' }
           ),
@@ -522,7 +527,7 @@ await describe('UIHttpServer', async () => {
           const res = new MockServerResponse()
 
           broadcastServer.emitRequest(
-            buildProcedureRequest('stopChargingStation', { hashIds: [TEST_HASH_ID] }),
+            buildProcedureRequest(ProcedureName.STOP_CHARGING_STATION, { hashIds: [TEST_HASH_ID] }),
             res
           )
 
@@ -552,7 +557,10 @@ await describe('UIHttpServer', async () => {
       try {
         const res = new MockServerResponse()
 
-        broadcastServer.emitRequest(buildProcedureRequest('listChargingStations', {}), res)
+        broadcastServer.emitRequest(
+          buildProcedureRequest(ProcedureName.LIST_CHARGING_STATIONS, {}),
+          res
+        )
         await awaitFinish(res)
 
         assert.strictEqual(res.statusCode, 200)
@@ -571,7 +579,7 @@ await describe('UIHttpServer', async () => {
         const res = new MockServerResponse()
 
         broadcastServer.emitRequest(
-          buildProcedureRequest('stopChargingStation', { hashIds: [TEST_HASH_ID] }),
+          buildProcedureRequest(ProcedureName.STOP_CHARGING_STATION, { hashIds: [TEST_HASH_ID] }),
           res
         )
 
