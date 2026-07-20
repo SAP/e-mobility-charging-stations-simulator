@@ -226,6 +226,28 @@ export const UIServerMetricsConfigurationSchema = z
   .strict()
 
 /**
+ * UIServerSecurityHeadersConfiguration — opt-in security response headers for
+ * the UI server (issue #1980).
+ *
+ * `strictTransportSecurity` (optional) is the `Strict-Transport-Security`
+ * (HSTS) header value. A non-empty string is emitted verbatim on every
+ * UI-server HTTP response path served over secure transport — HTTP-transport
+ * success responses, denials, WebSocket upgrade rejections, and the `/metrics`
+ * endpoint across the `http`, `ws` and `mcp` transports — but NOT on MCP
+ * JSON-RPC success bodies, which are written by the MCP SDK transport. `false`
+ * (the default) or an empty string omits the header, leaving the default
+ * response behavior unchanged. Emission is gated on secure transport (direct
+ * TLS or a trusted-proxy-forwarded `https`/`wss` protocol) per RFC 6797 §7.2,
+ * which forbids sending HSTS over non-secure transport. Recommended production
+ * value: `'max-age=31536000; includeSubDomains'`.
+ */
+export const UIServerSecurityHeadersConfigurationSchema = z
+  .object({
+    strictTransportSecurity: z.union([z.string(), z.literal(false)]).optional(),
+  })
+  .strict()
+
+/**
  * UIServerConfiguration — UI server configuration section.
  * `options` is structurally typed as `ListenOptions` from node:net and
  * validated by `UIServerListenOptionsSchema` (object guard → `accessPolicy`
@@ -238,6 +260,7 @@ export const UIServerConfigurationSchema = z
     enabled: z.boolean().optional(),
     metrics: UIServerMetricsConfigurationSchema.optional(),
     options: UIServerListenOptionsSchema.optional(),
+    securityHeaders: UIServerSecurityHeadersConfigurationSchema.optional(),
     type: z.enum(ApplicationProtocol).optional(),
     version: z.enum(ApplicationProtocolVersion).optional(),
   })

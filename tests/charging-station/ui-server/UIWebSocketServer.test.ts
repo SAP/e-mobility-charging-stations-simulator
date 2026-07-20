@@ -367,6 +367,84 @@ await describe('UIWebSocketServer', async () => {
     assert.match(response, /Content-Length: 0/)
   })
 
+  await it('should emit the configured HSTS value on a secure (direct TLS) upgrade rejection (issue #1980)', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: ['gateway.example.com'],
+        requireTlsForNonLoopback: true,
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+      securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'not-allowed.example.com',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: true, remoteAddress: '203.0.113.10' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    assert.strictEqual(socket.destroyed, true)
+    const response = socket.writes.join('')
+    assert.match(response, /403 Forbidden/)
+    assert.match(response, /Strict-Transport-Security: max-age=31536000; includeSubDomains/)
+  })
+
+  await it('should omit the HSTS header on a non-secure (plaintext) upgrade rejection (issue #1980)', async () => {
+    const config = createMockUIServerConfiguration({
+      accessPolicy: {
+        allowedHosts: ['gateway.example.com'],
+        requireTlsForNonLoopback: true,
+      },
+      options: {
+        host: 'localhost',
+        port: 0,
+      },
+      securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+    })
+    const server = new TestableUIWebSocketServer(config)
+    const socket = new MockUpgradeSocket()
+
+    try {
+      server.start()
+      await server.waitUntilListening()
+      server.emitUpgrade(
+        createMockIncomingMessage({
+          headers: {
+            connection: 'Upgrade',
+            host: 'gateway.example.com',
+            upgrade: 'websocket',
+          },
+          socket: { encrypted: false, remoteAddress: '203.0.113.10' } as never,
+        }),
+        socket as unknown as Duplex
+      )
+    } finally {
+      server.stop()
+    }
+
+    assert.strictEqual(socket.destroyed, true)
+    const response = socket.writes.join('')
+    assert.match(response, /403 Forbidden/)
+    assert.doesNotMatch(response, /Strict-Transport-Security/)
+  })
+
   await it('should include the Retry-After header on rate-limited upgrades', async () => {
     const config = createMockUIServerConfiguration({
       accessPolicy: {
@@ -656,6 +734,139 @@ await describe('UIWebSocketServer', async () => {
         )
         assert.match(res.body ?? '', /^# HELP simulator_started /m)
         assert.match(res.body ?? '', /^# TYPE simulator_started gauge$/m)
+      } finally {
+        server.stop()
+      }
+    })
+
+    await it('should emit the configured HSTS value on a secure metrics success response (issue #1980)', async t => {
+      const server = new TestableUIWebSocketServer(
+        createWsMetricsConfig({
+          securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+        })
+      )
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      try {
+        server.start()
+        const res = new MockServerResponse()
+        server.emitRequest(
+          buildWsMetricsRequest({
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+          }),
+          res
+        )
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+        assert.strictEqual(
+          res.headers['Strict-Transport-Security'],
+          'max-age=31536000; includeSubDomains'
+        )
+      } finally {
+        server.stop()
+      }
+    })
+
+    await it('should emit the configured HSTS value on a secure HEAD metrics response (issue #1980)', async t => {
+      const server = new TestableUIWebSocketServer(
+        createWsMetricsConfig({
+          securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+        })
+      )
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      try {
+        server.start()
+        const res = new MockServerResponse()
+        server.emitRequest(
+          buildWsMetricsRequest({
+            method: 'HEAD',
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+          }),
+          res
+        )
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+        assert.strictEqual(
+          res.headers['Strict-Transport-Security'],
+          'max-age=31536000; includeSubDomains'
+        )
+      } finally {
+        server.stop()
+      }
+    })
+
+    await it('should omit the HSTS header on a non-secure (plaintext) metrics success response (issue #1980)', async t => {
+      const server = new TestableUIWebSocketServer(
+        createWsMetricsConfig({
+          securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+        })
+      )
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      try {
+        server.start()
+        const res = new MockServerResponse()
+        server.emitRequest(buildWsMetricsRequest(), res)
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 200)
+        assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
+      } finally {
+        server.stop()
+      }
+    })
+
+    await it('should emit the configured HSTS value on a secure metrics 500 response (issue #1980)', async t => {
+      const server = new TestableUIWebSocketServer(
+        createWsMetricsConfig({
+          securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+        })
+      )
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      try {
+        server.start()
+        const registry = Reflect.get(server, 'metricsRegistry') as {
+          metrics: () => Promise<string>
+        }
+        t.mock.method(registry, 'metrics', () => Promise.reject(new Error('scrape failure')))
+        const res = new MockServerResponse()
+        server.emitRequest(
+          buildWsMetricsRequest({
+            socket: { encrypted: true, remoteAddress: '127.0.0.1' } as never,
+          }),
+          res
+        )
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 500)
+        assert.strictEqual(
+          res.headers['Strict-Transport-Security'],
+          'max-age=31536000; includeSubDomains'
+        )
+      } finally {
+        server.stop()
+      }
+    })
+
+    await it('should omit the HSTS header on a non-secure (plaintext) metrics 500 response (issue #1980)', async t => {
+      const server = new TestableUIWebSocketServer(
+        createWsMetricsConfig({
+          securityHeaders: { strictTransportSecurity: 'max-age=31536000; includeSubDomains' },
+        })
+      )
+      enrichBootstrapForMetrics(server)
+      server.mockListen(t)
+      try {
+        server.start()
+        const registry = Reflect.get(server, 'metricsRegistry') as {
+          metrics: () => Promise<string>
+        }
+        t.mock.method(registry, 'metrics', () => Promise.reject(new Error('scrape failure')))
+        const res = new MockServerResponse()
+        server.emitRequest(buildWsMetricsRequest(), res)
+        await awaitFinish(res)
+        assert.strictEqual(res.statusCode, 500)
+        assert.strictEqual(res.headers['Strict-Transport-Security'], undefined)
       } finally {
         server.stop()
       }

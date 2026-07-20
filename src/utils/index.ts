@@ -21,6 +21,7 @@ export {
   UI_SERVER_ACCESS_POLICY_DEFAULTS,
   UIServerConfigurationSchema,
   UIServerMetricsConfigurationSchema,
+  UIServerSecurityHeadersConfigurationSchema,
   WorkerConfigurationSchema,
 } from './ConfigurationSchema.js'
 export {

@@ -104,3 +104,6 @@ words:
   - emerg
   - REMAPPINGS
   - interruptible
+  - HSTS
+  - Hsts
+  - hsts

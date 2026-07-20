@@ -231,6 +231,55 @@ await describe('ConfigurationSchema', async () => {
       assert.ok(result.error.issues.some(i => i.path.join('.').includes('uiServer.accessPolicy')))
     })
 
+    await it('should accept valid uiServer security headers', () => {
+      for (const strictTransportSecurity of ['max-age=31536000; includeSubDomains', false]) {
+        const result = ConfigurationSchema.safeParse(
+          buildMinimalConfiguration({
+            uiServer: {
+              enabled: true,
+              securityHeaders: { strictTransportSecurity },
+              type: 'ws',
+            },
+          })
+        )
+        assert.ok(result.success)
+      }
+    })
+
+    await it('should reject unknown key in uiServer security headers', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            securityHeaders: {
+              unknownSecurityHeadersKey: true,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(i => i.path.join('.').includes('uiServer.securityHeaders'))
+      )
+    })
+
+    await it('should reject a non-string non-false strictTransportSecurity value', () => {
+      const result = ConfigurationSchema.safeParse(
+        buildMinimalConfiguration({
+          uiServer: {
+            securityHeaders: {
+              strictTransportSecurity: true,
+            },
+          },
+        })
+      )
+      assert.ok(!result.success)
+      assert.ok(
+        result.error.issues.some(i =>
+          i.path.join('.').includes('uiServer.securityHeaders.strictTransportSecurity')
+        )
+      )
+    })
+
     await it('should reject misplaced access policy under uiServer options', () => {
       const result = ConfigurationSchema.safeParse(
         buildMinimalConfiguration({

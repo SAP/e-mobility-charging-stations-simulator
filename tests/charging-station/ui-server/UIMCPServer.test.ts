@@ -112,17 +112,19 @@ class TestableUIMCPServer extends UIMCPServer {
   }
 
   public callSendErrorResponse (
+    req: IncomingMessage,
     res: ServerResponse,
     statusCode: StatusCodes,
     headers?: Readonly<Record<string, string>>
   ): void {
     ;(
       Reflect.get(this, 'sendErrorResponse') as (
+        req: IncomingMessage,
         res: ServerResponse,
         statusCode: StatusCodes,
         headers?: Readonly<Record<string, string>>
       ) => void
-    ).call(this, res, statusCode, headers)
+    ).call(this, req, res, statusCode, headers)
   }
 
   public emitRequest (req: IncomingMessage, res: MockServerResponse): void {
@@ -338,6 +340,9 @@ await describe('UIMCPServer', async () => {
       const res = new MockServerResponse()
 
       gatedServer.callSendErrorResponse(
+        createMockIncomingMessage({
+          socket: { encrypted: false, remoteAddress: '127.0.0.1' } as never,
+        }),
         res as unknown as ServerResponse,
         StatusCodes.METHOD_NOT_ALLOWED,
         { Allow: 'GET, POST, DELETE' }

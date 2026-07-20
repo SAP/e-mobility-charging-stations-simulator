@@ -38,6 +38,7 @@ import {
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import {
   createUIServerAccessCache,
+  isRequestEffectivelySecure,
   resolveUIServerAccess,
   type UIServerAccessCache,
   type UIServerAccessDecision,
@@ -592,6 +593,27 @@ export abstract class AbstractUIServer {
     return this.metricsRegistry
   }
 
+  /**
+   * Opt-in `Strict-Transport-Security` (HSTS) response header.
+   *
+   * Emits the configured `securityHeaders.strictTransportSecurity` value only
+   * when it is a non-empty string AND the response travels over secure
+   * transport (`isSecure`); returns an empty object otherwise. Omitting it over
+   * non-secure transport satisfies RFC 6797 §7.2 (an HSTS host must not send the
+   * header over non-secure transport); omitting it when unset or `false` keeps
+   * the default response behavior unchanged (issue #1980).
+   * @param isSecure Whether the response is served over secure transport, as
+   *   resolved by {@link isSecureRequest}.
+   * @returns Header object spreadable into `writeHead` (empty when insecure,
+   *   unset, or `false`).
+   */
+  protected getSecurityHeaders (isSecure: boolean): Record<string, string> {
+    const { strictTransportSecurity } = this.uiServerConfiguration.securityHeaders ?? {}
+    return isSecure && isNotEmptyString(strictTransportSecurity)
+      ? { 'Strict-Transport-Security': strictTransportSecurity }
+      : {}
+  }
+
   protected getUnauthorizedDenial (): {
     headers: Readonly<Record<string, string>>
     reasonPhrase: string
@@ -627,7 +649,7 @@ export abstract class AbstractUIServer {
   protected handleMetricsHttpRequest (req: IncomingMessage, res: ServerResponse): void {
     const registry = this.metricsRegistry
     if (registry === undefined) {
-      this.renderDenial(res, {
+      this.renderDenial(req, res, {
         reasonPhrase: getReasonPhrase(StatusCodes.NOT_FOUND),
         status: StatusCodes.NOT_FOUND,
       })
@@ -639,7 +661,12 @@ export abstract class AbstractUIServer {
         error
       )
       if (!res.headersSent && !res.writableEnded) {
-        res.writeHead(StatusCodes.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' }).end()
+        res
+          .writeHead(StatusCodes.INTERNAL_SERVER_ERROR, {
+            'Content-Type': 'text/plain',
+            ...this.getSecurityHeaders(this.isSecureRequest(req)),
+          })
+          .end()
       }
     })
   }
@@ -657,6 +684,17 @@ export abstract class AbstractUIServer {
     }
   }
 
+  /**
+   * Whether a response to `req` travels over secure transport (direct TLS or a
+   * trusted reverse proxy that forwarded `https`/`wss`), gating HSTS emission
+   * per RFC 6797 §7.2. Reuses the per-request access cache.
+   * @param req Incoming request whose transport security is evaluated.
+   * @returns `true` when the response would be served over secure transport.
+   */
+  protected isSecureRequest (req: IncomingMessage): boolean {
+    return isRequestEffectivelySecure(req, this.uiServerConfiguration, this.accessCache)
+  }
+
   protected notifyClients (): void {
     // No-op by default — subclasses with push capability override this
   }
@@ -668,6 +706,7 @@ export abstract class AbstractUIServer {
   }
 
   protected renderDenial (
+    req: IncomingMessage,
     res: ServerResponse,
     payload: {
       headers?: Readonly<Record<string, string>>
@@ -680,6 +719,7 @@ export abstract class AbstractUIServer {
       .writeHead(payload.status, {
         'Content-Type': 'text/plain',
         ...payload.headers,
+        ...this.getSecurityHeaders(this.isSecureRequest(req)),
         ...this.getConnectionCloseHeader(),
       })
       .end(`${payload.status.toString()} ${payload.reasonPhrase}`)
@@ -696,7 +736,7 @@ export abstract class AbstractUIServer {
    * @param res Server response.
    */
   protected renderNotFoundAndDestroy (req: IncomingMessage, res: ServerResponse): void {
-    this.renderDenial(res, {
+    this.renderDenial(req, res, {
       reasonPhrase: getReasonPhrase(StatusCodes.NOT_FOUND),
       status: StatusCodes.NOT_FOUND,
     })
@@ -785,7 +825,7 @@ export abstract class AbstractUIServer {
       return false
     }
     if (!this.authenticate(req)) {
-      this.renderDenial(res, this.getUnauthorizedDenial())
+      this.renderDenial(req, res, this.getUnauthorizedDenial())
       return true
     }
     this.handleMetricsHttpRequest(req, res)
@@ -1346,6 +1386,7 @@ export abstract class AbstractUIServer {
             .writeHead(StatusCodes.OK, {
               'Content-Length': contentLength,
               'Content-Type': registry.contentType,
+              ...this.getSecurityHeaders(this.isSecureRequest(req)),
             })
             .end(isHead ? undefined : rawBody)
         }

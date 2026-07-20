@@ -517,3 +517,33 @@ const isTrustedProxy = (remoteAddress: string, trustedProxies: ReadonlySet<strin
   }
   return trustedProxies.has(`${normalizedRemoteAddress.family}:${normalizedRemoteAddress.value}`)
 }
+
+/**
+ * Whether a response to `req` is conveyed over secure transport, as required
+ * before emitting `Strict-Transport-Security` (RFC 6797 §7.2 forbids the header
+ * over non-secure transport): direct TLS, or a trusted reverse proxy that
+ * forwarded a secure protocol (`https`/`wss`). The forwarded protocol is honored
+ * only from a trusted peer and only when unambiguous, mirroring the trust rules
+ * of {@link resolveUIServerAccess}; anything else is treated as non-secure.
+ * @param req - Incoming request whose transport security is evaluated.
+ * @param uiServerConfiguration - UI server configuration (trusted proxies).
+ * @param cache - Per-server access cache (reuses the normalized proxy set).
+ * @returns `true` when the response would travel over secure transport.
+ */
+export const isRequestEffectivelySecure = (
+  req: IncomingMessage,
+  uiServerConfiguration: UIServerConfiguration,
+  cache: UIServerAccessCache
+): boolean => {
+  if ((req.socket as { encrypted?: boolean }).encrypted === true) {
+    return true
+  }
+  const trustedProxies = getTrustedProxies(uiServerConfiguration, cache)
+  if (!isTrustedProxy(req.socket.remoteAddress ?? '', trustedProxies)) {
+    return false
+  }
+  const forwardedProtocol = getForwardedProtocol(req, parseSingleForwardedHeader(req))
+  return isSecureForwardedProtocol(
+    forwardedProtocol.kind === 'ok' ? forwardedProtocol.value : undefined
+  )
+}
