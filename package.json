@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.18.0",
-    "pnpm": "11.13.1"
+    "pnpm": "11.15.0"
   },
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@11.15.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -74,9 +74,9 @@
   },
   "dependencies": {
     "@mikro-orm/better-sqlite": "^6.6.14",
-    "@mikro-orm/core": "^6.6.15",
-    "@mikro-orm/mariadb": "^6.6.15",
-    "@mikro-orm/reflection": "^6.6.15",
+    "@mikro-orm/core": "^6.6.16",
+    "@mikro-orm/mariadb": "^6.6.16",
+    "@mikro-orm/reflection": "^6.6.16",
     "@modelcontextprotocol/sdk": "~1.29.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
@@ -105,7 +105,7 @@
     "@commitlint/config-conventional": "^21.2.0",
     "@cspell/eslint-plugin": "^10.0.1",
     "@eslint/js": "^9.39.5",
-    "@mikro-orm/cli": "^6.6.15",
+    "@mikro-orm/cli": "^6.6.16",
     "@types/node": "^24.13.3",
     "@types/semver": "^7.7.1",
     "@types/ws": "^8.18.1",
@@ -114,11 +114,11 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.5",
-    "eslint-plugin-jsdoc": "^63.0.13",
+    "eslint-plugin-jsdoc": "^63.1.0",
     "eslint-plugin-perfectionist": "^5.10.0",
     "eslint-plugin-vue": "^10.9.2",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
+    "lint-staged": "^17.1.0",
     "neostandard": "^0.13.0",
     "prettier": "^3.9.5",
     "rimraf": "^6.1.3",
