@@ -23,6 +23,7 @@ import {
   OCPP16StandardParametersKey,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { TEST_ONE_HOUR_SECONDS } from '../../ChargingStationTestConstants.js'
 import {
   ChargingProfileFixtures,
   createOCPP16IncomingRequestTestContext,
@@ -37,7 +38,7 @@ const attachComposableProfile = (
   profile: OCPP16ChargingProfile
 ): void => {
   profile.chargingSchedule.startSchedule = new Date()
-  profile.chargingSchedule.duration = 3600
+  profile.chargingSchedule.duration = TEST_ONE_HOUR_SECONDS
   const connectorStatus = station.getConnectorStatus(connectorId)
   if (connectorStatus != null) {
     connectorStatus.chargingProfiles = [profile]
@@ -278,14 +279,14 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       )
       const profile = ChargingProfileFixtures.createTxDefaultProfile()
       profile.chargingSchedule.startSchedule = new Date()
-      profile.chargingSchedule.duration = 3600
+      profile.chargingSchedule.duration = TEST_ONE_HOUR_SECONDS
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
         connectorStatus.chargingProfiles = [profile]
       }
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 1,
-        duration: 3600,
+        duration: TEST_ONE_HOUR_SECONDS,
       }
 
       // Act
@@ -308,7 +309,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       )
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 99,
-        duration: 3600,
+        duration: TEST_ONE_HOUR_SECONDS,
       }
 
       // Act
@@ -328,7 +329,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       )
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 0,
-        duration: 3600,
+        duration: TEST_ONE_HOUR_SECONDS,
       }
 
       // Act
@@ -357,7 +358,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       }
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 1,
-        duration: 3600,
+        duration: TEST_ONE_HOUR_SECONDS,
       }
 
       // Act
@@ -373,7 +374,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 1,
-        duration: 3600,
+        duration: TEST_ONE_HOUR_SECONDS,
       }
 
       // Act
@@ -396,7 +397,10 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
         'Core,SmartCharging'
       )
       attachComposableProfile(station, 3, ChargingProfileFixtures.createTxDefaultProfile())
-      const request: OCPP16GetCompositeScheduleRequest = { connectorId: 0, duration: 3600 }
+      const request: OCPP16GetCompositeScheduleRequest = {
+        connectorId: 0,
+        duration: TEST_ONE_HOUR_SECONDS,
+      }
 
       // Act
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
@@ -428,7 +432,10 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
         }
       }
       attachComposableProfile(station, 0, ChargingProfileFixtures.createChargePointMaxProfile())
-      const request: OCPP16GetCompositeScheduleRequest = { connectorId: 0, duration: 3600 }
+      const request: OCPP16GetCompositeScheduleRequest = {
+        connectorId: 0,
+        duration: TEST_ONE_HOUR_SECONDS,
+      }
 
       // Act
       const response = testableService.handleRequestGetCompositeSchedule(station, request)

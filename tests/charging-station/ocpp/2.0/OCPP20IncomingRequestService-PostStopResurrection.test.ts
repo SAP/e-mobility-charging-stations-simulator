@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
+import { GenericStatus, OCPPVersion, ReportBaseEnumType } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   flushMicrotasks,
@@ -171,8 +171,8 @@ await describe('OCPP20IncomingRequestService — post-stop resurrection guard', 
 
       await plumbing.sendNotifyReportRequest(
         station,
-        { reportBase: 'FullInventory', requestId: 1 },
-        { status: 'Accepted' }
+        { reportBase: ReportBaseEnumType.FullInventory, requestId: 1 },
+        { status: GenericStatus.Accepted }
       )
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
@@ -190,8 +190,8 @@ await describe('OCPP20IncomingRequestService — post-stop resurrection guard', 
 
       await plumbing.sendNotifyReportRequest(
         station,
-        { reportBase: 'FullInventory', requestId: 42 },
-        { status: 'Accepted' }
+        { reportBase: ReportBaseEnumType.FullInventory, requestId: 42 },
+        { status: GenericStatus.Accepted }
       )
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)

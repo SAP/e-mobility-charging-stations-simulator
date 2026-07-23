@@ -12,6 +12,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import {
   createUIServerAccessCache,
+  isRequestEffectivelySecure,
   resolveUIServerAccess,
   type UIServerAccessDecision,
   UIServerAccessDenialReason,
@@ -22,6 +23,8 @@ import {
   createGatewayConfigWithoutTrustedProxies,
   createGatewayConfigWithTrustedProxy,
   createMockUIServerConfiguration,
+  GATEWAY_HOST,
+  TRUSTED_PROXY_IP,
 } from './UIServerTestUtils.js'
 
 await describe('UIServerAccessPolicy', async () => {
@@ -1339,6 +1342,126 @@ await describe('UIServerAccessPolicy', async () => {
 
       assert.strictEqual(cacheA.decisions.has(req), true)
       assert.strictEqual(cacheB.decisions.has(req), false)
+    })
+  })
+
+  await describe('isRequestEffectivelySecure', async () => {
+    const isSecure = (req: IncomingMessage, config: UIServerConfiguration): boolean =>
+      isRequestEffectivelySecure(req, config, createUIServerAccessCache())
+
+    await it('should treat a direct TLS socket as secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({ encrypted: true, remoteAddress: '203.0.113.10' }),
+          createAccessPolicyConfiguration()
+        ),
+        true
+      )
+    })
+
+    await it('should treat trusted-proxy forwarded https as secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST, 'x-forwarded-proto': 'https' },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        true
+      )
+    })
+
+    await it('should treat trusted-proxy forwarded wss as secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST, 'x-forwarded-proto': 'wss' },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        true
+      )
+    })
+
+    await it('should treat trusted-proxy forwarded http as non-secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST, 'x-forwarded-proto': 'http' },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        false
+      )
+    })
+
+    await it('should ignore forwarded https from an untrusted peer', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST, 'x-forwarded-proto': 'https' },
+            remoteAddress: '203.0.113.10',
+          }),
+          createGatewayConfigWithoutTrustedProxies()
+        ),
+        false
+      )
+    })
+
+    await it('should treat an ambiguous multi-value forwarded protocol from a trusted proxy as non-secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST, 'x-forwarded-proto': 'https, http' },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        false
+      )
+    })
+
+    await it('should treat conflicting X-Forwarded-Proto and Forwarded protocols from a trusted proxy as non-secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: {
+              forwarded: 'proto=http',
+              host: GATEWAY_HOST,
+              'x-forwarded-proto': 'https',
+            },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        false
+      )
+    })
+
+    await it('should treat plaintext loopback as non-secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({ headers: { host: 'localhost:8080' } }),
+          createAccessPolicyConfiguration()
+        ),
+        false
+      )
+    })
+
+    await it('should treat a trusted proxy without forwarded protocol as non-secure', () => {
+      assert.strictEqual(
+        isSecure(
+          createAccessPolicyRequest({
+            headers: { host: GATEWAY_HOST },
+            remoteAddress: TRUSTED_PROXY_IP,
+          }),
+          createGatewayConfigWithTrustedProxy()
+        ),
+        false
+      )
     })
   })
 })

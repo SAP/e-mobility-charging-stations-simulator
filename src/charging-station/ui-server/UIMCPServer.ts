@@ -129,7 +129,7 @@ export class UIMCPServer extends AbstractUIServer {
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
-        this.renderDenial(res, prologue)
+        this.renderDenial(req, res, prologue)
         return
       }
       if (this.tryServeMetrics(req, res)) {
@@ -142,7 +142,7 @@ export class UIMCPServer extends AbstractUIServer {
       }
 
       if (!this.authenticate(req)) {
-        this.renderDenial(res, this.getUnauthorizedDenial())
+        this.renderDenial(req, res, this.getUnauthorizedDenial())
         return
       }
 
@@ -263,7 +263,7 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
       cleanup()
-      this.sendErrorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR)
+      this.sendErrorResponse(req, res, StatusCodes.INTERNAL_SERVER_ERROR)
       return
     }
 
@@ -275,7 +275,7 @@ export class UIMCPServer extends AbstractUIServer {
         await transport.handleRequest(req, res)
       } else {
         cleanup()
-        this.sendErrorResponse(res, StatusCodes.METHOD_NOT_ALLOWED, {
+        this.sendErrorResponse(req, res, StatusCodes.METHOD_NOT_ALLOWED, {
           Allow: 'GET, POST, DELETE',
         })
       }
@@ -284,6 +284,7 @@ export class UIMCPServer extends AbstractUIServer {
       cleanup()
       const isBadRequest = error instanceof SyntaxError || error instanceof PayloadTooLargeError
       this.sendErrorResponse(
+        req,
         res,
         isBadRequest ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
       )
@@ -459,11 +460,12 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   private sendErrorResponse (
+    req: IncomingMessage,
     res: ServerResponse,
     statusCode: StatusCodes,
     headers?: Readonly<Record<string, string>>
   ): void {
-    this.renderDenial(res, {
+    this.renderDenial(req, res, {
       headers,
       reasonPhrase: getReasonPhrase(statusCode),
       status: statusCode,

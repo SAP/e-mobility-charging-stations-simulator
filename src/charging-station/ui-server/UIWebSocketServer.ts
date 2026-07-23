@@ -203,7 +203,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse): void => {
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
-        this.renderDenial(res, prologue)
+        this.renderDenial(req, res, prologue)
         return
       }
       if (this.tryServeMetrics(req, res)) {
@@ -229,7 +229,8 @@ export class UIWebSocketServer extends AbstractUIServer {
         socket.write(
           buildUpgradeRejectionResponse(
             StatusCodes.BAD_REQUEST,
-            getReasonPhrase(StatusCodes.BAD_REQUEST)
+            getReasonPhrase(StatusCodes.BAD_REQUEST),
+            this.getSecurityHeaders(this.isSecureRequest(req))
           ),
           () => {
             socket.destroy()
@@ -241,7 +242,10 @@ export class UIWebSocketServer extends AbstractUIServer {
       const prologue = this.runRequestPrologue(req)
       if (!prologue.ok) {
         socket.write(
-          buildUpgradeRejectionResponse(prologue.status, prologue.reasonPhrase, prologue.headers),
+          buildUpgradeRejectionResponse(prologue.status, prologue.reasonPhrase, {
+            ...prologue.headers,
+            ...this.getSecurityHeaders(this.isSecureRequest(req)),
+          }),
           () => {
             socket.destroy()
           }
@@ -252,11 +256,10 @@ export class UIWebSocketServer extends AbstractUIServer {
       if (!this.authenticate(req)) {
         const unauthorized = this.getUnauthorizedDenial()
         socket.write(
-          buildUpgradeRejectionResponse(
-            unauthorized.status,
-            unauthorized.reasonPhrase,
-            unauthorized.headers
-          ),
+          buildUpgradeRejectionResponse(unauthorized.status, unauthorized.reasonPhrase, {
+            ...unauthorized.headers,
+            ...this.getSecurityHeaders(this.isSecureRequest(req)),
+          }),
           () => {
             socket.destroy()
           }
