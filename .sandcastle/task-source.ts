@@ -4,23 +4,30 @@ import * as sandcastle from '@ai-hero/sandcastle'
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker'
 import { z } from 'zod'
 
-import type { TaskSpec } from './types.js'
+import type { TaskConfidence, TaskIssueType, TaskSpec } from './types.js'
 
 import {
   AGENT_IDLE_TIMEOUT_S,
-  AGENT_PLANNER_EFFORT,
-  AGENT_PLANNER_MODEL,
+  AGENT_PLANNER_DEFAULT,
   AGENT_TASK_TIMEOUT_MS,
   COMPLETION_SIGNAL,
   DOCKER_MOUNTS,
+  EXEC_MAX_BUFFER_BYTES,
   GIT_TIMEOUT_MS,
   GITHUB_MAX_ISSUES_FETCH,
   GITHUB_MAX_PRS_FETCH,
+  MAX_ACCEPTANCE_CRITERIA_ITEMS,
+  MAX_ACCEPTANCE_CRITERION_CHARS,
+  MAX_ROOT_CAUSE_HYPOTHESIS_CHARS,
   MAX_SLUG_CHARS,
   MAX_TITLE_CHARS,
+  PLANNER_MAX_ITERATIONS,
+  PLANNER_MAX_RETRIES,
   SANDBOX_AUTH_HOOKS,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 import { branchPrefixOf, labelOf, type StrategyEntry } from './strategies/index.js'
+import { TASK_CONFIDENCE_VALUES, TASK_ISSUE_TYPE_VALUES } from './types.js'
 import { agentProvider, execFileAsync, toErrorMessage } from './utils.js'
 
 const RawIssueSchema = z.object({
@@ -77,10 +84,13 @@ export class GithubIssueSource implements TaskSource {
    */
   constructor (config: GithubIssueSourceConfig) {
     if (config.strategies.length === 0) {
-      throw new Error('GithubIssueSource requires at least one strategy.')
+      throw new SandcastleError(
+        'source_no_strategies',
+        'GithubIssueSource requires at least one strategy.'
+      )
     }
     this.dockerImage = config.dockerImage
-    this.maxRetries = config.maxRetries ?? 5
+    this.maxRetries = config.maxRetries ?? PLANNER_MAX_RETRIES
     this.strategies = config.strategies
 
     this.branchPatterns = this.strategies.map(
@@ -122,11 +132,11 @@ export class GithubIssueSource implements TaskSource {
       let plan: RunResult
       try {
         plan = await sandcastle.run({
-          agent: agentProvider(AGENT_PLANNER_MODEL, AGENT_PLANNER_EFFORT),
+          agent: agentProvider(AGENT_PLANNER_DEFAULT.model, AGENT_PLANNER_DEFAULT.effort),
           completionSignal: COMPLETION_SIGNAL,
           hooks: SANDBOX_AUTH_HOOKS,
           idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_S,
-          maxIterations: 5,
+          maxIterations: PLANNER_MAX_ITERATIONS,
           name: 'Planner',
           promptArgs: {
             ISSUES_JSON: JSON.stringify(
@@ -170,13 +180,16 @@ export class GithubIssueSource implements TaskSource {
 
       console.log(`Plan: ${String(tasks.length)} issue(s) to work on:`)
       for (const task of tasks) {
-        console.log(`  #${task.id} [${task.strategyKey}]: ${task.title} → ${task.branch}`)
+        console.log(`  #${task.id} [${task.strategyKey}]: ${task.title} -> ${task.branch}`)
       }
 
       return tasks
     }
 
-    throw new Error('Planner failed to produce a valid plan after all retries.')
+    throw new SandcastleError(
+      'planner_exhausted',
+      'Planner failed to produce a valid plan after all retries.'
+    )
   }
 
   /**
@@ -239,11 +252,12 @@ export class GithubIssueSource implements TaskSource {
           '--label',
           label,
         ],
-        { encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024, timeout: GIT_TIMEOUT_MS }
+        { encoding: 'utf-8', maxBuffer: EXEC_MAX_BUFFER_BYTES, timeout: GIT_TIMEOUT_MS }
       )
       rawIssuesJson = stdout
     } catch (err: unknown) {
-      throw new Error(
+      throw new SandcastleError(
+        'source_fetch_failed',
         `Failed to fetch issues with label '${label}': ${toErrorMessage(err)}. Ensure gh is installed and authenticated.`,
         { cause: err }
       )
@@ -252,7 +266,8 @@ export class GithubIssueSource implements TaskSource {
     try {
       return RawIssuesSchema.parse(JSON.parse(rawIssuesJson))
     } catch (err: unknown) {
-      throw new Error(
+      throw new SandcastleError(
+        'source_parse_failed',
         `Failed to parse issues JSON for label '${label}': ${toErrorMessage(err)}. Unexpected format from gh CLI.`,
         { cause: err }
       )
@@ -273,7 +288,7 @@ export class GithubIssueSource implements TaskSource {
           '--limit',
           String(GITHUB_MAX_PRS_FETCH),
         ],
-        { encoding: 'utf-8', maxBuffer: 8 * 1024 * 1024, timeout: GIT_TIMEOUT_MS }
+        { encoding: 'utf-8', maxBuffer: EXEC_MAX_BUFFER_BYTES, timeout: GIT_TIMEOUT_MS }
       )
       const prs = z.array(z.object({ headRefName: z.string() })).parse(JSON.parse(stdout))
       const issueNumbers = new Set<number>()
@@ -373,14 +388,17 @@ export class GithubIssueSource implements TaskSource {
       spec.confidence = item.confidence
     }
     if (typeof item.rootCauseHypothesis === 'string' && item.rootCauseHypothesis.length > 0) {
-      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(0, 500)
+      spec.rootCauseHypothesis = this.sanitizeForPrompt(item.rootCauseHypothesis).slice(
+        0,
+        MAX_ROOT_CAUSE_HYPOTHESIS_CHARS
+      )
     }
     if (Array.isArray(item.acceptanceCriteria)) {
       const criteria = item.acceptanceCriteria
         .filter((c): c is string => typeof c === 'string' && c.length > 0)
-        .map(c => this.sanitizeForPrompt(c).slice(0, 200))
+        .map(c => this.sanitizeForPrompt(c).slice(0, MAX_ACCEPTANCE_CRITERION_CHARS))
       if (criteria.length > 0) {
-        spec.acceptanceCriteria = criteria.slice(0, 5)
+        spec.acceptanceCriteria = criteria.slice(0, MAX_ACCEPTANCE_CRITERIA_ITEMS)
       }
     }
     return spec
@@ -398,8 +416,8 @@ const SLUG_PATTERN_BODY = '[a-z0-9]+(?:-[a-z0-9]+)*'
 
 const SLUG_PATTERN = new RegExp(`^${SLUG_PATTERN_BODY}$`)
 
-const VALID_CONFIDENCE = new Set(['high', 'low', 'medium'])
-const VALID_ISSUE_TYPES = new Set(['bug-fix', 'feature', 'refactor'])
+const VALID_CONFIDENCE: ReadonlySet<string> = new Set(TASK_CONFIDENCE_VALUES)
+const VALID_ISSUE_TYPES: ReadonlySet<string> = new Set(TASK_ISSUE_TYPE_VALUES)
 
 /**
  * @param value - Value to escape for safe interpolation in a regex.
@@ -413,7 +431,7 @@ function escapeRegex (value: string): string {
  * @param value - Value to check.
  * @returns Whether value is a valid confidence level.
  */
-function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' {
+function isValidConfidence (value: unknown): value is TaskConfidence {
   return typeof value === 'string' && VALID_CONFIDENCE.has(value)
 }
 
@@ -421,7 +439,7 @@ function isValidConfidence (value: unknown): value is 'high' | 'low' | 'medium' 
  * @param value - Value to check.
  * @returns Whether value is a valid issue type.
  */
-function isValidIssueType (value: unknown): value is 'bug-fix' | 'feature' | 'refactor' {
+function isValidIssueType (value: unknown): value is TaskIssueType {
   return typeof value === 'string' && VALID_ISSUE_TYPES.has(value)
 }
 

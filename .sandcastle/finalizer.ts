@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 
 import type { LoopResult, TaskSpec } from './types.js'
 
-import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS } from './constants.js'
+import { GIT_BASE_BRANCH, GIT_PUSH_TIMEOUT_MS, GIT_TIMEOUT_MS, NONCE_BYTES } from './constants.js'
 import { execFileAsync, toErrorMessage } from './utils.js'
 
 /**
@@ -10,24 +10,38 @@ import { execFileAsync, toErrorMessage } from './utils.js'
  * On failure, aborts the rebase cleanly.
  * @param cwd - Working directory (worktree path).
  * @param baseBranch - Target branch for rebase.
+ * @param signal - Optional abort signal forwarded to every git invocation.
  * @returns `true` if rebase succeeded, `false` otherwise.
  */
-export async function attemptRebase (cwd: string, baseBranch = GIT_BASE_BRANCH): Promise<boolean> {
+export async function attemptRebase (
+  cwd: string,
+  baseBranch = GIT_BASE_BRANCH,
+  signal?: AbortSignal
+): Promise<boolean> {
   try {
     await execFileAsync('git', ['fetch', 'origin', baseBranch], {
       cwd,
+      signal,
       timeout: GIT_TIMEOUT_MS,
     })
     await execFileAsync('git', ['rebase', `origin/${baseBranch}`], {
       cwd,
+      signal,
       timeout: GIT_TIMEOUT_MS,
     })
     return true
-  } catch {
+  } catch (err: unknown) {
+    signal?.throwIfAborted()
+    console.debug(`  rebase onto ${baseBranch} failed: ${toErrorMessage(err)}`)
     try {
-      await execFileAsync('git', ['rebase', '--abort'], { cwd })
-    } catch {
-      /* empty */
+      await execFileAsync('git', ['rebase', '--abort'], {
+        cwd,
+        signal,
+        timeout: GIT_TIMEOUT_MS,
+      })
+    } catch (abortErr: unknown) {
+      signal?.throwIfAborted()
+      console.debug(`  rebase --abort cleanup failed: ${toErrorMessage(abortErr)}`)
     }
     return false
   }
@@ -54,13 +68,13 @@ export function buildPrArgs (
   const lastFindings = loopResult.roundHistory.at(-1)?.findings ?? []
   const outstandingNote =
     lastFindings.length > 0
-      ? `\n\n${converged ? 'ℹ️ Known findings (not addressed):' : '⚠️ Outstanding findings:'}\n${lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
+      ? `\n\n${converged ? 'NOTE: Known findings (not addressed):' : 'WARNING: Outstanding findings:'}\n${lastFindings.map(f => `- [${f.severity}] ${f.file}: ${f.title}`).join('\n')}`
       : ''
   const validationNote = !validationPassed
-    ? '\n\n⚠️ Validation did not pass. Manual review required.'
+    ? '\n\nWARNING: Validation did not pass. Manual review required.'
     : ''
   const rebaseNote = !rebaseSucceeded
-    ? `\n\n⚠️ Rebase failed. Branch is not rebased onto ${baseBranch}.`
+    ? `\n\nWARNING: Rebase failed. Branch is not rebased onto ${baseBranch}.`
     : ''
 
   const validationCheck = validationPassed ? '- [x]' : '- [ ]'
@@ -104,38 +118,45 @@ export function buildPrArgs (
  * @param spec - The task specification.
  * @param cwd - Working directory (worktree path).
  * @param rebaseSucceeded - Whether the preceding rebase completed successfully.
+ * @param signal - Optional abort signal forwarded to every git invocation.
  * @returns `true` if the primary push succeeded, `false` otherwise.
  */
 export async function pushBranch (
   spec: TaskSpec,
   cwd: string,
-  rebaseSucceeded: boolean
+  rebaseSucceeded: boolean,
+  signal?: AbortSignal
 ): Promise<boolean> {
   if (rebaseSucceeded) {
     try {
       await execFileAsync('git', ['push', '--force-with-lease', 'origin', 'HEAD'], {
         cwd,
+        signal,
         timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {
+      if (signal?.aborted === true) throw pushErr
       const pushMsg = toErrorMessage(pushErr)
       try {
-        const suffix = crypto.randomBytes(4).toString('hex')
+        const suffix = crypto.randomBytes(NONCE_BYTES).toString('hex')
         await execFileAsync(
           'git',
           ['push', 'origin', `HEAD:refs/heads/rescue/${spec.branch}-${suffix}`],
           {
             cwd,
+            signal,
             timeout: GIT_PUSH_TIMEOUT_MS,
           }
         )
         console.warn(
           `  #${spec.id}: Push failed. Commits preserved at rescue/${spec.branch}-${suffix}`
         )
-      } catch {
+      } catch (rescueErr: unknown) {
+        signal?.throwIfAborted()
+        const rescueMsg = toErrorMessage(rescueErr)
         console.error(
-          `  #${spec.id}: Push failed and rescue failed. Commits will be lost on sandbox disposal: ${pushMsg}`
+          `  #${spec.id}: Push failed (${pushMsg}) and rescue failed (${rescueMsg}). Commits will be lost on sandbox disposal.`
         )
       }
       return false
@@ -144,10 +165,12 @@ export async function pushBranch (
     try {
       await execFileAsync('git', ['push', '-u', 'origin', 'HEAD'], {
         cwd,
+        signal,
         timeout: GIT_PUSH_TIMEOUT_MS,
       })
       return true
     } catch (pushErr: unknown) {
+      if (signal?.aborted === true) throw pushErr
       const pushMsg = toErrorMessage(pushErr)
       console.warn(`  #${spec.id}: git push failed after rebase abort: ${pushMsg}`)
       return false

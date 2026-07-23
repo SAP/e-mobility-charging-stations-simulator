@@ -1,6 +1,11 @@
 import type { TaskSpec } from './types.js'
 
-import { MAX_STDERR_CHARS, VALIDATION_COMMAND, VALIDATION_TIMEOUT_MS } from './constants.js'
+import {
+  EXEC_MAX_BUFFER_BYTES,
+  MAX_STDERR_CHARS,
+  VALIDATION_COMMAND,
+  VALIDATION_TIMEOUT_MS,
+} from './constants.js'
 import { execFileAsync } from './utils.js'
 
 /**
@@ -18,7 +23,7 @@ export async function runValidation (
   try {
     await execFileAsync('sh', ['-c', VALIDATION_COMMAND], {
       cwd,
-      maxBuffer: 8 * 1024 * 1024,
+      maxBuffer: EXEC_MAX_BUFFER_BYTES,
       signal,
       timeout: VALIDATION_TIMEOUT_MS,
     })
@@ -29,7 +34,7 @@ export async function runValidation (
     }
     if (err && typeof err === 'object' && 'killed' in err && (err as { killed: boolean }).killed) {
       const label = spec ? `#${spec.id}` : 'mid-loop'
-      console.warn(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
+      console.error(`  ${label}: Validation timed out after ${String(VALIDATION_TIMEOUT_MS)}ms.`)
     } else if (spec) {
       const stderr = extractStderr(err)
       console.warn(`  #${spec.id}: Validation failed.${stderr ? `\n${stderr}` : ''}`)
@@ -39,7 +44,7 @@ export async function runValidation (
 }
 
 /**
- * Extracts stderr from a caught error, truncated to 500 chars.
+ * Extracts stderr from a caught error, truncated to {@link MAX_STDERR_CHARS} chars.
  * @param err - The caught error value.
  * @returns Stderr string or empty string if unavailable.
  */
