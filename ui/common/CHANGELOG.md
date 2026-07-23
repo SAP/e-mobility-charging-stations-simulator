@@ -2,18 +2,16 @@
 
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.10.1...ui-common@v4.11.0) (2026-07-23)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#2034](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2034)) ([ee3db96](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ee3db961367b32afab340ca3a8706fddca19e3ca))
-* **deps:** update all non-major dependencies ([#2042](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2042)) ([f08aae5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f08aae5a79fcb83a0c1e21f10f25ecaf7467691e))
-
+- **deps:** update all non-major dependencies ([#2034](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2034)) ([ee3db96](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ee3db961367b32afab340ca3a8706fddca19e3ca))
+- **deps:** update all non-major dependencies ([#2042](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2042)) ([f08aae5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f08aae5a79fcb83a0c1e21f10f25ecaf7467691e))
 
 ### ✨ Polish
 
-* audit-driven cleanup — OCPP conformance fixes, physics, harmonization ([#1960](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1960)) ([f8d8e03](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f8d8e03f399f98fdbfec4716c555f259b39ab5ec))
-* code-quality cleanup — utils usage, logic consolidation, export hygiene ([#2036](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2036)) ([2bee489](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2bee4896149f6000ecd27feb118d39a2406b1194))
-* convention alignment — helpers, constants, imports, tests ([#1950](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1950)) ([0b0352f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0b0352f495d0ba2ad4915d3187c3554b1da8f6eb))
+- audit-driven cleanup — OCPP conformance fixes, physics, harmonization ([#1960](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1960)) ([f8d8e03](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f8d8e03f399f98fdbfec4716c555f259b39ab5ec))
+- code-quality cleanup — utils usage, logic consolidation, export hygiene ([#2036](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2036)) ([2bee489](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2bee4896149f6000ecd27feb118d39a2406b1194))
+- convention alignment — helpers, constants, imports, tests ([#1950](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1950)) ([0b0352f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0b0352f495d0ba2ad4915d3187c3554b1da8f6eb))
 
 ## [4.10.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.10.0...ui-common@v4.10.1) (2026-06-29)
 
