@@ -1,5 +1,22 @@
 # Changelog
 
+## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.10.1...web@v4.11.0) (2026-07-23)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1996](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1996)) ([9b1b8e8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9b1b8e851227b8a15da7c50592ba4e7c26ab7747))
+* **deps:** update all non-major dependencies ([#2030](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2030)) ([1945ea3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1945ea3ad1d57170bceba8cfa211292c2e9c6128))
+* **deps:** update all non-major dependencies ([#2034](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2034)) ([ee3db96](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ee3db961367b32afab340ca3a8706fddca19e3ca))
+* **deps:** update all non-major dependencies ([#2042](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2042)) ([f08aae5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f08aae5a79fcb83a0c1e21f10f25ecaf7467691e))
+
+
+### ✨ Polish
+
+* audit-driven cleanup (OCPP 2.0 spec conformance + 5 low-risk refactors) ([#1959](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1959)) ([22cb25f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/22cb25f02648f1efcccdf05db595f33862b4b709))
+* convention alignment — helpers, constants, imports, tests ([#1950](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1950)) ([0b0352f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0b0352f495d0ba2ad4915d3187c3554b1da8f6eb))
+* convention alignment round 2 — canonical defaults, helpers, dead exports, tests ([#1956](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1956)) ([e0a50c5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e0a50c58f62cf7fb0e7d9b41366215e175af616f))
+
 ## [4.10.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.10.0...web@v4.10.1) (2026-06-29)
 
 ### 🐞 Bug Fixes
