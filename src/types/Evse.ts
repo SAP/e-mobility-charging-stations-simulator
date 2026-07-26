@@ -7,6 +7,12 @@ export interface EvseEntry {
   readonly evseStatus: EvseStatus
 }
 
+/**
+ * JSON-wire projection of {@link EvseEntry} carried by `ChargingStationData.evses`;
+ * `evseStatus.connectors` is a serialization-safe `ConnectorEntry[]`, whereas the
+ * in-memory {@link EvseEntry} keeps a `Map`. Mirrors the ui-common `EvseEntry` wire
+ * shape (duplicated because packages share no re-exports).
+ */
 export interface EvseEntryData {
   readonly evseId: number
   readonly evseStatus: EvseStatusData
@@ -18,6 +24,11 @@ export interface EvseStatus {
   MeterValues?: SampledValueTemplate[]
 }
 
+/**
+ * JSON-wire projection of {@link EvseStatus}: `connectors` is a `ConnectorEntry[]`
+ * (a `Map` serializes to `{}`). `MeterValues` is intentionally omitted — the producer
+ * `buildEvseEntries` never emits it and no UI-facing consumer reads it off the wire.
+ */
 export interface EvseStatusData {
   availability: AvailabilityType
   connectors: ConnectorEntry[]
