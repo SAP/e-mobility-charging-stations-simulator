@@ -683,8 +683,8 @@ async def main():
     parser.add_argument(
         "--auth-mode",
         type=str,
-        choices=["normal", "whitelist", "blacklist"],
-        default="normal",
+        choices=[mode.value for mode in AuthMode],
+        default=AuthMode.normal.value,
         help="Authorization mode (default: normal)",
     )
     parser.add_argument(

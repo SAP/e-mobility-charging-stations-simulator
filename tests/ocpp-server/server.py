@@ -450,7 +450,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     # --- Outgoing commands (CSMS → CS) ---
 
     async def _call_and_log(self, request, action: Action, success_status) -> None:
-        """Send an OCPP request and log success or failure."""
+        """Send an OCPP request and log success or failure based on its status."""
         response = await self.call(request, suppress=False)
         if response.status == success_status:
             logger.info("%s successful", action)
@@ -1012,8 +1012,8 @@ async def main():
     parser.add_argument(
         "--auth-mode",
         type=str,
-        choices=["normal", "whitelist", "blacklist", "rate_limit"],
-        default="normal",
+        choices=[mode.value for mode in AuthMode],
+        default=AuthMode.normal.value,
         help="Authorization mode (default: normal)",
     )
     parser.add_argument(

@@ -2085,6 +2085,22 @@ class TestMultiVariableCommands:
         ):
             _parse_variable_specs("NoComponentVariable=30", require_value=True)
 
+    def test_parse_set_variable_specs_skips_empty_entries(self):
+        result = _parse_variable_specs(
+            "OCPPCommCtrlr.HeartbeatInterval=30,,TxCtrlr.EVConnectionTimeOut=60",
+            require_value=True,
+        )
+        assert len(result) == 2
+        assert result[0]["variable"]["name"] == "HeartbeatInterval"
+        assert result[1]["variable"]["name"] == "EVConnectionTimeOut"
+
+    def test_parse_get_variable_specs_invalid_no_dot(self):
+        with pytest.raises(
+            argparse.ArgumentTypeError,
+            match=r"expected 'Component\.Variable'",
+        ):
+            _parse_variable_specs("NoDot", require_value=False)
+
     async def test_send_set_variables_uses_custom_data(self, command_charge_point):
         custom_data = [
             {

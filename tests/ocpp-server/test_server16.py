@@ -572,6 +572,10 @@ class TestAuthorizeHandler:
         response = await cp.on_authorize(id_tag=TEST_TOKEN)
         assert response.id_tag_info["parent_id_tag"] == "ParentTag"
 
+    async def test_parent_id_tag_absent_by_default(self, charge_point):
+        response = await charge_point.on_authorize(id_tag=TEST_TOKEN)
+        assert "parent_id_tag" not in response.id_tag_info
+
 
 class TestStartTransactionHandler:
     """Tests for the StartTransaction incoming handler."""
