@@ -11,6 +11,9 @@ from typing import TypeVar
 
 ActionT = TypeVar("ActionT", bound=StrEnum)
 
+DEFAULT_WHITELIST: tuple[str, ...] = ("valid_token", "test_token", "authorized_user")
+DEFAULT_BLACKLIST: tuple[str, ...] = ("blocked_token", "invalid_user")
+
 
 def check_positive_number(value: str) -> float:
     try:

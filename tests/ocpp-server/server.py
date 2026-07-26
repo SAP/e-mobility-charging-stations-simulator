@@ -54,6 +54,8 @@ from ocpp.v201.enums import (
 from websockets import ConnectionClosed
 
 from _common import (
+    DEFAULT_BLACKLIST,
+    DEFAULT_WHITELIST,
     check_positive_number,
     install_signal_handlers_and_wait,
     negotiate_subprotocol,
@@ -84,8 +86,6 @@ DEFAULT_CUSTOMER_ID = "test_customer_001"
 DEFAULT_RESERVATION_ID = 1
 DEFAULT_RESERVE_ID_TOKEN = "reserved_token"  # noqa: S105
 DEFAULT_RESERVATION_EXPIRY_SECONDS = 3600
-DEFAULT_WHITELIST: tuple[str, ...] = ("valid_token", "test_token", "authorized_user")
-DEFAULT_BLACKLIST: tuple[str, ...] = ("blocked_token", "invalid_user")
 FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
 SHUTDOWN_TIMEOUT_SECONDS = 30.0
@@ -1014,9 +1014,11 @@ async def main():
     parser.add_argument(
         "--auth-mode",
         type=AuthMode,
-        choices=list(AuthMode),
         default=AuthMode.normal,
-        help="Authorization mode (default: normal)",
+        help=(
+            "Authorization mode: normal, whitelist, blacklist, rate_limit"
+            " (default: normal)"
+        ),
     )
     parser.add_argument(
         "--whitelist",
@@ -1118,7 +1120,7 @@ async def main():
         boot_sequence = (RegistrationStatusEnumType.accepted,)
 
     auth_config = AuthConfig(
-        mode=AuthMode(args.auth_mode),
+        mode=args.auth_mode,
         whitelist=tuple(args.whitelist),
         blacklist=tuple(args.blacklist),
         offline=args.offline,
