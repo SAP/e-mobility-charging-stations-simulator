@@ -342,6 +342,9 @@ class TestHandlerCoverage:
             f"Missing incoming handler: {handler_name}"
         )
         assert callable(getattr(ChargePoint, handler_name))
+        assert (
+            getattr(getattr(ChargePoint, handler_name), "_on_action", None) is not None
+        ), f"Handler {handler_name} is not registered with an @on decorator"
 
     @pytest.mark.parametrize("method_name", EXPECTED_OUTGOING_COMMANDS)
     def test_outgoing_command_exists(self, method_name):

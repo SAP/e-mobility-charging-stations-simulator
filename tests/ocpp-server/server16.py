@@ -55,6 +55,8 @@ DEFAULT_RESERVE_CONNECTOR_ID = 1
 DEFAULT_RESERVE_ID_TAG = "reserved_tag"
 DEFAULT_RESERVATION_ID = 1
 DEFAULT_RESERVATION_EXPIRY_SECONDS = 3600
+DEFAULT_WHITELIST: tuple[str, ...] = ("valid_token", "test_token", "authorized_user")
+DEFAULT_BLACKLIST: tuple[str, ...] = ("blocked_token", "invalid_user")
 FALLBACK_TRANSACTION_ID = 1
 MAX_TRANSACTION_ID = 2**31 - 1
 SHUTDOWN_TIMEOUT_SECONDS = 30.0
@@ -192,8 +194,8 @@ class ChargePoint(ocpp.v16.ChargePoint):
         if auth_config is None:
             self._auth_config = AuthConfig(
                 mode=AuthMode.normal,
-                whitelist=("valid_token", "test_token", "authorized_user"),
-                blacklist=("blocked_token", "invalid_user"),
+                whitelist=DEFAULT_WHITELIST,
+                blacklist=DEFAULT_BLACKLIST,
                 offline=False,
                 default_status=AuthorizationStatus.accepted,
             )
@@ -682,23 +684,23 @@ async def main():
     # Auth configuration
     parser.add_argument(
         "--auth-mode",
-        type=str,
-        choices=[mode.value for mode in AuthMode],
-        default=AuthMode.normal.value,
+        type=AuthMode,
+        choices=list(AuthMode),
+        default=AuthMode.normal,
         help="Authorization mode (default: normal)",
     )
     parser.add_argument(
         "--whitelist",
         type=str,
         nargs="+",
-        default=["valid_token", "test_token", "authorized_user"],
+        default=list(DEFAULT_WHITELIST),
         help="Whitelist of authorized id tags (space-separated)",
     )
     parser.add_argument(
         "--blacklist",
         type=str,
         nargs="+",
-        default=["blocked_token", "invalid_user"],
+        default=list(DEFAULT_BLACKLIST),
         help="Blacklist of blocked id tags (space-separated)",
     )
     parser.add_argument(
