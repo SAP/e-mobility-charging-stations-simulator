@@ -23,7 +23,7 @@ server = "poetry run python server.py"
 server16 = "poetry run python server16.py"
 test = "poetry run pytest -v"
 test_coverage = "poetry run pytest -v --cov --cov-report=term-missing"
-typecheck = "poetry run mypy server.py server16.py timer.py test_server.py test_server16.py test_timer.py"
+typecheck = "poetry run mypy server.py server16.py timer.py _common.py test_server.py test_server16.py test_timer.py"
 format = "ruff check --fix . && ruff format ."
 lint = "ruff check --diff . && ruff format --check --diff ."
 
@@ -50,12 +50,12 @@ module = ["ocpp.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test_server", "test_timer"]
+module = ["test_server", "test_server16", "test_timer"]
 disallow_untyped_defs = false
 
 [tool.coverage.run]
 branch = true
-source = ["server", "server16", "timer"]
+source = ["server", "server16", "timer", "_common"]
 
 [tool.coverage.report]
 show_missing = true

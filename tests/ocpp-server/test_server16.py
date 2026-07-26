@@ -164,7 +164,9 @@ def main_mocks():
 
 
 @contextlib.contextmanager
-def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
+def _patch_main(
+    mock_loop, mock_server, mock_event, extra_patches=None, **args_overrides
+):
     args = argparse.Namespace(
         command=None,
         commands=None,
@@ -187,6 +189,8 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         offline=False,
         auth_parent_id_tag=None,
     )
+    for key, value in args_overrides.items():
+        setattr(args, key, value)
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
     mock_serve_cm.__aexit__ = AsyncMock(return_value=False)
@@ -348,6 +352,18 @@ class TestChargePointDefaultConfig:
         assert TEST_VALID_TOKEN in charge_point._auth_config.whitelist
         assert TEST_BLOCKED_TOKEN in charge_point._auth_config.blacklist
 
+    def test_custom_auth_config(self, mock_connection):
+        config = AuthConfig(
+            mode=AuthMode.whitelist,
+            whitelist=("token1",),
+            blacklist=(),
+            offline=False,
+            default_status=AuthorizationStatus.accepted,
+        )
+        cp = ChargePoint(mock_connection, auth_config=config)
+        assert cp._auth_config.mode == AuthMode.whitelist
+        assert cp._auth_config.whitelist == ("token1",)
+
     def test_command_timer_initially_none(self, charge_point):
         assert charge_point._command_timer is None
 
@@ -387,6 +403,14 @@ class TestResolveAuthStatus:
 
     def test_blacklist_mode_accepts_valid_token(self, blacklist_charge_point):
         status = blacklist_charge_point._resolve_auth_status("good_token")
+        assert status == AuthorizationStatus.accepted
+
+    def test_whitelist_blocks_empty_token(self, whitelist_charge_point):
+        status = whitelist_charge_point._resolve_auth_status("")
+        assert status == AuthorizationStatus.blocked
+
+    def test_blacklist_accepts_empty_token(self, blacklist_charge_point):
+        status = blacklist_charge_point._resolve_auth_status("")
         assert status == AuthorizationStatus.accepted
 
 
@@ -636,6 +660,27 @@ class TestNotificationHandlers:
         # fresh empty result — a regression adding stray fields would fail this).
         assert isinstance(response, ocpp.v16.call_result.MeterValues)
         assert response == ocpp.v16.call_result.MeterValues()
+
+    async def test_meter_values_with_signed_meter_value(self, charge_point, caplog):
+        caplog.set_level(logging.INFO)
+        meter_value = [
+            {
+                "timestamp": TEST_TIMESTAMP,
+                "sampled_value": [
+                    {
+                        "value": "signed_blob",
+                        "format": ValueFormat.signed_data.value,
+                        "measurand": "Energy.Active.Import.Register",
+                        "context": "Sample.Periodic",
+                    }
+                ],
+            }
+        ]
+        response = await charge_point.on_meter_values(
+            connector_id=TEST_CONNECTOR_ID, meter_value=meter_value
+        )
+        assert isinstance(response, ocpp.v16.call_result.MeterValues)
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
 
     async def test_data_transfer(self, charge_point):
         response = await charge_point.on_data_transfer(vendor_id=TEST_VENDOR_ID)
@@ -1164,6 +1209,32 @@ class TestMainGracefulShutdown:
             for r in caplog.records
         )
 
+    async def test_windows_handler_schedules_via_call_soon_threadsafe(self, main_mocks):
+        mock_loop, mock_server, mock_event, _ = main_mocks
+        mock_loop.add_signal_handler = MagicMock(side_effect=NotImplementedError)
+        mock_loop.call_soon_threadsafe = MagicMock()
+        mock_event.wait = AsyncMock()
+
+        captured_handlers: dict[int, Any] = {}
+
+        def _capture_signal(sig: int, handler: Any) -> None:
+            captured_handlers[sig] = handler
+
+        with _patch_main(
+            mock_loop,
+            mock_server,
+            mock_event,
+            extra_patches=[
+                patch("server16.signal.signal", side_effect=_capture_signal)
+            ],
+        ):
+            await main()
+
+        sigint_handler = captured_handlers[signal.SIGINT]
+        assert callable(sigint_handler)
+        sigint_handler(signal.SIGINT.value, None)
+        mock_loop.call_soon_threadsafe.assert_called_once()
+
     async def test_windows_fallback_registers_signal_handlers(self, main_mocks):
         mock_loop, mock_server, mock_event, _ = main_mocks
         mock_loop.add_signal_handler = MagicMock(side_effect=NotImplementedError)
@@ -1192,42 +1263,27 @@ class TestMainGracefulShutdown:
 
         mock_event.wait = AsyncMock(side_effect=_fire_sigint)
 
-        args = argparse.Namespace(
-            command=None,
-            commands=None,
-            delay=None,
-            period=None,
-            host="127.0.0.1",
-            port=9000,
-            connector_id=1,
-            boot_status=None,
-            boot_status_sequence="Pending,Accepted",
-            trigger_message=MessageTrigger.status_notification,
-            reset_type=ResetType.hard,
-            availability_type=AvailabilityType.operative,
-            reserve_connector_id=1,
-            reserve_id_tag=DEFAULT_RESERVE_ID_TAG,
-            reservation_id=1,
-            auth_mode="normal",
-            whitelist=["valid_token"],
-            blacklist=["blocked_token"],
-            offline=False,
-            auth_parent_id_tag=None,
-        )
-        mock_serve_cm = AsyncMock()
-        mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
-        mock_serve_cm.__aexit__ = AsyncMock(return_value=False)
+        captured: dict[str, ServerConfig] = {}
+        real_server_config = ServerConfig
 
-        with (
-            patch(
-                "server16.argparse.ArgumentParser.parse_known_args",
-                return_value=(MagicMock(command=None), []),
-            ),
-            patch("server16.argparse.ArgumentParser.parse_args", return_value=args),
-            patch("server16.websockets.serve", return_value=mock_serve_cm),
-            patch("server16.asyncio.get_running_loop", return_value=mock_loop),
-            patch("server16.asyncio.Event", return_value=mock_event),
+        def _capture_server_config(*args, **kwargs):
+            config = real_server_config(*args, **kwargs)
+            captured["config"] = config
+            return config
+
+        with _patch_main(
+            mock_loop,
+            mock_server,
+            mock_event,
+            extra_patches=[
+                patch("server16.ServerConfig", side_effect=_capture_server_config)
+            ],
+            boot_status_sequence="Pending,Accepted",
         ):
             await main()
 
         mock_server.close.assert_called_once()
+        assert captured["config"].boot_sequence == (
+            RegistrationStatus.pending,
+            RegistrationStatus.accepted,
+        )

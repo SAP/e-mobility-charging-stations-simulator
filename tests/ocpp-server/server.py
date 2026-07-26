@@ -55,6 +55,7 @@ from ocpp.v201.enums import (
 )
 from websockets import ConnectionClosed
 
+from _common import check_positive_number
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -114,7 +115,6 @@ class AuthMode(StrEnum):
     whitelist = "whitelist"
     blacklist = "blacklist"
     rate_limit = "rate_limit"
-    offline = "offline"
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,10 @@ class ServerConfig:
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
-    # Shared mutable counter so boot_sequence advances across reconnections
+    # Shared mutable counter so boot_sequence advances across reconnections.
+    # NOTE: on_connect passes this same list to every ChargePoint, so the boot
+    # index is shared across ALL stations on this server, not per-station: the
+    # Nth BootNotification server-wide gets the Nth boot_sequence status.
     boot_index: list[int] = field(default_factory=lambda: [0])
     commands: list[tuple[Action, float]] | None = None
     trigger_message_type: MessageTriggerEnumType = (
@@ -449,7 +452,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         if response.status == success_status:
             logger.info("%s successful", action)
         else:
-            logger.info("%s failed", action)
+            logger.info("%s failed: %s", action, response.status)
 
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
@@ -868,22 +871,10 @@ async def on_connect(
         cp.handle_connection_closed()
 
 
-def check_positive_number(value):
-    try:
-        value = float(value)
-    except ValueError:
-        raise argparse.ArgumentTypeError("must be a number") from None
-    if not math.isfinite(value):
-        raise argparse.ArgumentTypeError("must be a finite number")
-    if value <= 0:
-        raise argparse.ArgumentTypeError("must be a positive number")
-    return value
-
-
 def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
     result: list[tuple[Action, float]] = []
-    for entry in commands_str.split(","):
-        entry = entry.strip()
+    for raw_entry in commands_str.split(","):
+        entry = raw_entry.strip()
         if not entry:
             continue
         if ":" not in entry:
@@ -942,7 +933,7 @@ def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[d
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="OCPP2 Server")
+    parser = argparse.ArgumentParser(description="OCPP 2.0.1 Server")
     command_group = parser.add_mutually_exclusive_group()
     command_group.add_argument("-c", "--command", type=Action, help="command name")
     command_group.add_argument(
@@ -1028,7 +1019,7 @@ async def main():
         help="ChangeAvailability status: Operative, Inoperative (default: Operative)",
     )
     parser.add_argument(
-        "--reserve-id",
+        "--reservation-id",
         type=int,
         default=DEFAULT_RESERVATION_ID,
         help=(
@@ -1187,7 +1178,7 @@ async def main():
         set_variables_data=parsed_set_variables,
         get_variables_data=parsed_get_variables,
         local_list_tokens=args.local_list_tokens,
-        reservation_id=args.reserve_id,
+        reservation_id=args.reservation_id,
         reserve_id_token=args.reserve_id_token,
         reserve_evse_id=args.reserve_evse_id,
     )
@@ -1222,6 +1213,7 @@ async def main():
                 shutdown_event.set()
             else:
                 logger.warning("Received %s again, forcing exit", sig.name)
+                # Unix convention: fatal-signal exit status is 128 + signal number.
                 sys.exit(128 + sig.value)
 
         for sig in (signal.SIGINT, signal.SIGTERM):

@@ -223,7 +223,7 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         set_variables=None,
         get_variables=None,
         local_list_tokens=None,
-        reserve_id=DEFAULT_RESERVATION_ID,
+        reservation_id=DEFAULT_RESERVATION_ID,
         reserve_id_token=DEFAULT_RESERVE_ID_TOKEN,
         reserve_evse_id=DEFAULT_EVSE_ID,
     )
