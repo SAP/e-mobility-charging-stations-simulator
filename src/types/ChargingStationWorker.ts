@@ -8,7 +8,7 @@ import type {
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js'
 import type { ConnectorEntry } from './ConnectorStatus.js'
-import type { EvseEntry } from './Evse.js'
+import type { EvseEntryData } from './Evse.js'
 import type { JsonObject } from './JsonType.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
@@ -34,7 +34,7 @@ export interface ChargingStationData extends WorkerData {
   automaticTransactionGenerator?: ATGConfiguration
   bootNotificationResponse?: BootNotificationResponse
   connectors: ConnectorEntry[]
-  evses: EvseEntry[]
+  evses: EvseEntryData[]
   ocppConfiguration: ChargingStationOcppConfiguration
   started: boolean
   stationInfo: ChargingStationInfo

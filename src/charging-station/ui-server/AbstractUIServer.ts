@@ -1539,7 +1539,7 @@ const addPerStationStatusInfo = (
 const countConnectors = (data: ChargingStationData): number =>
   isNotEmptyArray(data.connectors)
     ? data.connectors.length
-    : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.size, 0)
+    : data.evses.reduce((n, evse) => n + evse.evseStatus.connectors.length, 0)
 
 /**
  * Iterate connectors under the same OCPP 1.6 vs OCPP 2.0.x source split as
@@ -1557,8 +1557,8 @@ const iterateConnectors = function * (data: ChargingStationData): Generator<Conn
     return
   }
   for (const evse of data.evses) {
-    for (const [connectorId, connectorStatus] of evse.evseStatus.connectors) {
-      yield { connectorId, connectorStatus, evseId: evse.evseId }
+    for (const entry of evse.evseStatus.connectors) {
+      yield entry
     }
   }
 }

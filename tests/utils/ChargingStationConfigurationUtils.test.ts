@@ -9,7 +9,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
-import type { ConnectorEntry, ConnectorStatus, EvseStatus } from '../../src/types/index.js'
+import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 
 import { AvailabilityType } from '../../src/types/index.js'
 import {
@@ -512,7 +512,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
   })
 
   await describe('buildEvseEntries', async () => {
-    await it('should return entries with evseId, evseStatus containing availability and connectors Map', () => {
+    await it('should return entries with evseId, evseStatus containing availability and connectors array', () => {
       const { station } = createMockChargingStation({
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -545,9 +545,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result.length, 2)
       assert.strictEqual(result[0].evseId, 0)
       assert.strictEqual(result[0].evseStatus.availability, AvailabilityType.Operative)
-      assert.strictEqual((result[0].evseStatus.connectors as unknown as ConnectorEntry[]).length, 0)
+      assert.strictEqual(result[0].evseStatus.connectors.length, 0)
       assert.strictEqual(result[1].evseId, 1)
-      const connectors1 = result[1].evseStatus.connectors as unknown as ConnectorEntry[]
+      const connectors1 = result[1].evseStatus.connectors
       assert.strictEqual(connectors1.length, 1)
       assert.strictEqual(connectors1[0].connectorId, 1)
       assert.ok(!('transactionEndedMeterValues' in connectors1[0].connectorStatus))
@@ -600,7 +600,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result.length, 2)
       assert.strictEqual(result[0].evseId, 0)
       assert.strictEqual(result[1].evseId, 3)
-      const connectors3 = result[1].evseStatus.connectors as unknown as ConnectorEntry[]
+      const connectors3 = result[1].evseStatus.connectors
       assert.strictEqual(connectors3.length, 2)
       assert.ok(connectors3.some(c => c.connectorId === 2))
       assert.ok(connectors3.some(c => c.connectorId === 5))
