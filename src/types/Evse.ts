@@ -30,8 +30,8 @@ export interface EvseStatus {
  * `buildEvseEntries` never emits it and no UI-facing consumer reads it off the wire.
  */
 export interface EvseStatusData {
-  availability: AvailabilityType
-  connectors: ConnectorEntry[]
+  readonly availability: AvailabilityType
+  readonly connectors: readonly ConnectorEntry[]
 }
 
 export interface EvseTemplate {
