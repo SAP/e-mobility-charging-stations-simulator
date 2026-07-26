@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import logging
 import signal
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -574,7 +574,13 @@ class TestHeartbeatHandler:
     async def test_returns_current_time(self, charge_point):
         response = await charge_point.on_heartbeat()
         assert isinstance(response.current_time, str)
-        assert datetime.fromisoformat(response.current_time).tzinfo is not None
+        # Real contract: current_time must be a parseable ISO-8601 timestamp (UTC),
+        # not merely a string containing "T". datetime.fromisoformat raises on garbage.
+        parsed = datetime.fromisoformat(response.current_time)
+        assert parsed.tzinfo is not None
+        # emitted "now" — within a generous window of the assertion time
+        delta = abs((datetime.now(timezone.utc) - parsed).total_seconds())
+        assert delta < 60
 
 
 class TestStatusNotificationHandler:
@@ -1615,6 +1621,7 @@ class TestOnConnect:
 
         await on_connect(mock_ws, config=config)
         mock_ws.close.assert_called_once()
+        assert len(config.charge_points) == 0
 
     async def test_protocol_mismatch_closes_connection(self):
         mock_ws = MagicMock()
@@ -1626,6 +1633,7 @@ class TestOnConnect:
 
         await on_connect(mock_ws, config=config)
         mock_ws.close.assert_called_once()
+        assert len(config.charge_points) == 0
 
     async def test_successful_connection_creates_charge_point(self, mock_valid_ws):
         config = self._make_config()

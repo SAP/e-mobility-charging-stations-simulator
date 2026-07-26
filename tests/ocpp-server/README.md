@@ -208,7 +208,7 @@ An OCPP 1.6 mock CSMS. Runs independently of the 2.0.1 server; both share the sa
   - `Rejected` — Station rejected, must retry
 - `--boot-status-sequence <SEQ>`: Comma-separated status sequence (e.g., `Pending,Pending,Accepted`). Returns the next status on each BootNotification, stays on the last value once exhausted.
 
-`--boot-status` and `--boot-status-sequence` are mutually exclusive.
+`--boot-status` and `--boot-status-sequence` are mutually exclusive. `--boot-status X` is shorthand for `--boot-status-sequence X`.
 
 ```shell
 poetry run python server16.py --boot-status Rejected
