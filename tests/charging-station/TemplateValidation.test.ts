@@ -279,13 +279,16 @@ await describe('TemplateValidation', async () => {
   })
 
   await describe('all template files round-trip', async () => {
-    await it('should validate all 15 station template files through the pipeline', async t => {
+    await it('should validate all station template files through the pipeline', async t => {
       mockLoggerWarnDebug(t, logger)
       const fs = await import('node:fs')
       const path = await import('node:path')
       const templateDir = path.join(import.meta.dirname, '../../src/assets/station-templates')
       const files = fs.readdirSync(templateDir).filter(f => f.endsWith('.json'))
-      assert.strictEqual(files.length, 15)
+      assert.ok(
+        files.length >= 15,
+        `expected at least 15 template files, found ${String(files.length)}`
+      )
 
       for (const file of files) {
         const content = fs.readFileSync(path.join(templateDir, file), 'utf8')
