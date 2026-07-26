@@ -3,7 +3,6 @@
 import argparse
 import asyncio
 import logging
-import signal
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -54,7 +53,12 @@ from ocpp.v201.enums import (
 )
 from websockets import ConnectionClosed
 
-from _common import check_positive_number, parse_commands
+from _common import (
+    check_positive_number,
+    install_signal_handlers_and_wait,
+    negotiate_subprotocol,
+    parse_commands,
+)
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -810,7 +814,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             await asyncio.sleep(delay)
             await self._send_command(command_name)
 
-    def handle_connection_closed(self):
+    def handle_connection_closed(self) -> None:
         logger.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
@@ -825,22 +829,8 @@ async def on_connect(
     config: ServerConfig,
 ):
     """Handle new WebSocket connections from charge points."""
-    try:
-        requested_protocols = websocket.request.headers["Sec-WebSocket-Protocol"]
-    except KeyError:
-        logger.info("Client hasn't requested any Subprotocol. Closing Connection")
-        return await websocket.close()
-
-    if websocket.subprotocol:
-        logger.info("Protocols Matched: %s", websocket.subprotocol)
-    else:
-        logger.warning(
-            "Protocols Mismatched | Expected Subprotocols: %s,"
-            " but client supports %s | Closing connection",
-            websocket.available_subprotocols,
-            requested_protocols,
-        )
-        return await websocket.close()
+    if not await negotiate_subprotocol(websocket, logger):
+        return
 
     charge_points: set[ChargePoint] = config.charge_points
     cp = ChargePoint(
@@ -1120,8 +1110,6 @@ async def main():
                 )
             boot_sequence_items.append(status)
         boot_sequence = tuple(boot_sequence_items)
-        if not boot_sequence:
-            parser.error("--boot-status-sequence must contain at least one status")
     elif args.boot_status is not None:
         boot_sequence = (args.boot_status,)
     else:
@@ -1165,7 +1153,6 @@ async def main():
     )
 
     loop = asyncio.get_running_loop()
-    shutdown_count = 0
     shutdown_event = asyncio.Event()
 
     async with websockets.serve(
@@ -1178,46 +1165,9 @@ async def main():
         subprotocols=SUBPROTOCOLS,
     ) as server:
         logger.info("WebSocket Server Started on %s:%d", args.host, args.port)
-
-        def _on_signal(sig: signal.Signals) -> None:
-            nonlocal shutdown_count
-            shutdown_count += 1
-            if shutdown_count == 1:
-                logger.info("Received %s, initiating graceful shutdown...", sig.name)
-                server.close()
-                shutdown_event.set()
-            else:
-                logger.warning("Received %s again, forcing exit", sig.name)
-                # Unix convention: fatal-signal exit status is 128 + signal number.
-                sys.exit(128 + sig.value)
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                loop.add_signal_handler(sig, _on_signal, sig)
-            except NotImplementedError:
-                # Windows: ProactorEventLoop doesn't support add_signal_handler.
-                # signal.signal() fires outside the event loop, so schedule
-                # _on_signal into the loop via call_soon_threadsafe.
-                def _signal_handler(
-                    _signum: int,
-                    _frame: object,
-                    s: signal.Signals = sig,
-                ) -> None:
-                    loop.call_soon_threadsafe(_on_signal, s)
-
-                signal.signal(sig, _signal_handler)
-
-        await shutdown_event.wait()
-
-        try:
-            async with asyncio.timeout(SHUTDOWN_TIMEOUT_SECONDS):
-                await server.wait_closed()
-        except TimeoutError:
-            logger.warning(
-                "Shutdown timed out after %.0fs"
-                " — connections may not have closed cleanly",
-                SHUTDOWN_TIMEOUT_SECONDS,
-            )
+        await install_signal_handlers_and_wait(
+            loop, server, shutdown_event, SHUTDOWN_TIMEOUT_SECONDS, logger
+        )
 
     logger.info("Server shutdown complete")
 

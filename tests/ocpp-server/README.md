@@ -114,7 +114,7 @@ poetry run python server.py --commands "RequestStartTransaction:5,RequestStopTra
 These flags customize the payload of specific commands:
 
 - `--trigger-message <TYPE>`: TriggerMessage requested message type (default: `StatusNotification`)
-  - `StatusNotification`, `BootNotification`, `Heartbeat`, `MeterValues`, `FirmwareStatusNotification`, `LogStatusNotification`, `SignCertificate`
+  - `StatusNotification`, `BootNotification`, `Heartbeat`, `MeterValues`, `FirmwareStatusNotification`, `LogStatusNotification`, `PublishFirmwareStatusNotification`, `TransactionEvent`, `SignChargingStationCertificate`, `SignV2GCertificate`, `SignCombinedCertificate`
 - `--reset-type <TYPE>`: Reset type (default: `Immediate`)
   - `Immediate` — Reset now
   - `OnIdle` — Reset when no transaction is active

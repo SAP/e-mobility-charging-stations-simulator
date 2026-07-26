@@ -299,6 +299,14 @@ class TestCommandSequencing:
         with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
             _parse_commands("Reset:nan")
 
+    def test_parse_commands_non_numeric_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="must be a number"):
+            _parse_commands("Reset:abc")
+
+    def test_parse_commands_skips_empty_entries(self):
+        result = _parse_commands("Reset:5,,ClearCache:10")
+        assert result == [(Action.reset, 5.0), (Action.clear_cache, 10.0)]
+
 
 class TestHandlerCoverage:
     """Tests verifying all expected OCPP 1.6 handlers and commands are implemented."""
@@ -954,21 +962,33 @@ class TestOutgoingCommands:
 class TestSendCommandErrorHandling:
     """Tests for error handling in the command dispatch layer."""
 
-    async def test_timeout_is_caught(self, charge_point):
+    async def test_timeout_is_caught(self, charge_point, caplog):
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point, "_send_reset", side_effect=TimeoutError("timed out")
         ):
             await charge_point._send_command(command_name=Action.reset)
+        assert any(
+            r.levelno == logging.ERROR and "timeout waiting for" in r.message.lower()
+            for r in caplog.records
+        )
 
-    async def test_ocpp_error_is_caught(self, charge_point):
+    async def test_ocpp_error_is_caught(self, charge_point, caplog):
         from ocpp.exceptions import InternalError as OCPPInternalError
 
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point,
             "_send_reset",
             side_effect=OCPPInternalError(description="test error"),
         ):
             await charge_point._send_command(command_name=Action.reset)
+        assert any(
+            r.levelno == logging.ERROR
+            and "ocpp error sending" in r.message.lower()
+            and "test error" in r.message
+            for r in caplog.records
+        )
 
     async def test_connection_closed_is_caught(self, charge_point):
         from websockets.exceptions import ConnectionClosedOK
@@ -987,11 +1007,17 @@ class TestSendCommandErrorHandling:
             await charge_point._send_command(command_name=Action.reset)
             charge_point.handle_connection_closed.assert_called_once()
 
-    async def test_unexpected_error_is_caught(self, charge_point):
+    async def test_unexpected_error_is_caught(self, charge_point, caplog):
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point, "_send_reset", side_effect=RuntimeError("boom")
         ):
             await charge_point._send_command(command_name=Action.reset)
+        assert any(
+            r.levelno == logging.ERROR
+            and "unexpected error sending" in r.message.lower()
+            for r in caplog.records
+        )
 
     async def test_unsupported_command_logs_warning(self, charge_point, caplog):
         caplog.set_level(logging.WARNING)
@@ -1225,9 +1251,7 @@ class TestMainGracefulShutdown:
             mock_loop,
             mock_server,
             mock_event,
-            extra_patches=[
-                patch("server16.signal.signal", side_effect=_capture_signal)
-            ],
+            extra_patches=[patch("_common.signal.signal", side_effect=_capture_signal)],
         ):
             await main()
 
@@ -1247,7 +1271,7 @@ class TestMainGracefulShutdown:
             mock_loop,
             mock_server,
             mock_event,
-            extra_patches=[patch("server16.signal.signal", mock_signal_fn)],
+            extra_patches=[patch("_common.signal.signal", mock_signal_fn)],
         ):
             await main()
 

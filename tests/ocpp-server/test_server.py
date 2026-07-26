@@ -60,6 +60,7 @@ from server import (
     AuthMode,
     ChargePoint,
     ServerConfig,
+    _log_signed_meter_values,
     _parse_commands,
     _parse_variable_specs,
     _random_request_id,
@@ -1052,24 +1053,88 @@ class TestNotificationHandlers:
         assert response == ocpp.v201.call_result.NotifyCustomerInformation()
 
 
+class TestLogSignedMeterValues:
+    """Tests for the _log_signed_meter_values helper (OCPP 2.0.1 semantics)."""
+
+    def test_logs_signed_data(self, caplog):
+        caplog.set_level(logging.INFO)
+        signed_mv = {
+            "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
+            "signing_method": "ECDSA-secp256r1-SHA256",
+            "encoding_method": "OCMF",
+            "public_key": "b2NhOmJhc2UxNjphc24xOmZha2VrZXk=",
+        }
+        meter_value = [
+            {
+                "timestamp": TEST_TIMESTAMP,
+                "sampled_value": [
+                    {
+                        "value": 0.0,
+                        "measurand": "Energy.Active.Import.Register",
+                        "signed_meter_value": signed_mv,
+                    }
+                ],
+            }
+        ]
+        _log_signed_meter_values(meter_value)
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
+
+    def test_ignores_unsigned_data(self, caplog):
+        caplog.set_level(logging.INFO)
+        meter_value = [
+            {
+                "timestamp": TEST_TIMESTAMP,
+                "sampled_value": [
+                    {
+                        "value": 10.5,
+                        "measurand": "Energy.Active.Import.Register",
+                    }
+                ],
+            }
+        ]
+        _log_signed_meter_values(meter_value)
+        assert not any(
+            "signed meter value" in r.message.lower() for r in caplog.records
+        )
+
+    def test_empty_list_no_error(self, caplog):
+        caplog.set_level(logging.INFO)
+        _log_signed_meter_values([])
+        assert not any(
+            "signed meter value" in r.message.lower() for r in caplog.records
+        )
+
+
 class TestSendCommandErrorHandling:
     """Tests for error handling in the command dispatch layer."""
 
-    async def test_timeout_is_caught(self, charge_point):
+    async def test_timeout_is_caught(self, charge_point, caplog):
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point, "_send_clear_cache", side_effect=TimeoutError("timed out")
         ):
             await charge_point._send_command(command_name=Action.clear_cache)
+        assert any(
+            r.levelno == logging.ERROR and "timeout waiting for" in r.message.lower()
+            for r in caplog.records
+        )
 
-    async def test_ocpp_error_is_caught(self, charge_point):
+    async def test_ocpp_error_is_caught(self, charge_point, caplog):
         from ocpp.exceptions import InternalError as OCPPInternalError
 
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point,
             "_send_clear_cache",
             side_effect=OCPPInternalError(description="test error"),
         ):
             await charge_point._send_command(command_name=Action.clear_cache)
+        assert any(
+            r.levelno == logging.ERROR
+            and "ocpp error sending" in r.message.lower()
+            and "test error" in r.message
+            for r in caplog.records
+        )
 
     async def test_connection_closed_is_caught(self, charge_point):
         from websockets.exceptions import ConnectionClosedOK
@@ -1094,11 +1159,17 @@ class TestSendCommandErrorHandling:
         await charge_point._send_command(command_name=unsupported)
         assert any("not supported" in r.message.lower() for r in caplog.records)
 
-    async def test_unexpected_error_is_caught(self, charge_point):
+    async def test_unexpected_error_is_caught(self, charge_point, caplog):
+        caplog.set_level(logging.ERROR)
         with patch.object(
             charge_point, "_send_clear_cache", side_effect=RuntimeError("boom")
         ):
             await charge_point._send_command(command_name=Action.clear_cache)
+        assert any(
+            r.levelno == logging.ERROR
+            and "unexpected error sending" in r.message.lower()
+            for r in caplog.records
+        )
 
 
 class TestOutgoingCommands:
@@ -1735,7 +1806,7 @@ class TestMainGracefulShutdown:
             mock_loop,
             mock_server,
             mock_event,
-            extra_patches=[patch("server.signal.signal", mock_signal_fn)],
+            extra_patches=[patch("_common.signal.signal", mock_signal_fn)],
         ):
             await main()
 
@@ -1758,7 +1829,7 @@ class TestMainGracefulShutdown:
             mock_loop,
             mock_server,
             mock_event,
-            extra_patches=[patch("server.signal.signal", side_effect=_capture_signal)],
+            extra_patches=[patch("_common.signal.signal", side_effect=_capture_signal)],
         ):
             await main()
 
@@ -1962,6 +2033,14 @@ class TestCommandSequencing:
     def test_parse_commands_nan_delay(self):
         with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
             _parse_commands("Reset:nan")
+
+    def test_parse_commands_non_numeric_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="must be a number"):
+            _parse_commands("Reset:abc")
+
+    def test_parse_commands_skips_empty_entries(self):
+        result = _parse_commands("Reset:5,,ClearCache:10")
+        assert result == [(Action.reset, 5.0), (Action.clear_cache, 10.0)]
 
 
 class TestMultiVariableCommands:
