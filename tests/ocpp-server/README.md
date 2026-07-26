@@ -124,6 +124,9 @@ These flags customize the payload of specific commands:
 - `--set-variables <SPECS>`: SetVariables data as `Component.Variable=Value,...` (values must not contain commas)
 - `--get-variables <SPECS>`: GetVariables data as `Component.Variable,...`
 - `--local-list-tokens TOKEN ...`: Tokens to include in SendLocalList (default: test token)
+- `--reservation-id <ID>`: ReserveNow/CancelReservation reservation id (default: `1`)
+- `--reserve-id-token <TOKEN>`: ReserveNow id_token value the reservation is bound to (default: `reserved_token`)
+- `--reserve-evse-id <ID>`: ReserveNow target EVSE id (default: `1`)
 
 ```shell
 poetry run python server.py --command TriggerMessage --trigger-message BootNotification --delay 5
@@ -133,12 +136,14 @@ poetry run python server.py --command SetVariables --delay 5 \
   --set-variables "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
 poetry run python server.py --command GetLocalListVersion --delay 5
 poetry run python server.py --command SendLocalList --delay 5 --local-list-tokens token1 token2
+poetry run python server.py --command ReserveNow --reserve-evse-id 1 --reserve-id-token mytag --reservation-id 42 --delay 5
 ```
 
 ## Supported OCPP 2.0.1 Messages
 
 ### Outgoing Commands (CSMS → CS)
 
+- `CancelReservation` — Cancel a reservation
 - `CertificateSigned` — Send a signed certificate to the charging station
 - `ChangeAvailability` — Change connector availability
 - `ClearCache` — Clear the charging station cache
@@ -154,6 +159,7 @@ poetry run python server.py --command SendLocalList --delay 5 --local-list-token
 - `InstallCertificate` — Install a CA certificate
 - `RequestStartTransaction` — Remote start a transaction
 - `RequestStopTransaction` — Remote stop a transaction
+- `ReserveNow` — Reserve an EVSE
 - `Reset` — Reset the charging station
 - `SendLocalList` — Send a local authorization list update
 - `SetNetworkProfile` — Set the network connection profile
@@ -257,6 +263,7 @@ poetry run python server16.py --commands "RemoteStartTransaction:5,RemoteStopTra
 #### Command-specific options
 
 - `--trigger-message <TYPE>`: TriggerMessage requested message type (default: `StatusNotification`)
+  - `StatusNotification`, `BootNotification`, `Heartbeat`, `MeterValues`, `FirmwareStatusNotification`, `DiagnosticsStatusNotification`, `LogStatusNotification`, `SignChargePointCertificate`
 - `--reset-type <TYPE>`: Reset type (default: `Hard`)
   - `Hard` — Reset now
   - `Soft` — Graceful reset

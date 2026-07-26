@@ -587,6 +587,7 @@ class TestStatusNotificationHandler:
             connector_status="Available",
         )
         assert isinstance(response, ocpp.v201.call_result.StatusNotification)
+        assert response == ocpp.v201.call_result.StatusNotification()
 
 
 class TestAuthorizeHandler:
@@ -746,7 +747,8 @@ class TestTransactionEventHandler:
         assert response.total_cost is None
         assert response.id_token_info is None
 
-    async def test_started_with_signed_meter_value(self, charge_point):
+    async def test_started_with_signed_meter_value(self, charge_point, caplog):
+        caplog.set_level(logging.INFO)
         signed_mv = {
             "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
             "signing_method": "ECDSA-secp256r1-SHA256",
@@ -774,8 +776,10 @@ class TestTransactionEventHandler:
         )
         assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
         assert response.id_token_info["status"] == AuthorizationStatusEnumType.accepted
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
 
-    async def test_updated_with_signed_meter_value(self, charge_point):
+    async def test_updated_with_signed_meter_value(self, charge_point, caplog):
+        caplog.set_level(logging.INFO)
         signed_mv = {
             "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
             "signing_method": "ECDSA-secp256r1-SHA256",
@@ -802,8 +806,10 @@ class TestTransactionEventHandler:
         )
         assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
         assert response.total_cost == DEFAULT_TOTAL_COST
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
 
-    async def test_ended_with_signed_meter_value(self, charge_point):
+    async def test_ended_with_signed_meter_value(self, charge_point, caplog):
+        caplog.set_level(logging.INFO)
         signed_mv = {
             "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
             "signing_method": "ECDSA-secp256r1-SHA256",
@@ -841,6 +847,7 @@ class TestTransactionEventHandler:
             meter_value=[begin_mv, end_mv],
         )
         assert isinstance(response, ocpp.v201.call_result.TransactionEvent)
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
 
 
 class TestDataTransferHandler:
@@ -925,6 +932,20 @@ class TestTransactionTracking:
         )
         assert "" not in charge_point._active_transactions
 
+    async def test_transaction_event_started_null_evse_defaults_to_zero(
+        self, charge_point
+    ):
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+            evse=None,
+        )
+        assert charge_point._active_transactions[TEST_TRANSACTION_ID] == 0
+
 
 class TestCertificateHandlers:
     """Tests for certificate-related incoming handlers."""
@@ -964,8 +985,10 @@ class TestNotificationHandlers:
             meter_value=[{"timestamp": TEST_TIMESTAMP}],
         )
         assert isinstance(response, ocpp.v201.call_result.MeterValues)
+        assert response == ocpp.v201.call_result.MeterValues()
 
-    async def test_meter_values_with_signed_meter_value(self, charge_point):
+    async def test_meter_values_with_signed_meter_value(self, charge_point, caplog):
+        caplog.set_level(logging.INFO)
         signed_mv = {
             "signed_meter_data": "T0NNRnx7fXxmYWtlc2lnbmF0dXJl",
             "signing_method": "ECDSA-secp256r1-SHA256",
@@ -986,6 +1009,7 @@ class TestNotificationHandlers:
             evse_id=TEST_EVSE_ID, meter_value=[mv]
         )
         assert isinstance(response, ocpp.v201.call_result.MeterValues)
+        assert any("signed meter value" in r.message.lower() for r in caplog.records)
 
     async def test_notify_report(self, charge_point):
         response = await charge_point.on_notify_report(
@@ -994,24 +1018,28 @@ class TestNotificationHandlers:
             seq_no=0,
         )
         assert isinstance(response, ocpp.v201.call_result.NotifyReport)
+        assert response == ocpp.v201.call_result.NotifyReport()
 
     async def test_firmware_status_notification(self, charge_point):
         response = await charge_point.on_firmware_status_notification(
             status="Installed"
         )
         assert isinstance(response, ocpp.v201.call_result.FirmwareStatusNotification)
+        assert response == ocpp.v201.call_result.FirmwareStatusNotification()
 
     async def test_log_status_notification(self, charge_point):
         response = await charge_point.on_log_status_notification(
             status="Uploaded", request_id=1
         )
         assert isinstance(response, ocpp.v201.call_result.LogStatusNotification)
+        assert response == ocpp.v201.call_result.LogStatusNotification()
 
     async def test_security_event_notification(self, charge_point):
         response = await charge_point.on_security_event_notification(
             event_type="FirmwareUpdated", timestamp=TEST_TIMESTAMP
         )
         assert isinstance(response, ocpp.v201.call_result.SecurityEventNotification)
+        assert response == ocpp.v201.call_result.SecurityEventNotification()
 
     async def test_notify_customer_information(self, charge_point):
         response = await charge_point.on_notify_customer_information(
@@ -1021,6 +1049,7 @@ class TestNotificationHandlers:
             request_id=1,
         )
         assert isinstance(response, ocpp.v201.call_result.NotifyCustomerInformation)
+        assert response == ocpp.v201.call_result.NotifyCustomerInformation()
 
 
 class TestSendCommandErrorHandling:
@@ -1059,9 +1088,17 @@ class TestSendCommandErrorHandling:
             await charge_point._send_command(command_name=Action.clear_cache)
             charge_point.handle_connection_closed.assert_called_once()
 
-    async def test_unsupported_command_logs_warning(self, charge_point):
+    async def test_unsupported_command_logs_warning(self, charge_point, caplog):
+        caplog.set_level(logging.WARNING)
         unsupported = MagicMock(value="Unsupported")
         await charge_point._send_command(command_name=unsupported)
+        assert any("not supported" in r.message.lower() for r in caplog.records)
+
+    async def test_unexpected_error_is_caught(self, charge_point):
+        with patch.object(
+            charge_point, "_send_clear_cache", side_effect=RuntimeError("boom")
+        ):
+            await charge_point._send_command(command_name=Action.clear_cache)
 
 
 class TestOutgoingCommands:
@@ -1555,6 +1592,19 @@ class TestOnConnect:
             await on_connect(mock_valid_ws, config=config)
             mock_cp.send_command.assert_called_once_with(Action.clear_cache, 1.0, None)
 
+    async def test_commands_sequence_scheduled_on_connect(self, mock_valid_ws):
+        config = self._make_config(commands=[(Action.clear_cache, 1.0)])
+
+        with (
+            patch("server.ChargePoint") as MockCP,
+            patch("server.asyncio.create_task") as mock_create_task,
+        ):
+            mock_cp = AsyncMock()
+            mock_cp.send_commands = MagicMock()
+            MockCP.return_value = mock_cp
+            await on_connect(mock_valid_ws, config=config)
+            mock_create_task.assert_called_once()
+
 
 class TestHandleConnectionClosed:
     """Tests for the handle_connection_closed cleanup method."""
@@ -1749,6 +1799,39 @@ class TestMainGracefulShutdown:
         assert captured["config"].boot_sequence == (
             RegistrationStatusEnumType.pending,
             RegistrationStatusEnumType.accepted,
+        )
+
+    async def test_boot_status_single_value(self, main_mocks):
+        mock_loop, mock_server, mock_event, signal_handlers = main_mocks
+
+        async def _fire_sigint():
+            handler, args = signal_handlers[signal.SIGINT]
+            handler(*args)
+
+        mock_event.wait = AsyncMock(side_effect=_fire_sigint)
+
+        captured: dict[str, ServerConfig] = {}
+        real_server_config = ServerConfig
+
+        def _capture_server_config(*args, **kwargs):
+            config = real_server_config(*args, **kwargs)
+            captured["config"] = config
+            return config
+
+        with _patch_main(
+            mock_loop,
+            mock_server,
+            mock_event,
+            extra_patches=[
+                patch("server.ServerConfig", side_effect=_capture_server_config)
+            ],
+            boot_status=RegistrationStatusEnumType.rejected,
+        ):
+            await main()
+
+        mock_server.close.assert_called_once()
+        assert captured["config"].boot_sequence == (
+            RegistrationStatusEnumType.rejected,
         )
 
 

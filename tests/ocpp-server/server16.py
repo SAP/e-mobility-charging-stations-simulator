@@ -3,7 +3,6 @@
 import argparse
 import asyncio
 import logging
-import math
 import signal
 import sys
 from dataclasses import dataclass, field
@@ -35,7 +34,7 @@ from ocpp.v16.enums import (
 )
 from websockets import ConnectionClosed
 
-from _common import check_positive_number
+from _common import check_positive_number, parse_commands
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -573,34 +572,7 @@ async def on_connect(
 
 
 def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
-    result: list[tuple[Action, float]] = []
-    for raw_entry in commands_str.split(","):
-        entry = raw_entry.strip()
-        if not entry:
-            continue
-        if ":" not in entry:
-            raise argparse.ArgumentTypeError(
-                f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
-            )
-        cmd_str, delay_str = entry.split(":", 1)
-        try:
-            cmd = Action(cmd_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Unknown action: '{cmd_str.strip()}'"
-            ) from None
-        try:
-            delay = float(delay_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Invalid delay '{delay_str.strip()}': must be a number"
-            ) from None
-        if not math.isfinite(delay) or delay <= 0:
-            raise argparse.ArgumentTypeError(
-                f"Delay must be a finite positive number, got {delay}"
-            )
-        result.append((cmd, delay))
-    return result
+    return parse_commands(commands_str, Action)
 
 
 async def main():

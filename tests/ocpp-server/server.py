@@ -3,7 +3,6 @@
 import argparse
 import asyncio
 import logging
-import math
 import signal
 import sys
 from dataclasses import dataclass, field
@@ -55,7 +54,7 @@ from ocpp.v201.enums import (
 )
 from websockets import ConnectionClosed
 
-from _common import check_positive_number
+from _common import check_positive_number, parse_commands
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -340,7 +339,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 logger.info("Received %s Started", Action.transaction_event)
 
                 transaction_id = transaction_info.get("transaction_id", "")
-                evse_id = kwargs.get("evse", {}).get("id", 0)
+                evse_id = (kwargs.get("evse") or {}).get("id", 0)
                 if transaction_id:
                     self._active_transactions[transaction_id] = evse_id
                 else:
@@ -732,6 +731,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     # --- Command dispatch ---
 
+    # Intentional subset of CSMS→CS commands supported by this mock.
+    # Any Action absent from this map is handled by _send_command via
+    # logger.warning only — no request is sent and no error is raised.
     _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
         Action.clear_cache: "_send_clear_cache",
         Action.get_base_report: "_send_get_base_report",
@@ -872,34 +874,7 @@ async def on_connect(
 
 
 def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
-    result: list[tuple[Action, float]] = []
-    for raw_entry in commands_str.split(","):
-        entry = raw_entry.strip()
-        if not entry:
-            continue
-        if ":" not in entry:
-            raise argparse.ArgumentTypeError(
-                f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
-            )
-        cmd_str, delay_str = entry.split(":", 1)
-        try:
-            cmd = Action(cmd_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Unknown action: '{cmd_str.strip()}'"
-            ) from None
-        try:
-            delay = float(delay_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Invalid delay '{delay_str.strip()}': must be a number"
-            ) from None
-        if not math.isfinite(delay) or delay <= 0:
-            raise argparse.ArgumentTypeError(
-                f"Delay must be a finite positive number, got {delay}"
-            )
-        result.append((cmd, delay))
-    return result
+    return parse_commands(commands_str, Action)
 
 
 def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[dict]:
