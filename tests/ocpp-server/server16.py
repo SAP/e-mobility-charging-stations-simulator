@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import contextlib
 import logging
 import sys
 from dataclasses import dataclass, field
@@ -217,8 +218,7 @@ class ChargePoint(ocpp.v16.ChargePoint):
                     if id_tag in self._auth_config.blacklist
                     else AuthorizationStatus.accepted
                 )
-            case _:
-                return self._auth_config.default_status
+        return self._auth_config.default_status
 
     def _build_id_tag_info(self, id_tag: str) -> dict:
         """Build id_tag_info dict with optional parentIdTag."""
@@ -800,8 +800,6 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
     sys.exit(0)

@@ -269,15 +269,15 @@ class TestCommandSequencing:
         cp = ChargePoint(mock_connection)
         mock_send = AsyncMock()
         with patch.object(cp, "_send_command", mock_send):
-            commands = [(Action.heartbeat, 0.001), (Action.reset, 0.001)]
+            commands = [(Action.trigger_message, 0.001), (Action.reset, 0.001)]
             await cp.send_commands(commands)
             assert mock_send.call_count == 2
-            assert mock_send.call_args_list[0][0][0] == Action.heartbeat
+            assert mock_send.call_args_list[0][0][0] == Action.trigger_message
             assert mock_send.call_args_list[1][0][0] == Action.reset
 
     def test_parse_commands_valid(self):
-        result = _parse_commands("Reset:5,ClearCache:10")
-        assert result == [(Action.reset, 5.0), (Action.clear_cache, 10.0)]
+        result = _parse_commands("Reset:5,TriggerMessage:10")
+        assert result == [(Action.reset, 5.0), (Action.trigger_message, 10.0)]
 
     def test_parse_commands_invalid_format(self):
         with pytest.raises(argparse.ArgumentTypeError, match="expected 'CMD:DELAY'"):

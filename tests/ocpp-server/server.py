@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import contextlib
 import logging
 import sys
 from dataclasses import dataclass, field
@@ -264,8 +265,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 )
             case AuthMode.rate_limit:
                 return AuthorizationStatusEnumType.not_at_this_time
-            case _:
-                return self._auth_config.default_status
+        return self._auth_config.default_status
 
     def _build_id_token_info(self, token_id: str) -> dict:
         """Build id_token_info dict with optional groupIdToken and cacheExpiry."""
@@ -1178,8 +1178,6 @@ async def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
     sys.exit(0)
