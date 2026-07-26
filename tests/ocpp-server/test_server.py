@@ -4,6 +4,7 @@ import argparse
 import contextlib
 import logging
 import signal
+from datetime import datetime
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -13,6 +14,7 @@ import pytest
 from ocpp.v201.enums import (
     Action,
     AuthorizationStatusEnumType,
+    CancelReservationStatusEnumType,
     CertificateSignedStatusEnumType,
     ChangeAvailabilityStatusEnumType,
     ClearCacheStatusEnumType,
@@ -33,6 +35,7 @@ from ocpp.v201.enums import (
     RegistrationStatusEnumType,
     ReportBaseEnumType,
     RequestStartStopStatusEnumType,
+    ReserveNowStatusEnumType,
     ResetEnumType,
     ResetStatusEnumType,
     SendLocalListStatusEnumType,
@@ -45,8 +48,11 @@ from ocpp.v201.enums import (
 )
 
 from server import (
+    DEFAULT_EVSE_ID,
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     DEFAULT_LOCAL_LIST_VERSION,
+    DEFAULT_RESERVATION_ID,
+    DEFAULT_RESERVE_ID_TOKEN,
     DEFAULT_TOTAL_COST,
     FALLBACK_TRANSACTION_ID,
     MAX_REQUEST_ID,
@@ -217,6 +223,9 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         set_variables=None,
         get_variables=None,
         local_list_tokens=None,
+        reserve_id=DEFAULT_RESERVATION_ID,
+        reserve_id_token=DEFAULT_RESERVE_ID_TOKEN,
+        reserve_evse_id=DEFAULT_EVSE_ID,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -369,6 +378,8 @@ class TestHandlerCoverage:
         "_send_send_local_list",
         "_send_set_network_profile",
         "_send_update_firmware",
+        "_send_reserve_now",
+        "_send_cancel_reservation",
     ]
 
     @pytest.mark.parametrize("handler_name", EXPECTED_INCOMING_HANDLERS)
@@ -446,7 +457,7 @@ class TestBootNotificationHandler:
         assert response.status == RegistrationStatusEnumType.accepted
         assert response.interval == DEFAULT_HEARTBEAT_INTERVAL_SECONDS
         assert isinstance(response.current_time, str)
-        assert "T" in response.current_time
+        assert datetime.fromisoformat(response.current_time).tzinfo is not None
 
     async def test_configurable_boot_status(self, mock_connection):
         cp = ChargePoint(
@@ -558,7 +569,7 @@ class TestHeartbeatHandler:
     async def test_returns_current_time(self, charge_point):
         response = await charge_point.on_heartbeat()
         assert isinstance(response.current_time, str)
-        assert "T" in response.current_time
+        assert datetime.fromisoformat(response.current_time).tzinfo is not None
 
 
 class TestStatusNotificationHandler:
@@ -663,7 +674,8 @@ class TestRicherAuthorizeResponse:
         )
         assert "cache_expiry_date_time" in result.id_token_info
         expiry = result.id_token_info["cache_expiry_date_time"]
-        assert isinstance(expiry, str) and "T" in expiry
+        assert isinstance(expiry, str)
+        assert datetime.fromisoformat(expiry).tzinfo is not None
 
     async def test_authorize_no_enrichment_by_default(self, charge_point):
         result = await charge_point.on_authorize(
@@ -1324,7 +1336,30 @@ class TestOutgoingCommands:
         assert request.request_id > 0
         assert isinstance(request.firmware, dict)
 
-    # --- Failure path tests (rejected/failed status → correct logging) ---
+    async def test_send_reserve_now(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.ReserveNow(
+            status=ReserveNowStatusEnumType.accepted
+        )
+        await command_charge_point._send_reserve_now()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.ReserveNow)
+        assert request.id == command_charge_point._reservation_id
+        assert request.evse_id == command_charge_point._reserve_evse_id
+        assert request.id_token["id_token"] == command_charge_point._reserve_id_token
+        assert isinstance(request.expiry_date_time, str)
+
+    async def test_send_cancel_reservation(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.CancelReservation(
+                status=CancelReservationStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_cancel_reservation()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.CancelReservation)
+        assert request.reservation_id == command_charge_point._reservation_id
 
     FAILURE_PATH_CASES: ClassVar[list[tuple[str, type, object]]] = [
         (
@@ -1406,6 +1441,16 @@ class TestOutgoingCommands:
             "_send_update_firmware",
             ocpp.v201.call_result.UpdateFirmware,
             UpdateFirmwareStatusEnumType.rejected,
+        ),
+        (
+            "_send_reserve_now",
+            ocpp.v201.call_result.ReserveNow,
+            ReserveNowStatusEnumType.rejected,
+        ),
+        (
+            "_send_cancel_reservation",
+            ocpp.v201.call_result.CancelReservation,
+            CancelReservationStatusEnumType.rejected,
         ),
     ]
 

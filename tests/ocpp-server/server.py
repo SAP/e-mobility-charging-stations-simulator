@@ -20,6 +20,7 @@ from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
     AuthorizationStatusEnumType,
+    CancelReservationStatusEnumType,
     CertificateSignedStatusEnumType,
     CertificateSigningUseEnumType,
     ChangeAvailabilityStatusEnumType,
@@ -41,6 +42,7 @@ from ocpp.v201.enums import (
     OperationalStatusEnumType,
     RegistrationStatusEnumType,
     ReportBaseEnumType,
+    ReserveNowStatusEnumType,
     ResetEnumType,
     ResetStatusEnumType,
     SendLocalListStatusEnumType,
@@ -75,6 +77,9 @@ DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v2.0.bin"
 DEFAULT_LOG_URL = "https://example.com/logs"
 DEFAULT_LOCAL_LIST_VERSION = 1
 DEFAULT_CUSTOMER_ID = "test_customer_001"
+DEFAULT_RESERVATION_ID = 1
+DEFAULT_RESERVE_ID_TOKEN = "reserved_token"  # noqa: S105
+DEFAULT_RESERVATION_EXPIRY_SECONDS = 3600
 FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
 SHUTDOWN_TIMEOUT_SECONDS = 30.0
@@ -148,6 +153,9 @@ class ServerConfig:
     set_variables_data: list[dict] | None = None
     get_variables_data: list[dict] | None = None
     local_list_tokens: list[str] | None = None
+    reservation_id: int = DEFAULT_RESERVATION_ID
+    reserve_id_token: str = DEFAULT_RESERVE_ID_TOKEN
+    reserve_evse_id: int = DEFAULT_EVSE_ID
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -166,6 +174,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _set_variables_data: list[dict] | None
     _get_variables_data: list[dict] | None
     _local_list_tokens: list[str] | None
+    _reservation_id: int
+    _reserve_id_token: str
+    _reserve_evse_id: int
 
     def __init__(
         self,
@@ -187,6 +198,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         set_variables_data: list[dict] | None = None,
         get_variables_data: list[dict] | None = None,
         local_list_tokens: list[str] | None = None,
+        reservation_id: int = DEFAULT_RESERVATION_ID,
+        reserve_id_token: str = DEFAULT_RESERVE_ID_TOKEN,
+        reserve_evse_id: int = DEFAULT_EVSE_ID,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
         cp_id = connection.request.path.strip("/").split("/")[-1]
@@ -209,6 +223,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._set_variables_data = set_variables_data
         self._get_variables_data = get_variables_data
         self._local_list_tokens = local_list_tokens
+        self._reservation_id = reservation_id
+        self._reserve_id_token = reserve_id_token
+        self._reserve_evse_id = reserve_evse_id
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
@@ -688,6 +705,28 @@ class ChargePoint(ocpp.v201.ChargePoint):
             request, Action.update_firmware, UpdateFirmwareStatusEnumType.accepted
         )
 
+    async def _send_reserve_now(self):
+        expiry_date_time = datetime.now(timezone.utc) + timedelta(
+            seconds=DEFAULT_RESERVATION_EXPIRY_SECONDS
+        )
+        request = ocpp.v201.call.ReserveNow(
+            id=self._reservation_id,
+            expiry_date_time=expiry_date_time.isoformat(),
+            id_token={"id_token": self._reserve_id_token, "type": DEFAULT_TOKEN_TYPE},
+            evse_id=self._reserve_evse_id,
+        )
+        await self._call_and_log(
+            request, Action.reserve_now, ReserveNowStatusEnumType.accepted
+        )
+
+    async def _send_cancel_reservation(self):
+        request = ocpp.v201.call.CancelReservation(reservation_id=self._reservation_id)
+        await self._call_and_log(
+            request,
+            Action.cancel_reservation,
+            CancelReservationStatusEnumType.accepted,
+        )
+
     # --- Command dispatch ---
 
     _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
@@ -713,6 +752,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         Action.install_certificate: "_send_install_certificate",
         Action.set_network_profile: "_send_set_network_profile",
         Action.update_firmware: "_send_update_firmware",
+        Action.reserve_now: "_send_reserve_now",
+        Action.cancel_reservation: "_send_cancel_reservation",
     }
 
     async def _send_command(self, command_name: Action):
@@ -810,6 +851,9 @@ async def on_connect(
         set_variables_data=config.set_variables_data,
         get_variables_data=config.get_variables_data,
         local_list_tokens=config.local_list_tokens,
+        reservation_id=config.reservation_id,
+        reserve_id_token=config.reserve_id_token,
+        reserve_evse_id=config.reserve_evse_id,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
@@ -983,6 +1027,30 @@ async def main():
         default=OperationalStatusEnumType.operative,
         help="ChangeAvailability status: Operative, Inoperative (default: Operative)",
     )
+    parser.add_argument(
+        "--reserve-id",
+        type=int,
+        default=DEFAULT_RESERVATION_ID,
+        help=(
+            "ReserveNow/CancelReservation reservation id"
+            f" (default: {DEFAULT_RESERVATION_ID})"
+        ),
+    )
+    parser.add_argument(
+        "--reserve-id-token",
+        type=str,
+        default=DEFAULT_RESERVE_ID_TOKEN,
+        help=(
+            "ReserveNow id_token value the reservation is bound to"
+            f" (default: {DEFAULT_RESERVE_ID_TOKEN})"
+        ),
+    )
+    parser.add_argument(
+        "--reserve-evse-id",
+        type=int,
+        default=DEFAULT_EVSE_ID,
+        help=f"ReserveNow target EVSE id (default: {DEFAULT_EVSE_ID})",
+    )
 
     # Auth configuration
     parser.add_argument(
@@ -1119,6 +1187,9 @@ async def main():
         set_variables_data=parsed_set_variables,
         get_variables_data=parsed_get_variables,
         local_list_tokens=args.local_list_tokens,
+        reservation_id=args.reserve_id,
+        reserve_id_token=args.reserve_id_token,
+        reserve_evse_id=args.reserve_evse_id,
     )
 
     logger.info(
