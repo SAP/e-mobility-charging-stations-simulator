@@ -10,6 +10,7 @@ import type { Registry } from 'prom-client'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type {
   ChargingStationData,
   EvseStatus,
@@ -558,7 +559,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
               ],
             },
           },
-        ] as ChargingStationData['evses'],
+        ] satisfies ChargingStationData['evses'],
       })
     )
     server.mockListen(t)
@@ -586,15 +587,14 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
   // never exercised the array shape the worker->main producer actually emits.
   // These feed the REAL buildEvseEntries output into the scrape.
   const buildEvseWireEntries = (evses: Map<number, EvseStatus>): ChargingStationData['evses'] => {
-    const stub = {
-      hasEvses: true,
-      iterateEvses: function * () {
+    const stub: Pick<ChargingStation, 'iterateEvses'> = {
+      * iterateEvses () {
         for (const [evseId, evseStatus] of evses) {
           yield { evseId, evseStatus }
         }
       },
-    } as unknown as Parameters<typeof buildEvseEntries>[0]
-    return buildEvseEntries(stub)
+    }
+    return buildEvseEntries(stub as ChargingStation)
   }
 
   const evseStatusOf = (
@@ -666,8 +666,8 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     )
   })
 
-  await it('should report connectors_total 0 (not NaN) for an EVSE-mode station with empty evses (issue #2046)', async t => {
-    const evsesWire = buildEvseWireEntries(new Map<number, EvseStatus>())
+  await it('should report connectors_total 0 (not NaN) for an EVSE with an empty connectors array (issue #2046)', async t => {
+    const evsesWire = buildEvseWireEntries(new Map<number, EvseStatus>([[1, evseStatusOf([])]]))
     server.addStation(buildStationData('station-2046-empty', { connectors: [], evses: evsesWire }))
     server.mockListen(t)
 
