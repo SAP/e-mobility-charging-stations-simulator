@@ -35,7 +35,7 @@ OCPP 1.6:
 poetry run python server16.py
 ```
 
-Both servers listen on `127.0.0.1:9000` by default.The server listens on `127.0.0.1:9000` by default.
+Both servers listen on `127.0.0.1:9000` by default.
 
 ## Configuration
 

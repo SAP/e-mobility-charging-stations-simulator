@@ -1,7 +1,7 @@
 [project]
 name = "ocpp-server"
 version = "4.10.1"
-description = "OCPP2 mock server"
+description = "OCPP 1.6 and 2.0.1 mock CSMS servers for charging station simulator testing"
 authors = [{ name = "Jérôme Benoit", email = "jerome.benoit@sap.com" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"

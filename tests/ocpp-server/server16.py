@@ -35,6 +35,7 @@ from ocpp.v16.enums import (
 )
 from websockets import ConnectionClosed
 
+from _common import check_positive_number
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,6 @@ DEFAULT_PORT = 9000
 DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 60
 DEFAULT_CONNECTOR_ID = 1
 DEFAULT_TEST_TOKEN = "test_token"  # noqa: S105
-DEFAULT_VENDOR_ID = "TestVendor"
 DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v1.6.bin"
 DEFAULT_DIAGNOSTICS_URL = "https://example.com/diagnostics"
 DEFAULT_RESERVE_CONNECTOR_ID = 1
@@ -116,7 +116,10 @@ class ServerConfig:
     connector_id: int
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
-    # Shared mutable counter so boot_sequence advances across reconnections
+    # Shared mutable counter so boot_sequence advances across reconnections.
+    # NOTE: on_connect passes this same list to every ChargePoint, so the boot
+    # index is shared across ALL stations on this server, not per-station: the
+    # Nth BootNotification server-wide gets the Nth boot_sequence status.
     boot_index: list[int] = field(default_factory=lambda: [0])
     commands: list[tuple[Action, float]] | None = None
     trigger_message_type: MessageTrigger = MessageTrigger.status_notification
@@ -267,7 +270,7 @@ class ChargePoint(ocpp.v16.ChargePoint):
 
     @on(Action.start_transaction)
     async def on_start_transaction(
-        self, connector_id, id_tag, meter_start, timestamp, **kwargs
+        self, connector_id: int, id_tag: str, meter_start: int, timestamp, **kwargs
     ):
         logger.info(
             "Received %s on connector %s for id_tag %s (meter_start=%s)",
@@ -290,7 +293,7 @@ class ChargePoint(ocpp.v16.ChargePoint):
 
     @on(Action.stop_transaction)
     async def on_stop_transaction(
-        self, meter_stop, timestamp, transaction_id, **kwargs
+        self, meter_stop: int, timestamp, transaction_id: int, **kwargs
     ):
         logger.info(
             "Received %s for transaction %s (meter_stop=%s, reason=%s)",
@@ -322,7 +325,9 @@ class ChargePoint(ocpp.v16.ChargePoint):
         return ocpp.v16.call_result.MeterValues()
 
     @on(Action.status_notification)
-    async def on_status_notification(self, connector_id, error_code, status, **kwargs):
+    async def on_status_notification(
+        self, connector_id: int, error_code: str, status: str, **kwargs
+    ):
         logger.info(
             "Received %s on connector %s: status=%s, error_code=%s",
             Action.status_notification,
@@ -443,6 +448,9 @@ class ChargePoint(ocpp.v16.ChargePoint):
 
     # --- Command dispatch ---
 
+    # Intentional subset of CSMS→CS commands supported by this mock.
+    # Any Action absent from this map is handled by _send_command via
+    # logger.warning only — no request is sent and no error is raised.
     _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
         Action.trigger_message: "_send_trigger_message",
         Action.remote_start_transaction: "_send_remote_start_transaction",
@@ -562,18 +570,6 @@ async def on_connect(
         await cp.start()
     except ConnectionClosed:
         cp.handle_connection_closed()
-
-
-def check_positive_number(value: str) -> float:
-    try:
-        number = float(value)
-    except ValueError:
-        raise argparse.ArgumentTypeError("must be a number") from None
-    if not math.isfinite(number):
-        raise argparse.ArgumentTypeError("must be a finite number")
-    if number <= 0:
-        raise argparse.ArgumentTypeError("must be a positive number")
-    return number
 
 
 def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
@@ -845,6 +841,7 @@ async def main():
                 shutdown_event.set()
             else:
                 logger.warning("Received %s again, forcing exit", sig.name)
+                # Unix convention: fatal-signal exit status is 128 + signal number.
                 sys.exit(128 + sig.value)
 
         for sig in (signal.SIGINT, signal.SIGTERM):

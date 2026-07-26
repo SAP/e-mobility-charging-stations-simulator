@@ -1150,6 +1150,7 @@ class TestOnConnect:
             patch("server16.asyncio.create_task") as mock_create_task,
         ):
             mock_cp = AsyncMock()
+            mock_cp.send_commands = MagicMock()
             MockCP.return_value = mock_cp
             await on_connect(mock_valid_ws, config=config)
             mock_create_task.assert_called_once()
@@ -1287,3 +1288,34 @@ class TestMainGracefulShutdown:
             RegistrationStatus.pending,
             RegistrationStatus.accepted,
         )
+
+    async def test_boot_status_single_value(self, main_mocks):
+        mock_loop, mock_server, mock_event, signal_handlers = main_mocks
+
+        async def _fire_sigint():
+            handler, args = signal_handlers[signal.SIGINT]
+            handler(*args)
+
+        mock_event.wait = AsyncMock(side_effect=_fire_sigint)
+
+        captured: dict[str, ServerConfig] = {}
+        real_server_config = ServerConfig
+
+        def _capture_server_config(*args, **kwargs):
+            config = real_server_config(*args, **kwargs)
+            captured["config"] = config
+            return config
+
+        with _patch_main(
+            mock_loop,
+            mock_server,
+            mock_event,
+            extra_patches=[
+                patch("server16.ServerConfig", side_effect=_capture_server_config)
+            ],
+            boot_status=RegistrationStatus.rejected,
+        ):
+            await main()
+
+        mock_server.close.assert_called_once()
+        assert captured["config"].boot_sequence == (RegistrationStatus.rejected,)
