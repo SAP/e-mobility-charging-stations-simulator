@@ -4,7 +4,7 @@ import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ConnectorEntry,
   ConnectorStatus,
-  EvseEntry,
+  EvseEntryData,
   EvseStatusConfiguration,
 } from '../types/index.js'
 
@@ -78,7 +78,7 @@ export const buildConnectorsStatus = (
     .toArray()
 }
 
-export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] => {
+export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntryData[] => {
   return chargingStation
     .iterateEvses()
     .map(({ evseId, evseStatus }) => ({
@@ -99,7 +99,7 @@ export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] 
         ),
       },
     }))
-    .toArray() as unknown as EvseEntry[]
+    .toArray()
 }
 
 export const buildEvsesStatus = (

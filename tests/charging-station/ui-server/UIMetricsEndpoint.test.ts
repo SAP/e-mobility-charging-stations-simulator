@@ -10,8 +10,10 @@ import type { Registry } from 'prom-client'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type {
   ChargingStationData,
+  EvseStatus,
   TemplateStatistics,
   UIServerConfiguration,
 } from '../../../src/types/index.js'
@@ -33,6 +35,7 @@ import {
   OCPP16AvailabilityType,
   OCPPVersion,
 } from '../../../src/types/index.js'
+import { buildEvseEntries } from '../../../src/utils/ChargingStationConfigurationUtils.js'
 import { logger } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import {
@@ -543,20 +546,20 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
             evseId: 1,
             evseStatus: {
               availability: OCPP16AvailabilityType.Operative,
-              connectors: new Map([
-                [
-                  1,
-                  {
+              connectors: [
+                {
+                  connectorId: 1,
+                  connectorStatus: {
                     availability: OCPP16AvailabilityType.Operative,
                     MeterValues: [],
                     status: ConnectorStatusEnum.Available,
                   },
-                ],
-              ]),
-              MeterValues: [],
+                  evseId: 1,
+                },
+              ],
             },
           },
-        ] as ChargingStationData['evses'],
+        ] satisfies ChargingStationData['evses'],
       })
     )
     server.mockListen(t)
@@ -578,6 +581,106 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
     assert.ok(statusLine != null, 'simulator_connector_status_info value line not found')
     assert.match(statusLine, /connector_id="1"/)
     assert.match(statusLine, /status="Available"/)
+  })
+
+  // issue #2046: the earlier EVSE-mode test hand-builds a synthetic Map, so it
+  // never exercised the array shape the worker->main producer actually emits.
+  // These feed the REAL buildEvseEntries output into the scrape.
+  const buildEvseWireEntries = (evses: Map<number, EvseStatus>): ChargingStationData['evses'] => {
+    const stub: Pick<ChargingStation, 'iterateEvses'> = {
+      * iterateEvses () {
+        for (const [evseId, evseStatus] of evses) {
+          yield { evseId, evseStatus }
+        }
+      },
+    }
+    return buildEvseEntries(stub as ChargingStation)
+  }
+
+  const evseStatusOf = (
+    connectorIds: number[],
+    status = ConnectorStatusEnum.Available
+  ): EvseStatus => ({
+    availability: OCPP16AvailabilityType.Operative,
+    connectors: new Map(
+      connectorIds.map(connectorId => [
+        connectorId,
+        { availability: OCPP16AvailabilityType.Operative, MeterValues: [], status },
+      ])
+    ),
+  })
+
+  await it('should serve 200 with the ACTUAL buildEvseEntries wire shape and sum connectors across EVSEs (issue #2046)', async t => {
+    const evsesWire = buildEvseWireEntries(
+      new Map<number, EvseStatus>([
+        [1, evseStatusOf([1, 2])],
+        [2, evseStatusOf([1])],
+      ])
+    )
+    assert.ok(
+      Array.isArray(evsesWire[0].evseStatus.connectors),
+      'buildEvseEntries must emit evseStatus.connectors as an array (wire contract)'
+    )
+    server.addStation(buildStationData('station-2046', { connectors: [], evses: evsesWire }))
+    server.mockListen(t)
+
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await awaitFinish(res)
+    assert.strictEqual(res.statusCode, 200)
+    const body = res.body ?? ''
+    assert.match(body, /^# HELP /m)
+    assert.match(body, /^# TYPE /m)
+    assert.match(body, /simulator_station_connectors_total\{[^}]*hash_id="station-2046"[^}]*\}\s+3/)
+    const statusLine = body
+      .split('\n')
+      .find(
+        l =>
+          l.startsWith('simulator_connector_status_info{') &&
+          l.includes('hash_id="station-2046"') &&
+          l.endsWith(' 1')
+      )
+    assert.ok(statusLine != null, 'simulator_connector_status_info value line not found')
+  })
+
+  await it('should count connector id 0 / evse id 0 in connectors_total (issue #2046)', async t => {
+    const evsesWire = buildEvseWireEntries(
+      new Map<number, EvseStatus>([
+        [0, evseStatusOf([0])],
+        [1, evseStatusOf([1])],
+      ])
+    )
+    server.addStation(buildStationData('station-2046-zero', { connectors: [], evses: evsesWire }))
+    server.mockListen(t)
+
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await awaitFinish(res)
+    assert.strictEqual(res.statusCode, 200)
+    const body = res.body ?? ''
+    assert.match(
+      body,
+      /simulator_station_connectors_total\{[^}]*hash_id="station-2046-zero"[^}]*\}\s+2/
+    )
+  })
+
+  await it('should report connectors_total 0 (not NaN) for an EVSE with an empty connectors array (issue #2046)', async t => {
+    const evsesWire = buildEvseWireEntries(new Map<number, EvseStatus>([[1, evseStatusOf([])]]))
+    server.addStation(buildStationData('station-2046-empty', { connectors: [], evses: evsesWire }))
+    server.mockListen(t)
+
+    server.start()
+    const res = new MockServerResponse()
+    server.emitRequest(buildMetricsRequest(), res)
+    await awaitFinish(res)
+    assert.strictEqual(res.statusCode, 200)
+    const body = res.body ?? ''
+    assert.match(
+      body,
+      /simulator_station_connectors_total\{[^}]*hash_id="station-2046-empty"[^}]*\}\s+0/
+    )
   })
 
   await it('should detect off-by-one at soft cap boundary (strict-greater-than semantics)', async t => {
