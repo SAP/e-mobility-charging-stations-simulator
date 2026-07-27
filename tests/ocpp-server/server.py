@@ -2,9 +2,8 @@
 
 import argparse
 import asyncio
+import contextlib
 import logging
-import math
-import signal
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -20,6 +19,7 @@ from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
     AuthorizationStatusEnumType,
+    CancelReservationStatusEnumType,
     CertificateSignedStatusEnumType,
     CertificateSigningUseEnumType,
     ChangeAvailabilityStatusEnumType,
@@ -41,6 +41,7 @@ from ocpp.v201.enums import (
     OperationalStatusEnumType,
     RegistrationStatusEnumType,
     ReportBaseEnumType,
+    ReserveNowStatusEnumType,
     ResetEnumType,
     ResetStatusEnumType,
     SendLocalListStatusEnumType,
@@ -53,6 +54,14 @@ from ocpp.v201.enums import (
 )
 from websockets import ConnectionClosed
 
+from _common import (
+    DEFAULT_BLACKLIST,
+    DEFAULT_WHITELIST,
+    check_positive_number,
+    install_signal_handlers_and_wait,
+    negotiate_subprotocol,
+    parse_commands,
+)
 from timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -75,6 +84,9 @@ DEFAULT_FIRMWARE_URL = "https://example.com/firmware/v2.0.bin"
 DEFAULT_LOG_URL = "https://example.com/logs"
 DEFAULT_LOCAL_LIST_VERSION = 1
 DEFAULT_CUSTOMER_ID = "test_customer_001"
+DEFAULT_RESERVATION_ID = 1
+DEFAULT_RESERVE_ID_TOKEN = "reserved_token"  # noqa: S105
+DEFAULT_RESERVATION_EXPIRY_SECONDS = 3600
 FALLBACK_TRANSACTION_ID = "test_transaction_123"
 MAX_REQUEST_ID = 2**31 - 1
 SHUTDOWN_TIMEOUT_SECONDS = 30.0
@@ -109,7 +121,6 @@ class AuthMode(StrEnum):
     whitelist = "whitelist"
     blacklist = "blacklist"
     rate_limit = "rate_limit"
-    offline = "offline"
 
 
 @dataclass(frozen=True)
@@ -137,7 +148,10 @@ class ServerConfig:
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
-    # Shared mutable counter so boot_sequence advances across reconnections
+    # Shared mutable counter so boot_sequence advances across reconnections.
+    # NOTE: on_connect passes this same list to every ChargePoint, so the boot
+    # index is shared across ALL stations on this server, not per-station: the
+    # Nth BootNotification server-wide gets the Nth boot_sequence status.
     boot_index: list[int] = field(default_factory=lambda: [0])
     commands: list[tuple[Action, float]] | None = None
     trigger_message_type: MessageTriggerEnumType = (
@@ -148,6 +162,9 @@ class ServerConfig:
     set_variables_data: list[dict] | None = None
     get_variables_data: list[dict] | None = None
     local_list_tokens: list[str] | None = None
+    reservation_id: int = DEFAULT_RESERVATION_ID
+    reserve_id_token: str = DEFAULT_RESERVE_ID_TOKEN
+    reserve_evse_id: int = DEFAULT_EVSE_ID
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -166,6 +183,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _set_variables_data: list[dict] | None
     _get_variables_data: list[dict] | None
     _local_list_tokens: list[str] | None
+    _reservation_id: int
+    _reserve_id_token: str
+    _reserve_evse_id: int
 
     def __init__(
         self,
@@ -187,6 +207,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         set_variables_data: list[dict] | None = None,
         get_variables_data: list[dict] | None = None,
         local_list_tokens: list[str] | None = None,
+        reservation_id: int = DEFAULT_RESERVATION_ID,
+        reserve_id_token: str = DEFAULT_RESERVE_ID_TOKEN,
+        reserve_evse_id: int = DEFAULT_EVSE_ID,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
         cp_id = connection.request.path.strip("/").split("/")[-1]
@@ -209,13 +232,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._set_variables_data = set_variables_data
         self._get_variables_data = get_variables_data
         self._local_list_tokens = local_list_tokens
+        self._reservation_id = reservation_id
+        self._reserve_id_token = reserve_id_token
+        self._reserve_evse_id = reserve_evse_id
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
             self._auth_config = AuthConfig(
                 mode=AuthMode.normal,
-                whitelist=("valid_token", "test_token", "authorized_user"),
-                blacklist=("blocked_token", "invalid_user"),
+                whitelist=DEFAULT_WHITELIST,
+                blacklist=DEFAULT_BLACKLIST,
                 offline=False,
                 default_status=AuthorizationStatusEnumType.accepted,
             )
@@ -239,8 +265,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 )
             case AuthMode.rate_limit:
                 return AuthorizationStatusEnumType.not_at_this_time
-            case _:
-                return self._auth_config.default_status
+        return self._auth_config.default_status
 
     def _build_id_token_info(self, token_id: str) -> dict:
         """Build id_token_info dict with optional groupIdToken and cacheExpiry."""
@@ -320,7 +345,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 logger.info("Received %s Started", Action.transaction_event)
 
                 transaction_id = transaction_info.get("transaction_id", "")
-                evse_id = kwargs.get("evse", {}).get("id", 0)
+                evse_id = (kwargs.get("evse") or {}).get("id", 0)
                 if transaction_id:
                     self._active_transactions[transaction_id] = evse_id
                 else:
@@ -427,12 +452,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
     # --- Outgoing commands (CSMS → CS) ---
 
     async def _call_and_log(self, request, action: Action, success_status) -> None:
-        """Send an OCPP request and log success or failure."""
+        """Send an OCPP request and log success or failure based on its status."""
         response = await self.call(request, suppress=False)
         if response.status == success_status:
             logger.info("%s successful", action)
         else:
-            logger.info("%s failed", action)
+            logger.info("%s failed: %s", action, response.status)
 
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
@@ -688,8 +713,33 @@ class ChargePoint(ocpp.v201.ChargePoint):
             request, Action.update_firmware, UpdateFirmwareStatusEnumType.accepted
         )
 
+    async def _send_reserve_now(self):
+        expiry_date_time = datetime.now(timezone.utc) + timedelta(
+            seconds=DEFAULT_RESERVATION_EXPIRY_SECONDS
+        )
+        request = ocpp.v201.call.ReserveNow(
+            id=self._reservation_id,
+            expiry_date_time=expiry_date_time.isoformat(),
+            id_token={"id_token": self._reserve_id_token, "type": DEFAULT_TOKEN_TYPE},
+            evse_id=self._reserve_evse_id,
+        )
+        await self._call_and_log(
+            request, Action.reserve_now, ReserveNowStatusEnumType.accepted
+        )
+
+    async def _send_cancel_reservation(self):
+        request = ocpp.v201.call.CancelReservation(reservation_id=self._reservation_id)
+        await self._call_and_log(
+            request,
+            Action.cancel_reservation,
+            CancelReservationStatusEnumType.accepted,
+        )
+
     # --- Command dispatch ---
 
+    # Intentional subset of CSMS→CS commands supported by this mock.
+    # Any Action absent from this map is handled by _send_command via
+    # logger.warning only — no request is sent and no error is raised.
     _COMMAND_HANDLERS: ClassVar[dict[Action, str]] = {
         Action.clear_cache: "_send_clear_cache",
         Action.get_base_report: "_send_get_base_report",
@@ -713,6 +763,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         Action.install_certificate: "_send_install_certificate",
         Action.set_network_profile: "_send_set_network_profile",
         Action.update_firmware: "_send_update_firmware",
+        Action.reserve_now: "_send_reserve_now",
+        Action.cancel_reservation: "_send_cancel_reservation",
     }
 
     async def _send_command(self, command_name: Action):
@@ -764,7 +816,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             await asyncio.sleep(delay)
             await self._send_command(command_name)
 
-    def handle_connection_closed(self):
+    def handle_connection_closed(self) -> None:
         logger.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
@@ -779,22 +831,8 @@ async def on_connect(
     config: ServerConfig,
 ):
     """Handle new WebSocket connections from charge points."""
-    try:
-        requested_protocols = websocket.request.headers["Sec-WebSocket-Protocol"]
-    except KeyError:
-        logger.info("Client hasn't requested any Subprotocol. Closing Connection")
-        return await websocket.close()
-
-    if websocket.subprotocol:
-        logger.info("Protocols Matched: %s", websocket.subprotocol)
-    else:
-        logger.warning(
-            "Protocols Mismatched | Expected Subprotocols: %s,"
-            " but client supports %s | Closing connection",
-            websocket.available_subprotocols,
-            requested_protocols,
-        )
-        return await websocket.close()
+    if not await negotiate_subprotocol(websocket, logger):
+        return
 
     charge_points: set[ChargePoint] = config.charge_points
     cp = ChargePoint(
@@ -810,6 +848,9 @@ async def on_connect(
         set_variables_data=config.set_variables_data,
         get_variables_data=config.get_variables_data,
         local_list_tokens=config.local_list_tokens,
+        reservation_id=config.reservation_id,
+        reserve_id_token=config.reserve_id_token,
+        reserve_evse_id=config.reserve_evse_id,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
@@ -824,47 +865,8 @@ async def on_connect(
         cp.handle_connection_closed()
 
 
-def check_positive_number(value):
-    try:
-        value = float(value)
-    except ValueError:
-        raise argparse.ArgumentTypeError("must be a number") from None
-    if not math.isfinite(value):
-        raise argparse.ArgumentTypeError("must be a finite number")
-    if value <= 0:
-        raise argparse.ArgumentTypeError("must be a positive number")
-    return value
-
-
 def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
-    result: list[tuple[Action, float]] = []
-    for entry in commands_str.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        if ":" not in entry:
-            raise argparse.ArgumentTypeError(
-                f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
-            )
-        cmd_str, delay_str = entry.split(":", 1)
-        try:
-            cmd = Action(cmd_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Unknown action: '{cmd_str.strip()}'"
-            ) from None
-        try:
-            delay = float(delay_str.strip())
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Invalid delay '{delay_str.strip()}': must be a number"
-            ) from None
-        if not math.isfinite(delay) or delay <= 0:
-            raise argparse.ArgumentTypeError(
-                f"Delay must be a finite positive number, got {delay}"
-            )
-        result.append((cmd, delay))
-    return result
+    return parse_commands(commands_str, Action)
 
 
 def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[dict]:
@@ -898,7 +900,7 @@ def _parse_variable_specs(specs_str: str, require_value: bool = False) -> list[d
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="OCPP2 Server")
+    parser = argparse.ArgumentParser(description="OCPP 2.0.1 Server")
     command_group = parser.add_mutually_exclusive_group()
     command_group.add_argument("-c", "--command", type=Action, help="command name")
     command_group.add_argument(
@@ -983,27 +985,53 @@ async def main():
         default=OperationalStatusEnumType.operative,
         help="ChangeAvailability status: Operative, Inoperative (default: Operative)",
     )
+    parser.add_argument(
+        "--reservation-id",
+        type=int,
+        default=DEFAULT_RESERVATION_ID,
+        help=(
+            "ReserveNow/CancelReservation reservation id"
+            f" (default: {DEFAULT_RESERVATION_ID})"
+        ),
+    )
+    parser.add_argument(
+        "--reserve-id-token",
+        type=str,
+        default=DEFAULT_RESERVE_ID_TOKEN,
+        help=(
+            "ReserveNow id_token value the reservation is bound to"
+            f" (default: {DEFAULT_RESERVE_ID_TOKEN})"
+        ),
+    )
+    parser.add_argument(
+        "--reserve-evse-id",
+        type=int,
+        default=DEFAULT_EVSE_ID,
+        help=f"ReserveNow target EVSE id (default: {DEFAULT_EVSE_ID})",
+    )
 
     # Auth configuration
     parser.add_argument(
         "--auth-mode",
-        type=str,
-        choices=["normal", "whitelist", "blacklist", "rate_limit"],
-        default="normal",
-        help="Authorization mode (default: normal)",
+        type=AuthMode,
+        default=AuthMode.normal,
+        help=(
+            "Authorization mode: normal, whitelist, blacklist, rate_limit"
+            " (default: normal)"
+        ),
     )
     parser.add_argument(
         "--whitelist",
         type=str,
         nargs="+",
-        default=["valid_token", "test_token", "authorized_user"],
+        default=list(DEFAULT_WHITELIST),
         help="Whitelist of authorized tokens (space-separated)",
     )
     parser.add_argument(
         "--blacklist",
         type=str,
         nargs="+",
-        default=["blocked_token", "invalid_user"],
+        default=list(DEFAULT_BLACKLIST),
         help="Blacklist of blocked tokens (space-separated)",
     )
     parser.add_argument(
@@ -1086,15 +1114,13 @@ async def main():
                 )
             boot_sequence_items.append(status)
         boot_sequence = tuple(boot_sequence_items)
-        if not boot_sequence:
-            parser.error("--boot-status-sequence must contain at least one status")
     elif args.boot_status is not None:
         boot_sequence = (args.boot_status,)
     else:
         boot_sequence = (RegistrationStatusEnumType.accepted,)
 
     auth_config = AuthConfig(
-        mode=AuthMode(args.auth_mode),
+        mode=args.auth_mode,
         whitelist=tuple(args.whitelist),
         blacklist=tuple(args.blacklist),
         offline=args.offline,
@@ -1119,6 +1145,9 @@ async def main():
         set_variables_data=parsed_set_variables,
         get_variables_data=parsed_get_variables,
         local_list_tokens=args.local_list_tokens,
+        reservation_id=args.reservation_id,
+        reserve_id_token=args.reserve_id_token,
+        reserve_evse_id=args.reserve_evse_id,
     )
 
     logger.info(
@@ -1128,7 +1157,6 @@ async def main():
     )
 
     loop = asyncio.get_running_loop()
-    shutdown_count = 0
     shutdown_event = asyncio.Event()
 
     async with websockets.serve(
@@ -1141,53 +1169,15 @@ async def main():
         subprotocols=SUBPROTOCOLS,
     ) as server:
         logger.info("WebSocket Server Started on %s:%d", args.host, args.port)
-
-        def _on_signal(sig: signal.Signals) -> None:
-            nonlocal shutdown_count
-            shutdown_count += 1
-            if shutdown_count == 1:
-                logger.info("Received %s, initiating graceful shutdown...", sig.name)
-                server.close()
-                shutdown_event.set()
-            else:
-                logger.warning("Received %s again, forcing exit", sig.name)
-                sys.exit(128 + sig.value)
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                loop.add_signal_handler(sig, _on_signal, sig)
-            except NotImplementedError:
-                # Windows: ProactorEventLoop doesn't support add_signal_handler.
-                # signal.signal() fires outside the event loop, so schedule
-                # _on_signal into the loop via call_soon_threadsafe.
-                def _signal_handler(
-                    _signum: int,
-                    _frame: object,
-                    s: signal.Signals = sig,
-                ) -> None:
-                    loop.call_soon_threadsafe(_on_signal, s)
-
-                signal.signal(sig, _signal_handler)
-
-        await shutdown_event.wait()
-
-        try:
-            async with asyncio.timeout(SHUTDOWN_TIMEOUT_SECONDS):
-                await server.wait_closed()
-        except TimeoutError:
-            logger.warning(
-                "Shutdown timed out after %.0fs"
-                " — connections may not have closed cleanly",
-                SHUTDOWN_TIMEOUT_SECONDS,
-            )
+        await install_signal_handlers_and_wait(
+            loop, server, shutdown_event, SHUTDOWN_TIMEOUT_SECONDS, logger
+        )
 
     logger.info("Server shutdown complete")
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
     sys.exit(0)
