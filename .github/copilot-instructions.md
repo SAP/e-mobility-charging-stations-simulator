@@ -117,69 +117,10 @@ Documentation serves as an operational specification, not narrative prose.
 
 ## Quality gates
 
-Each sub-project has its own quality gates (format, typecheck, lint, build, test). See sub-project READMEs for exact commands. Run gates for every sub-project affected by your changes.
+Each sub-project has its own quality gates (format, lint, typecheck, build, test). See sub-project READMEs for exact commands. Run gates for every sub-project affected by your changes.
 
 - Logs use appropriate levels (error, warn, info, debug).
 - Pull request title and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
-
-## Examples
-
-### Naming coherence
-
-**Good** (consistent style, clear semantics):
-
-```typescript
-const thresholdValue = 0.06
-const processingMode = 'piecewise'
-type ChargingStationStatus = 'Available' | 'Preparing' | 'Charging'
-```
-
-**Bad** (mixed styles, ambiguous):
-
-```typescript
-const threshold_value = 0.06    // inconsistent case style
-const thresholdAim = 0.06       // synonym creates ambiguity
-type charging_station_status    // wrong casing for type
-```
-
-### Promise-based request/response pattern
-
-**Good** (proper async flow):
-
-```typescript
-protected handleProtocolRequest(
-  uuid: string,
-  procedureName: ProcedureName,
-  payload: RequestPayload
-): Promise<ResponsePayload> {
-  return new Promise<ResponsePayload>((resolve, reject) => {
-    this.pendingRequests.set(uuid, { reject, resolve })
-    this.sendBroadcastChannelRequest(uuid, procedureName, payload)
-  })
-}
-```
-
-**Bad** (returns void, no Promise):
-
-```typescript
-protected handleProtocolRequest(
-  uuid: string,
-  procedureName: ProcedureName,
-  payload: RequestPayload
-): void {
-  this.sendBroadcastChannelRequest(uuid, procedureName, payload)
-  // Response never reaches caller!
-}
-```
-
-### Statistical reporting
-
-```markdown
-| Metric      | Value | Interpretation        |
-| ----------- | ----- | --------------------- |
-| KL(A‖B)     | 0.023 | < 0.1: low divergence |
-| Effect size | 0.12  | small to medium       |
-```
 
 ---
 
