@@ -85,9 +85,9 @@ await describe('DeepFreeze', async () => {
   })
 
   await it('should treat array-buffer views as opaque leaves without throwing', () => {
-    const object = { buffer: new Uint8Array([1, 2, 3]) }
+    const object = { view: new Uint8Array([1, 2, 3]) }
     assert.strictEqual(deepFreeze(object), object)
     assert.strictEqual(Object.isFrozen(object), true)
-    assert.strictEqual(Object.isFrozen(object.buffer), false)
+    assert.strictEqual(Object.isFrozen(object.view), false)
   })
 })
