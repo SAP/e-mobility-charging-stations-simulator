@@ -65,6 +65,7 @@ export {
   hasReservationExpired,
   removeExpiredReservations,
 } from './HelpersReservation.js'
+export { internStationInfoInvariants } from './StationInfoInvariants.js'
 
 export const checkChargingStationState = (
   chargingStation: ChargingStation,

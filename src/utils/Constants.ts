@@ -5,6 +5,7 @@ import {
   OCPPVersion,
   VendorParametersKey,
 } from '../types/index.js'
+import { deepFreeze } from './DeepFreeze.js'
 
 // Shared literals for class-static members below (TS2729 forbids static
 // forward-reference).
@@ -78,7 +79,7 @@ export class Constants {
   /** Default cache TTL for remote authorization results, distinct from `DEFAULT_AUTH_CACHE_TTL_SECONDS` (3600, local cache default). */
   static readonly DEFAULT_REMOTE_AUTH_CACHE_TTL_SECONDS = 300
 
-  static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
+  static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = deepFreeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
     autoStart: true,

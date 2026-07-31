@@ -31,6 +31,7 @@ export {
 } from './ConfigurationUtils.js'
 export { ConfigurationValidationError, validateConfiguration } from './ConfigurationValidation.js'
 export { Constants } from './Constants.js'
+export { deepFreeze } from './DeepFreeze.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'
 export {
   ensureError,

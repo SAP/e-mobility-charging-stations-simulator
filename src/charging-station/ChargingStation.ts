@@ -144,6 +144,7 @@ import {
   hasFeatureProfile,
   hasReservationExpired,
   initializeConnectorsMapStatus,
+  internStationInfoInvariants,
   prepareConnectorStatus,
   propagateSerialNumber,
   setChargingStationOptions,
@@ -1707,6 +1708,7 @@ export class ChargingStation extends EventEmitter {
       mergeDeepRight(Constants.DEFAULT_STATION_INFO as ChargingStationInfo, stationInfo),
       options
     )
+    internStationInfoInvariants(stationInfo)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationInfo)
     stationInfo.hashId = getHashId(this.index, stationTemplate, stationInfo.chargingStationId)
     return stationInfo
