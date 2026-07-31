@@ -134,4 +134,62 @@ await describe('StationInfoInvariants', async () => {
     assert.strictEqual(consumer.messageTriggerSupport, producer.messageTriggerSupport)
     assert.strictEqual(JSON.stringify(consumer), consumerBefore)
   })
+
+  await it('should not cross-bleed invariant keys across disjoint key-sets', () => {
+    const stationInfoA = buildStationInfo({
+      commandsSupport: {
+        incomingCommands: { Reset: true },
+      } as NonNullable<ChargingStationInfo['commandsSupport']>,
+    })
+    const stationInfoB = buildStationInfo({
+      messageTriggerSupport: {
+        Heartbeat: true,
+      } as NonNullable<ChargingStationInfo['messageTriggerSupport']>,
+    })
+
+    internStationInfoInvariants(stationInfoA)
+    internStationInfoInvariants(stationInfoB)
+
+    assert.strictEqual(stationInfoA.messageTriggerSupport, undefined)
+    assert.strictEqual(stationInfoB.commandsSupport, undefined)
+    assert.ok(stationInfoA.commandsSupport != null)
+    assert.ok(stationInfoB.messageTriggerSupport != null)
+  })
+
+  await it('should not inject a foreign invariant key on a partial cache-hit', () => {
+    const producer = buildStationInfo({
+      commandsSupport: {
+        incomingCommands: { Reset: true },
+      } as NonNullable<ChargingStationInfo['commandsSupport']>,
+      firmwareUpgrade: { reset: false, versionUpgrade: { step: 2 } },
+    })
+    const consumer = buildStationInfo({
+      firmwareUpgrade: { reset: false, versionUpgrade: { step: 2 } },
+    })
+    const consumerBefore = JSON.stringify(consumer)
+
+    internStationInfoInvariants(producer)
+    internStationInfoInvariants(consumer)
+
+    assert.strictEqual(Object.hasOwn(consumer, 'commandsSupport'), false)
+    assert.strictEqual(JSON.stringify(consumer), consumerBefore)
+  })
+
+  await it('should never set an interned key to undefined', () => {
+    const stationInfo = buildStationInfo({
+      commandsSupport: {
+        incomingCommands: { Reset: true },
+      } as NonNullable<ChargingStationInfo['commandsSupport']>,
+      firmwareUpgrade: { reset: false },
+      messageTriggerSupport: {
+        Heartbeat: true,
+      } as NonNullable<ChargingStationInfo['messageTriggerSupport']>,
+    })
+
+    internStationInfoInvariants(stationInfo)
+
+    assert.notStrictEqual(stationInfo.commandsSupport, undefined)
+    assert.notStrictEqual(stationInfo.firmwareUpgrade, undefined)
+    assert.notStrictEqual(stationInfo.messageTriggerSupport, undefined)
+  })
 })
