@@ -75,4 +75,19 @@ await describe('DeepFreeze', async () => {
     assert.strictEqual(Object.isFrozen(symbolNested), true)
     assert.strictEqual(getterCalls, 0)
   })
+
+  await it('should freeze non-enumerable string-keyed data properties', () => {
+    const hidden = { value: 1 }
+    const object = {}
+    Object.defineProperty(object, 'hidden', { enumerable: false, value: hidden })
+    deepFreeze(object)
+    assert.strictEqual(Object.isFrozen(hidden), true)
+  })
+
+  await it('should treat array-buffer views as opaque leaves without throwing', () => {
+    const object = { buffer: new Uint8Array([1, 2, 3]) }
+    assert.strictEqual(deepFreeze(object), object)
+    assert.strictEqual(Object.isFrozen(object), true)
+    assert.strictEqual(Object.isFrozen(object.buffer), false)
+  })
 })
