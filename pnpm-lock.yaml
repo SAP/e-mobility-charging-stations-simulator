@@ -21,8 +21,8 @@ importers:
         specifier: ^6.6.16
         version: 6.6.16(@mikro-orm/core@6.6.16)
       '@modelcontextprotocol/sdk':
-        specifier: ~1.29.0
-        version: 1.29.0(supports-color@7.2.0)(zod@4.4.3)
+        specifier: ~1.30.0
+        version: 1.30.0(supports-color@7.2.0)(zod@4.4.3)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -115,7 +115,7 @@ importers:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.6.1)(supports-color@7.2.0)
       eslint-plugin-jsdoc:
-        specifier: ^63.3.1
+        specifier: ^63.3.2
         version: 63.3.2(eslint@9.39.5(jiti@2.6.1)(supports-color@7.2.0))(supports-color@7.2.0)
       eslint-plugin-perfectionist:
         specifier: ^5.10.0
@@ -1152,8 +1152,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@modelcontextprotocol/sdk@1.29.0':
-    resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
+  '@modelcontextprotocol/sdk@1.30.0':
+    resolution: {integrity: sha512-xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -5810,7 +5810,7 @@ snapshots:
       globby: 11.1.0
       ts-morph: 27.0.2
 
-  '@modelcontextprotocol/sdk@1.29.0(supports-color@7.2.0)(zod@4.4.3)':
+  '@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.15(hono@4.12.32)
       ajv: 8.20.0
