@@ -5,9 +5,10 @@
  * @description Shares (flyweight design pattern) the object-valued `stationInfo`
  *   fields that are invariant across all charging stations built from the same
  *   template, instead of duplicating them per instance. On a cache miss a
- *   deep-frozen clone of the invariant projection is stored, keyed by a content
- *   hash of the projection; every subsequent same-content station reuses the
- *   same frozen object graph by reference. `internStationInfoInvariants` is
+ *   deep-frozen clone of the invariant projection is cached through weak
+ *   references, keyed by a content hash of the projection; every subsequent
+ *   same-content station reuses the same frozen object graph by reference while
+ *   at least one station still retains it. `internStationInfoInvariants` is
  *   re-exported from `./Helpers.js`.
  *
  *   Scope decisions (issue #92):
@@ -45,18 +46,87 @@ const INVARIANT_STATION_INFO_OBJECT_KEYS = [
 ] as const satisfies readonly (keyof ChargingStationInfo)[]
 
 /**
- * Per-worker registry: invariants content hash -> deep-frozen invariant graph.
- * The key space is bounded by the number of distinct invariant contents (at
- * most one per template variant), so an unbounded `Map` cannot leak
- * meaningfully; unbounded (rather than an LRU) also guarantees a stable shared
- * identity for the lifetime of the worker.
+ * Weak references to the object values of one deep-frozen invariant projection.
+ * Stations retain these values directly after `Object.assign`; the transient
+ * projection container itself is therefore deliberately not used as the weak
+ * target.
  */
-const invariantsCache = new Map<string, Readonly<Record<string, unknown>>>()
+interface FinalizedInvariantsCacheEntry {
+  readonly cacheEntry: InvariantsCacheEntry
+  readonly invariantsHash: string
+}
+
+interface InvariantsCacheEntry {
+  readonly references: Readonly<Record<string, WeakRef<object>>>
+}
+
+/**
+ * Per-worker weak-value registry: invariants content hash -> invariant object
+ * references. A late finalizer can observe a replacement under the same hash,
+ * so deletion is guarded by cache-entry identity.
+ */
+const invariantsCache = new Map<string, InvariantsCacheEntry>()
+
+const invariantsFinalizationRegistry = new FinalizationRegistry<FinalizedInvariantsCacheEntry>(
+  ({ cacheEntry, invariantsHash }) => {
+    if (invariantsCache.get(invariantsHash) === cacheEntry) {
+      invariantsCache.delete(invariantsHash)
+      invariantsFinalizationRegistry.unregister(cacheEntry)
+    }
+  }
+)
+
+const cacheSharedInvariants = (
+  invariantsHash: string,
+  sharedInvariants: Readonly<Record<string, unknown>>
+): void => {
+  const references: Record<string, WeakRef<object>> = {}
+  for (const [key, value] of Object.entries(sharedInvariants)) {
+    // ChargingStationInfo types and template validation constrain every selected
+    // invariant to an object. Fail open for a malformed direct caller: it still
+    // receives the frozen clone, but the invalid projection is not cached.
+    if (value == null || typeof value !== 'object') {
+      return
+    }
+    references[key] = new WeakRef(value)
+  }
+  const cacheEntry: InvariantsCacheEntry = { references }
+  invariantsCache.set(invariantsHash, cacheEntry)
+  for (const reference of Object.values(references)) {
+    const value = reference.deref()
+    if (value != null) {
+      invariantsFinalizationRegistry.register(value, { cacheEntry, invariantsHash }, cacheEntry)
+    }
+  }
+}
+
+const getSharedInvariants = (
+  invariantsHash: string
+): Readonly<Record<string, unknown>> | undefined => {
+  const cacheEntry = invariantsCache.get(invariantsHash)
+  if (cacheEntry == null) {
+    return undefined
+  }
+  const sharedInvariants: Record<string, unknown> = {}
+  for (const [key, reference] of Object.entries(cacheEntry.references)) {
+    const value = reference.deref()
+    if (value == null) {
+      invariantsFinalizationRegistry.unregister(cacheEntry)
+      invariantsCache.delete(invariantsHash)
+      return undefined
+    }
+    sharedInvariants[key] = value
+  }
+  return sharedInvariants
+}
 
 /**
  * Clears the per-worker invariants cache. Test-only isolation helper.
  */
 export const clearStationInfoInvariantsCache = (): void => {
+  for (const cacheEntry of invariantsCache.values()) {
+    invariantsFinalizationRegistry.unregister(cacheEntry)
+  }
   invariantsCache.clear()
 }
 
@@ -82,7 +152,7 @@ export const internStationInfoInvariants = (stationInfo: ChargingStationInfo): v
       Object.hasOwn(stationInfo, key) &&
       // Skip a field still pointing at the shared DEFAULT reference: it is
       // already deduped, and interning it would only add hashing cost.
-      !Object.is(value, Constants.DEFAULT_STATION_INFO[key])
+      !Object.is(value, (Constants.DEFAULT_STATION_INFO as Partial<ChargingStationInfo>)[key])
     ) {
       projection[key] = value
     }
@@ -94,12 +164,12 @@ export const internStationInfoInvariants = (stationInfo: ChargingStationInfo): v
   // identical key <=> shared identity. Any difference forks its own entry, so
   // reusing an interned graph can never alter a station's serialized bytes.
   const invariantsHash = hash(Constants.DEFAULT_HASH_ALGORITHM, JSON.stringify(projection), 'hex')
-  let sharedInvariants = invariantsCache.get(invariantsHash)
+  let sharedInvariants = getSharedInvariants(invariantsHash)
   if (sharedInvariants == null) {
     // Clone before freezing so the shared graph is independent of the station's
     // (or any file/LRU-cache-aliased) mutable field references.
     sharedInvariants = deepFreeze(clone(projection))
-    invariantsCache.set(invariantsHash, sharedInvariants)
+    cacheSharedInvariants(invariantsHash, sharedInvariants)
   }
   // Object.assign copies only the keys present in sharedInvariants and preserves
   // per-station insertion order. A per-key loop over

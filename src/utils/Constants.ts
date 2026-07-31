@@ -2,15 +2,26 @@ import {
   type AutomaticTransactionGeneratorConfiguration,
   type ChargingStationInfo,
   CurrentType,
+  type FirmwareUpgrade,
   OCPPVersion,
   VendorParametersKey,
 } from '../types/index.js'
-import { deepFreeze } from './DeepFreeze.js'
+import { deepFreeze, type DeepReadonly } from './DeepFreeze.js'
 
 // Shared literals for class-static members below (TS2729 forbids static
 // forward-reference).
 const DAY_IN_MS = 86_400_000
 const DAY_IN_SECONDS = 86_400
+
+type DefaultFirmwareUpgrade = DeepReadonly<
+  Required<Pick<FirmwareUpgrade, 'reset' | 'versionUpgrade'>> & {
+    versionUpgrade: Required<Pick<NonNullable<FirmwareUpgrade['versionUpgrade']>, 'step'>>
+  }
+>
+
+type DefaultStationInfo = Readonly<Omit<Partial<ChargingStationInfo>, 'firmwareUpgrade'>> & {
+  readonly firmwareUpgrade: DefaultFirmwareUpgrade
+}
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
@@ -79,7 +90,7 @@ export class Constants {
   /** Default cache TTL for remote authorization results, distinct from `DEFAULT_AUTH_CACHE_TTL_SECONDS` (3600, local cache default). */
   static readonly DEFAULT_REMOTE_AUTH_CACHE_TTL_SECONDS = 300
 
-  static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = deepFreeze({
+  static readonly DEFAULT_STATION_INFO: DefaultStationInfo = deepFreeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
     autoStart: true,
@@ -115,7 +126,7 @@ export class Constants {
     supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
     transactionDataMeterValues: false,
     useConnectorId0: true,
-  })
+  } satisfies Partial<ChargingStationInfo>)
 
   static readonly DEFAULT_TX_UPDATED_INTERVAL_SECONDS = 30
 

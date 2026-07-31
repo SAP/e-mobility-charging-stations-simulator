@@ -3,11 +3,16 @@
  * @description Unit tests for the recursive deep-freeze utility.
  */
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { deepFreeze } from '../../src/utils/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('DeepFreeze', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
   await it('should return the same reference it was given', () => {
     const object = { a: 1 }
     assert.strictEqual(deepFreeze(object), object)
@@ -29,6 +34,7 @@ await describe('DeepFreeze', async () => {
   await it('should make nested mutation throw in strict mode', () => {
     const object = deepFreeze({ nested: { value: 1 } })
     assert.throws(() => {
+      // @ts-expect-error - deepFreeze must expose deeply frozen plain objects as readonly.
       object.nested.value = 2
     }, TypeError)
   })
@@ -89,5 +95,16 @@ await describe('DeepFreeze', async () => {
     assert.strictEqual(deepFreeze(object), object)
     assert.strictEqual(Object.isFrozen(object), true)
     assert.strictEqual(Object.isFrozen(object.view), false)
+    object.view[0] = 4
+    assert.strictEqual(object.view[0], 4)
+  })
+
+  await it('should preserve the mutable type and runtime behavior of opaque maps', () => {
+    const nested = { value: 1 }
+    const map = deepFreeze(new Map([['key', nested]]))
+    map.set('second', { value: 2 })
+    nested.value = 3
+    assert.strictEqual(map.size, 2)
+    assert.strictEqual(map.get('key')?.value, 3)
   })
 })

@@ -14,6 +14,7 @@ import {
   internStationInfoInvariants,
 } from '../../src/charging-station/StationInfoInvariants.js'
 import { Constants } from '../../src/utils/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const buildStationInfo = (overrides: Partial<ChargingStationInfo> = {}): ChargingStationInfo =>
   ({
@@ -25,6 +26,7 @@ const buildStationInfo = (overrides: Partial<ChargingStationInfo> = {}): Chargin
 
 await describe('StationInfoInvariants', async () => {
   afterEach(() => {
+    standardCleanup()
     clearStationInfoInvariantsCache()
   })
 

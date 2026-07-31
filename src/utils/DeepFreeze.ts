@@ -14,6 +14,29 @@
  *   field frozen during module evaluation).
  */
 
+/**
+ * Deeply readonly view of an object graph frozen by {@link deepFreeze}.
+ * Runtime-opaque mutable containers keep their original type because
+ * `Object.freeze` cannot make their internal slots or backing storage immutable.
+ */
+export type DeepReadonly<T> = T extends (...arguments_: never[]) => unknown
+  ? T
+  : T extends ArrayBuffer | ArrayBufferView | Date | RegExp | SharedArrayBuffer
+    ? T
+    : T extends ReadonlyMap<infer _Key, infer _Value>
+      ? T
+      : T extends ReadonlySet<infer _Value>
+        ? T
+        : T extends WeakMap<infer _Key extends object, infer _Value>
+          ? T
+          : T extends WeakSet<infer _Value extends object>
+            ? T
+            : T extends readonly unknown[]
+              ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+              : T extends object
+                ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+                : T
+
 const deepFreezeInto = (object: unknown, seen: WeakSet<object>): void => {
   if (object == null || typeof object !== 'object' || seen.has(object)) {
     return
@@ -48,12 +71,15 @@ const deepFreezeInto = (object: unknown, seen: WeakSet<object>): void => {
  * unchanged). Array-buffer views (typed arrays, `DataView`) are treated as
  * opaque leaves and left unfrozen. `Map`/`Set` objects are frozen, but their
  * entries are not traversed and `Object.freeze` does not prevent `set`/`add`/
- * `delete`/`clear`.
+ * `delete`/`clear`. These opaque mutable containers retain their mutable
+ * TypeScript type; plain objects and arrays are returned as
+ * {@link DeepReadonly} graphs.
  * @param object - Value to deep-freeze.
- * @returns The same `object` reference, deeply frozen when it is an object.
+ * @returns The same `object` reference with a deeply readonly type for the
+ *   object and array shapes that are deeply frozen.
  * @template T - Type of the value, preserved on return.
  */
-export const deepFreeze = <T>(object: T): T => {
+export const deepFreeze = <T>(object: T): DeepReadonly<T> => {
   deepFreezeInto(object, new WeakSet())
-  return object
+  return object as DeepReadonly<T>
 }
