@@ -101,9 +101,9 @@ export const internStationInfoInvariants = (stationInfo: ChargingStationInfo): v
     sharedInvariants = deepFreeze(clone(projection))
     invariantsCache.set(invariantsHash, sharedInvariants)
   }
-  // A cache hit implies a byte-identical projection, so sharedInvariants holds
-  // exactly this projection's keys. Object.assign preserves per-station key
-  // order; per-key assignment is deliberately avoided — it would write
-  // undefined for any key missing from a (hypothetically) collided graph.
+  // Object.assign copies only the keys present in sharedInvariants and preserves
+  // per-station insertion order. A per-key loop over
+  // INVARIANT_STATION_INFO_OBJECT_KEYS is avoided: for a narrower (subset) entry
+  // it would write undefined for the absent keys, injecting foreign own keys.
   Object.assign(stationInfo, sharedInvariants)
 }
