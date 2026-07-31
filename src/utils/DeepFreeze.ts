@@ -19,23 +19,25 @@
  * Runtime-opaque mutable containers keep their original type because
  * `Object.freeze` cannot make their internal slots or backing storage immutable.
  */
-export type DeepReadonly<T> = T extends (...arguments_: never[]) => unknown
+export type DeepReadonly<T> = T extends abstract new (...arguments_: never[]) => unknown
   ? T
-  : T extends ArrayBuffer | ArrayBufferView | Date | RegExp | SharedArrayBuffer
+  : T extends (...arguments_: never[]) => unknown
     ? T
-    : T extends ReadonlyMap<infer _Key, infer _Value>
+    : T extends ArrayBuffer | ArrayBufferView | Date | RegExp | SharedArrayBuffer
       ? T
-      : T extends ReadonlySet<infer _Value>
+      : T extends ReadonlyMap<infer _Key, infer _Value>
         ? T
-        : T extends WeakMap<infer _Key extends object, infer _Value>
+        : T extends ReadonlySet<infer _Value>
           ? T
-          : T extends WeakSet<infer _Value extends object>
+          : T extends WeakMap<infer _Key extends object, infer _Value>
             ? T
-            : T extends readonly unknown[]
-              ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
-              : T extends object
+            : T extends WeakSet<infer _Value extends object>
+              ? T
+              : T extends readonly unknown[]
                 ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
-                : T
+                : T extends object
+                  ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+                  : T
 
 const deepFreezeInto = (object: unknown, seen: WeakSet<object>): void => {
   if (object == null || typeof object !== 'object' || seen.has(object)) {
