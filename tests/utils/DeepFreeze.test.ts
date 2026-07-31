@@ -52,4 +52,27 @@ await describe('DeepFreeze', async () => {
     deepFreeze(object)
     assert.strictEqual(Object.isFrozen(object.nested), true)
   })
+
+  await it('should terminate and freeze a self-referential graph', () => {
+    const object: Record<string, unknown> = { value: 1 }
+    object.self = object
+    assert.strictEqual(deepFreeze(object), object)
+    assert.strictEqual(Object.isFrozen(object), true)
+  })
+
+  await it('should freeze symbol-keyed data properties without invoking getters', () => {
+    const nestedKey = Symbol('nested')
+    const symbolNested = { value: 1 }
+    let getterCalls = 0
+    const object = {
+      get lazy () {
+        getterCalls++
+        return { value: 1 }
+      },
+      [nestedKey]: symbolNested,
+    }
+    deepFreeze(object)
+    assert.strictEqual(Object.isFrozen(symbolNested), true)
+    assert.strictEqual(getterCalls, 0)
+  })
 })

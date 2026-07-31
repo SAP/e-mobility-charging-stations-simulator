@@ -7,7 +7,8 @@
  *   template, instead of duplicating them per instance. On a cache miss a
  *   deep-frozen clone of the invariant projection is stored, keyed by a content
  *   hash of the projection; every subsequent same-content station reuses the
- *   same frozen object graph by reference. Re-exported from `./Helpers.js`.
+ *   same frozen object graph by reference. `internStationInfoInvariants` is
+ *   re-exported from `./Helpers.js`.
  *
  *   Scope decisions (issue #92):
  *   - Only object-valued invariant fields yield memory savings; primitive fields
@@ -53,8 +54,7 @@ const INVARIANT_STATION_INFO_OBJECT_KEYS = [
 const invariantsCache = new Map<string, Readonly<Record<string, unknown>>>()
 
 /**
- * Clears the per-worker invariants cache. Test-only isolation helper mirroring
- * {@link SharedLRUCache.clear}.
+ * Clears the per-worker invariants cache. Test-only isolation helper.
  */
 export const clearStationInfoInvariantsCache = (): void => {
   invariantsCache.clear()
