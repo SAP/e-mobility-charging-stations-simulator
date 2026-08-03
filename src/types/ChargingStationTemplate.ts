@@ -73,6 +73,15 @@ export interface ChargingStationTemplate {
   commandsSupport?: CommandsSupport
   Configuration?: ChargingStationOcppConfiguration
   Connectors?: Record<string, ConnectorStatus>
+  /**
+   * AC-input to DC-output power conversion efficiency, in (0, 1]. DC stations
+   * only (`currentOutType === CurrentType.DC`). Absent ⇒ 1 (no reduction,
+   * backward compatible). Reduces only the available charging power returned by
+   * `getConnectorMaximumAvailablePower` (and the DC output-side MeterValues
+   * derived from it: Power, Current, Energy). `stationInfo.maximumPower` and
+   * `maximumAmperage` remain the AC input-side values and are left unchanged.
+   */
+  conversionEfficiency?: number
   currentOutType?: CurrentType
   customValueLimitationMeterValues?: boolean
   enableStatistics?: boolean

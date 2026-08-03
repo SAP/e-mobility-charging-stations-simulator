@@ -185,6 +185,7 @@ const BaseTemplateSchema = z.looseObject({
   commandsSupport: CommandsSupportSchema.optional(),
   Configuration: OcppConfigurationSchema.optional(),
   Connectors: z.record(z.string().regex(/^\d+$/), ConnectorStatusSchema).optional(),
+  conversionEfficiency: z.number().positive().max(1).optional(),
   currentOutType: z.string().optional(),
   customValueLimitationMeterValues: z.boolean().optional(),
   enableStatistics: z.boolean().optional(),

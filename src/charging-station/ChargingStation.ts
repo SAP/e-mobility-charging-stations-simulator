@@ -636,8 +636,21 @@ export class ChargingStation extends EventEmitter {
       )
       return Number.POSITIVE_INFINITY
     }
-    const connectorMaximumPower = maximumPower / (this.powerDivider ?? 1)
-    const connectorHardwareMaximumPower = this.getConnectorStatus(connectorId)?.maximumPower
+    // #443: on DC, the template maximumPower is the AC input-side power; the
+    // power actually available for charging is input * conversion efficiency.
+    // AC => 1 (not applied). Absent => 1 (backward compatible). Applied to both
+    // power-derived bounds so the connector hardware bound (also derived from
+    // the AC template power) cannot short-circuit the factor through min().
+    const conversionEfficiency =
+      this.stationInfo?.currentOutType === CurrentType.DC
+        ? (this.stationInfo.conversionEfficiency ?? 1)
+        : 1
+    const connectorMaximumPower = (maximumPower / (this.powerDivider ?? 1)) * conversionEfficiency
+    const connectorHardwareMaximumPowerInput = this.getConnectorStatus(connectorId)?.maximumPower
+    const connectorHardwareMaximumPower =
+      connectorHardwareMaximumPowerInput == null
+        ? undefined
+        : connectorHardwareMaximumPowerInput * conversionEfficiency
     const chargingStationChargingProfilesLimit =
       (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
       (this.powerDivider ?? 1)
