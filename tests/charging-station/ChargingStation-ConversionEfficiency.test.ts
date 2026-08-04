@@ -1,5 +1,5 @@
 /**
- * @file Tests for template AC/DC conversion efficiency (issue #443).
+ * @file Tests for template AC/DC conversion efficiency.
  * @description On DC stations, template `maximumPower` is the AC input-side
  * power; the power available for charging is `input * conversionEfficiency`.
  * The factor is applied at runtime in `getConnectorMaximumAvailablePower` only

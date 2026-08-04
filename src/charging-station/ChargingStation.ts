@@ -636,7 +636,7 @@ export class ChargingStation extends EventEmitter {
       )
       return Number.POSITIVE_INFINITY
     }
-    // #443: on DC, the template maximumPower is the AC input-side power; the
+    // On DC, the template maximumPower is the AC input-side power; the
     // power actually available for charging is input * conversion efficiency.
     // AC => 1 (not applied). Absent => 1 (backward compatible). Applied to both
     // power-derived bounds: the connector hardware bound is an input-side power
