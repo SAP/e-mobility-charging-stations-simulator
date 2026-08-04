@@ -3,8 +3,9 @@
  * @description On DC stations, template `maximumPower` is the AC input-side
  * power; the power available for charging is `input * conversionEfficiency`.
  * The factor is applied at runtime in `getConnectorMaximumAvailablePower` only
- * (DC-only, absent => 1). `stationInfo.maximumPower` and `maximumAmperage`
- * remain the AC input-side values and are left unchanged.
+ * (DC-only, absent => 1). `stationInfo.maximumPower` (the AC input-side power)
+ * and `stationInfo.maximumAmperage` (derived from it as `maximumPower /
+ * voltageOut` on DC) are left unchanged and are not reduced by the factor.
  */
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'

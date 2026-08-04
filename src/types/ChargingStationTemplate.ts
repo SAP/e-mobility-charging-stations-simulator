@@ -77,9 +77,12 @@ export interface ChargingStationTemplate {
    * AC-input to DC-output power conversion efficiency, in (0, 1]. DC stations
    * only (`currentOutType === CurrentType.DC`). Absent ⇒ 1 (no reduction,
    * backward compatible). Reduces only the available charging power returned by
-   * `getConnectorMaximumAvailablePower` (and the DC output-side MeterValues
-   * derived from it: Power, Current, Energy). `stationInfo.maximumPower` and
-   * `maximumAmperage` remain the AC input-side values and are left unchanged.
+   * `getConnectorMaximumAvailablePower`, and the DC output-side MeterValues
+   * derived from it (Power, Current, Energy), which are assumed to be measured
+   * at the connector outlet (the OCPP default `location` for these measurands).
+   * `stationInfo.maximumPower` (the AC input-side power) and
+   * `stationInfo.maximumAmperage` (derived from it as `maximumPower / voltageOut`
+   * on DC) are left unchanged and are not reduced by this factor.
    */
   conversionEfficiency?: number
   currentOutType?: CurrentType

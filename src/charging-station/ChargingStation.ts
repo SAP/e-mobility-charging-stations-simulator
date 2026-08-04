@@ -639,8 +639,10 @@ export class ChargingStation extends EventEmitter {
     // #443: on DC, the template maximumPower is the AC input-side power; the
     // power actually available for charging is input * conversion efficiency.
     // AC => 1 (not applied). Absent => 1 (backward compatible). Applied to both
-    // power-derived bounds so the connector hardware bound (also derived from
-    // the AC template power) cannot short-circuit the factor through min().
+    // power-derived bounds: the connector hardware bound is an input-side power
+    // rating too (its default derives from the AC template power; an explicit
+    // Connectors[n].maximumPower is configured directly), so it must be reduced
+    // as well and cannot short-circuit the factor through min().
     const conversionEfficiency =
       this.stationInfo?.currentOutType === CurrentType.DC
         ? (this.stationInfo.conversionEfficiency ?? 1)
