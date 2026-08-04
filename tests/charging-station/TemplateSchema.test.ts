@@ -72,6 +72,26 @@ await describe('TemplateSchema', async () => {
     })
   })
 
+  await describe('conversionEfficiency', async () => {
+    await it('should accept an absent conversionEfficiency (backward compatible)', () => {
+      assert.ok(TemplateSchema.safeParse(buildMinimalTemplate()).success)
+    })
+
+    for (const conversionEfficiency of [0.5, 0.9, 1]) {
+      await it(`should accept conversionEfficiency ${conversionEfficiency.toString()}`, () => {
+        assert.ok(TemplateSchema.safeParse(buildMinimalTemplate({ conversionEfficiency })).success)
+      })
+    }
+
+    for (const conversionEfficiency of [0, -0.1, 1.5, '0.9']) {
+      await it(`should reject conversionEfficiency ${JSON.stringify(conversionEfficiency)}`, () => {
+        const result = TemplateSchema.safeParse(buildMinimalTemplate({ conversionEfficiency }))
+        assert.ok(!result.success)
+        assert.ok(result.error.issues.some(i => i.path.includes('conversionEfficiency')))
+      })
+    }
+  })
+
   await describe('deprecated keys rejection', async () => {
     for (const [legacyKey, legacyValue] of [
       ['supervisionUrl', TEST_SUPERVISION_URL],

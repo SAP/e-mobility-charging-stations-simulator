@@ -16,6 +16,8 @@
         "start-mcp-server",
         "--context",
         "ide-assistant",
+        "--open-web-dashboard",
+        "false",
       ],
       "enabled": true,
     },
