@@ -618,7 +618,7 @@ export class ChargingStation extends EventEmitter {
     ) {
       const voltageOut = this.getVoltageOut()
       connectorAmperageLimitationLimit =
-        (this.stationInfo?.currentOutType === CurrentType.AC
+        (this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
             this.getNumberOfPhases(),
             voltageOut,
@@ -644,8 +644,8 @@ export class ChargingStation extends EventEmitter {
     // Connectors[n].maximumPower is configured directly), so it must be reduced
     // as well and cannot short-circuit the factor through min().
     const conversionEfficiency =
-      this.stationInfo?.currentOutType === CurrentType.DC
-        ? (this.stationInfo.conversionEfficiency ?? 1)
+      this.getCurrentOutType() === CurrentType.DC
+        ? (this.stationInfo?.conversionEfficiency ?? 1)
         : 1
     const connectorMaximumPower = (maximumPower / (this.powerDivider ?? 1)) * conversionEfficiency
     const connectorHardwareMaximumPowerInput = this.getConnectorStatus(connectorId)?.maximumPower
