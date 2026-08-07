@@ -1,5 +1,27 @@
 # Changelog
 
+## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.11.0...simulator@v4.12.0) (2026-08-07)
+
+
+### 🚀 Features
+
+* **simulator:** add AC/DC conversion efficiency template support ([#2063](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2063)) ([bd10066](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd100667af56f495e8458ead117bb7521ba434a6)), closes [#443](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/443)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#2051](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2051)) ([e545222](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e545222d7afb921dec5f79ed172b1b24f1c5afaf))
+* **deps:** update all non-major dependencies ([#2057](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2057)) ([82e9650](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/82e96505d12548d6d7563471375b7368078e5e20))
+* **deps:** update all non-major dependencies ([#2067](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2067)) ([fc76b35](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fc76b350ae3bcf57948f6fb93c619bb9f7f7626b))
+* **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
+* **deps:** update dependency chalk to v6 ([#2055](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2055)) ([fb82151](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb8215111d80330a111111c5bcc9333eaae5b127))
+
+
+### 📚 Documentation
+
+* **readme:** phrase coherent MeterValues docs in user-facing terms ([#2060](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2060)) ([7176b56](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7176b56a7554625bc1b11931a506a7ae7dd611b7))
+* streamline copilot instructions ([#2053](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2053)) ([ba25e39](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ba25e39b4fcb4ff5352c8c25a5b4f76c378f7422))
+
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.10.1...simulator@v4.11.0) (2026-07-27)
 
 ### 🚀 Features
