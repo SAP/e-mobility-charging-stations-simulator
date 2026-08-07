@@ -33,11 +33,14 @@
         </dl>
       </section>
       <section class="station-details__section">
-        <h3 class="station-details__title">
+        <h3
+          id="station-details-ocpp-title"
+          class="station-details__title"
+        >
           OCPP Parameters
         </h3>
         <p
-          v-if="configurationKeys.length === 0"
+          v-if="configurationRows.length === 0"
           class="station-details__empty"
         >
           No OCPP parameters reported
@@ -45,6 +48,7 @@
         <table
           v-else
           class="station-details__table"
+          aria-labelledby="station-details-ocpp-title"
         >
           <thead>
             <tr>
@@ -64,15 +68,15 @@
           </thead>
           <tbody>
             <tr
-              v-for="configurationKey in configurationKeys"
-              :key="configurationKey.key"
+              v-for="row in configurationRows"
+              :key="row.key"
             >
               <th scope="row">
-                {{ configurationKey.key }}
+                {{ row.key }}
               </th>
-              <td>{{ configurationKey.value ?? EMPTY_VALUE_PLACEHOLDER }}</td>
-              <td>{{ configurationKey.readonly ? 'Yes' : 'No' }}</td>
-              <td>{{ configurationKey.reboot === true ? 'Yes' : 'No' }}</td>
+              <td>{{ row.value }}</td>
+              <td>{{ row.readonly }}</td>
+              <td>{{ row.reboot }}</td>
             </tr>
           </tbody>
         </table>
@@ -92,8 +96,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { EMPTY_VALUE_PLACEHOLDER, useChargingStations } from '@/core/index.js'
-import { buildStationDetailSections, getVisibleConfigurationKeys } from '@/shared/utils/index.js'
+import { useChargingStations } from '@/core/index.js'
+import { buildConfigurationRows, buildStationDetailSections } from '@/shared/utils/index.js'
 
 import ActionButton from '../ActionButton.vue'
 import Modal from '../ModernModal.vue'
@@ -115,8 +119,8 @@ const sections = computed(() =>
   station.value != null ? buildStationDetailSections(station.value) : []
 )
 
-const configurationKeys = computed(() =>
-  station.value != null ? getVisibleConfigurationKeys(station.value) : []
+const configurationRows = computed(() =>
+  station.value != null ? buildConfigurationRows(station.value) : []
 )
 
 const close = (): void => {

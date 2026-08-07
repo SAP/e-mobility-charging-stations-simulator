@@ -16,6 +16,13 @@ import { EMPTY_VALUE_PLACEHOLDER, MASKED_VALUE_PLACEHOLDER } from '@/core/index.
 import { formatSupervisionUrl } from './formatSupervisionUrl.js'
 import { getConnectorEntries } from './stationStatus.js'
 
+export interface ConfigurationRow {
+  key: string
+  readonly: string
+  reboot: string
+  value: string
+}
+
 export interface DetailEntry {
   label: string
   value: string
@@ -40,6 +47,20 @@ const formatValue = (value: boolean | number | string | undefined): string => {
     return EMPTY_VALUE_PLACEHOLDER
   }
   return String(value)
+}
+
+/**
+ * Builds display rows for the visible OCPP configuration keys.
+ * @param station - The charging station data
+ * @returns Formatted configuration rows (key, value, readonly, reboot)
+ */
+export function buildConfigurationRows (station: ChargingStationData): ConfigurationRow[] {
+  return getVisibleConfigurationKeys(station).map(key => ({
+    key: key.key,
+    readonly: key.readonly ? 'Yes' : 'No',
+    reboot: key.reboot === true ? 'Yes' : 'No',
+    value: key.value ?? EMPTY_VALUE_PLACEHOLDER,
+  }))
 }
 
 /**
@@ -120,7 +141,7 @@ export function buildStationDetailSections (station: ChargingStationData): Detai
         { label: 'Interval', value: formatValue(station.bootNotificationResponse.interval) },
         {
           label: 'Current Time',
-          value: formatValue(station.bootNotificationResponse.currentTime as unknown as string),
+          value: new Date(station.bootNotificationResponse.currentTime).toLocaleString(),
         },
       ],
       title: 'Boot Notification',

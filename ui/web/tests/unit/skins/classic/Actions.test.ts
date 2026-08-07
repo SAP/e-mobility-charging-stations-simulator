@@ -7,7 +7,14 @@ import { OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
-import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core/index.js'
+import {
+  chargingStationsKey,
+  configurationKey,
+  EMPTY_VALUE_PLACEHOLDER,
+  MASKED_VALUE_PLACEHOLDER,
+  templatesKey,
+  uiClientKey,
+} from '@/core/index.js'
 import AddChargingStations from '@/skins/classic/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/skins/classic/components/actions/SetSupervisionUrl.vue'
 import ShowDetails from '@/skins/classic/components/actions/ShowDetails.vue'
@@ -16,6 +23,7 @@ import StartTransaction from '@/skins/classic/components/actions/StartTransactio
 import { toastMock } from '../../../setup.js'
 import {
   createChargingStationData,
+  createStationInfo,
   createUIServerConfig,
   TEST_HASH_ID,
   TEST_STATION_ID,
@@ -462,6 +470,35 @@ describe('Actions', () => {
         createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
       ])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should mask the supervision password in the rendered panel', () => {
+      const wrapper = mountShowDetails([
+        createChargingStationData({
+          stationInfo: createStationInfo({ supervisionPassword: 'super-secret' }),
+        }),
+      ])
+      expect(wrapper.text()).not.toContain('super-secret')
+      expect(wrapper.text()).toContain(MASKED_VALUE_PLACEHOLDER)
+    })
+
+    it('should format OCPP readonly, reboot and missing value cells', () => {
+      const wrapper = mountShowDetails([
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
+          },
+        }),
+      ])
+      const tables = wrapper.findAll('table.data-table')
+      const ocppTable = tables[tables.length - 1]
+      const row = ocppTable.findAll('tbody tr').find(tr => tr.find('th').text() === 'RebootKey')
+      expect(row).toBeDefined()
+      expect(row?.findAll('td').map(td => td.text())).toEqual([
+        EMPTY_VALUE_PLACEHOLDER,
+        'Yes',
+        'Yes',
+      ])
     })
 
     it('should render a not-found message when the station is absent from the store', () => {

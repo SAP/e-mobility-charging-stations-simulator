@@ -53,21 +53,21 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-if="configurationKeys.length === 0">
+        <tr v-if="configurationRows.length === 0">
           <td colspan="4">
             No OCPP parameters reported
           </td>
         </tr>
         <tr
-          v-for="configurationKey in configurationKeys"
-          :key="configurationKey.key"
+          v-for="row in configurationRows"
+          :key="row.key"
         >
           <th scope="row">
-            {{ configurationKey.key }}
+            {{ row.key }}
           </th>
-          <td>{{ configurationKey.value ?? EMPTY_VALUE_PLACEHOLDER }}</td>
-          <td>{{ configurationKey.readonly ? 'Yes' : 'No' }}</td>
-          <td>{{ configurationKey.reboot === true ? 'Yes' : 'No' }}</td>
+          <td>{{ row.value }}</td>
+          <td>{{ row.readonly }}</td>
+          <td>{{ row.reboot }}</td>
         </tr>
       </tbody>
     </table>
@@ -84,13 +84,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import {
-  EMPTY_VALUE_PLACEHOLDER,
-  resetToggleButtonState,
-  ROUTE_NAMES,
-  useChargingStations,
-} from '@/core/index.js'
-import { buildStationDetailSections, getVisibleConfigurationKeys } from '@/shared/utils/index.js'
+import { resetToggleButtonState, ROUTE_NAMES, useChargingStations } from '@/core/index.js'
+import { buildConfigurationRows, buildStationDetailSections } from '@/shared/utils/index.js'
 
 import Button from '../buttons/ClassicButton.vue'
 
@@ -110,8 +105,8 @@ const sections = computed(() =>
   station.value != null ? buildStationDetailSections(station.value) : []
 )
 
-const configurationKeys = computed(() =>
-  station.value != null ? getVisibleConfigurationKeys(station.value) : []
+const configurationRows = computed(() =>
+  station.value != null ? buildConfigurationRows(station.value) : []
 )
 
 const close = (): void => {

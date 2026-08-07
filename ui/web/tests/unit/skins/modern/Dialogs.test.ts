@@ -15,7 +15,12 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 
-import { chargingStationsKey, templatesKey, uiClientKey } from '@/core/index.js'
+import {
+  chargingStationsKey,
+  EMPTY_VALUE_PLACEHOLDER,
+  templatesKey,
+  uiClientKey,
+} from '@/core/index.js'
 
 // Mock Modal to render slots inline (no Teleport), so `wrapper.find()` works.
 vi.mock('@/skins/modern/components/ModernModal.vue', () => ({
@@ -582,6 +587,25 @@ describe('Dialogs', () => {
       ])
       expect(wrapper.text()).toContain('HeartbeatInterval')
       expect(wrapper.text()).toContain('30')
+    })
+
+    it('should format OCPP readonly, reboot and missing value cells', () => {
+      const wrapper = mountDialog([
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
+          },
+        }),
+      ])
+      const row = wrapper
+        .findAll('.station-details__table tbody tr')
+        .find(tr => tr.find('th').text() === 'RebootKey')
+      expect(row).toBeDefined()
+      expect(row?.findAll('td').map(td => td.text())).toEqual([
+        EMPTY_VALUE_PLACEHOLDER,
+        'Yes',
+        'Yes',
+      ])
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {

@@ -315,7 +315,7 @@ describe('ModernLayout', () => {
     wrapper.unmount()
   })
 
-  it('should open authorize dialog when station card emits open-authorize', async () => {
+  it('should open the matching dialog when station card emits an open-* event', async () => {
     const station = createChargingStationData({
       stationInfo: {
         baseName: 'CS-1',

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { EMPTY_VALUE_PLACEHOLDER, MASKED_VALUE_PLACEHOLDER } from '@/core/index.js'
 import {
+  buildConfigurationRows,
   buildStationDetailSections,
   type DetailSection,
   getVisibleConfigurationKeys,
@@ -137,6 +138,53 @@ describe('stationDetails', () => {
       expect(
         getVisibleConfigurationKeys(createChargingStationData({ ocppConfiguration: {} }))
       ).toEqual([])
+    })
+  })
+
+  describe('buildConfigurationRows', () => {
+    it('should format readonly, reboot and missing value for display', () => {
+      const rows = buildConfigurationRows(
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'HeartbeatInterval', readonly: true, reboot: true }],
+          },
+        })
+      )
+      expect(rows).toEqual([
+        {
+          key: 'HeartbeatInterval',
+          readonly: 'Yes',
+          reboot: 'Yes',
+          value: EMPTY_VALUE_PLACEHOLDER,
+        },
+      ])
+    })
+
+    it('should format non-readonly, non-reboot keys with their value', () => {
+      const rows = buildConfigurationRows(
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'MeterValueSampleInterval', readonly: false, value: '60' }],
+          },
+        })
+      )
+      expect(rows).toEqual([
+        { key: 'MeterValueSampleInterval', readonly: 'No', reboot: 'No', value: '60' },
+      ])
+    })
+
+    it('should exclude keys marked not visible', () => {
+      const rows = buildConfigurationRows(
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [
+              { key: 'Shown', readonly: false, value: 'a' },
+              { key: 'Hidden', readonly: false, value: 'b', visible: false },
+            ],
+          },
+        })
+      )
+      expect(rows.map(row => row.key)).toEqual(['Shown'])
     })
   })
 })
