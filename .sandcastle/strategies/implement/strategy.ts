@@ -1,6 +1,6 @@
 import type { FinalizationConfig, LoopStrategy, TaskSpec } from '../../types.js'
 
-import { GIT_TIMEOUT_MS } from '../../constants.js'
+import { EXEC_MAX_BUFFER_BYTES, GIT_TIMEOUT_MS } from '../../constants.js'
 import { attemptRebase, buildPrArgs, pushBranch } from '../../finalizer.js'
 import { execFileAsync, toErrorMessage } from '../../utils.js'
 import { runValidation } from '../../validation.js'
@@ -24,6 +24,11 @@ function buildPlanContext (spec: TaskSpec): string {
   return parts.join('\n\n')
 }
 
+/**
+ * Default implementation strategy.
+ * Runs the actor↔critic loop for issues labelled `sandcastle-implement`, then
+ * rebases, pushes, and creates a draft or ready PR from the sandbox branch.
+ */
 export const implementStrategy: FinalizationConfig & LoopStrategy = {
   actorPromptFile: './.sandcastle/strategies/implement/actor-prompt.md',
 
@@ -45,18 +50,19 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
 
   criticPromptFile: './.sandcastle/strategies/implement/critic-prompt.md',
 
-  finalize: async (spec, loopResult, sandbox) => {
+  finalize: async (spec, loopResult, sandbox, signal) => {
     const cwd = sandbox.worktreePath
-    let validationPassed = await runValidation(cwd, spec)
+    let validationPassed =
+      loopResult.validationCertified || (await runValidation(cwd, spec, signal))
 
-    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch)
+    const rebaseSucceeded = await attemptRebase(cwd, loopResult.baseBranch, signal)
     if (rebaseSucceeded && validationPassed) {
-      if (!(await runValidation(cwd, spec))) {
+      if (!(await runValidation(cwd, spec, signal))) {
         validationPassed = false
       }
     }
 
-    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded)
+    const pushSucceeded = await pushBranch(spec, cwd, rebaseSucceeded, signal)
     if (!pushSucceeded) {
       console.error(`  #${spec.id}: Push failed; cannot create PR without remote branch.`)
       return { success: false }
@@ -74,12 +80,14 @@ export const implementStrategy: FinalizationConfig & LoopStrategy = {
     try {
       await execFileAsync('gh', prArgs, {
         cwd,
-        maxBuffer: 8 * 1024 * 1024,
+        maxBuffer: EXEC_MAX_BUFFER_BYTES,
+        signal,
         timeout: GIT_TIMEOUT_MS,
       })
       console.log(`  #${spec.id}: PR created${isDraft ? ' (draft)' : ''}.`)
       prCreated = true
     } catch (err: unknown) {
+      if (signal?.aborted === true) throw err
       console.error(`  #${spec.id}: PR creation failed: ${toErrorMessage(err)}`)
     }
 
