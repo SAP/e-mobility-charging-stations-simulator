@@ -1,4 +1,26 @@
 {
+  "driivzDeletion": {
+    "baseUrl": "https://example.driivz.com",
+    "headers": {
+      "Authorization": "Bearer ..."
+    },
+    "pollIntervalMs": 1000,
+    "pollTimeoutMs": 120000,
+    "stateFile": "deleteChargingStations.state.json",
+    "chargers": [
+      {
+        "id": "",
+        "siteId": "",
+        "propertyId": "",
+        "connectorEvses": [
+          {
+            "connectorId": "",
+            "payload": {}
+          }
+        ]
+      }
+    ]
+  },
   "publicFlag": true,
   "tenantIDs": [""],
   "idPattern": "",
