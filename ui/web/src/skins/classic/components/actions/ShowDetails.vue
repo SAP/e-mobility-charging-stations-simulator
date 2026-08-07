@@ -16,7 +16,9 @@
       class="data-table data-table--bordered show-details__section"
     >
       <caption class="data-table__caption">
-        {{ section.title }}
+        {{
+          section.title
+        }}
       </caption>
       <tbody>
         <tr
