@@ -59,7 +59,7 @@ export function buildConfigurationRows (station: ChargingStationData): Configura
     key: key.key,
     readonly: key.readonly ? 'Yes' : 'No',
     reboot: key.reboot === true ? 'Yes' : 'No',
-    value: key.value ?? EMPTY_VALUE_PLACEHOLDER,
+    value: formatValue(key.value),
   }))
 }
 

@@ -173,6 +173,17 @@ describe('stationDetails', () => {
       ])
     })
 
+    it('should render an empty-string value as the empty placeholder', () => {
+      const rows = buildConfigurationRows(
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'BlankValue', readonly: false, value: '' }],
+          },
+        })
+      )
+      expect(rows[0].value).toBe(EMPTY_VALUE_PLACEHOLDER)
+    })
+
     it('should exclude keys marked not visible', () => {
       const rows = buildConfigurationRows(
         createChargingStationData({

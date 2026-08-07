@@ -18,6 +18,7 @@ import { defineComponent, ref } from 'vue'
 import {
   chargingStationsKey,
   EMPTY_VALUE_PLACEHOLDER,
+  MASKED_VALUE_PLACEHOLDER,
   templatesKey,
   uiClientKey,
 } from '@/core/index.js'
@@ -622,6 +623,20 @@ describe('Dialogs', () => {
         }),
       ])
       expect(wrapper.text()).not.toContain('super-secret')
+      expect(wrapper.text()).toContain(MASKED_VALUE_PLACEHOLDER)
+    })
+
+    it('should give the OCPP parameters table an accessible name', () => {
+      const wrapper = mountDialog([
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
+          },
+        }),
+      ])
+      expect(wrapper.find('.station-details__table').attributes('aria-labelledby')).toBe(
+        'station-details-ocpp-title'
+      )
     })
 
     it('should render a not-found message when the station is absent', () => {
