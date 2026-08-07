@@ -1,6 +1,6 @@
 <template>
   <h1 class="classic-action-header">
-    Station Details
+    Show Details
   </h1>
   <h2>{{ chargingStationId }}</h2>
   <p
@@ -81,11 +81,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { resetToggleButtonState, ROUTE_NAMES, useChargingStations } from '@/core/index.js'
-import { buildConfigurationRows, buildStationDetailSections } from '@/shared/utils/index.js'
+import { resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
+import { useStationDetails } from '@/shared/composables/useStationDetails.js'
 
 import Button from '../buttons/ClassicButton.vue'
 
@@ -95,19 +94,8 @@ const props = defineProps<{
 }>()
 
 const $router = useRouter()
-const $chargingStations = useChargingStations()
 
-const station = computed(() =>
-  $chargingStations.value.find(entry => entry.stationInfo.hashId === props.hashId)
-)
-
-const sections = computed(() =>
-  station.value != null ? buildStationDetailSections(station.value) : []
-)
-
-const configurationRows = computed(() =>
-  station.value != null ? buildConfigurationRows(station.value) : []
-)
+const { configurationRows, sections, station } = useStationDetails(props.hashId)
 
 const close = (): void => {
   resetToggleButtonState(`${props.hashId}-show-details`, true)

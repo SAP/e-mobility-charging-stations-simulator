@@ -453,7 +453,7 @@ describe('Actions', () => {
 
     it('should render the heading and station id', () => {
       const wrapper = mountShowDetails()
-      expect(wrapper.find('h1').text()).toBe('Station Details')
+      expect(wrapper.find('h1').text()).toBe('Show Details')
       expect(wrapper.find('h2').text()).toBe(TEST_STATION_ID)
     })
 

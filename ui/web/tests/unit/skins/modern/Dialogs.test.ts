@@ -569,7 +569,7 @@ describe('Dialogs', () => {
 
     it('should render the title with the station id', () => {
       const wrapper = mountDialog()
-      expect(wrapper.text()).toContain(`Details — ${TEST_STATION_ID}`)
+      expect(wrapper.text()).toContain(`Show Details — ${TEST_STATION_ID}`)
     })
 
     it('should render detail sections', () => {
@@ -637,6 +637,17 @@ describe('Dialogs', () => {
       expect(wrapper.find('.station-details__table').attributes('aria-labelledby')).toBe(
         'station-details-ocpp-title'
       )
+    })
+
+    it('should give each detail section an accessible name pointing at its heading', () => {
+      const wrapper = mountDialog()
+      const lists = wrapper.findAll('.station-details__list')
+      expect(lists.length).toBeGreaterThan(0)
+      for (const list of lists) {
+        const labelledBy = list.attributes('aria-labelledby') ?? ''
+        expect(labelledBy).not.toBe('')
+        expect(wrapper.find(`#${labelledBy}`).exists()).toBe(true)
+      }
     })
 
     it('should render a not-found message when the station is absent', () => {

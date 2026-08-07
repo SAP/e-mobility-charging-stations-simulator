@@ -34,6 +34,15 @@ export interface DetailSection {
 }
 
 /**
+ * Formats a date-like station field for display.
+ * Nullish values render as the empty placeholder; otherwise the localized date-time string.
+ * @param value - The raw date, epoch millisecond timestamp, or ISO string
+ * @returns A display string
+ */
+const formatDate = (value: Date | number | string | undefined): string =>
+  value == null ? EMPTY_VALUE_PLACEHOLDER : new Date(value).toLocaleString()
+
+/**
  * Formats a scalar station field for display.
  * Booleans render as Yes/No; nullish or empty values render as the empty placeholder.
  * @param value - The raw field value
@@ -85,13 +94,7 @@ export function buildStationDetailSections (station: ChargingStationData): Detai
           value: formatValue(station.bootNotificationResponse?.status),
         },
         { label: 'Connectors', value: formatValue(getConnectorEntries(station).length) },
-        {
-          label: 'Last Update',
-          value:
-            station.timestamp == null
-              ? EMPTY_VALUE_PLACEHOLDER
-              : new Date(station.timestamp).toLocaleString(),
-        },
+        { label: 'Last Update', value: formatDate(station.timestamp) },
       ],
       title: 'General',
     },
@@ -137,11 +140,10 @@ export function buildStationDetailSections (station: ChargingStationData): Detai
   if (station.bootNotificationResponse != null) {
     sections.push({
       entries: [
-        { label: 'Status', value: formatValue(station.bootNotificationResponse.status) },
         { label: 'Interval', value: formatValue(station.bootNotificationResponse.interval) },
         {
           label: 'Current Time',
-          value: new Date(station.bootNotificationResponse.currentTime).toLocaleString(),
+          value: formatDate(station.bootNotificationResponse.currentTime),
         },
       ],
       title: 'Boot Notification',

@@ -1,6 +1,6 @@
 <template>
   <Modal
-    :title="`Details — ${chargingStationId}`"
+    :title="`Show Details — ${chargingStationId}`"
     @close="close"
   >
     <p
@@ -14,14 +14,20 @@
       class="station-details"
     >
       <section
-        v-for="section in sections"
+        v-for="(section, index) in sections"
         :key="section.title"
         class="station-details__section"
       >
-        <h3 class="station-details__title">
+        <h3
+          :id="`${sectionsBaseId}-section-${index}`"
+          class="station-details__title"
+        >
           {{ section.title }}
         </h3>
-        <dl class="station-details__list">
+        <dl
+          class="station-details__list"
+          :aria-labelledby="`${sectionsBaseId}-section-${index}`"
+        >
           <div
             v-for="entry in section.entries"
             :key="entry.label"
@@ -94,10 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { useId } from 'vue'
 
-import { useChargingStations } from '@/core/index.js'
-import { buildConfigurationRows, buildStationDetailSections } from '@/shared/utils/index.js'
+import { useStationDetails } from '@/shared/composables/useStationDetails.js'
 
 import ActionButton from '../ActionButton.vue'
 import Modal from '../ModernModal.vue'
@@ -109,19 +114,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const $chargingStations = useChargingStations()
+const sectionsBaseId = useId()
 
-const station = computed(() =>
-  $chargingStations.value.find(entry => entry.stationInfo.hashId === props.hashId)
-)
-
-const sections = computed(() =>
-  station.value != null ? buildStationDetailSections(station.value) : []
-)
-
-const configurationRows = computed(() =>
-  station.value != null ? buildConfigurationRows(station.value) : []
-)
+const { configurationRows, sections, station } = useStationDetails(props.hashId)
 
 const close = (): void => {
   emit('close')
