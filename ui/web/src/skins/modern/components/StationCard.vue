@@ -136,6 +136,12 @@
         >
           Authorize
         </ActionButton>
+        <ActionButton
+          variant="ghost"
+          @click="emitOpenDetails"
+        >
+          Details
+        </ActionButton>
       </div>
       <ActionButton
         variant="danger"
@@ -187,6 +193,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'open-authorize': [data: { chargingStationId: string; hashId: string; ocppVersion?: OCPPVersion }]
+  'open-details': [data: { chargingStationId: string; hashId: string }]
   'open-set-url': [data: { chargingStationId: string; hashId: string }]
   'open-start-tx': [
     data: {
@@ -252,6 +259,13 @@ const emitOpenAuthorize = (): void => {
     chargingStationId: props.chargingStation.stationInfo.chargingStationId,
     hashId: props.chargingStation.stationInfo.hashId,
     ocppVersion: props.chargingStation.stationInfo.ocppVersion,
+  })
+}
+
+const emitOpenDetails = (): void => {
+  emit('open-details', {
+    chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+    hashId: props.chargingStation.stationInfo.hashId,
   })
 }
 

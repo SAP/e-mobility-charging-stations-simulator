@@ -81,6 +81,16 @@ export const router = createRouter({
       props: { action: true },
     },
     {
+      beforeEnter: skinGuard,
+      components: {
+        action: () => import('@/skins/classic/components/actions/ShowDetails.vue'),
+      },
+      meta: { skinOnly: 'classic' },
+      name: ROUTE_NAMES.SHOW_DETAILS,
+      path: '/show-details/:hashId/:chargingStationId',
+      props: { action: true },
+    },
+    {
       component: {
         render: () =>
           h(
