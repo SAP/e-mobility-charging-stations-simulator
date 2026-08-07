@@ -36,9 +36,15 @@ import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.v
 import SetConnectorStatusDialog from '@/skins/modern/components/dialogs/SetConnectorStatusDialog.vue'
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
 import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
+import StationDetailsDialog from '@/skins/modern/components/dialogs/StationDetailsDialog.vue'
 
 import { toastMock } from '../../../setup.js'
-import { createChargingStationData, TEST_HASH_ID, TEST_STATION_ID } from '../../constants.js'
+import {
+  createChargingStationData,
+  createStationInfo,
+  TEST_HASH_ID,
+  TEST_STATION_ID,
+} from '../../constants.js'
 import { createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 let mockClient: MockUIClient
@@ -533,6 +539,73 @@ describe('Dialogs', () => {
     })
 
     it('should emit close when cancel is clicked', async () => {
+      const wrapper = mountDialog()
+      await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
+      expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+  })
+
+  describe('StationDetailsDialog', () => {
+    /**
+     * @param stations - Charging station data to provide to the dialog
+     * @returns Mounted wrapper for StationDetailsDialog
+     */
+    function mountDialog (stations = [createChargingStationData()]) {
+      return mount(StationDetailsDialog, {
+        global: {
+          provide: {
+            [chargingStationsKey as symbol]: ref(stations),
+          },
+        },
+        props: { chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID },
+      })
+    }
+
+    it('should render the title with the station id', () => {
+      const wrapper = mountDialog()
+      expect(wrapper.text()).toContain(`Details — ${TEST_STATION_ID}`)
+    })
+
+    it('should render detail sections', () => {
+      const wrapper = mountDialog()
+      expect(wrapper.text()).toContain('General')
+      expect(wrapper.text()).toContain('Station Info')
+    })
+
+    it('should render OCPP parameter rows from the configuration keys', () => {
+      const wrapper = mountDialog([
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
+          },
+        }),
+      ])
+      expect(wrapper.text()).toContain('HeartbeatInterval')
+      expect(wrapper.text()).toContain('30')
+    })
+
+    it('should render the empty message when no OCPP parameters are reported', () => {
+      const wrapper = mountDialog([
+        createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
+      ])
+      expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should mask the supervision password', () => {
+      const wrapper = mountDialog([
+        createChargingStationData({
+          stationInfo: createStationInfo({ supervisionPassword: 'super-secret' }),
+        }),
+      ])
+      expect(wrapper.text()).not.toContain('super-secret')
+    })
+
+    it('should render a not-found message when the station is absent', () => {
+      const wrapper = mountDialog([])
+      expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should emit close when the Close button is clicked', async () => {
       const wrapper = mountDialog()
       await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
       expect(wrapper.emitted('close')).toHaveLength(1)

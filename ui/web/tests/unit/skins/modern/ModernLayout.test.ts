@@ -346,19 +346,22 @@ describe('ModernLayout', () => {
           SimulatorBar: true,
           StartTransactionDialog: true,
           StationCard: {
-            emits: ['open-authorize', 'open-set-url', 'open-start-tx'],
+            emits: ['open-authorize', 'open-details', 'open-set-url', 'open-start-tx'],
             props: ['chargingStation'],
             template: `<article class="stub-station-card">
               <button class="stub-authorize" @click="$emit('open-authorize', { chargingStationId: 'CS-1', hashId: 'h1' })">auth</button>
+              <button class="stub-details" @click="$emit('open-details', { chargingStationId: 'CS-1', hashId: 'h1' })">details</button>
               <button class="stub-set-url" @click="$emit('open-set-url', { chargingStationId: 'CS-1', hashId: 'h1' })">url</button>
               <button class="stub-start-tx" @click="$emit('open-start-tx', { chargingStationId: 'CS-1', connectorId: '1', hashId: 'h1' })">tx</button>
             </article>`,
           },
+          StationDetailsDialog: true,
         },
       },
     })
     await flushPromises()
     await wrapper.find('.stub-authorize').trigger('click')
+    await wrapper.find('.stub-details').trigger('click')
     await wrapper.find('.stub-set-url').trigger('click')
     await wrapper.find('.stub-start-tx').trigger('click')
     await flushPromises()
@@ -366,6 +369,7 @@ describe('ModernLayout', () => {
     expect(wrapper.findComponent({ name: 'AuthorizeDialog' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'SetSupervisionUrlDialog' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'StartTransactionDialog' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'StationDetailsDialog' }).exists()).toBe(true)
     wrapper.unmount()
   })
 })
