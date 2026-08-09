@@ -148,7 +148,7 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.13.3)(typescript@6.0.3)
       tsx:
-        specifier: ^4.23.5
+        specifier: ^4.23.9
         version: 4.23.9
       typescript:
         specifier: ~6.0.3
@@ -216,7 +216,7 @@ importers:
         specifier: workspace:*
         version: link:../common
       vue:
-        specifier: ^3.5.40
+        specifier: ^3.5.41
         version: 3.5.41(typescript@6.0.3)
       vue-router:
         specifier: ^5.2.0
