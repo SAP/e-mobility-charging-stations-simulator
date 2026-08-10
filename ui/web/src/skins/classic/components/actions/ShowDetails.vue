@@ -3,12 +3,17 @@
     Show Details
   </h1>
   <h2>{{ chargingStationId }}</h2>
-  <p
-    v-if="station == null"
-    class="show-details__empty"
-  >
-    Charging station not found
-  </p>
+  <template v-if="station == null">
+    <p class="show-details__empty">
+      Charging station not found
+    </p>
+    <Button
+      id="action-button"
+      @click="close()"
+    >
+      Back to Charging Stations
+    </Button>
+  </template>
   <template v-else>
     <table
       v-for="section in sections"
@@ -72,12 +77,6 @@
       </tbody>
     </table>
   </template>
-  <Button
-    id="action-button"
-    @click="close()"
-  >
-    Close
-  </Button>
 </template>
 
 <script setup lang="ts">
@@ -104,12 +103,27 @@ const close = (): void => {
 </script>
 
 <style scoped>
+/* Bound the width: the shared action container is `min-width: max-content`,
+ * so uncapped these tables would grow it to fill the main area. */
 .show-details__section {
-  margin-bottom: var(--spacing-md);
+  width: 32rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.show-details__section:last-of-type {
+  margin-bottom: 0;
 }
 
 .show-details__section :is(th, td) {
   text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.show-details__section th[scope='row'] {
+  font-weight: bold;
+  background-color: var(--color-bg-header);
+  border-right: solid 0.25px var(--color-border);
 }
 
 .show-details__empty {

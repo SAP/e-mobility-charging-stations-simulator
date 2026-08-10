@@ -134,12 +134,23 @@ const close = (): void => {
   display: flex;
   flex-direction: column;
   gap: var(--skin-space-2);
+  padding: var(--skin-space-3);
+  background-color: var(--skin-surface-sunken);
+  border: 1px solid var(--skin-border);
+  border-radius: var(--skin-radius-lg);
+}
+
+.station-details__section > h3 {
+  font-size: 0.8125rem;
+  color: var(--color-text-strong);
+  padding-bottom: var(--skin-space-2);
+  border-bottom: 1px solid var(--skin-border);
 }
 
 .station-details__list {
   margin: 0;
   display: grid;
-  gap: var(--skin-space-2);
+  gap: var(--skin-space-1);
 }
 
 .station-details__row {
@@ -147,6 +158,11 @@ const close = (): void => {
   grid-template-columns: minmax(9rem, 12rem) 1fr;
   gap: var(--skin-space-1) var(--skin-space-3);
   align-items: baseline;
+}
+
+.station-details__row + .station-details__row {
+  padding-top: var(--skin-space-1);
+  border-top: 1px solid var(--skin-border);
 }
 
 .station-details__row dt {

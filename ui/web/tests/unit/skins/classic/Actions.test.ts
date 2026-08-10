@@ -422,10 +422,6 @@ describe('Actions', () => {
   })
 
   describe('ShowDetails', () => {
-    beforeEach(() => {
-      mockPush.mockClear()
-    })
-
     afterEach(() => {
       vi.clearAllMocks()
       vi.restoreAllMocks()
@@ -506,8 +502,8 @@ describe('Actions', () => {
       expect(wrapper.text()).toContain('Charging station not found')
     })
 
-    it('should navigate to charging-stations on close', async () => {
-      const wrapper = mountShowDetails()
+    it('should navigate to charging-stations from the not-found panel', async () => {
+      const wrapper = mountShowDetails([])
       await wrapper.findComponent(ButtonStub).trigger('click')
       await flushPromises()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
