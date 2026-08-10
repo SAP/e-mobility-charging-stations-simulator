@@ -313,5 +313,25 @@ describe('CSData', () => {
       toggleProps.off?.()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
+
+    it('should trigger router push to show-details on toggle on', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const toggleProps = toggleButtons[1].props() as unknown as StubProps
+      toggleProps.on?.()
+      expect(mockPush).toHaveBeenCalledOnce()
+      const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
+      expect(callArg.name).toBe('show-details')
+      expect(callArg.params.hashId).toBe(TEST_HASH_ID)
+      expect(callArg.params.chargingStationId).toBe(TEST_STATION_ID)
+    })
+
+    it('should trigger router push to charging-stations on show-details toggle off', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const toggleProps = toggleButtons[1].props() as unknown as StubProps
+      toggleProps.off?.()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
+    })
   })
 })

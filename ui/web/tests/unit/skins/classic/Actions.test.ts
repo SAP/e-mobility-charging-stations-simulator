@@ -422,10 +422,6 @@ describe('Actions', () => {
   })
 
   describe('ShowDetails', () => {
-    beforeEach(() => {
-      mockPush.mockClear()
-    })
-
     afterEach(() => {
       vi.clearAllMocks()
       vi.restoreAllMocks()
@@ -442,7 +438,6 @@ describe('Actions', () => {
           provide: {
             [chargingStationsKey as symbol]: shallowRef(stations),
           },
-          stubs: { Button: ButtonStub },
         },
         props: {
           chargingStationId: TEST_STATION_ID,

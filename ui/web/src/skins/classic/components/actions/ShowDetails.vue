@@ -91,7 +91,6 @@ const { configurationRows, sections, station } = useStationDetails(props.hashId)
  * main area, and let long keys/values wrap instead of widening the panel. */
 .show-details__section {
   width: 32rem;
-  max-width: 100%;
   margin-bottom: var(--spacing-lg);
 }
 
