@@ -15,6 +15,7 @@ import {
   ConfigurationStatus,
   OCPP20ComponentName,
   OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -81,6 +82,25 @@ await describe('OCPP20IncomingRequestService — changeConfiguration seam', asyn
     )
 
     assert.strictEqual(status, ConfigurationStatus.ACCEPTED)
+  })
+
+  await it('should reject a read-only registry variable', () => {
+    const name = buildConfigKey(OCPP20ComponentName.ChargingStation, 'Available')
+
+    const status = incomingRequestService.changeConfiguration(station, name, 'false')
+
+    assert.strictEqual(status, ConfigurationStatus.REJECTED)
+  })
+
+  await it('should return RebootRequired for a reboot-required registry variable', () => {
+    const name = buildConfigKey(
+      OCPP20ComponentName.SecurityCtrlr,
+      OCPP20RequiredVariableName.OrganizationName
+    )
+
+    const status = incomingRequestService.changeConfiguration(station, name, 'Acme Corporation')
+
+    assert.strictEqual(status, ConfigurationStatus.REBOOT_REQUIRED)
   })
 
   await it('should return NotSupported for a key that does not resolve to a registry variable', () => {

@@ -269,6 +269,25 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     assert.strictEqual(status, OCPP16ConfigurationStatus.NOT_SUPPORTED)
   })
 
+  await it('should not send an OCPP response to the CSMS when applying a change via the seam', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
+    const sendResponseSpy = mock.method(station.ocppRequestService, 'sendResponse', async () =>
+      Promise.resolve()
+    )
+
+    // Act
+    incomingRequestService.changeConfiguration(
+      station,
+      OCPP16StandardParametersKey.MeterValueSampleInterval,
+      '30'
+    )
+
+    // Assert — the seam reuses the handler's logic but must NOT emit a CSMS CALLRESULT
+    assert.strictEqual(sendResponseSpy.mock.callCount(), 0)
+  })
+
   // ---------------------------------------------------------------------------
   // GetConfiguration (§5.8)
   // ---------------------------------------------------------------------------
