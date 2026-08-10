@@ -131,11 +131,11 @@ const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/Aut
 const SetSupervisionUrlDialog = defineAsyncDialog(
   () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
 )
-const StartTransactionDialog = defineAsyncDialog(
-  () => import('./components/dialogs/StartTransactionDialog.vue')
-)
 const ShowDetailsDialog = defineAsyncDialog(
   () => import('./components/dialogs/ShowDetailsDialog.vue')
+)
+const StartTransactionDialog = defineAsyncDialog(
+  () => import('./components/dialogs/StartTransactionDialog.vue')
 )
 
 const $chargingStations = useChargingStations()
