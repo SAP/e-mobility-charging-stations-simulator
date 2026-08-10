@@ -1406,8 +1406,6 @@ Examples:
 
 > **Deprecated**: Use `"type": "mcp"` for HTTP-based access to the simulator.
 
-To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
-
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/e-mobility-charging-stations-simulator/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](./CONTRIBUTING.md).
