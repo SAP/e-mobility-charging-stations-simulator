@@ -104,7 +104,12 @@ const close = (): void => {
 </script>
 
 <style scoped>
+/* Keep the details in a right-hand panel: bound the width so the shared
+ * action container (min-width: max-content) does not balloon to fill the
+ * main area, and let long keys/values wrap instead of widening the panel. */
 .show-details__section {
+  width: 32rem;
+  max-width: 100%;
   margin-bottom: var(--spacing-lg);
 }
 
@@ -115,6 +120,7 @@ const close = (): void => {
 .show-details__section :is(th, td) {
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 /* Set the key column apart from its value: header fill + weight + divider. */
