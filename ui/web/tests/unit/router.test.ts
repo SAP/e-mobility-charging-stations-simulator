@@ -29,6 +29,11 @@ describe('router', () => {
     expect(router.currentRoute.value.name).toBe(ROUTE_NAMES.CHARGING_STATIONS)
   })
 
+  it('should redirect show-details to charging-stations when active skin is not classic', async () => {
+    await router.push('/show-details/test-hash/CS-1')
+    expect(router.currentRoute.value.name).toBe(ROUTE_NAMES.CHARGING_STATIONS)
+  })
+
   it('should allow non-guarded routes regardless of skin', async () => {
     await router.push('/')
     expect(router.currentRoute.value.name).toBe(ROUTE_NAMES.CHARGING_STATIONS)

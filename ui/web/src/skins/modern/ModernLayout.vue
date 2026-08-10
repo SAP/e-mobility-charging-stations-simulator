@@ -32,6 +32,7 @@
         :key="station.stationInfo.hashId"
         :charging-station="station"
         @open-authorize="openAuthorizeDialog"
+        @open-details="openDetailsDialog"
         @open-set-url="openSetUrlDialog"
         @open-start-tx="openStartTxDialog"
       />
@@ -70,6 +71,12 @@
       :charging-station-id="showAuthorizeDialog.chargingStationId"
       :ocpp-version="showAuthorizeDialog.ocppVersion"
       @close="showAuthorizeDialog = null"
+    />
+    <ShowDetailsDialog
+      v-if="showDetailsDialog"
+      :hash-id="showDetailsDialog.hashId"
+      :charging-station-id="showDetailsDialog.chargingStationId"
+      @close="showDetailsDialog = null"
     />
   </main>
 </template>
@@ -124,6 +131,9 @@ const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/Aut
 const SetSupervisionUrlDialog = defineAsyncDialog(
   () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
 )
+const ShowDetailsDialog = defineAsyncDialog(
+  () => import('./components/dialogs/ShowDetailsDialog.vue')
+)
 const StartTransactionDialog = defineAsyncDialog(
   () => import('./components/dialogs/StartTransactionDialog.vue')
 )
@@ -165,6 +175,10 @@ const showAuthorizeDialog = ref<null | {
   hashId: string
   ocppVersion?: OCPPVersion
 }>(null)
+const showDetailsDialog = ref<null | {
+  chargingStationId: string
+  hashId: string
+}>(null)
 
 const confirmStopSimulator = (): void => {
   stopSimulator()
@@ -181,6 +195,9 @@ const toggleSimulator = (): void => {
 
 const openAuthorizeDialog = (data: typeof showAuthorizeDialog.value): void => {
   showAuthorizeDialog.value = data
+}
+const openDetailsDialog = (data: typeof showDetailsDialog.value): void => {
+  showDetailsDialog.value = data
 }
 const openSetUrlDialog = (data: typeof showSetUrlDialog.value): void => {
   showSetUrlDialog.value = data

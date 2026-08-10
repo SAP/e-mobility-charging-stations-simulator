@@ -7,6 +7,7 @@ export const DEFAULT_SKIN: (typeof SKIN_IDS)[number] = 'modern'
 export const DEFAULT_THEME: (typeof THEME_IDS)[number] = 'tokyo-night-storm'
 export const ASYNC_COMPONENT_TIMEOUT_MS = 10_000
 export const EMPTY_VALUE_PLACEHOLDER = 'Ø'
+export const MASKED_VALUE_PLACEHOLDER = '••••••••'
 export const MAX_SKIN_ERROR_RELOADS = 2
 export const MAX_STATIONS_PER_ADD = 100
 export const SKIN_ERROR_RELOAD_COUNT_KEY = 'skin-error-reload-count'
@@ -19,6 +20,7 @@ export const ROUTE_NAMES = {
   CHARGING_STATIONS: 'charging-stations',
   NOT_FOUND: 'not-found',
   SET_SUPERVISION_URL: 'set-supervision-url',
+  SHOW_DETAILS: 'show-details',
   START_TRANSACTION: 'start-transaction',
 } as const
 

@@ -7,13 +7,27 @@ import { OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
-import { chargingStationsKey, configurationKey, templatesKey, uiClientKey } from '@/core/index.js'
+import {
+  chargingStationsKey,
+  configurationKey,
+  EMPTY_VALUE_PLACEHOLDER,
+  MASKED_VALUE_PLACEHOLDER,
+  templatesKey,
+  uiClientKey,
+} from '@/core/index.js'
 import AddChargingStations from '@/skins/classic/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/skins/classic/components/actions/SetSupervisionUrl.vue'
+import ShowDetails from '@/skins/classic/components/actions/ShowDetails.vue'
 import StartTransaction from '@/skins/classic/components/actions/StartTransaction.vue'
 
 import { toastMock } from '../../../setup.js'
-import { createUIServerConfig, TEST_HASH_ID, TEST_STATION_ID } from '../../constants.js'
+import {
+  createChargingStationData,
+  createStationInfo,
+  createUIServerConfig,
+  TEST_HASH_ID,
+  TEST_STATION_ID,
+} from '../../constants.js'
 import { ButtonStub, createMockUIClient, type MockUIClient } from '../../helpers.js'
 
 const mockPush = vi.fn().mockResolvedValue(undefined)
@@ -404,6 +418,95 @@ describe('Actions', () => {
       await submitBtn.trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalledWith('Error at starting transaction')
+    })
+  })
+
+  describe('ShowDetails', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+    })
+
+    /**
+     * Mounts ShowDetails with a provided store.
+     * @param stations - Charging stations to seed the store with
+     * @returns Mounted ShowDetails wrapper
+     */
+    function mountShowDetails (stations = [createChargingStationData()]) {
+      return mount(ShowDetails, {
+        global: {
+          provide: {
+            [chargingStationsKey as symbol]: shallowRef(stations),
+          },
+          stubs: { Button: ButtonStub },
+        },
+        props: {
+          chargingStationId: TEST_STATION_ID,
+          hashId: TEST_HASH_ID,
+        },
+      })
+    }
+
+    it('should render the heading and station id', () => {
+      const wrapper = mountShowDetails()
+      expect(wrapper.find('h1').text()).toBe('Show Details')
+      expect(wrapper.find('h2').text()).toBe(TEST_STATION_ID)
+    })
+
+    it('should render the detail sections and OCPP parameters table', () => {
+      const wrapper = mountShowDetails()
+      const captions = wrapper.findAll('caption').map(c => c.text())
+      expect(captions).toContain('General')
+      expect(captions).toContain('Station Info')
+      expect(captions).toContain('OCPP Parameters')
+    })
+
+    it('should render the empty message when no OCPP parameters are reported', () => {
+      const wrapper = mountShowDetails([
+        createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
+      ])
+      expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should mask the supervision password in the rendered panel', () => {
+      const wrapper = mountShowDetails([
+        createChargingStationData({
+          stationInfo: createStationInfo({ supervisionPassword: 'super-secret' }),
+        }),
+      ])
+      expect(wrapper.text()).not.toContain('super-secret')
+      expect(wrapper.text()).toContain(MASKED_VALUE_PLACEHOLDER)
+    })
+
+    it('should format OCPP readonly, reboot and missing value cells', () => {
+      const wrapper = mountShowDetails([
+        createChargingStationData({
+          ocppConfiguration: {
+            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
+          },
+        }),
+      ])
+      const tables = wrapper.findAll('table.data-table')
+      const ocppTable = tables[tables.length - 1]
+      const row = ocppTable.findAll('tbody tr').find(tr => tr.find('th').text() === 'RebootKey')
+      expect(row).toBeDefined()
+      expect(row?.findAll('td').map(td => td.text())).toEqual([
+        EMPTY_VALUE_PLACEHOLDER,
+        'Yes',
+        'Yes',
+      ])
+    })
+
+    it('should render a not-found message when the station is absent from the store', () => {
+      const wrapper = mountShowDetails([])
+      expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should navigate to charging-stations from the not-found panel', async () => {
+      const wrapper = mountShowDetails([])
+      await wrapper.findComponent(ButtonStub).trigger('click')
+      await flushPromises()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
   })
 })

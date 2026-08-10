@@ -9,7 +9,7 @@ Vue.js dashboard for monitoring and controlling the e-mobility charging stations
 ![Web UI](./src/assets/screenshot.png)
 
 1. The top bar lets you switch between UI servers, start/stop the simulator, add charging stations, and select themes and skins.
-2. Each charging station is a card with status indicators, connector details, and actions: start, stop, open/close connection, start/stop transaction, and more.
+2. Each charging station is a card with status indicators, connector details, and actions: start, stop, open/close connection, start/stop transaction, show details, and more.
 
 ## Table of contents
 
