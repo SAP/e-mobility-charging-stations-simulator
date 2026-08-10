@@ -393,8 +393,8 @@ html[data-skin='modern'] #app {
 
 /* Section label + the content right under it belong together, so pull
  * them in tight. The body `gap` still separates distinct sections. */
-.modern-card__section-label + .modern-card__connectors,
-.modern-card__section-label + .modern-card__empty-connectors {
+.modern-section-label + .modern-card__connectors,
+.modern-section-label + .modern-card__empty-connectors {
   margin-top: calc(var(--skin-space-3) * -1 + var(--skin-space-1));
 }
 
@@ -568,7 +568,7 @@ html[data-skin='modern'] #app {
   box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--color-state-err) 40%, transparent);
 }
 
-.modern-card__section-label {
+.modern-section-label {
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--color-text-muted);

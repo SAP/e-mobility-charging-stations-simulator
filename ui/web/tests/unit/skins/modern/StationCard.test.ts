@@ -239,6 +239,16 @@ describe('StationCard', () => {
       ])
     })
 
+    it('should emit open-details from footer', async () => {
+      wrapper = mountCard()
+      const buttons = wrapper.findAll('.modern-card__foot-group .modern-btn')
+      const btn = buttons.find(b => b.text() === 'Details')
+      await btn?.trigger('click')
+      expect(wrapper.emitted('open-details')).toEqual([
+        [{ chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID }],
+      ])
+    })
+
     it('should open delete confirm dialog and cancel without an API call', async () => {
       wrapper = mountCard()
       const delBtn = wrapper.find('.modern-card__foot .modern-btn--danger')
