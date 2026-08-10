@@ -438,6 +438,7 @@ describe('Actions', () => {
           provide: {
             [chargingStationsKey as symbol]: shallowRef(stations),
           },
+          stubs: { Button: ButtonStub },
         },
         props: {
           chargingStationId: TEST_STATION_ID,
@@ -499,6 +500,13 @@ describe('Actions', () => {
     it('should render a not-found message when the station is absent from the store', () => {
       const wrapper = mountShowDetails([])
       expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should navigate to charging-stations from the not-found panel', async () => {
+      const wrapper = mountShowDetails([])
+      await wrapper.findComponent(ButtonStub).trigger('click')
+      await flushPromises()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
   })
 })

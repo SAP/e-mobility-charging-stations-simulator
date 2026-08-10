@@ -3,12 +3,17 @@
     Show Details
   </h1>
   <h2>{{ chargingStationId }}</h2>
-  <p
-    v-if="station == null"
-    class="show-details__empty"
-  >
-    Charging station not found
-  </p>
+  <template v-if="station == null">
+    <p class="show-details__empty">
+      Charging station not found
+    </p>
+    <Button
+      id="action-button"
+      @click="close()"
+    >
+      Back to Charging Stations
+    </Button>
+  </template>
   <template v-else>
     <table
       v-for="section in sections"
@@ -75,14 +80,26 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+import { resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
 import { useStationDetails } from '@/shared/composables/useStationDetails.js'
+
+import Button from '../buttons/ClassicButton.vue'
 
 const props = defineProps<{
   chargingStationId: string
   hashId: string
 }>()
 
+const $router = useRouter()
+
 const { configurationRows, sections, station } = useStationDetails(props.hashId)
+
+const close = (): void => {
+  resetToggleButtonState(`${props.hashId}-show-details`, true)
+  $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+}
 </script>
 
 <style scoped>
