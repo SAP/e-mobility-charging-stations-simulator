@@ -1,4 +1,4 @@
-import { type ChargingStationData } from 'ui-common'
+import { type ChargingStationData, type ConfigurationKey } from 'ui-common'
 import { computed, type ComputedRef } from 'vue'
 
 import { useChargingStations } from '@/core/index.js'
@@ -7,10 +7,12 @@ import {
   buildStationDetailSections,
   type ConfigurationRow,
   type DetailSection,
+  getVisibleConfigurationKeys,
 } from '@/shared/utils/index.js'
 
 export interface StationDetailsView {
   configurationRows: ComputedRef<ConfigurationRow[]>
+  editableConfigurationKeys: ComputedRef<ConfigurationKey[]>
   sections: ComputedRef<DetailSection[]>
   station: ComputedRef<ChargingStationData | undefined>
 }
@@ -38,8 +40,13 @@ export function useStationDetails (hashId: string): StationDetailsView {
     station.value != null ? buildConfigurationRows(station.value) : []
   )
 
+  const editableConfigurationKeys = computed(() =>
+    station.value != null ? getVisibleConfigurationKeys(station.value) : []
+  )
+
   return {
     configurationRows,
+    editableConfigurationKeys,
     sections,
     station,
   }

@@ -12,6 +12,7 @@ import {
   AttributeEnumType,
   CertificateSigningUseEnumType,
   ChangeAvailabilityStatusEnumType,
+  ConfigurationStatus,
   ConnectorEnumType,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -211,6 +212,19 @@ const getCertificateIdUseToInstallCertificateUse: Readonly<
     InstallCertificateUseEnumType.V2GRootCertificate,
   [GetCertificateIdUseEnumType.V2GRootCertificate]:
     InstallCertificateUseEnumType.V2GRootCertificate,
+})
+
+// Collapses the 6 OCPP 2.0.1 SetVariables statuses onto the 4 version-agnostic
+// ConfigurationStatus values used by the local (Web UI) configuration-change seam.
+const setVariableStatusToConfigurationStatus: Readonly<
+  Record<SetVariableStatusEnumType, ConfigurationStatus>
+> = Object.freeze({
+  [SetVariableStatusEnumType.Accepted]: ConfigurationStatus.ACCEPTED,
+  [SetVariableStatusEnumType.NotSupportedAttributeType]: ConfigurationStatus.NOT_SUPPORTED,
+  [SetVariableStatusEnumType.RebootRequired]: ConfigurationStatus.REBOOT_REQUIRED,
+  [SetVariableStatusEnumType.Rejected]: ConfigurationStatus.REJECTED,
+  [SetVariableStatusEnumType.UnknownComponent]: ConfigurationStatus.NOT_SUPPORTED,
+  [SetVariableStatusEnumType.UnknownVariable]: ConfigurationStatus.NOT_SUPPORTED,
 })
 
 interface StationInfoReportField {
@@ -696,6 +710,32 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         }
       }
     )
+  }
+
+  public changeConfiguration (
+    chargingStation: ChargingStation,
+    key: string,
+    value: string
+  ): ConfigurationStatus {
+    const resolved = OCPP20VariableManager.getInstance().resolveConfigurationKeyName(key)
+    if (resolved == null) {
+      return ConfigurationStatus.NOT_SUPPORTED
+    }
+    const { component, instance, variable } = resolved
+    const response = this.handleRequestSetVariables(chargingStation, {
+      setVariableData: [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: value,
+          component: { name: component, ...(instance != null && { instance }) },
+          variable: { name: variable, ...(instance != null && { instance }) },
+        },
+      ],
+    })
+    if (response.setVariableResult.length === 0) {
+      return ConfigurationStatus.REJECTED
+    }
+    return setVariableStatusToConfigurationStatus[response.setVariableResult[0].attributeStatus]
   }
 
   /**

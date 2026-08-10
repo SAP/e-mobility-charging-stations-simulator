@@ -13,6 +13,7 @@ import type {
   GetConfigurationRequest,
 } from '../../../../src/types/index.js'
 
+import { getConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   OCPP16ConfigurationStatus,
@@ -175,6 +176,97 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
       .map(call => (call.arguments as [ChargingStation, number, number])[1])
       .sort((a, b) => a - b)
     assert.deepStrictEqual(restartedConnectorIds, [1, 3])
+  })
+
+  // ---------------------------------------------------------------------------
+  // changeConfiguration (local Web UI seam over §5.4)
+  // ---------------------------------------------------------------------------
+
+  await it('should apply and persist a mutable key change via the changeConfiguration seam', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
+
+    // Act
+    const status = incomingRequestService.changeConfiguration(
+      station,
+      OCPP16StandardParametersKey.MeterValueSampleInterval,
+      '30'
+    )
+
+    // Assert — status returned AND the new value persisted to the configuration
+    assert.strictEqual(status, OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(
+      getConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval)?.value,
+      '30'
+    )
+  })
+
+  await it('should reject a readonly key via the seam without mutating its value', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '60', true)
+
+    // Act
+    const status = incomingRequestService.changeConfiguration(
+      station,
+      OCPP16StandardParametersKey.HeartbeatInterval,
+      '30'
+    )
+
+    // Assert — rejected AND value unchanged
+    assert.strictEqual(status, OCPP16ConfigurationStatus.REJECTED)
+    assert.strictEqual(
+      getConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval)?.value,
+      '60'
+    )
+  })
+
+  await it('should reject a non-integer value for an integer key via the seam', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.ConnectionTimeOut, '60')
+
+    // Act
+    const status = incomingRequestService.changeConfiguration(
+      station,
+      OCPP16StandardParametersKey.ConnectionTimeOut,
+      'not-a-number'
+    )
+
+    // Assert
+    assert.strictEqual(status, OCPP16ConfigurationStatus.REJECTED)
+    assert.strictEqual(
+      getConfigurationKey(station, OCPP16StandardParametersKey.ConnectionTimeOut)?.value,
+      '60'
+    )
+  })
+
+  await it('should return RebootRequired via the seam for a reboot key', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, 'RebootKey', 'oldValue')
+    const configKey = station.ocppConfiguration?.configurationKey?.find(k => k.key === 'RebootKey')
+    if (configKey != null) {
+      configKey.reboot = true
+    }
+
+    // Act
+    const status = incomingRequestService.changeConfiguration(station, 'RebootKey', 'newValue')
+
+    // Assert
+    assert.strictEqual(status, OCPP16ConfigurationStatus.REBOOT_REQUIRED)
+  })
+
+  await it('should return NotSupported via the seam for an unknown key', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+
+    // Act
+    const status = incomingRequestService.changeConfiguration(station, 'NonExistentKey', 'anyValue')
+
+    // Assert
+    assert.strictEqual(status, OCPP16ConfigurationStatus.NOT_SUPPORTED)
   })
 
   // ---------------------------------------------------------------------------

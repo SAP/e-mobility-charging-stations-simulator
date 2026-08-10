@@ -14,6 +14,7 @@ import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-se
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  ConfigurationStatus,
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
@@ -169,6 +170,39 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         BroadcastChannelProcedureName.TRANSACTION_EVENT
       )
     })
+  })
+
+  // ==========================================================================
+  // CHANGE_CONFIGURATION status collapse (guards the acceptedStatusCommands entry:
+  // without it, even ACCEPTED would fall through to the FAILURE default)
+  // ==========================================================================
+
+  await describe('commandResponseToResponseStatus CHANGE_CONFIGURATION', async () => {
+    const cases: { expected: ResponseStatus; status: ConfigurationStatus }[] = [
+      { expected: ResponseStatus.SUCCESS, status: ConfigurationStatus.ACCEPTED },
+      { expected: ResponseStatus.SUCCESS, status: ConfigurationStatus.REBOOT_REQUIRED },
+      { expected: ResponseStatus.FAILURE, status: ConfigurationStatus.REJECTED },
+      { expected: ResponseStatus.FAILURE, status: ConfigurationStatus.NOT_SUPPORTED },
+    ]
+    for (const { expected, status } of cases) {
+      await it(`should map ${status} to ${expected}`, () => {
+        const { station } = createMockChargingStation({
+          connectorsCount: 1,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        instance = new ChargingStationWorkerBroadcastChannel(station)
+        const testable = createTestableWorkerBroadcastChannel(instance)
+
+        assert.strictEqual(
+          testable.commandResponseToResponseStatus(
+            BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+            { status }
+          ),
+          expected
+        )
+      })
+    }
   })
 
   // ==========================================================================

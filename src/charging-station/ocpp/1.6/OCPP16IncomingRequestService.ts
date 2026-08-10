@@ -33,6 +33,7 @@ import {
   type ChangeConfigurationResponse,
   type ClearCacheResponse,
   ConfigurationSection,
+  type ConfigurationStatus,
   type ConnectorStatus,
   ErrorType,
   type GenericResponse,
@@ -725,6 +726,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         }
       }
     )
+  }
+
+  public changeConfiguration (
+    chargingStation: ChargingStation,
+    key: string,
+    value: string
+  ): ConfigurationStatus {
+    return this.handleRequestChangeConfiguration(chargingStation, { key, value }).status
   }
 
   /**

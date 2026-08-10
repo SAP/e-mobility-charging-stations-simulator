@@ -12,6 +12,8 @@ import {
   type BroadcastChannelRequest,
   type BroadcastChannelRequestPayload,
   type BroadcastChannelResponsePayload,
+  type ChangeConfigurationResponse,
+  ConfigurationStatus,
   type DataTransferResponse,
   DataTransferStatus,
   GenericStatus,
@@ -68,6 +70,7 @@ type CommandHandler = (
 type CommandResponse =
   | AuthorizeResponse
   | BootNotificationResponse
+  | ChangeConfigurationResponse
   | DataTransferResponse
   | HeartbeatResponse
   | OCPP20Get15118EVCertificateResponse
@@ -85,6 +88,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         [
           BroadcastChannelProcedureName.BOOT_NOTIFICATION,
           r => r.status === RegistrationStatusEnumType.ACCEPTED,
+        ],
+        [
+          BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+          r =>
+            r.status === ConfigurationStatus.ACCEPTED ||
+        r.status === ConfigurationStatus.REBOOT_REQUIRED,
         ],
         [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
         [
@@ -127,6 +136,24 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
       [BroadcastChannelProcedureName.AUTHORIZE, this.passthrough(RequestCommand.AUTHORIZE)],
       [BroadcastChannelProcedureName.BOOT_NOTIFICATION, this.handleBootNotification.bind(this)],
+      [
+        BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+        (requestPayload?: BroadcastChannelRequestPayload): ChangeConfigurationResponse => {
+          const key = requestPayload?.key
+          if (typeof key !== 'string' || isEmpty(key)) {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'key' field is required`
+            )
+          }
+          const value = requestPayload?.value
+          if (typeof value !== 'string') {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'value' field is required`
+            )
+          }
+          return { status: this.chargingStation.changeConfiguration(key, value) }
+        },
+      ],
       [
         BroadcastChannelProcedureName.CLOSE_CONNECTION,
         () => {

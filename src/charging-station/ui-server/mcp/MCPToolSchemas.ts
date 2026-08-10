@@ -182,6 +182,18 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     },
   ],
   [
+    ProcedureName.CHANGE_CONFIGURATION,
+    {
+      description:
+        'Change the value of an OCPP configuration key for one or more charging stations, applying the OCPP spec side effects (read-only keys are rejected)',
+      inputSchema: z.object({
+        hashIds,
+        key: z.string().describe('The OCPP configuration key to change'),
+        value: z.string().describe('The new value to set for the configuration key'),
+      }),
+    },
+  ],
+  [
     ProcedureName.CLOSE_CONNECTION,
     {
       description:

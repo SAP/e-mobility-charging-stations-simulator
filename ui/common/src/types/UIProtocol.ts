@@ -14,6 +14,7 @@ export enum ProcedureName {
   ADD_CHARGING_STATIONS = 'addChargingStations',
   AUTHORIZE = 'authorize',
   BOOT_NOTIFICATION = 'bootNotification',
+  CHANGE_CONFIGURATION = 'changeConfiguration',
   CLOSE_CONNECTION = 'closeConnection',
   DATA_TRANSFER = 'dataTransfer',
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',

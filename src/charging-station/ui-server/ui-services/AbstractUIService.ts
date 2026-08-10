@@ -83,6 +83,7 @@ export abstract class AbstractUIService {
   >([
     [ProcedureName.AUTHORIZE, BroadcastChannelProcedureName.AUTHORIZE],
     [ProcedureName.BOOT_NOTIFICATION, BroadcastChannelProcedureName.BOOT_NOTIFICATION],
+    [ProcedureName.CHANGE_CONFIGURATION, BroadcastChannelProcedureName.CHANGE_CONFIGURATION],
     [ProcedureName.CLOSE_CONNECTION, BroadcastChannelProcedureName.CLOSE_CONNECTION],
     [ProcedureName.DATA_TRANSFER, BroadcastChannelProcedureName.DATA_TRANSFER],
     [

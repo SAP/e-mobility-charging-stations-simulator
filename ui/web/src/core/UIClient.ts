@@ -74,6 +74,18 @@ export class UIClient {
     })
   }
 
+  public async changeConfiguration (
+    hashId: string,
+    key: string,
+    value: string
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.CHANGE_CONFIGURATION, {
+      hashIds: [hashId],
+      key,
+      value,
+    })
+  }
+
   public async closeConnection (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
       hashIds: [hashId],

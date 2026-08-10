@@ -53,6 +53,23 @@ describe('useStationDetails', () => {
     ])
   })
 
+  it('should expose the visible raw configuration keys for editing', () => {
+    const stations = ref([
+      createChargingStationData({
+        ocppConfiguration: {
+          configurationKey: [
+            { key: 'HeartbeatInterval', readonly: false, value: '30' },
+            { key: 'SecretKey', readonly: true, value: 'x', visible: false },
+          ],
+        },
+      }),
+    ])
+    const { editableConfigurationKeys } = runComposable(stations, TEST_HASH_ID)
+    expect(editableConfigurationKeys.value).toEqual([
+      { key: 'HeartbeatInterval', readonly: false, value: '30' },
+    ])
+  })
+
   it('should return an undefined station and empty derived data for an unknown hashId', () => {
     const stations = ref([createChargingStationData()])
     const { configurationRows, sections, station } = runComposable(stations, 'unknown-hash')
