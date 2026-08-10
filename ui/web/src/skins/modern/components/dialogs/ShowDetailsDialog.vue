@@ -150,7 +150,7 @@ const close = (): void => {
 .station-details__list {
   margin: 0;
   display: grid;
-  gap: var(--skin-space-2);
+  gap: var(--skin-space-1);
 }
 
 .station-details__row {
@@ -161,7 +161,7 @@ const close = (): void => {
 }
 
 .station-details__row + .station-details__row {
-  padding-top: var(--skin-space-2);
+  padding-top: var(--skin-space-1);
   border-top: 1px solid var(--skin-border);
 }
 
