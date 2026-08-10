@@ -86,9 +86,8 @@ const { configurationRows, sections, station } = useStationDetails(props.hashId)
 </script>
 
 <style scoped>
-/* Keep the details in a right-hand panel: bound the width so the shared
- * action container (min-width: max-content) does not balloon to fill the
- * main area, and let long keys/values wrap instead of widening the panel. */
+/* Bound the width: the shared action container is `min-width: max-content`,
+ * so uncapped these tables would grow it to fill the main area. */
 .show-details__section {
   width: 32rem;
   margin-bottom: var(--spacing-lg);
@@ -104,7 +103,6 @@ const { configurationRows, sections, station } = useStationDetails(props.hashId)
   overflow-wrap: anywhere;
 }
 
-/* Set the key column apart from its value: header fill + weight + divider. */
 .show-details__section th[scope='row'] {
   font-weight: bold;
   background-color: var(--color-bg-header);

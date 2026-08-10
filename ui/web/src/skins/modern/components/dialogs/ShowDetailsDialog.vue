@@ -140,8 +140,6 @@ const close = (): void => {
   border-radius: var(--skin-radius-lg);
 }
 
-/* Promote the section heading above the field labels (dt) and add a divider,
- * so each panel reads as a titled block: title > key > value hierarchy. */
 .station-details__section > h3 {
   font-size: 0.8125rem;
   color: var(--color-text-strong);
@@ -162,7 +160,6 @@ const close = (): void => {
   align-items: baseline;
 }
 
-/* Faint separator between consecutive key/value pairs. */
 .station-details__row + .station-details__row {
   padding-top: var(--skin-space-2);
   border-top: 1px solid var(--skin-border);
