@@ -68,28 +68,28 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
     }
   })
 
-  await it('seeds numberOfPhases to 3 for an AC template omitting the field', () => {
+  await it('should seed numberOfPhases to 3 for an AC template omitting the field', () => {
     const station = newStation({ currentOutType: 'AC' })
     assert.strictEqual(station.stationInfo?.numberOfPhases, 3)
   })
 
-  await it('seeds numberOfPhases to 0 for a DC template', () => {
+  await it('should seed numberOfPhases to 0 for a DC template', () => {
     const station = newStation({ currentOutType: 'DC' })
     assert.strictEqual(station.stationInfo?.numberOfPhases, 0)
   })
 
-  await it('preserves an explicit AC template numberOfPhases value', () => {
+  await it('should preserve an explicit AC template numberOfPhases value', () => {
     const station = newStation({ currentOutType: 'AC', numberOfPhases: 1 })
     assert.strictEqual(station.stationInfo?.numberOfPhases, 1)
   })
 
-  await it('transmits the seeded numberOfPhases in the UI data payload', () => {
+  await it('should transmit the seeded numberOfPhases in the UI data payload', () => {
     const station = newStation({ currentOutType: 'AC' })
     const payload = buildAddedMessage(station).data
     assert.strictEqual(payload.stationInfo.numberOfPhases, 3)
   })
 
-  await it('matches getNumberOfPhases so backend consumers are invariant', () => {
+  await it('should match getNumberOfPhases so backend consumers are invariant', () => {
     const acStation = newStation({ currentOutType: 'AC' })
     assert.strictEqual(acStation.stationInfo?.numberOfPhases, acStation.getNumberOfPhases())
     const dcStation = newStation({ currentOutType: 'DC' })
