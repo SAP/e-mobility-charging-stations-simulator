@@ -134,6 +134,16 @@ const close = (): void => {
   display: flex;
   flex-direction: column;
   gap: var(--skin-space-2);
+  padding: var(--skin-space-3);
+  background-color: var(--skin-surface-sunken);
+  border: 1px solid var(--skin-border);
+  border-radius: var(--skin-radius-lg);
+}
+
+/* Divider under each section heading, so sections read as distinct blocks. */
+.station-details__section > h3 {
+  padding-bottom: var(--skin-space-2);
+  border-bottom: 1px solid var(--skin-border);
 }
 
 .station-details__list {
@@ -147,6 +157,12 @@ const close = (): void => {
   grid-template-columns: minmax(9rem, 12rem) 1fr;
   gap: var(--skin-space-1) var(--skin-space-3);
   align-items: baseline;
+}
+
+/* Faint separator between consecutive key/value pairs. */
+.station-details__row + .station-details__row {
+  padding-top: var(--skin-space-2);
+  border-top: 1px solid var(--skin-border);
 }
 
 .station-details__row dt {

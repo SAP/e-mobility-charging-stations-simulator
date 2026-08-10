@@ -105,11 +105,23 @@ const close = (): void => {
 
 <style scoped>
 .show-details__section {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.show-details__section:last-of-type {
+  margin-bottom: 0;
 }
 
 .show-details__section :is(th, td) {
   text-align: left;
+  vertical-align: top;
+}
+
+/* Set the key column apart from its value: header fill + weight + divider. */
+.show-details__section th[scope='row'] {
+  font-weight: bold;
+  background-color: var(--color-bg-header);
+  border-right: solid 0.25px var(--color-border);
 }
 
 .show-details__empty {
