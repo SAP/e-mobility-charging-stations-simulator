@@ -343,6 +343,7 @@ describe('ModernLayout', () => {
           AuthorizeDialog: true,
           ConfirmDialog: true,
           SetSupervisionUrlDialog: true,
+          ShowDetailsDialog: true,
           SimulatorBar: true,
           StartTransactionDialog: true,
           StationCard: {
@@ -355,7 +356,6 @@ describe('ModernLayout', () => {
               <button class="stub-start-tx" @click="$emit('open-start-tx', { chargingStationId: 'CS-1', connectorId: '1', hashId: 'h1' })">tx</button>
             </article>`,
           },
-          StationDetailsDialog: true,
         },
       },
     })
@@ -369,7 +369,7 @@ describe('ModernLayout', () => {
     expect(wrapper.findComponent({ name: 'AuthorizeDialog' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'SetSupervisionUrlDialog' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'StartTransactionDialog' }).exists()).toBe(true)
-    expect(wrapper.findComponent({ name: 'StationDetailsDialog' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'ShowDetailsDialog' }).exists()).toBe(true)
     wrapper.unmount()
   })
 })

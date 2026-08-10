@@ -1,6 +1,6 @@
 <template>
   <Modal
-    :title="`Show Details — ${chargingStationId}`"
+    :title="`Show details — ${chargingStationId}`"
     @close="close"
   >
     <p
@@ -40,7 +40,7 @@
       </section>
       <section class="station-details__section">
         <h3
-          id="station-details-ocpp-title"
+          :id="`${sectionsBaseId}-ocpp`"
           class="modern-section-label"
         >
           OCPP Parameters
@@ -54,7 +54,7 @@
         <table
           v-else
           class="station-details__table"
-          aria-labelledby="station-details-ocpp-title"
+          :aria-labelledby="`${sectionsBaseId}-ocpp`"
         >
           <thead>
             <tr>

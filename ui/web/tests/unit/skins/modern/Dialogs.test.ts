@@ -41,8 +41,8 @@ import AddStationsDialog from '@/skins/modern/components/dialogs/AddStationsDial
 import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.vue'
 import SetConnectorStatusDialog from '@/skins/modern/components/dialogs/SetConnectorStatusDialog.vue'
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
+import ShowDetailsDialog from '@/skins/modern/components/dialogs/ShowDetailsDialog.vue'
 import StartTransactionDialog from '@/skins/modern/components/dialogs/StartTransactionDialog.vue'
-import StationDetailsDialog from '@/skins/modern/components/dialogs/StationDetailsDialog.vue'
 
 import { toastMock } from '../../../setup.js'
 import {
@@ -551,13 +551,13 @@ describe('Dialogs', () => {
     })
   })
 
-  describe('StationDetailsDialog', () => {
+  describe('ShowDetailsDialog', () => {
     /**
      * @param stations - Charging station data to provide to the dialog
-     * @returns Mounted wrapper for StationDetailsDialog
+     * @returns Mounted wrapper for ShowDetailsDialog
      */
     function mountDialog (stations = [createChargingStationData()]) {
-      return mount(StationDetailsDialog, {
+      return mount(ShowDetailsDialog, {
         global: {
           provide: {
             [chargingStationsKey as symbol]: ref(stations),
@@ -569,7 +569,7 @@ describe('Dialogs', () => {
 
     it('should render the title with the station id', () => {
       const wrapper = mountDialog()
-      expect(wrapper.text()).toContain(`Show Details — ${TEST_STATION_ID}`)
+      expect(wrapper.text()).toContain(`Show details — ${TEST_STATION_ID}`)
     })
 
     it('should render detail sections', () => {
@@ -634,9 +634,9 @@ describe('Dialogs', () => {
           },
         }),
       ])
-      expect(wrapper.find('.station-details__table').attributes('aria-labelledby')).toBe(
-        'station-details-ocpp-title'
-      )
+      const labelledBy = wrapper.find('.station-details__table').attributes('aria-labelledby') ?? ''
+      expect(labelledBy).not.toBe('')
+      expect(wrapper.find(`#${labelledBy}`).exists()).toBe(true)
     })
 
     it('should give each detail section an accessible name pointing at its heading', () => {

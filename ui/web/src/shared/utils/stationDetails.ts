@@ -34,6 +34,13 @@ export interface DetailSection {
 }
 
 /**
+ * Formats a boolean flag for display; undefined renders as "No".
+ * @param value - The raw boolean flag
+ * @returns "Yes" or "No"
+ */
+const formatBoolean = (value: boolean | undefined): string => (value === true ? 'Yes' : 'No')
+
+/**
  * Formats a date-like station field for display.
  * Nullish values render as the empty placeholder; otherwise the localized date-time string.
  * @param value - The raw date, epoch millisecond timestamp, or ISO string
@@ -50,7 +57,7 @@ const formatDate = (value: Date | number | string | undefined): string =>
  */
 const formatValue = (value: boolean | number | string | undefined): string => {
   if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No'
+    return formatBoolean(value)
   }
   if (value == null || value === '') {
     return EMPTY_VALUE_PLACEHOLDER
@@ -66,8 +73,8 @@ const formatValue = (value: boolean | number | string | undefined): string => {
 export function buildConfigurationRows (station: ChargingStationData): ConfigurationRow[] {
   return getVisibleConfigurationKeys(station).map(key => ({
     key: key.key,
-    readonly: key.readonly ? 'Yes' : 'No',
-    reboot: key.reboot === true ? 'Yes' : 'No',
+    readonly: formatBoolean(key.readonly),
+    reboot: formatBoolean(key.reboot),
     value: formatValue(key.value),
   }))
 }
@@ -84,7 +91,7 @@ export function buildStationDetailSections (station: ChargingStationData): Detai
       entries: [
         { label: 'Charging Station Id', value: formatValue(stationInfo.chargingStationId) },
         { label: 'Started', value: formatValue(station.started) },
-        { label: 'Supervision URL', value: formatSupervisionUrl(station.supervisionUrl) },
+        { label: 'Supervision Url', value: formatSupervisionUrl(station.supervisionUrl) },
         {
           label: 'WebSocket State',
           value: formatValue(getWebSocketStateName(station.wsState)),

@@ -72,7 +72,7 @@
       :ocpp-version="showAuthorizeDialog.ocppVersion"
       @close="showAuthorizeDialog = null"
     />
-    <StationDetailsDialog
+    <ShowDetailsDialog
       v-if="showDetailsDialog"
       :hash-id="showDetailsDialog.hashId"
       :charging-station-id="showDetailsDialog.chargingStationId"
@@ -134,8 +134,8 @@ const SetSupervisionUrlDialog = defineAsyncDialog(
 const StartTransactionDialog = defineAsyncDialog(
   () => import('./components/dialogs/StartTransactionDialog.vue')
 )
-const StationDetailsDialog = defineAsyncDialog(
-  () => import('./components/dialogs/StationDetailsDialog.vue')
+const ShowDetailsDialog = defineAsyncDialog(
+  () => import('./components/dialogs/ShowDetailsDialog.vue')
 )
 
 const $chargingStations = useChargingStations()

@@ -106,6 +106,9 @@ const close = (): void => {
 <style scoped>
 .show-details__section {
   margin-bottom: var(--spacing-md);
+}
+
+.show-details__section :is(th, td) {
   text-align: left;
 }
 
