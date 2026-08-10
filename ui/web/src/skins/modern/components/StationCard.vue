@@ -84,7 +84,7 @@
           </svg>
         </button>
       </div>
-      <p class="modern-card__section-label">
+      <p class="modern-section-label">
         Connectors
       </p>
       <div

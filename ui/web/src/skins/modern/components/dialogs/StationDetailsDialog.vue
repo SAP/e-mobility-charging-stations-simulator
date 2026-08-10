@@ -20,7 +20,7 @@
       >
         <h3
           :id="`${sectionsBaseId}-section-${index}`"
-          class="station-details__title"
+          class="modern-section-label"
         >
           {{ section.title }}
         </h3>
@@ -41,7 +41,7 @@
       <section class="station-details__section">
         <h3
           id="station-details-ocpp-title"
-          class="station-details__title"
+          class="modern-section-label"
         >
           OCPP Parameters
         </h3>
@@ -130,55 +130,76 @@ const close = (): void => {
   gap: var(--skin-space-4);
 }
 
-.station-details__title {
-  margin: 0 0 var(--skin-space-2);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-text-strong);
+.station-details__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--skin-space-2);
 }
 
 .station-details__list {
   margin: 0;
   display: grid;
-  gap: var(--skin-space-1) var(--skin-space-3);
+  gap: var(--skin-space-2);
 }
 
 .station-details__row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--skin-space-3);
-  border-bottom: 1px solid var(--skin-border);
-  padding-bottom: var(--skin-space-1);
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) 1fr;
+  gap: var(--skin-space-1) var(--skin-space-3);
+  align-items: baseline;
 }
 
 .station-details__row dt {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
   color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .station-details__row dd {
   margin: 0;
-  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-strong);
   word-break: break-word;
-  color: var(--color-text);
 }
 
 .station-details__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
 }
 
 .station-details__table th,
 .station-details__table td {
   padding: var(--skin-space-1) var(--skin-space-2);
-  border: 1px solid var(--skin-border);
   text-align: left;
+}
+
+.station-details__table td,
+.station-details__table th[scope='row'] {
   word-break: break-word;
 }
 
 .station-details__table thead th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--skin-border);
+}
+
+.station-details__table th[scope='row'] {
+  font-weight: 600;
   color: var(--color-text-strong);
-  background-color: var(--skin-surface-sunken);
+}
+
+.station-details__table tbody tr {
+  border-bottom: 1px solid var(--skin-border);
 }
 
 .station-details__empty {
