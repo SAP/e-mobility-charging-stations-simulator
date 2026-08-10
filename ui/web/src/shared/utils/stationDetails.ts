@@ -6,8 +6,8 @@
  * ordering, labelling and formatting stay single-sourced.
  *
  * Security invariant: `supervisionPassword` is always masked (never rendered raw); the
- * supervision URL is formatted host-only via {@link formatSupervisionUrl}, which drops any
- * embedded userinfo credentials.
+ * supervision URL is passed through {@link formatSupervisionUrl}, which strips any embedded
+ * userinfo credentials (protocol, host and path are preserved).
  */
 import { type ChargingStationData, type ConfigurationKey, getWebSocketStateName } from 'ui-common'
 

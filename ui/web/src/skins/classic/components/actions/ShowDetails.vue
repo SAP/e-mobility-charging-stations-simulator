@@ -7,7 +7,7 @@
     v-if="station == null"
     class="show-details__empty"
   >
-    Charging station not found.
+    Charging station not found
   </p>
   <template v-else>
     <table
