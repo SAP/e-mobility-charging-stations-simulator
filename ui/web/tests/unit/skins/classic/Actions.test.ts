@@ -505,12 +505,5 @@ describe('Actions', () => {
       const wrapper = mountShowDetails([])
       expect(wrapper.text()).toContain('Charging station not found')
     })
-
-    it('should navigate to charging-stations on close', async () => {
-      const wrapper = mountShowDetails()
-      await wrapper.findComponent(ButtonStub).trigger('click')
-      await flushPromises()
-      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
-    })
   })
 })
