@@ -1,29 +1,49 @@
 import { type ConfigurationKey } from 'ui-common'
-import { type DeepReadonly, reactive, readonly } from 'vue'
+import { type DeepReadonly, reactive, readonly, type Ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import { useUIClient } from '@/core/index.js'
 
 /**
- * Returns per-key submission logic for editing OCPP configuration keys, shared by both
- * skins so the mutation flow, toast messaging and pending tracking stay single-sourced.
- * Read-only keys are never submitted (the backend also rejects them). A successful change
- * on a `reboot` key surfaces a reboot-required notice, mirroring the OCPP spec semantics.
+ * Returns per-key draft state and submission logic for changing OCPP configuration keys,
+ * shared by both skins so the draft seeding, mutation flow, toast messaging and pending
+ * tracking stay single-sourced. Read-only keys are never submitted (the backend also rejects
+ * them). A successful change on a `reboot` key surfaces a reboot-required notice, mirroring
+ * the OCPP spec semantics.
  * @param hashId - The charging station hash identifier
- * @returns The reactive set of keys with an in-flight change and a per-key submit function
+ * @param editableConfigurationKeys - The reactive set of configuration keys the form operates on
+ * @returns The per-key draft values, the keys with an in-flight change, and a per-key save function
  */
-export function useChangeConfigurationForm (hashId: string): {
-  pending: DeepReadonly<Set<string>>
-  submit: (configurationKey: ConfigurationKey, value: string) => Promise<boolean>
-} {
+export function useChangeConfigurationForm (
+  hashId: string,
+  editableConfigurationKeys: Readonly<Ref<ConfigurationKey[]>>
+): {
+    draftValues: Record<string, string>
+    pending: DeepReadonly<Set<string>>
+    save: (configurationKey: ConfigurationKey) => Promise<boolean>
+  } {
   const $uiClient = useUIClient()
   const $toast = useToast()
 
   const pending = reactive(new Set<string>())
+  const draftValues = reactive<Record<string, string>>({})
+
+  // Seed a draft entry for each new key without clobbering in-flight user input.
+  watch(
+    editableConfigurationKeys,
+    configurationKeys => {
+      for (const configurationKey of configurationKeys) {
+        if (!(configurationKey.key in draftValues)) {
+          draftValues[configurationKey.key] = configurationKey.value ?? ''
+        }
+      }
+    },
+    { immediate: true }
+  )
 
   /**
    * Submits a new value for a configuration key.
-   * @param configurationKey - The raw configuration key being edited
+   * @param configurationKey - The configuration key being changed
    * @param value - The new value to apply
    * @returns Whether the change was accepted
    */
@@ -49,8 +69,18 @@ export function useChangeConfigurationForm (hashId: string): {
     }
   }
 
+  /**
+   * Submits the current draft value for a configuration key.
+   * @param configurationKey - The configuration key being changed
+   * @returns Whether the change was accepted
+   */
+  async function save (configurationKey: ConfigurationKey): Promise<boolean> {
+    return await submit(configurationKey, draftValues[configurationKey.key] ?? '')
+  }
+
   return {
+    draftValues,
     pending: readonly(pending),
-    submit,
+    save,
   }
 }

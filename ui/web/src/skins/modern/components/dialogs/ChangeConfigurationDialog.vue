@@ -91,8 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { type ConfigurationKey } from 'ui-common'
-import { reactive, useId, watch } from 'vue'
+import { useId } from 'vue'
 
 import { useChangeConfigurationForm } from '@/shared/composables/useChangeConfigurationForm.js'
 import { useStationDetails } from '@/shared/composables/useStationDetails.js'
@@ -110,25 +109,10 @@ const emit = defineEmits<{ close: [] }>()
 const tableLabelId = useId()
 
 const { editableConfigurationKeys, station } = useStationDetails(props.hashId)
-const { pending, submit } = useChangeConfigurationForm(props.hashId)
-
-const draftValues = reactive<Record<string, string>>({})
-
-watch(
-  editableConfigurationKeys,
-  configurationKeys => {
-    for (const configurationKey of configurationKeys) {
-      if (!(configurationKey.key in draftValues)) {
-        draftValues[configurationKey.key] = configurationKey.value ?? ''
-      }
-    }
-  },
-  { immediate: true }
+const { draftValues, pending, save } = useChangeConfigurationForm(
+  props.hashId,
+  editableConfigurationKeys
 )
-
-const save = async (configurationKey: ConfigurationKey): Promise<void> => {
-  await submit(configurationKey, draftValues[configurationKey.key] ?? '')
-}
 
 const close = (): void => {
   emit('close')

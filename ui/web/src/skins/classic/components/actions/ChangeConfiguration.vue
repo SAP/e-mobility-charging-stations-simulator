@@ -86,8 +86,6 @@
 </template>
 
 <script setup lang="ts">
-import { type ConfigurationKey } from 'ui-common'
-import { reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
@@ -104,25 +102,10 @@ const props = defineProps<{
 const $router = useRouter()
 
 const { editableConfigurationKeys, station } = useStationDetails(props.hashId)
-const { pending, submit } = useChangeConfigurationForm(props.hashId)
-
-const draftValues = reactive<Record<string, string>>({})
-
-watch(
-  editableConfigurationKeys,
-  configurationKeys => {
-    for (const configurationKey of configurationKeys) {
-      if (!(configurationKey.key in draftValues)) {
-        draftValues[configurationKey.key] = configurationKey.value ?? ''
-      }
-    }
-  },
-  { immediate: true }
+const { draftValues, pending, save } = useChangeConfigurationForm(
+  props.hashId,
+  editableConfigurationKeys
 )
-
-const save = async (configurationKey: ConfigurationKey): Promise<void> => {
-  await submit(configurationKey, draftValues[configurationKey.key] ?? '')
-}
 
 const close = (): void => {
   resetToggleButtonState(`${props.hashId}-change-configuration`, true)

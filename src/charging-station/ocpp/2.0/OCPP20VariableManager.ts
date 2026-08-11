@@ -144,7 +144,7 @@ export class OCPP20VariableManager {
   /**
    * Resolves a persisted flat configuration key name (as shown in the UI) back to
    * its registry-defined component/variable/instance tuple, for round-tripping a
-   * generic configuration edit through {@link setVariables}.
+   * generic configuration change through {@link setVariables}.
    * @param name - Configuration key name (`component.variable[.instance]`).
    * @returns The resolved tuple, or `undefined` when the name is not registry-backed.
    */
