@@ -1148,7 +1148,7 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `key`: string,  
   `value`: string  
   }  
-  `key` and `value` are both required: `key` is a non-empty OCPP configuration key name and `value` is the new value as a string (an empty string is allowed). Read-only keys are rejected and the OCPP specification side effects are applied (e.g. a `reboot` key returns a reboot-required status).
+  `key` and `value` are both required: `key` is a non-empty OCPP configuration key name and `value` is the new value as a string. Read-only keys are rejected, as are values invalid for the target key (e.g. a non-integer or empty value for a numeric key). Accepted changes apply the OCPP specification side effects (e.g. a `reboot` key returns a reboot-required status).
 
 - Response:  
   `PDU`: {  
