@@ -5,7 +5,6 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import {
-  type ConfigurationKey,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   OCPP20ConnectorStatusEnumType,
@@ -50,6 +49,7 @@ import { toastMock } from '../../../setup.js'
 import {
   createChargingStationData,
   createStationInfo,
+  createStationWithConfigurationKeys,
   TEST_HASH_ID,
   TEST_STATION_ID,
 } from '../../constants.js'
@@ -681,15 +681,6 @@ describe('Dialogs', () => {
       })
     }
 
-    /**
-     * Builds a station carrying the given OCPP configuration keys.
-     * @param configurationKey - OCPP configuration keys to seed
-     * @returns Charging station data with the keys
-     */
-    function stationWithKeys (configurationKey: ConfigurationKey[]) {
-      return createChargingStationData({ ocppConfiguration: { configurationKey } })
-    }
-
     it('should render the title with the station id', () => {
       const wrapper = mountDialog()
       expect(wrapper.text()).toContain(`Change configuration — ${TEST_STATION_ID}`)
@@ -701,13 +692,13 @@ describe('Dialogs', () => {
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {
-      const wrapper = mountDialog([stationWithKeys([])])
+      const wrapper = mountDialog([createStationWithConfigurationKeys([])])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
     })
 
     it('should prefill inputs and disable read-only keys', () => {
       const wrapper = mountDialog([
-        stationWithKeys([
+        createStationWithConfigurationKeys([
           { key: 'HeartbeatInterval', readonly: false, value: '30' },
           { key: 'SecretKey', readonly: true, value: 'x' },
         ]),
@@ -723,7 +714,9 @@ describe('Dialogs', () => {
 
     it('should call changeConfiguration and toast success on save', async () => {
       const wrapper = mountDialog([
-        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       await wrapper.find('[aria-label="Value for HeartbeatInterval"]').setValue('45')
       await wrapper.find('[aria-label="Save HeartbeatInterval"]').trigger('click')

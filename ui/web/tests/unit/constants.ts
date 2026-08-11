@@ -6,6 +6,7 @@
 import {
   type ChargingStationData,
   type ChargingStationInfo,
+  type ConfigurationKey,
   type ConnectorStatus,
   DEFAULT_HOST,
   DEFAULT_PORT,
@@ -99,6 +100,17 @@ export function createStationInfo (overrides?: Partial<ChargingStationInfo>): Ch
     templateName: 'template-test.json',
     ...overrides,
   }
+}
+
+/**
+ * Creates a ChargingStationData fixture carrying the given OCPP configuration keys.
+ * @param configurationKey - OCPP configuration keys to seed
+ * @returns ChargingStationData fixture with the given configuration keys
+ */
+export function createStationWithConfigurationKeys (
+  configurationKey: ConfigurationKey[]
+): ChargingStationData {
+  return createChargingStationData({ ocppConfiguration: { configurationKey } })
 }
 
 /**

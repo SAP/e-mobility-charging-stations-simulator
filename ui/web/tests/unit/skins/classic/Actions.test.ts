@@ -3,7 +3,7 @@
  * @description Unit tests for classic skin action components: AddChargingStations, SetSupervisionUrl, StartTransaction.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { type ConfigurationKey, OCPPVersion } from 'ui-common'
+import { OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
@@ -25,6 +25,7 @@ import { toastMock } from '../../../setup.js'
 import {
   createChargingStationData,
   createStationInfo,
+  createStationWithConfigurationKeys,
   createUIServerConfig,
   TEST_HASH_ID,
   TEST_STATION_ID,
@@ -543,15 +544,6 @@ describe('Actions', () => {
       })
     }
 
-    /**
-     * Builds a station carrying the given OCPP configuration keys.
-     * @param configurationKey - OCPP configuration keys to seed
-     * @returns Charging station data with the keys
-     */
-    function stationWithKeys (configurationKey: ConfigurationKey[]) {
-      return createChargingStationData({ ocppConfiguration: { configurationKey } })
-    }
-
     it('should render the heading and station id', () => {
       const wrapper = mountChange()
       expect(wrapper.find('h1').text()).toBe('Change Configuration')
@@ -567,13 +559,13 @@ describe('Actions', () => {
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {
-      const wrapper = mountChange([stationWithKeys([])])
+      const wrapper = mountChange([createStationWithConfigurationKeys([])])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
     })
 
     it('should exclude keys explicitly marked not visible', () => {
       const wrapper = mountChange([
-        stationWithKeys([
+        createStationWithConfigurationKeys([
           { key: 'HeartbeatInterval', readonly: false, value: '30' },
           { key: 'HiddenKey', readonly: false, value: 'x', visible: false },
         ]),
@@ -586,7 +578,7 @@ describe('Actions', () => {
 
     it('should prefill inputs and disable read-only keys', () => {
       const wrapper = mountChange([
-        stationWithKeys([
+        createStationWithConfigurationKeys([
           { key: 'HeartbeatInterval', readonly: false, value: '30' },
           { key: 'SecretKey', readonly: true, value: 'x' },
         ]),
@@ -603,7 +595,9 @@ describe('Actions', () => {
 
     it('should call changeConfiguration and toast success on save', async () => {
       const wrapper = mountChange([
-        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       await wrapper.find('input[name="configuration-value-HeartbeatInterval"]').setValue('45')
       await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
@@ -620,7 +614,9 @@ describe('Actions', () => {
 
     it('should surface a reboot-required notice for reboot keys', async () => {
       const wrapper = mountChange([
-        stationWithKeys([{ key: 'RebootKey', readonly: false, reboot: true, value: '1' }]),
+        createStationWithConfigurationKeys([
+          { key: 'RebootKey', readonly: false, reboot: true, value: '1' },
+        ]),
       ])
       await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
       await flushPromises()
@@ -631,7 +627,7 @@ describe('Actions', () => {
 
     it('should not submit read-only keys', async () => {
       const wrapper = mountChange([
-        stationWithKeys([{ key: 'SecretKey', readonly: true, value: 'x' }]),
+        createStationWithConfigurationKeys([{ key: 'SecretKey', readonly: true, value: 'x' }]),
       ])
       await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
       await flushPromises()
@@ -641,7 +637,9 @@ describe('Actions', () => {
     it('should toast an error when the backend rejects the change', async () => {
       mockClient.changeConfiguration = vi.fn().mockRejectedValue(new Error('boom'))
       const wrapper = mountChange([
-        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
       await flushPromises()
