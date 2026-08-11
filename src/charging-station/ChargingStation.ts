@@ -1723,7 +1723,7 @@ export class ChargingStation extends EventEmitter {
       options
     )
     // getNumberOfPhases owns this derived default, but raw consumers (UI data payload,
-    // persisted configuration) read stationInfo directly. Materialize it post-merge so
+    // persisted configuration) read stationInfo directly. Seed it post-merge so
     // those paths — and persisted configs predating the field — get the effective value.
     stationInfo.numberOfPhases = this.getNumberOfPhases(stationInfo)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationInfo)

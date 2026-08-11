@@ -124,8 +124,9 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
     assert.strictEqual(configuration.stationInfo.numberOfPhases, 3)
     delete configuration.stationInfo.numberOfPhases
     writeFileSync(configurationFile, JSON.stringify(configuration), 'utf8')
-    // A fresh station's per-instance configuration cache is empty, so it reads
-    // the file from disk and the file-sourced stationInfo must backfill the field.
+    // A fresh station starts with an empty configurationFileHash, so getConfigurationFromFile
+    // bypasses the shared cache and reads the file from disk; the file-sourced stationInfo
+    // must backfill the field.
     const reloaded = makeStation(templateFile, true)
     assert.strictEqual(reloaded.stationInfo?.numberOfPhases, 3)
   })
