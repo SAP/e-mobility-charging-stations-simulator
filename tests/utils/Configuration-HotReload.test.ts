@@ -3,8 +3,7 @@
  * @description Validates snapshot rollback, callback gating, lock release, and event coalescing
  */
 import assert from 'node:assert/strict'
-import { type FSWatcher, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { type FSWatcher, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
@@ -14,6 +13,7 @@ import { BaseError } from '../../src/exception/index.js'
 import { ConfigurationSection } from '../../src/types/index.js'
 import { ConfigurationValidationError } from '../../src/utils/index.js'
 import { Configuration, logger } from '../../src/utils/index.js'
+import { cleanupTempDirs, createTempDir } from '../helpers/TempFiles.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   buildInvalidJsonString,
@@ -35,7 +35,7 @@ interface ConfigurationInternals {
 const getInternals = (): ConfigurationInternals =>
   Configuration as unknown as ConfigurationInternals
 
-const createTempConfigDir = (): string => mkdtempSync(join(tmpdir(), 'cfg-hot-reload-'))
+const createTempConfigDir = (): string => createTempDir('cfg-hot-reload-')
 
 const writeConfigFile = (dir: string, contents: unknown): string => {
   const file = join(dir, 'config.json')
@@ -46,6 +46,7 @@ const writeConfigFile = (dir: string, contents: unknown): string => {
 await describe('Configuration hot-reload', async () => {
   afterEach(() => {
     standardCleanup()
+    cleanupTempDirs()
   })
 
   await it('should replace caches and invoke callback on a valid reload', async t => {
@@ -90,7 +91,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationSectionCache = originalCache
       internals.configurationFileReloading = originalReloading
       internals.configurationChangeCallback = originalCallback
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 
@@ -149,7 +149,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationSectionCache = originalCache
       internals.configurationFileReloading = originalReloading
       internals.configurationChangeCallback = originalCallback
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 
@@ -195,7 +194,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationSectionCache = originalCache
       internals.configurationFileReloading = originalReloading
       internals.configurationChangeCallback = originalCallback
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 
@@ -236,7 +234,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationFileReloading = originalReloading
       internals.configurationChangeCallback = originalCallback
       internals.configurationFileWatcher = originalWatcher
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 
@@ -291,7 +288,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationFileReloading = originalReloading
       internals.configurationFileReloadPending = originalPending
       internals.configurationChangeCallback = originalCallback
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 
@@ -328,7 +324,6 @@ await describe('Configuration hot-reload', async () => {
       internals.configurationSectionCache = originalCache
       internals.configurationFileReloading = originalReloading
       internals.configurationChangeCallback = originalCallback
-      rmSync(tempDir, { force: true, recursive: true })
     }
   })
 })

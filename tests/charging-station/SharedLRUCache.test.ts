@@ -21,7 +21,7 @@ import { Bootstrap } from '../../src/charging-station/index.js'
 import { SharedLRUCache } from '../../src/charging-station/index.js'
 import { StandardParametersKey } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { resetSingleton, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface BootstrapStatic {
   instance: Bootstrap | null
@@ -69,13 +69,6 @@ function installMockBootstrap (): void {
   } as unknown as Bootstrap
 }
 
-/**
- * Resets the SharedLRUCache singleton so subsequent getInstance() creates a fresh cache.
- */
-function resetSharedLRUCache (): void {
-  ;(SharedLRUCache as unknown as { instance: null }).instance = null
-}
-
 await describe('SharedLRUCache', async () => {
   beforeEach(() => {
     installMockBootstrap()
@@ -83,8 +76,8 @@ await describe('SharedLRUCache', async () => {
 
   afterEach(() => {
     standardCleanup()
-    resetSharedLRUCache()
-    ;(Bootstrap as unknown as BootstrapStatic).instance = null
+    resetSingleton(SharedLRUCache)
+    resetSingleton(Bootstrap)
   })
 
   await describe('getInstance', async () => {
@@ -97,7 +90,7 @@ await describe('SharedLRUCache', async () => {
 
     await it('should create new instance after reset', () => {
       const instance1 = SharedLRUCache.getInstance()
-      resetSharedLRUCache()
+      resetSingleton(SharedLRUCache)
       const instance2 = SharedLRUCache.getInstance()
 
       assert.notStrictEqual(instance1, instance2)

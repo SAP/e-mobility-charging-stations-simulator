@@ -6,21 +6,19 @@ import assert from 'node:assert/strict'
 import {
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readdirSync,
   readFileSync,
-  rmSync,
   statSync,
   type WatchListener,
   writeFileSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { FileType } from '../../src/types/index.js'
 import { atomicWriteFile, atomicWriteFileSync, watchJsonFile } from '../../src/utils/index.js'
 import { logger } from '../../src/utils/index.js'
+import { cleanupTempDirs, createTempDir } from '../helpers/TempFiles.js'
 import { createLoggerMocks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const LOG_PREFIX = 'FileUtils-test |'
@@ -36,12 +34,12 @@ await describe('FileUtils', async () => {
   let tmpDir: string
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'fileutils-test-'))
+    tmpDir = createTempDir('fileutils-test-')
   })
 
   afterEach(() => {
     standardCleanup()
-    rmSync(tmpDir, { force: true, recursive: true })
+    cleanupTempDirs()
   })
 
   await describe('watchJsonFile', async () => {

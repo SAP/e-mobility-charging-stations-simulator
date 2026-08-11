@@ -5,20 +5,22 @@
  * local and does not mutate the shared template held in the SharedLRUCache.
  */
 import assert from 'node:assert/strict'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type { ChargingStationTemplate } from '../../src/types/index.js'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  copyStationTemplate,
+  createStationFromTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 // templateFileHash is the SharedLRUCache key; reached via a typed boundary cast (no `as any`).
 const templateHashOf = (station: ChargingStation): string =>
@@ -31,38 +33,15 @@ const configValue = (template: ChargingStationTemplate, key: string): string | u
 const CONFIG_KEY = 'MeterValueSampleInterval'
 const TEMPLATE_VALUE = '30'
 
-const tmpRoots: string[] = []
-
-// Fresh template in its own temp station-templates dir. A station caches its parsed template
-// in the SharedLRUCache under a content-derived key; templateHashOf() fetches that exact entry
-// so the test can assert the station's Configuration is an independent copy of it.
-const makeTemplate = (): string => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-config-isolation-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const file = join(root, 'station-templates', 'virtual-simple.station-template.json')
-  copyFileSync(
-    join(process.cwd(), 'src/assets/station-templates/virtual-simple.station-template.json'),
-    file
-  )
-  return file
-}
-
 await describe('ChargingStation OCPP Configuration isolation', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('should not mutate the shared cached template when a non-persistent station changes a configuration key', () => {
-    const templateFile = makeTemplate()
-    const station = new ChargingStation(1, templateFile, {
-      autoStart: false,
-      persistentConfiguration: false,
-      supervisionUrls: 'ws://localhost:9999/',
-    })
+    const templateFile = copyStationTemplate()
+    const station = createStationFromTemplate(templateFile, { persistentConfiguration: false })
 
     // The exact cached template the station parsed and read its Configuration from.
     const cachedTemplate = SharedLRUCache.getInstance().getChargingStationTemplate(
