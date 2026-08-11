@@ -8,10 +8,11 @@
  * preserved (idempotent, no clobber).
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
+import { setImmediate as flushPendingWrites } from 'node:timers/promises'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { buildAddedMessage } from '../../src/utils/MessageChannelUtils.js'
@@ -51,14 +52,17 @@ const makeTemplate = (overrides: TemplateOverrides = {}): string => {
   return file
 }
 
-const newStation = (overrides: TemplateOverrides = {}): ChargingStation =>
-  new ChargingStation(1, makeTemplate(overrides), {
+const makeStation = (templateFile: string, persistentConfiguration = false): ChargingStation =>
+  new ChargingStation(1, templateFile, {
     autoStart: false,
     baseName: 'TEST-NUMBER-OF-PHASES',
     fixedName: true,
-    persistentConfiguration: false,
+    persistentConfiguration,
     supervisionUrls: 'ws://localhost:9999/',
   })
+
+const newStation = (overrides: TemplateOverrides = {}): ChargingStation =>
+  makeStation(makeTemplate(overrides))
 
 await describe('ChargingStation numberOfPhases seeding', async () => {
   afterEach(() => {
@@ -94,5 +98,34 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
     assert.strictEqual(acStation.stationInfo?.numberOfPhases, acStation.getNumberOfPhases())
     const dcStation = newStation({ currentOutType: 'DC' })
     assert.strictEqual(dcStation.stationInfo?.numberOfPhases, dcStation.getNumberOfPhases())
+  })
+
+  await it('should pin numberOfPhases to 0 for DC even when the template sets it', () => {
+    const station = newStation({ currentOutType: 'DC', numberOfPhases: 3 })
+    assert.strictEqual(station.stationInfo?.numberOfPhases, 0)
+  })
+
+  await it('should backfill numberOfPhases into a persisted config that predates the field', async () => {
+    const templateFile = makeTemplate({ currentOutType: 'AC' })
+    // First run persists a full configuration; the write settles under an async
+    // lock, so yield until pending writes flush before reading the file back.
+    makeStation(templateFile, true)
+    await flushPendingWrites()
+    // Simulate a legacy configuration written before numberOfPhases was seeded.
+    const configurationDir = join(dirname(dirname(templateFile)), 'configurations')
+    const configurationFile = join(
+      configurationDir,
+      readdirSync(configurationDir).find(entry => entry.endsWith('.json')) ?? ''
+    )
+    const configuration = JSON.parse(readFileSync(configurationFile, 'utf8')) as {
+      stationInfo: { numberOfPhases?: number }
+    }
+    assert.strictEqual(configuration.stationInfo.numberOfPhases, 3)
+    delete configuration.stationInfo.numberOfPhases
+    writeFileSync(configurationFile, JSON.stringify(configuration), 'utf8')
+    // A fresh station's per-instance configuration cache is empty, so it reads
+    // the file from disk and the file-sourced stationInfo must backfill the field.
+    const reloaded = makeStation(templateFile, true)
+    assert.strictEqual(reloaded.stationInfo?.numberOfPhases, 3)
   })
 })
