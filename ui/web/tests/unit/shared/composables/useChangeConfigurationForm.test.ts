@@ -41,7 +41,7 @@ describe('useChangeConfigurationForm', () => {
     mockChangeConfiguration.mockResolvedValue({ status: 'success' })
   })
 
-  it('should seed draft values from the editable keys', () => {
+  it('should seed draft values from the visible keys', () => {
     const keys = ref<ConfigurationKey[]>([writableKey, rebootKey])
     const { draftValues } = useChangeConfigurationForm('hash1', keys)
     expect(draftValues).toEqual({ AuthorizationKey: 'abc', MeterValueSampleInterval: '60' })

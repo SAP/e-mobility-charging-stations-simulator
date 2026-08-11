@@ -974,8 +974,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
       ])
       if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
         // Number() preserved: rejection check relies on NaN-on-invalid; convertToInt would silently accept (returns 0 for null/undefined, truncates '1.5' → 1) or throw uncaught (for '', 'abc').
+        // Reject empty/blank explicitly: Number('') === 0 would otherwise pass as a valid non-negative integer and persist a non-numeric value.
         const numValue = Number(value)
-        if (!Number.isInteger(numValue) || numValue < 0) {
+        if (!isNotEmptyString(value) || !Number.isInteger(numValue) || numValue < 0) {
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
         }
       }

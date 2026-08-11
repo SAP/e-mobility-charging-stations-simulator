@@ -1139,6 +1139,25 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
   `responsesFailed`: failed responses payload array (optional)  
   }
 
+###### Change Configuration
+
+- Request:  
+  `ProcedureName`: 'changeConfiguration'  
+  `PDU`: {  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `key`: string,  
+  `value`: string  
+  }  
+  `key` and `value` are both required: `key` is a non-empty OCPP configuration key name and `value` is the new value as a string (an empty string is allowed). Read-only keys are rejected and the OCPP specification side effects are applied (e.g. a `reboot` key returns a reboot-required status).
+
+- Response:  
+  `PDU`: {  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
+  }
+
 ###### Performance Statistics
 
 - Request:  

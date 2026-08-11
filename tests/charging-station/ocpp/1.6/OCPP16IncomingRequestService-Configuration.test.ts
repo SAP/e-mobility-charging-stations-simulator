@@ -242,6 +242,26 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     )
   })
 
+  await it('should reject an empty value for an integer key via the seam', () => {
+    // Arrange
+    const { incomingRequestService, station } = testContext
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.ConnectionTimeOut, '60')
+
+    // Act — Number('') === 0 must not be accepted as a valid integer
+    const status = incomingRequestService.changeConfiguration(
+      station,
+      OCPP16StandardParametersKey.ConnectionTimeOut,
+      ''
+    )
+
+    // Assert — rejected AND value unchanged
+    assert.strictEqual(status, OCPP16ConfigurationStatus.REJECTED)
+    assert.strictEqual(
+      getConfigurationKey(station, OCPP16StandardParametersKey.ConnectionTimeOut)?.value,
+      '60'
+    )
+  })
+
   await it('should return RebootRequired via the seam for a reboot key', () => {
     // Arrange
     const { incomingRequestService, station } = testContext

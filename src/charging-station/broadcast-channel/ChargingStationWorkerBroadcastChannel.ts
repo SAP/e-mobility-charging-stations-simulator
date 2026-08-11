@@ -149,7 +149,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           const value = requestPayload?.value
           if (typeof value !== 'string') {
             throw new BaseError(
-              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'value' field is required`
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'value' field must be a string`
             )
           }
           return { status: this.chargingStation.changeConfiguration(key, value) }
