@@ -19,7 +19,6 @@ import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { buildAddedMessage } from '../../src/utils/MessageChannelUtils.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-const TEST_BASE_NAME = 'TEST-NUMBER-OF-PHASES'
 const POWER_W = 22000
 
 const tmpRoots: string[] = []
@@ -36,7 +35,7 @@ const makeTemplate = (overrides: TemplateOverrides = {}): string => {
   const file = join(root, 'station-templates', 'phases.station-template.json')
   const template: Record<string, unknown> = {
     $schemaVersion: 1,
-    baseName: TEST_BASE_NAME,
+    baseName: 'TEST-NUMBER-OF-PHASES',
     chargePointModel: 'Simulator simple',
     chargePointVendor: 'Simulator',
     Connectors: {
@@ -57,7 +56,7 @@ const makeTemplate = (overrides: TemplateOverrides = {}): string => {
 const makeStation = (templateFile: string, persistentConfiguration = false): ChargingStation =>
   new ChargingStation(1, templateFile, {
     autoStart: false,
-    baseName: TEST_BASE_NAME,
+    baseName: 'TEST-NUMBER-OF-PHASES',
     fixedName: true,
     persistentConfiguration,
     supervisionUrls: 'ws://localhost:9999/',
