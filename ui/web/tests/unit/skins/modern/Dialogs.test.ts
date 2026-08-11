@@ -582,11 +582,9 @@ describe('Dialogs', () => {
 
     it('should render OCPP parameter rows from the configuration keys', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
-          },
-        }),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       expect(wrapper.text()).toContain('HeartbeatInterval')
       expect(wrapper.text()).toContain('30')
@@ -594,11 +592,7 @@ describe('Dialogs', () => {
 
     it('should format OCPP readonly, reboot and missing value cells', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
-          },
-        }),
+        createStationWithConfigurationKeys([{ key: 'RebootKey', readonly: true, reboot: true }]),
       ])
       const row = wrapper
         .findAll('.station-details__table tbody tr')
@@ -612,9 +606,7 @@ describe('Dialogs', () => {
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {
-      const wrapper = mountDialog([
-        createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
-      ])
+      const wrapper = mountDialog([createStationWithConfigurationKeys([])])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
     })
 
@@ -630,11 +622,9 @@ describe('Dialogs', () => {
 
     it('should give the OCPP parameters table an accessible name', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
-          },
-        }),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       const labelledBy = wrapper.find('.station-details__table').attributes('aria-labelledby') ?? ''
       expect(labelledBy).not.toBe('')

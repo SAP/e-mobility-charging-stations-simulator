@@ -464,9 +464,7 @@ describe('Actions', () => {
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {
-      const wrapper = mountShowDetails([
-        createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
-      ])
+      const wrapper = mountShowDetails([createStationWithConfigurationKeys([])])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
     })
 
@@ -482,11 +480,7 @@ describe('Actions', () => {
 
     it('should format OCPP readonly, reboot and missing value cells', () => {
       const wrapper = mountShowDetails([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
-          },
-        }),
+        createStationWithConfigurationKeys([{ key: 'RebootKey', readonly: true, reboot: true }]),
       ])
       const tables = wrapper.findAll('table.data-table')
       const ocppTable = tables[tables.length - 1]
