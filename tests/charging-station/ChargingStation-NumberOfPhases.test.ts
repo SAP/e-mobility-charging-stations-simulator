@@ -10,67 +10,58 @@
  * backfilled on reload.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+
 import { buildAddedMessage } from '../../src/utils/MessageChannelUtils.js'
 import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  createStationFromTemplate,
+  writeStationTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 const POWER_W = 22000
-
-const tmpRoots: string[] = []
 
 interface TemplateOverrides {
   currentOutType?: string
   numberOfPhases?: number
 }
 
-const makeTemplate = (overrides: TemplateOverrides = {}): string => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-number-of-phases-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const file = join(root, 'station-templates', 'phases.station-template.json')
-  const template: Record<string, unknown> = {
-    $schemaVersion: 1,
-    baseName: 'TEST-NUMBER-OF-PHASES',
-    chargePointModel: 'Simulator simple',
-    chargePointVendor: 'Simulator',
-    Connectors: {
-      0: {},
-      1: { bootStatus: 'Available' },
-    },
-    currentOutType: overrides.currentOutType ?? 'AC',
-    numberOfConnectors: 1,
-    power: POWER_W,
-    powerUnit: 'W',
-    randomConnectors: false,
-    ...(overrides.numberOfPhases != null ? { numberOfPhases: overrides.numberOfPhases } : {}),
-  }
-  writeFileSync(file, JSON.stringify(template), 'utf8')
-  return file
-}
+const buildTemplate = (overrides: TemplateOverrides = {}): Record<string, unknown> => ({
+  $schemaVersion: 1,
+  baseName: 'TEST-NUMBER-OF-PHASES',
+  chargePointModel: 'Simulator simple',
+  chargePointVendor: 'Simulator',
+  Connectors: {
+    0: {},
+    1: { bootStatus: 'Available' },
+  },
+  currentOutType: overrides.currentOutType ?? 'AC',
+  numberOfConnectors: 1,
+  power: POWER_W,
+  powerUnit: 'W',
+  randomConnectors: false,
+  ...(overrides.numberOfPhases != null ? { numberOfPhases: overrides.numberOfPhases } : {}),
+})
 
 const makeStation = (templateFile: string, persistentConfiguration = false): ChargingStation =>
-  new ChargingStation(1, templateFile, {
-    autoStart: false,
+  createStationFromTemplate(templateFile, {
     baseName: 'TEST-NUMBER-OF-PHASES',
     fixedName: true,
     persistentConfiguration,
-    supervisionUrls: 'ws://localhost:9999/',
   })
 
 const newStation = (overrides: TemplateOverrides = {}): ChargingStation =>
-  makeStation(makeTemplate(overrides))
+  makeStation(writeStationTemplate(buildTemplate(overrides)))
 
 await describe('ChargingStation numberOfPhases seeding', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('should seed numberOfPhases to 3 for an AC template omitting the field', () => {
@@ -107,7 +98,7 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
   })
 
   await it('should backfill numberOfPhases into a persisted config that predates the field', async () => {
-    const templateFile = makeTemplate({ currentOutType: 'AC' })
+    const templateFile = writeStationTemplate(buildTemplate({ currentOutType: 'AC' }))
     // The persisted config write runs under an async lock; flush before reading it back.
     makeStation(templateFile, true)
     await flushMicrotasks()

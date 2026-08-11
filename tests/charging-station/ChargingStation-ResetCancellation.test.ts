@@ -6,37 +6,23 @@
  * CSMS (the "zombie" reconnect that triggers issue #2017).
  */
 import assert from 'node:assert/strict'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import {
   flushMicrotasks,
   standardCleanup,
   withMockTimers,
 } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  copyStationTemplate,
+  createStationFromTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 const RESET_TIME_MS = 60000
-
-const tmpRoots: string[] = []
-
-// Fresh template under its own temp station-templates dir so each test is
-// isolated, mirroring the ChargingStation-ResetIdentity harness.
-const makeTemplate = (): string => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-reset-cancel-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const file = join(root, 'station-templates', 'virtual-simple.station-template.json')
-  copyFileSync(
-    join(process.cwd(), 'src/assets/station-templates/virtual-simple.station-template.json'),
-    file
-  )
-  return file
-}
 
 interface ResetInternals {
   initialize: (options?: ChargingStationOptions) => void
@@ -45,12 +31,10 @@ interface ResetInternals {
 }
 
 const newStation = (resetTimeMs = RESET_TIME_MS): ChargingStation => {
-  const station = new ChargingStation(1, makeTemplate(), {
-    autoStart: false,
+  const station = createStationFromTemplate(copyStationTemplate(), {
     baseName: 'TEST-RESET-CANCEL',
     fixedName: true,
     persistentConfiguration: false,
-    supervisionUrls: 'ws://localhost:9999/',
   })
   if (station.stationInfo != null) {
     station.stationInfo.resetTime = resetTimeMs
@@ -61,9 +45,7 @@ const newStation = (resetTimeMs = RESET_TIME_MS): ChargingStation => {
 await describe('ChargingStation cancellable reset', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('should not re-initialize or reconnect when deleted during the reset sleep window', async t => {
