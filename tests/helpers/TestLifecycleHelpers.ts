@@ -351,6 +351,17 @@ export function standardCleanup (): void {
 }
 
 /**
+ * Clears a `getInstance()` singleton's cached instance so the next `getInstance()`
+ * builds a fresh one. Reaches the private static `instance` field via a typed cast
+ * (test-only reflection; there is no runtime shape to validate).
+ * @param holder - The singleton class (e.g. `Bootstrap`, `IdTagsCache`).
+ */
+export const resetSingleton = (holder: unknown): void => {
+  const singleton = holder as { instance: unknown }
+  singleton.instance = null
+}
+
+/**
  * Flush all pending microtasks by yielding to the event loop.
  * setImmediate fires after all microtasks in the current event loop iteration are drained.
  * Use this in tests that need to await async side effects triggered by synchronous calls

@@ -6,9 +6,7 @@
 import type { AddressInfo } from 'node:net'
 
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { request as httpRequest, type Server } from 'node:http'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -16,6 +14,7 @@ import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer
 import { HttpMethod } from '../../../src/charging-station/ui-server/UIServerUtils.js'
 import { ApplicationProtocol, ConfigurationSection } from '../../../src/types/index.js'
 import { Configuration } from '../../../src/utils/index.js'
+import { cleanupTempDirs, createTempDir, writeTempFile } from '../../helpers/TempFiles.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockBootstrap, createMockUIServerConfiguration } from './UIServerTestUtils.js'
 
@@ -181,7 +180,7 @@ await describe('UIMCPServer HTTP Integration', async () => {
     }
 
     beforeEach(() => {
-      logTmpDir = mkdtempSync(join(tmpdir(), 'mcp-log-test-'))
+      logTmpDir = createTempDir('mcp-log-test-')
       getConfigSectionCache().set(ConfigurationSection.log, {
         console: false,
         enabled: true,
@@ -195,15 +194,18 @@ await describe('UIMCPServer HTTP Integration', async () => {
 
     afterEach(() => {
       getConfigSectionCache().delete(ConfigurationSection.log)
-      rmSync(logTmpDir, { force: true, recursive: true })
+      cleanupTempDirs()
     })
 
     await it('should return log content with default date (current local date)', async () => {
       // Arrange
       const now = new Date()
       const todayDate = `${now.getFullYear().toString()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
-      const logFile = join(logTmpDir, `combined-${todayDate}.log`)
-      writeFileSync(logFile, 'info: test log line 1\ninfo: test log line 2\n')
+      writeTempFile(
+        logTmpDir,
+        `combined-${todayDate}.log`,
+        'info: test log line 1\ninfo: test log line 2\n'
+      )
 
       // Act
       const result = await callTool(testPort, 'readCombinedLog', { tail: 10 })
@@ -218,8 +220,7 @@ await describe('UIMCPServer HTTP Integration', async () => {
     await it('should return log content for explicit date parameter', async () => {
       // Arrange
       const testDate = '2020-01-01'
-      const logFile = join(logTmpDir, `combined-${testDate}.log`)
-      writeFileSync(logFile, 'info: historical log entry\n')
+      writeTempFile(logTmpDir, `combined-${testDate}.log`, 'info: historical log entry\n')
 
       // Act
       const result = await callTool(testPort, 'readCombinedLog', { date: testDate, tail: 10 })
