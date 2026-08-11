@@ -713,16 +713,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
   }
 
   /**
-   * Applies a configuration change from a trusted local caller (the Web UI) by resolving the
-   * persisted flat key to its registry tuple and reusing the CSMS-side SetVariables handler,
-   * without emitting a SetVariablesRequest to a CSMS.
+   * Applies a Web UI configuration change: resolves the flat key to its registry tuple and
+   * reuses the SetVariables handler internally, never emitting a SetVariablesRequest to a CSMS.
    *
-   * The resolved `instance` is carried on the component slot. The registry stores a single,
-   * undifferentiated `instance` per variable and internal resolution reads
-   * `variable.instance ?? component.instance`, so the change round-trips regardless of slot.
-   * This is intentional: since no SetVariablesRequest is ever put on the wire here, the OCPP
-   * 2.0.1 component- vs variable-instance distinction is immaterial. A future wire-originating
-   * path must place a variableInstance on `variable.instance` for conformance.
+   * The resolved `instance` is placed on the component slot; internal resolution reads
+   * `variable.instance ?? component.instance`, so the round-trip is slot-agnostic. This is only
+   * correct because nothing is emitted on the wire — a future wire-originating path must move a
+   * variableInstance to `variable.instance` for OCPP 2.0.1 conformance.
    * @param chargingStation - Target charging station.
    * @param key - Persisted flat configuration key name.
    * @param value - New value to set.

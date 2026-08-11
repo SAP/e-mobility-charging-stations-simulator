@@ -973,8 +973,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService<OCP
         OCPP16StandardParametersKey.WebSocketPingInterval,
       ])
       if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
-        // Number() preserved: rejection check relies on NaN-on-invalid; convertToInt would silently accept (returns 0 for null/undefined, truncates '1.5' → 1) or throw uncaught (for '', 'abc').
-        // Reject empty/blank explicitly: Number('') === 0 would otherwise pass as a valid non-negative integer and persist a non-numeric value.
+        // convertToInt would truncate '1.5' → 1 and throw on ''/'abc'; Number() instead yields a non-integer
+        // float or NaN that !Number.isInteger rejects, and isNotEmptyString rejects '' (Number('') === 0 would otherwise pass).
         const numValue = Number(value)
         if (!isNotEmptyString(value) || !Number.isInteger(numValue) || numValue < 0) {
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
