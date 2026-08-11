@@ -8,7 +8,11 @@ import { millisecondsToSeconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { buildConfigKey, type ChargingStation } from '../../../../src/charging-station/index.js'
+import {
+  buildConfigKey,
+  type ChargingStation,
+  getConfigurationKey,
+} from '../../../../src/charging-station/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
@@ -101,6 +105,21 @@ await describe('OCPP20IncomingRequestService — changeConfiguration seam', asyn
     const status = incomingRequestService.changeConfiguration(station, name, 'Acme Corporation')
 
     assert.strictEqual(status, ConfigurationStatus.REBOOT_REQUIRED)
+  })
+
+  await it('should resolve, accept and persist an instance-scoped registry variable', () => {
+    // TariffCostCtrlr.Enabled has instance 'Cost' (ReadWrite/Persistent): the flat key
+    // must round-trip through the component-scoped instance and persist the new value.
+    const name = buildConfigKey(
+      OCPP20ComponentName.TariffCostCtrlr,
+      OCPP20RequiredVariableName.Enabled,
+      'Cost'
+    )
+
+    const status = incomingRequestService.changeConfiguration(station, name, 'true')
+
+    assert.strictEqual(status, ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(getConfigurationKey(station, name)?.value, 'true')
   })
 
   await it('should return NotSupported for a key that does not resolve to a registry variable', () => {

@@ -81,8 +81,8 @@
     />
     <ChangeConfigurationDialog
       v-if="showChangeConfigDialog"
-      :charging-station-id="showChangeConfigDialog.chargingStationId"
       :hash-id="showChangeConfigDialog.hashId"
+      :charging-station-id="showChangeConfigDialog.chargingStationId"
       @close="showChangeConfigDialog = null"
     />
   </main>
@@ -134,10 +134,10 @@ function defineAsyncDialog (loader: () => Promise<{ default: Component }>) {
 const AddStationsDialog = defineAsyncDialog(
   () => import('./components/dialogs/AddStationsDialog.vue')
 )
+const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/AuthorizeDialog.vue'))
 const ChangeConfigurationDialog = defineAsyncDialog(
   () => import('./components/dialogs/ChangeConfigurationDialog.vue')
 )
-const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/AuthorizeDialog.vue'))
 const SetSupervisionUrlDialog = defineAsyncDialog(
   () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
 )

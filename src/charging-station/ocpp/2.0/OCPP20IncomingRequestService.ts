@@ -728,7 +728,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           attributeType: AttributeEnumType.Actual,
           attributeValue: value,
           component: { name: component, ...(instance != null && { instance }) },
-          variable: { name: variable, ...(instance != null && { instance }) },
+          variable: { name: variable },
         },
       ],
     })
