@@ -3,7 +3,7 @@
  * @description Unit tests for classic skin action components: AddChargingStations, SetSupervisionUrl, StartTransaction.
  */
 import { flushPromises, mount } from '@vue/test-utils'
-import { OCPPVersion } from 'ui-common'
+import { type ConfigurationKey, OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 
@@ -16,6 +16,7 @@ import {
   uiClientKey,
 } from '@/core/index.js'
 import AddChargingStations from '@/skins/classic/components/actions/AddChargingStations.vue'
+import ChangeConfiguration from '@/skins/classic/components/actions/ChangeConfiguration.vue'
 import SetSupervisionUrl from '@/skins/classic/components/actions/SetSupervisionUrl.vue'
 import ShowDetails from '@/skins/classic/components/actions/ShowDetails.vue'
 import StartTransaction from '@/skins/classic/components/actions/StartTransaction.vue'
@@ -507,6 +508,146 @@ describe('Actions', () => {
       await wrapper.findComponent(ButtonStub).trigger('click')
       await flushPromises()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
+    })
+  })
+
+  describe('ChangeConfiguration', () => {
+    beforeEach(() => {
+      mockClient = createMockUIClient()
+      mockPush.mockClear()
+    })
+
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+    })
+
+    /**
+     * Mounts ChangeConfiguration with a provided store.
+     * @param stations - Charging stations to seed the store with
+     * @returns Mounted ChangeConfiguration wrapper
+     */
+    function mountChange (stations = [createChargingStationData()]) {
+      return mount(ChangeConfiguration, {
+        global: {
+          provide: {
+            [chargingStationsKey as symbol]: shallowRef(stations),
+            [uiClientKey as symbol]: mockClient,
+          },
+          stubs: { Button: ButtonStub },
+        },
+        props: {
+          chargingStationId: TEST_STATION_ID,
+          hashId: TEST_HASH_ID,
+        },
+      })
+    }
+
+    /**
+     * Builds a station carrying the given OCPP configuration keys.
+     * @param configurationKey - OCPP configuration keys to seed
+     * @returns Charging station data with the keys
+     */
+    function stationWithKeys (configurationKey: ConfigurationKey[]) {
+      return createChargingStationData({ ocppConfiguration: { configurationKey } })
+    }
+
+    it('should render the heading and station id', () => {
+      const wrapper = mountChange()
+      expect(wrapper.find('h1').text()).toBe('Change Configuration')
+      expect(wrapper.find('h2').text()).toBe(TEST_STATION_ID)
+    })
+
+    it('should render a not-found panel and navigate away when the station is absent', async () => {
+      const wrapper = mountChange([])
+      expect(wrapper.text()).toContain('Charging station not found')
+      await wrapper.findComponent(ButtonStub).trigger('click')
+      await flushPromises()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
+    })
+
+    it('should render the empty message when no OCPP parameters are reported', () => {
+      const wrapper = mountChange([stationWithKeys([])])
+      expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should exclude keys explicitly marked not visible', () => {
+      const wrapper = mountChange([
+        stationWithKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+          { key: 'HiddenKey', readonly: false, value: 'x', visible: false },
+        ]),
+      ])
+      expect(wrapper.find('input[name="configuration-value-HeartbeatInterval"]').exists()).toBe(
+        true
+      )
+      expect(wrapper.find('input[name="configuration-value-HiddenKey"]').exists()).toBe(false)
+    })
+
+    it('should prefill inputs and disable read-only keys', () => {
+      const wrapper = mountChange([
+        stationWithKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+          { key: 'SecretKey', readonly: true, value: 'x' },
+        ]),
+      ])
+      const editable = wrapper.find<HTMLInputElement>(
+        'input[name="configuration-value-HeartbeatInterval"]'
+      )
+      expect(editable.element.value).toBe('30')
+      expect(editable.attributes('disabled')).toBeUndefined()
+      expect(
+        wrapper.find('input[name="configuration-value-SecretKey"]').attributes('disabled')
+      ).toBeDefined()
+    })
+
+    it('should call changeConfiguration and toast success on save', async () => {
+      const wrapper = mountChange([
+        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+      ])
+      await wrapper.find('input[name="configuration-value-HeartbeatInterval"]').setValue('45')
+      await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        'HeartbeatInterval',
+        '45'
+      )
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'HeartbeatInterval' successfully set"
+      )
+    })
+
+    it('should surface a reboot-required notice for reboot keys', async () => {
+      const wrapper = mountChange([
+        stationWithKeys([{ key: 'RebootKey', readonly: false, reboot: true, value: '1' }]),
+      ])
+      await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'RebootKey' set, reboot required to take effect"
+      )
+    })
+
+    it('should not submit read-only keys', async () => {
+      const wrapper = mountChange([
+        stationWithKeys([{ key: 'SecretKey', readonly: true, value: 'x' }]),
+      ])
+      await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).not.toHaveBeenCalled()
+    })
+
+    it('should toast an error when the backend rejects the change', async () => {
+      mockClient.changeConfiguration = vi.fn().mockRejectedValue(new Error('boom'))
+      const wrapper = mountChange([
+        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+      ])
+      await wrapper.findAllComponents(ButtonStub)[0].trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "Error at setting configuration key 'HeartbeatInterval'"
+      )
     })
   })
 })

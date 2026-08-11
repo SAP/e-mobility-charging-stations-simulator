@@ -5,6 +5,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import {
+  type ConfigurationKey,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   OCPP20ConnectorStatusEnumType,
@@ -39,6 +40,7 @@ vi.mock('@/skins/modern/components/ModernModal.vue', () => ({
 
 import AddStationsDialog from '@/skins/modern/components/dialogs/AddStationsDialog.vue'
 import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.vue'
+import ChangeConfigurationDialog from '@/skins/modern/components/dialogs/ChangeConfigurationDialog.vue'
 import SetConnectorStatusDialog from '@/skins/modern/components/dialogs/SetConnectorStatusDialog.vue'
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
 import ShowDetailsDialog from '@/skins/modern/components/dialogs/ShowDetailsDialog.vue'
@@ -653,6 +655,87 @@ describe('Dialogs', () => {
     it('should render a not-found message when the station is absent', () => {
       const wrapper = mountDialog([])
       expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should emit close when the Close button is clicked', async () => {
+      const wrapper = mountDialog()
+      await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
+      expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+  })
+
+  describe('ChangeConfigurationDialog', () => {
+    /**
+     * @param stations - Charging station data to provide to the dialog
+     * @returns Mounted wrapper for ChangeConfigurationDialog
+     */
+    function mountDialog (stations = [createChargingStationData()]) {
+      return mount(ChangeConfigurationDialog, {
+        global: {
+          provide: {
+            [chargingStationsKey as symbol]: ref(stations),
+            [uiClientKey as symbol]: mockClient,
+          },
+        },
+        props: { chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID },
+      })
+    }
+
+    /**
+     * Builds a station carrying the given OCPP configuration keys.
+     * @param configurationKey - OCPP configuration keys to seed
+     * @returns Charging station data with the keys
+     */
+    function stationWithKeys (configurationKey: ConfigurationKey[]) {
+      return createChargingStationData({ ocppConfiguration: { configurationKey } })
+    }
+
+    it('should render the title with the station id', () => {
+      const wrapper = mountDialog()
+      expect(wrapper.text()).toContain(`Change configuration — ${TEST_STATION_ID}`)
+    })
+
+    it('should render a not-found message when the station is absent', () => {
+      const wrapper = mountDialog([])
+      expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should render the empty message when no OCPP parameters are reported', () => {
+      const wrapper = mountDialog([stationWithKeys([])])
+      expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should prefill inputs and disable read-only keys', () => {
+      const wrapper = mountDialog([
+        stationWithKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+          { key: 'SecretKey', readonly: true, value: 'x' },
+        ]),
+      ])
+      const editable = wrapper.find<HTMLInputElement>('[aria-label="Value for HeartbeatInterval"]')
+      expect(editable.element.value).toBe('30')
+      expect(editable.attributes('disabled')).toBeUndefined()
+      expect(
+        wrapper.find('[aria-label="Value for SecretKey"]').attributes('disabled')
+      ).toBeDefined()
+      expect(wrapper.find('[aria-label="Save SecretKey"]').attributes('disabled')).toBeDefined()
+    })
+
+    it('should call changeConfiguration and toast success on save', async () => {
+      const wrapper = mountDialog([
+        stationWithKeys([{ key: 'HeartbeatInterval', readonly: false, value: '30' }]),
+      ])
+      await wrapper.find('[aria-label="Value for HeartbeatInterval"]').setValue('45')
+      await wrapper.find('[aria-label="Save HeartbeatInterval"]').trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        'HeartbeatInterval',
+        '45'
+      )
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'HeartbeatInterval' successfully set"
+      )
     })
 
     it('should emit close when the Close button is clicked', async () => {
