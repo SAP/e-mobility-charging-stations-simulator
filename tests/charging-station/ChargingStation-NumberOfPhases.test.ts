@@ -109,8 +109,7 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
 
   await it('should backfill numberOfPhases into a persisted config that predates the field', async () => {
     const templateFile = makeTemplate({ currentOutType: 'AC' })
-    // First run persists a full configuration; the write settles under an async
-    // lock, so yield until pending writes flush before reading the file back.
+    // The persisted config write runs under an async lock; flush before reading it back.
     makeStation(templateFile, true)
     await flushMicrotasks()
     // Simulate a legacy configuration written before numberOfPhases was seeded.
