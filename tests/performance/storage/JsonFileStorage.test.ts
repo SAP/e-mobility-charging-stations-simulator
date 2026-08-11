@@ -3,14 +3,14 @@
  * @description Unit tests for the JSON file performance storage backend.
  */
 import assert from 'node:assert/strict'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { pathToFileURL } from 'node:url'
 
 import { JsonFileStorage } from '../../../src/performance/storage/JsonFileStorage.js'
 import { logger } from '../../../src/utils/index.js'
+import { cleanupTempDirs, createTempDir } from '../../helpers/TempFiles.js'
 import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { buildTestStatistics } from './StorageTestHelpers.js'
 
@@ -24,7 +24,7 @@ await describe('JsonFileStorage', async () => {
   let storage: JsonFileStorage
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'json-file-storage-test-'))
+    tmpDir = createTempDir('json-file-storage-test-')
     dbPath = join(tmpDir, 'perf.json')
     storage = new JsonFileStorage(buildStorageUri(dbPath), LOG_PREFIX)
     storage.open()
@@ -33,7 +33,7 @@ await describe('JsonFileStorage', async () => {
   afterEach(() => {
     storage.close()
     standardCleanup()
-    rmSync(tmpDir, { force: true, recursive: true })
+    cleanupTempDirs()
   })
 
   await it('should write performance statistics atomically and leave no temp artifact behind', async () => {

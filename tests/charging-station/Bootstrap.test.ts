@@ -16,7 +16,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 
 import { Bootstrap, STATE_FILE_VERSION } from '../../src/charging-station/index.js'
 import { logger } from '../../src/utils/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { resetSingleton, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 interface Barrier {
   promise: Promise<void>
@@ -54,10 +54,6 @@ const createBarrier = (): Barrier => {
     throw new Error('Barrier resolver not assigned')
   }
   return { promise, resolve: resolveFn }
-}
-
-const resetBootstrapSingleton = (): void => {
-  ;(Bootstrap as unknown as { instance: Bootstrap | null }).instance = null
 }
 
 const buildLifecycleTestInstance = (stateFilePath: string): BootstrapInternal => {
@@ -130,7 +126,7 @@ await describe('Bootstrap lifecycle state machine', async () => {
 
   afterEach(() => {
     rmSync(testDir, { force: true, recursive: true })
-    resetBootstrapSingleton()
+    resetSingleton(Bootstrap)
     mock.restoreAll()
     standardCleanup()
   })
