@@ -4,19 +4,20 @@
  * `getNumberOfPhases` getter (AC: template value ?? 3, DC: 0) and must be
  * seeded into `stationInfo` by `getStationInfo` so raw consumers — the UI data
  * payload (`buildAddedMessage`) and the persisted configuration — receive the
- * effective value instead of `undefined`. An explicit template value must be
- * preserved (idempotent, no clobber).
+ * effective value instead of `undefined`. An explicit AC template value is
+ * preserved (idempotent, no clobber), DC pins 0 even against an explicit
+ * template value, and a persisted configuration predating the field is
+ * backfilled on reload.
  */
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
-import { setImmediate as flushPendingWrites } from 'node:timers/promises'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { buildAddedMessage } from '../../src/utils/MessageChannelUtils.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const POWER_W = 22000
 
@@ -110,7 +111,7 @@ await describe('ChargingStation numberOfPhases seeding', async () => {
     // First run persists a full configuration; the write settles under an async
     // lock, so yield until pending writes flush before reading the file back.
     makeStation(templateFile, true)
-    await flushPendingWrites()
+    await flushMicrotasks()
     // Simulate a legacy configuration written before numberOfPhases was seeded.
     const configurationDir = join(dirname(dirname(templateFile)), 'configurations')
     const configurationFile = join(
