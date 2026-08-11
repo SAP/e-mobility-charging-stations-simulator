@@ -48,6 +48,7 @@ import {
   getErrorMessage,
   isAsyncFunction,
   isEmpty,
+  isNotEmptyString,
   isOCPP20x,
   logger,
 } from '../../utils/index.js'
@@ -140,7 +141,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
         (requestPayload?: BroadcastChannelRequestPayload): ChangeConfigurationResponse => {
           const key = requestPayload?.key
-          if (typeof key !== 'string' || isEmpty(key)) {
+          if (!isNotEmptyString(key)) {
             throw new BaseError(
               `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'key' field is required`
             )
@@ -220,7 +221,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           const url = requestPayload?.url
-          if (typeof url !== 'string' || isEmpty(url)) {
+          if (!isNotEmptyString(url)) {
             throw new BaseError(
               `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'url' field is required`
             )
