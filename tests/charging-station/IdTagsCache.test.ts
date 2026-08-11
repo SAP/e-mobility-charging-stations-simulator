@@ -10,9 +10,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
@@ -20,7 +17,8 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 import { getIdTagsFile } from '../../src/charging-station/index.js'
 import { IdTagsCache } from '../../src/charging-station/index.js'
 import { IdTagDistribution } from '../../src/types/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { cleanupTempDirs, createTempDir, writeTempFile } from '../helpers/TempFiles.js'
+import { resetSingleton, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './helpers/StationHelpers.js'
 
 const TEST_ID_TAGS = ['TAG-001', 'TAG-002', 'TAG-003']
@@ -43,13 +41,6 @@ function populateCache (cache: IdTagsCache, file: string, idTags: string[]): voi
 }
 
 /**
- * Resets the IdTagsCache singleton so subsequent getInstance() creates a fresh cache.
- */
-function resetIdTagsCache (): void {
-  ;(IdTagsCache as unknown as { instance: null }).instance = null
-}
-
-/**
  * Resolves the idTags file path for a mock station, throwing if unresolvable.
  * @param station - The station whose stationInfo is used
  * @returns The resolved file path string
@@ -69,7 +60,8 @@ function resolveIdTagsFile (station: ChargingStation): string {
 await describe('IdTagsCache', async () => {
   afterEach(() => {
     standardCleanup()
-    resetIdTagsCache()
+    resetSingleton(IdTagsCache)
+    cleanupTempDirs()
   })
 
   await describe('getInstance', async () => {
@@ -82,7 +74,7 @@ await describe('IdTagsCache', async () => {
 
     await it('should create new instance after reset', () => {
       const instance1 = IdTagsCache.getInstance()
-      resetIdTagsCache()
+      resetSingleton(IdTagsCache)
       const instance2 = IdTagsCache.getInstance()
 
       assert.notStrictEqual(instance1, instance2)
@@ -101,19 +93,16 @@ await describe('IdTagsCache', async () => {
     })
 
     await it('should load id tags from file when cache is empty', () => {
-      const tmpDir = mkdtempSync(join(tmpdir(), 'idtags-test-'))
-      const idTagsFile = join(tmpDir, 'idtags.json')
-      writeFileSync(idTagsFile, JSON.stringify(TEST_ID_TAGS))
+      const idTagsFile = writeTempFile(
+        createTempDir('idtags-test-'),
+        'idtags.json',
+        JSON.stringify(TEST_ID_TAGS)
+      )
+      const cache = IdTagsCache.getInstance()
+      const result = cache.getIdTags(idTagsFile)
 
-      try {
-        const cache = IdTagsCache.getInstance()
-        const result = cache.getIdTags(idTagsFile)
-
-        assert.deepStrictEqual(result, TEST_ID_TAGS)
-        cache.deleteIdTags(idTagsFile)
-      } finally {
-        rmSync(tmpDir, { force: true, recursive: true })
-      }
+      assert.deepStrictEqual(result, TEST_ID_TAGS)
+      cache.deleteIdTags(idTagsFile)
     })
 
     await it('should return empty array for empty file path', () => {

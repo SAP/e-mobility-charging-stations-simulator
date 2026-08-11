@@ -320,23 +320,55 @@ const { station, mocks } = createMockChargingStation({
 assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 ```
 
+### Real station from a template
+
+`createMockChargingStation()` is a stub that bypasses `initialize()`/`getStationInfo()`.
+Tests exercising the real construction pipeline (persistence, reset, reconnect, template
+parsing) MUST build a real station from a template file via
+`helpers/StationHelpers.realStation.ts` — never re-implement the temp-dir scaffolding:
+
+| Helper                        | Purpose                                                     |
+| ----------------------------- | ----------------------------------------------------------- |
+| `writeStationTemplate(obj)`   | Write an inline template object into an isolated temp dir   |
+| `copyStationTemplate(ovr?)`   | Copy a bundled asset template, optionally merging overrides |
+| `createStationFromTemplate()` | Construct a real `ChargingStation` from a template file     |
+| `cleanupStationTemplates()`   | Remove temp template dirs (call in `afterEach`)             |
+
+```typescript
+afterEach(() => {
+  standardCleanup()
+  cleanupStationTemplates()
+})
+
+const station = createStationFromTemplate(copyStationTemplate())
+```
+
 ---
 
 ## 10. Utility Reference
 
 ### Lifecycle Helpers (`helpers/TestLifecycleHelpers.ts`)
 
-| Utility                           | Purpose                                  |
-| --------------------------------- | ---------------------------------------- |
-| `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
-| `flushMicrotasks()`               | Drain async side-effects from `emit()`   |
-| `withMockTimers()`                | Execute test with timer mocking          |
-| `createTimerScope()`              | Manual timer control                     |
-| `sleep(ms)`                       | Real-time delay (avoid in tests)         |
-| `createLoggerMocks()`             | Create logger spies (error, warn)        |
-| `createConsoleMocks()`            | Create console spies (error, warn, info) |
-| `setupConnectorWithTransaction()` | Setup connector in transaction state     |
-| `clearConnectorTransaction()`     | Clear connector transaction state        |
+| Utility                           | Purpose                                    |
+| --------------------------------- | ------------------------------------------ |
+| `standardCleanup()`               | **MANDATORY** afterEach cleanup            |
+| `flushMicrotasks()`               | Drain async side-effects from `emit()`     |
+| `withMockTimers()`                | Execute test with timer mocking            |
+| `createTimerScope()`              | Manual timer control                       |
+| `sleep(ms)`                       | Real-time delay (avoid in tests)           |
+| `createLoggerMocks()`             | Create logger spies (error, warn)          |
+| `createConsoleMocks()`            | Create console spies (error, warn, info)   |
+| `setupConnectorWithTransaction()` | Setup connector in transaction state       |
+| `clearConnectorTransaction()`     | Clear connector transaction state          |
+| `resetSingleton(cls)`             | Reset a `getInstance()` singleton instance |
+
+### Temp Files (`helpers/TempFiles.ts`)
+
+| Utility             | Purpose                                             |
+| ------------------- | --------------------------------------------------- |
+| `createTempDir()`   | Create a tracked temp dir under the OS temp root    |
+| `writeTempFile()`   | Write a file into a dir (typically `createTempDir`) |
+| `cleanupTempDirs()` | Remove tracked temp dirs (call in `afterEach`)      |
 
 ### Mock Classes (`mocks/`)
 

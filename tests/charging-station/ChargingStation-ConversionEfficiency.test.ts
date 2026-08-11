@@ -8,17 +8,18 @@
  * voltageOut` on DC) are left unchanged and are not reduced by the factor.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  createStationFromTemplate,
+  writeStationTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 const POWER_W = 50000
-
-const tmpRoots: string[] = []
 
 interface TemplateOverrides {
   connectorMaximumPower?: number
@@ -32,14 +33,10 @@ interface TemplateOverrides {
 // station power and the station bound is the binding one; an explicit
 // connectorMaximumPower override makes the connector hardware bound binding
 // instead, to exercise the second power-derived term of the min().
-const makeTemplate = (overrides: TemplateOverrides = {}): string => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-conversion-efficiency-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const file = join(root, 'station-templates', 'dc.station-template.json')
+const buildTemplate = (overrides: TemplateOverrides = {}): Record<string, unknown> => {
   const connectorMaximumPower =
     overrides.connectorMaximumPower != null ? { maximumPower: overrides.connectorMaximumPower } : {}
-  const template: Record<string, unknown> = {
+  return {
     $schemaVersion: 1,
     baseName: 'TEST-CONVERSION-EFFICIENCY',
     chargePointModel: 'Simulator simple',
@@ -59,25 +56,19 @@ const makeTemplate = (overrides: TemplateOverrides = {}): string => {
       ? { conversionEfficiency: overrides.conversionEfficiency }
       : {}),
   }
-  writeFileSync(file, JSON.stringify(template), 'utf8')
-  return file
 }
 
 const newStation = (overrides: TemplateOverrides = {}): ChargingStation =>
-  new ChargingStation(1, makeTemplate(overrides), {
-    autoStart: false,
+  createStationFromTemplate(writeStationTemplate(buildTemplate(overrides)), {
     baseName: 'TEST-CONVERSION-EFFICIENCY',
     fixedName: true,
     persistentConfiguration: false,
-    supervisionUrls: 'ws://localhost:9999/',
   })
 
 await describe('ChargingStation AC/DC conversion efficiency', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('reduces the DC connector available power by the efficiency factor', () => {

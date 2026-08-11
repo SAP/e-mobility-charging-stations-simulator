@@ -1722,6 +1722,10 @@ export class ChargingStation extends EventEmitter {
       mergeDeepRight(Constants.DEFAULT_STATION_INFO as ChargingStationInfo, stationInfo),
       options
     )
+    // getNumberOfPhases owns this derived default, but raw consumers (UI data payload,
+    // persisted configuration) read stationInfo directly. Seed it post-merge so
+    // those paths — and persisted configs predating the field — get the effective value.
+    stationInfo.numberOfPhases = this.getNumberOfPhases(stationInfo)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationInfo)
     stationInfo.hashId = getHashId(this.index, stationTemplate, stationInfo.chargingStationId)
     return stationInfo

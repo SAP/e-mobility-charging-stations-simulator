@@ -5,15 +5,18 @@
  * disconnected after a requested close.
  */
 import assert from 'node:assert/strict'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { WebSocket } from 'ws'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+
 import { WebSocketCloseEventStatusCode } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  copyStationTemplate,
+  createStationFromTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 // onClose and reconnect are private; the tests drive onClose directly with a
 // spied reconnect to observe the reconnect decision without opening a socket.
@@ -24,22 +27,9 @@ interface StationInternals {
   wsConnection: unknown
 }
 
-const tmpRoots: string[] = []
-
 // Build a started station whose reconnect() is replaced by a counter.
 const makeStation = (): { reconnectCount: () => number; station: ChargingStation } => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-reconnect-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const templateFile = join(root, 'station-templates', 'virtual-simple.station-template.json')
-  copyFileSync(
-    join(process.cwd(), 'src/assets/station-templates/virtual-simple.station-template.json'),
-    templateFile
-  )
-  const station = new ChargingStation(1, templateFile, {
-    autoStart: false,
-    supervisionUrls: 'ws://localhost:9999/',
-  })
+  const station = createStationFromTemplate(copyStationTemplate())
   let reconnects = 0
   const internals = station as unknown as StationInternals
   internals.reconnect = () => {
@@ -53,9 +43,7 @@ const makeStation = (): { reconnectCount: () => number; station: ChargingStation
 await describe('ChargingStation reconnect decision on WebSocket close', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('should reconnect after a server-initiated normal close while started', () => {

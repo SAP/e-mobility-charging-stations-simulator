@@ -5,26 +5,21 @@
  * non-persistent one only keeps it when the creation options are re-applied.
  */
 import assert from 'node:assert/strict'
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { setTimeout as sleep } from 'node:timers/promises'
 
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type { ChargingStationOptions } from '../../src/types/index.js'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { SharedLRUCache } from '../../src/charging-station/SharedLRUCache.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import {
+  cleanupStationTemplates,
+  copyStationTemplate,
+  createStationFromTemplate,
+} from './helpers/StationHelpers.realStation.js'
 
 // The identity logic lives in initialize(); the identity tests call it directly
 // to avoid reset()'s stop/sleep/start (which would dial a socket). A separate
@@ -38,30 +33,6 @@ const internalsOf = (station: ChargingStation): StationInternals =>
 
 const identityOf = (station: ChargingStation): string | undefined =>
   station.stationInfo?.chargingStationId
-
-const tmpRoots: string[] = []
-
-// Fresh template under its own temp station-templates dir, so each test's
-// persisted config lands in an isolated sibling configurations dir. Optional
-// overrides are merged into the template's top-level fields (e.g. to enable the
-// OCPP-config supervision URL mechanism).
-const makeTemplate = (overrides?: Record<string, boolean | number | string>): string => {
-  const root = mkdtempSync(join(tmpdir(), 'cs-reset-identity-'))
-  tmpRoots.push(root)
-  mkdirSync(join(root, 'station-templates'), { recursive: true })
-  const file = join(root, 'station-templates', 'virtual-simple.station-template.json')
-  const source = join(
-    process.cwd(),
-    'src/assets/station-templates/virtual-simple.station-template.json'
-  )
-  if (overrides == null) {
-    copyFileSync(source, file)
-  } else {
-    const template = JSON.parse(readFileSync(source, 'utf8')) as Record<string, unknown>
-    writeFileSync(file, JSON.stringify({ ...template, ...overrides }, null, 2))
-  }
-  return file
-}
 
 // Config writes are asynchronous, so wait until the identity has been persisted.
 // The configurations dir sits beside the station-templates dir (same derivation
@@ -90,9 +61,7 @@ const waitForPersistedId = async (
 await describe('ChargingStation keeps its identity across a reset', async () => {
   afterEach(() => {
     standardCleanup()
-    for (const root of tmpRoots.splice(0)) {
-      rmSync(root, { force: true, recursive: true })
-    }
+    cleanupStationTemplates()
   })
 
   await it('should keep identity only when the creation options are re-applied (non-persistent)', () => {
@@ -103,7 +72,7 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
       persistentConfiguration: false,
       supervisionUrls: 'ws://localhost:9999/',
     }
-    const station = new ChargingStation(1, makeTemplate(), options)
+    const station = createStationFromTemplate(copyStationTemplate(), options)
     assert.strictEqual(identityOf(station), 'TEST-RESET-ID')
 
     // With no options and no saved config to fall back to, the station reverts
@@ -117,13 +86,11 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
   })
 
   await it('should keep identity without re-applying the creation options (persistent)', async () => {
-    const templateFile = makeTemplate()
-    const station = new ChargingStation(1, templateFile, {
-      autoStart: false,
+    const templateFile = copyStationTemplate()
+    const station = createStationFromTemplate(templateFile, {
       baseName: 'TEST-PERSIST-ID',
       fixedName: true,
       persistentConfiguration: true,
-      supervisionUrls: 'ws://localhost:9999/',
     })
     assert.strictEqual(identityOf(station), 'TEST-PERSIST-ID')
     assert.ok(
@@ -143,12 +110,10 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
   // nor dials a socket, and the reset delay is zeroed.
   for (const persistentConfiguration of [false, true]) {
     await it(`should re-apply the creation options to initialize() only when non-persistent (persistent=${persistentConfiguration.toString()})`, async t => {
-      const station = new ChargingStation(1, makeTemplate(), {
-        autoStart: false,
+      const station = createStationFromTemplate(copyStationTemplate(), {
         baseName: 'TEST-RESET-WIRING',
         fixedName: true,
         persistentConfiguration,
-        supervisionUrls: 'ws://localhost:9999/',
       })
       if (station.stationInfo != null) {
         station.stationInfo.resetTime = 0
@@ -172,10 +137,8 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
   }
 
   await it('should keep the setSupervisionUrl URL across a reset via the retained options', () => {
-    const station = new ChargingStation(1, makeTemplate(), {
-      autoStart: false,
+    const station = createStationFromTemplate(copyStationTemplate(), {
       persistentConfiguration: false,
-      supervisionUrls: 'ws://localhost:9999/',
     })
     station.setSupervisionUrl('ws://localhost:8888/')
 
@@ -193,13 +156,12 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
     // supervisionUrlOcppConfiguration routes the URL through an OCPP config key
     // rather than stationInfo.supervisionUrls, and must be a template field to
     // survive the reset rebuild.
-    const station = new ChargingStation(
-      1,
-      makeTemplate({
+    const station = createStationFromTemplate(
+      copyStationTemplate({
         supervisionUrlOcppConfiguration: true,
         supervisionUrlOcppKey: 'ConnectionUrl',
       }),
-      { autoStart: false, persistentConfiguration: false, supervisionUrls: 'ws://localhost:9999/' }
+      { persistentConfiguration: false }
     )
     station.setSupervisionUrl('ws://localhost:7777/')
     if (station.stationInfo != null) {
@@ -221,13 +183,12 @@ await describe('ChargingStation keeps its identity across a reset', async () => 
   })
 
   await it('should re-seed an OCPP-config supervision URL from the retained options on template reload (non-persistent)', () => {
-    const station = new ChargingStation(
-      1,
-      makeTemplate({
+    const station = createStationFromTemplate(
+      copyStationTemplate({
         supervisionUrlOcppConfiguration: true,
         supervisionUrlOcppKey: 'ConnectionUrl',
       }),
-      { autoStart: false, persistentConfiguration: false, supervisionUrls: 'ws://localhost:9999/' }
+      { persistentConfiguration: false }
     )
     station.setSupervisionUrl('ws://localhost:7777/')
 

@@ -10,9 +10,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
 import type { EvProfile } from '../../../src/charging-station/meter-values/types.js'
@@ -22,6 +19,7 @@ import {
   loadEvProfilesFile,
   selectEvProfile,
 } from '../../../src/charging-station/meter-values/EvProfiles.js'
+import { cleanupTempDirs, createTempDir, writeTempFile } from '../../helpers/TempFiles.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 const midProfile: EvProfile = {
@@ -41,6 +39,7 @@ const midProfile: EvProfile = {
 await describe('EvProfiles', async () => {
   afterEach(() => {
     standardCleanup()
+    cleanupTempDirs()
   })
   await describe('interpolateChargingCurve', async () => {
     await it('should return endpoint value at the lower boundary', () => {
@@ -105,22 +104,15 @@ await describe('EvProfiles', async () => {
     })
 
     await it('should return undefined on invalid JSON (fail-soft)', () => {
-      const dir = mkdtempSync(join(tmpdir(), 'ev-profiles-'))
-      const path = join(dir, 'bad.json')
-      writeFileSync(path, '{not json}')
-      try {
-        const result = loadEvProfilesFile(path, 'test')
-        assert.strictEqual(result, undefined)
-      } finally {
-        rmSync(dir, { force: true, recursive: true })
-      }
+      const path = writeTempFile(createTempDir('ev-profiles-'), 'bad.json', '{not json}')
+      const result = loadEvProfilesFile(path, 'test')
+      assert.strictEqual(result, undefined)
     })
 
     await it('should return undefined on schema violation', () => {
-      const dir = mkdtempSync(join(tmpdir(), 'ev-profiles-'))
-      const path = join(dir, 'bad-schema.json')
-      writeFileSync(
-        path,
+      const path = writeTempFile(
+        createTempDir('ev-profiles-'),
+        'bad-schema.json',
         JSON.stringify({
           profiles: [
             {
@@ -131,19 +123,14 @@ await describe('EvProfiles', async () => {
           ],
         })
       )
-      try {
-        const result = loadEvProfilesFile(path, 'test')
-        assert.strictEqual(result, undefined)
-      } finally {
-        rmSync(dir, { force: true, recursive: true })
-      }
+      const result = loadEvProfilesFile(path, 'test')
+      assert.strictEqual(result, undefined)
     })
 
     await it('should load a valid file and sort curve by socPercent', () => {
-      const dir = mkdtempSync(join(tmpdir(), 'ev-profiles-'))
-      const path = join(dir, 'ok.json')
-      writeFileSync(
-        path,
+      const path = writeTempFile(
+        createTempDir('ev-profiles-'),
+        'ok.json',
         JSON.stringify({
           profiles: [
             {
@@ -163,23 +150,18 @@ await describe('EvProfiles', async () => {
           ],
         })
       )
-      try {
-        const result = loadEvProfilesFile(path, 'test')
-        assert.ok(result != null)
-        const curve = result.profiles[0].chargingCurve
-        assert.strictEqual(curve[0].socPercent, 0)
-        assert.strictEqual(curve[1].socPercent, 50)
-        assert.strictEqual(curve[2].socPercent, 100)
-      } finally {
-        rmSync(dir, { force: true, recursive: true })
-      }
+      const result = loadEvProfilesFile(path, 'test')
+      assert.ok(result != null)
+      const curve = result.profiles[0].chargingCurve
+      assert.strictEqual(curve[0].socPercent, 0)
+      assert.strictEqual(curve[1].socPercent, 50)
+      assert.strictEqual(curve[2].socPercent, 100)
     })
 
     await it('should swap inverted initial SoC bounds', () => {
-      const dir = mkdtempSync(join(tmpdir(), 'ev-profiles-'))
-      const path = join(dir, 'inverted.json')
-      writeFileSync(
-        path,
+      const path = writeTempFile(
+        createTempDir('ev-profiles-'),
+        'inverted.json',
         JSON.stringify({
           profiles: [
             {
@@ -194,14 +176,10 @@ await describe('EvProfiles', async () => {
           ],
         })
       )
-      try {
-        const result = loadEvProfilesFile(path, 'test')
-        assert.ok(result != null)
-        assert.strictEqual(result.profiles[0].initialSocPercentMin, 20)
-        assert.strictEqual(result.profiles[0].initialSocPercentMax, 80)
-      } finally {
-        rmSync(dir, { force: true, recursive: true })
-      }
+      const result = loadEvProfilesFile(path, 'test')
+      assert.ok(result != null)
+      assert.strictEqual(result.profiles[0].initialSocPercentMin, 20)
+      assert.strictEqual(result.profiles[0].initialSocPercentMax, 80)
     })
   })
 })
