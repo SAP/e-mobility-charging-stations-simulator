@@ -12,9 +12,9 @@ import {
 
 export interface StationDetailsView {
   configurationRows: ComputedRef<ConfigurationRow[]>
-  editableConfigurationKeys: ComputedRef<ConfigurationKey[]>
   sections: ComputedRef<DetailSection[]>
   station: ComputedRef<ChargingStationData | undefined>
+  visibleConfigurationKeys: ComputedRef<ConfigurationKey[]>
 }
 
 /**
@@ -24,7 +24,7 @@ export interface StationDetailsView {
  * reactive lookup and view-model wiring stay single-sourced. The view stays reactive to
  * store updates and degrades to `undefined`/empty when the station is removed.
  * @param hashId - The charging station hash identifier
- * @returns The resolved station with its detail sections, configuration rows and editable keys
+ * @returns The resolved station with its detail sections, configuration rows and visible keys
  */
 export function useStationDetails (hashId: string): StationDetailsView {
   const $chargingStations = useChargingStations()
@@ -41,14 +41,14 @@ export function useStationDetails (hashId: string): StationDetailsView {
     station.value != null ? buildConfigurationRows(station.value) : []
   )
 
-  const editableConfigurationKeys = computed(() =>
+  const visibleConfigurationKeys = computed(() =>
     station.value != null ? getVisibleConfigurationKeys(station.value) : []
   )
 
   return {
     configurationRows,
-    editableConfigurationKeys,
     sections,
     station,
+    visibleConfigurationKeys,
   }
 }

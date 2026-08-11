@@ -51,24 +51,22 @@ const isOCPP20RequiredVariableName = (name: string): name is OCPP20RequiredVaria
 const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string =>
   buildConfigKey(variableMetadata.component, variableMetadata.variable, variableMetadata.instance)
 
-const configurationKeyNameToVariable = new Map<
-  string,
-  { component: string; instance?: string; variable: string }
->()
-for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
-  const variableMetadata = VARIABLE_REGISTRY[metaKey]
-  const configurationKeyName = computeConfigurationKeyName(variableMetadata)
-  if (!configurationKeyNameToVariable.has(configurationKeyName)) {
-    configurationKeyNameToVariable.set(configurationKeyName, {
-      component: variableMetadata.component,
-      instance: variableMetadata.instance,
-      variable: variableMetadata.variable,
-    })
-  }
-}
-
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
+
+  readonly #configurationKeyNameToVariable = new Map<
+    string,
+    { component: string; instance?: string; variable: string }
+  >(
+    Object.values(VARIABLE_REGISTRY).map(variableMetadata => [
+      computeConfigurationKeyName(variableMetadata),
+      {
+        component: variableMetadata.component,
+        instance: variableMetadata.instance,
+        variable: variableMetadata.variable,
+      },
+    ])
+  )
 
   readonly #validComponentNames = new Set<string>(
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
@@ -151,7 +149,7 @@ export class OCPP20VariableManager {
   public resolveConfigurationKeyName (
     name: string
   ): undefined | { component: string; instance?: string; variable: string } {
-    return configurationKeyNameToVariable.get(name)
+    return this.#configurationKeyNameToVariable.get(name)
   }
 
   public setVariables (

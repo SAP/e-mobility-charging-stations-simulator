@@ -10,7 +10,7 @@
       Charging station not found
     </p>
     <p
-      v-else-if="editableConfigurationKeys.length === 0"
+      v-else-if="visibleConfigurationKeys.length === 0"
       class="change-configuration__empty"
     >
       No OCPP parameters reported
@@ -47,7 +47,7 @@
       </thead>
       <tbody>
         <tr
-          v-for="configurationKey in editableConfigurationKeys"
+          v-for="configurationKey in visibleConfigurationKeys"
           :key="configurationKey.key"
         >
           <th scope="row">
@@ -108,10 +108,10 @@ const emit = defineEmits<{ close: [] }>()
 
 const tableLabelId = useId()
 
-const { editableConfigurationKeys, station } = useStationDetails(props.hashId)
+const { station, visibleConfigurationKeys } = useStationDetails(props.hashId)
 const { draftValues, pending, save } = useChangeConfigurationForm(
   props.hashId,
-  editableConfigurationKeys
+  visibleConfigurationKeys
 )
 
 const close = (): void => {

@@ -53,7 +53,7 @@ describe('useStationDetails', () => {
     ])
   })
 
-  it('should expose the visible raw configuration keys for editing', () => {
+  it('should expose the visible raw configuration keys', () => {
     const stations = ref([
       createChargingStationData({
         ocppConfiguration: {
@@ -64,8 +64,8 @@ describe('useStationDetails', () => {
         },
       }),
     ])
-    const { editableConfigurationKeys } = runComposable(stations, TEST_HASH_ID)
-    expect(editableConfigurationKeys.value).toEqual([
+    const { visibleConfigurationKeys } = runComposable(stations, TEST_HASH_ID)
+    expect(visibleConfigurationKeys.value).toEqual([
       { key: 'HeartbeatInterval', readonly: false, value: '30' },
     ])
   })

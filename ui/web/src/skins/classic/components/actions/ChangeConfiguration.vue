@@ -39,13 +39,13 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-if="editableConfigurationKeys.length === 0">
+        <tr v-if="visibleConfigurationKeys.length === 0">
           <td colspan="5">
             No OCPP parameters reported
           </td>
         </tr>
         <tr
-          v-for="configurationKey in editableConfigurationKeys"
+          v-for="configurationKey in visibleConfigurationKeys"
           :key="configurationKey.key"
         >
           <th scope="row">
@@ -101,10 +101,10 @@ const props = defineProps<{
 
 const $router = useRouter()
 
-const { editableConfigurationKeys, station } = useStationDetails(props.hashId)
+const { station, visibleConfigurationKeys } = useStationDetails(props.hashId)
 const { draftValues, pending, save } = useChangeConfigurationForm(
   props.hashId,
-  editableConfigurationKeys
+  visibleConfigurationKeys
 )
 
 const close = (): void => {
