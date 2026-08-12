@@ -216,6 +216,8 @@ const getCertificateIdUseToInstallCertificateUse: Readonly<
 
 // Collapses the 6 OCPP 2.0.1 SetVariables statuses onto the 4 version-agnostic
 // ConfigurationStatus values used by the local (Web UI) configuration-change seam.
+// UnknownComponent / UnknownVariable are unreachable via changeConfiguration (resolveConfigurationKeyName
+// gates unknown flat keys upstream); Record exhaustiveness is compile-enforced.
 const setVariableStatusToConfigurationStatus: Readonly<
   Record<SetVariableStatusEnumType, ConfigurationStatus>
 > = Object.freeze({

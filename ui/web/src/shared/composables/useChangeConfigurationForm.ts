@@ -58,6 +58,9 @@ export function useChangeConfigurationForm (
         configurationKey.key,
         draftValues[configurationKey.key] ?? ''
       )
+      // The reboot notice is driven by the key's `reboot` metadata flag, not the runtime
+      // ConfigurationStatus: the worker broadcast-channel response collapses ACCEPTED and
+      // REBOOT_REQUIRED into a single boolean success, so the actual status is not observable here.
       $toast.success(
         configurationKey.reboot === true
           ? `Configuration key '${configurationKey.key}' set, reboot required to take effect`
