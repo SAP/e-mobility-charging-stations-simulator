@@ -724,16 +724,25 @@ describe('Dialogs', () => {
     it('should render Yes/No cells for the readonly and reboot flags', () => {
       const wrapper = mountDialog([
         createStationWithConfigurationKeys([
-          { key: 'RebootKey', readonly: true, reboot: true, value: '1' },
-          { key: 'PlainKey', readonly: false, value: '2' },
+          { key: 'ReadonlyKey', readonly: true, reboot: false, value: '1' },
+          { key: 'RebootKey', readonly: false, reboot: true, value: '2' },
         ]),
       ])
-      const rebootCells = wrapper.findAll('tbody tr')[0].findAll('td')
-      expect(rebootCells[1].text()).toBe('Yes')
+      const readonlyCells = wrapper.findAll('tbody tr')[0].findAll('td')
+      expect(readonlyCells[1].text()).toBe('Yes')
+      expect(readonlyCells[2].text()).toBe('No')
+      const rebootCells = wrapper.findAll('tbody tr')[1].findAll('td')
+      expect(rebootCells[1].text()).toBe('No')
       expect(rebootCells[2].text()).toBe('Yes')
-      const plainCells = wrapper.findAll('tbody tr')[1].findAll('td')
-      expect(plainCells[1].text()).toBe('No')
-      expect(plainCells[2].text()).toBe('No')
+    })
+
+    it('should name the OCPP parameters table via its caption', () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      expect(wrapper.find('.change-configuration__table caption').text()).toBe('OCPP Parameters')
     })
 
     it('should mark the Save button busy while a change is in flight', async () => {
