@@ -19,9 +19,7 @@
       v-else
       class="change-configuration__table"
     >
-      <caption
-        class="change-configuration__caption"
-      >
+      <caption class="change-configuration__caption">
         OCPP Parameters
       </caption>
       <thead>
