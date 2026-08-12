@@ -5,7 +5,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { OCPPVersion } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref, shallowRef } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 
 import {
   chargingStationsKey,
@@ -640,6 +640,44 @@ describe('Actions', () => {
       expect(toastMock.error).toHaveBeenCalledWith(
         "Error at setting configuration key 'HeartbeatInterval'"
       )
+    })
+
+    it('should render Yes/No cells for the readonly and reboot flags', () => {
+      const wrapper = mountChange([
+        createStationWithConfigurationKeys([
+          { key: 'RebootKey', readonly: true, reboot: true, value: '1' },
+          { key: 'PlainKey', readonly: false, value: '2' },
+        ]),
+      ])
+      const rebootCells = wrapper.findAll('tbody tr')[0].findAll('td')
+      expect(rebootCells[1].text()).toBe('Yes')
+      expect(rebootCells[2].text()).toBe('Yes')
+      const plainCells = wrapper.findAll('tbody tr')[1].findAll('td')
+      expect(plainCells[1].text()).toBe('No')
+      expect(plainCells[2].text()).toBe('No')
+    })
+
+    it('should mark the Save button busy while a change is in flight', async () => {
+      // Promise.withResolvers is unavailable under this project's TS lib (@vue/tsconfig overrides
+      // node24's es2024 lib -> TS2550), so a captured-resolver Promise is used instead.
+      let resolveChange: () => void = () => undefined
+      mockClient.changeConfiguration = vi.fn().mockReturnValue(
+        new Promise<void>(resolve => {
+          resolveChange = resolve
+        })
+      )
+      const wrapper = mountChange([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      const save = wrapper.findAllComponents(ButtonStub)[0]
+      await save.trigger('click')
+      await nextTick()
+      expect(save.attributes('aria-busy')).toBe('true')
+      resolveChange()
+      await flushPromises()
+      expect(save.attributes('aria-busy')).toBeUndefined()
     })
   })
 })

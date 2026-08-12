@@ -18,10 +18,8 @@
     <table
       v-else
       class="change-configuration__table"
-      :aria-labelledby="tableLabelId"
     >
       <caption
-        :id="tableLabelId"
         class="change-configuration__caption"
       >
         OCPP Parameters
@@ -56,15 +54,14 @@
           <td>
             <input
               v-model="draftValues[configurationKey.key]"
-              :aria-disabled="configurationKey.readonly"
               :aria-label="`Value for ${configurationKey.key}`"
               class="change-configuration__input"
               :disabled="configurationKey.readonly || pending.has(configurationKey.key)"
               type="text"
             >
           </td>
-          <td>{{ configurationKey.readonly ? 'Yes' : 'No' }}</td>
-          <td>{{ configurationKey.reboot === true ? 'Yes' : 'No' }}</td>
+          <td>{{ formatBoolean(configurationKey.readonly) }}</td>
+          <td>{{ formatBoolean(configurationKey.reboot) }}</td>
           <td>
             <ActionButton
               :aria-label="`Save ${configurationKey.key}`"
@@ -91,10 +88,9 @@
 </template>
 
 <script setup lang="ts">
-import { useId } from 'vue'
-
 import { useChangeConfigurationForm } from '@/shared/composables/useChangeConfigurationForm.js'
 import { useStationDetails } from '@/shared/composables/useStationDetails.js'
+import { formatBoolean } from '@/shared/utils/index.js'
 
 import ActionButton from '../ActionButton.vue'
 import Modal from '../ModernModal.vue'
@@ -105,8 +101,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ close: [] }>()
-
-const tableLabelId = useId()
 
 const { station, visibleConfigurationKeys } = useStationDetails(props.hashId)
 const { draftValues, pending, save } = useChangeConfigurationForm(

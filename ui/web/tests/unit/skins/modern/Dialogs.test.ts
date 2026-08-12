@@ -13,7 +13,7 @@ import {
   ServerFailureError,
 } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, nextTick, ref } from 'vue'
 
 import {
   chargingStationsKey,
@@ -718,6 +718,80 @@ describe('Dialogs', () => {
       )
       expect(toastMock.success).toHaveBeenCalledWith(
         "Configuration key 'HeartbeatInterval' successfully set"
+      )
+    })
+
+    it('should render Yes/No cells for the readonly and reboot flags', () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'RebootKey', readonly: true, reboot: true, value: '1' },
+          { key: 'PlainKey', readonly: false, value: '2' },
+        ]),
+      ])
+      const rebootCells = wrapper.findAll('tbody tr')[0].findAll('td')
+      expect(rebootCells[1].text()).toBe('Yes')
+      expect(rebootCells[2].text()).toBe('Yes')
+      const plainCells = wrapper.findAll('tbody tr')[1].findAll('td')
+      expect(plainCells[1].text()).toBe('No')
+      expect(plainCells[2].text()).toBe('No')
+    })
+
+    it('should mark the Save button busy while a change is in flight', async () => {
+      // Promise.withResolvers is unavailable under this project's TS lib (@vue/tsconfig overrides
+      // node24's es2024 lib -> TS2550), so a captured-resolver Promise is used instead.
+      let resolveChange: () => void = () => undefined
+      mockClient.changeConfiguration = vi.fn().mockReturnValue(
+        new Promise<void>(resolve => {
+          resolveChange = resolve
+        })
+      )
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      const save = wrapper.find('[aria-label="Save HeartbeatInterval"]')
+      await save.trigger('click')
+      await nextTick()
+      expect(save.attributes('aria-busy')).toBe('true')
+      resolveChange()
+      await flushPromises()
+      expect(save.attributes('aria-busy')).toBeUndefined()
+    })
+
+    it('should surface a reboot-required notice for reboot keys', async () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'RebootKey', readonly: false, reboot: true, value: '1' },
+        ]),
+      ])
+      await wrapper.find('[aria-label="Save RebootKey"]').trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'RebootKey' set, reboot required to take effect"
+      )
+    })
+
+    it('should not submit read-only keys', async () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([{ key: 'SecretKey', readonly: true, value: 'x' }]),
+      ])
+      await wrapper.find('[aria-label="Save SecretKey"]').trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).not.toHaveBeenCalled()
+    })
+
+    it('should toast an error when the backend rejects the change', async () => {
+      mockClient.changeConfiguration = vi.fn().mockRejectedValue(new Error('boom'))
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      await wrapper.find('[aria-label="Save HeartbeatInterval"]').trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "Error at setting configuration key 'HeartbeatInterval'"
       )
     })
 

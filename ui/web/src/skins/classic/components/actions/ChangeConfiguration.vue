@@ -55,17 +55,17 @@
             <input
               v-model="draftValues[configurationKey.key]"
               :aria-label="`Value for ${configurationKey.key}`"
-              :aria-disabled="configurationKey.readonly"
               class="change-configuration__input"
               :disabled="configurationKey.readonly || pending.has(configurationKey.key)"
               :name="`configuration-value-${configurationKey.key}`"
               type="text"
             >
           </td>
-          <td>{{ configurationKey.readonly ? 'Yes' : 'No' }}</td>
-          <td>{{ configurationKey.reboot === true ? 'Yes' : 'No' }}</td>
+          <td>{{ formatBoolean(configurationKey.readonly) }}</td>
+          <td>{{ formatBoolean(configurationKey.reboot) }}</td>
           <td>
             <Button
+              :aria-busy="pending.has(configurationKey.key) || undefined"
               :aria-label="`Save ${configurationKey.key}`"
               :disabled="configurationKey.readonly || pending.has(configurationKey.key)"
               @click="save(configurationKey)"
@@ -91,6 +91,7 @@ import { useRouter } from 'vue-router'
 import { resetToggleButtonState, ROUTE_NAMES } from '@/core/index.js'
 import { useChangeConfigurationForm } from '@/shared/composables/useChangeConfigurationForm.js'
 import { useStationDetails } from '@/shared/composables/useStationDetails.js'
+import { formatBoolean } from '@/shared/utils/index.js'
 
 import Button from '../buttons/ClassicButton.vue'
 

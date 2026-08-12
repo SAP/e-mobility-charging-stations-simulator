@@ -38,7 +38,7 @@ export interface DetailSection {
  * @param value - The raw boolean flag
  * @returns "Yes" or "No"
  */
-const formatBoolean = (value: boolean | undefined): string => (value === true ? 'Yes' : 'No')
+export const formatBoolean = (value: boolean | undefined): string => (value === true ? 'Yes' : 'No')
 
 /**
  * Formats a date-like station field for display.
