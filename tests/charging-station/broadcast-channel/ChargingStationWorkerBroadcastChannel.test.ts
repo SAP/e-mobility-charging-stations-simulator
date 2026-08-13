@@ -104,7 +104,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 1: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries (8 tests)
+  // Group 1: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries
   // ==========================================================================
 
   await describe('ProcedureNameToBroadCastChannelProcedureNameMapping OCPP 2.0.1 entries', async () => {
@@ -174,7 +174,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 2: commandResponseToResponseStatus — 4 new command response cases (18 tests)
+  // Group 2: commandResponseToResponseStatus — 4 new command response cases
   // ==========================================================================
 
   await describe('commandResponseToResponseStatus OCPP 2.0.1 commands', async () => {
@@ -516,7 +516,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 3: CHANGE_CONFIGURATION — status collapse + worker handler (9 tests)
+  // Group 3: CHANGE_CONFIGURATION — status collapse + worker handler
   // The status-collapse tests guard the acceptedStatusCommands entry: without it,
   // even ACCEPTED would fall through to the FAILURE default.
   // ==========================================================================
@@ -612,7 +612,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 4: commandHandler dispatch pipeline — verify full dispatch (9 tests)
+  // Group 4: commandHandler dispatch pipeline — verify full dispatch
   // ==========================================================================
 
   await describe('commandHandler OCPP 2.0.1 dispatch pipeline', async () => {
@@ -729,7 +729,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 5: requestHandler full pipeline — exercise handler dispatch via message events (6 tests)
+  // Group 5: requestHandler full pipeline — exercise handler dispatch via message events
   // ==========================================================================
 
   await describe('requestHandler full pipeline OCPP 2.0.1', async () => {
