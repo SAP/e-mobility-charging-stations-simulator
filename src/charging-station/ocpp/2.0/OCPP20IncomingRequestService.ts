@@ -747,7 +747,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         },
       ],
     })
-    if (response.setVariableResult.length === 0) {
+    if (isEmpty(response.setVariableResult)) {
       return ConfigurationStatus.REJECTED
     }
     return setVariableStatusToConfigurationStatus[response.setVariableResult[0].attributeStatus]
