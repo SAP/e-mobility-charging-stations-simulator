@@ -17,6 +17,7 @@ export const WH_PER_KWH = 1000
 
 export const ROUTE_NAMES = {
   ADD_CHARGING_STATIONS: 'add-charging-stations',
+  CHANGE_CONFIGURATION: 'change-configuration',
   CHARGING_STATIONS: 'charging-stations',
   NOT_FOUND: 'not-found',
   SET_SUPERVISION_URL: 'set-supervision-url',

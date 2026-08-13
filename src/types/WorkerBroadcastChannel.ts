@@ -4,6 +4,7 @@ import type { UUIDv4 } from './UUID.js'
 export enum BroadcastChannelProcedureName {
   AUTHORIZE = 'authorize',
   BOOT_NOTIFICATION = 'bootNotification',
+  CHANGE_CONFIGURATION = 'changeConfiguration',
   CLOSE_CONNECTION = 'closeConnection',
   DATA_TRANSFER = 'dataTransfer',
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',

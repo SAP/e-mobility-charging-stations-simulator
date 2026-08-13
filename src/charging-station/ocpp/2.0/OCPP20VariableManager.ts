@@ -54,6 +54,20 @@ const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
+  readonly #configurationKeyNameToVariable = new Map<
+    string,
+    { component: string; instance?: string; variable: string }
+  >(
+    Object.values(VARIABLE_REGISTRY).map(variableMetadata => [
+      computeConfigurationKeyName(variableMetadata),
+      {
+        component: variableMetadata.component,
+        instance: variableMetadata.instance,
+        variable: variableMetadata.variable,
+      },
+    ])
+  )
+
   readonly #validComponentNames = new Set<string>(
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
@@ -123,6 +137,19 @@ export class OCPP20VariableManager {
       this.minSetOverrides.clear()
       this.maxSetOverrides.clear()
     }
+  }
+
+  /**
+   * Resolves a persisted flat configuration key name (as shown in the UI) back to
+   * its registry-defined component/variable/instance tuple, for round-tripping a
+   * generic configuration change through {@link setVariables}.
+   * @param name - Configuration key name (`component.variable[.instance]`).
+   * @returns The resolved tuple, or `undefined` when the name is not registry-backed.
+   */
+  public resolveConfigurationKeyName (
+    name: string
+  ): undefined | { component: string; instance?: string; variable: string } {
+    return this.#configurationKeyNameToVariable.get(name)
   }
 
   public setVariables (
@@ -284,9 +311,16 @@ export class OCPP20VariableManager {
         }
         const defaultValue = variableMetadata.defaultValue
         if (defaultValue != null) {
-          addConfigurationKey(chargingStation, configurationKeyName, defaultValue, undefined, {
-            overwrite: false,
-          })
+          addConfigurationKey(
+            chargingStation,
+            configurationKeyName,
+            defaultValue,
+            {
+              readonly: isReadOnly(variableMetadata),
+              reboot: variableMetadata.rebootRequired === true,
+            },
+            { overwrite: false }
+          )
           logger.info(
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${configurationKeyName}' with default '${defaultValue}'`
           )
@@ -638,7 +672,10 @@ export class OCPP20VariableManager {
           chargingStation,
           configurationKeyName,
           value, // Use the resolved default value
-          undefined,
+          {
+            readonly: isReadOnly(variableMetadata),
+            reboot: variableMetadata.rebootRequired === true,
+          },
           {
             overwrite: false,
           }
@@ -1001,9 +1038,16 @@ export class OCPP20VariableManager {
     if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
       const configKey = getConfigurationKey(chargingStation, configurationKeyName)
       if (configKey == null) {
-        addConfigurationKey(chargingStation, configurationKeyName, attributeValue, undefined, {
-          overwrite: false,
-        })
+        addConfigurationKey(
+          chargingStation,
+          configurationKeyName,
+          attributeValue,
+          {
+            readonly: isReadOnly(variableMetadata),
+            reboot: variableMetadata.rebootRequired === true,
+          },
+          { overwrite: false }
+        )
       } else if (configKey.value !== attributeValue) {
         setConfigurationKeyValue(chargingStation, configurationKeyName, attributeValue)
       }

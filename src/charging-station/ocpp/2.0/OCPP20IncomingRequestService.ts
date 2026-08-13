@@ -12,6 +12,7 @@ import {
   AttributeEnumType,
   CertificateSigningUseEnumType,
   ChangeAvailabilityStatusEnumType,
+  ConfigurationStatus,
   ConnectorEnumType,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -211,6 +212,21 @@ const getCertificateIdUseToInstallCertificateUse: Readonly<
     InstallCertificateUseEnumType.V2GRootCertificate,
   [GetCertificateIdUseEnumType.V2GRootCertificate]:
     InstallCertificateUseEnumType.V2GRootCertificate,
+})
+
+// Collapses the 6 OCPP 2.0.1 SetVariables statuses onto the 4 version-agnostic
+// ConfigurationStatus values used by the local (Web UI) configuration-change seam.
+// UnknownComponent / UnknownVariable are unreachable via changeConfiguration (resolveConfigurationKeyName
+// gates unknown flat keys upstream); Record exhaustiveness is compile-enforced.
+const setVariableStatusToConfigurationStatus: Readonly<
+  Record<SetVariableStatusEnumType, ConfigurationStatus>
+> = Object.freeze({
+  [SetVariableStatusEnumType.Accepted]: ConfigurationStatus.ACCEPTED,
+  [SetVariableStatusEnumType.NotSupportedAttributeType]: ConfigurationStatus.NOT_SUPPORTED,
+  [SetVariableStatusEnumType.RebootRequired]: ConfigurationStatus.REBOOT_REQUIRED,
+  [SetVariableStatusEnumType.Rejected]: ConfigurationStatus.REJECTED,
+  [SetVariableStatusEnumType.UnknownComponent]: ConfigurationStatus.NOT_SUPPORTED,
+  [SetVariableStatusEnumType.UnknownVariable]: ConfigurationStatus.NOT_SUPPORTED,
 })
 
 interface StationInfoReportField {
@@ -696,6 +712,45 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         }
       }
     )
+  }
+
+  /**
+   * Applies a Web UI configuration change: resolves the flat key to its registry tuple and
+   * reuses the SetVariables handler internally, never emitting a SetVariablesRequest to a CSMS.
+   *
+   * The resolved `instance` is placed on the component slot; internal resolution reads
+   * `variable.instance ?? component.instance`, so the round-trip is slot-agnostic. This is only
+   * correct because nothing is emitted on the wire — a future wire-originating path must move a
+   * variableInstance to `variable.instance` for OCPP 2.0.1 conformance.
+   * @param chargingStation - Target charging station.
+   * @param key - Persisted flat configuration key name.
+   * @param value - New value to set.
+   * @returns The resulting configuration status.
+   */
+  public changeConfiguration (
+    chargingStation: ChargingStation,
+    key: string,
+    value: string
+  ): ConfigurationStatus {
+    const resolved = OCPP20VariableManager.getInstance().resolveConfigurationKeyName(key)
+    if (resolved == null) {
+      return ConfigurationStatus.NOT_SUPPORTED
+    }
+    const { component, instance, variable } = resolved
+    const response = this.handleRequestSetVariables(chargingStation, {
+      setVariableData: [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: value,
+          component: { name: component, ...(instance != null && { instance }) },
+          variable: { name: variable },
+        },
+      ],
+    })
+    if (isEmpty(response.setVariableResult)) {
+      return ConfigurationStatus.REJECTED
+    }
+    return setVariableStatusToConfigurationStatus[response.setVariableResult[0].attributeStatus]
   }
 
   /**

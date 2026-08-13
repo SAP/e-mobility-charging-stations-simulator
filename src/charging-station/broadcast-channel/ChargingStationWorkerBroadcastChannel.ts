@@ -12,6 +12,8 @@ import {
   type BroadcastChannelRequest,
   type BroadcastChannelRequestPayload,
   type BroadcastChannelResponsePayload,
+  type ChangeConfigurationResponse,
+  ConfigurationStatus,
   type DataTransferResponse,
   DataTransferStatus,
   GenericStatus,
@@ -46,6 +48,7 @@ import {
   getErrorMessage,
   isAsyncFunction,
   isEmpty,
+  isNotEmptyString,
   isOCPP20x,
   logger,
 } from '../../utils/index.js'
@@ -68,6 +71,7 @@ type CommandHandler = (
 type CommandResponse =
   | AuthorizeResponse
   | BootNotificationResponse
+  | ChangeConfigurationResponse
   | DataTransferResponse
   | HeartbeatResponse
   | OCPP20Get15118EVCertificateResponse
@@ -85,6 +89,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         [
           BroadcastChannelProcedureName.BOOT_NOTIFICATION,
           r => r.status === RegistrationStatusEnumType.ACCEPTED,
+        ],
+        [
+          BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+          r =>
+            r.status === ConfigurationStatus.ACCEPTED ||
+        r.status === ConfigurationStatus.REBOOT_REQUIRED,
         ],
         [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
         [
@@ -127,6 +137,24 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
       [BroadcastChannelProcedureName.AUTHORIZE, this.passthrough(RequestCommand.AUTHORIZE)],
       [BroadcastChannelProcedureName.BOOT_NOTIFICATION, this.handleBootNotification.bind(this)],
+      [
+        BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+        (requestPayload?: BroadcastChannelRequestPayload): ChangeConfigurationResponse => {
+          const key = requestPayload?.key
+          if (!isNotEmptyString(key)) {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'key' field is required`
+            )
+          }
+          const value = requestPayload?.value
+          if (typeof value !== 'string') {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'value' field must be a string`
+            )
+          }
+          return { status: this.chargingStation.changeConfiguration(key, value) }
+        },
+      ],
       [
         BroadcastChannelProcedureName.CLOSE_CONNECTION,
         () => {
@@ -193,7 +221,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           const url = requestPayload?.url
-          if (typeof url !== 'string' || isEmpty(url)) {
+          if (!isNotEmptyString(url)) {
             throw new BaseError(
               `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'url' field is required`
             )

@@ -32,6 +32,7 @@
         :key="station.stationInfo.hashId"
         :charging-station="station"
         @open-authorize="openAuthorizeDialog"
+        @open-change-config="openChangeConfigDialog"
         @open-details="openDetailsDialog"
         @open-set-url="openSetUrlDialog"
         @open-start-tx="openStartTxDialog"
@@ -77,6 +78,12 @@
       :hash-id="showDetailsDialog.hashId"
       :charging-station-id="showDetailsDialog.chargingStationId"
       @close="showDetailsDialog = null"
+    />
+    <ChangeConfigurationDialog
+      v-if="showChangeConfigDialog"
+      :hash-id="showChangeConfigDialog.hashId"
+      :charging-station-id="showChangeConfigDialog.chargingStationId"
+      @close="showChangeConfigDialog = null"
     />
   </main>
 </template>
@@ -128,6 +135,9 @@ const AddStationsDialog = defineAsyncDialog(
   () => import('./components/dialogs/AddStationsDialog.vue')
 )
 const AuthorizeDialog = defineAsyncDialog(() => import('./components/dialogs/AuthorizeDialog.vue'))
+const ChangeConfigurationDialog = defineAsyncDialog(
+  () => import('./components/dialogs/ChangeConfigurationDialog.vue')
+)
 const SetSupervisionUrlDialog = defineAsyncDialog(
   () => import('./components/dialogs/SetSupervisionUrlDialog.vue')
 )
@@ -179,6 +189,10 @@ const showDetailsDialog = ref<null | {
   chargingStationId: string
   hashId: string
 }>(null)
+const showChangeConfigDialog = ref<null | {
+  chargingStationId: string
+  hashId: string
+}>(null)
 
 const confirmStopSimulator = (): void => {
   stopSimulator()
@@ -195,6 +209,9 @@ const toggleSimulator = (): void => {
 
 const openAuthorizeDialog = (data: typeof showAuthorizeDialog.value): void => {
   showAuthorizeDialog.value = data
+}
+const openChangeConfigDialog = (data: typeof showChangeConfigDialog.value): void => {
+  showChangeConfigDialog.value = data
 }
 const openDetailsDialog = (data: typeof showDetailsDialog.value): void => {
   showDetailsDialog.value = data

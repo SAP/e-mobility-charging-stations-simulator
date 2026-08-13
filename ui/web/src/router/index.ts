@@ -63,6 +63,16 @@ export const router = createRouter({
     {
       beforeEnter: skinGuard,
       components: {
+        action: () => import('@/skins/classic/components/actions/ChangeConfiguration.vue'),
+      },
+      meta: { skinOnly: 'classic' },
+      name: ROUTE_NAMES.CHANGE_CONFIGURATION,
+      path: '/change-configuration/:hashId/:chargingStationId',
+      props: { action: true },
+    },
+    {
+      beforeEnter: skinGuard,
+      components: {
         action: () => import('@/skins/classic/components/actions/SetSupervisionUrl.vue'),
       },
       meta: { skinOnly: 'classic' },

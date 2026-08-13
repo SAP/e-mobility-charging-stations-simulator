@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events'
 import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
+  type ConfigurationStatus,
   ErrorType,
   type IncomingRequestCommand,
   type IncomingRequestHandler,
@@ -106,6 +107,22 @@ export abstract class OCPPIncomingRequestService<
     }
     return OCPPIncomingRequestService.instances.get(this) as T
   }
+
+  /**
+   * Applies a configuration change from a trusted local caller (e.g. the Web UI),
+   * reusing the version-specific incoming-request spec logic (readonly rejection,
+   * value validation, side-effect restarts, reboot signalling) WITHOUT emitting an
+   * OCPP response to the CSMS.
+   * @param chargingStation - Target charging station.
+   * @param key - Configuration key name.
+   * @param value - New value to apply.
+   * @returns The resulting {@link ConfigurationStatus}.
+   */
+  public abstract changeConfiguration (
+    chargingStation: ChargingStation,
+    key: string,
+    value: string
+  ): ConfigurationStatus
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(

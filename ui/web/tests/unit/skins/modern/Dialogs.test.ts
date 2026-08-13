@@ -13,7 +13,7 @@ import {
   ServerFailureError,
 } from 'ui-common'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, nextTick, ref } from 'vue'
 
 import {
   chargingStationsKey,
@@ -39,6 +39,7 @@ vi.mock('@/skins/modern/components/ModernModal.vue', () => ({
 
 import AddStationsDialog from '@/skins/modern/components/dialogs/AddStationsDialog.vue'
 import AuthorizeDialog from '@/skins/modern/components/dialogs/AuthorizeDialog.vue'
+import ChangeConfigurationDialog from '@/skins/modern/components/dialogs/ChangeConfigurationDialog.vue'
 import SetConnectorStatusDialog from '@/skins/modern/components/dialogs/SetConnectorStatusDialog.vue'
 import SetSupervisionUrlDialog from '@/skins/modern/components/dialogs/SetSupervisionUrlDialog.vue'
 import ShowDetailsDialog from '@/skins/modern/components/dialogs/ShowDetailsDialog.vue'
@@ -48,6 +49,7 @@ import { toastMock } from '../../../setup.js'
 import {
   createChargingStationData,
   createStationInfo,
+  createStationWithConfigurationKeys,
   TEST_HASH_ID,
   TEST_STATION_ID,
 } from '../../constants.js'
@@ -580,11 +582,9 @@ describe('Dialogs', () => {
 
     it('should render OCPP parameter rows from the configuration keys', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
-          },
-        }),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       expect(wrapper.text()).toContain('HeartbeatInterval')
       expect(wrapper.text()).toContain('30')
@@ -592,11 +592,7 @@ describe('Dialogs', () => {
 
     it('should format OCPP readonly, reboot and missing value cells', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'RebootKey', readonly: true, reboot: true }],
-          },
-        }),
+        createStationWithConfigurationKeys([{ key: 'RebootKey', readonly: true, reboot: true }]),
       ])
       const row = wrapper
         .findAll('.station-details__table tbody tr')
@@ -610,9 +606,7 @@ describe('Dialogs', () => {
     })
 
     it('should render the empty message when no OCPP parameters are reported', () => {
-      const wrapper = mountDialog([
-        createChargingStationData({ ocppConfiguration: { configurationKey: [] } }),
-      ])
+      const wrapper = mountDialog([createStationWithConfigurationKeys([])])
       expect(wrapper.text()).toContain('No OCPP parameters reported')
     })
 
@@ -628,11 +622,9 @@ describe('Dialogs', () => {
 
     it('should give the OCPP parameters table an accessible name', () => {
       const wrapper = mountDialog([
-        createChargingStationData({
-          ocppConfiguration: {
-            configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
-          },
-        }),
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
       ])
       const labelledBy = wrapper.find('.station-details__table').attributes('aria-labelledby') ?? ''
       expect(labelledBy).not.toBe('')
@@ -653,6 +645,163 @@ describe('Dialogs', () => {
     it('should render a not-found message when the station is absent', () => {
       const wrapper = mountDialog([])
       expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should emit close when the Close button is clicked', async () => {
+      const wrapper = mountDialog()
+      await wrapper.findAll('.stub-modal__foot button')[0].trigger('click')
+      expect(wrapper.emitted('close')).toHaveLength(1)
+    })
+  })
+
+  describe('ChangeConfigurationDialog', () => {
+    /**
+     * @param stations - Charging station data to provide to the dialog
+     * @returns Mounted wrapper for ChangeConfigurationDialog
+     */
+    function mountDialog (stations = [createChargingStationData()]) {
+      return mount(ChangeConfigurationDialog, {
+        global: {
+          provide: {
+            [chargingStationsKey as symbol]: ref(stations),
+            [uiClientKey as symbol]: mockClient,
+          },
+        },
+        props: { chargingStationId: TEST_STATION_ID, hashId: TEST_HASH_ID },
+      })
+    }
+
+    it('should render the title with the station id', () => {
+      const wrapper = mountDialog()
+      expect(wrapper.text()).toContain(`Change configuration — ${TEST_STATION_ID}`)
+    })
+
+    it('should render a not-found message when the station is absent', () => {
+      const wrapper = mountDialog([])
+      expect(wrapper.text()).toContain('Charging station not found')
+    })
+
+    it('should render the empty message when no OCPP parameters are reported', () => {
+      const wrapper = mountDialog([createStationWithConfigurationKeys([])])
+      expect(wrapper.text()).toContain('No OCPP parameters reported')
+    })
+
+    it('should prefill inputs and disable read-only keys', () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+          { key: 'SecretKey', readonly: true, value: 'x' },
+        ]),
+      ])
+      const editable = wrapper.find<HTMLInputElement>('[aria-label="Value for HeartbeatInterval"]')
+      expect(editable.element.value).toBe('30')
+      expect(editable.attributes('disabled')).toBeUndefined()
+      expect(
+        wrapper.find('[aria-label="Value for SecretKey"]').attributes('disabled')
+      ).toBeDefined()
+      expect(wrapper.find('[aria-label="Save SecretKey"]').attributes('disabled')).toBeDefined()
+    })
+
+    it('should call changeConfiguration and toast success on save', async () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      await wrapper.find('[aria-label="Value for HeartbeatInterval"]').setValue('45')
+      await wrapper.find('[aria-label="Save HeartbeatInterval"]').trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).toHaveBeenCalledWith(
+        TEST_HASH_ID,
+        'HeartbeatInterval',
+        '45'
+      )
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'HeartbeatInterval' successfully set"
+      )
+    })
+
+    it('should render Yes/No cells for the readonly and reboot flags', () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'ReadonlyKey', readonly: true, reboot: false, value: '1' },
+          { key: 'RebootKey', readonly: false, reboot: true, value: '2' },
+        ]),
+      ])
+      const readonlyCells = wrapper.findAll('tbody tr')[0].findAll('td')
+      expect(readonlyCells[1].text()).toBe('Yes')
+      expect(readonlyCells[2].text()).toBe('No')
+      const rebootCells = wrapper.findAll('tbody tr')[1].findAll('td')
+      expect(rebootCells[1].text()).toBe('No')
+      expect(rebootCells[2].text()).toBe('Yes')
+    })
+
+    it('should name the OCPP parameters table via its caption', () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      expect(wrapper.find('.change-configuration__table caption').text()).toBe('OCPP Parameters')
+    })
+
+    it('should mark the Save button busy while a change is in flight', async () => {
+      // Promise.withResolvers is unavailable under this project's TS lib (@vue/tsconfig overrides
+      // node24's es2024 lib -> TS2550), so a captured-resolver Promise is used instead.
+      let resolveChange: () => void = () => undefined
+      mockClient.changeConfiguration = vi.fn().mockReturnValue(
+        new Promise<void>(resolve => {
+          resolveChange = resolve
+        })
+      )
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      const save = wrapper.find('[aria-label="Save HeartbeatInterval"]')
+      await save.trigger('click')
+      await nextTick()
+      expect(save.attributes('aria-busy')).toBe('true')
+      resolveChange()
+      await flushPromises()
+      expect(save.attributes('aria-busy')).toBeUndefined()
+    })
+
+    it('should surface a reboot-required notice for reboot keys', async () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'RebootKey', readonly: false, reboot: true, value: '1' },
+        ]),
+      ])
+      await wrapper.find('[aria-label="Save RebootKey"]').trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Configuration key 'RebootKey' set, reboot required to take effect"
+      )
+    })
+
+    it('should not submit read-only keys', async () => {
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([{ key: 'SecretKey', readonly: true, value: 'x' }]),
+      ])
+      await wrapper.find('[aria-label="Save SecretKey"]').trigger('click')
+      await flushPromises()
+      expect(mockClient.changeConfiguration).not.toHaveBeenCalled()
+    })
+
+    it('should toast an error when the backend rejects the change', async () => {
+      mockClient.changeConfiguration = vi.fn().mockRejectedValue(new Error('boom'))
+      const wrapper = mountDialog([
+        createStationWithConfigurationKeys([
+          { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        ]),
+      ])
+      await wrapper.find('[aria-label="Save HeartbeatInterval"]').trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith(
+        "Error at setting configuration key 'HeartbeatInterval'"
+      )
     })
 
     it('should emit close when the Close button is clicked', async () => {

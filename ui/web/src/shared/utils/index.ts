@@ -5,6 +5,7 @@ export type { ConfigurationRow, DetailEntry, DetailSection } from './stationDeta
 export {
   buildConfigurationRows,
   buildStationDetailSections,
+  formatBoolean,
   getVisibleConfigurationKeys,
 } from './stationDetails.js'
 export type { StatusVariant } from './stationStatus.js'

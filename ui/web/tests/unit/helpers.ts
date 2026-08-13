@@ -11,6 +11,7 @@ import { type App, createApp } from 'vue'
 export interface MockUIClient {
   addChargingStations: ReturnType<typeof vi.fn>
   authorize: ReturnType<typeof vi.fn>
+  changeConfiguration: ReturnType<typeof vi.fn>
   closeConnection: ReturnType<typeof vi.fn>
   deleteChargingStation: ReturnType<typeof vi.fn>
   isConnected: ReturnType<typeof vi.fn>
@@ -140,6 +141,7 @@ export function createMockUIClient (): MockUIClient {
   return {
     addChargingStations: vi.fn().mockResolvedValue(successResponse),
     authorize: vi.fn().mockResolvedValue(successResponse),
+    changeConfiguration: vi.fn().mockResolvedValue(successResponse),
     closeConnection: vi.fn().mockResolvedValue(successResponse),
     deleteChargingStation: vi.fn().mockResolvedValue(successResponse),
     isConnected: vi.fn().mockReturnValue(false),

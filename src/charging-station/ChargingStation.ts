@@ -25,6 +25,7 @@ import {
   type ChargingStationOcppConfiguration,
   type ChargingStationOptions,
   type ChargingStationTemplate,
+  ConfigurationStatus,
   type ConnectorEntry,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -384,6 +385,22 @@ export class ChargingStation extends EventEmitter {
   public bufferMessage (message: string): void {
     this.messageQueue.push(message)
     this.setIntervalFlushMessageBuffer()
+  }
+
+  /**
+   * Applies a configuration change requested by a trusted local caller (e.g. the Web UI),
+   * reusing the OCPP-version-specific spec logic (readonly rejection, value validation,
+   * side-effect restarts, reboot signalling) without emitting an OCPP response to the CSMS.
+   * @param key - Configuration key name.
+   * @param value - New value to apply.
+   * @returns The resulting {@link ConfigurationStatus}.
+   */
+  public changeConfiguration (key: string, value: string): ConfigurationStatus {
+    const status = this.ocppIncomingRequestService.changeConfiguration(this, key, value)
+    if (status === ConfigurationStatus.ACCEPTED || status === ConfigurationStatus.REBOOT_REQUIRED) {
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
+    }
+    return status
   }
 
   /**

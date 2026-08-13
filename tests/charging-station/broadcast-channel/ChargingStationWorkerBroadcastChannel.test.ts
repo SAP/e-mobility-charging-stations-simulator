@@ -7,13 +7,15 @@
 
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { ChargingStationWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
 import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
+import { BaseError } from '../../../src/exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  ConfigurationStatus,
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
@@ -514,7 +516,103 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 4: commandHandler dispatch pipeline — verify full dispatch (8 tests)
+  // Group 3: CHANGE_CONFIGURATION — status collapse + worker handler (9 tests)
+  // The status-collapse tests guard the acceptedStatusCommands entry: without it,
+  // even ACCEPTED would fall through to the FAILURE default.
+  // ==========================================================================
+
+  await describe('commandResponseToResponseStatus CHANGE_CONFIGURATION', async () => {
+    const cases: { expected: ResponseStatus; status: ConfigurationStatus }[] = [
+      { expected: ResponseStatus.SUCCESS, status: ConfigurationStatus.ACCEPTED },
+      { expected: ResponseStatus.SUCCESS, status: ConfigurationStatus.REBOOT_REQUIRED },
+      { expected: ResponseStatus.FAILURE, status: ConfigurationStatus.REJECTED },
+      { expected: ResponseStatus.FAILURE, status: ConfigurationStatus.NOT_SUPPORTED },
+    ]
+    for (const { expected, status } of cases) {
+      await it(`should map ${status} to ${expected}`, () => {
+        const { station } = createMockChargingStation({
+          connectorsCount: 1,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        instance = new ChargingStationWorkerBroadcastChannel(station)
+        const testable = createTestableWorkerBroadcastChannel(instance)
+
+        assert.strictEqual(
+          testable.commandResponseToResponseStatus(
+            BroadcastChannelProcedureName.CHANGE_CONFIGURATION,
+            { status }
+          ),
+          expected
+        )
+      })
+    }
+  })
+
+  // CHANGE_CONFIGURATION command handler: payload validation + delegation
+
+  await describe('CHANGE_CONFIGURATION handler', async () => {
+    const changePayload = (
+      overrides: Partial<BroadcastChannelRequestPayload> = {}
+    ): BroadcastChannelRequestPayload => ({ key: 'HeartbeatInterval', value: '60', ...overrides })
+
+    const setup = () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const changeConfigurationMock = mock.fn(() => ConfigurationStatus.ACCEPTED)
+      station.changeConfiguration = changeConfigurationMock
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const handler = createTestableWorkerBroadcastChannel(instance).commandHandlers.get(
+        BroadcastChannelProcedureName.CHANGE_CONFIGURATION
+      )
+      assert.ok(handler != null)
+      return { changeConfigurationMock, handler }
+    }
+
+    await it('should delegate a valid payload to changeConfiguration and return its status', () => {
+      const { changeConfigurationMock, handler } = setup()
+      const response = handler(changePayload())
+      assert.deepStrictEqual(response, { status: ConfigurationStatus.ACCEPTED })
+      assert.strictEqual(changeConfigurationMock.mock.callCount(), 1)
+      assert.deepStrictEqual(changeConfigurationMock.mock.calls[0].arguments, [
+        'HeartbeatInterval',
+        '60',
+      ])
+    })
+
+    await it('should accept an empty-string value', () => {
+      const { changeConfigurationMock, handler } = setup()
+      const response = handler(changePayload({ value: '' }))
+      assert.deepStrictEqual(response, { status: ConfigurationStatus.ACCEPTED })
+      assert.deepStrictEqual(changeConfigurationMock.mock.calls[0].arguments, [
+        'HeartbeatInterval',
+        '',
+      ])
+    })
+
+    await it('should throw a BaseError when key is missing', () => {
+      const { changeConfigurationMock, handler } = setup()
+      assert.throws(() => handler(changePayload({ key: undefined })), BaseError)
+      assert.strictEqual(changeConfigurationMock.mock.callCount(), 0)
+    })
+
+    await it('should throw a BaseError when key is an empty string', () => {
+      const { handler } = setup()
+      assert.throws(() => handler(changePayload({ key: '' })), BaseError)
+    })
+
+    await it('should throw a BaseError when value is not a string', () => {
+      const { changeConfigurationMock, handler } = setup()
+      assert.throws(() => handler(changePayload({ value: 42 as unknown as string })), BaseError)
+      assert.strictEqual(changeConfigurationMock.mock.callCount(), 0)
+    })
+  })
+
+  // ==========================================================================
+  // Group 4: commandHandler dispatch pipeline — verify full dispatch (9 tests)
   // ==========================================================================
 
   await describe('commandHandler OCPP 2.0.1 dispatch pipeline', async () => {

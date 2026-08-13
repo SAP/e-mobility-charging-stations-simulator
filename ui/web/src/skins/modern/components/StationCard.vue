@@ -142,6 +142,12 @@
         >
           Details
         </ActionButton>
+        <ActionButton
+          variant="ghost"
+          @click="emitOpenChangeConfig"
+        >
+          Configuration
+        </ActionButton>
       </div>
       <ActionButton
         variant="danger"
@@ -193,6 +199,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'open-authorize': [data: { chargingStationId: string; hashId: string; ocppVersion?: OCPPVersion }]
+  'open-change-config': [data: { chargingStationId: string; hashId: string }]
   'open-details': [data: { chargingStationId: string; hashId: string }]
   'open-set-url': [data: { chargingStationId: string; hashId: string }]
   'open-start-tx': [
@@ -264,6 +271,13 @@ const emitOpenAuthorize = (): void => {
 
 const emitOpenDetails = (): void => {
   emit('open-details', {
+    chargingStationId: props.chargingStation.stationInfo.chargingStationId,
+    hashId: props.chargingStation.stationInfo.hashId,
+  })
+}
+
+const emitOpenChangeConfig = (): void => {
+  emit('open-change-config', {
     chargingStationId: props.chargingStation.stationInfo.chargingStationId,
     hashId: props.chargingStation.stationInfo.hashId,
   })

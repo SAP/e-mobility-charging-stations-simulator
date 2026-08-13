@@ -95,6 +95,31 @@
       >
         Show Details
       </ToggleButton>
+      <ToggleButton
+        :id="`${chargingStation.stationInfo.hashId}-change-configuration`"
+        :off="
+          () => {
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+          }
+        "
+        :on="
+          () => {
+            $router
+              .push({
+                name: ROUTE_NAMES.CHANGE_CONFIGURATION,
+                params: {
+                  hashId: chargingStation.stationInfo.hashId,
+                  chargingStationId: chargingStation.stationInfo.chargingStationId,
+                },
+              })
+              .catch(() => undefined)
+          }
+        "
+        :shared="true"
+        @clicked="$emit('need-refresh')"
+      >
+        Change Configuration
+      </ToggleButton>
       <Button @click="deleteChargingStation()">
         Delete Charging Station
       </Button>

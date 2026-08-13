@@ -14,7 +14,11 @@ import {
   useStationDetails,
 } from '@/shared/composables/useStationDetails.js'
 
-import { createChargingStationData, TEST_HASH_ID } from '../../constants.js'
+import {
+  createChargingStationData,
+  createStationWithConfigurationKeys,
+  TEST_HASH_ID,
+} from '../../constants.js'
 
 /**
  * Mounts a throwaway component that runs useStationDetails with the provided store.
@@ -39,17 +43,28 @@ function runComposable (stations: Ref<ChargingStationData[]>, hashId: string): S
 describe('useStationDetails', () => {
   it('should resolve the station and derive its sections and configuration rows', () => {
     const stations = ref([
-      createChargingStationData({
-        ocppConfiguration: {
-          configurationKey: [{ key: 'HeartbeatInterval', readonly: false, value: '30' }],
-        },
-      }),
+      createStationWithConfigurationKeys([
+        { key: 'HeartbeatInterval', readonly: false, value: '30' },
+      ]),
     ])
     const { configurationRows, sections, station } = runComposable(stations, TEST_HASH_ID)
     expect(station.value?.stationInfo.hashId).toBe(TEST_HASH_ID)
     expect(sections.value.map(section => section.title)).toContain('General')
     expect(configurationRows.value).toEqual([
       { key: 'HeartbeatInterval', readonly: 'No', reboot: 'No', value: '30' },
+    ])
+  })
+
+  it('should expose the visible raw configuration keys', () => {
+    const stations = ref([
+      createStationWithConfigurationKeys([
+        { key: 'HeartbeatInterval', readonly: false, value: '30' },
+        { key: 'SecretKey', readonly: true, value: 'x', visible: false },
+      ]),
+    ])
+    const { visibleConfigurationKeys } = runComposable(stations, TEST_HASH_ID)
+    expect(visibleConfigurationKeys.value).toEqual([
+      { key: 'HeartbeatInterval', readonly: false, value: '30' },
     ])
   })
 

@@ -1,4 +1,4 @@
-import { type ChargingStationData } from 'ui-common'
+import { type ChargingStationData, type ConfigurationKey } from 'ui-common'
 import { computed, type ComputedRef } from 'vue'
 
 import { useChargingStations } from '@/core/index.js'
@@ -7,21 +7,24 @@ import {
   buildStationDetailSections,
   type ConfigurationRow,
   type DetailSection,
+  getVisibleConfigurationKeys,
 } from '@/shared/utils/index.js'
 
 export interface StationDetailsView {
   configurationRows: ComputedRef<ConfigurationRow[]>
   sections: ComputedRef<DetailSection[]>
   station: ComputedRef<ChargingStationData | undefined>
+  visibleConfigurationKeys: ComputedRef<ConfigurationKey[]>
 }
 
 /**
- * Resolves a charging station from the store by hash id and derives its read-only
- * "Show details" view model (detail sections + OCPP configuration rows). Shared by both
- * skins so the reactive lookup and view-model wiring stay single-sourced. The view stays
- * reactive to store updates and degrades to `undefined`/empty when the station is removed.
+ * Resolves a charging station from the store by hash id and derives its "Show details"
+ * view model: detail sections, the OCPP configuration rows for display, and the visible
+ * configuration keys the change-configuration form operates on. Shared by both skins so the
+ * reactive lookup and view-model wiring stay single-sourced. The view stays reactive to
+ * store updates and degrades to `undefined`/empty when the station is removed.
  * @param hashId - The charging station hash identifier
- * @returns The resolved station and its derived detail sections and configuration rows
+ * @returns The resolved station with its detail sections, configuration rows and visible keys
  */
 export function useStationDetails (hashId: string): StationDetailsView {
   const $chargingStations = useChargingStations()
@@ -38,9 +41,14 @@ export function useStationDetails (hashId: string): StationDetailsView {
     station.value != null ? buildConfigurationRows(station.value) : []
   )
 
+  const visibleConfigurationKeys = computed(() =>
+    station.value != null ? getVisibleConfigurationKeys(station.value) : []
+  )
+
   return {
     configurationRows,
     sections,
     station,
+    visibleConfigurationKeys,
   }
 }
