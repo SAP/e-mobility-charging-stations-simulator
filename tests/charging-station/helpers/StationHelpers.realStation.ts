@@ -2,15 +2,25 @@
  * @file Helpers to build a real ChargingStation from a template file.
  * @description Tests that exercise the real construction pipeline
  * (`initialize()`/`getStationInfo()`, persistence, reset, reconnect) cannot use
- * the `createMockChargingStation` stub, which bypasses it. These helpers write a
- * template into an isolated temp `station-templates` dir and construct a real
- * `ChargingStation` from it, tracking temp roots for a single `afterEach`
- * cleanup. Two template sources are supported: an inline object
- * (`writeStationTemplate`) and a bundled asset (`copyStationTemplate`).
+ * the `createMockChargingStation` stub, which bypasses it. Grouped by concern:
+ * (1) temp `station-templates` dir lifecycle — write an inline template
+ * (`writeStationTemplate`) or copy a bundled asset (`copyStationTemplate`),
+ * removed by a single `afterEach` `cleanupStationTemplates`; (2) real
+ * `ChargingStation` construction (`createStationFromTemplate`); (3) resolution of
+ * the persisted configuration the station writes (`persistedConfigurationDir`,
+ * `resolvePersistedConfigurationFile`).
  */
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import type { ChargingStationOptions } from '../../../src/types/index.js'
 
@@ -28,6 +38,10 @@ const freshTemplateDir = (): string => {
   mkdirSync(join(root, 'station-templates'), { recursive: true })
   return root
 }
+
+// ---------------------------------------------------------------
+// Temp template dir lifecycle
+// ---------------------------------------------------------------
 
 /**
  * Writes an inline template object into a fresh isolated `station-templates` dir.
@@ -67,6 +81,20 @@ export const copyStationTemplate = (
 }
 
 /**
+ * Removes every temp template dir created by `writeStationTemplate`/`copyStationTemplate`.
+ * Call in `afterEach`, alongside `standardCleanup()`.
+ */
+export const cleanupStationTemplates = (): void => {
+  for (const root of templateRoots.splice(0)) {
+    rmSync(root, { force: true, recursive: true })
+  }
+}
+
+// ---------------------------------------------------------------
+// Real station construction
+// ---------------------------------------------------------------
+
+/**
  * Constructs a real ChargingStation from a template file with test defaults
  * (`autoStart` off, local supervision URL); caller options take precedence.
  * @param templateFile - Path returned by `writeStationTemplate`/`copyStationTemplate`.
@@ -85,12 +113,31 @@ export const createStationFromTemplate = (
     ...options,
   })
 
+// ---------------------------------------------------------------
+// Persisted configuration resolution
+// ---------------------------------------------------------------
+
 /**
- * Removes every temp template dir created by `writeStationTemplate`/`copyStationTemplate`.
- * Call in `afterEach`, alongside `standardCleanup()`.
+ * Resolves the isolated `configurations` dir sitting beside the
+ * `station-templates` dir of a template file — where a persisted
+ * ChargingStation writes its configuration.
+ * @param templateFile - Path returned by `writeStationTemplate`/`copyStationTemplate`.
+ * @returns Absolute path to the sibling `configurations` dir.
  */
-export const cleanupStationTemplates = (): void => {
-  for (const root of templateRoots.splice(0)) {
-    rmSync(root, { force: true, recursive: true })
+export const persistedConfigurationDir = (templateFile: string): string =>
+  join(dirname(dirname(templateFile)), 'configurations')
+
+/**
+ * Resolves the single persisted configuration file written by a station built
+ * from `templateFile`. Throws when none exists yet (flush the async write first).
+ * @param templateFile - Path returned by `writeStationTemplate`/`copyStationTemplate`.
+ * @returns Absolute path to the persisted configuration `.json` file.
+ */
+export const resolvePersistedConfigurationFile = (templateFile: string): string => {
+  const configurationDir = persistedConfigurationDir(templateFile)
+  const configurationFile = readdirSync(configurationDir).find(entry => entry.endsWith('.json'))
+  if (configurationFile == null) {
+    throw new Error(`No persisted configuration file found in ${configurationDir}`)
   }
+  return join(configurationDir, configurationFile)
 }

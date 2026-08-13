@@ -11,8 +11,7 @@
  * from the default (non-discriminant).
  */
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -23,6 +22,7 @@ import { flushMicrotasks, standardCleanup } from '../helpers/TestLifecycleHelper
 import {
   cleanupStationTemplates,
   createStationFromTemplate,
+  resolvePersistedConfigurationFile,
   writeStationTemplate,
 } from './helpers/StationHelpers.realStation.js'
 
@@ -93,11 +93,7 @@ await describe('ChargingStation autoRegister/ocppProtocol seeding', async () => 
     makeStation(templateFile, true)
     await flushMicrotasks()
     // Simulate a legacy configuration written before the fields were seeded.
-    const configurationDir = join(dirname(dirname(templateFile)), 'configurations')
-    const configurationFile = join(
-      configurationDir,
-      readdirSync(configurationDir).find(entry => entry.endsWith('.json')) ?? ''
-    )
+    const configurationFile = resolvePersistedConfigurationFile(templateFile)
     const configuration = JSON.parse(readFileSync(configurationFile, 'utf8')) as {
       stationInfo: { autoRegister?: boolean; ocppProtocol?: string }
     }

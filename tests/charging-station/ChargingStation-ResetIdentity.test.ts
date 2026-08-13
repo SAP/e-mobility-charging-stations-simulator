@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { setTimeout as sleep } from 'node:timers/promises'
 
@@ -19,6 +19,7 @@ import {
   cleanupStationTemplates,
   copyStationTemplate,
   createStationFromTemplate,
+  persistedConfigurationDir,
 } from './helpers/StationHelpers.realStation.js'
 
 // The identity logic lives in initialize(); the identity tests call it directly
@@ -41,7 +42,7 @@ const waitForPersistedId = async (
   templateFile: string,
   chargingStationId: string
 ): Promise<boolean> => {
-  const configurationsDir = dirname(templateFile.replace('station-templates', 'configurations'))
+  const configurationsDir = persistedConfigurationDir(templateFile)
   for (let attempt = 0; attempt < 100; attempt++) {
     if (existsSync(configurationsDir)) {
       for (const file of readdirSync(configurationsDir)) {
