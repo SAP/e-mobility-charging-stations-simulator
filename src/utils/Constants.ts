@@ -2,6 +2,7 @@ import {
   type AutomaticTransactionGeneratorConfiguration,
   type ChargingStationInfo,
   CurrentType,
+  OCPPProtocol,
   OCPPVersion,
   VendorParametersKey,
 } from '../types/index.js'
@@ -81,6 +82,7 @@ export class Constants {
   static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
+    autoRegister: false,
     autoStart: true,
     beginEndMeterValues: false,
     currentOutType: CurrentType.AC,
@@ -99,6 +101,7 @@ export class Constants {
     mainVoltageMeterValues: true,
     meteringPerTransaction: true,
     ocppPersistentConfiguration: true,
+    ocppProtocol: OCPPProtocol.JSON,
     ocppStrictCompliance: true,
     ocppVersion: OCPPVersion.VERSION_16,
     outOfOrderEndMeterValues: false,

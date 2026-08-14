@@ -373,6 +373,7 @@ export {
   MeterValueUnit,
   type SampledValue,
 } from './ocpp/MeterValues.js'
+export { OCPPProtocol } from './ocpp/OCPPProtocol.js'
 export { OCPPVersion } from './ocpp/OCPPVersion.js'
 export {
   AvailabilityType,
