@@ -290,14 +290,21 @@ describe('CSData', () => {
     it('should render set-supervision-url toggle button', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      expect(toggleButtons.length).toBeGreaterThanOrEqual(1)
-      expect(toggleButtons[0].props('shared')).toBe(true)
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      expect(setSupervisionUrlToggle?.props('shared')).toBe(true)
     })
 
     it('should trigger router push to set-supervision-url on toggle on', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      const toggleProps = toggleButtons[0].props() as unknown as StubProps
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      const toggleProps = setSupervisionUrlToggle?.props() as unknown as StubProps
       toggleProps.on?.()
       expect(mockPush).toHaveBeenCalledOnce()
       const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
@@ -309,7 +316,11 @@ describe('CSData', () => {
     it('should trigger router push to charging-stations on toggle off', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      const toggleProps = toggleButtons[0].props() as unknown as StubProps
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      const toggleProps = setSupervisionUrlToggle?.props() as unknown as StubProps
       toggleProps.off?.()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
