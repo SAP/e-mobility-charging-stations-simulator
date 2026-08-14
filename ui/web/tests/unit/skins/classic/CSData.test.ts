@@ -314,6 +314,34 @@ describe('CSData', () => {
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
 
+    it('should trigger router push to change-configuration on toggle on', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const changeConfigurationToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-change-configuration`
+      )
+      expect(changeConfigurationToggle).toBeDefined()
+      const toggleProps = changeConfigurationToggle?.props() as unknown as StubProps
+      toggleProps.on?.()
+      expect(mockPush).toHaveBeenCalledOnce()
+      const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
+      expect(callArg.name).toBe('change-configuration')
+      expect(callArg.params.hashId).toBe(TEST_HASH_ID)
+      expect(callArg.params.chargingStationId).toBe(TEST_STATION_ID)
+    })
+
+    it('should trigger router push to charging-stations on change-configuration toggle off', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const changeConfigurationToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-change-configuration`
+      )
+      expect(changeConfigurationToggle).toBeDefined()
+      const toggleProps = changeConfigurationToggle?.props() as unknown as StubProps
+      toggleProps.off?.()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
+    })
+
     it('should trigger router push to show-details on toggle on', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
