@@ -327,14 +327,14 @@ Tests exercising the real construction pipeline (persistence, reset, reconnect, 
 parsing) MUST build a real station from a template file via
 `helpers/StationHelpers.realStation.ts` — never re-implement the temp-dir scaffolding:
 
-| Helper                                 | Purpose                                                     |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `writeStationTemplate(obj)`            | Write an inline template object into an isolated temp dir   |
-| `copyStationTemplate(ovr?)`            | Copy a bundled asset template, optionally merging overrides |
-| `cleanupStationTemplates()`            | Remove temp template dirs (call in `afterEach`)             |
-| `createStationFromTemplate()`          | Construct a real `ChargingStation` from a template file     |
-| `persistedConfigurationDir(f)`         | Resolve the sibling `configurations` dir of a template file |
-| `resolvePersistedConfigurationFile(f)` | Resolve the persisted config file (throws if none yet)      |
+| Helper                                    | Purpose                                                     |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `writeStationTemplate(obj)`               | Write an inline template object into an isolated temp dir   |
+| `copyStationTemplate(ovr?)`               | Copy a bundled asset template, optionally merging overrides |
+| `cleanupStationTemplates()`               | Remove temp template dirs (call in `afterEach`)             |
+| `createStationFromTemplate()`             | Construct a real `ChargingStation` from a template file     |
+| `persistedConfigurationDir(file)`         | Resolve the sibling `configurations` dir of a template file |
+| `resolvePersistedConfigurationFile(file)` | Resolve the persisted config file (throws if none yet)      |
 
 ```typescript
 afterEach(() => {
