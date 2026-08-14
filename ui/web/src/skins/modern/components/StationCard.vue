@@ -132,6 +132,12 @@
         </ActionButton>
         <ActionButton
           variant="ghost"
+          @click="emitOpenChangeConfig"
+        >
+          Configuration
+        </ActionButton>
+        <ActionButton
+          variant="ghost"
           @click="emitOpenAuthorize"
         >
           Authorize
@@ -141,12 +147,6 @@
           @click="emitOpenDetails"
         >
           Details
-        </ActionButton>
-        <ActionButton
-          variant="ghost"
-          @click="emitOpenChangeConfig"
-        >
-          Configuration
         </ActionButton>
       </div>
       <ActionButton

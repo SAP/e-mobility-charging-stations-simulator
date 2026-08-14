@@ -71,31 +71,6 @@
         Set Supervision Url
       </ToggleButton>
       <ToggleButton
-        :id="`${chargingStation.stationInfo.hashId}-show-details`"
-        :off="
-          () => {
-            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
-          }
-        "
-        :on="
-          () => {
-            $router
-              .push({
-                name: ROUTE_NAMES.SHOW_DETAILS,
-                params: {
-                  hashId: chargingStation.stationInfo.hashId,
-                  chargingStationId: chargingStation.stationInfo.chargingStationId,
-                },
-              })
-              .catch(() => undefined)
-          }
-        "
-        :shared="true"
-        @clicked="$emit('need-refresh')"
-      >
-        Show Details
-      </ToggleButton>
-      <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-change-configuration`"
         :off="
           () => {
@@ -119,6 +94,31 @@
         @clicked="$emit('need-refresh')"
       >
         Change Configuration
+      </ToggleButton>
+      <ToggleButton
+        :id="`${chargingStation.stationInfo.hashId}-show-details`"
+        :off="
+          () => {
+            $router.push({ name: ROUTE_NAMES.CHARGING_STATIONS }).catch(() => undefined)
+          }
+        "
+        :on="
+          () => {
+            $router
+              .push({
+                name: ROUTE_NAMES.SHOW_DETAILS,
+                params: {
+                  hashId: chargingStation.stationInfo.hashId,
+                  chargingStationId: chargingStation.stationInfo.chargingStationId,
+                },
+              })
+              .catch(() => undefined)
+          }
+        "
+        :shared="true"
+        @clicked="$emit('need-refresh')"
+      >
+        Show Details
       </ToggleButton>
       <Button @click="deleteChargingStation()">
         Delete Charging Station
