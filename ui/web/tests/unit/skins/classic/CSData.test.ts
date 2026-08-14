@@ -290,14 +290,21 @@ describe('CSData', () => {
     it('should render set-supervision-url toggle button', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      expect(toggleButtons.length).toBeGreaterThanOrEqual(1)
-      expect(toggleButtons[0].props('shared')).toBe(true)
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      expect(setSupervisionUrlToggle?.props('shared')).toBe(true)
     })
 
     it('should trigger router push to set-supervision-url on toggle on', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      const toggleProps = toggleButtons[0].props() as unknown as StubProps
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      const toggleProps = setSupervisionUrlToggle?.props() as unknown as StubProps
       toggleProps.on?.()
       expect(mockPush).toHaveBeenCalledOnce()
       const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
@@ -309,7 +316,39 @@ describe('CSData', () => {
     it('should trigger router push to charging-stations on toggle off', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      const toggleProps = toggleButtons[0].props() as unknown as StubProps
+      const setSupervisionUrlToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-set-supervision-url`
+      )
+      expect(setSupervisionUrlToggle).toBeDefined()
+      const toggleProps = setSupervisionUrlToggle?.props() as unknown as StubProps
+      toggleProps.off?.()
+      expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
+    })
+
+    it('should trigger router push to change-configuration on toggle on', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const changeConfigurationToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-change-configuration`
+      )
+      expect(changeConfigurationToggle).toBeDefined()
+      const toggleProps = changeConfigurationToggle?.props() as unknown as StubProps
+      toggleProps.on?.()
+      expect(mockPush).toHaveBeenCalledOnce()
+      const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
+      expect(callArg.name).toBe('change-configuration')
+      expect(callArg.params.hashId).toBe(TEST_HASH_ID)
+      expect(callArg.params.chargingStationId).toBe(TEST_STATION_ID)
+    })
+
+    it('should trigger router push to charging-stations on change-configuration toggle off', () => {
+      const wrapper = mountCSData()
+      const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
+      const changeConfigurationToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-change-configuration`
+      )
+      expect(changeConfigurationToggle).toBeDefined()
+      const toggleProps = changeConfigurationToggle?.props() as unknown as StubProps
       toggleProps.off?.()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
@@ -317,8 +356,11 @@ describe('CSData', () => {
     it('should trigger router push to show-details on toggle on', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      expect(toggleButtons[1].props('id')).toBe(`${TEST_HASH_ID}-show-details`)
-      const toggleProps = toggleButtons[1].props() as unknown as StubProps
+      const showDetailsToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-show-details`
+      )
+      expect(showDetailsToggle).toBeDefined()
+      const toggleProps = showDetailsToggle?.props() as unknown as StubProps
       toggleProps.on?.()
       expect(mockPush).toHaveBeenCalledOnce()
       const callArg = mockPush.mock.calls[0][0] as { name: string; params: Record<string, string> }
@@ -330,8 +372,11 @@ describe('CSData', () => {
     it('should trigger router push to charging-stations on show-details toggle off', () => {
       const wrapper = mountCSData()
       const toggleButtons = wrapper.findAllComponents(ToggleButtonStub)
-      expect(toggleButtons[1].props('id')).toBe(`${TEST_HASH_ID}-show-details`)
-      const toggleProps = toggleButtons[1].props() as unknown as StubProps
+      const showDetailsToggle = toggleButtons.find(
+        toggleButton => toggleButton.props('id') === `${TEST_HASH_ID}-show-details`
+      )
+      expect(showDetailsToggle).toBeDefined()
+      const toggleProps = showDetailsToggle?.props() as unknown as StubProps
       toggleProps.off?.()
       expect(mockPush).toHaveBeenCalledWith({ name: 'charging-stations' })
     })
