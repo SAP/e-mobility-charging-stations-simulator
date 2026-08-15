@@ -103,7 +103,7 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0
       esbuild:
-        specifier: ^0.28.1
+        specifier: ^0.28.2
         version: 0.28.2
       esbuild-plugin-clean:
         specifier: ^1.0.1
@@ -148,7 +148,7 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.13.3)(typescript@6.0.3)
       tsx:
-        specifier: ^4.23.11
+        specifier: ^4.23.12
         version: 4.23.12
       typescript:
         specifier: ~6.0.3
@@ -192,7 +192,7 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       esbuild:
-        specifier: ^0.28.1
+        specifier: ^0.28.2
         version: 0.28.2
       esbuild-plugin-clean:
         specifier: ^1.0.1
