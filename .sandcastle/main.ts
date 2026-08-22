@@ -13,9 +13,11 @@ import {
   MAX_PARALLEL,
   SANDBOX_BUILD_HOOKS,
 } from './constants.js'
+import { SandcastleError } from './errors.js'
 import { runRefinementLoop } from './refinement-loop.js'
 import { STRATEGY_BY_KEY, STRATEGY_REGISTRY } from './strategies/index.js'
 import { GithubIssueSource } from './task-source.js'
+import { toErrorMessage } from './utils.js'
 
 const source = new GithubIssueSource({
   dockerImage: DOCKER_IMAGE,
@@ -26,9 +28,20 @@ let tasks: TaskSpec[]
 try {
   tasks = await source.discover()
 } catch (err) {
-  console.error(err instanceof Error ? err.message : String(err))
-  process.exitCode = 1
-  process.exit()
+  if (err instanceof SandcastleError) {
+    console.error(`[${err.code}] ${err.message}`)
+    if (err.stack !== undefined) {
+      console.error(err.stack)
+    }
+    if (err.cause instanceof Error) {
+      console.error(err.cause.stack ?? err.cause.message)
+    } else if (err.cause !== undefined) {
+      console.error(toErrorMessage(err.cause))
+    }
+  } else {
+    console.error(err instanceof Error ? (err.stack ?? err.message) : String(err))
+  }
+  process.exit(1)
 }
 
 if (tasks.length === 0) {
@@ -41,13 +54,19 @@ if (tasks.length === 0) {
       pool.run(async () => {
         const entry = STRATEGY_BY_KEY.get(spec.strategyKey)
         if (!entry) {
-          throw new Error(
+          throw new SandcastleError(
+            'unknown_strategy',
             `Task #${spec.id}: unknown strategy '${spec.strategyKey}' (not in registry).`
           )
         }
         const ac = new AbortController()
         const timer = setTimeout(() => {
-          ac.abort(new Error(`Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`))
+          ac.abort(
+            new SandcastleError(
+              'aborted',
+              `Task #${spec.id} timed out after ${String(AGENT_TASK_TIMEOUT_MS)}ms`
+            )
+          )
         }, AGENT_TASK_TIMEOUT_MS)
         timer.unref()
 
@@ -67,7 +86,12 @@ if (tasks.length === 0) {
 
           let workSuccess = false
           if (loopResult.totalCommits > 0) {
-            const finalizeResult = await entry.strategy.finalize(spec, loopResult, sandbox)
+            const finalizeResult = await entry.strategy.finalize(
+              spec,
+              loopResult,
+              sandbox,
+              ac.signal
+            )
             workSuccess = entry.strategy.isWorkComplete(finalizeResult)
           }
 
@@ -87,7 +111,7 @@ if (tasks.length === 0) {
     if (outcome.status === 'rejected') {
       const reason: unknown = outcome.reason
       const msg = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)
-      console.error(`  ✗ #${tasks[i]?.id ?? String(i)} failed: ${msg}`)
+      console.error(`  FAILED #${tasks[i]?.id ?? String(i)}: ${msg}`)
     }
   }
 
