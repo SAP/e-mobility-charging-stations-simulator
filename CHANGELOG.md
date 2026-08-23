@@ -1,5 +1,37 @@
 # Changelog
 
+## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.11.0...simulator@v4.12.0) (2026-08-23)
+
+
+### 🚀 Features
+
+* **simulator:** add AC/DC conversion efficiency template support ([#2063](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2063)) ([bd10066](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd100667af56f495e8458ead117bb7521ba434a6)), closes [#443](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/443)
+* **webui:** allow editing charging station configuration ([#2077](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2077)) ([aa432cb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aa432cb88d85abf304b662691df416e1c288ef82))
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#2051](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2051)) ([e545222](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e545222d7afb921dec5f79ed172b1b24f1c5afaf))
+* **deps:** update all non-major dependencies ([#2057](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2057)) ([82e9650](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/82e96505d12548d6d7563471375b7368078e5e20))
+* **deps:** update all non-major dependencies ([#2067](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2067)) ([fc76b35](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fc76b350ae3bcf57948f6fb93c619bb9f7f7626b))
+* **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
+* **deps:** update all non-major dependencies ([#2073](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2073)) ([7ac8726](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7ac87266493f3a4be8927d36b69a927d05d237aa))
+* **deps:** update all non-major dependencies ([#2079](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2079)) ([32089d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/32089d03e279d19469bec0a026fd0cab4480dd2d))
+* **deps:** update dependency chalk to v6 ([#2055](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2055)) ([fb82151](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb8215111d80330a111111c5bcc9333eaae5b127))
+* **simulator:** seed autoRegister and ocppProtocol defaults into stationInfo ([#2082](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2082)) ([2cc9587](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2cc95879ce5519b7a1e1df12c43e3bc713420939))
+* **simulator:** seed numberOfPhases default into stationInfo ([#2078](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2078)) ([4fb658c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4fb658ce70d18d728e58b02dcb8e22451aedf163))
+
+
+### 🧪 Tests
+
+* **simulator:** drop manual test counters from worker broadcast-channel test ([#2081](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2081)) ([6495e7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6495e7a8359b69f26c5b677fc90c6d8c5d43b737))
+
+
+### 📚 Documentation
+
+* **readme:** phrase coherent MeterValues docs in user-facing terms ([#2060](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2060)) ([7176b56](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7176b56a7554625bc1b11931a506a7ae7dd611b7))
+* streamline copilot instructions ([#2053](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2053)) ([ba25e39](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ba25e39b4fcb4ff5352c8c25a5b4f76c378f7422))
+
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v4.10.1...simulator@v4.11.0) (2026-07-27)
 
 ### 🚀 Features

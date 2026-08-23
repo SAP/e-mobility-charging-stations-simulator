@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.11.0...ui-common@v4.12.0) (2026-08-23)
+
+
+### 🚀 Features
+
+* **webui:** allow editing charging station configuration ([#2077](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2077)) ([aa432cb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aa432cb88d85abf304b662691df416e1c288ef82))
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
+
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-common@v4.10.1...ui-common@v4.11.0) (2026-07-27)
 
 ### 🐞 Bug Fixes
