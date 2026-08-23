@@ -20,7 +20,6 @@ eslint.config.js
 .nyc_output
 .reuse
 .xmake.cfg
-.sandcastle/
 # Logs
 logs/
 *.log
