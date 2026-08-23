@@ -12,4 +12,3 @@ allowBuilds:
   esbuild: false
   msgpackr-extract: false
   utf-8-validate: false
-
