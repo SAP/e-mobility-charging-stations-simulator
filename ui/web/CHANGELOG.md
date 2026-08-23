@@ -2,24 +2,21 @@
 
 ## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.11.0...web@v4.12.0) (2026-08-23)
 
-
 ### 🚀 Features
 
-* **webui:** add show details action for charging stations ([#2072](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2072)) ([742f186](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/742f18690c0119acf6d5672703546d1a2642b579))
-* **webui:** allow editing charging station configuration ([#2077](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2077)) ([aa432cb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aa432cb88d85abf304b662691df416e1c288ef82))
-
+- **webui:** add show details action for charging stations ([#2072](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2072)) ([742f186](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/742f18690c0119acf6d5672703546d1a2642b579))
+- **webui:** allow editing charging station configuration ([#2077](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2077)) ([aa432cb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aa432cb88d85abf304b662691df416e1c288ef82))
 
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
-* **deps:** update all non-major dependencies ([#2073](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2073)) ([7ac8726](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7ac87266493f3a4be8927d36b69a927d05d237aa))
-* **webui:** keep modern station-card Delete action aligned on the footer row ([#2083](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2083)) ([4998c98](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4998c9848c6909bcdd31e8c5e6a2fd5847c0c875))
-* **webui:** polish the station details view (panel placement + section/key-value separation) ([#2076](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2076)) ([88b193f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/88b193f6f6f08e2572fbdbb37d09a1003c547125))
-
+- **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
+- **deps:** update all non-major dependencies ([#2073](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2073)) ([7ac8726](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7ac87266493f3a4be8927d36b69a927d05d237aa))
+- **webui:** keep modern station-card Delete action aligned on the footer row ([#2083](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2083)) ([4998c98](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4998c9848c6909bcdd31e8c5e6a2fd5847c0c875))
+- **webui:** polish the station details view (panel placement + section/key-value separation) ([#2076](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2076)) ([88b193f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/88b193f6f6f08e2572fbdbb37d09a1003c547125))
 
 ### ✨ Polish
 
-* **webui:** order station action buttons by CSO lifecycle ([#2084](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2084)) ([11e1fa6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11e1fa6286da26a87e834a40ef1d76670343b2d9))
+- **webui:** order station action buttons by CSO lifecycle ([#2084](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2084)) ([11e1fa6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11e1fa6286da26a87e834a40ef1d76670343b2d9))
 
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/web@v4.10.1...web@v4.11.0) (2026-07-27)
 
