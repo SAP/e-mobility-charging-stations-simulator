@@ -23,9 +23,7 @@ words:
   - varh
   - rfid
   - workerset
-  - worktree
   - dedup
-  - unpushed
   - logform
   - mnemonist
   - multiton

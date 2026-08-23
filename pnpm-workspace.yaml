@@ -13,5 +13,3 @@ allowBuilds:
   msgpackr-extract: false
   utf-8-validate: false
 
-minimumReleaseAgeExclude:
-  - '@ai-hero/sandcastle@0.6.6'
