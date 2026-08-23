@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.12.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.11.0...cli@v4.12.0) (2026-08-23)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#2069](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2069)) ([465d564](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/465d56429dbc5f5de74f1f5443de228b8500a437))
+- **deps:** update all non-major dependencies ([#2079](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2079)) ([32089d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/32089d03e279d19469bec0a026fd0cab4480dd2d))
+- **deps:** update dependency chalk to v6 ([#2055](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/2055)) ([fb82151](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb8215111d80330a111111c5bcc9333eaae5b127))
+
 ## [4.11.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/cli@v4.10.1...cli@v4.11.0) (2026-07-27)
 
 ### 🐞 Bug Fixes
