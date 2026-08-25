@@ -47,6 +47,8 @@ import {
   MapStringifyFormat,
   MessageType,
   MeterValueMeasurand,
+  OCPP20ComponentName,
+  OCPP20RequiredVariableName,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -209,6 +211,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  private alignedMeterValuesSetInterval?: NodeJS.Timeout
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile: string
@@ -1159,6 +1162,12 @@ export class ChargingStation extends EventEmitter {
     this.start()
   }
 
+  /** Restarts the autonomous clock-aligned MeterValues timer (e.g. after an Interval change). */
+  public restartAlignedMeterValues (): void {
+    this.stopAlignedMeterValues()
+    this.startAlignedMeterValues()
+  }
+
   /** Restarts the periodic heartbeat to the central server. */
   public restartHeartbeat (): void {
     this.stopHeartbeat()
@@ -1302,6 +1311,36 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
+   * Starts the autonomous, out-of-transaction clock-aligned MeterValues timer
+   * (#2011 Category 2F). OCPP 2.0.x only; a no-op when
+   * `AlignedDataCtrlr.Interval` resolves to 0 (spec §2.2).
+   */
+  public startAlignedMeterValues (): void {
+    if (!isOCPP20x(this.stationInfo?.ocppVersion)) {
+      return
+    }
+    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
+      this,
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20RequiredVariableName.AlignedDataInterval,
+      900
+    )
+    if (intervalSeconds <= 0) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: AlignedDataCtrlr.Interval set to ${intervalSeconds.toString()}, not starting the clock-aligned MeterValues`
+      )
+      return
+    }
+    const intervalMs = clampToSafeTimerValue(secondsToMilliseconds(intervalSeconds))
+    this.alignedMeterValuesSetInterval ??= setInterval(() => {
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
+    }, intervalMs)
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues started every ${formatDurationMilliSeconds(intervalMs)}`
+    )
+  }
+
+  /**
    * Starts automatic transaction generation on the specified connectors.
    * @param connectorIds - Optional array of connector IDs to start ATG on
    * @param stopAbsoluteDuration - Whether to use absolute duration for stopping
@@ -1402,6 +1441,14 @@ export class ChargingStation extends EventEmitter {
       }
     } else {
       logger.warn(`${this.logPrefix()} ${moduleName}.stop: Already stopped`)
+    }
+  }
+
+  /** Stops the autonomous clock-aligned MeterValues timer. */
+  public stopAlignedMeterValues (): void {
+    if (this.alignedMeterValuesSetInterval != null) {
+      clearInterval(this.alignedMeterValuesSetInterval)
+      delete this.alignedMeterValuesSetInterval
     }
   }
 
@@ -2446,6 +2493,7 @@ export class ChargingStation extends EventEmitter {
   private internalStopMessageSequence (): void {
     this.stopWebSocketPing()
     this.stopHeartbeat()
+    this.stopAlignedMeterValues()
     if (this.automaticTransactionGenerator?.started === true) {
       this.stopAutomaticTransactionGenerator()
     }
@@ -2958,6 +3006,9 @@ export class ChargingStation extends EventEmitter {
     }
     if (this.heartbeatSetInterval == null) {
       this.startHeartbeat()
+    }
+    if (this.alignedMeterValuesSetInterval == null) {
+      this.startAlignedMeterValues()
     }
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
       await sendAndSetConnectorStatus(this, {
