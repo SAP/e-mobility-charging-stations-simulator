@@ -928,20 +928,32 @@ interface VersionedSampledValueDispatch {
 
 /**
  * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
- * used by {@link buildMeterValue}. Extracted verbatim from the original
- * `buildMeterValue` switch so behavior is preserved exactly.
+ * used by {@link buildMeterValue} and {@link buildClockAlignedConnectorMeterValue}.
+ * The identity is either transaction-derived (legacy callers) or provided
+ * directly (clock-aligned reporting for idle connectors, #2011 Category 2F).
  * @param chargingStation - Target charging station.
- * @param transactionId - Active transaction identifier.
+ * @param identity - Meter value source.
+ * @param identity.connectorId - Direct connector id (clock path) or resolved
+ *   from `transactionId`.
+ * @param identity.evseId - Direct EVSE id or resolved from `transactionId`.
+ * @param identity.transactionId - Active transaction identifier when building
+ *   transactional meter values.
  * @param context - Optional MeterValue reading context (drives signing
  *   configuration for OCPP 2.0.1).
  * @returns The dispatch bundle.
  */
 const createVersionedSampledValueDispatcher = (
   chargingStation: ChargingStation,
-  transactionId: number | string,
+  identity: {
+    connectorId?: number
+    evseId?: number
+    transactionId?: number | string
+  },
   context?: MeterValueContext
 ): VersionedSampledValueDispatch => {
-  const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+  const { transactionId } = identity
+  const connectorId =
+    identity.connectorId ?? chargingStation.getConnectorIdByTransactionId(transactionId)
   let evseId: number | undefined
   let buildVersionedSampledValue: BuildVersionedSampledValue
   let signingConfig: SampledValueSigningConfig | undefined
@@ -959,7 +971,7 @@ const createVersionedSampledValueDispatcher = (
       break
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      evseId = identity.evseId ?? chargingStation.getEvseIdByTransactionId(transactionId)
       if (connectorId == null || evseId == null) {
         throw new OCPPError(
           ErrorType.INTERNAL_ERROR,
@@ -974,7 +986,10 @@ const createVersionedSampledValueDispatcher = (
           StandardParametersKey.SignReadings
         )
 
-        if (signReadings) {
+        // Clock-aligned readings built for an idle connector carry no
+        // transaction id: they stay unsigned (no signingConfig is constructed)
+        // so the one-time public-key state of future transactions is untouched.
+        if (signReadings && transactionId != null) {
           let signingEnabledForContext = true
           if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
             signingEnabledForContext = isOCPP20FlagEnabled(
@@ -1172,14 +1187,62 @@ export const buildMeterValue = (
   if (transactionId == null) {
     return buildEmptyMeterValue()
   }
+  return buildIdentifiedMeterValue(
+    chargingStation,
+    { transactionId },
+    interval,
+    measurandsKey,
+    context,
+    debug
+  )
+}
+
+/**
+ * Builds a complete MeterValue for a connector identified directly, without an
+ * active transaction (#2011 Category 2F clock-aligned reporting, J01.FR.14).
+ * Idle readings are unsigned by design: the signing pipeline is keyed on
+ * `transactionId`, so no signing configuration applies here.
+ * @param chargingStation - Target charging station.
+ * @param identity - Direct connector/EVSE identification.
+ * @param identity.connectorId - Connector identifier.
+ * @param identity.evseId - EVSE identifier.
+ * @param interval - Clock-aligned data interval in milliseconds
+ * @param measurandsKey - Configuration key for the sampled measurands list
+ * @param context - Meter value reading context (Sample.Clock for aligned data)
+ * @returns Populated MeterValue object
+ */
+export const buildClockAlignedConnectorMeterValue = (
+  chargingStation: ChargingStation,
+  identity: { connectorId: number; evseId: number },
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext
+): MeterValue =>
+  buildIdentifiedMeterValue(chargingStation, identity, interval, measurandsKey, context)
+
+const buildIdentifiedMeterValue = (
+  chargingStation: ChargingStation,
+  identity: {
+    connectorId?: number
+    evseId?: number
+    transactionId?: number | string
+  },
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext,
+  debug = false
+): MeterValue => {
   const { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState } =
-    createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
+    createVersionedSampledValueDispatcher(chargingStation, identity, context)
   // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
   // is available (so the coherent path can emit versioned SampledValues) and
   // BEFORE the random/fixed measurand generation runs. When coherent mode
   // is not active for this station or no session exists for the transaction,
   // this is a no-op and the random/fixed code path is unchanged.
-  const coherentSession = chargingStation.getCoherentSession(transactionId)
+  const coherentSession =
+    identity.transactionId != null
+      ? chargingStation.getCoherentSession(identity.transactionId)
+      : undefined
   if (isCoherentModeActive(coherentSession)) {
     // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
     // through to the coherent builder so per-phase L-N
@@ -1428,7 +1491,11 @@ export const buildMeterValue = (
     measurandsKey
   )
   if (energyMeasurand != null) {
-    updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
+    // Clock-aligned idle ticks must not advance the connector's energy
+    // bookkeeping: the register baseline belongs to the transaction lifecycle.
+    if (identity.transactionId != null) {
+      updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
+    }
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
@@ -1436,7 +1503,9 @@ export const buildMeterValue = (
     const energySampledValue = buildVersionedSampledValue(
       energyMeasurand.template,
       roundTo(
-        chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) / unitDivider,
+        (identity.transactionId != null
+          ? chargingStation.getEnergyActiveImportRegisterByTransactionId(identity.transactionId)
+          : chargingStation.getEnergyActiveImportRegisterByConnectorId(connectorId)) / unitDivider,
         2
       ),
       context
@@ -1460,7 +1529,9 @@ export const buildMeterValue = (
       { interval }
     )
   }
-  if (signingState.publicKeyIncluded && connectorStatus != null) {
+  // Only transactional builds may flip the one-time public-key flag; an idle
+  // clock-aligned tick must never suppress the key of the next transaction.
+  if (identity.transactionId != null && signingState.publicKeyIncluded && connectorStatus != null) {
     connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue

@@ -71,7 +71,7 @@ import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestServi
  * Interface exposing private handler methods of OCPP20IncomingRequestService for testing.
  * Each method signature matches the corresponding private method in the service class.
  */
-interface TestableOCPP20IncomingRequestService {
+export interface TestableOCPP20IncomingRequestService {
   /**
    * Builds report data for the device model report.
    * Used internally by handleRequestGetBaseReport.
