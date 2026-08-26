@@ -125,7 +125,10 @@ function findEnergySample (
 ): undefined | { context?: string; measurand?: string; value: unknown } {
   return payload.meterValue
     .flatMap(meterValue => meterValue.sampledValue)
-    .find(sampledValue => sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER)
+    .find(
+      sampledValue =>
+        sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+    )
 }
 
 /**
