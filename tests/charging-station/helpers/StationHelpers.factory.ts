@@ -248,15 +248,20 @@ export function createMockChargingStation (
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorId
     },
-    getConnectorMaximumAvailablePower (_connectorId: number): number {
+    getConnectorMaximumAvailablePower (_connectorId: number, _evseId?: number): number {
       return stationInfoOverrides?.maximumPower ?? 22000
     },
-    getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+    getConnectorStatus (connectorId: number, evseId?: number): ConnectorStatus | undefined {
+      if (evseId != null) return this.getEvseStatus(evseId)?.connectors.get(connectorId)
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
         ?.connectorStatus
     },
-    getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-      const connectorStatus = this.getConnectorStatus(connectorId)
+    getEnergyActiveImportRegisterByConnectorId (
+      connectorId: number,
+      rounded = false,
+      evseId?: number
+    ): number {
+      const connectorStatus = this.getConnectorStatus(connectorId, evseId)
       if (connectorStatus == null) {
         return 0
       }

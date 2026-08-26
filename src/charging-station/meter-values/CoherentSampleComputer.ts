@@ -55,6 +55,7 @@ import { createStreamPrng } from './PRNG.js'
  * auto-collected when the session becomes unreachable.
  */
 interface SessionRuntime {
+  lastSample?: CoherentSample
   voltagePrng?: () => number
 }
 
@@ -93,6 +94,35 @@ export const disposeCoherentSessionRuntime = (session: CoherentSession | undefin
     return false
   }
   return sessionRuntimes.delete(session)
+}
+
+/**
+ * Returns the last committed coherent sample without advancing physics or the
+ * PRNG. Before the first committed sample, returns a conservative zero-flow
+ * snapshot from the current session/register state.
+ * @param context - Charging-station context.
+ * @param connectorStatus - Connector state.
+ * @param session - Active coherent session.
+ * @returns Immutable-by-convention sample snapshot.
+ */
+export const getCoherentSampleSnapshot = (
+  context: ICoherentContext,
+  connectorStatus: ConnectorStatus,
+  session: CoherentSession
+): CoherentSample => {
+  const lastSample = sessionRuntimes.get(session)?.lastSample
+  if (lastSample != null) {
+    return {
+      ...lastSample,
+      deltaEnergyWh: 0,
+      energyRegisterWh: Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0),
+    }
+  }
+  return buildZeroSample(
+    session.socPercent,
+    context.getVoltageOut(),
+    Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
+  )
 }
 
 /**
@@ -282,6 +312,7 @@ export const advanceEnergyRegister = (
  * @param connectorStatus - Connector status.
  * @param session - Active coherent session (resolved by caller).
  * @param options - Per-sample parameters (interval, seed material, ...).
+ * @param evseId - Exact EVSE id when connector ids are EVSE-local.
  * @returns The computed sample. `energyRegisterWh` reflects the projected
  *   register value AFTER `advanceEnergyRegister` is applied by the caller.
  */
@@ -289,7 +320,8 @@ export const computeCoherentSample = (
   context: ICoherentContext,
   connectorStatus: ConnectorStatus,
   session: CoherentSession,
-  options: ComputeSampleOptions
+  options: ComputeSampleOptions,
+  evseId?: number
 ): CoherentSample => {
   const transactionId = session.transactionId
 
@@ -382,7 +414,7 @@ export const computeCoherentSample = (
   const evAcceptanceW = acceptanceFraction * session.profile.maxPowerW
 
   // EVSE cap (already includes hardware/charging-profile clamps via ChargingStation).
-  const evseLimitW = context.getConnectorMaximumAvailablePower(session.connectorId)
+  const evseLimitW = context.getConnectorMaximumAvailablePower(session.connectorId, evseId)
 
   const socCap = session.socPercent >= 100 ? 0 : 1
   const targetPowerW = rampFactor * Math.min(evseLimitW, evAcceptanceW) * socCap
@@ -440,7 +472,7 @@ export const computeCoherentSample = (
   const deltaSocPercent = (deltaEnergyWh / session.profile.batteryCapacityWh) * 100
   session.socPercent = Math.min(100, session.socPercent + deltaSocPercent)
 
-  return {
+  const sample: CoherentSample = {
     currentA: roundedCurrent,
     deltaEnergyWh,
     energyRegisterWh: projectedRegisterWh,
@@ -448,4 +480,6 @@ export const computeCoherentSample = (
     socPercent: roundTo(session.socPercent, ROUNDING_SCALE),
     voltageV: roundedV,
   }
+  getSessionRuntime(session).lastSample = sample
+  return sample
 }

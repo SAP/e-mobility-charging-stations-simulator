@@ -627,10 +627,12 @@ export class ChargingStation extends EventEmitter {
   /**
    * Computes the maximum power available on a connector considering amperage limitations and charging profiles.
    * @param connectorId - The connector ID
+   * @param evseId - Optional EVSE id when connector ids are EVSE-local
    * @returns The maximum available power in watts
    */
-  public getConnectorMaximumAvailablePower (connectorId: number): number {
+  public getConnectorMaximumAvailablePower (connectorId: number, evseId?: number): number {
     let connectorAmperageLimitationLimit: number | undefined
+    const connectorStatus = this.getConnectorStatus(connectorId, evseId)
     const amperageLimitation = this.getAmperageLimitation()
     if (
       amperageLimitation != null &&
@@ -668,7 +670,7 @@ export class ChargingStation extends EventEmitter {
         ? (this.stationInfo?.conversionEfficiency ?? 1)
         : 1
     const connectorMaximumPower = (maximumPower / (this.powerDivider ?? 1)) * conversionEfficiency
-    const connectorHardwareMaximumPowerInput = this.getConnectorStatus(connectorId)?.maximumPower
+    const connectorHardwareMaximumPowerInput = connectorStatus?.maximumPower
     const connectorHardwareMaximumPower =
       connectorHardwareMaximumPowerInput == null
         ? undefined
@@ -676,7 +678,11 @@ export class ChargingStation extends EventEmitter {
     const chargingStationChargingProfilesLimit =
       (getChargingStationChargingProfilesLimit(this) ?? Number.POSITIVE_INFINITY) /
       (this.powerDivider ?? 1)
-    const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
+    const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(
+      this,
+      connectorId,
+      connectorStatus
+    )
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
       connectorHardwareMaximumPower == null || Number.isNaN(connectorHardwareMaximumPower)
@@ -694,7 +700,10 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  public getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+  public getConnectorStatus (connectorId: number, evseId?: number): ConnectorStatus | undefined {
+    if (evseId != null) {
+      return this.getEvseStatus(evseId)?.connectors.get(connectorId)
+    }
     return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
       ?.connectorStatus
   }
@@ -704,9 +713,14 @@ export class ChargingStation extends EventEmitter {
    * @param connectorId - The connector ID
    * @param rounded - Whether to round the value
    * @returns The cumulative active energy imported in watt-hours
+   * @param evseId - Optional EVSE id when connector ids are EVSE-local
    */
-  public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
+  public getEnergyActiveImportRegisterByConnectorId (
+    connectorId: number,
+    rounded = false,
+    evseId?: number
+  ): number {
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId, evseId), rounded)
   }
 
   /**
