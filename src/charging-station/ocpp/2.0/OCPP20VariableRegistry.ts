@@ -137,7 +137,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, 'SendDuringIdle')]: {
+  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20OptionalVariableName.SendDuringIdle)]: {
     component: OCPP20ComponentName.AlignedDataCtrlr,
     dataType: DataEnumType.boolean,
     defaultValue: 'false',
@@ -146,7 +146,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'SendDuringIdle',
+    variable: OCPP20OptionalVariableName.SendDuringIdle,
   },
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20OptionalVariableName.SignReadings)]:
     {

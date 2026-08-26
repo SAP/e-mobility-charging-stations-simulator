@@ -30,6 +30,7 @@ import {
   AttributeEnumType,
   OCPP20ComponentName,
   OCPP20MeasurandEnumType,
+  OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
@@ -57,8 +58,15 @@ const ALIGNED_ENABLED_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20RequiredVariableName.Enabled
 )
-const SEND_DURING_IDLE_KEY = buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, 'SendDuringIdle')
-const SIGN_READINGS_KEY = buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, 'SignReadings')
+const SEND_DURING_IDLE_KEY = buildConfigKey(
+  OCPP20ComponentName.AlignedDataCtrlr,
+  OCPP20OptionalVariableName.SendDuringIdle
+)
+// The dispatcher gates signing on SampledDataCtrlr.SignReadings:
+const SIGN_READINGS_KEY = buildConfigKey(
+  OCPP20ComponentName.SampledDataCtrlr,
+  OCPP20OptionalVariableName.SignReadings
+)
 
 interface AlignedStation {
   mockStation: MockChargingStation
@@ -72,16 +80,26 @@ type RequestHandlerSpy = Mock<(...args: unknown[]) => Promise<unknown>>
 const noop = (): void => {}
 
 /**
- * Create a mock OCPP 2.0.1 station with two EVSEs (plus the station-level EVSE 0)
- * and a mocked request handler capturing outgoing MeterValues requests.
+ * Create a mock OCPP 2.0.1 station with a mocked request handler capturing
+ * outgoing MeterValues requests.
+ * @param overrides - Connector/EVSE counts (defaults: two single-connector EVSEs).
+ * @param overrides.connectorsCount - Total number of connectors.
+ * @param overrides.evsesCount - Number of EVSEs the connectors are spread over.
  * @returns The mock station with seeded energy registers and its handler spy.
  */
-function createAlignedStation (): AlignedStation {
+function createAlignedStation (
+  overrides: {
+    connectorsCount?: number
+    evsesCount?: number
+  } = {}
+): AlignedStation {
+  const connectorsCount = overrides.connectorsCount ?? 2
+  const evsesCount = overrides.evsesCount ?? 2
   const requestHandlerMock: RequestHandlerSpy = mock.fn(async () => Promise.resolve({}))
   const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 2,
-    evseConfiguration: { evsesCount: 2 },
+    connectorsCount,
+    evseConfiguration: { evsesCount },
     ocppRequestService: {
       requestHandler: requestHandlerMock,
     },
@@ -94,7 +112,7 @@ function createAlignedStation (): AlignedStation {
     mockStation.stationInfo.meteringPerTransaction = false
   }
   // Minimal energy template so the measurand builders can produce samples:
-  for (const evseId of [1, 2]) {
+  for (const evseId of Array.from({ length: evsesCount }, (_, i) => i + 1)) {
     const evseStatus = mockStation.getEvseStatus(evseId)
     if (evseStatus != null) {
       evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
@@ -110,7 +128,9 @@ function createAlignedStation (): AlignedStation {
     }
   }
   seedRegister(1, 54321)
-  seedRegister(2, 54322)
+  if (connectorsCount >= 2) {
+    seedRegister(2, 54322)
+  }
   return { mockStation, requestHandlerMock }
 }
 
@@ -177,6 +197,26 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         assert.ok(energySample != null)
         assert.ok(Number(energySample.value) > 0)
       }
+    })
+
+    await it('aggregates every connector of one EVSE into a single request', () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const payload = sentPayloads(requestHandlerMock)[0]
+      assert.strictEqual(payload.evseId, 1)
+      assert.strictEqual(payload.meterValue.length, 2)
+      const contexts = payload.meterValue.flatMap(meterValue =>
+        meterValue.sampledValue.map(sampledValue => sampledValue.context)
+      )
+      assert.ok(contexts.every(context => context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK))
     })
 
     await it('suppresses an in-transaction EVSE when SendDuringIdle=true (J01.FR.19)', () => {
@@ -350,9 +390,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ],
       })
 
-      assert.notStrictEqual(
+      assert.strictEqual(
         response.setVariableResult[0].attributeStatus,
-        SetVariableStatusEnumType.Accepted
+        SetVariableStatusEnumType.Rejected
       )
       assert.strictEqual(restartSpy.mock.callCount(), 0)
       assert.strictEqual(stopSpy.mock.callCount(), 0)

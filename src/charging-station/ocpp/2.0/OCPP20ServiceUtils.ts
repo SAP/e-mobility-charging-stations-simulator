@@ -578,7 +578,7 @@ export class OCPP20ServiceUtils {
     return OCPP20ServiceUtils.readVariableAsBoolean(
       chargingStation,
       OCPP20ComponentName.AlignedDataCtrlr,
-      'SendDuringIdle',
+      OCPP20OptionalVariableName.SendDuringIdle,
       false
     )
   }
