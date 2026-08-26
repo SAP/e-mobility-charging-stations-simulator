@@ -1023,10 +1023,7 @@ const createVersionedSampledValueDispatcher = (
               OCPP20ComponentName.SampledDataCtrlr,
               VendorParametersKey.SignStartedReadings
             )
-          } else if (
-            context == null ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
-          ) {
+          } else if (context == null || context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               OCPP20ComponentName.SampledDataCtrlr,
@@ -1409,9 +1406,7 @@ const buildIdentifiedMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
-    const connectorMinimumPower = idle
-      ? 0
-      : Math.round(powerMeasurand.template.minimumValue ?? 0)
+    const connectorMinimumPower = idle ? 0 : Math.round(powerMeasurand.template.minimumValue ?? 0)
 
     meterValue.sampledValue.push(
       buildVersionedSampledValue(powerMeasurand.template, powerMeasurand.values.allPhases, context)

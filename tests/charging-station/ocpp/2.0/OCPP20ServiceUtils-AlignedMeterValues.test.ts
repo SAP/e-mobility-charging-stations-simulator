@@ -452,18 +452,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         samplesByMeasurand.get(OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)?.value,
         0
       )
-      assert.strictEqual(
-        samplesByMeasurand.get(OCPP20MeasurandEnumType.CURRENT_IMPORT)?.value,
-        0
-      )
-      assert.strictEqual(
-        samplesByMeasurand.has(OCPP20MeasurandEnumType.STATE_OF_CHARGE),
-        false
-      )
-      assert.strictEqual(
-        samplesByMeasurand.get(OCPP20MeasurandEnumType.VOLTAGE)?.value,
-        230
-      )
+      assert.strictEqual(samplesByMeasurand.get(OCPP20MeasurandEnumType.CURRENT_IMPORT)?.value, 0)
+      assert.strictEqual(samplesByMeasurand.has(OCPP20MeasurandEnumType.STATE_OF_CHARGE), false)
+      assert.strictEqual(samplesByMeasurand.get(OCPP20MeasurandEnumType.VOLTAGE)?.value, 230)
       assert.strictEqual(
         samplesByMeasurand.get(OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER)?.value,
         54321
