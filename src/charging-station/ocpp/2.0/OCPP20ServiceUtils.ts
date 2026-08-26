@@ -364,13 +364,18 @@ export class OCPP20ServiceUtils {
     // J01.FR.20: the registered variable is station-scoped (no EVSE instance),
     // so with SendDuringIdle=true an ongoing transaction anywhere on the
     // charging station stops clock-aligned meter values for ALL EVSEs.
+    // Pending transactions count as ongoing (same shape as
+    // resolveActiveTransaction): transactionId is assigned before the Started
+    // event is accepted.
     if (
       sendDuringIdle &&
       chargingStation
         .iterateConnectors(true)
         .some(
           ({ connectorStatus }) =>
-            connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
+            (connectorStatus.transactionStarted === true ||
+              connectorStatus.transactionPending === true) &&
+            connectorStatus.transactionId != null
         )
     ) {
       return

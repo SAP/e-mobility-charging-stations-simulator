@@ -111,8 +111,11 @@ function createAlignedStation (
   if (mockStation.stationInfo != null) {
     mockStation.stationInfo.meteringPerTransaction = false
   }
-  // Minimal energy template so the measurand builders can produce samples:
-  for (const evseId of Array.from({ length: evsesCount }, (_, i) => i + 1)) {
+  // Minimal energy template so the measurand builders can produce samples.
+  // EVSE 0 is seeded too: the evseId=0 exclusion test must fail if iteration
+  // semantics ever change.
+  const evseIds = [0, ...Array.from({ length: evsesCount }, (_, i) => i + 1)]
+  for (const evseId of evseIds) {
     const evseStatus = mockStation.getEvseStatus(evseId)
     if (evseStatus != null) {
       evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
@@ -292,8 +295,18 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.ok(requestHandlerMock.mock.callCount() > 0)
-      // Idle readings are unsigned (fallback B) and never flip the one-time
-      // public-key flag consumed by the next transaction's first signed value:
+      // Idle readings are unsigned on the wire (fallback B):
+      const samples = sentPayloads(requestHandlerMock).flatMap(payload =>
+        payload.meterValue.flatMap(meterValue => meterValue.sampledValue)
+      )
+      for (const sampledValue of samples) {
+        assert.strictEqual(
+          (sampledValue as { signedMeterValue?: unknown }).signedMeterValue,
+          undefined
+        )
+      }
+      // ...and never flip the one-time public-key flag consumed by the next
+      // transaction's first signed value:
       for (const connectorId of [1, 2]) {
         const status = mockStation.getConnectorStatus(connectorId)
         assert.ok(status != null)

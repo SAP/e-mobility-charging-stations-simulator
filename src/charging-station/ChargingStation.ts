@@ -1337,7 +1337,7 @@ export class ChargingStation extends EventEmitter {
       OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
     }, intervalMs)
     logger.info(
-      `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues started every ${formatDurationMilliSeconds(intervalMs)}`
+      `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}`
     )
   }
 
