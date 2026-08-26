@@ -739,11 +739,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ComponentName.AlignedDataCtrlr,
         OCPP20RequiredVariableName.Measurands
       )
-      upsertConfigurationKey(
-        mockStation,
-        measurandsKey,
-        OCPP20MeasurandEnumType.VOLTAGE
-      )
+      upsertConfigurationKey(mockStation, measurandsKey, OCPP20MeasurandEnumType.VOLTAGE)
 
       const meterValue = buildClockAlignedConnectorMeterValue(
         mockStation,
@@ -753,7 +749,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      const variants = meterValue.sampledValue.map(sample => [sample.location, sample.value] as const)
+      const variants = meterValue.sampledValue.map(
+        sample => [sample.location, sample.value] as const
+      )
       assert.deepEqual(variants.slice(0, 2), [
         [OCPP20LocationEnumType.Inlet, 180],
         [OCPP20LocationEnumType.Outlet, 240],
@@ -834,7 +832,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(
         mockStation,
         measurandsKey,
-        [OCPP20MeasurandEnumType.CURRENT_IMPORT, OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT].join(',')
+        [OCPP20MeasurandEnumType.CURRENT_IMPORT, OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT].join(
+          ','
+        )
       )
 
       const meterValue = buildClockAlignedConnectorMeterValue(
@@ -1332,7 +1332,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         measurandsKey,
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
-      assert.deepEqual(dcMeterValue.sampledValue.map(sample => sample.phase), [undefined])
+      assert.deepEqual(
+        dcMeterValue.sampledValue.map(sample => sample.phase),
+        [undefined]
+      )
     })
 
     await it('preserves automatic voltage phases and main-voltage suppression', () => {

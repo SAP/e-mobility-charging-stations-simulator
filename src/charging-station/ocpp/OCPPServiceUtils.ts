@@ -457,8 +457,10 @@ const buildEnergyMeasurandValue = (
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
   const unitDivider =
     energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? Constants.UNIT_DIVIDER_KILO : 1
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMaximumEnergyRounded = roundTo(
     (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
     2
@@ -572,8 +574,10 @@ const buildPowerMeasurandValue = (
   }
   const unitDivider =
     powerTemplate.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
   const connectorMaximumPowerPerPhase = Math.round(
     connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
@@ -795,8 +799,10 @@ const buildCurrentMeasurandValue = (
       values: { allPhases: 0, L1: 0, L2: 0, L3: 0 },
     }
   }
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMinimumAmperage = currentTemplate.minimumValue ?? 0
   let connectorMaximumAmperage: number
 
@@ -1239,7 +1245,8 @@ const resolveClockAlignedTemplates = (
   connectorId: number,
   evseId: number | undefined
 ): SampledValueTemplate[] => {
-  const evseTemplates = evseId != null ? chargingStation.getEvseStatus(evseId)?.MeterValues : undefined
+  const evseTemplates =
+    evseId != null ? chargingStation.getEvseStatus(evseId)?.MeterValues : undefined
   return isNotEmptyArray(evseTemplates)
     ? evseTemplates
     : (chargingStation.getConnectorStatus(connectorId, evseId)?.MeterValues ?? [])
@@ -1303,7 +1310,7 @@ const applySnapshotRegisterValuesWithoutPhases = (
     if (
       (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
       MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    ) continue
+    ) { continue }
     const key = JSON.stringify([
       template.context,
       template.format,
@@ -1375,12 +1382,9 @@ const expandClockAlignedSnapshotSamples = (
         chargingStation.stationInfo?.currentOutType !== CurrentType.AC ||
         linePhaseIndex == null ||
         linePhaseIndex > numberOfPhases
-      ) continue
+      ) { continue }
     }
-    if (
-      phaseFamily === 'Neutral' &&
-      chargingStation.stationInfo?.currentOutType !== CurrentType.AC
-    ) continue
+    if (phaseFamily === 'Neutral' && chargingStation.stationInfo?.currentOutType !== CurrentType.AC) { continue }
     const aggregateSource = baseline.find(
       sample =>
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
@@ -1398,10 +1402,7 @@ const expandClockAlignedSnapshotSamples = (
       } else if (phaseFamily === 'Line') {
         rawValue = energyRegister / numberOfPhases
       }
-    } else if (
-      measurand === MeterValueMeasurand.CURRENT_IMPORT &&
-      phaseFamily === 'Neutral'
-    ) {
+    } else if (measurand === MeterValueMeasurand.CURRENT_IMPORT && phaseFamily === 'Neutral') {
       rawValue = 0
     } else if (measurand === MeterValueMeasurand.VOLTAGE && phaseFamily === 'Neutral') {
       rawValue = 0
@@ -1422,10 +1423,7 @@ const expandClockAlignedSnapshotSamples = (
       (idle || phaseFamily !== 'Aggregate')
     ) {
       continue
-    } else if (
-      measurand === MeterValueMeasurand.VOLTAGE &&
-      isNotEmptyString(template.value)
-    ) {
+    } else if (measurand === MeterValueMeasurand.VOLTAGE && isNotEmptyString(template.value)) {
       const nominal = getRandomFloatFluctuatedRounded(
         convertToFloat(template.value),
         template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -1449,20 +1447,21 @@ const expandClockAlignedSnapshotSamples = (
         rawValue = 0
       } else {
         const divider = resolveSnapshotUnitDivider(measurand, template.unit as string | undefined)
-        const maximumValue = measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
-          ? chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId) /
-            (phaseFamily === 'Line' ? numberOfPhases : 1) /
-            divider
-          : chargingStation.stationInfo?.currentOutType === CurrentType.AC
-            ? ACElectricUtils.amperagePerPhaseFromPower(
-              numberOfPhases,
-              chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
-              chargingStation.getVoltageOut()
-            )
-            : DCElectricUtils.amperage(
-              chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
-              chargingStation.getVoltageOut()
-            )
+        const maximumValue =
+          measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+            ? chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId) /
+              (phaseFamily === 'Line' ? numberOfPhases : 1) /
+              divider
+            : chargingStation.stationInfo?.currentOutType === CurrentType.AC
+              ? ACElectricUtils.amperagePerPhaseFromPower(
+                numberOfPhases,
+                chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
+                chargingStation.getVoltageOut()
+              )
+              : DCElectricUtils.amperage(
+                chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
+                chargingStation.getVoltageOut()
+              )
         const minimumValue = template.minimumValue ?? 0
         const value = isNotEmptyString(template.value)
           ? getRandomFloatFluctuatedRounded(
@@ -1501,9 +1500,10 @@ const expandClockAlignedSnapshotSamples = (
         template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
       )
     } else if (measurand === MeterValueMeasurand.VOLTAGE) {
-      const nominal = phaseFamily === 'LineToLine'
-        ? chargingStation.getVoltageOut() * Math.sqrt(3)
-        : chargingStation.getVoltageOut()
+      const nominal =
+        phaseFamily === 'LineToLine'
+          ? chargingStation.getVoltageOut() * Math.sqrt(3)
+          : chargingStation.getVoltageOut()
       rawValue = getRandomFloatFluctuatedRounded(
         nominal,
         template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -1533,7 +1533,7 @@ const applyClockAlignedVoltageControls = (
   if (
     chargingStation.getNumberOfPhases() !== 3 ||
     chargingStation.stationInfo?.currentOutType !== CurrentType.AC
-  ) return sampledValues
+  ) { return sampledValues }
   const aggregateVoltages = sampledValues.filter(
     sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null
   )
@@ -1559,7 +1559,12 @@ const applyClockAlignedVoltageControls = (
     const addPhase = (phase: OCPP20PhaseEnumType, value: number): void => {
       if (!configuredPhases.has(phase)) {
         automaticSamples.push(
-          buildVersionedSampledValue(template, roundTo(value, 2), context, phase) as OCPP20SampledValue
+          buildVersionedSampledValue(
+            template,
+            roundTo(value, 2),
+            context,
+            phase
+          ) as OCPP20SampledValue
         )
       }
     }
@@ -1573,11 +1578,12 @@ const applyClockAlignedVoltageControls = (
       addPhase(OCPP20PhaseEnumType.L3_L1, lineToLineVoltage)
     }
   }
-  const retainedSamples = chargingStation.stationInfo.mainVoltageMeterValues === true
-    ? sampledValues
-    : sampledValues.filter(
-      sample => !(sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null)
-    )
+  const retainedSamples =
+    chargingStation.stationInfo.mainVoltageMeterValues === true
+      ? sampledValues
+      : sampledValues.filter(
+        sample => !(sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null)
+      )
   return [...retainedSamples, ...automaticSamples]
 }
 /**
@@ -1695,35 +1701,36 @@ const buildIdentifiedMeterValue = (
         ? (connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0)
         : (connectorStatus?.energyActiveImportRegisterValue ?? 0)
     )
-    const coherentMeterValue = identity.snapshot === true
-      ? buildCoherentMeterValueSnapshot(
-        chargingStation,
-        coherentSession,
-        buildSignedVersionedSampledValue,
-        context,
-        enabledMeasurands,
-        registerValuesWithoutPhases,
-        timestamp,
-        connectorStatus,
-        evseId,
-        coherentSnapshotEnergyRegister
-      )
-      : buildCoherentMeterValue(
-        chargingStation,
-        coherentSession,
-        buildSignedVersionedSampledValue,
-        {
-          intervalMs: interval,
-          nowMs: Date.now(),
-          rootSeed: resolveRootSeed(chargingStation.stationInfo),
-        },
-        context,
-        enabledMeasurands,
-        registerValuesWithoutPhases,
-        timestamp,
-        connectorStatus,
-        evseId
-      )
+    const coherentMeterValue =
+      identity.snapshot === true
+        ? buildCoherentMeterValueSnapshot(
+          chargingStation,
+          coherentSession,
+          buildSignedVersionedSampledValue,
+          context,
+          enabledMeasurands,
+          registerValuesWithoutPhases,
+          timestamp,
+          connectorStatus,
+          evseId,
+          coherentSnapshotEnergyRegister
+        )
+        : buildCoherentMeterValue(
+          chargingStation,
+          coherentSession,
+          buildSignedVersionedSampledValue,
+          {
+            intervalMs: interval,
+            nowMs: Date.now(),
+            rootSeed: resolveRootSeed(chargingStation.stationInfo),
+          },
+          context,
+          enabledMeasurands,
+          registerValuesWithoutPhases,
+          timestamp,
+          connectorStatus,
+          evseId
+        )
     if (identity.snapshot === true) {
       const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
       coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(
@@ -1850,8 +1857,10 @@ const buildIdentifiedMeterValue = (
   if (powerMeasurand?.values.allPhases != null) {
     const unitDivider =
       powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
     const connectorMinimumPower = idle ? 0 : Math.round(powerMeasurand.template.minimumValue ?? 0)
 
@@ -1913,8 +1922,10 @@ const buildIdentifiedMeterValue = (
     snapshot
   )
   if (currentMeasurand?.values.allPhases != null) {
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumAmperage =
       chargingStation.stationInfo?.currentOutType === CurrentType.AC
         ? ACElectricUtils.amperagePerPhaseFromPower(
@@ -2005,8 +2016,10 @@ const buildIdentifiedMeterValue = (
       context
     )
     meterValue.sampledValue.push(energySampledValue)
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumEnergyRounded = roundTo(
       (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
       2

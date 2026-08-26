@@ -164,9 +164,10 @@ export const getConnectorChargingProfiles = (
   connectorId: number,
   connectorStatus?: ConnectorStatus
 ): ChargingProfile[] => {
-  const chargingProfiles = connectorStatus != null
-    ? (connectorStatus.chargingProfiles ?? [])
-    : (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
+  const chargingProfiles =
+    connectorStatus != null
+      ? (connectorStatus.chargingProfiles ?? [])
+      : (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
   return chargingProfiles
     .slice()
     .sort((a, b) => {
@@ -207,7 +208,11 @@ export const getConnectorChargingProfilesLimit = (
   connectorId: number,
   connectorStatus?: ConnectorStatus
 ): number | undefined => {
-  const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId, connectorStatus)
+  const chargingProfiles = getConnectorChargingProfiles(
+    chargingStation,
+    connectorId,
+    connectorStatus
+  )
   if (isNotEmptyArray(chargingProfiles)) {
     const chargingProfilesLimit = getChargingProfilesLimit(
       chargingStation,
@@ -221,10 +226,11 @@ export const getConnectorChargingProfilesLimit = (
       if (maximumPower == null) {
         return limit
       }
-      const connectorMaximumPower = connectorStatus != null
-        ? (connectorStatus.maximumPower ?? maximumPower / (chargingStation.powerDivider ?? 1))
-        : (chargingStation.getConnectorStatus(connectorId)?.maximumPower ??
-          maximumPower / (chargingStation.powerDivider ?? 1))
+      const connectorMaximumPower =
+        connectorStatus != null
+          ? (connectorStatus.maximumPower ?? maximumPower / (chargingStation.powerDivider ?? 1))
+          : (chargingStation.getConnectorStatus(connectorId)?.maximumPower ??
+            maximumPower / (chargingStation.powerDivider ?? 1))
       if (limit > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,

@@ -274,7 +274,11 @@ const resolvePhasedValue = (
   if (family === 'Unsupported') return undefined
   if (family === 'LineToNeutral') {
     const linePhaseIndex = resolveLinePhaseIndex(phase)
-    if (currentType !== CurrentType.AC || linePhaseIndex == null || linePhaseIndex > numberOfPhases) {
+    if (
+      currentType !== CurrentType.AC ||
+      linePhaseIndex == null ||
+      linePhaseIndex > numberOfPhases
+    ) {
       return undefined
     }
   }
@@ -447,10 +451,7 @@ const serializeCoherentMeterValue = (
         )
         continue
       }
-      const unitDivider = resolveUnitDivider(
-        measurand,
-        template.unit as MeterValueUnit | undefined
-      )
+      const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
       const scaled = roundTo(raw / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
     }
