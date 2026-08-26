@@ -1287,6 +1287,7 @@ export class ChargingStation extends EventEmitter {
                   }
                   this.restartHeartbeat()
                   this.restartWebSocketPing()
+                  this.restartAlignedMeterValues()
                 } catch (error) {
                   const e = ensureError(error)
                   logger.error(

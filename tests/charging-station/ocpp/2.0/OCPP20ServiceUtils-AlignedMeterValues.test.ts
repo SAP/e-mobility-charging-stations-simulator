@@ -219,7 +219,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(contexts.every(context => context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK))
     })
 
-    await it('suppresses an in-transaction EVSE when SendDuringIdle=true (J01.FR.19)', () => {
+    await it('stops ALL emissions while a transaction is ongoing and SendDuringIdle=true (J01.FR.20 station scope)', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -228,9 +228,18 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const payloads = sentPayloads(requestHandlerMock)
-      assert.strictEqual(payloads[0].evseId, 2)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('emits for idle EVSEs with SendDuringIdle=true when no transaction is ongoing', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
     })
 
     await it('keeps emitting for an in-transaction EVSE when SendDuringIdle=false', () => {
@@ -302,6 +311,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       const payloads = sentPayloads(requestHandlerMock)
+      assert.strictEqual(payloads.length, 2)
       assert.ok(payloads.every(payload => payload.evseId !== 0))
     })
   })

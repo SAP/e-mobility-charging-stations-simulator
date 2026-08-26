@@ -361,19 +361,25 @@ export class OCPP20ServiceUtils {
       return
     }
     const sendDuringIdle = OCPP20ServiceUtils.isAlignedDataSendDuringIdleEnabled(chargingStation)
+    // J01.FR.20: the registered variable is station-scoped (no EVSE instance),
+    // so with SendDuringIdle=true an ongoing transaction anywhere on the
+    // charging station stops clock-aligned meter values for ALL EVSEs.
+    if (
+      sendDuringIdle &&
+      chargingStation
+        .iterateConnectors(true)
+        .some(
+          ({ connectorStatus }) =>
+            connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
+        )
+    ) {
+      return
+    }
     const measurandsKey = buildConfigKey(
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.Measurands
     )
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
-      // Canonical in-transaction predicate (same shape as the TxUpdated loop).
-      const inTransaction = [...evseStatus.connectors.values()].some(
-        connectorStatus =>
-          connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
-      )
-      if (inTransaction && sendDuringIdle) {
-        continue
-      }
       const meterValues: OCPP20MeterValue[] = []
       for (const [connectorId] of evseStatus.connectors) {
         try {
