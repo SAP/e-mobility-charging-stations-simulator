@@ -39,6 +39,7 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  type OCPP20MeterValue,
   OCPP20OptionalVariableName,
   OCPP20ReadingContextEnumType,
   OCPPVersion,
@@ -61,6 +62,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   isValidRandomIntBounds,
   JSONStringify,
   logger,
@@ -421,7 +423,8 @@ const buildEnergyMeasurandValue = (
   connectorId: number,
   interval: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  idle = false
 ): null | SingleValueMeasurandData => {
   const energyTemplate = getSampledValueTemplate(
     chargingStation,
@@ -432,6 +435,9 @@ const buildEnergyMeasurandValue = (
   )
   if (energyTemplate == null) {
     return null
+  }
+  if (idle) {
+    return { template: energyTemplate, value: 0 }
   }
 
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
@@ -491,7 +497,8 @@ const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  idle = false
 ): MultiPhaseMeasurandData | null => {
   const powerTemplate = getSampledValueTemplate(
     chargingStation,
@@ -536,6 +543,13 @@ const buildPowerMeasurandValue = (
 
   checkMeasurandPowerDivider(chargingStation, powerTemplate.measurand)
   const powerValues: MeasurandValues = {} as MeasurandValues
+  if (idle) {
+    return {
+      perPhaseTemplates,
+      template: powerTemplate,
+      values: { allPhases: 0, L1: 0, L2: 0, L3: 0 },
+    }
+  }
   const unitDivider =
     powerTemplate.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
   const connectorMaximumAvailablePower =
@@ -702,7 +716,8 @@ const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  idle = false
 ): MultiPhaseMeasurandData | null => {
   const currentTemplate = getSampledValueTemplate(
     chargingStation,
@@ -747,6 +762,13 @@ const buildCurrentMeasurandValue = (
 
   checkMeasurandPowerDivider(chargingStation, currentTemplate.measurand)
   const currentValues: MeasurandValues = {} as MeasurandValues
+  if (idle) {
+    return {
+      perPhaseTemplates,
+      template: currentTemplate,
+      values: { allPhases: 0, L1: 0, L2: 0, L3: 0 },
+    }
+  }
   const connectorMaximumAvailablePower =
     chargingStation.getConnectorMaximumAvailablePower(connectorId)
   const connectorMinimumAmperage = currentTemplate.minimumValue ?? 0
@@ -980,9 +1002,13 @@ const createVersionedSampledValueDispatcher = (
         )
       }
       {
+        const signReadingsComponent =
+          context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+            ? OCPP20ComponentName.AlignedDataCtrlr
+            : OCPP20ComponentName.SampledDataCtrlr
         const signReadings = isOCPP20FlagEnabled(
           chargingStation,
-          OCPP20ComponentName.SampledDataCtrlr,
+          signReadingsComponent,
           StandardParametersKey.SignReadings
         )
 
@@ -999,8 +1025,7 @@ const createVersionedSampledValueDispatcher = (
             )
           } else if (
             context == null ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC
           ) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
@@ -1198,27 +1223,41 @@ export const buildMeterValue = (
 }
 
 /**
- * Builds a complete MeterValue for a connector identified directly, without an
- * active transaction (#2011 Category 2F clock-aligned reporting, J01.FR.14).
- * Idle readings are unsigned by design: the signing pipeline is keyed on
- * `transactionId`, so no signing configuration applies here.
+ * Builds a complete OCPP 2.0 MeterValue for a directly identified connector.
+ * Active connectors may provide a transaction id to preserve coherent and
+ * aligned-signing semantics; idle connectors omit it and stay unsigned.
  * @param chargingStation - Target charging station.
  * @param identity - Direct connector/EVSE identification.
  * @param identity.connectorId - Connector identifier.
  * @param identity.evseId - EVSE identifier.
+ * @param identity.transactionId - Optional active transaction identifier.
  * @param interval - Clock-aligned data interval in milliseconds
  * @param measurandsKey - Configuration key for the sampled measurands list
  * @param context - Meter value reading context (Sample.Clock for aligned data)
- * @returns Populated MeterValue object
+ * @returns Populated OCPP 2.0 MeterValue object
  */
 export const buildClockAlignedConnectorMeterValue = (
   chargingStation: ChargingStation,
-  identity: { connectorId: number; evseId: number },
+  identity: { connectorId: number; evseId: number; transactionId?: number | string },
   interval: number,
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext
-): MeterValue =>
-  buildIdentifiedMeterValue(chargingStation, identity, interval, measurandsKey, context)
+): OCPP20MeterValue => {
+  if (!isOCPP20x(chargingStation.stationInfo?.ocppVersion)) {
+    throw new OCPPError(
+      ErrorType.INTERNAL_ERROR,
+      `Cannot build clock-aligned MeterValue for OCPP version ${String(chargingStation.stationInfo?.ocppVersion)}`,
+      RequestCommand.METER_VALUES
+    )
+  }
+  return buildIdentifiedMeterValue(
+    chargingStation,
+    identity,
+    interval,
+    measurandsKey,
+    context
+  ) as OCPP20MeterValue
+}
 
 const buildIdentifiedMeterValue = (
   chargingStation: ChargingStation,
@@ -1275,24 +1314,27 @@ const buildIdentifiedMeterValue = (
   if (signingConfig != null) {
     signingConfig.timestamp = meterValue.timestamp
   }
-  // SoC measurand
-  const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
-  if (socMeasurand != null) {
-    const socSampledValue = buildVersionedSampledValue(
-      socMeasurand.template,
-      socMeasurand.value,
-      context
-    )
-    meterValue.sampledValue.push(socSampledValue)
-    validateMeasurandValue(
-      chargingStation,
-      connectorId,
-      convertToInt(socSampledValue.value),
-      socMeasurand.template.minimumValue ?? 0,
-      Constants.SOC_MAXIMUM_PERCENT,
-      socSampledValue.measurand,
-      debug
-    )
+  // SoC only has transaction semantics in the simulator. An idle connector
+  // has no EV state to report.
+  if (identity.transactionId != null) {
+    const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
+    if (socMeasurand != null) {
+      const socSampledValue = buildVersionedSampledValue(
+        socMeasurand.template,
+        socMeasurand.value,
+        context
+      )
+      meterValue.sampledValue.push(socSampledValue)
+      validateMeasurandValue(
+        chargingStation,
+        connectorId,
+        convertToInt(socSampledValue.value),
+        socMeasurand.template.minimumValue ?? 0,
+        Constants.SOC_MAXIMUM_PERCENT,
+        socSampledValue.measurand,
+        debug
+      )
+    }
   }
   // Voltage measurand
   const voltageMeasurand = buildVoltageMeasurandValue(
@@ -1353,11 +1395,13 @@ const buildIdentifiedMeterValue = (
     }
   }
   // Power.Active.Import measurand
+  const idle = identity.transactionId == null
   const powerMeasurand = buildPowerMeasurandValue(
     chargingStation,
     connectorId,
     evseId,
-    measurandsKey
+    measurandsKey,
+    idle
   )
   if (powerMeasurand?.values.allPhases != null) {
     const unitDivider =
@@ -1365,7 +1409,9 @@ const buildIdentifiedMeterValue = (
     const connectorMaximumAvailablePower =
       chargingStation.getConnectorMaximumAvailablePower(connectorId)
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
-    const connectorMinimumPower = Math.round(powerMeasurand.template.minimumValue ?? 0)
+    const connectorMinimumPower = idle
+      ? 0
+      : Math.round(powerMeasurand.template.minimumValue ?? 0)
 
     meterValue.sampledValue.push(
       buildVersionedSampledValue(powerMeasurand.template, powerMeasurand.values.allPhases, context)
@@ -1420,7 +1466,8 @@ const buildIdentifiedMeterValue = (
     chargingStation,
     connectorId,
     evseId,
-    measurandsKey
+    measurandsKey,
+    idle
   )
   if (currentMeasurand?.values.allPhases != null) {
     const connectorMaximumAvailablePower =
@@ -1433,7 +1480,7 @@ const buildIdentifiedMeterValue = (
           chargingStation.getVoltageOut()
         )
         : DCElectricUtils.amperage(connectorMaximumAvailablePower, chargingStation.getVoltageOut())
-    const connectorMinimumAmperage = currentMeasurand.template.minimumValue ?? 0
+    const connectorMinimumAmperage = idle ? 0 : (currentMeasurand.template.minimumValue ?? 0)
 
     meterValue.sampledValue.push(
       buildVersionedSampledValue(
@@ -1488,7 +1535,8 @@ const buildIdentifiedMeterValue = (
     connectorId,
     interval,
     evseId,
-    measurandsKey
+    measurandsKey,
+    idle
   )
   if (energyMeasurand != null) {
     // Clock-aligned idle ticks must not advance the connector's energy
@@ -1503,9 +1551,7 @@ const buildIdentifiedMeterValue = (
     const energySampledValue = buildVersionedSampledValue(
       energyMeasurand.template,
       roundTo(
-        (identity.transactionId != null
-          ? chargingStation.getEnergyActiveImportRegisterByTransactionId(identity.transactionId)
-          : chargingStation.getEnergyActiveImportRegisterByConnectorId(connectorId)) / unitDivider,
+        chargingStation.getEnergyActiveImportRegisterByConnectorId(connectorId) / unitDivider,
         2
       ),
       context

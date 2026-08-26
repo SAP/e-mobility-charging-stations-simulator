@@ -1,8 +1,8 @@
 /**
  * @file Tests for autonomous clock-aligned MeterValues (OCPP 2.0.1, #2011 Category 2F)
- * @description Out-of-transaction, wall-clock `MeterValuesRequest` emission driven by
+ * @description Standalone clock-aligned `MeterValuesRequest` emission driven by
  * `AlignedDataCtrlr` (Interval / Enabled / Measurands / SendDuringIdle) per
- * J01.FR.14 and J01.FR.19.
+ * J01.FR.14, J01.FR.20, J01.FR.21, and J01.FR.22.
  */
 
 import type { Mock } from 'node:test'
@@ -15,6 +15,7 @@ import type {
   ChargingStationInfo,
   EvseStatus,
   OCPP20MeterValuesRequest,
+  OCPP20SampledValue,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
@@ -34,13 +35,17 @@ import {
   OCPP20ReadingContextEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
+  PublicKeyWithSignedMeterValueEnumType,
   SetVariableStatusEnumType,
 } from '../../../../src/types/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_PUBLIC_KEY_HEX,
+} from '../../ChargingStationTestConstants.js'
 import {
   cleanupChargingStation,
   cleanupStationTemplates,
@@ -62,11 +67,15 @@ const SEND_DURING_IDLE_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SendDuringIdle
 )
-// The dispatcher gates signing on SampledDataCtrlr.SignReadings:
 const SIGN_READINGS_KEY = buildConfigKey(
-  OCPP20ComponentName.SampledDataCtrlr,
+  OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SignReadings
 )
+const PUBLIC_KEY_MODE_KEY = buildConfigKey(
+  OCPP20ComponentName.OCPPCommCtrlr,
+  OCPP20OptionalVariableName.PublicKeyWithSignedMeterValue
+)
+const FISCAL_PUBLIC_KEY = buildConfigKey(OCPP20ComponentName.FiscalMetering, 'PublicKey')
 
 interface AlignedStation {
   mockStation: MockChargingStation
@@ -263,6 +272,29 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        PUBLIC_KEY_MODE_KEY,
+        PublicKeyWithSignedMeterValueEnumType.Never
+      )
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-1' })
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const evse1Payload = sentPayloads(requestHandlerMock).find(payload => payload.evseId === 1)
+      assert.ok(evse1Payload != null)
+      const energySample = findEnergySample(evse1Payload) as OCPP20SampledValue | undefined
+      assert.ok(energySample?.signedMeterValue != null)
+      assert.strictEqual(energySample.context, OCPP20ReadingContextEnumType.SAMPLE_CLOCK)
+    })
+
     await it('emits nothing when AlignedDataInterval=0 (spec §2.2)', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '0')
@@ -359,7 +391,83 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
       )
       assert.ok(energySample != null)
-      assert.ok(Number(energySample.value) > 0)
+      assert.ok(energySample.value > 0)
+    })
+
+    await it('emits a physically coherent idle snapshot', () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      const evseStatus = mockStation.getEvseStatus(1)
+      assert.ok(evseStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          unit: 'W',
+          value: '1000',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT,
+          unit: 'A',
+          value: '16',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.STATE_OF_CHARGE,
+          unit: 'Percent',
+          value: '80',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.VOLTAGE,
+          unit: 'V',
+          value: '230',
+        },
+        { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
+      ] as unknown as EvseStatus['MeterValues']
+      upsertConfigurationKey(
+        mockStation,
+        buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
+        [
+          OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          OCPP20MeasurandEnumType.CURRENT_IMPORT,
+          OCPP20MeasurandEnumType.STATE_OF_CHARGE,
+          OCPP20MeasurandEnumType.VOLTAGE,
+          OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+        ].join(',')
+      )
+
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        mockStation,
+        { connectorId: 1, evseId: 1 },
+        60_000,
+        buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
+        OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+      )
+
+      const samplesByMeasurand = new Map(
+        meterValue.sampledValue.map(sample => [sample.measurand, sample] as const)
+      )
+      assert.strictEqual(
+        samplesByMeasurand.get(OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)?.value,
+        0
+      )
+      assert.strictEqual(
+        samplesByMeasurand.get(OCPP20MeasurandEnumType.CURRENT_IMPORT)?.value,
+        0
+      )
+      assert.strictEqual(
+        samplesByMeasurand.has(OCPP20MeasurandEnumType.STATE_OF_CHARGE),
+        false
+      )
+      assert.strictEqual(
+        samplesByMeasurand.get(OCPP20MeasurandEnumType.VOLTAGE)?.value,
+        230
+      )
+      assert.strictEqual(
+        samplesByMeasurand.get(OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER)?.value,
+        54321
+      )
     })
   })
 
@@ -401,7 +509,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(restartSpy.mock.callCount(), 1)
     })
 
-    await it('rejects out-of-range intervals without touching the timer (registry min:1)', () => {
+    await it('accepts interval 0 and stops the aligned timer', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -415,10 +523,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(
         response.setVariableResult[0].attributeStatus,
-        SetVariableStatusEnumType.Rejected
+        SetVariableStatusEnumType.Accepted
       )
       assert.strictEqual(restartSpy.mock.callCount(), 0)
-      assert.strictEqual(stopSpy.mock.callCount(), 0)
+      assert.strictEqual(stopSpy.mock.callCount(), 1)
     })
   })
 

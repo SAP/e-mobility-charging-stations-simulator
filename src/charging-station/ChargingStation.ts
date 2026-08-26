@@ -1312,8 +1312,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Starts the autonomous, out-of-transaction clock-aligned MeterValues timer
-   * (#2011 Category 2F). OCPP 2.0.x only; a no-op when
+   * Starts the autonomous standalone clock-aligned MeterValues timer (#2011
+   * Category 2F). OCPP 2.0.x only; a no-op when
    * `AlignedDataCtrlr.Interval` resolves to 0 (spec §2.2).
    */
   public startAlignedMeterValues (): void {
@@ -1333,11 +1333,17 @@ export class ChargingStation extends EventEmitter {
       this,
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.AlignedDataInterval,
-      900
+      Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS
     )
-    if (intervalSeconds <= 0) {
+    if (intervalSeconds === 0) {
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues disabled by AlignedDataCtrlr.Interval=0`
+      )
+      return
+    }
+    if (intervalSeconds < 0) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: AlignedDataCtrlr.Interval set to ${intervalSeconds.toString()}, not starting the clock-aligned MeterValues`
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Invalid negative AlignedDataCtrlr.Interval ${intervalSeconds.toString()}`
       )
       return
     }

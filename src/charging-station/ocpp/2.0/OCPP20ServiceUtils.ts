@@ -325,20 +325,21 @@ export class OCPP20ServiceUtils {
   ][] => createPayloadConfigs(OCPP20ServiceUtils.outgoingRequestSchemaNames, 'Response.json')
 
   /**
-   * One tick of the autonomous, out-of-transaction clock-aligned MeterValues
-   * sweep (#2011 Category 2F, J01.FR.14/J01.FR.19). Called by the station-level
-   * aligned timer; every gate is re-read per tick so configuration changes take
-   * effect without re-arming:
+   * One tick of the station-scoped clock-aligned MeterValues sweep (#2011
+   * Category 2F, J01.FR.14/J01.FR.20/J01.FR.21/J01.FR.22). Called by the
+   * station-level aligned timer; every gate is re-read per tick so
+   * configuration changes take effect without re-arming:
    * - `AlignedDataCtrlr.Interval <= 0` disables transmission (spec §2.2). Read
    *   raw (not via {@link OCPP20ServiceUtils.getAlignedDataInterval}) because
    *   `readVariableAsIntervalMs` clamps non-positive values to the default.
    * - `AlignedDataCtrlr.Enabled=false` (the default) disables the feature.
-   * - An EVSE with an ongoing transaction is skipped iff
-   *   `SendDuringIdle=true` (J01.FR.19).
+   * - The station-scoped `SendDuringIdle=true` suppresses the whole sweep
+   *   while any transaction is ongoing (J01.FR.20).
    * Each EVSE gets ONE aggregated `MeterValuesRequest` covering ALL its
-   * connectors (idle ones included) with ReadingContext Sample.Clock and real
-   * measurands built from the connector state. An empty aggregate stays silent
-   * to preserve the `MeterValueType.sampledValue` 1..* cardinality.
+   * connectors with ReadingContext Sample.Clock. Active connectors use the
+   * transaction pipeline; idle connectors use the transaction-less physical
+   * snapshot. An empty aggregate stays silent to preserve the
+   * `MeterValueType.sampledValue` 1..* cardinality.
    * @param chargingStation - Target charging station
    */
   public static emitClockAlignedMeterValues (chargingStation: ChargingStation): void {
@@ -346,7 +347,7 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.AlignedDataInterval,
-      900
+      Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS
     )
     if (alignedDataIntervalSeconds <= 0) {
       return
@@ -386,15 +387,25 @@ export class OCPP20ServiceUtils {
     )
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       const meterValues: OCPP20MeterValue[] = []
-      for (const [connectorId] of evseStatus.connectors) {
+      for (const [connectorId, connectorStatus] of evseStatus.connectors) {
         try {
+          const transactionId =
+            (connectorStatus.transactionStarted === true ||
+              connectorStatus.transactionPending === true) &&
+            connectorStatus.transactionId != null
+              ? connectorStatus.transactionId
+              : undefined
           const meterValue = buildClockAlignedConnectorMeterValue(
             chargingStation,
-            { connectorId, evseId },
+            {
+              connectorId,
+              evseId,
+              ...(transactionId != null && { transactionId }),
+            },
             secondsToMilliseconds(alignedDataIntervalSeconds),
             measurandsKey,
             OCPP20ReadingContextEnumType.SAMPLE_CLOCK
-          ) as OCPP20MeterValue
+          )
           // `MeterValueType.sampledValue` cardinality is 1..*: skip a collapsed
           // MeterValue so the outgoing request stays schema-conforming.
           if (isNotEmptyArray(meterValue.sampledValue)) {
@@ -546,7 +557,7 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.AlignedDataInterval,
-      900
+      Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS
     )
   }
 

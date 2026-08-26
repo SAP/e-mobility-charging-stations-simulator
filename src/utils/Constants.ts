@@ -14,6 +14,8 @@ const DAY_IN_SECONDS = 86_400
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
+  static readonly DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS = 900
+
   static readonly DEFAULT_ATG_CONFIGURATION: Readonly<AutomaticTransactionGeneratorConfiguration> =
     Object.freeze({
       enable: false,

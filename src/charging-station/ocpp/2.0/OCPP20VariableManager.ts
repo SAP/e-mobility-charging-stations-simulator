@@ -1071,11 +1071,13 @@ export class OCPP20VariableManager {
     ) {
       chargingStation.restartWebSocketPing()
     }
-    if (variable.name === (OCPP20RequiredVariableName.AlignedDataInterval as string)) {
+    if (
+      isOCPP20ComponentName(component.name) &&
+      component.name === OCPP20ComponentName.AlignedDataCtrlr &&
+      variable.name === (OCPP20RequiredVariableName.AlignedDataInterval as string)
+    ) {
       const alignedDataInterval = convertToIntOrNaN(attributeValue)
       if (!Number.isNaN(alignedDataInterval)) {
-        // Defensive-only stop branch: the registry min (1) blocks a protocol
-        // set of 0, matching the WebSocketPingInterval >= 0 restart precedent.
         if (alignedDataInterval > 0) {
           chargingStation.restartAlignedMeterValues()
         } else {

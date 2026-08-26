@@ -167,12 +167,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     OCPP20ComponentName.AlignedDataCtrlr,
     OCPP20RequiredVariableName.AlignedDataInterval
   )]: {
+    allowZero: true,
     component: OCPP20ComponentName.AlignedDataCtrlr,
     dataType: DataEnumType.integer,
-    defaultValue: '900',
+    defaultValue: Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS.toString(),
     description:
       'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the MeterValuesRequest message.',
-    min: 1,
+    min: 0,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     required: true,
