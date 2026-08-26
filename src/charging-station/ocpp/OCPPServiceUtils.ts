@@ -1310,7 +1310,9 @@ const applySnapshotRegisterValuesWithoutPhases = (
     if (
       (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
       MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    ) { continue }
+    ) {
+      continue
+    }
     const key = JSON.stringify([
       template.context,
       template.format,
@@ -1382,9 +1384,16 @@ const expandClockAlignedSnapshotSamples = (
         chargingStation.stationInfo?.currentOutType !== CurrentType.AC ||
         linePhaseIndex == null ||
         linePhaseIndex > numberOfPhases
-      ) { continue }
+      ) {
+        continue
+      }
     }
-    if (phaseFamily === 'Neutral' && chargingStation.stationInfo?.currentOutType !== CurrentType.AC) { continue }
+    if (
+      phaseFamily === 'Neutral' &&
+      chargingStation.stationInfo?.currentOutType !== CurrentType.AC
+    ) {
+      continue
+    }
     const aggregateSource = baseline.find(
       sample =>
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
@@ -1533,7 +1542,9 @@ const applyClockAlignedVoltageControls = (
   if (
     chargingStation.getNumberOfPhases() !== 3 ||
     chargingStation.stationInfo?.currentOutType !== CurrentType.AC
-  ) { return sampledValues }
+  ) {
+    return sampledValues
+  }
   const aggregateVoltages = sampledValues.filter(
     sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null
   )
