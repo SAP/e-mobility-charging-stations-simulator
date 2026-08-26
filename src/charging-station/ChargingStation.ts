@@ -1320,6 +1320,15 @@ export class ChargingStation extends EventEmitter {
     if (!isOCPP20x(this.stationInfo?.ocppVersion)) {
       return
     }
+    // Defensive: validateStationInfo rejects Connectors-only OCPP 2.0.1
+    // templates, so a station reaching this point without EVSE topology would
+    // make the sweep a silent no-op.
+    if (!this.hasEvses) {
+      logger.warn(
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Station has no EVSE topology (Connectors-only template), not starting the clock-aligned MeterValues`
+      )
+      return
+    }
     const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
       this,
       OCPP20ComponentName.AlignedDataCtrlr,
