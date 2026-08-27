@@ -47,8 +47,6 @@ import {
   MapStringifyFormat,
   MessageType,
   MeterValueMeasurand,
-  OCPP20ComponentName,
-  OCPP20RequiredVariableName,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -211,7 +209,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private alignedMeterValuesSetInterval?: NodeJS.Timeout
+  private alignedMeterValuesGeneration = 0
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
@@ -1327,9 +1325,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Starts the autonomous standalone clock-aligned MeterValues timer (#2011
-   * Category 2F). OCPP 2.0.x only; a no-op when
-   * `AlignedDataCtrlr.Interval` resolves to 0 (spec §2.2).
+   * Starts the autonomous clock-aligned MeterValues scheduler (#2011 Category
+   * 2F). OCPP 2.0.x only; a no-op when `AlignedDataCtrlr.Interval` resolves to
+   * 0 or falls outside the supported UTC-day range.
    */
   public startAlignedMeterValues (): void {
     if (!isOCPP20x(this.stationInfo?.ocppVersion)) {
@@ -1344,42 +1342,43 @@ export class ChargingStation extends EventEmitter {
       )
       return
     }
-    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
-      this,
-      OCPP20ComponentName.AlignedDataCtrlr,
-      OCPP20RequiredVariableName.AlignedDataInterval,
-      Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS
-    )
+    const intervalSeconds = OCPP20ServiceUtils.readAlignedDataIntervalSeconds(this)
+    if (intervalSeconds == null) return
     if (intervalSeconds === 0) {
       logger.info(
         `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues disabled by AlignedDataCtrlr.Interval=0`
       )
       return
     }
-    if (intervalSeconds < 0) {
-      logger.error(
-        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Invalid negative AlignedDataCtrlr.Interval ${intervalSeconds.toString()}`
-      )
-      return
-    }
-    const intervalMs = clampToSafeTimerValue(secondsToMilliseconds(intervalSeconds))
-    if (this.alignedMeterValuesSetInterval == null && this.alignedMeterValuesSetTimeout == null) {
-      // Clock-aligned emission (OCPP 2.0.1 §2.7.12): intervals are evenly spaced
-      // per day from 00:00:00. Delay the first emission to the next wall-clock
-      // boundary (aligned to the Unix epoch, i.e. 00:00:00 UTC), then emit every
-      // interval so boundaries stay aligned for intervals dividing the day.
-      const initialDelayMs = intervalMs - (Date.now() % intervalMs)
+    const intervalMs = secondsToMilliseconds(intervalSeconds)
+    if (this.alignedMeterValuesSetTimeout != null) return
+    const generation = this.alignedMeterValuesGeneration
+    const scheduleNext = (): void => {
+      if (generation !== this.alignedMeterValuesGeneration) return
+      const now = Date.now()
+      const dayStartMs = now - (now % Constants.MS_PER_DAY)
+      const dayEndMs = dayStartMs + Constants.MS_PER_DAY
+      const elapsedTodayMs = now - dayStartMs
+      const nextSlotMs =
+        dayStartMs + (Math.floor(elapsedTodayMs / intervalMs) + 1) * intervalMs
+      const targetMs = Math.min(nextSlotMs, dayEndMs)
+      const delayMs = targetMs - now
       this.alignedMeterValuesSetTimeout = setTimeout(() => {
-        delete this.alignedMeterValuesSetTimeout
-        OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
-        this.alignedMeterValuesSetInterval = setInterval(() => {
+        if (generation !== this.alignedMeterValuesGeneration) return
+        try {
           OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
-        }, intervalMs)
-      }, initialDelayMs)
-      logger.info(
-        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}, first emission aligned to the next clock boundary in ${formatDurationMilliSeconds(initialDelayMs)}`
-      )
+        } finally {
+          if (generation === this.alignedMeterValuesGeneration) {
+            delete this.alignedMeterValuesSetTimeout
+            scheduleNext()
+          }
+        }
+      }, delayMs)
     }
+    scheduleNext()
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)} on UTC-day boundaries`
+    )
   }
 
   /**
@@ -1488,13 +1487,10 @@ export class ChargingStation extends EventEmitter {
 
   /** Stops the autonomous clock-aligned MeterValues timer. */
   public stopAlignedMeterValues (): void {
+    this.alignedMeterValuesGeneration++
     if (this.alignedMeterValuesSetTimeout != null) {
       clearTimeout(this.alignedMeterValuesSetTimeout)
       delete this.alignedMeterValuesSetTimeout
-    }
-    if (this.alignedMeterValuesSetInterval != null) {
-      clearInterval(this.alignedMeterValuesSetInterval)
-      delete this.alignedMeterValuesSetInterval
     }
   }
 
@@ -3053,7 +3049,7 @@ export class ChargingStation extends EventEmitter {
     if (this.heartbeatSetInterval == null) {
       this.startHeartbeat()
     }
-    if (this.alignedMeterValuesSetInterval == null) {
+    if (this.alignedMeterValuesSetTimeout == null) {
       this.startAlignedMeterValues()
     }
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {

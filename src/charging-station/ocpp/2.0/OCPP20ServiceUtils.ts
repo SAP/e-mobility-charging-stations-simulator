@@ -335,21 +335,16 @@ export class OCPP20ServiceUtils {
    * - `AlignedDataCtrlr.Enabled=false` (the default) disables the feature.
    * - The station-scoped `SendDuringIdle=true` suppresses the whole sweep
    *   while any transaction is ongoing (J01.FR.20).
-   * Each EVSE gets ONE aggregated `MeterValuesRequest` covering ALL its
-   * connectors with ReadingContext Sample.Clock. Active connectors use the
-   * transaction pipeline; idle connectors use the transaction-less physical
-   * snapshot. An empty aggregate stays silent to preserve the
-   * `MeterValueType.sampledValue` 1..* cardinality.
+   * EVSEs without a transaction get one aggregated `MeterValuesRequest` with
+   * ReadingContext Sample.Clock. Each active connector reports its snapshot in
+   * `TransactionEvent(Updated, MeterValueClock)` so transaction identity and
+   * sequence state remain attached. Empty sample sets stay silent.
    * @param chargingStation - Target charging station
    */
   public static emitClockAlignedMeterValues (chargingStation: ChargingStation): void {
-    const alignedDataIntervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
-      chargingStation,
-      OCPP20ComponentName.AlignedDataCtrlr,
-      OCPP20RequiredVariableName.AlignedDataInterval,
-      Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS
-    )
-    if (alignedDataIntervalSeconds <= 0) {
+    const alignedDataIntervalSeconds =
+      OCPP20ServiceUtils.readAlignedDataIntervalSeconds(chargingStation)
+    if (alignedDataIntervalSeconds == null || alignedDataIntervalSeconds === 0) {
       return
     }
     const alignedDataEnabled = OCPP20ServiceUtils.readVariableAsBoolean(
@@ -386,20 +381,27 @@ export class OCPP20ServiceUtils {
       OCPP20RequiredVariableName.Measurands
     )
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
+      let evseInTransaction = false
+      for (const connectorStatus of evseStatus.connectors.values()) {
+        if (
+          (connectorStatus.transactionStarted === true ||
+            connectorStatus.transactionPending === true) &&
+          connectorStatus.transactionId != null
+        ) {
+          evseInTransaction = true
+          break
+        }
+      }
       const meterValues: OCPP20MeterValue[] = []
-      // One aggregated MeterValuesRequest per EVSE. OCPP20MeterValue carries no
-      // connectorId, so per-connector entries are indistinguishable on the wire:
-      // this assumes the canonical OCPP 2.0.1 topology of one connector per EVSE.
-      // A multi-connector EVSE would emit connector snapshots the CSMS cannot
-      // attribute individually.
       for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+        const transactionId =
+          (connectorStatus.transactionStarted === true ||
+            connectorStatus.transactionPending === true) &&
+          connectorStatus.transactionId != null
+            ? connectorStatus.transactionId
+            : undefined
+        if (evseInTransaction && transactionId == null) continue
         try {
-          const transactionId =
-            (connectorStatus.transactionStarted === true ||
-              connectorStatus.transactionPending === true) &&
-            connectorStatus.transactionId != null
-              ? connectorStatus.transactionId
-              : undefined
           const meterValue = buildClockAlignedConnectorMeterValue(
             chargingStation,
             {
@@ -411,9 +413,22 @@ export class OCPP20ServiceUtils {
             measurandsKey,
             OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           )
-          // `MeterValueType.sampledValue` cardinality is 1..*: skip a collapsed
-          // MeterValue so the outgoing request stays schema-conforming.
-          if (isNotEmptyArray(meterValue.sampledValue)) {
+          if (!isNotEmptyArray(meterValue.sampledValue)) continue
+          if (transactionId != null) {
+            OCPP20ServiceUtils.sendTransactionEvent(
+              chargingStation,
+              OCPP20TransactionEventEnumType.Updated,
+              OCPP20TriggerReasonEnumType.MeterValueClock,
+              connectorId,
+              transactionId.toString(),
+              { evseId, meterValue: [meterValue] }
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.TRANSACTION_EVENT}':`,
+                error
+              )
+            })
+          } else {
             meterValues.push(meterValue)
           }
         } catch (error: unknown) {
@@ -422,17 +437,12 @@ export class OCPP20ServiceUtils {
           )
         }
       }
-      if (!isNotEmptyArray(meterValues)) {
-        continue
-      }
+      if (evseInTransaction || !isNotEmptyArray(meterValues)) continue
       chargingStation.ocppRequestService
         .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
           chargingStation,
           OCPP20RequestCommand.METER_VALUES,
-          {
-            evseId,
-            meterValue: meterValues,
-          }
+          { evseId, meterValue: meterValues }
         )
         .catch((error: unknown) => {
           logger.error(
@@ -608,6 +618,31 @@ export class OCPP20ServiceUtils {
       OCPP20OptionalVariableName.SendDuringIdle,
       false
     )
+  }
+
+  public static readAlignedDataIntervalSeconds (
+    chargingStation: ChargingStation
+  ): number | undefined {
+    const value =
+      OCPP20ServiceUtils.readVariableValue(
+        chargingStation,
+        OCPP20ComponentName.AlignedDataCtrlr,
+        OCPP20RequiredVariableName.AlignedDataInterval
+      ) ?? Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS.toString()
+    if (!/^[0-9]+$/.test(value)) {
+      logger.warn(
+        `${moduleName}.readAlignedDataIntervalSeconds: Invalid integer '${value}' for AlignedDataCtrlr.Interval`
+      )
+      return
+    }
+    const intervalSeconds = Number(value)
+    if (!Number.isSafeInteger(intervalSeconds) || intervalSeconds > Constants.SECONDS_PER_DAY) {
+      logger.warn(
+        `${moduleName}.readAlignedDataIntervalSeconds: Out-of-range value '${value}' for AlignedDataCtrlr.Interval`
+      )
+      return
+    }
+    return intervalSeconds
   }
 
   /**
@@ -858,12 +893,14 @@ export class OCPP20ServiceUtils {
    * Send queued TransactionEvent requests accumulated while offline.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier whose queue to drain
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
   public static async sendQueuedTransactionEvents (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): Promise<void> {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (
       connectorStatus?.transactionEventQueue == null ||
       !isNotEmptyArray(connectorStatus.transactionEventQueue)
@@ -925,7 +962,8 @@ export class OCPP20ServiceUtils {
     options: Omit<OCPP20TransactionEventOptions, 'eventType'> = {}
   ): Promise<OCPP20TransactionEventResponse> {
     try {
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      const evseId = typeof options.evseId === 'number' ? options.evseId : undefined
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
       if (connectorStatus == null) {
         const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
         logger.error(
@@ -1489,7 +1527,7 @@ export function buildTransactionEvent (
     throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
   }
 
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   if (connectorStatus == null) {
     const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)

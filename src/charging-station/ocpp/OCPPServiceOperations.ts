@@ -186,9 +186,13 @@ export const flushQueuedTransactionMessages = async (
       break
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      for (const { connectorId, connectorStatus } of chargingStation.iterateConnectors()) {
+      for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors()) {
         if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
-          await OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId).catch(
+          await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+            chargingStation,
+            connectorId,
+            evseId
+          ).catch(
             (error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,

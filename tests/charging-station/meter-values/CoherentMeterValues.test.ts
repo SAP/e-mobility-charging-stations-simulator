@@ -519,6 +519,76 @@ await describe('CoherentMeterValues', async () => {
 
       assert.deepEqual(requestedIdentity, [1, 2])
     })
+
+    await it('should preserve enabled fixed non-physical measurands in coherent snapshots', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.FREQUENCY,
+          unit: MeterValueUnit.HERTZ,
+          value: '50',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          unit: MeterValueUnit.WATT,
+          value: '9999',
+        },
+        {
+          measurand: MeterValueMeasurand.POWER_FACTOR,
+          value: '50Hz',
+        },
+        { measurand: MeterValueMeasurand.CURRENT_EXPORT },
+      ] as unknown as SampledValueTemplate[]
+      const enabledMeasurands = new Set([
+        MeterValueMeasurand.CURRENT_EXPORT,
+        MeterValueMeasurand.FREQUENCY,
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.POWER_FACTOR,
+      ])
+
+      const snapshot = buildCoherentMeterValueSnapshot(
+        context,
+        session,
+        passThroughBuilder,
+        undefined,
+        enabledMeasurands
+      )
+
+      assert.strictEqual(
+        snapshot.sampledValue.find(value => value.measurand === MeterValueMeasurand.FREQUENCY)
+          ?.value,
+        '50'
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.find(
+          value => value.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+        )?.value,
+        '0'
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.some(
+          value => value.measurand === MeterValueMeasurand.CURRENT_EXPORT
+        ),
+        false
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.some(
+          value => value.measurand === MeterValueMeasurand.POWER_FACTOR
+        ),
+        false
+      )
+    })
   })
 
   await describe('Wh / kWh unit conversion', async () => {

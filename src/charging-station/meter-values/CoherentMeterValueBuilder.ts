@@ -13,8 +13,9 @@
  * - Within a measurand with multiple phase-qualified templates: no-phase
  *   first, then `L1/L1-N → L2/L2-N → L3/L3-N → L1-L2 → L2-L3 → L3-L1 → N`.
  *
- * Unsupported `(measurand, phase)` combinations are logged and skipped.
- * Only measurands enabled by the caller-resolved allow-list are emitted.
+ * Unsupported physical `(measurand, phase)` combinations are logged and
+ * skipped; enabled non-physical templates with finite fixed values are emitted.
+ * Only measurands enabled by the caller-resolved allow-list are included.
  * The energy register is advanced unconditionally by the caller through
  * {@link ./CoherentSampleComputer.advanceEnergyRegister} independent of
  * whether the Energy measurand is emitted.
@@ -36,7 +37,15 @@ import {
   MeterValuePhase,
   MeterValueUnit,
 } from '../../types/index.js'
-import { Constants, isEmpty, isNotEmptyArray, logger, roundTo } from '../../utils/index.js'
+import {
+  Constants,
+  getRandomFloatFluctuatedRounded,
+  isEmpty,
+  isNotEmptyArray,
+  isNotEmptyString,
+  logger,
+  roundTo,
+} from '../../utils/index.js'
 import {
   advanceEnergyRegister,
   computeCoherentSample,
@@ -121,6 +130,10 @@ const MEASURAND_EMIT_ORDER = [
   MeterValueMeasurand.CURRENT_IMPORT,
   MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
 ] as const satisfies readonly MeterValueMeasurand[]
+
+const PHYSICAL_MEASURANDS: ReadonlySet<MeterValueMeasurand> = new Set(
+  MEASURAND_EMIT_ORDER
+)
 
 /**
  * Within-measurand phase order for deterministic per-phase emission:
@@ -454,6 +467,29 @@ const serializeCoherentMeterValue = (
       const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
       const scaled = roundTo(raw / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
+    }
+  }
+  for (const [measurand, bucket] of groups) {
+    if (PHYSICAL_MEASURANDS.has(measurand) || !isEnabled(measurand)) continue
+    for (const template of bucket) {
+      if (!isNotEmptyString(template.value)) {
+        logger.warn(
+          `${context.logPrefix()} ${moduleName}.serializeCoherentMeterValue: unsupported dynamic (${measurand}, phase=${String(template.phase)}) - template skipped`
+        )
+        continue
+      }
+      const configuredValue = Number(template.value)
+      if (!Number.isFinite(configuredValue)) {
+        logger.warn(
+          `${context.logPrefix()} ${moduleName}.serializeCoherentMeterValue: non-finite fixed (${measurand}, phase=${String(template.phase)}) - template skipped`
+        )
+        continue
+      }
+      const value = getRandomFloatFluctuatedRounded(
+        configuredValue,
+        template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+      )
+      sampledValue.push(buildVersionedSampledValue(template, value, mvContext, template.phase))
     }
   }
   return { sampledValue, timestamp } as MeterValue

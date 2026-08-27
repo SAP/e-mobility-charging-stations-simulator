@@ -172,7 +172,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     dataType: DataEnumType.integer,
     defaultValue: Constants.DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS.toString(),
     description:
-      'Size (in seconds) of the clock-aligned data interval, intended to be transmitted in the MeterValuesRequest message.',
+      'Size (in seconds) of the clock-aligned data interval within one UTC day, intended for MeterValuesRequest or transaction-scoped TransactionEventRequest emission.',
+    max: Constants.SECONDS_PER_DAY,
+    maxLength: 5,
     min: 0,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
