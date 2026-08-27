@@ -1115,7 +1115,7 @@ const createVersionedSampledValueDispatcher = (
               }
             } else {
               logger.warn(
-                `${chargingStation.logPrefix()} ${moduleName}.buildIdentifiedMeterValue: Signed meter values disabled: ${prerequisiteResult.reason}`
+                `${chargingStation.logPrefix()} ${moduleName}.createVersionedSampledValueDispatcher: Signed meter values disabled: ${prerequisiteResult.reason}`
               )
             }
           }

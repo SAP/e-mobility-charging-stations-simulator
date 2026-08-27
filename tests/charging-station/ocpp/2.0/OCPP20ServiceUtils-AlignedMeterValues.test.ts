@@ -314,6 +314,24 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('does not emit a TransactionEvent for a pending (not yet started) transaction', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      setupConnectorWithTransaction(mockStation, 1, { pending: true, transactionId: 'tx-pending' })
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      // A pending transaction has no accepted Started, so no Updated is emitted;
+      // its EVSE stays in-transaction (no idle aggregate for it either).
+      assert.strictEqual(sentTransactionEvents(requestHandlerMock).length, 0)
+      assert.deepEqual(
+        sentPayloads(requestHandlerMock).map(payload => payload.evseId),
+        [2]
+      )
+    })
+
     await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')

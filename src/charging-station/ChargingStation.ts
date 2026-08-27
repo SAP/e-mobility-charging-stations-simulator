@@ -1366,6 +1366,11 @@ export class ChargingStation extends EventEmitter {
         if (generation !== this.alignedMeterValuesGeneration) return
         try {
           OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
+        } catch (error) {
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
+            error
+          )
         } finally {
           if (generation === this.alignedMeterValuesGeneration) {
             delete this.alignedMeterValuesSetTimeout

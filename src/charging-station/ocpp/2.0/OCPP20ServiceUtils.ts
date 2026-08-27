@@ -85,6 +85,10 @@ export interface RejectionReason {
   reasonCode: ReasonCodeEnumType
 }
 
+const hasOngoingTransaction = (connectorStatus: ConnectorStatus): boolean =>
+  (connectorStatus.transactionStarted === true || connectorStatus.transactionPending === true) &&
+  connectorStatus.transactionId != null
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPP20ServiceUtils {
   private static readonly incomingRequestSchemaNames: readonly [
@@ -367,12 +371,7 @@ export class OCPP20ServiceUtils {
       sendDuringIdle &&
       chargingStation
         .iterateConnectors(true)
-        .some(
-          ({ connectorStatus }) =>
-            (connectorStatus.transactionStarted === true ||
-              connectorStatus.transactionPending === true) &&
-            connectorStatus.transactionId != null
-        )
+        .some(({ connectorStatus }) => hasOngoingTransaction(connectorStatus))
     ) {
       return
     }
@@ -383,21 +382,19 @@ export class OCPP20ServiceUtils {
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       let evseInTransaction = false
       for (const connectorStatus of evseStatus.connectors.values()) {
-        if (
-          (connectorStatus.transactionStarted === true ||
-            connectorStatus.transactionPending === true) &&
-          connectorStatus.transactionId != null
-        ) {
+        if (hasOngoingTransaction(connectorStatus)) {
           evseInTransaction = true
           break
         }
       }
       const meterValues: OCPP20MeterValue[] = []
       for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+        // Only started transactions get a TransactionEvent(Updated); a pending
+        // transaction has no accepted Started yet, so emitting Updated would be
+        // out of order. Pending still marks the EVSE in-transaction above, so
+        // its connectors are skipped here (no idle emission either).
         const transactionId =
-          (connectorStatus.transactionStarted === true ||
-            connectorStatus.transactionPending === true) &&
-          connectorStatus.transactionId != null
+          connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
             ? connectorStatus.transactionId
             : undefined
         if (evseInTransaction && transactionId == null) continue
