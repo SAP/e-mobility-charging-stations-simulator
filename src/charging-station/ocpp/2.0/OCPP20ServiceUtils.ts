@@ -387,6 +387,11 @@ export class OCPP20ServiceUtils {
     )
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       const meterValues: OCPP20MeterValue[] = []
+      // One aggregated MeterValuesRequest per EVSE. OCPP20MeterValue carries no
+      // connectorId, so per-connector entries are indistinguishable on the wire:
+      // this assumes the canonical OCPP 2.0.1 topology of one connector per EVSE.
+      // A multi-connector EVSE would emit connector snapshots the CSMS cannot
+      // attribute individually.
       for (const [connectorId, connectorStatus] of evseStatus.connectors) {
         try {
           const transactionId =

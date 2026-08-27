@@ -963,8 +963,22 @@ export const buildEmptyMeterValue = (): MeterValue => ({
 })
 
 /**
+ * Resolved meter-value identity shared by {@link buildIdentifiedMeterValue} and
+ * {@link createVersionedSampledValueDispatcher}. Either transaction-derived
+ * (legacy callers pass only `transactionId`) or provided directly for
+ * clock-aligned reporting (`connectorId` + `evseId` + `snapshot`, #2011
+ * Category 2F).
+ */
+interface ResolvedMeterValueIdentity {
+  connectorId?: number
+  evseId?: number
+  snapshot?: boolean
+  transactionId?: number | string
+}
+
+/**
  * Internal dispatch bag returned by {@link createVersionedSampledValueDispatcher}
- * and consumed by {@link buildMeterValue}. Not exported: kept out of the
+ * and consumed by {@link buildIdentifiedMeterValue}. Not exported: kept out of the
  * module surface so external callers rely on the higher-level entry point.
  */
 interface VersionedSampledValueDispatch {
@@ -983,7 +997,7 @@ interface VersionedSampledValueDispatch {
 
 /**
  * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
- * used by {@link buildMeterValue} and {@link buildClockAlignedConnectorMeterValue}.
+ * used by {@link buildIdentifiedMeterValue}, the shared builder behind {@link buildMeterValue} and {@link buildClockAlignedConnectorMeterValue}.
  * The identity is either transaction-derived (legacy callers) or provided
  * directly (clock-aligned reporting for idle connectors, #2011 Category 2F).
  * @param chargingStation - Target charging station.
@@ -1001,12 +1015,7 @@ interface VersionedSampledValueDispatch {
  */
 const createVersionedSampledValueDispatcher = (
   chargingStation: ChargingStation,
-  identity: {
-    connectorId?: number
-    evseId?: number
-    snapshot?: boolean
-    transactionId?: number | string
-  },
+  identity: ResolvedMeterValueIdentity,
   context?: MeterValueContext
 ): VersionedSampledValueDispatch => {
   const { transactionId } = identity
@@ -1106,7 +1115,7 @@ const createVersionedSampledValueDispatcher = (
               }
             } else {
               logger.warn(
-                `${chargingStation.logPrefix()} ${moduleName}.buildMeterValue: Signed meter values disabled: ${prerequisiteResult.reason}`
+                `${chargingStation.logPrefix()} ${moduleName}.buildIdentifiedMeterValue: Signed meter values disabled: ${prerequisiteResult.reason}`
               )
             }
           }
@@ -1667,12 +1676,7 @@ export const buildClockAlignedConnectorMeterValue = (
 
 const buildIdentifiedMeterValue = (
   chargingStation: ChargingStation,
-  identity: {
-    connectorId?: number
-    evseId?: number
-    snapshot?: boolean
-    transactionId?: number | string
-  },
+  identity: ResolvedMeterValueIdentity,
   interval: number,
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext,
@@ -1712,37 +1716,36 @@ const buildIdentifiedMeterValue = (
         ? (connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0)
         : (connectorStatus?.energyActiveImportRegisterValue ?? 0)
     )
-    const coherentMeterValue =
-      identity.snapshot === true
-        ? buildCoherentMeterValueSnapshot(
-          chargingStation,
-          coherentSession,
-          buildSignedVersionedSampledValue,
-          context,
-          enabledMeasurands,
-          registerValuesWithoutPhases,
-          timestamp,
-          connectorStatus,
-          evseId,
-          coherentSnapshotEnergyRegister
-        )
-        : buildCoherentMeterValue(
-          chargingStation,
-          coherentSession,
-          buildSignedVersionedSampledValue,
-          {
-            intervalMs: interval,
-            nowMs: Date.now(),
-            rootSeed: resolveRootSeed(chargingStation.stationInfo),
-          },
-          context,
-          enabledMeasurands,
-          registerValuesWithoutPhases,
-          timestamp,
-          connectorStatus,
-          evseId
-        )
-    if (identity.snapshot === true) {
+    const coherentMeterValue = snapshot
+      ? buildCoherentMeterValueSnapshot(
+        chargingStation,
+        coherentSession,
+        buildSignedVersionedSampledValue,
+        context,
+        enabledMeasurands,
+        registerValuesWithoutPhases,
+        timestamp,
+        connectorStatus,
+        evseId,
+        coherentSnapshotEnergyRegister
+      )
+      : buildCoherentMeterValue(
+        chargingStation,
+        coherentSession,
+        buildSignedVersionedSampledValue,
+        {
+          intervalMs: interval,
+          nowMs: Date.now(),
+          rootSeed: resolveRootSeed(chargingStation.stationInfo),
+        },
+        context,
+        enabledMeasurands,
+        registerValuesWithoutPhases,
+        timestamp,
+        connectorStatus,
+        evseId
+      )
+    if (snapshot) {
       const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
       coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(
         chargingStation,
@@ -2055,6 +2058,11 @@ const buildIdentifiedMeterValue = (
       { interval }
     )
   }
+  // Snapshot builds re-project the full configured template identity set
+  // (location/unit/context/format families, fixed-value measurands,
+  // RegisterValuesWithoutPhases) from the base samples above, which only serve
+  // as the value source. The second pass is intentional (per-identity/phase
+  // coherence), not redundant computation.
   if (snapshot) {
     meterValue.sampledValue = expandClockAlignedSnapshotSamples(
       chargingStation,
