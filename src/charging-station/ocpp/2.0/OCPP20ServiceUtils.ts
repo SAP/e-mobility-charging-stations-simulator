@@ -346,6 +346,12 @@ export class OCPP20ServiceUtils {
    * @param chargingStation - Target charging station
    */
   public static emitClockAlignedMeterValues (chargingStation: ChargingStation): void {
+    // Clock-aligned values are wall-clock anchored: skip the autonomous sweep
+    // while offline so we neither queue stale snapshots nor grow the offline
+    // TransactionEvent queue unbounded during long disconnects.
+    if (!chargingStation.isWebSocketConnectionOpened()) {
+      return
+    }
     const alignedDataIntervalSeconds =
       OCPP20ServiceUtils.readAlignedDataIntervalSeconds(chargingStation)
     if (alignedDataIntervalSeconds == null || alignedDataIntervalSeconds === 0) {

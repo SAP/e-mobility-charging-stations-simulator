@@ -556,6 +556,17 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
+    await it('emits nothing while the WebSocket connection is closed', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      mockStation.wsConnection = null
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
     await it('never mutates connector energy bookkeeping nor public-key flag on idle ticks', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
