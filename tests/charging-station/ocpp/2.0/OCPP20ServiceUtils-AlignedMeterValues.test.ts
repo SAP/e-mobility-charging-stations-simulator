@@ -1542,7 +1542,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
     })
 
     await it('arms exactly one timer and guards double start', () => {
-      mock.timers.enable({ apis: ['setInterval'] })
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
       station.startAlignedMeterValues()
@@ -1554,8 +1554,24 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
+    await it('aligns the first emission to the next wall-clock boundary', () => {
+      // now = 300 s into a 900 s interval → first emission 600 s later (at the
+      // next boundary), not a full interval after start.
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 300_000 })
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+
+      station.startAlignedMeterValues()
+
+      mock.timers.tick(599_999)
+      assert.strictEqual(emitSpy.mock.callCount(), 0)
+      mock.timers.tick(1)
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      mock.timers.tick(900_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
+    })
+
     await it('stops cleanly and survives repeated online cycles without leaks', () => {
-      mock.timers.enable({ apis: ['setInterval'] })
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
       station.startAlignedMeterValues()
@@ -1573,7 +1589,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
     await it('re-arms with the new cadence after an interval change and restart', () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
-      mock.timers.enable({ apis: ['setInterval'] })
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
       station.restartAlignedMeterValues()
@@ -1590,7 +1606,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       station.stationInfo = {
         ocppVersion: OCPPVersion.VERSION_16,
       } as ChargingStationInfo
-      mock.timers.enable({ apis: ['setInterval'] })
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
       station.startAlignedMeterValues()
@@ -1601,7 +1617,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
     await it('does not arm when the configured interval is 0', () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '0')
-      mock.timers.enable({ apis: ['setInterval'] })
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
       station.startAlignedMeterValues()

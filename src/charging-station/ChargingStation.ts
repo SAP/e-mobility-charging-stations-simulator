@@ -212,6 +212,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private alignedMeterValuesSetInterval?: NodeJS.Timeout
+  private alignedMeterValuesSetTimeout?: NodeJS.Timeout
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile: string
@@ -1362,12 +1363,21 @@ export class ChargingStation extends EventEmitter {
       return
     }
     const intervalMs = clampToSafeTimerValue(secondsToMilliseconds(intervalSeconds))
-    if (this.alignedMeterValuesSetInterval == null) {
-      this.alignedMeterValuesSetInterval = setInterval(() => {
+    if (this.alignedMeterValuesSetInterval == null && this.alignedMeterValuesSetTimeout == null) {
+      // Clock-aligned emission (OCPP 2.0.1 §2.7.12): intervals are evenly spaced
+      // per day from 00:00:00. Delay the first emission to the next wall-clock
+      // boundary (aligned to the Unix epoch, i.e. 00:00:00 UTC), then emit every
+      // interval so boundaries stay aligned for intervals dividing the day.
+      const initialDelayMs = intervalMs - (Date.now() % intervalMs)
+      this.alignedMeterValuesSetTimeout = setTimeout(() => {
+        delete this.alignedMeterValuesSetTimeout
         OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
-      }, intervalMs)
+        this.alignedMeterValuesSetInterval = setInterval(() => {
+          OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
+        }, intervalMs)
+      }, initialDelayMs)
       logger.info(
-        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}`
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}, first emission aligned to the next clock boundary in ${formatDurationMilliSeconds(initialDelayMs)}`
       )
     }
   }
@@ -1478,6 +1488,10 @@ export class ChargingStation extends EventEmitter {
 
   /** Stops the autonomous clock-aligned MeterValues timer. */
   public stopAlignedMeterValues (): void {
+    if (this.alignedMeterValuesSetTimeout != null) {
+      clearTimeout(this.alignedMeterValuesSetTimeout)
+      delete this.alignedMeterValuesSetTimeout
+    }
     if (this.alignedMeterValuesSetInterval != null) {
       clearInterval(this.alignedMeterValuesSetInterval)
       delete this.alignedMeterValuesSetInterval
