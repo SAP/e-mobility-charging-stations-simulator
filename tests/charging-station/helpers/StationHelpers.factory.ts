@@ -265,6 +265,9 @@ export function createMockChargingStation (
       if (connectorStatus == null) {
         return 0
       }
+      // `!== false` mirrors production's effective default: DEFAULT_STATION_INFO
+      // seeds meteringPerTransaction to true (Constants.ts), so an unset field
+      // reads transaction-scoped like ChargingStation.getEnergyActiveImportRegister.
       const value =
         this.stationInfo.meteringPerTransaction !== false
           ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
@@ -312,7 +315,7 @@ export function createMockChargingStation (
       return evses.has(0) ? evses.size - 1 : evses.size
     },
     getNumberOfPhases (): number {
-      return stationInfoOverrides?.numberOfPhases ?? 3
+      return this.stationInfo.numberOfPhases
     },
     getNumberOfRunningTransactions (): number {
       return this.iterateConnectors(true).reduce(
@@ -332,7 +335,7 @@ export function createMockChargingStation (
       )?.connectorStatus.transactionIdTag
     },
     getVoltageOut (): number {
-      return stationInfoOverrides?.voltageOut ?? 230
+      return this.stationInfo.voltageOut
     },
     getWebSocketPingInterval (): number {
       return websocketPingInterval
