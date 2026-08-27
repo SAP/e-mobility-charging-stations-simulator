@@ -240,7 +240,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('AC 1-phase invariants', async () => {
-    await it('should satisfy P = V·I·phases within ±1 W after rounding', () => {
+    await it('should satisfy P = V·I·phases within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 7400,
@@ -272,7 +272,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('AC 3-phase invariants', async () => {
-    await it('should satisfy P = V·I·3 within ±3 W after rounding', () => {
+    await it('should satisfy P = V·I·3 within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
@@ -303,7 +303,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('DC invariants', async () => {
-    await it('should satisfy P = V·I within ±1 W after rounding', () => {
+    await it('should satisfy P = V·I within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.DC,
         evseMaxPowerW: 50000,

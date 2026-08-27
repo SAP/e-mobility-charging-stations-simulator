@@ -265,7 +265,10 @@ export function createMockChargingStation (
       if (connectorStatus == null) {
         return 0
       }
-      const value = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      const value =
+        this.stationInfo.meteringPerTransaction !== false
+          ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
+          : (connectorStatus.energyActiveImportRegisterValue ?? 0)
       return rounded ? Math.round(value) : value
     },
     getEnergyActiveImportRegisterByTransactionId (

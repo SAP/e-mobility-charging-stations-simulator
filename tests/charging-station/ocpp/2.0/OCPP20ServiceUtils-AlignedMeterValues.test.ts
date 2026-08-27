@@ -400,7 +400,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
     })
 
     await it('does not perturb the next coherent sample when emitting an aligned snapshot', () => {
-      const { mockStation } = alignedStation
+      const { mockStation, requestHandlerMock } = alignedStation
       const { mockStation: controlStation } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -447,6 +447,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
+      // Guard against a vacuous pass: the sweep must actually emit for the
+      // active coherent EVSE, otherwise "does not perturb" holds trivially.
+      assert.ok(sentPayloads(requestHandlerMock).some(payload => payload.evseId === 1))
       assert.strictEqual(session.socPercent, socBefore)
       assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, registerBefore)
       assert.strictEqual(
