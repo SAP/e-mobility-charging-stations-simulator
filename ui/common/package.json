@@ -7,10 +7,10 @@
     "pnpm": ">=10.9.0"
   },
   "volta": {
-    "node": "24.19.0",
-    "pnpm": "11.22.0"
+    "node": "24.20.0",
+    "pnpm": "11.23.0"
   },
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@11.23.0",
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
