@@ -577,15 +577,11 @@ await describe('CoherentMeterValues', async () => {
         '0'
       )
       assert.strictEqual(
-        snapshot.sampledValue.some(
-          value => value.measurand === MeterValueMeasurand.CURRENT_EXPORT
-        ),
+        snapshot.sampledValue.some(value => value.measurand === MeterValueMeasurand.CURRENT_EXPORT),
         false
       )
       assert.strictEqual(
-        snapshot.sampledValue.some(
-          value => value.measurand === MeterValueMeasurand.POWER_FACTOR
-        ),
+        snapshot.sampledValue.some(value => value.measurand === MeterValueMeasurand.POWER_FACTOR),
         false
       )
     })

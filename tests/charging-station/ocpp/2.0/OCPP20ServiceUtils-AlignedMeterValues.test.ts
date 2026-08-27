@@ -295,7 +295,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
-      assert.deepEqual(sentPayloads(requestHandlerMock).map(payload => payload.evseId), [2])
+      assert.deepEqual(
+        sentPayloads(requestHandlerMock).map(payload => payload.evseId),
+        [2]
+      )
       const transactionEvents = sentTransactionEvents(requestHandlerMock)
       assert.strictEqual(transactionEvents.length, 1)
       assert.strictEqual(transactionEvents[0].connectorId, 1)
@@ -341,8 +344,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ? transactionEvent.meterValue
           .flatMap(meterValue => meterValue.sampledValue)
           .find(
-            sample =>
-              sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+            sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
           )
         : undefined
       assert.ok(energySample?.signedMeterValue != null)
@@ -1752,11 +1754,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
 
-      for (const value of [
-        (Constants.SECONDS_PER_DAY + 1).toString(),
-        '86400.5',
-        '-0.5',
-      ]) {
+      for (const value of [(Constants.SECONDS_PER_DAY + 1).toString(), '86400.5', '-0.5']) {
         upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, value)
         station.startAlignedMeterValues()
         mock.timers.tick(Constants.MAX_SETINTERVAL_DELAY_MS)

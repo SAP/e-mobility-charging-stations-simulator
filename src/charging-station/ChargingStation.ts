@@ -1359,8 +1359,7 @@ export class ChargingStation extends EventEmitter {
       const dayStartMs = now - (now % Constants.MS_PER_DAY)
       const dayEndMs = dayStartMs + Constants.MS_PER_DAY
       const elapsedTodayMs = now - dayStartMs
-      const nextSlotMs =
-        dayStartMs + (Math.floor(elapsedTodayMs / intervalMs) + 1) * intervalMs
+      const nextSlotMs = dayStartMs + (Math.floor(elapsedTodayMs / intervalMs) + 1) * intervalMs
       const targetMs = Math.min(nextSlotMs, dayEndMs)
       const delayMs = targetMs - now
       this.alignedMeterValuesSetTimeout = setTimeout(() => {

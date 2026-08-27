@@ -192,14 +192,12 @@ export const flushQueuedTransactionMessages = async (
             chargingStation,
             connectorId,
             evseId
-          ).catch(
-            (error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
-                error
-              )
-            }
-          )
+          ).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+              error
+            )
+          })
         }
       }
       break

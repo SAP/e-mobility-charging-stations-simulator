@@ -131,9 +131,7 @@ const MEASURAND_EMIT_ORDER = [
   MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
 ] as const satisfies readonly MeterValueMeasurand[]
 
-const PHYSICAL_MEASURANDS: ReadonlySet<MeterValueMeasurand> = new Set(
-  MEASURAND_EMIT_ORDER
-)
+const PHYSICAL_MEASURANDS: ReadonlySet<MeterValueMeasurand> = new Set(MEASURAND_EMIT_ORDER)
 
 /**
  * Within-measurand phase order for deterministic per-phase emission:
