@@ -1362,12 +1362,14 @@ export class ChargingStation extends EventEmitter {
       return
     }
     const intervalMs = clampToSafeTimerValue(secondsToMilliseconds(intervalSeconds))
-    this.alignedMeterValuesSetInterval ??= setInterval(() => {
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
-    }, intervalMs)
-    logger.info(
-      `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}`
-    )
+    if (this.alignedMeterValuesSetInterval == null) {
+      this.alignedMeterValuesSetInterval = setInterval(() => {
+        OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
+      }, intervalMs)
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues timer started every ${formatDurationMilliSeconds(intervalMs)}`
+      )
+    }
   }
 
   /**

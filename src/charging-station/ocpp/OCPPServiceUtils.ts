@@ -1751,7 +1751,15 @@ const buildIdentifiedMeterValue = (
         context
       )
     }
-    if (signingState.publicKeyIncluded && connectorStatus != null) {
+    // Only transactional builds may flip the one-time public-key flag. A
+    // coherent session always carries a transactionId, but guard explicitly to
+    // stay symmetric with the random/fixed path below and robust to any future
+    // coherent-session model change.
+    if (
+      identity.transactionId != null &&
+      signingState.publicKeyIncluded &&
+      connectorStatus != null
+    ) {
       connectorStatus.publicKeySentInTransaction = true
     }
     return coherentMeterValue
