@@ -34,6 +34,7 @@ import {
 } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   AttributeEnumType,
+  ChargingStationEvents,
   CurrentType,
   MeterValuePhase,
   OCPP20ComponentName,
@@ -223,6 +224,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+      assert.ok(
+        requestHandlerMock.mock.calls.every(
+          call =>
+            call.arguments[1] !== OCPP20RequestCommand.METER_VALUES ||
+            (call.arguments[3] as undefined | { skipBufferingOnError?: boolean })
+              ?.skipBufferingOnError === true
+        )
+      )
       const payloads = sentPayloads(requestHandlerMock)
       assert.deepEqual(
         payloads.map(payload => payload.evseId).sort((a, b) => a - b),
@@ -312,9 +321,18 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         transactionEvents[0].meterValue?.[0].sampledValue[0].context,
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
+      const transactionEventCall = requestHandlerMock.mock.calls.find(
+        call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT
+      )
+      assert.ok(transactionEventCall != null)
+      assert.strictEqual(
+        (transactionEventCall.arguments[3] as { skipBufferingOnError?: boolean })
+          .skipBufferingOnError,
+        true
+      )
     })
 
-    await it('does not emit a TransactionEvent for a pending (not yet started) transaction', () => {
+    await it('treats a pending transaction as idle until Started is accepted', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -323,12 +341,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
-      // A pending transaction has no accepted Started, so no Updated is emitted;
-      // its EVSE stays in-transaction (no idle aggregate for it either).
       assert.strictEqual(sentTransactionEvents(requestHandlerMock).length, 0)
       assert.deepEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
-        [2]
+        [1, 2]
       )
     })
 
@@ -565,6 +581,23 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('does not queue a clock-aligned event when the connection closes during a sweep', () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-race' })
+      let connectionChecks = 0
+      mock.method(mockStation, 'isWebSocketConnectionOpened', () => connectionChecks++ === 0)
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+      assert.deepEqual(mockStation.getConnectorStatus(1, 1)?.transactionEventQueue ?? [], [])
     })
 
     await it('never mutates connector energy bookkeeping nor public-key flag on idle ticks', () => {
@@ -846,7 +879,6 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
           unit: 'Hz',
           value: '50',
         },
-        { measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, unit: 'Wh' },
       ] as unknown as NonNullable<EvseStatus['MeterValues']>
       const measurandsKey = buildConfigKey(
         OCPP20ComponentName.AlignedDataCtrlr,
@@ -1738,6 +1770,15 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       station.startAlignedMeterValues()
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+    })
+
+    await it('re-arms after reconnecting in an already accepted state', () => {
+      const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
+      mock.method(station, 'inAcceptedState', () => true)
+
+      station.emitChargingStationEvent(ChargingStationEvents.connected)
+
+      assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
     await it('re-arms with the new cadence after an interval change and restart', () => {

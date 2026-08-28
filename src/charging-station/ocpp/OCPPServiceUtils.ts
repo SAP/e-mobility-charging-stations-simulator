@@ -438,6 +438,14 @@ const buildEnergyMeasurandValue = (
   measurandsKey?: ConfigurationKeyType,
   snapshot = false
 ): null | SingleValueMeasurandData => {
+  if (
+    snapshot &&
+    resolveEnabledMeasurands(chargingStation, measurandsKey)?.has(
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    ) === false
+  ) {
+    return null
+  }
   const energyTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,

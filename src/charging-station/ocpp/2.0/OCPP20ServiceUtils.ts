@@ -35,6 +35,7 @@ import {
   OCPPVersion,
   ReasonCodeEnumType,
   RequestCommand,
+  type RequestParams,
   type StartTransactionResult,
   type StatusNotificationOptions,
   type StopTransactionReason,
@@ -86,8 +87,7 @@ export interface RejectionReason {
 }
 
 const hasOngoingTransaction = (connectorStatus: ConnectorStatus): boolean =>
-  (connectorStatus.transactionStarted === true || connectorStatus.transactionPending === true) &&
-  connectorStatus.transactionId != null
+  connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPP20ServiceUtils {
@@ -370,9 +370,7 @@ export class OCPP20ServiceUtils {
     // J01.FR.20: the registered variable is station-scoped (no EVSE instance),
     // so with SendDuringIdle=true an ongoing transaction anywhere on the
     // charging station stops clock-aligned meter values for ALL EVSEs.
-    // Pending transactions count as ongoing (same shape as
-    // resolveActiveTransaction): transactionId is assigned before the Started
-    // event is accepted.
+    // A pending remote start is not ongoing until its Started event is accepted.
     if (
       sendDuringIdle &&
       chargingStation
@@ -395,10 +393,9 @@ export class OCPP20ServiceUtils {
       }
       const meterValues: OCPP20MeterValue[] = []
       for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-        // Only started transactions get a TransactionEvent(Updated); a pending
-        // transaction has no accepted Started yet, so emitting Updated would be
-        // out of order. Pending still marks the EVSE in-transaction above, so
-        // its connectors are skipped here (no idle emission either).
+        // Only accepted Started transactions get TransactionEvent(Updated).
+        // A pending remote start remains idle until then and reports through
+        // the non-transactional MeterValues path.
         const transactionId =
           connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
             ? connectorStatus.transactionId
@@ -424,7 +421,8 @@ export class OCPP20ServiceUtils {
               OCPP20TriggerReasonEnumType.MeterValueClock,
               connectorId,
               transactionId.toString(),
-              { evseId, meterValue: [meterValue] }
+              { evseId, meterValue: [meterValue] },
+              { skipBufferingOnError: true }
             ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.TRANSACTION_EVENT}':`,
@@ -445,7 +443,8 @@ export class OCPP20ServiceUtils {
         .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
           chargingStation,
           OCPP20RequestCommand.METER_VALUES,
-          { evseId, meterValue: meterValues }
+          { evseId, meterValue: meterValues },
+          { skipBufferingOnError: true }
         )
         .catch((error: unknown) => {
           logger.error(
@@ -954,6 +953,7 @@ export class OCPP20ServiceUtils {
    * @param connectorId - Connector identifier
    * @param transactionId - Transaction identifier
    * @param options - Additional transaction event options
+   * @param requestParams - Optional transport behavior overrides
    * @returns Promise resolving to the TransactionEvent response
    */
   public static async sendTransactionEvent (
@@ -962,7 +962,8 @@ export class OCPP20ServiceUtils {
     triggerReason: OCPP20TriggerReasonEnumType,
     connectorId: number,
     transactionId: string,
-    options: Omit<OCPP20TransactionEventOptions, 'eventType'> = {}
+    options: Omit<OCPP20TransactionEventOptions, 'eventType'> = {},
+    requestParams?: RequestParams
   ): Promise<OCPP20TransactionEventResponse> {
     try {
       const evseId = typeof options.evseId === 'number' ? options.evseId : undefined
@@ -977,6 +978,12 @@ export class OCPP20ServiceUtils {
 
       // Offline: build and queue pre-built payload (sent as-is via rawPayload on reconnect)
       if (!chargingStation.isWebSocketConnectionOpened()) {
+        if (requestParams?.skipBufferingOnError === true) {
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Dropping non-buffered TransactionEvent while offline`
+          )
+          return { idTokenInfo: undefined }
+        }
         // E04.FR.03: offline flag SHALL be TRUE for any TransactionEventRequest that occurred while offline
         const transactionEventRequest = buildTransactionEvent(chargingStation, {
           connectorId,
@@ -1006,13 +1013,18 @@ export class OCPP20ServiceUtils {
       const response = await chargingStation.ocppRequestService.requestHandler<
         OCPP20TransactionEventOptions,
         OCPP20TransactionEventResponse
-      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, {
-        connectorId,
-        eventType,
-        transactionId,
-        triggerReason,
-        ...options,
-      })
+      >(
+        chargingStation,
+        OCPP20RequestCommand.TRANSACTION_EVENT,
+        {
+          connectorId,
+          eventType,
+          transactionId,
+          triggerReason,
+          ...options,
+        },
+        requestParams
+      )
 
       return response
     } catch (error) {
