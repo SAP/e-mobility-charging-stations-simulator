@@ -318,9 +318,6 @@ export class ChargingStation extends EventEmitter {
       if (this.wsPingSetInterval == null) {
         this.startWebSocketPing()
       }
-      if (this.inAcceptedState()) {
-        this.startAlignedMeterValues()
-      }
     })
     this.on(ChargingStationEvents.disconnected, () => {
       try {
@@ -2775,6 +2772,7 @@ export class ChargingStation extends EventEmitter {
         )
       } else {
         await flushQueuedTransactionMessages(this)
+        this.startAlignedMeterValues()
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {

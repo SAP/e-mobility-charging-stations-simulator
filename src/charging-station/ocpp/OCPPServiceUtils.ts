@@ -1767,6 +1767,7 @@ const buildIdentifiedMeterValue = (
     // stay symmetric with the random/fixed path below and robust to any future
     // coherent-session model change.
     if (
+      !snapshot &&
       identity.transactionId != null &&
       signingState.publicKeyIncluded &&
       connectorStatus != null
@@ -2084,9 +2085,14 @@ const buildIdentifiedMeterValue = (
       idle
     )
   }
-  // Only transactional builds may flip the one-time public-key flag; an idle
-  // clock-aligned tick must never suppress the key of the next transaction.
-  if (identity.transactionId != null && signingState.publicKeyIncluded && connectorStatus != null) {
+  // Transactional snapshots defer this flag until their request is delivered.
+  // Other transactional builds preserve the existing eager-commit behavior.
+  if (
+    !snapshot &&
+    identity.transactionId != null &&
+    signingState.publicKeyIncluded &&
+    connectorStatus != null
+  ) {
     connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue

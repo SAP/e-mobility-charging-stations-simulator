@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
+import type { QueuedTransactionEvent } from '../../../../src/types/ConnectorStatus.js'
 import type {
   ChargingStationInfo,
   EvseStatus,
@@ -35,6 +36,7 @@ import {
 import {
   AttributeEnumType,
   ChargingStationEvents,
+  ConnectorStatusEnum,
   CurrentType,
   MeterValuePhase,
   OCPP20ComponentName,
@@ -104,6 +106,11 @@ type RequestHandlerSpy = Mock<(...args: unknown[]) => Promise<unknown>>
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- inert timer-tick spy target
 const noop = (): void => {}
+
+/** Waits until fire-and-forget request continuations have settled. */
+const flushPendingPromises = async (): Promise<void> => {
+  await new Promise(resolve => setImmediate(resolve))
+}
 
 /**
  * Create a mock OCPP 2.0.1 station with a mocked request handler capturing
@@ -348,6 +355,24 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('isolates a connector build failure from the remaining EVSEs', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      const getConnectorStatus = mockStation.getConnectorStatus.bind(mockStation)
+      mock.method(mockStation, 'getConnectorStatus', (connectorId: number, evseId?: number) => {
+        if (evseId === 1) throw new Error('connector build failed')
+        return getConnectorStatus(connectorId, evseId)
+      })
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.deepEqual(
+        sentPayloads(requestHandlerMock).map(payload => payload.evseId),
+        [2]
+      )
+    })
+
     await it('uses the transactional Sample.Clock pipeline and aligned signing for an active connector', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
@@ -386,7 +411,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
-    await it('finalizes signing state and timestamp on a coherent aligned snapshot', () => {
+    await it('finalizes signing state and timestamp on a coherent aligned snapshot', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -440,6 +465,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(mockStation.getCoherentSession('tx-coherent'), session)
 
       OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await flushPendingPromises()
 
       const connectorStatus = mockStation.getConnectorStatus(1)
       assert.strictEqual(connectorStatus?.publicKeySentInTransaction, true)
@@ -467,6 +493,54 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         'base64'
       ).toString('utf8')
       assert.ok(signedMeterData.includes(`"TM":"${timestamp.toISOString()}"`))
+    })
+
+    await it('commits OncePerTransaction public-key state only after successful delivery', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        PUBLIC_KEY_MODE_KEY,
+        PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+      )
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      upsertConfigurationKey(
+        mockStation,
+        FISCAL_SIGNING_METHOD,
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-retry' })
+      if (mockStation.stationInfo != null) mockStation.stationInfo.meteringPerTransaction = true
+      const connectorStatus = mockStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
+      let attempts = 0
+      requestHandlerMock.mock.mockImplementation(async () => {
+        attempts++
+        if (attempts === 1) throw new Error('transport failed')
+        return Promise.resolve({})
+      })
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await flushPendingPromises()
+      assert.notStrictEqual(connectorStatus.publicKeySentInTransaction, true)
+
+      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await flushPendingPromises()
+
+      const transactionEvents = sentTransactionEvents(requestHandlerMock)
+      assert.strictEqual(transactionEvents.length, 2)
+      const deliveredEnergySample = transactionEvents[1].meterValue
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER)
+      assert.ok((deliveredEnergySample?.signedMeterValue?.publicKey.length ?? 0) > 0)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
     await it('does not perturb the next coherent sample when emitting an aligned snapshot', () => {
@@ -1192,6 +1266,43 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('cleans up the EVSE-qualified connector after replaying an Ended event', async () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 2 })
+      const evse1 = mockStation.getEvseStatus(1)
+      const evse2 = mockStation.getEvseStatus(2)
+      assert.ok(evse1 != null)
+      assert.ok(evse2 != null)
+      const connector1 = [...evse1.connectors.values()][0]
+      const connector2 = [...evse2.connectors.values()][0]
+      evse1.connectors.clear()
+      evse2.connectors.clear()
+      evse1.connectors.set(1, connector1)
+      evse2.connectors.set(1, connector2)
+      connector1.status = ConnectorStatusEnum.Faulted
+      connector2.status = ConnectorStatusEnum.Occupied
+      connector2.transactionStarted = true
+      connector2.transactionId = '00000000-0000-4000-8000-000000000001'
+      connector2.transactionEventQueue = [
+        {
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Ended,
+            seqNo: 1,
+            timestamp: new Date(),
+            transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+            triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+          },
+          seqNo: 1,
+          timestamp: new Date(),
+        },
+      ]
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 1, 2)
+
+      assert.strictEqual(connector1.status, ConnectorStatusEnum.Faulted)
+      assert.strictEqual(connector2.status, ConnectorStatusEnum.Available)
+      assert.strictEqual(connector2.transactionStarted, false)
+    })
+
     await it('preserves every register template identity family during phase suppression', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) mockStation.stationInfo.numberOfPhases = 3
@@ -1772,13 +1883,45 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
 
-    await it('re-arms after reconnecting in an already accepted state', () => {
+    await it('re-arms only after queued TransactionEvents finish replaying', async () => {
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
       mock.method(station, 'inAcceptedState', () => true)
+      mock.method(station, 'isWebSocketConnectionOpened', () => true)
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEventQueue = [{} as QueuedTransactionEvent]
+      let signalFlushStarted: (() => void) | undefined
+      const flushStarted = new Promise<void>(resolve => {
+        signalFlushStarted = resolve
+      })
+      let releaseFlush: (() => void) | undefined
+      const flushBlocked = new Promise<void>(resolve => {
+        releaseFlush = resolve
+      })
+      mock.method(OCPP20ServiceUtils, 'sendQueuedTransactionEvents', async () => {
+        signalFlushStarted?.()
+        await flushBlocked
+      })
 
-      station.emitChargingStationEvent(ChargingStationEvents.connected)
+      const onOpenPromise = (station as unknown as { onOpen: () => Promise<void> }).onOpen()
+      await flushStarted
+      const startsBeforeFlushCompleted = startSpy.mock.callCount()
+      releaseFlush?.()
+      await onOpenPromise
 
+      assert.strictEqual(startsBeforeFlushCompleted, 0)
       assert.strictEqual(startSpy.mock.callCount(), 1)
+    })
+
+    await it('stops the aligned timer when the station disconnects', () => {
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+
+      station.startAlignedMeterValues()
+      station.emitChargingStationEvent(ChargingStationEvents.disconnected)
+      mock.timers.tick(900_000)
+
+      assert.strictEqual(emitSpy.mock.callCount(), 0)
     })
 
     await it('re-arms with the new cadence after an interval change and restart', () => {

@@ -395,12 +395,14 @@ export class OCPP20ResponseService extends OCPPResponseService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent(${requestPayload.eventType}) response received`
     )
+    const evseId =
+      requestPayload.evse?.id ??
+      chargingStation.getEvseIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorId =
       requestPayload.evse?.connectorId ??
-      requestPayload.evse?.id ??
       chargingStation.getConnectorIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorStatus =
-      connectorId != null ? chargingStation.getConnectorStatus(connectorId) : undefined
+      connectorId != null ? chargingStation.getConnectorStatus(connectorId, evseId) : undefined
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
@@ -408,7 +410,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
           await OCPP20ServiceUtils.cleanupEndedTransaction(
             chargingStation,
             connectorId,
-            connectorStatus
+            connectorStatus,
+            evseId
           )
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
@@ -443,6 +446,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
             sendAndSetConnectorStatus(chargingStation, {
               connectorId,
               connectorStatus: ConnectorStatusEnum.Occupied,
+              ...(evseId != null && { evseId }),
             }).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Occupied):`,

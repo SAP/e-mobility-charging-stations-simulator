@@ -208,11 +208,13 @@ export class OCPP20ServiceUtils {
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
    * @param connectorStatus - Connector status to reset
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
   public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
-    connectorStatus: ConnectorStatus
+    connectorStatus: ConnectorStatus,
+    evseId?: number
   ): Promise<void> {
     if (
       connectorStatus.transactionStarted !== true &&
@@ -223,7 +225,7 @@ export class OCPP20ServiceUtils {
     // Snapshot transactionId BEFORE any mutation below deletes it, so the
     // coherent session (if any) can still be destroyed after the reset.
     const txId = connectorStatus.transactionId
-    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+    OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     if (postTransactionDelay > 0) {
       delete connectorStatus.transactionId
@@ -239,7 +241,7 @@ export class OCPP20ServiceUtils {
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
-    await sendPostTransactionStatus(chargingStation, connectorId)
+    await sendPostTransactionStatus(chargingStation, connectorId, evseId)
   }
 
   /**
@@ -767,7 +769,8 @@ export class OCPP20ServiceUtils {
   ): Promise<OCPP20TransactionEventResponse> {
     const { connectorStatus, transactionId } = OCPP20ServiceUtils.resolveActiveTransaction(
       chargingStation,
-      connectorId
+      connectorId,
+      evseId
     )
 
     const stopTxOnInvalidId = OCPP20ServiceUtils.readVariableAsBoolean(
@@ -855,7 +858,8 @@ export class OCPP20ServiceUtils {
   ): Promise<OCPP20TransactionEventResponse> {
     const { connectorStatus, transactionId } = OCPP20ServiceUtils.resolveActiveTransaction(
       chargingStation,
-      connectorId
+      connectorId,
+      evseId
     )
 
     return this.terminateTransaction(
@@ -933,7 +937,8 @@ export class OCPP20ServiceUtils {
           await OCPP20ServiceUtils.cleanupEndedTransaction(
             chargingStation,
             connectorId,
-            connectorStatus
+            connectorStatus,
+            evseId
           )
         }
       } catch (error) {
@@ -1025,6 +1030,17 @@ export class OCPP20ServiceUtils {
         },
         requestParams
       )
+      const meterValues = options.meterValue as OCPP20MeterValue[] | undefined
+      if (
+        meterValues?.some(meterValue =>
+          meterValue.sampledValue.some(
+            sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
+          )
+        ) === true &&
+        connectorStatus.transactionId?.toString() === transactionId
+      ) {
+        connectorStatus.publicKeySentInTransaction = true
+      }
 
       return response
     } catch (error) {
@@ -1305,9 +1321,14 @@ export class OCPP20ServiceUtils {
    * Stop periodic TxEnded meter value collection for a connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
-  public static stopEndedMeterValues (chargingStation: ChargingStation, connectorId: number): void {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  public static stopEndedMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    evseId?: number
+  ): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (connectorStatus?.transactionEndedMeterValuesSetInterval != null) {
       clearInterval(connectorStatus.transactionEndedMeterValuesSetInterval)
       delete connectorStatus.transactionEndedMeterValuesSetInterval
@@ -1348,12 +1369,14 @@ export class OCPP20ServiceUtils {
    * Stop periodic TransactionEvent(Updated) sending for a connector.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
   public static stopUpdatedMeterValues (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): void {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (connectorStatus?.transactionUpdatedMeterValuesSetInterval != null) {
       clearInterval(connectorStatus.transactionUpdatedMeterValuesSetInterval)
       delete connectorStatus.transactionUpdatedMeterValuesSetInterval
@@ -1445,9 +1468,10 @@ export class OCPP20ServiceUtils {
 
   private static resolveActiveTransaction (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): { connectorStatus: ConnectorStatus; transactionId: string } {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (
       (connectorStatus?.transactionStarted === true ||
         connectorStatus?.transactionPending === true) &&
@@ -1479,7 +1503,7 @@ export class OCPP20ServiceUtils {
     stoppedReason: OCPP20ReasonEnumType,
     evseId?: number
   ): Promise<OCPP20TransactionEventResponse> {
-    this.stopEndedMeterValues(chargingStation, connectorId)
+    this.stopEndedMeterValues(chargingStation, connectorId, evseId)
     const endedMeterValues = this.buildTransactionEndedMeterValues(
       chargingStation,
       connectorId,
@@ -1499,7 +1523,12 @@ export class OCPP20ServiceUtils {
       }
     )
 
-    await OCPP20ServiceUtils.cleanupEndedTransaction(chargingStation, connectorId, connectorStatus)
+    await OCPP20ServiceUtils.cleanupEndedTransaction(
+      chargingStation,
+      connectorId,
+      connectorStatus,
+      evseId
+    )
 
     return response
   }
