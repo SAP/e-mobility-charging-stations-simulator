@@ -83,6 +83,7 @@ export const RequestCommand = {
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
+  onMessageSent?: () => void
   rawPayload?: boolean
   skipBufferingOnError?: boolean
   throwError?: boolean

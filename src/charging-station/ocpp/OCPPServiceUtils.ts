@@ -1073,7 +1073,13 @@ const createVersionedSampledValueDispatcher = (
         // so the one-time public-key state of future transactions is untouched.
         if (signReadings && transactionId != null) {
           let signingEnabledForContext = true
-          if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
+          if (context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK) {
+            signingEnabledForContext = isOCPP20FlagEnabled(
+              chargingStation,
+              OCPP20ComponentName.AlignedDataCtrlr,
+              VendorParametersKey.SignUpdatedReadings
+            )
+          } else if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               OCPP20ComponentName.SampledDataCtrlr,

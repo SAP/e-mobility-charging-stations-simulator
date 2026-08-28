@@ -482,6 +482,7 @@ export abstract class OCPPRequestService {
             PerformanceStatistics.endMeasure(commandName, beginId)
             clearTimeout(sendTimeout)
             if (error == null) {
+              params.onMessageSent?.()
               logger.debug(
                 `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: >> Command '${commandName}' sent ${getMessageTypeString(
                   messageType

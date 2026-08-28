@@ -1364,19 +1364,21 @@ export class ChargingStation extends EventEmitter {
       const delayMs = targetMs - now
       this.alignedMeterValuesSetTimeout = setTimeout(() => {
         if (generation !== this.alignedMeterValuesGeneration) return
-        try {
-          OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date(targetMs))
-        } catch (error) {
-          logger.error(
-            `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
-            error
-          )
-        } finally {
-          if (generation === this.alignedMeterValuesGeneration) {
-            delete this.alignedMeterValuesSetTimeout
-            scheduleNext()
-          }
-        }
+        // Preserve the UTC slot even when the event loop runs late: OCPP allows
+        // delayed transmission but requires measurement at the configured interval.
+        OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date(targetMs))
+          .finally(() => {
+            if (generation === this.alignedMeterValuesGeneration) {
+              delete this.alignedMeterValuesSetTimeout
+              scheduleNext()
+            }
+          })
+          .catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
+              error
+            )
+          })
       }, delayMs)
     }
     scheduleNext()
@@ -3055,9 +3057,6 @@ export class ChargingStation extends EventEmitter {
     }
     if (this.heartbeatSetInterval == null) {
       this.startHeartbeat()
-    }
-    if (this.alignedMeterValuesSetTimeout == null) {
-      this.startAlignedMeterValues()
     }
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
       await sendAndSetConnectorStatus(this, {

@@ -1072,9 +1072,8 @@ export class OCPP20VariableManager {
       chargingStation.restartWebSocketPing()
     }
     if (
-      isOCPP20ComponentName(component.name) &&
-      component.name === OCPP20ComponentName.AlignedDataCtrlr &&
-      variable.name === (OCPP20RequiredVariableName.AlignedDataInterval as string)
+      component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
+      variable.name.toLowerCase() === OCPP20RequiredVariableName.AlignedDataInterval.toLowerCase()
     ) {
       const alignedDataInterval = convertToIntOrNaN(attributeValue)
       if (!Number.isNaN(alignedDataInterval)) {

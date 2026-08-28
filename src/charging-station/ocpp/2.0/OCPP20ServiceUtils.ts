@@ -348,10 +348,10 @@ export class OCPP20ServiceUtils {
    * @param chargingStation - Target charging station
    * @param timestamp - UTC slot timestamp shared by every message in this sweep
    */
-  public static emitClockAlignedMeterValues (
+  public static async emitClockAlignedMeterValues (
     chargingStation: ChargingStation,
     timestamp = new Date()
-  ): void {
+  ): Promise<void> {
     // Clock-aligned values are wall-clock anchored: skip the autonomous sweep
     // while offline so we neither queue stale snapshots nor grow the offline
     // TransactionEvent queue unbounded during long disconnects.
@@ -389,6 +389,7 @@ export class OCPP20ServiceUtils {
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.Measurands
     )
+    const pendingRequests: Promise<void>[] = []
     for (const { evseId, evseStatus } of chargingStation.iterateEvses(true)) {
       let evseInTransaction = false
       for (const connectorStatus of evseStatus.connectors.values()) {
@@ -422,20 +423,24 @@ export class OCPP20ServiceUtils {
           )
           if (!isNotEmptyArray(meterValue.sampledValue)) continue
           if (transactionId != null) {
-            OCPP20ServiceUtils.sendTransactionEvent(
-              chargingStation,
-              OCPP20TransactionEventEnumType.Updated,
-              OCPP20TriggerReasonEnumType.MeterValueClock,
-              connectorId,
-              transactionId.toString(),
-              { evseId, meterValue: [meterValue], timestamp },
-              { skipBufferingOnError: true }
-            ).catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.TRANSACTION_EVENT}':`,
-                error
+            pendingRequests.push(
+              OCPP20ServiceUtils.sendTransactionEvent(
+                chargingStation,
+                OCPP20TransactionEventEnumType.Updated,
+                OCPP20TriggerReasonEnumType.MeterValueClock,
+                connectorId,
+                transactionId.toString(),
+                { evseId, meterValue: [meterValue], timestamp },
+                { skipBufferingOnError: true }
               )
-            })
+                .then(() => undefined)
+                .catch((error: unknown) => {
+                  logger.error(
+                    `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.TRANSACTION_EVENT}':`,
+                    error
+                  )
+                })
+            )
           } else {
             meterValues.push(meterValue)
           }
@@ -446,20 +451,24 @@ export class OCPP20ServiceUtils {
         }
       }
       if (evseInTransaction || !isNotEmptyArray(meterValues)) continue
-      chargingStation.ocppRequestService
-        .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-          chargingStation,
-          OCPP20RequestCommand.METER_VALUES,
-          { evseId, meterValue: meterValues },
-          { skipBufferingOnError: true }
-        )
-        .catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
-            error
+      pendingRequests.push(
+        chargingStation.ocppRequestService
+          .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
+            chargingStation,
+            OCPP20RequestCommand.METER_VALUES,
+            { evseId, meterValue: meterValues },
+            { skipBufferingOnError: true }
           )
-        })
+          .then(() => undefined)
+          .catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
+              error
+            )
+          })
+      )
     }
+    await Promise.all(pendingRequests)
   }
 
   /**
@@ -1029,6 +1038,7 @@ export class OCPP20ServiceUtils {
             sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
           )
         ) === true
+      const deliveryState = { sent: false }
       if (reservesPublicKey) {
         // Reserve before awaiting transport so an overlapping tick cannot
         // include the OncePerTransaction key a second time.
@@ -1048,10 +1058,20 @@ export class OCPP20ServiceUtils {
             triggerReason,
             ...options,
           },
-          requestParams
+          {
+            ...requestParams,
+            onMessageSent: () => {
+              deliveryState.sent = true
+              requestParams?.onMessageSent?.()
+            },
+          }
         )
       } catch (error) {
-        if (reservesPublicKey && connectorStatus.transactionId?.toString() === transactionId) {
+        if (
+          reservesPublicKey &&
+          !deliveryState.sent &&
+          connectorStatus.transactionId?.toString() === transactionId
+        ) {
           connectorStatus.publicKeySentInTransaction = false
         }
         throw error

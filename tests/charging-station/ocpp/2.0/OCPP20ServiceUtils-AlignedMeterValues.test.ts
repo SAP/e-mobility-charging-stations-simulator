@@ -18,6 +18,7 @@ import type {
   EvseStatus,
   OCPP20MeterValuesRequest,
   OCPP20TransactionEventOptions,
+  RequestParams,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
@@ -48,6 +49,7 @@ import {
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
+  OCPP20VendorVariableName,
   OCPPVersion,
   PublicKeyWithSignedMeterValueEnumType,
   ReasonCodeEnumType,
@@ -88,6 +90,10 @@ const SEND_DURING_IDLE_KEY = buildConfigKey(
 const SIGN_READINGS_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SignReadings
+)
+const SIGN_UPDATED_READINGS_KEY = buildConfigKey(
+  OCPP20ComponentName.AlignedDataCtrlr,
+  OCPP20VendorVariableName.SignUpdatedReadings
 )
 const PUBLIC_KEY_MODE_KEY = buildConfigKey(
   OCPP20ComponentName.OCPPCommCtrlr,
@@ -228,7 +234,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       assert.ok(
@@ -266,7 +272,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const payload = sentPayloads(requestHandlerMock)[0]
@@ -285,7 +291,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-1' })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
@@ -296,7 +302,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'true')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
     })
@@ -308,7 +314,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-1' })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       assert.deepEqual(
@@ -346,7 +352,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       setupConnectorWithTransaction(mockStation, 1, { pending: true, transactionId: 'tx-pending' })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(sentTransactionEvents(requestHandlerMock).length, 0)
       assert.deepEqual(
@@ -365,7 +371,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         return getConnectorStatus(connectorId, evseId)
       })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.deepEqual(
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
@@ -379,6 +385,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
       upsertConfigurationKey(
         mockStation,
         PUBLIC_KEY_MODE_KEY,
@@ -397,7 +404,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       activeConnectorStatus.transactionEnergyActiveImportRegisterValue = 1234
 
       const slotTimestamp = new Date('2026-08-28T15:00:00.000Z')
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, slotTimestamp)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, slotTimestamp)
 
       const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
       assert.strictEqual(transactionEvent.timestamp, slotTimestamp)
@@ -410,12 +417,38 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
+    await it('requires AlignedDataCtrlr.SignUpdatedReadings for active aligned samples', () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'false')
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      upsertConfigurationKey(
+        mockStation,
+        FISCAL_SIGNING_METHOD,
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-sign-disabled' })
+
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
+      assert.ok(
+        transactionEvent.meterValue?.every(meterValue =>
+          meterValue.sampledValue.every(sample => sample.signedMeterValue == null)
+        )
+      )
+    })
+
     await it('finalizes signing state and timestamp on a coherent aligned snapshot', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
       upsertConfigurationKey(
         mockStation,
         PUBLIC_KEY_MODE_KEY,
@@ -463,7 +496,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.__injectCoherentSession('tx-coherent', session)
       assert.strictEqual(mockStation.getCoherentSession('tx-coherent'), session)
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       await flushPendingPromises()
 
       const connectorStatus = mockStation.getConnectorStatus(1)
@@ -503,6 +536,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
       upsertConfigurationKey(
         mockStation,
         PUBLIC_KEY_MODE_KEY,
@@ -520,17 +554,19 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(connectorStatus != null)
       connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
       let attempts = 0
-      requestHandlerMock.mock.mockImplementation(async () => {
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
         attempts++
-        if (attempts === 1) throw new Error('transport failed')
+        if (attempts === 1) return Promise.reject(new Error('transport failed'))
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
         return Promise.resolve({})
       })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       await flushPendingPromises()
       assert.notStrictEqual(connectorStatus.publicKeySentInTransaction, true)
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       await flushPendingPromises()
 
       const transactionEvents = sentTransactionEvents(requestHandlerMock)
@@ -542,6 +578,50 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
+    await it('keeps OncePerTransaction state after a sent request receives an error', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        PUBLIC_KEY_MODE_KEY,
+        PublicKeyWithSignedMeterValueEnumType.OncePerTransaction
+      )
+      upsertConfigurationKey(mockStation, FISCAL_PUBLIC_KEY, TEST_PUBLIC_KEY_HEX)
+      upsertConfigurationKey(
+        mockStation,
+        FISCAL_SIGNING_METHOD,
+        SigningMethodEnumType.ECDSA_secp256k1_SHA256
+      )
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-call-error' })
+      const connectorStatus = mockStation.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
+      requestHandlerMock.mock.mockImplementation((...args: unknown[]) => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        return Promise.reject(new Error('CALLERROR'))
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const transactionEvents = sentTransactionEvents(requestHandlerMock)
+      const publicKeyCount = (event: OCPP20TransactionEventOptions): number =>
+        event.meterValue
+          ?.flatMap(meterValue => meterValue.sampledValue)
+          .filter(sample => (sample.signedMeterValue?.publicKey.length ?? 0) > 0).length ?? 0
+      assert.strictEqual(publicKeyCount(transactionEvents[0]), 1)
+      assert.strictEqual(publicKeyCount(transactionEvents[1]), 0)
+    })
+
     await it('reserves OncePerTransaction public-key state across overlapping sends', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
@@ -551,6 +631,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
       upsertConfigurationKey(mockStation, SIGN_READINGS_KEY, 'true')
+      upsertConfigurationKey(mockStation, SIGN_UPDATED_READINGS_KEY, 'true')
       upsertConfigurationKey(
         mockStation,
         PUBLIC_KEY_MODE_KEY,
@@ -572,14 +653,16 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         releaseFirstSend = resolve
       })
       let attempts = 0
-      requestHandlerMock.mock.mockImplementation(async () => {
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]) => {
         attempts++
         if (attempts === 1) await firstSendBlocked
-        return Promise.resolve({})
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        return {}
       })
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       await flushPendingPromises()
 
       const transactionEvents = sentTransactionEvents(requestHandlerMock)
@@ -642,7 +725,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const registerBefore = connectorStatus.energyActiveImportRegisterValue
       const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       // Guard against a vacuous pass: the sweep must actually emit for the
       // active coherent EVSE, otherwise "does not perturb" holds trivially.
@@ -674,7 +757,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       connectorStatus.energyActiveImportRegisterValue = 54321
       connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 54321)
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 1234)
@@ -685,7 +768,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '0')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
@@ -694,7 +777,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
@@ -705,7 +788,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
       mockStation.wsConnection = null
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
@@ -721,7 +804,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       let connectionChecks = 0
       mock.method(mockStation, 'isWebSocketConnectionOpened', () => connectionChecks++ === 0)
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
       assert.deepEqual(mockStation.getConnectorStatus(1, 1)?.transactionEventQueue ?? [], [])
@@ -737,7 +820,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       connectorStatus.energyActiveImportRegisterValue = 54321
       connectorStatus.transactionEnergyActiveImportRegisterValue = 54321
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.ok(requestHandlerMock.mock.callCount() > 0)
       // Idle readings are unsigned on the wire (fallback B):
@@ -766,7 +849,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
 
-      OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       const payloads = sentPayloads(requestHandlerMock)
       assert.strictEqual(payloads.length, 2)
@@ -1805,6 +1888,25 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(restartSpy.mock.callCount(), 1)
     })
 
+    await it('restarts the aligned timer for case-insensitive SetVariables names', () => {
+      const response = testableService.handleRequestSetVariables(mockStation, {
+        setVariableData: [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: '120',
+            component: { name: OCPP20ComponentName.AlignedDataCtrlr },
+            variable: { name: 'interval' },
+          },
+        ],
+      })
+
+      assert.strictEqual(
+        response.setVariableResult[0].attributeStatus,
+        SetVariableStatusEnumType.Accepted
+      )
+      assert.strictEqual(restartSpy.mock.callCount(), 1)
+    })
+
     await it('accepts interval 0 and stops the aligned timer', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
@@ -1881,24 +1983,55 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       cleanupStationTemplates()
     })
 
-    await it('arms exactly one timer and guards double start', () => {
+    await it('arms exactly one timer and guards double start', async () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
       station.startAlignedMeterValues()
 
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+      await Promise.resolve()
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('aligns the first emission to the next wall-clock boundary', () => {
+    await it('waits for an in-flight sweep before scheduling the next one', async () => {
+      upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
+      let releaseSweep: (() => void) | undefined
+      const sweepBlocked = new Promise<void>(resolve => {
+        releaseSweep = resolve
+      })
+      const emitSpy = mock.method(
+        OCPP20ServiceUtils,
+        'emitClockAlignedMeterValues',
+        () => sweepBlocked
+      )
+
+      station.startAlignedMeterValues()
+      mock.timers.tick(60_000)
+      mock.timers.tick(600_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+
+      releaseSweep?.()
+      await Promise.resolve()
+      mock.timers.tick(59_999)
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      mock.timers.tick(1)
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
+    })
+
+    await it('aligns the first emission to the next wall-clock boundary', async () => {
       // now = 300 s into a 900 s interval → first emission 600 s later (at the
       // next boundary), not a full interval after start.
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 300_000 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
 
@@ -1906,18 +2039,21 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
       mock.timers.tick(1)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+      await Promise.resolve()
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('re-anchors non-divisor intervals at UTC midnight', () => {
+    await it('re-anchors non-divisor intervals at UTC midnight', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '7')
       const dayStart = Date.UTC(2026, 7, 27)
       mock.timers.enable({
         apis: ['setInterval', 'setTimeout', 'Date'],
         now: dayStart + Constants.MS_PER_DAY - 1000,
       })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
 
@@ -1925,16 +2061,19 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
       mock.timers.tick(1)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+      await Promise.resolve()
       mock.timers.tick(6999)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
       mock.timers.tick(1)
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('recomputes the boundary after a delayed callback', () => {
+    await it('recomputes the boundary after a delayed callback', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
       mock.timers.setTime(70_000)
@@ -1943,6 +2082,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const firstSlotTimestamp = emitSpy.mock.calls[0].arguments[1]
       assert.ok(firstSlotTimestamp instanceof Date)
       assert.strictEqual(firstSlotTimestamp.getTime(), 60_000)
+      await Promise.resolve()
       mock.timers.tick(49_999)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
       mock.timers.tick(1)
@@ -1954,7 +2094,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
     await it('stops cleanly and survives repeated online cycles without leaks', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
       station.stopAlignedMeterValues()
@@ -2000,6 +2142,17 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
+    await it('leaves aligned scheduling to onOpen after the accepted sequence', async () => {
+      const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
+      mock.method(station.ocppRequestService, 'requestHandler', () => Promise.resolve({}))
+
+      await (
+        station as unknown as { startMessageSequence: () => Promise<void> }
+      ).startMessageSequence()
+
+      assert.strictEqual(startSpy.mock.callCount(), 0)
+    })
+
     await it('does not re-arm after disconnecting during queued event replay', async () => {
       station.started = true
       let connected = true
@@ -2034,7 +2187,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
     await it('stops the aligned timer when the station disconnects', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
       station.emitChargingStationEvent(ChargingStationEvents.disconnected)
@@ -2043,10 +2198,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
     })
 
-    await it('re-arms with the new cadence after an interval change and restart', () => {
+    await it('re-arms with the new cadence after an interval change and restart', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.restartAlignedMeterValues()
 
@@ -2054,6 +2211,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 0)
       mock.timers.tick(1)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+      await Promise.resolve()
       mock.timers.tick(60_000)
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
@@ -2063,7 +2221,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ocppVersion: OCPPVersion.VERSION_16,
       } as ChargingStationInfo
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
 
@@ -2074,7 +2234,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
     await it('does not arm when the configured interval is 0', () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '0')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       station.startAlignedMeterValues()
 
@@ -2084,7 +2246,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
     await it('does not arm for invalid persisted intervals', () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
-      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', noop)
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
 
       for (const value of [(Constants.SECONDS_PER_DAY + 1).toString(), '86400.5', '-0.5']) {
         upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, value)
