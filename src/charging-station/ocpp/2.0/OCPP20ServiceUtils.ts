@@ -346,8 +346,12 @@ export class OCPP20ServiceUtils {
    * `TransactionEvent(Updated, MeterValueClock)` so transaction identity and
    * sequence state remain attached. Empty sample sets stay silent.
    * @param chargingStation - Target charging station
+   * @param timestamp - UTC slot timestamp shared by every message in this sweep
    */
-  public static emitClockAlignedMeterValues (chargingStation: ChargingStation): void {
+  public static emitClockAlignedMeterValues (
+    chargingStation: ChargingStation,
+    timestamp = new Date()
+  ): void {
     // Clock-aligned values are wall-clock anchored: skip the autonomous sweep
     // while offline so we neither queue stale snapshots nor grow the offline
     // TransactionEvent queue unbounded during long disconnects.
@@ -409,6 +413,7 @@ export class OCPP20ServiceUtils {
             {
               connectorId,
               evseId,
+              timestamp,
               ...(transactionId != null && { transactionId }),
             },
             secondsToMilliseconds(alignedDataIntervalSeconds),
@@ -423,7 +428,7 @@ export class OCPP20ServiceUtils {
               OCPP20TriggerReasonEnumType.MeterValueClock,
               connectorId,
               transactionId.toString(),
-              { evseId, meterValue: [meterValue] },
+              { evseId, meterValue: [meterValue], timestamp },
               { skipBufferingOnError: true }
             ).catch((error: unknown) => {
               logger.error(
@@ -1015,34 +1020,42 @@ export class OCPP20ServiceUtils {
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
 
-      const response = await chargingStation.ocppRequestService.requestHandler<
-        OCPP20TransactionEventOptions,
-        OCPP20TransactionEventResponse
-      >(
-        chargingStation,
-        OCPP20RequestCommand.TRANSACTION_EVENT,
-        {
-          connectorId,
-          eventType,
-          transactionId,
-          triggerReason,
-          ...options,
-        },
-        requestParams
-      )
       const meterValues = options.meterValue as OCPP20MeterValue[] | undefined
-      if (
+      const reservesPublicKey =
+        connectorStatus.publicKeySentInTransaction !== true &&
+        connectorStatus.transactionId?.toString() === transactionId &&
         meterValues?.some(meterValue =>
           meterValue.sampledValue.some(
             sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
           )
-        ) === true &&
-        connectorStatus.transactionId?.toString() === transactionId
-      ) {
+        ) === true
+      if (reservesPublicKey) {
+        // Reserve before awaiting transport so an overlapping tick cannot
+        // include the OncePerTransaction key a second time.
         connectorStatus.publicKeySentInTransaction = true
       }
-
-      return response
+      try {
+        return await chargingStation.ocppRequestService.requestHandler<
+          OCPP20TransactionEventOptions,
+          OCPP20TransactionEventResponse
+        >(
+          chargingStation,
+          OCPP20RequestCommand.TRANSACTION_EVENT,
+          {
+            connectorId,
+            eventType,
+            transactionId,
+            triggerReason,
+            ...options,
+          },
+          requestParams
+        )
+      } catch (error) {
+        if (reservesPublicKey && connectorStatus.transactionId?.toString() === transactionId) {
+          connectorStatus.publicKeySentInTransaction = false
+        }
+        throw error
+      }
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Failed to send TransactionEvent:`,
@@ -1057,13 +1070,15 @@ export class OCPP20ServiceUtils {
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
    * @param interval - Collection interval in milliseconds
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
   public static startEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
-    interval: number
+    interval: number,
+    evseId?: number
   ): void {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (connectorStatus == null) {
       return
     }
@@ -1072,10 +1087,10 @@ export class OCPP20ServiceUtils {
       return
     }
     if (connectorStatus.transactionEndedMeterValuesSetInterval != null) {
-      OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId)
+      OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId, evseId)
     }
     connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => {
-      const cs = chargingStation.getConnectorStatus(connectorId)
+      const cs = chargingStation.getConnectorStatus(connectorId, evseId)
       if (cs?.transactionStarted === true && cs.transactionId != null) {
         const measurandsKey = buildConfigKey(
           OCPP20ComponentName.SampledDataCtrlr,
@@ -1157,13 +1172,15 @@ export class OCPP20ServiceUtils {
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier
    * @param interval - Sending interval in milliseconds
+   * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    */
   public static startUpdatedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
-    interval: number
+    interval: number,
+    evseId?: number
   ): void {
-    const initialConnectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const initialConnectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (initialConnectorStatus == null) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Connector ${connectorId.toString()} not found`
@@ -1180,10 +1197,10 @@ export class OCPP20ServiceUtils {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: TxUpdatedInterval already started, stopping first`
       )
-      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     }
     initialConnectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
       if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
         if (
           connectorStatus.transactionDeauthorized === true &&
@@ -1198,7 +1215,7 @@ export class OCPP20ServiceUtils {
           const currentEnergy = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
           const energySinceDeauth = currentEnergy - connectorStatus.transactionDeauthorizedEnergyWh
           if (maxEnergy > 0 && energySinceDeauth >= maxEnergy) {
-            const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+            const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
             OCPP20ServiceUtils.terminateTransaction(
               chargingStation,
               connectorId,
@@ -1206,7 +1223,7 @@ export class OCPP20ServiceUtils {
               connectorStatus.transactionId.toString(),
               OCPP20TriggerReasonEnumType.Deauthorized,
               OCPP20ReasonEnumType.DeAuthorized,
-              evseId
+              resolvedEvseId
             ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: Error terminating deauthorized transaction:`,
@@ -1229,9 +1246,10 @@ export class OCPP20ServiceUtils {
         // `TransactionEventRequest.meterValue` is `0..*`: when `TxUpdatedMeasurands`
         // yields no sampled values, omit the `meterValue` field entirely rather
         // than send an empty-wrapper schema violation.
-        const eventPayload = isNotEmptyArray(meterValue.sampledValue)
-          ? { meterValue: [meterValue] }
-          : {}
+        const eventPayload = {
+          ...(isNotEmptyArray(meterValue.sampledValue) && { meterValue: [meterValue] }),
+          ...(evseId != null && { evseId }),
+        }
         OCPP20ServiceUtils.sendTransactionEvent(
           chargingStation,
           OCPP20TransactionEventEnumType.Updated,
@@ -1410,9 +1428,10 @@ export class OCPP20ServiceUtils {
   private static buildTransactionEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
-    transactionId: number | string
+    transactionId: number | string,
+    evseId?: number
   ): OCPP20MeterValue[] {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     const endedMeterValues = (connectorStatus?.transactionEndedMeterValues ??
       []) as OCPP20MeterValue[]
     const beginMeterValue = connectorStatus?.transactionBeginMeterValue as
@@ -1507,7 +1526,8 @@ export class OCPP20ServiceUtils {
     const endedMeterValues = this.buildTransactionEndedMeterValues(
       chargingStation,
       connectorId,
-      transactionId
+      transactionId,
+      evseId
     )
 
     const response = await this.sendTransactionEvent(
@@ -1618,7 +1638,7 @@ export function buildTransactionEvent (
   const transactionEventRequest: OCPP20TransactionEventRequest = {
     eventType,
     seqNo: connectorStatus.transactionSeqNo,
-    timestamp: new Date(),
+    timestamp: commandParams.timestamp ?? new Date(),
     transactionInfo,
     triggerReason,
   }

@@ -974,13 +974,14 @@ export const buildEmptyMeterValue = (): MeterValue => ({
  * Resolved meter-value identity shared by {@link buildIdentifiedMeterValue} and
  * {@link createVersionedSampledValueDispatcher}. Either transaction-derived
  * (legacy callers pass only `transactionId`) or provided directly for
- * clock-aligned reporting (`connectorId` + `evseId` + `snapshot`, #2011
- * Category 2F).
+ * clock-aligned reporting (`connectorId` + `evseId` + `snapshot` + optional
+ * UTC slot `timestamp`, #2011 Category 2F).
  */
 interface ResolvedMeterValueIdentity {
   connectorId?: number
   evseId?: number
   snapshot?: boolean
+  timestamp?: Date
   transactionId?: number | string
 }
 
@@ -1653,6 +1654,7 @@ export const buildMeterValue = (
  * @param identity - Direct connector/EVSE identification.
  * @param identity.connectorId - Connector identifier.
  * @param identity.evseId - EVSE identifier.
+ * @param identity.timestamp - Optional UTC slot timestamp shared across the aligned sweep.
  * @param identity.transactionId - Optional active transaction identifier.
  * @param interval - Clock-aligned data interval in milliseconds
  * @param measurandsKey - Configuration key for the sampled measurands list
@@ -1661,7 +1663,12 @@ export const buildMeterValue = (
  */
 export const buildClockAlignedConnectorMeterValue = (
   chargingStation: ChargingStation,
-  identity: { connectorId: number; evseId: number; transactionId?: number | string },
+  identity: {
+    connectorId: number
+    evseId: number
+    timestamp?: Date
+    transactionId?: number | string
+  },
   interval: number,
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext
@@ -1715,7 +1722,7 @@ const buildIdentifiedMeterValue = (
   )
   const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   if (isCoherentModeActive(coherentSession)) {
-    const timestamp = new Date()
+    const timestamp = identity.timestamp ?? new Date()
     if (signingConfig != null) signingConfig.timestamp = timestamp
     const enabledMeasurands = resolveEnabledMeasurands(chargingStation, measurandsKey)
     const coherentSnapshotEnergyRegister = Math.max(
@@ -1780,6 +1787,7 @@ const buildIdentifiedMeterValue = (
     ? buildUnsignedVersionedSampledValue
     : buildSignedVersionedSampledValue
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
+  if (identity.timestamp != null) meterValue.timestamp = identity.timestamp
   if (signingConfig != null) {
     signingConfig.timestamp = meterValue.timestamp
   }

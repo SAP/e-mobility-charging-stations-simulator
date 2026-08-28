@@ -80,12 +80,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 2.0-T2 — Force-tx on Invalid `Started`: deauth NOT called, connector
-  // locked, MV update + ended pumps started.
-  // TODO Phase 6 (golden set): add a fake-timer fence to verify the MV pump
-  // actually emits a TransactionEvent(Updated) over the wire — the helper-
-  // call assertion below stubs the pump and therefore does not catch a
-  // wire-level regression where startUpdatedMeterValues is invoked but the
-  // interval is bound to the wrong connector. Phase 6 closes this gap.
+  // locked, MV update + ended pumps started for the response EVSE.
   await it('should not deauthorize on Invalid Started when the flag is true', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(
@@ -121,6 +116,8 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     assert.strictEqual(connectorStatus.locked, true)
     assert.strictEqual(mockStartUpdated.mock.calls.length, 1)
     assert.strictEqual(mockStartEnded.mock.calls.length, 1)
+    assert.strictEqual(mockStartUpdated.mock.calls[0].arguments[3], 1)
+    assert.strictEqual(mockStartEnded.mock.calls[0].arguments[3], 1)
   })
 
   // 2.0-T3 — Mid-transaction revocation (Updated) STILL aborts.

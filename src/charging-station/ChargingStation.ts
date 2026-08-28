@@ -1365,7 +1365,7 @@ export class ChargingStation extends EventEmitter {
       this.alignedMeterValuesSetTimeout = setTimeout(() => {
         if (generation !== this.alignedMeterValuesGeneration) return
         try {
-          OCPP20ServiceUtils.emitClockAlignedMeterValues(this)
+          OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date(targetMs))
         } catch (error) {
           logger.error(
             `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
@@ -2772,7 +2772,9 @@ export class ChargingStation extends EventEmitter {
         )
       } else {
         await flushQueuedTransactionMessages(this)
-        this.startAlignedMeterValues()
+        if (this.started && this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
+          this.startAlignedMeterValues()
+        }
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {

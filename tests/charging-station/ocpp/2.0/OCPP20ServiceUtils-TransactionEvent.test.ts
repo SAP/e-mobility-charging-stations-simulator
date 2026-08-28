@@ -121,6 +121,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const triggerReason = OCPP20TriggerReasonEnumType.Authorized
+        const timestamp = new Date('2026-08-28T15:00:00.000Z')
 
         // Reset sequence number to simulate new transaction
         OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
@@ -128,6 +129,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionEvent = buildTransactionEvent(mockStation, {
           connectorId,
           eventType: OCPP20TransactionEventEnumType.Started,
+          timestamp,
           transactionId,
           triggerReason,
         })
@@ -136,7 +138,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Started)
         assert.strictEqual(transactionEvent.triggerReason, triggerReason)
         assert.strictEqual(transactionEvent.seqNo, 0) // First event should have seqNo 0
-        assert.ok(transactionEvent.timestamp instanceof Date)
+        assert.strictEqual(transactionEvent.timestamp, timestamp)
         if (transactionEvent.evse == null) {
           assert.fail('Expected evse to be defined')
         }
