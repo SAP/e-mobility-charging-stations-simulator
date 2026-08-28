@@ -48,7 +48,7 @@ import {
 } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
-  computeCoherentSample,
+  computeCoherentSampleAtTime,
   getCoherentSampleSnapshot,
   ROUNDING_SCALE,
 } from './CoherentSampleComputer.js'
@@ -516,7 +516,13 @@ export const buildCoherentMeterValue = (
     )
     return { sampledValue: [], timestamp: new Date() }
   }
-  const sample = computeCoherentSample(context, connectorStatus, session, options, evseIdOverride)
+  const sample = computeCoherentSampleAtTime(
+    context,
+    connectorStatus,
+    session,
+    options,
+    evseIdOverride
+  )
   advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
   return serializeCoherentMeterValue(
     context,

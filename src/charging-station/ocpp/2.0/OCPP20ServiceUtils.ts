@@ -389,7 +389,8 @@ export class OCPP20ServiceUtils {
       chargingStation,
       OCPP20ComponentName.OCPPCommCtrlr,
       OCPP20RequiredVariableName.MessageTimeout,
-      Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS
+      Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
+      'Default'
     )
     const measurandsKey = buildConfigKey(
       OCPP20ComponentName.AlignedDataCtrlr,
@@ -440,7 +441,7 @@ export class OCPP20ServiceUtils {
                 { evseId, meterValue: [meterValue], timestamp },
                 {
                   responseTimeoutMs,
-                  skipBufferingOnError: true,
+                  skipBufferingOnError: false,
                   throwError: true,
                 }
               )
@@ -731,9 +732,15 @@ export class OCPP20ServiceUtils {
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
-    defaultValue: number
+    defaultValue: number,
+    componentInstance?: string
   ): number {
-    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
+    const value = OCPP20ServiceUtils.readVariableValue(
+      chargingStation,
+      componentName,
+      variableName,
+      componentInstance
+    )
     if (value != null) {
       try {
         return convertToInt(value)
@@ -762,12 +769,16 @@ export class OCPP20ServiceUtils {
   public static readVariableValue (
     chargingStation: ChargingStation,
     componentName: string,
-    variableName: string
+    variableName: string,
+    componentInstance?: string
   ): string | undefined {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
       {
-        component: { name: componentName },
+        component: {
+          name: componentName,
+          ...(componentInstance != null && { instance: componentInstance }),
+        },
         variable: { name: variableName },
       },
     ])
@@ -947,7 +958,14 @@ export class OCPP20ServiceUtils {
     const queue = [...connectorStatus.transactionEventQueue]
     connectorStatus.transactionEventQueue = []
 
-    for (const queuedEvent of queue) {
+    const responseTimeoutMs = OCPP20ServiceUtils.readVariableAsIntervalMs(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20RequiredVariableName.MessageTimeout,
+      Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
+      'Default'
+    )
+    for (const [index, queuedEvent] of queue.entries()) {
       try {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending queued event with seqNo=${queuedEvent.seqNo.toString()}`
@@ -957,6 +975,8 @@ export class OCPP20ServiceUtils {
           OCPP20TransactionEventResponse
         >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, queuedEvent.request, {
           rawPayload: true,
+          responseTimeoutMs,
+          throwError: true,
         })
         if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
           await OCPP20ServiceUtils.cleanupEndedTransaction(
@@ -967,10 +987,15 @@ export class OCPP20ServiceUtils {
           )
         }
       } catch (error) {
+        connectorStatus.transactionEventQueue = [
+          ...queue.slice(index),
+          ...(connectorStatus.transactionEventQueue ?? []),
+        ]
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Failed to send queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}:`,
+          `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Failed to send queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}, preserving it and the remaining queue:`,
           error
         )
+        break
       }
     }
   }
@@ -1081,6 +1106,7 @@ export class OCPP20ServiceUtils {
         if (
           reservesPublicKey &&
           !deliveryState.sent &&
+          requestParams?.skipBufferingOnError !== false &&
           connectorStatus.transactionId?.toString() === transactionId
         ) {
           connectorStatus.publicKeySentInTransaction = false
@@ -1511,13 +1537,15 @@ export class OCPP20ServiceUtils {
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
-    defaultSeconds: number
+    defaultSeconds: number,
+    componentInstance?: string
   ): number {
     const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
       chargingStation,
       componentName,
       variableName,
-      defaultSeconds
+      defaultSeconds,
+      componentInstance
     )
     return intervalSeconds > 0
       ? secondsToMilliseconds(intervalSeconds)
@@ -1531,6 +1559,7 @@ export class OCPP20ServiceUtils {
   ): { connectorStatus: ConnectorStatus; transactionId: string } {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (
+      connectorStatus?.transactionEnding !== true &&
       (connectorStatus?.transactionStarted === true ||
         connectorStatus?.transactionPending === true) &&
       connectorStatus.transactionId != null

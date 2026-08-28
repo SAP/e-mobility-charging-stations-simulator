@@ -209,9 +209,9 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private alignedMeterValuesEmissionGeneration?: number
   private alignedMeterValuesGeneration = 0
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
+  private alignedMeterValuesStartup?: Promise<void>
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile: string
@@ -304,12 +304,14 @@ export class ChargingStation extends EventEmitter {
         this.wsConnectionRetryCount > 0
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
-      ).catch((error: unknown) => {
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.onAccepted: Error while starting the message sequence:`,
-          error
-        )
-      })
+      )
+        .then(() => this.startAlignedMeterValuesAfterReplay())
+        .catch((error: unknown) => {
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.onAccepted: Error while starting the message sequence:`,
+            error
+          )
+        })
       this.wsConnectionRetryCount = 0
     })
     this.on(ChargingStationEvents.rejected, () => {
@@ -1367,27 +1369,14 @@ export class ChargingStation extends EventEmitter {
         if (generation !== this.alignedMeterValuesGeneration) return
         delete this.alignedMeterValuesSetTimeout
         scheduleNext()
-        if (this.alignedMeterValuesEmissionGeneration === generation) {
-          logger.warn(
-            `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Previous clock-aligned sweep is still pending, skipping this boundary`
-          )
-          return
-        }
-        this.alignedMeterValuesEmissionGeneration = generation
         // Capture when the callback actually runs. Reusing a missed UTC slot
         // would falsely predate values computed from current simulator state.
-        OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date())
-          .finally(() => {
-            if (this.alignedMeterValuesEmissionGeneration === generation) {
-              delete this.alignedMeterValuesEmissionGeneration
-            }
-          })
-          .catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
-              error
-            )
-          })
+        OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date()).catch((error: unknown) => {
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Error emitting clock-aligned MeterValues:`,
+            error
+          )
+        })
       }, delayMs)
     }
     scheduleNext()
@@ -2782,10 +2771,7 @@ export class ChargingStation extends EventEmitter {
           `${this.logPrefix()} ${moduleName}.onOpen: Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
       } else {
-        await flushQueuedTransactionMessages(this)
-        if (this.started && this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
-          this.startAlignedMeterValues()
-        }
+        await this.startAlignedMeterValuesAfterReplay()
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {
@@ -3050,6 +3036,23 @@ export class ChargingStation extends EventEmitter {
         this.clearIntervalFlushMessageBuffer()
       }
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL_MS)
+  }
+
+  private async startAlignedMeterValuesAfterReplay (): Promise<void> {
+    this.alignedMeterValuesStartup ??= (async () => {
+      await flushQueuedTransactionMessages(this)
+      if (this.started && this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
+        this.startAlignedMeterValues()
+      }
+    })()
+    const startup = this.alignedMeterValuesStartup
+    try {
+      await startup
+    } finally {
+      if (this.alignedMeterValuesStartup === startup) {
+        this.alignedMeterValuesStartup = undefined
+      }
+    }
   }
 
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {

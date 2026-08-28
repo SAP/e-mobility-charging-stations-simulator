@@ -87,6 +87,11 @@ const SEND_DURING_IDLE_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SendDuringIdle
 )
+const MESSAGE_TIMEOUT_KEY = buildConfigKey(
+  OCPP20ComponentName.OCPPCommCtrlr,
+  OCPP20RequiredVariableName.MessageTimeout,
+  'Default'
+)
 const SIGN_READINGS_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SignReadings
@@ -233,6 +238,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, MESSAGE_TIMEOUT_KEY, '7')
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
@@ -241,7 +247,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         requestHandlerMock.mock.calls.every(call => {
           if (call.arguments[1] !== OCPP20RequestCommand.METER_VALUES) return true
           const requestParams = call.arguments[3] as RequestParams | undefined
-          return requestParams?.skipBufferingOnError === true && requestParams.throwError === true
+          return (
+            requestParams?.responseTimeoutMs === 7000 &&
+            requestParams.skipBufferingOnError === true &&
+            requestParams.throwError === true
+          )
         })
       )
       const payloads = sentPayloads(requestHandlerMock)
@@ -338,7 +348,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
       assert.ok(transactionEventCall != null)
       const requestParams = transactionEventCall.arguments[3] as RequestParams
-      assert.strictEqual(requestParams.skipBufferingOnError, true)
+      assert.strictEqual(requestParams.skipBufferingOnError, false)
       assert.strictEqual(requestParams.throwError, true)
     })
 
@@ -381,6 +391,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       const stopPromise = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
       await flushPendingPromises()
+      await assert.rejects(
+        OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1),
+        /No active transaction/
+      )
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       const eventTypesWhileEnding = sentTransactionEvents(requestHandlerMock).map(
         event => event.eventType
@@ -472,7 +486,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
-    await it('finalizes signing state and timestamp on a coherent aligned snapshot', async () => {
+    await it('finalizes signing state and timestamp on a coherent aligned sample', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -526,7 +540,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mockStation.__injectCoherentSession('tx-coherent', session)
       assert.strictEqual(mockStation.getCoherentSession('tx-coherent'), session)
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      const alignedTimestamp = new Date(60_000)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, alignedTimestamp)
       await flushPendingPromises()
 
       const connectorStatus = mockStation.getConnectorStatus(1)
@@ -540,7 +555,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
             sampledValue.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
         )
       assert.strictEqual(energySamples.length, 2)
-      assert.ok(energySamples.every(sample => sample.value === 1234))
+      assert.ok(
+        energySamples.every(sample => typeof sample.value === 'number' && sample.value > 1234)
+      )
       assert.ok(energySamples.every(sample => sample.signedMeterValue != null))
       assert.strictEqual(
         energySamples.filter(sample => (sample.signedMeterValue?.publicKey.length ?? 0) > 0).length,
@@ -550,6 +567,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(energySample.signedMeterValue != null)
       const timestamp = meterValues[0].timestamp
       assert.strictEqual(timestamp instanceof Date, true)
+      assert.strictEqual(timestamp.getTime(), alignedTimestamp.getTime())
       const signedMeterData = Buffer.from(
         energySample.signedMeterValue.signedMeterData,
         'base64'
@@ -557,7 +575,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(signedMeterData.includes(`"TM":"${timestamp.toISOString()}"`))
     })
 
-    await it('commits OncePerTransaction public-key state only after successful delivery', async () => {
+    await it('retains OncePerTransaction public-key state when transport buffers the event', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -594,18 +612,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
       await flushPendingPromises()
-      assert.notStrictEqual(connectorStatus.publicKeySentInTransaction, true)
-
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
-      await flushPendingPromises()
-
-      const transactionEvents = sentTransactionEvents(requestHandlerMock)
-      assert.strictEqual(transactionEvents.length, 2)
-      const deliveredEnergySample = transactionEvents[1].meterValue
+      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+      const bufferedEvent = sentTransactionEvents(requestHandlerMock)[0]
+      const bufferedEnergySample = bufferedEvent.meterValue
         ?.flatMap(meterValue => meterValue.sampledValue)
         .find(sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER)
-      assert.ok((deliveredEnergySample?.signedMeterValue?.publicKey.length ?? 0) > 0)
-      assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
+      assert.ok((bufferedEnergySample?.signedMeterValue?.publicKey.length ?? 0) > 0)
+      const requestParams = requestHandlerMock.mock.calls[0].arguments[3] as RequestParams
+      assert.strictEqual(requestParams.skipBufferingOnError, false)
     })
 
     await it('keeps OncePerTransaction state after a sent request receives an error', async () => {
@@ -709,7 +723,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.publicKeySentInTransaction, true)
     })
 
-    await it('does not perturb the next coherent sample when emitting an aligned snapshot', () => {
+    await it('advances coherent state once across interleaved aligned samples', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       const { mockStation: controlStation } = createAlignedStation({
         connectorsCount: 1,
@@ -755,26 +769,29 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const registerBefore = connectorStatus.energyActiveImportRegisterValue
       const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
 
-      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(90_000))
 
-      // Guard against a vacuous pass: the sweep must actually emit for the
-      // active coherent EVSE, otherwise "does not perturb" holds trivially.
+      // Guard against a vacuous pass: the sweep must actually emit and advance
+      // the active coherent session to the aligned observation time.
       assert.ok(
         sentTransactionEvents(requestHandlerMock).some(
           event => event.transactionId === 'tx-coherent-state'
         )
       )
-      assert.strictEqual(session.socPercent, socBefore)
-      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, registerBefore)
-      assert.strictEqual(
-        connectorStatus.transactionEnergyActiveImportRegisterValue,
-        transactionRegisterBefore
+      assert.ok(session.socPercent > socBefore)
+      assert.ok((connectorStatus.energyActiveImportRegisterValue ?? 0) > (registerBefore ?? 0))
+      assert.ok(
+        (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0) >
+          (transactionRegisterBefore ?? 0)
       )
-      const nextOptions = { intervalMs: 60_000, nowMs: 120_000, rootSeed: 42 }
-      assert.deepEqual(
-        computeCoherentSample(mockStation, connectorStatus, session, nextOptions),
-        computeCoherentSample(controlStation, controlConnectorStatus, controlSession, nextOptions)
-      )
+
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, new Date(120_000))
+      computeCoherentSample(controlStation, controlConnectorStatus, controlSession, {
+        intervalMs: 60_000,
+        nowMs: 120_000,
+        rootSeed: 42,
+      })
+      assert.ok(Math.abs(session.socPercent - controlSession.socPercent) < Number.EPSILON * 32)
     })
     await it('does not advance active transaction registers on an aligned snapshot', () => {
       const { mockStation } = alignedStation
@@ -823,7 +840,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('does not queue a clock-aligned event when the connection closes during a sweep', () => {
+    await it('queues a clock-aligned event when the connection closes during a sweep', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
         evsesCount: 1,
@@ -837,7 +854,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
-      assert.deepEqual(mockStation.getConnectorStatus(1, 1)?.transactionEventQueue ?? [], [])
+      assert.strictEqual(mockStation.getConnectorStatus(1, 1)?.transactionEventQueue?.length, 1)
     })
 
     await it('never mutates connector energy bookkeeping nor public-key flag on idle ticks', () => {
@@ -1430,6 +1447,8 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         requestHandlerMock.mock.calls[0].arguments[1],
         OCPP20RequestCommand.TRANSACTION_EVENT
       )
+      const replayParams = requestHandlerMock.mock.calls[0].arguments[3] as RequestParams
+      assert.strictEqual(replayParams.responseTimeoutMs, 30_000)
     })
 
     await it('cleans up the EVSE-qualified connector after replaying an Ended event', async () => {
@@ -2029,7 +2048,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('waits for an in-flight sweep before scheduling the next one', async () => {
+    await it('emits every boundary while an earlier sweep is in flight', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseSweep: (() => void) | undefined
@@ -2045,14 +2064,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       station.startAlignedMeterValues()
       mock.timers.tick(60_000)
       mock.timers.tick(600_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
-
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
       releaseSweep?.()
       await Promise.resolve()
-      mock.timers.tick(59_999)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
-      mock.timers.tick(1)
-      assert.strictEqual(emitSpy.mock.callCount(), 2)
+      mock.timers.tick(60_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 3)
     })
 
     await it('aligns the first emission to the next wall-clock boundary', async () => {
@@ -2141,7 +2157,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
 
-    await it('keeps the timer armed without overlapping a pending sweep', async () => {
+    await it('keeps the timer armed while a prior sweep is pending', async () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseFirstSweep: () => void = noop
       const firstSweepBlocked = new Promise<void>(resolve => {
@@ -2161,12 +2177,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
       mock.timers.tick(900_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
 
       releaseFirstSweep()
       await flushPendingPromises()
       mock.timers.tick(900_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 2)
+      assert.strictEqual(emitSpy.mock.callCount(), 3)
     })
 
     await it('re-arms only after queued TransactionEvents finish replaying', async () => {
@@ -2200,15 +2216,21 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
-    await it('leaves aligned scheduling to onOpen after the accepted sequence', async () => {
+    await it('arms after an Accepted transition outside onOpen', async () => {
+      station.started = true
+      mock.method(station, 'inAcceptedState', () => true)
+      mock.method(station, 'isWebSocketConnectionOpened', () => true)
       const startSpy = mock.method(station, 'startAlignedMeterValues', noop)
-      mock.method(station.ocppRequestService, 'requestHandler', () => Promise.resolve({}))
+      const testableStation = station as unknown as {
+        startMessageSequence: () => Promise<void>
+      }
+      mock.method(testableStation, 'startMessageSequence', () => Promise.resolve())
 
-      await (
-        station as unknown as { startMessageSequence: () => Promise<void> }
-      ).startMessageSequence()
+      station.emitChargingStationEvent(ChargingStationEvents.accepted)
+      await flushPendingPromises()
+      await flushPendingPromises()
 
-      assert.strictEqual(startSpy.mock.callCount(), 0)
+      assert.strictEqual(startSpy.mock.callCount(), 1)
     })
 
     await it('does not re-arm after disconnecting during queued event replay', async () => {

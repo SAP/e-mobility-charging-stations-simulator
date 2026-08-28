@@ -200,6 +200,7 @@ await describe('G02 - Heartbeat', async () => {
         {
           onMessageSent: () => {
             messageSentCount++
+            throw new Error('observer failure')
           },
           responseTimeoutMs: 5,
           skipBufferingOnError: true,

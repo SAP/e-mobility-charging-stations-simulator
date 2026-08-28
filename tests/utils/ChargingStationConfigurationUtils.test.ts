@@ -71,6 +71,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
           MeterValues: [],
           transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
           transactionEndedMeterValuesSetInterval: interval2,
+          transactionEnding: true,
           transactionEventQueue: [],
           transactionUpdatedMeterValuesSetInterval: interval1,
         } as unknown as ConnectorStatus)
@@ -80,6 +81,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         assert.strictEqual(result.length, 2)
         for (const [, connector] of result) {
           assert.ok(!('transactionEndedMeterValues' in connector))
+          assert.ok(!('transactionEnding' in connector))
           assert.ok(!('transactionEndedMeterValuesSetInterval' in connector))
           assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connector))
           assert.ok(!('transactionEventQueue' in connector))
@@ -202,6 +204,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         MeterValues: [],
         transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
         transactionEndedMeterValuesSetInterval: undefined,
+        transactionEnding: true,
         transactionEventQueue: [],
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
@@ -224,6 +227,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(connectorsStatus[0][0], 1)
       const connectorStatus = connectorsStatus[0][1]
       assert.ok(!('transactionEndedMeterValues' in connectorStatus))
+      assert.ok(!('transactionEnding' in connectorStatus))
       assert.ok(!('transactionEndedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionEventQueue' in connectorStatus))

@@ -55,6 +55,7 @@ import { createStreamPrng } from './PRNG.js'
  * auto-collected when the session becomes unreachable.
  */
 interface SessionRuntime {
+  lastComputedAtMs?: number
   lastSample?: CoherentSample
   voltagePrng?: () => number
 }
@@ -481,5 +482,40 @@ export const computeCoherentSample = (
     voltageV: roundedV,
   }
   getSessionRuntime(session).lastSample = sample
+  getSessionRuntime(session).lastComputedAtMs = options.nowMs
   return sample
+}
+/**
+ * Advances coherent physics to an absolute sample time without counting an
+ * interval twice when periodic and clock-aligned samplers interleave.
+ * The first sample integrates from the transaction start; later samples
+ * integrate only elapsed time since the last committed sample. Out-of-order
+ * or same-instant observations reuse the committed state without advancing it.
+ * @param context - Charging-station context.
+ * @param connectorStatus - Connector state.
+ * @param session - Active coherent session.
+ * @param options - Sample options whose `nowMs` is the observation time.
+ * @param evseId - Exact EVSE id when connector ids are EVSE-local.
+ * @returns The current coherent sample.
+ */
+export const computeCoherentSampleAtTime = (
+  context: ICoherentContext,
+  connectorStatus: ConnectorStatus,
+  session: CoherentSession,
+  options: ComputeSampleOptions,
+  evseId?: number
+): CoherentSample => {
+  const runtime = getSessionRuntime(session)
+  const previousSampleAtMs = runtime.lastComputedAtMs ?? session.sessionStartMs
+  const intervalMs = Math.max(0, options.nowMs - previousSampleAtMs)
+  if (intervalMs === 0) {
+    return getCoherentSampleSnapshot(context, connectorStatus, session)
+  }
+  return computeCoherentSample(
+    context,
+    connectorStatus,
+    session,
+    { ...options, intervalMs },
+    evseId
+  )
 }

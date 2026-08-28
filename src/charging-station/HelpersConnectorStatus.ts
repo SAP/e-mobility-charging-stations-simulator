@@ -125,6 +125,7 @@ export const initializeConnectorsMapStatus = (
   defaultMaximumPower?: number
 ): void => {
   for (const [connectorId, connectorStatus] of connectors) {
+    delete connectorStatus.transactionEnding
     if (connectorId > 0 && connectorStatus.transactionStarted === true) {
       if (
         connectorStatus.transactionId == null ||

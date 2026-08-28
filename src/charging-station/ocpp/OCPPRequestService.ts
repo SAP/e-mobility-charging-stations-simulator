@@ -491,7 +491,16 @@ export abstract class OCPPRequestService {
             PerformanceStatistics.endMeasure(commandName, beginId)
             clearTimeout(sendTimeout)
             if (error == null) {
-              params.onMessageSent?.()
+              const notifyMessageSent = (): void => {
+                try {
+                  params.onMessageSent?.()
+                } catch (error: unknown) {
+                  logger.error(
+                    `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onMessageSent callback failed for message id '${messageId}':`,
+                    error
+                  )
+                }
+              }
               logger.debug(
                 `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: >> Command '${commandName}' sent ${getMessageTypeString(
                   messageType
@@ -519,9 +528,11 @@ export abstract class OCPPRequestService {
                     )
                   }, params.responseTimeoutMs)
                 }
+                notifyMessageSent()
               } else {
                 // Resolve response
                 resolve(messagePayload)
+                notifyMessageSent()
               }
             } else {
               handleSendError(

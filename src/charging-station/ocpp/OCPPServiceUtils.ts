@@ -75,7 +75,6 @@ import {
 } from '../../utils/index.js'
 import {
   buildCoherentMeterValue,
-  buildCoherentMeterValueSnapshot,
   type BuildVersionedSampledValue,
   isCoherentModeActive,
   resolveRootSeed,
@@ -1731,41 +1730,22 @@ const buildIdentifiedMeterValue = (
     const timestamp = identity.timestamp ?? new Date()
     if (signingConfig != null) signingConfig.timestamp = timestamp
     const enabledMeasurands = resolveEnabledMeasurands(chargingStation, measurandsKey)
-    const coherentSnapshotEnergyRegister = Math.max(
-      0,
-      chargingStation.stationInfo?.meteringPerTransaction === true
-        ? (connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0)
-        : (connectorStatus?.energyActiveImportRegisterValue ?? 0)
+    const coherentMeterValue = buildCoherentMeterValue(
+      chargingStation,
+      coherentSession,
+      buildSignedVersionedSampledValue,
+      {
+        intervalMs: interval,
+        nowMs: identity.timestamp?.getTime() ?? Date.now(),
+        rootSeed: resolveRootSeed(chargingStation.stationInfo),
+      },
+      context,
+      enabledMeasurands,
+      registerValuesWithoutPhases,
+      timestamp,
+      connectorStatus,
+      evseId
     )
-    const coherentMeterValue = snapshot
-      ? buildCoherentMeterValueSnapshot(
-        chargingStation,
-        coherentSession,
-        buildSignedVersionedSampledValue,
-        context,
-        enabledMeasurands,
-        registerValuesWithoutPhases,
-        timestamp,
-        connectorStatus,
-        evseId,
-        coherentSnapshotEnergyRegister
-      )
-      : buildCoherentMeterValue(
-        chargingStation,
-        coherentSession,
-        buildSignedVersionedSampledValue,
-        {
-          intervalMs: interval,
-          nowMs: Date.now(),
-          rootSeed: resolveRootSeed(chargingStation.stationInfo),
-        },
-        context,
-        enabledMeasurands,
-        registerValuesWithoutPhases,
-        timestamp,
-        connectorStatus,
-        evseId
-      )
     if (snapshot) {
       const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
       coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(

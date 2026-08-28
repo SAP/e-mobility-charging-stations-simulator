@@ -1915,7 +1915,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     })
 
     await describe('Error handling during queue drain', async () => {
-      await it('should continue sending remaining events if one fails', async () => {
+      await it('should preserve a failed event and the remaining queue in order', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         let callCount = 0
@@ -1973,13 +1973,21 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         errorStation.isWebSocketConnectionOpened = () => true
 
         const connectorStatus = errorStation.getConnectorStatus(connectorId)
-        if (connectorStatus != null) {
-          connectorStatus.transactionStarted = true
-        }
+        assert(connectorStatus != null)
+        connectorStatus.transactionStarted = true
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
-        assert.strictEqual(callCount, 4)
+        assert.strictEqual(callCount, 2)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.request.eventType),
+          [OCPP20TransactionEventEnumType.Updated, OCPP20TransactionEventEnumType.Ended]
+        )
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
+
+        assert.strictEqual(callCount, 5)
+        assert.deepEqual(connectorStatus.transactionEventQueue, [])
       })
     })
   })
