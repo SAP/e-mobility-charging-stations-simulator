@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 Heartbeat request building (G02)
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -175,5 +175,40 @@ await describe('G02 - Heartbeat', async () => {
 
     // Ensure it's a plain object and not an instance of another type
     assert.strictEqual(Object.getPrototypeOf(payload), Object.prototype)
+  })
+
+  await it('expires a sent request that receives no OCPP response', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    let messageSentCount = 0
+    mock.method(
+      wsConnection,
+      'send',
+      (_data: unknown, callback?: (error?: Error) => void): void => {
+        callback?.()
+      }
+    )
+
+    await assert.rejects(
+      context.requestService.requestHandler(
+        context.station,
+        OCPP20RequestCommand.HEARTBEAT,
+        {},
+        {
+          onMessageSent: () => {
+            messageSentCount++
+          },
+          responseTimeoutMs: 5,
+          skipBufferingOnError: true,
+          throwError: true,
+        }
+      ),
+      /Timeout .* waiting for response/
+    )
+    assert.strictEqual(context.station.requests.size, 0)
+    assert.strictEqual(messageSentCount, 1)
   })
 })

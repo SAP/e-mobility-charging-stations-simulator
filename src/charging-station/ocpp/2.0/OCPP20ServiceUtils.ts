@@ -385,6 +385,12 @@ export class OCPP20ServiceUtils {
     ) {
       return
     }
+    const responseTimeoutMs = OCPP20ServiceUtils.readVariableAsIntervalMs(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20RequiredVariableName.MessageTimeout,
+      Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS
+    )
     const measurandsKey = buildConfigKey(
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.Measurands
@@ -400,6 +406,7 @@ export class OCPP20ServiceUtils {
       }
       const meterValues: OCPP20MeterValue[] = []
       for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+        if (connectorStatus.transactionEnding === true) continue
         // Only accepted Started transactions get TransactionEvent(Updated).
         // A pending remote start remains idle until then and reports through
         // the non-transactional MeterValues path.
@@ -431,7 +438,11 @@ export class OCPP20ServiceUtils {
                 connectorId,
                 transactionId.toString(),
                 { evseId, meterValue: [meterValue], timestamp },
-                { skipBufferingOnError: true }
+                {
+                  responseTimeoutMs,
+                  skipBufferingOnError: true,
+                  throwError: true,
+                }
               )
                 .then(() => undefined)
                 .catch((error: unknown) => {
@@ -457,7 +468,7 @@ export class OCPP20ServiceUtils {
             chargingStation,
             OCPP20RequestCommand.METER_VALUES,
             { evseId, meterValue: meterValues },
-            { skipBufferingOnError: true }
+            { responseTimeoutMs, skipBufferingOnError: true, throwError: true }
           )
           .then(() => undefined)
           .catch((error: unknown) => {
@@ -1111,7 +1122,11 @@ export class OCPP20ServiceUtils {
     }
     connectorStatus.transactionEndedMeterValuesSetInterval = setInterval(() => {
       const cs = chargingStation.getConnectorStatus(connectorId, evseId)
-      if (cs?.transactionStarted === true && cs.transactionId != null) {
+      if (
+        cs?.transactionStarted === true &&
+        cs.transactionEnding !== true &&
+        cs.transactionId != null
+      ) {
         const measurandsKey = buildConfigKey(
           OCPP20ComponentName.SampledDataCtrlr,
           OCPP20RequiredVariableName.TxEndedMeasurands
@@ -1221,7 +1236,11 @@ export class OCPP20ServiceUtils {
     }
     initialConnectorStatus.transactionUpdatedMeterValuesSetInterval = setInterval(() => {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
-      if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
+      if (
+        connectorStatus?.transactionStarted === true &&
+        connectorStatus.transactionEnding !== true &&
+        connectorStatus.transactionId != null
+      ) {
         if (
           connectorStatus.transactionDeauthorized === true &&
           connectorStatus.transactionDeauthorizedEnergyWh != null
@@ -1550,18 +1569,25 @@ export class OCPP20ServiceUtils {
       evseId
     )
 
-    const response = await this.sendTransactionEvent(
-      chargingStation,
-      OCPP20TransactionEventEnumType.Ended,
-      triggerReason,
-      connectorId,
-      transactionId,
-      {
-        evseId,
-        meterValue: isNotEmptyArray(endedMeterValues) ? endedMeterValues : undefined,
-        stoppedReason,
-      }
-    )
+    connectorStatus.transactionEnding = true
+    let response: OCPP20TransactionEventResponse
+    try {
+      response = await this.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        triggerReason,
+        connectorId,
+        transactionId,
+        {
+          evseId,
+          meterValue: isNotEmptyArray(endedMeterValues) ? endedMeterValues : undefined,
+          stoppedReason,
+        }
+      )
+    } catch (error) {
+      delete connectorStatus.transactionEnding
+      throw error
+    }
 
     await OCPP20ServiceUtils.cleanupEndedTransaction(
       chargingStation,

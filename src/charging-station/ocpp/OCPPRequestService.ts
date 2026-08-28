@@ -385,12 +385,20 @@ export abstract class OCPPRequestService {
       // eslint-disable-next-line @typescript-eslint/no-this-alias -- stable outer-this reference captured for nested Promise executor and its response-handler closures
       const self = this
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
+        let responseTimeout: NodeJS.Timeout | undefined
+        const clearResponseTimeout = (): void => {
+          if (responseTimeout != null) {
+            clearTimeout(responseTimeout)
+            responseTimeout = undefined
+          }
+        }
         /**
          * Function that will receive the request's response
          * @param payload - The response payload
          * @param requestPayload - The original request payload
          */
         const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
+          clearResponseTimeout()
           chargingStation.recordRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE)
           self.ocppResponseService
             .responseHandler(
@@ -416,6 +424,7 @@ export abstract class OCPPRequestService {
          * @param requestStatistic - Whether to record request statistics
          */
         const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
+          clearResponseTimeout()
           if (requestStatistic) {
             chargingStation.recordRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE)
           }
@@ -497,6 +506,19 @@ export abstract class OCPPRequestService {
                   responseCallback,
                   errorCallback
                 )
+                if (params.responseTimeoutMs != null && params.responseTimeoutMs > 0) {
+                  responseTimeout = setTimeout(() => {
+                    errorCallback(
+                      new OCPPError(
+                        ErrorType.GENERIC_ERROR,
+                        `Timeout ${formatDurationMilliSeconds(params.responseTimeoutMs ?? 0)} waiting for response to message id '${messageId}'`,
+                        commandName,
+                        messagePayload instanceof OCPPError ? messagePayload.details : undefined
+                      ),
+                      false
+                    )
+                  }, params.responseTimeoutMs)
+                }
               } else {
                 // Resolve response
                 resolve(messagePayload)

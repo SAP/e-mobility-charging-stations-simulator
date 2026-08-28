@@ -190,6 +190,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.transactionPending = false
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
+  delete connectorStatus.transactionEnding
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag

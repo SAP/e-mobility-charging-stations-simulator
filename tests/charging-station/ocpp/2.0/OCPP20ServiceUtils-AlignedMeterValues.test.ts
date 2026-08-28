@@ -238,12 +238,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       assert.ok(
-        requestHandlerMock.mock.calls.every(
-          call =>
-            call.arguments[1] !== OCPP20RequestCommand.METER_VALUES ||
-            (call.arguments[3] as undefined | { skipBufferingOnError?: boolean })
-              ?.skipBufferingOnError === true
-        )
+        requestHandlerMock.mock.calls.every(call => {
+          if (call.arguments[1] !== OCPP20RequestCommand.METER_VALUES) return true
+          const requestParams = call.arguments[3] as RequestParams | undefined
+          return requestParams?.skipBufferingOnError === true && requestParams.throwError === true
+        })
       )
       const payloads = sentPayloads(requestHandlerMock)
       assert.deepEqual(
@@ -338,11 +337,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.ok(transactionEventCall != null)
-      assert.strictEqual(
-        (transactionEventCall.arguments[3] as { skipBufferingOnError?: boolean })
-          .skipBufferingOnError,
-        true
-      )
+      const requestParams = transactionEventCall.arguments[3] as RequestParams
+      assert.strictEqual(requestParams.skipBufferingOnError, true)
+      assert.strictEqual(requestParams.throwError, true)
     })
 
     await it('treats a pending transaction as idle until Started is accepted', () => {
@@ -359,6 +356,39 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         sentPayloads(requestHandlerMock).map(payload => payload.evseId),
         [1, 2]
       )
+    })
+
+    await it('does not emit Updated after Ended delivery has started', async () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-ending' })
+      let releaseEndedRequest: () => void = noop
+      const endedRequestBlocked = new Promise<void>(resolve => {
+        releaseEndedRequest = resolve
+      })
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]): Promise<unknown> => {
+        const options = args[2] as OCPP20TransactionEventOptions | undefined
+        if (
+          args[1] === OCPP20RequestCommand.TRANSACTION_EVENT &&
+          options?.eventType === OCPP20TransactionEventEnumType.Ended
+        ) {
+          await endedRequestBlocked
+        }
+        return undefined
+      })
+
+      const stopPromise = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
+      await flushPendingPromises()
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      const eventTypesWhileEnding = sentTransactionEvents(requestHandlerMock).map(
+        event => event.eventType
+      )
+      releaseEndedRequest()
+      await stopPromise
+
+      assert.deepEqual(eventTypesWhileEnding, [OCPP20TransactionEventEnumType.Ended])
     })
 
     await it('isolates a connector build failure from the remaining EVSEs', () => {
@@ -2079,9 +2109,9 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.timers.setTime(70_000)
       mock.timers.tick(60_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
-      const firstSlotTimestamp = emitSpy.mock.calls[0].arguments[1]
-      assert.ok(firstSlotTimestamp instanceof Date)
-      assert.strictEqual(firstSlotTimestamp.getTime(), 60_000)
+      const firstSampleTimestamp = emitSpy.mock.calls[0].arguments[1]
+      assert.ok(firstSampleTimestamp instanceof Date)
+      assert.strictEqual(firstSampleTimestamp.getTime(), 130_000)
       await Promise.resolve()
       mock.timers.tick(49_999)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
@@ -2109,6 +2139,34 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       station.startAlignedMeterValues()
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
+    })
+
+    await it('keeps the timer armed without overlapping a pending sweep', async () => {
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
+      let releaseFirstSweep: () => void = noop
+      const firstSweepBlocked = new Promise<void>(resolve => {
+        releaseFirstSweep = resolve
+      })
+      let emissionCount = 0
+      const emitSpy = mock.method(
+        OCPP20ServiceUtils,
+        'emitClockAlignedMeterValues',
+        async (): Promise<void> => {
+          emissionCount++
+          if (emissionCount === 1) await firstSweepBlocked
+        }
+      )
+
+      station.startAlignedMeterValues()
+      mock.timers.tick(900_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      mock.timers.tick(900_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+
+      releaseFirstSweep()
+      await flushPendingPromises()
+      mock.timers.tick(900_000)
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
     await it('re-arms only after queued TransactionEvents finish replaying', async () => {

@@ -209,6 +209,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  private alignedMeterValuesEmissionGeneration?: number
   private alignedMeterValuesGeneration = 0
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
@@ -1364,13 +1365,21 @@ export class ChargingStation extends EventEmitter {
       const delayMs = targetMs - now
       this.alignedMeterValuesSetTimeout = setTimeout(() => {
         if (generation !== this.alignedMeterValuesGeneration) return
-        // Preserve the UTC slot even when the event loop runs late: OCPP allows
-        // delayed transmission but requires measurement at the configured interval.
-        OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date(targetMs))
+        delete this.alignedMeterValuesSetTimeout
+        scheduleNext()
+        if (this.alignedMeterValuesEmissionGeneration === generation) {
+          logger.warn(
+            `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Previous clock-aligned sweep is still pending, skipping this boundary`
+          )
+          return
+        }
+        this.alignedMeterValuesEmissionGeneration = generation
+        // Capture when the callback actually runs. Reusing a missed UTC slot
+        // would falsely predate values computed from current simulator state.
+        OCPP20ServiceUtils.emitClockAlignedMeterValues(this, new Date())
           .finally(() => {
-            if (generation === this.alignedMeterValuesGeneration) {
-              delete this.alignedMeterValuesSetTimeout
-              scheduleNext()
+            if (this.alignedMeterValuesEmissionGeneration === generation) {
+              delete this.alignedMeterValuesEmissionGeneration
             }
           })
           .catch((error: unknown) => {
