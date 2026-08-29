@@ -101,7 +101,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
-    "@cspell/eslint-plugin": "^10.1.0",
+    "@cspell/eslint-plugin": "^10.1.1",
     "@eslint/js": "^9.39.5",
     "@mikro-orm/cli": "^6.6.16",
     "@types/node": "^24.13.3",
