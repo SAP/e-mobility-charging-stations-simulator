@@ -1090,11 +1090,7 @@ const createVersionedSampledValueDispatcher = (
               OCPP20ComponentName.SampledDataCtrlr,
               VendorParametersKey.SignStartedReadings
             )
-          } else if (
-            context == null ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
-            (context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK && transactionId != null)
-          ) {
+          } else if (context == null || context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               signReadingsComponent,
@@ -1470,7 +1466,7 @@ const expandClockAlignedSnapshotSamples = (
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
         sample.phase === template.phase &&
         JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
-        sample.location === resolvedIdentity.location &&
+        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
     )
@@ -1495,7 +1491,7 @@ const expandClockAlignedSnapshotSamples = (
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
         sample.phase == null &&
         JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
-        sample.location === resolvedIdentity.location &&
+        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
     )
@@ -1516,7 +1512,7 @@ const expandClockAlignedSnapshotSamples = (
           !phasedPowerByLine.has(line) &&
           JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
           sample.measurand === measurand &&
-          sample.location === resolvedIdentity.location &&
+          (sample.location === resolvedIdentity.location || evseId === 0) &&
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
         ) {
           phasedPowerByLine.set(line, sample)

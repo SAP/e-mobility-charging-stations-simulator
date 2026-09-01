@@ -1240,16 +1240,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     const reportData: ReportDataType[] = []
 
     switch (reportBase) {
-      case ReportBaseEnumType.ConfigurationInventory:
+      case ReportBaseEnumType.ConfigurationInventory: {
+        const variableManager = OCPP20VariableManager.getInstance()
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
+            const resolved = variableManager.resolveConfigurationKeyName(configKey.key)
+            const metadata =
+              resolved == null
+                ? undefined
+                : getVariableMetadata(resolved.component, resolved.variable, resolved.instance)
             reportData.push({
-              component: {
-                name: OCPP20ComponentName.OCPPCommCtrlr,
-              },
-              variable: {
-                name: configKey.key,
-              },
+              component:
+                resolved == null
+                  ? { name: OCPP20ComponentName.OCPPCommCtrlr }
+                  : {
+                      name: resolved.component,
+                      ...(resolved.evseId != null && { evse: { id: resolved.evseId } }),
+                    },
+              variable:
+                resolved == null
+                  ? { name: configKey.key }
+                  : {
+                      name: resolved.variable,
+                      ...(resolved.instance != null && { instance: resolved.instance }),
+                    },
               variableAttribute: [
                 {
                   type: AttributeEnumType.Actual,
@@ -1257,13 +1271,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
                 },
               ],
               variableCharacteristics: {
-                dataType: DataEnumType.string,
+                dataType: metadata?.dataType ?? DataEnumType.string,
                 supportsMonitoring: false,
               },
             })
           }
         }
         break
+      }
 
       case ReportBaseEnumType.FullInventory: {
         reportData.push(...buildStationInfoReportData(chargingStation, STATION_INFO_FIELDS_FULL))

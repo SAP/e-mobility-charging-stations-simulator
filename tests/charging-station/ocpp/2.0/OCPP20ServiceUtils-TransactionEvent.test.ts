@@ -1446,6 +1446,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await it('should queue TransactionEvent when WebSocket is disconnected', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
+        const saveQueueSpy = mock.method(mockStation, 'saveTransactionEventQueues')
 
         setOnline(false)
 
@@ -1468,6 +1469,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert(connectorStatus.transactionEventQueue != null)
         assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
         assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 0)
+        assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
       })
 
       await it('should queue multiple TransactionEvents in order when offline', async () => {
@@ -1666,6 +1668,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
+        saveQueueSpy.mock.resetCalls()
         assert.strictEqual(sentRequests.length, 0)
 
         setOnline(true)

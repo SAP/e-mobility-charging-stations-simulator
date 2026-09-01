@@ -1295,6 +1295,7 @@ export class OCPP20ServiceUtils {
       const reservesPublicKey = reservePublicKey(transactionEventRequest)
       if (!canSend) {
         OCPP20ServiceUtils.enqueueTransactionEvent(
+          chargingStation,
           connectorStatus,
           transactionEventRequest,
           transactionEventRequest.offline === true
@@ -1309,7 +1310,11 @@ export class OCPP20ServiceUtils {
         triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock &&
         OCPP20ServiceUtils.transactionEventSendChains.has(connectorStatus)
       ) {
-        OCPP20ServiceUtils.enqueueTransactionEvent(connectorStatus, transactionEventRequest)
+        OCPP20ServiceUtils.enqueueTransactionEvent(
+          chargingStation,
+          connectorStatus,
+          transactionEventRequest
+        )
         OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
           chargingStation,
           connectorId,
@@ -1340,6 +1345,7 @@ export class OCPP20ServiceUtils {
                 !chargingStation.inAcceptedState()
               ) {
                 OCPP20ServiceUtils.enqueueTransactionEvent(
+                  chargingStation,
                   connectorStatus,
                   transactionEventRequest,
                   transactionEventRequest.offline === true
@@ -1375,6 +1381,7 @@ export class OCPP20ServiceUtils {
             !chargingStation.inAcceptedState())
         ) {
           OCPP20ServiceUtils.enqueueTransactionEvent(
+            chargingStation,
             connectorStatus,
             transactionEventRequest,
             transactionEventRequest.offline === true
@@ -1957,6 +1964,7 @@ export class OCPP20ServiceUtils {
   }
 
   private static enqueueTransactionEvent (
+    chargingStation: ChargingStation,
     connectorStatus: ConnectorStatus,
     request: OCPP20TransactionEventRequest,
     markOffline = false
@@ -1978,6 +1986,7 @@ export class OCPP20ServiceUtils {
       }
     }
     queue.splice(insertionIndex, 0, queuedEvent)
+    chargingStation.saveTransactionEventQueues()
   }
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {

@@ -897,7 +897,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
-    await it('does not sign active aligned samples when SignUpdatedReadings is disabled', () => {
+    await it('signs active aligned samples when standard SignReadings is enabled', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -917,7 +917,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
       assert.ok(
         transactionEvent.meterValue?.every(meterValue =>
-          meterValue.sampledValue.every(sample => sample.signedMeterValue == null)
+          meterValue.sampledValue.every(sample => sample.signedMeterValue != null)
         )
       )
     })
@@ -1544,6 +1544,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         evseStatus.MeterValues = [
           {
             fluctuationPercent: 0,
+            location: evseId === 0 ? OCPP20LocationEnumType.Inlet : OCPP20LocationEnumType.Outlet,
             measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
             unit: 'W',
             value: '1000',

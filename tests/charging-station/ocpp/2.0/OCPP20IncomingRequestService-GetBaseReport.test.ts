@@ -181,6 +181,25 @@ await describe('B07 - Get Base Report', async () => {
       ),
       false
     )
+    const configurationReport = testableService.buildReportData(
+      station,
+      ReportBaseEnumType.ConfigurationInventory
+    )
+    const scopedEntry = configurationReport.find(
+      entry =>
+        entry.component.name === (OCPP20ComponentName.AlignedDataCtrlr as string) &&
+        entry.component.evse?.id === 2 &&
+        entry.variable.name === (OCPP20OptionalVariableName.SendDuringIdle as string)
+    )
+    assert.strictEqual(scopedEntry?.variableAttribute[0]?.value, 'true')
+    assert.strictEqual(
+      configurationReport.some(
+        entry =>
+          entry.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string) &&
+          entry.variable.name.endsWith('.EVSE.2')
+      ),
+      false
+    )
   })
 
   // FR: B08.FR.03
