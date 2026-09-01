@@ -203,6 +203,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionEnding
   delete connectorStatus.transactionStarting
+  delete connectorStatus.transactionRestored
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
@@ -309,6 +310,8 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
   } else {
     delete connectorStatus.transactionStart
   }
+  connectorStatus.transactionRestored =
+    connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
   const transactionEnergyLastUpdatedAt = convertPersistedDate(
     connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
   )
@@ -354,6 +357,7 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         )
         : -1
     if (preparedQueue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
+      const removedEvents: QueuedTransactionEvent[] = []
       let excess = preparedQueue.length - Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
       const retainedQueue = preparedQueue.filter(queuedEvent => {
         if (
@@ -369,10 +373,11 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         ) {
           removedActiveTransactionEvent = true
         }
+        removedEvents.push(queuedEvent)
         return false
       })
       if (excess > 0) {
-        const removedEvents = retainedQueue.splice(0, excess)
+        removedEvents.push(...retainedQueue.splice(0, excess))
         if (
           transactionId != null &&
           removedEvents.some(
@@ -383,6 +388,28 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         }
       }
       preparedQueue.splice(0, preparedQueue.length, ...retainedQueue)
+      for (const removedEvent of removedEvents) {
+        const removedTransactionId = removedEvent.request.transactionInfo.transactionId
+        const removedPublicKey = removedEvent.request.meterValue
+          ?.flatMap(meterValue => meterValue.sampledValue)
+          .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
+          .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
+        if (removedPublicKey == null) continue
+        const replacementSignedSample = retainedQueue
+          .find(
+            retainedEvent =>
+              retainedEvent.request.transactionInfo.transactionId === removedTransactionId &&
+              retainedEvent.request.meterValue?.some(meterValue =>
+                meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
+              ) === true
+          )
+          ?.request.meterValue?.flatMap(meterValue => meterValue.sampledValue)
+          .find(sampledValue => sampledValue.signedMeterValue != null)
+        const replacementSignedMeterValue = replacementSignedSample?.signedMeterValue
+        if (replacementSignedMeterValue?.publicKey.length === 0) {
+          replacementSignedMeterValue.publicKey = removedPublicKey
+        }
+      }
     }
     connectorStatus.transactionEventQueue = preparedQueue
     if (activeTransactionMaxSeqNo >= 0) {

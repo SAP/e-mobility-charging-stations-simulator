@@ -251,6 +251,39 @@ await describe('G02 - Heartbeat', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
+  await it('does not cancel an answered request while its response handler is running', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    mock.method(wsConnection, 'send', (_data: unknown, callback?: (error?: Error) => void) => {
+      callback?.()
+    })
+    const responseHandlerGate = Promise.withResolvers<undefined>()
+    const responseService = (
+      context.requestService as unknown as {
+        ocppResponseService: { responseHandler: () => Promise<undefined> }
+      }
+    ).ocppResponseService
+    mock.method(responseService, 'responseHandler', () => responseHandlerGate.promise)
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      { responseTimeoutMs: 3_600_000, throwError: true }
+    )
+    await flushMicrotasks()
+    const cachedRequest = [...context.station.requests.values()][0]
+
+    cachedRequest[0]({ currentTime: new Date().toISOString() }, {})
+    assert.strictEqual(context.station.requests.size, 0)
+    context.requestService.cancelPendingRequests(context.station)
+    responseHandlerGate.resolve(undefined)
+
+    await pendingRequest
+  })
+
   await it('cancels a request while WebSocket.send is still pending', async () => {
     const context = createOCPP20RequestTestContext()
     const wsConnection = context.station.wsConnection

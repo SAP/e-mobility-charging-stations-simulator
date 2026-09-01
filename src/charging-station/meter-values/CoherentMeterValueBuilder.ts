@@ -535,10 +535,11 @@ export const buildCoherentMeterValue = (
     )
   }
   const energyRegisterWhOverride =
-    explicitEnergyRegisterWhOverride ??
-    (useTransactionEnergyRegister
-      ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
-      : undefined)
+    explicitEnergyRegisterWhOverride != null
+      ? explicitEnergyRegisterWhOverride + (snapshotOnly ? 0 : sample.deltaEnergyWh)
+      : useTransactionEnergyRegister
+        ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
+        : undefined
   return serializeCoherentMeterValue(
     context,
     session.connectorId,

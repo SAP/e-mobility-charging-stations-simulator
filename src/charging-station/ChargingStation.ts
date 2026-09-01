@@ -1391,9 +1391,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   /**
-   * Starts the autonomous clock-aligned MeterValues scheduler (#2011 Category
-   * 2F). OCPP 2.0.x only; a no-op when `AlignedDataCtrlr.Interval` resolves to
-   * 0 or falls outside the supported UTC-day range.
+   * 2F). OCPP 2.0.x only; a no-op when `AlignedDataCtrlr.Enabled` is false or
+   * `AlignedDataCtrlr.Interval` resolves to 0 or falls outside the supported
+   * UTC-day range.
    */
   public startAlignedMeterValues (): void {
     if (!isOCPP20x(this.stationInfo?.ocppVersion)) {
@@ -1405,6 +1405,12 @@ export class ChargingStation extends EventEmitter {
     if (!this.hasEvses) {
       logger.warn(
         `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Station has no EVSE topology (Connectors-only template), not starting the clock-aligned MeterValues`
+      )
+      return
+    }
+    if (!OCPP20ServiceUtils.isAlignedDataEnabled(this)) {
+      logger.info(
+        `${this.logPrefix()} ${moduleName}.startAlignedMeterValues: Clock-aligned MeterValues disabled by AlignedDataCtrlr.Enabled=false`
       )
       return
     }

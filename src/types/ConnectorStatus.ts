@@ -47,6 +47,7 @@ export interface ConnectorStatus {
   transactionIdTokenSent?: boolean
   transactionPending?: boolean
   transactionRemoteStarted?: boolean
+  transactionRestored?: boolean
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean

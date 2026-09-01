@@ -94,6 +94,9 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     assert.strictEqual(connectorStatus.locked, false)
     assert.ok(requestHandlerMock.mock.calls.length >= 1, 'Should send StatusNotification')
     assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
+    const requestParams = requestHandlerMock.mock.calls[0].arguments[3] as
+      undefined | { responseTimeoutMs?: number }
+    assert.strictEqual(requestParams?.responseTimeoutMs, 30_000)
   })
 
   await it('should abort post-transaction delay with the station lifecycle', async t => {

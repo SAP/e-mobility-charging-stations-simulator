@@ -438,6 +438,10 @@ export abstract class OCPPRequestService {
               error
             )
           }
+          // The wire response has arrived: remove the correlation entry before
+          // asynchronous response-side effects so lifecycle cancellation cannot
+          // reject an already-answered request while its handler is still running.
+          chargingStation.requests.delete(messageId)
           self.ocppResponseService
             .responseHandler(
               chargingStation,
@@ -450,7 +454,6 @@ export abstract class OCPPRequestService {
               return undefined
             })
             .finally(() => {
-              chargingStation.requests.delete(messageId)
               chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
             })
             .catch(reject)

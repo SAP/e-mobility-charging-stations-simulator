@@ -80,6 +80,7 @@ import {
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { mapStopReasonToOCPP20 } from './OCPP20RequestBuilders.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
+import { getVariableMetadata } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20ServiceUtils'
 
@@ -463,6 +464,12 @@ export class OCPP20ServiceUtils {
       return
     }
     sendPostTransactionStatus(chargingStation, connectorId, evseId, {
+      responseTimeoutMs: OCPP20ServiceUtils.readVariableAsIntervalMs(
+        chargingStation,
+        OCPP20ComponentName.OCPPCommCtrlr,
+        OCPP20RequiredVariableName.MessageTimeout,
+        Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS
+      ),
       waitForResponse: false,
     }).catch((error: unknown) => {
       logger.error(
@@ -672,7 +679,8 @@ export class OCPP20ServiceUtils {
             chargingStation,
             {
               connectorId,
-              ...(!periodicTransactionEnergySamples &&
+              ...((!periodicTransactionEnergySamples ||
+                connectorStatus.transactionRestored === true) &&
                 transactionId != null && { advanceEnergy: true }),
               ...(evseId === 0 && {
                 idle: !chargingStation
@@ -950,6 +958,20 @@ export class OCPP20ServiceUtils {
   }
 
   /**
+   * Returns whether autonomous clock-aligned data generation is enabled.
+   * @param chargingStation - Target charging station
+   * @returns Whether clock-aligned data generation is enabled
+   */
+  public static isAlignedDataEnabled (chargingStation: ChargingStation): boolean {
+    return OCPP20ServiceUtils.readVariableAsBoolean(
+      chargingStation,
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20RequiredVariableName.Enabled,
+      false
+    )
+  }
+
+  /**
    * Resolves `AlignedDataCtrlr.SendDuringIdle`, optionally for one EVSE.
    * EVSE-scoped values fall back to the station-wide value when absent.
    * @param chargingStation - Target charging station
@@ -988,12 +1010,6 @@ export class OCPP20ServiceUtils {
     if (!Number.isSafeInteger(intervalSeconds) || intervalSeconds > Constants.SECONDS_PER_DAY) {
       logger.warn(
         `${moduleName}.readAlignedDataIntervalSeconds: Out-of-range value '${value}' for AlignedDataCtrlr.Interval`
-      )
-      return
-    }
-    if (intervalSeconds > 0 && Constants.SECONDS_PER_DAY % intervalSeconds !== 0) {
-      logger.warn(
-        `${moduleName}.readAlignedDataIntervalSeconds: Value '${value}' does not divide the UTC day into evenly spaced intervals`
       )
       return
     }
@@ -1362,7 +1378,6 @@ export class OCPP20ServiceUtils {
       }
       if (
         eventType === OCPP20TransactionEventEnumType.Updated &&
-        triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock &&
         OCPP20ServiceUtils.transactionEventSendChains.has(connectorStatus)
       ) {
         OCPP20ServiceUtils.enqueueTransactionEvent(
@@ -1623,6 +1638,7 @@ export class OCPP20ServiceUtils {
       )
       return
     }
+    delete initialConnectorStatus.transactionRestored
     if (initialConnectorStatus.transactionUpdatedMeterValuesSetInterval != null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.startUpdatedMeterValues: TxUpdatedInterval already started, stopping first`
@@ -1939,6 +1955,7 @@ export class OCPP20ServiceUtils {
       Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
       'Default'
     )
+    let queueChanged = false
     while (queue.length > 0) {
       const queuedEvent = queue[0]
       if (eligibleEvents != null && !eligibleEvents.has(queuedEvent)) break
@@ -1967,7 +1984,7 @@ export class OCPP20ServiceUtils {
           )
         }
         queue.shift()
-        chargingStation.saveTransactionEventQueues()
+        queueChanged = true
       } catch (error) {
         if (
           !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
@@ -2022,7 +2039,7 @@ export class OCPP20ServiceUtils {
             )
           }
           queue.shift()
-          chargingStation.saveTransactionEventQueues()
+          queueChanged = true
           continue
         }
         logger.error(
@@ -2032,6 +2049,7 @@ export class OCPP20ServiceUtils {
         break
       }
     }
+    if (queueChanged) chargingStation.saveTransactionEventQueues()
   }
 
   private static enqueueTransactionEvent (
@@ -2088,23 +2106,30 @@ export class OCPP20ServiceUtils {
         if (droppedPublicKey) connectorStatus.publicKeySentInTransaction = false
         return
       }
-      const replacedEvent = removedEvents.find(
-        queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
-      )
-      const replacedPublicKey = replacedEvent?.request.meterValue
-        ?.flatMap(meterValue => meterValue.sampledValue)
-        .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-        .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
-      const replacementSignedSample = request.meterValue
-        ?.flatMap(meterValue => meterValue.sampledValue)
-        .find(sampledValue => sampledValue.signedMeterValue != null)
-      if (replacedPublicKey != null && replacementSignedSample?.signedMeterValue != null) {
-        replacementSignedSample.signedMeterValue.publicKey = replacedPublicKey
-      } else if (
-        replacedPublicKey != null &&
-        connectorStatus.transactionId?.toString() === transactionId
-      ) {
-        connectorStatus.publicKeySentInTransaction = false
+      for (const removedEvent of removedEvents) {
+        const removedTransactionId = removedEvent.request.transactionInfo.transactionId
+        const removedPublicKey = removedEvent.request.meterValue
+          ?.flatMap(meterValue => meterValue.sampledValue)
+          .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
+          .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
+        if (removedPublicKey == null) continue
+        const replacementRequest = [...queue.map(queuedEvent => queuedEvent.request), request].find(
+          candidate =>
+            candidate.transactionInfo.transactionId === removedTransactionId &&
+            candidate.meterValue?.some(meterValue =>
+              meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
+            ) === true
+        )
+        const replacementSignedSample = replacementRequest?.meterValue
+          ?.flatMap(meterValue => meterValue.sampledValue)
+          .find(sampledValue => sampledValue.signedMeterValue != null)
+        if (replacementSignedSample?.signedMeterValue != null) {
+          if (replacementSignedSample.signedMeterValue.publicKey.length === 0) {
+            replacementSignedSample.signedMeterValue.publicKey = removedPublicKey
+          }
+        } else if (connectorStatus.transactionId?.toString() === removedTransactionId) {
+          connectorStatus.publicKeySentInTransaction = false
+        }
       }
     }
     const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
@@ -2125,6 +2150,33 @@ export class OCPP20ServiceUtils {
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
     return (chargingStation as unknown as { isStopping?: () => boolean }).isStopping?.() === true
+  }
+
+  /**
+   * Reads an integer and clamps it to its canonical Device Model bounds.
+   * @param chargingStation - Target charging station
+   * @param componentName - Device Model component name
+   * @param variableName - Device Model variable name
+   * @param defaultValue - Fallback value
+   * @param componentInstance - Optional component instance
+   * @returns The bounded integer value
+   */
+  private static readBoundedVariableAsInteger (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue: number,
+    componentInstance?: string
+  ): number {
+    const value = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      componentName,
+      variableName,
+      defaultValue,
+      componentInstance
+    )
+    const metadata = getVariableMetadata(componentName, variableName, componentInstance)
+    return Math.min(metadata?.max ?? value, Math.max(metadata?.min ?? value, value))
   }
 
   private static readVariableAsIntervalMs (
@@ -2220,36 +2272,32 @@ export class OCPP20ServiceUtils {
     request: OCPP20TransactionEventRequest,
     requestParams: RequestParams = {}
   ): Promise<OCPP20TransactionEventResponse> {
-    const maximumAttempts = Math.max(
-      1,
-      OCPP20ServiceUtils.readVariableAsInteger(
-        chargingStation,
-        OCPP20ComponentName.OCPPCommCtrlr,
-        OCPP20RequiredVariableName.MessageAttempts,
-        3,
-        OCPP20RequestCommand.TRANSACTION_EVENT
-      )
+    const maximumAttempts = OCPP20ServiceUtils.readBoundedVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.OCPPCommCtrlr,
+      OCPP20RequiredVariableName.MessageAttempts,
+      3,
+      OCPP20RequestCommand.TRANSACTION_EVENT
     )
     const retryIntervalMs = secondsToMilliseconds(
-      Math.max(
-        0,
-        OCPP20ServiceUtils.readVariableAsInteger(
-          chargingStation,
-          OCPP20ComponentName.OCPPCommCtrlr,
-          OCPP20RequiredVariableName.MessageAttemptInterval,
-          5,
-          OCPP20RequestCommand.TRANSACTION_EVENT
-        )
+      OCPP20ServiceUtils.readBoundedVariableAsInteger(
+        chargingStation,
+        OCPP20ComponentName.OCPPCommCtrlr,
+        OCPP20RequiredVariableName.MessageAttemptInterval,
+        5,
+        OCPP20RequestCommand.TRANSACTION_EVENT
       )
     )
     const responseTimeoutMs =
       requestParams.responseTimeoutMs ??
-      OCPP20ServiceUtils.readVariableAsIntervalMs(
-        chargingStation,
-        OCPP20ComponentName.OCPPCommCtrlr,
-        OCPP20RequiredVariableName.MessageTimeout,
-        Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
-        'Default'
+      secondsToMilliseconds(
+        OCPP20ServiceUtils.readBoundedVariableAsInteger(
+          chargingStation,
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageTimeout,
+          Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
+          'Default'
+        )
       )
     const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
       .lifecycleAbortSignal
@@ -2285,10 +2333,11 @@ export class OCPP20ServiceUtils {
         ) {
           throw error
         }
+        const retryDelayMs = clampToSafeTimerValue(retryIntervalMs * attempt)
         if (lifecycleAbortSignal == null) {
-          await sleep(retryIntervalMs * attempt)
+          await sleep(retryDelayMs)
         } else {
-          await interruptibleSleep(retryIntervalMs * attempt, lifecycleAbortSignal)
+          await interruptibleSleep(retryDelayMs, lifecycleAbortSignal)
           if (lifecycleAbortSignal.aborted) throw error
         }
       }

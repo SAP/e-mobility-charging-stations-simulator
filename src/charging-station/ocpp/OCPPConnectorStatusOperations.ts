@@ -22,11 +22,12 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
  * @param options - Optional send behavior.
  * @param options.send - Whether to send the status notification.
  * @param options.waitForResponse - Whether local completion waits for the CSMS response.
+ * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationOptions,
-  options?: { send: boolean; waitForResponse?: boolean }
+  options?: { responseTimeoutMs?: number; send: boolean; waitForResponse?: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
   const { connectorId, errorCode, evseId } = commandParams
@@ -40,7 +41,9 @@ export const sendAndSetConnectorStatus = async (
     const response = chargingStation.ocppRequestService.requestHandler<
       StatusNotificationOptions,
       StatusNotificationResponse
-    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
+    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams, {
+      responseTimeoutMs: options.responseTimeoutMs,
+    })
     if (options.waitForResponse === false) {
       response.catch((error: unknown) => {
         logger.error(
@@ -69,12 +72,13 @@ export const sendAndSetConnectorStatus = async (
  * @param evseId - Optional EVSE identifier for EVSE-local connector ids
  * @param options - Optional send behavior.
  * @param options.waitForResponse - Whether local completion waits for the CSMS response.
+ * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
  */
 export const sendPostTransactionStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  options?: { waitForResponse?: boolean }
+  options?: { responseTimeoutMs?: number; waitForResponse?: boolean }
 ): Promise<void> => {
   const status =
     chargingStation.isChargingStationAvailable() &&
@@ -87,10 +91,10 @@ export const sendPostTransactionStatus = async (
     {
       connectorId,
       connectorStatus: status,
-      ...(evseId != null && { evseId }),
+      evseId,
       status,
     },
-    { send: true, ...options }
+    { responseTimeoutMs: options?.responseTimeoutMs, send: true, ...options }
   )
 }
 

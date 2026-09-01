@@ -1678,7 +1678,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(sentRequests.length, 2)
         assert.strictEqual(sentRequests[0].payload.seqNo, 0)
         assert.strictEqual(sentRequests[1].payload.seqNo, 1)
-        assert.strictEqual(saveQueueSpy.mock.callCount(), 2)
+        assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
       })
 
       await it('keeps a later Ended event visible while replaying Started', async () => {
@@ -2803,7 +2803,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepEqual(sentSequenceNumbers, [0, 0, 1])
       })
 
-      await it('queues aligned updates without stacking delivery promises', async () => {
+      await it('queues periodic updates without stacking delivery promises', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const firstDeliveryStarted = Promise.withResolvers<undefined>()
@@ -2838,7 +2838,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const firstDelivery = OCPP20ServiceUtils.sendTransactionEvent(
           station,
           OCPP20TransactionEventEnumType.Updated,
-          OCPP20TriggerReasonEnumType.MeterValueClock,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           transactionId
         )
@@ -2846,7 +2846,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.sendTransactionEvent(
           station,
           OCPP20TransactionEventEnumType.Updated,
-          OCPP20TriggerReasonEnumType.MeterValueClock,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           transactionId
         )
@@ -3578,6 +3578,52 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
 
       assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL_SECONDS * 1000)
+    })
+    await it('clamps persisted retry settings to their registry bounds', () => {
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.${OCPP20RequestCommand.TRANSACTION_EVENT}`,
+        '1000000000',
+        undefined,
+        { save: false }
+      )
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttemptInterval}.${OCPP20RequestCommand.TRANSACTION_EVENT}`,
+        '0',
+        undefined,
+        { save: false }
+      )
+      const serviceUtils = OCPP20ServiceUtils as unknown as {
+        readBoundedVariableAsInteger: (
+          target: ChargingStation,
+          componentName: string,
+          variableName: string,
+          defaultValue: number,
+          componentInstance?: string
+        ) => number
+      }
+
+      assert.strictEqual(
+        serviceUtils.readBoundedVariableAsInteger(
+          station,
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageAttempts,
+          3,
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        ),
+        10
+      )
+      assert.strictEqual(
+        serviceUtils.readBoundedVariableAsInteger(
+          station,
+          OCPP20ComponentName.OCPPCommCtrlr,
+          OCPP20RequiredVariableName.MessageAttemptInterval,
+          5,
+          OCPP20RequestCommand.TRANSACTION_EVENT
+        ),
+        1
+      )
     })
   })
 

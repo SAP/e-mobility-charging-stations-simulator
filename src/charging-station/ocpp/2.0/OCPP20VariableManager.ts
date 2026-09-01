@@ -1057,22 +1057,6 @@ export class OCPP20VariableManager {
           validation.info ?? 'Invalid value'
         )
       }
-      if (
-        component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
-        variable.name.toLowerCase() === OCPP20RequiredVariableName.AlignedDataInterval.toLowerCase()
-      ) {
-        const intervalSeconds = convertToIntOrNaN(attributeValue)
-        if (intervalSeconds > 0 && Constants.SECONDS_PER_DAY % intervalSeconds !== 0) {
-          return this.rejectSet(
-            variable,
-            component,
-            resolvedAttributeType,
-            SetVariableStatusEnumType.Rejected,
-            ReasonCodeEnumType.InvalidValue,
-            'AlignedDataCtrlr.Interval must divide the UTC day into evenly spaced intervals'
-          )
-        }
-      }
       // Enforce dynamic MinSet/MaxSet overrides for integer values
       if (variableMetadata.dataType === DataEnumType.integer) {
         const num = convertToIntOrNaN(attributeValue)
@@ -1149,13 +1133,17 @@ export class OCPP20VariableManager {
     ) {
       chargingStation.restartWebSocketPing()
     }
-    if (
-      component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
-      variable.name.toLowerCase() === OCPP20RequiredVariableName.AlignedDataInterval.toLowerCase()
-    ) {
-      const alignedDataInterval = convertToIntOrNaN(attributeValue)
-      if (!Number.isNaN(alignedDataInterval)) {
-        if (alignedDataInterval > 0) {
+    if (component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase()) {
+      const variableName = variable.name.toLowerCase()
+      if (variableName === OCPP20RequiredVariableName.AlignedDataInterval.toLowerCase()) {
+        const alignedDataInterval = convertToIntOrNaN(attributeValue)
+        if (!Number.isNaN(alignedDataInterval) && alignedDataInterval > 0) {
+          chargingStation.restartAlignedMeterValues()
+        } else {
+          chargingStation.stopAlignedMeterValues()
+        }
+      } else if (variableName === OCPP20RequiredVariableName.Enabled.toLowerCase()) {
+        if (attributeValue.trim().toLowerCase() === 'true') {
           chargingStation.restartAlignedMeterValues()
         } else {
           chargingStation.stopAlignedMeterValues()

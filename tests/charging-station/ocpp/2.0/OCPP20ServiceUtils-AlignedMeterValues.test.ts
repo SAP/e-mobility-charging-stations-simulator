@@ -26,6 +26,7 @@ import type {
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 
+import { prepareConnectorStatus } from '../../../../src/charging-station/HelpersConnectorStatus.js'
 import { buildConfigKey, getConfigurationKey } from '../../../../src/charging-station/index.js'
 import { computeCoherentSample } from '../../../../src/charging-station/meter-values/CoherentSampleComputer.js'
 import {
@@ -1435,6 +1436,42 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 54321)
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 1234)
     })
+    await it('advances a restored transaction when no periodic sampler was rehydrated', async () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      const alignedAt = new Date('2026-09-01T12:01:00.000Z')
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.customValueLimitationMeterValues = true
+      mock.method(mockStation, 'getConnectorMaximumAvailablePower', () => 3600)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: '1000',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: '00000000-0000-4000-8000-000000000012',
+      })
+      connectorStatus.energyActiveImportRegisterValue = 100
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+      connectorStatus.transactionStart = new Date(alignedAt.getTime() - 30_000)
+      prepareConnectorStatus(connectorStatus)
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, alignedAt)
+
+      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 130)
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt?.getTime(),
+        alignedAt.getTime()
+      )
+    })
 
     await it('integrates only the elapsed energy before the first aligned boundary', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
@@ -1668,6 +1705,73 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20TransactionEventEnumType.Ended
       )
       assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 1)
+    })
+    await it('preserves a historical transaction public key during saturation eviction', () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
+      const activeTransactionId = '00000000-0000-4000-8000-000000000100'
+      const historicalTransactionId = '00000000-0000-4000-8000-000000000099'
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: activeTransactionId })
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      const signedMeterValue = (publicKey: string) => [
+        {
+          sampledValue: [
+            {
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+              signedMeterValue: {
+                encodingMethod: 'OCMF',
+                publicKey,
+                signedMeterData: 'signed-data',
+                signingMethod: '',
+              },
+              value: 1,
+            },
+          ],
+          timestamp: new Date(),
+        },
+      ]
+      connectorStatus.transactionEventQueue = Array.from(
+        { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 2 },
+        (_, seqNo): QueuedTransactionEvent => ({
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Updated,
+            ...(seqNo < 2 && {
+              meterValue: signedMeterValue(seqNo === 0 ? 'historical-public-key' : ''),
+            }),
+            seqNo,
+            timestamp: new Date(seqNo * 1000),
+            transactionInfo: {
+              transactionId: seqNo < 2 ? historicalTransactionId : activeTransactionId,
+            },
+            triggerReason: OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          },
+          seqNo,
+          timestamp: new Date(seqNo * 1000),
+        })
+      )
+      const enqueueTransactionEvent = OCPP20ServiceUtils as unknown as {
+        enqueueTransactionEvent: (
+          station: MockChargingStation,
+          status: ConnectorStatus,
+          request: OCPP20TransactionEventRequest
+        ) => void
+      }
+
+      enqueueTransactionEvent.enqueueTransactionEvent(mockStation, connectorStatus, {
+        eventType: OCPP20TransactionEventEnumType.Updated,
+        seqNo: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH,
+        timestamp: new Date(),
+        transactionInfo: { transactionId: activeTransactionId },
+        triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+      })
+
+      const historicalReplacement = connectorStatus.transactionEventQueue.find(
+        queuedEvent => queuedEvent.request.transactionInfo.transactionId === historicalTransactionId
+      )
+      assert.strictEqual(
+        historicalReplacement?.request.meterValue?.[0].sampledValue[0].signedMeterValue?.publicKey,
+        'historical-public-key'
+      )
     })
 
     await it('clears transaction identity when Started delivery is cancelled', async () => {
@@ -3403,7 +3507,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stopSpy.mock.callCount(), 0)
     })
 
-    await it('rejects intervals that do not partition the UTC day evenly', () => {
+    await it('accepts intervals that do not partition the UTC day evenly', () => {
       const response = testableService.handleRequestSetVariables(mockStation, {
         setVariableData: [
           {
@@ -3417,14 +3521,43 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(
         response.setVariableResult[0].attributeStatus,
-        SetVariableStatusEnumType.Rejected
+        SetVariableStatusEnumType.Accepted
+      )
+      assert.strictEqual(restartSpy.mock.callCount(), 1)
+      assert.strictEqual(stopSpy.mock.callCount(), 0)
+    })
+    await it('reacts immediately when AlignedDataCtrlr.Enabled changes', () => {
+      const disableResponse = testableService.handleRequestSetVariables(mockStation, {
+        setVariableData: [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'false',
+            component: { name: OCPP20ComponentName.AlignedDataCtrlr },
+            variable: { name: OCPP20RequiredVariableName.Enabled },
+          },
+        ],
+      })
+      const enableResponse = testableService.handleRequestSetVariables(mockStation, {
+        setVariableData: [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'true',
+            component: { name: OCPP20ComponentName.AlignedDataCtrlr },
+            variable: { name: OCPP20RequiredVariableName.Enabled },
+          },
+        ],
+      })
+
+      assert.strictEqual(
+        disableResponse.setVariableResult[0].attributeStatus,
+        SetVariableStatusEnumType.Accepted
       )
       assert.strictEqual(
-        response.setVariableResult[0].attributeStatusInfo?.reasonCode,
-        ReasonCodeEnumType.InvalidValue
+        enableResponse.setVariableResult[0].attributeStatus,
+        SetVariableStatusEnumType.Accepted
       )
-      assert.strictEqual(restartSpy.mock.callCount(), 0)
-      assert.strictEqual(stopSpy.mock.callCount(), 0)
+      assert.strictEqual(stopSpy.mock.callCount(), 1)
+      assert.strictEqual(restartSpy.mock.callCount(), 1)
     })
   })
 
@@ -3460,6 +3593,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         'aligned-mv.station-template.json'
       )
       station = createStationFromTemplate(templateFile)
+      upsertConfigurationKey(station, ALIGNED_ENABLED_KEY, 'true')
     })
 
     afterEach(() => {
@@ -3548,7 +3682,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('rejects intervals that do not partition the UTC day evenly', () => {
+    await it('supports intervals that do not partition the UTC day evenly', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '7')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
@@ -3556,7 +3690,20 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
 
       station.startAlignedMeterValues()
-      mock.timers.tick(Constants.MS_PER_DAY)
+      mock.timers.tick(7_000)
+      await flushPendingPromises()
+
+      assert.strictEqual(emitSpy.mock.callCount(), 1)
+    })
+    await it('does not arm the scheduler while AlignedDataCtrlr.Enabled is false', () => {
+      upsertConfigurationKey(station, ALIGNED_ENABLED_KEY, 'false')
+      mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
+      const emitSpy = mock.method(OCPP20ServiceUtils, 'emitClockAlignedMeterValues', () =>
+        Promise.resolve()
+      )
+
+      station.startAlignedMeterValues()
+      mock.timers.tick(900_000)
 
       assert.strictEqual(emitSpy.mock.callCount(), 0)
     })

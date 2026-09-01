@@ -422,6 +422,60 @@ await describe('ChargingStationConfigurationUtils', async () => {
         Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
       )
     })
+    await it('should transfer a historical signing key when trimming a persisted queue', () => {
+      const activeTransactionId = '00000000-0000-4000-8000-000000000008'
+      const historicalTransactionId = '00000000-0000-4000-8000-000000000007'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const signedMeterValue = (publicKey: string) => [
+        {
+          sampledValue: [
+            {
+              signedMeterValue: {
+                encodingMethod: 'OCMF',
+                publicKey,
+                signedMeterData: 'signed-data',
+                signingMethod: 'ECDSA-secp256r1-SHA256',
+              },
+              value: 1,
+            },
+          ],
+          timestamp: eventTimestamp,
+        },
+      ]
+      const connectorStatus = {
+        transactionEventQueue: Array.from(
+          { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1 },
+          (_, seqNo) => ({
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              ...(seqNo < 2 && {
+                meterValue: signedMeterValue(seqNo === 0 ? 'historical-public-key' : ''),
+              }),
+              seqNo,
+              timestamp: eventTimestamp,
+              transactionInfo: {
+                transactionId: seqNo < 2 ? historicalTransactionId : activeTransactionId,
+              },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo,
+            timestamp: eventTimestamp,
+          })
+        ),
+        transactionId: activeTransactionId,
+        transactionStarted: true,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+      const historicalReplacement = restoredConnectorStatus.transactionEventQueue?.find(
+        queuedEvent => queuedEvent.request.transactionInfo.transactionId === historicalTransactionId
+      )
+
+      assert.strictEqual(
+        historicalReplacement?.request.meterValue?.[0].sampledValue[0].signedMeterValue?.publicKey,
+        'historical-public-key'
+      )
+    })
 
     await it('should release a reserved signing key when its persisted event is discarded', () => {
       const transactionId = '00000000-0000-4000-8000-000000000007'
