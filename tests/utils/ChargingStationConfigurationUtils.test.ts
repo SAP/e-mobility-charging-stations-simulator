@@ -289,6 +289,17 @@ await describe('ChargingStationConfigurationUtils', async () => {
             seqNo: 4,
             timestamp: eventTimestamp.toISOString(),
           },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 5,
+              timestamp: 'bogus',
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000005' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 5,
+            timestamp: eventTimestamp.toISOString(),
+          },
         ],
       } as unknown as ConnectorStatus
 
@@ -297,6 +308,16 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].timestamp instanceof Date)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+    })
+
+    await it('should discard a non-array persisted transaction queue', () => {
+      const connectorStatus = {
+        transactionEventQueue: { unexpected: true },
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue, undefined)
     })
 
     await it('should preserve connector IDs across serialization', () => {

@@ -484,6 +484,11 @@ export class ChargingStation extends EventEmitter {
         )
       }
     }
+    this.ocppRequestService.cancelPendingRequests(
+      this,
+      'Charging station deleted while awaiting an OCPP response',
+      true
+    )
     AutomaticTransactionGenerator.deleteInstance(this)
     CoherentMeterValuesManager.deleteInstance(this)
     PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
@@ -2300,7 +2305,14 @@ export class ChargingStation extends EventEmitter {
           : ((evseStatusConfiguration.connectorsStatus ?? []) as ConnectorStatus[]).map(
               (status, index) => [index, status]
             )
-        const templateMeterValues = stationTemplate.Evses?.[evseId].MeterValues
+        const templateEvse = stationTemplate.Evses?.[evseId]
+        if (templateEvse == null) {
+          logger.warn(
+            `${this.logPrefix()} ${moduleName}.initializeConnectorsOrEvsesFromFile: Ignoring persisted EVSE ${evseId.toString()} absent from template ${this.templateFile}`
+          )
+          continue
+        }
+        const templateMeterValues = templateEvse.MeterValues
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
           ...(isNotEmptyArray(templateMeterValues) && {

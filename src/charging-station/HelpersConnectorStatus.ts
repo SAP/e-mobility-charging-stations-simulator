@@ -220,6 +220,17 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionDeauthorizedEnergyWh
 }
 
+const convertPersistedDate = (value: unknown): Date | undefined => {
+  if (!(value instanceof Date) && typeof value !== 'string' && typeof value !== 'number') {
+    return undefined
+  }
+  try {
+    return convertToDate(value)
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * Post-load rehydration hook: coerces the persisted reservation
  * `expiryDate` back into a `Date` instance (or drops the reservation
@@ -238,7 +249,12 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       delete connectorStatus.reservation
     }
   }
-  if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
+  if (
+    connectorStatus.transactionEventQueue != null &&
+    !Array.isArray(connectorStatus.transactionEventQueue)
+  ) {
+    delete connectorStatus.transactionEventQueue
+  } else if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
     connectorStatus.transactionEventQueue = (
       connectorStatus.transactionEventQueue as unknown[]
     ).filter((candidate): candidate is QueuedTransactionEvent => {
@@ -257,15 +273,15 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         return false
       }
       const queuedEvent = candidate as unknown as QueuedTransactionEvent
-      const queuedTimestamp = convertToDate(queuedEvent.timestamp)
-      const requestTimestamp = convertToDate(queuedEvent.request.timestamp)
+      const queuedTimestamp = convertPersistedDate(queuedEvent.timestamp)
+      const requestTimestamp = convertPersistedDate(queuedEvent.request.timestamp)
       if (queuedTimestamp == null || requestTimestamp == null) return false
       queuedEvent.timestamp = queuedTimestamp
       queuedEvent.request.timestamp = requestTimestamp
       if (isNotEmptyArray(queuedEvent.request.meterValue)) {
         for (const meterValue of queuedEvent.request.meterValue) {
           if (!isJsonObject(meterValue)) return false
-          const meterValueTimestamp = convertToDate(meterValue.timestamp)
+          const meterValueTimestamp = convertPersistedDate(meterValue.timestamp)
           if (meterValueTimestamp == null) return false
           meterValue.timestamp = meterValueTimestamp
         }

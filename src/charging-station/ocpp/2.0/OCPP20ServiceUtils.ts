@@ -93,8 +93,18 @@ export interface RejectionReason {
   reasonCode: ReasonCodeEnumType
 }
 
+const hasQueuedEndedEvent = (connectorStatus: ConnectorStatus): boolean =>
+  connectorStatus.transactionId != null &&
+  connectorStatus.transactionEventQueue?.some(
+    queuedEvent =>
+      queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended &&
+      queuedEvent.request.transactionInfo.transactionId ===
+        connectorStatus.transactionId?.toString()
+  ) === true
+
 const hasOngoingTransaction = (connectorStatus: ConnectorStatus): boolean =>
   connectorStatus.transactionEnding !== true &&
+  !hasQueuedEndedEvent(connectorStatus) &&
   (connectorStatus.transactionStarting === true ||
     (connectorStatus.transactionStarted === true && connectorStatus.transactionId != null))
 interface AdditiveUnitFamily {
@@ -615,11 +625,12 @@ export class OCPP20ServiceUtils {
         // the non-transactional MeterValues path.
         const transactionId =
           connectorStatus.transactionEnding !== true &&
+          !hasQueuedEndedEvent(connectorStatus) &&
           connectorStatus.transactionStarted === true &&
           connectorStatus.transactionId != null
             ? connectorStatus.transactionId
             : undefined
-        if (evseInTransaction && transactionId == null) continue
+        if (evseInTransaction && transactionId == null && usesEvseMeterTemplate) continue
         try {
           const meterValue = buildClockAlignedConnectorMeterValue(
             chargingStation,

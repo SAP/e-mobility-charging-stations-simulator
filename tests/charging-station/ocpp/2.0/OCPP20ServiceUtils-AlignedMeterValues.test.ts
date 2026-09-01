@@ -355,6 +355,68 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('includes idle sibling connectors in the station aggregate', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      const stationEvse = mockStation.getEvseStatus(0)
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(stationEvse != null)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      stationEvse.MeterValues = [
+        { measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER, unit: 'varh' },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      evseStatus.MeterValues = []
+      connector1.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER,
+          unit: 'varh',
+          value: '1000',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      connector2.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER,
+          unit: 'varh',
+          value: '2000',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER
+      )
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: '00000000-0000-4000-8000-000000000010',
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
+      assert.ok(stationPayload != null)
+      const reactiveEnergySample = stationPayload.meterValue
+        .flatMap(meterValue => meterValue.sampledValue)
+        .find(
+          sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_REACTIVE_IMPORT_REGISTER
+        )
+      assert.strictEqual(reactiveEnergySample?.value, 3000)
+      assert.strictEqual(
+        sentPayloads(requestHandlerMock).some(({ evseId }) => evseId === 1),
+        false
+      )
+      assert.strictEqual(sentTransactionEvents(requestHandlerMock).length, 1)
+    })
+
     await it('normalizes compatible power units before station aggregation', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
@@ -839,6 +901,35 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       await stopPromise
 
       assert.deepEqual(eventTypesWhileEnding, [OCPP20TransactionEventEnumType.Ended])
+    })
+
+    await it('does not emit Updated after an Ended event has been persisted', async () => {
+      const { mockStation, requestHandlerMock } = alignedStation
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: '00000000-0000-4000-8000-000000000009',
+      })
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionEventQueue = [
+        {
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Ended,
+            seqNo: 1,
+            timestamp: new Date('2026-09-01T12:00:00.000Z'),
+            transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000009' },
+            triggerReason: OCPP20TriggerReasonEnumType.EVCommunicationLost,
+          },
+          seqNo: 1,
+          timestamp: new Date('2026-09-01T12:00:00.000Z'),
+        },
+      ]
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.deepEqual(sentTransactionEvents(requestHandlerMock), [])
     })
 
     await it('isolates a connector build failure from the remaining EVSEs', () => {

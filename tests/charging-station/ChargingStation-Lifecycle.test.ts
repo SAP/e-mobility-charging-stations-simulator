@@ -286,6 +286,60 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(station.getNumberOfConnectors(), 0)
     })
 
+    await it('should cancel requests created while stop settles during delete', async () => {
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      station.started = true
+      const cleanupOrder: string[] = []
+      mock.method(station.ocppRequestService, 'cancelPendingRequests', () => {
+        cleanupOrder.push('cancel')
+      })
+      mock.method(station, 'stop', () => {
+        cleanupOrder.push('stop')
+        result.station.started = false
+        return Promise.resolve()
+      })
+
+      await station.delete(false)
+
+      assert.deepEqual(cleanupOrder, ['stop', 'cancel'])
+    })
+
+    await it('should ignore persisted EVSEs absent from the current template', () => {
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      station = result.station
+      const initializeFromFile = (
+        ChargingStation.prototype as unknown as {
+          initializeConnectorsOrEvsesFromFile: (
+            configuration: unknown,
+            stationTemplate: unknown
+          ) => void
+        }
+      ).initializeConnectorsOrEvsesFromFile
+
+      assert.doesNotThrow(() => {
+        initializeFromFile.call(
+          station,
+          {
+            evsesStatus: [
+              [
+                99,
+                {
+                  availability: 'Operative',
+                  connectorsStatus: [],
+                },
+              ],
+            ],
+          },
+          { Evses: {} }
+        )
+      })
+      assert.strictEqual(station.getEvseStatus(99), undefined)
+    })
+
     await it('should handle delete operation with pending transactions', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 2 })
