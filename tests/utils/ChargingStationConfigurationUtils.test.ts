@@ -11,7 +11,12 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 
-import { AvailabilityType } from '../../src/types/index.js'
+import { prepareConnectorStatus } from '../../src/charging-station/HelpersConnectorStatus.js'
+import {
+  AvailabilityType,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
+} from '../../src/types/index.js'
 import {
   buildATGEntries,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
@@ -189,7 +194,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(connectorsStatus[0][0], 1)
     })
 
-    await it('should strip internal fields from evse connectors', () => {
+    await it('should strip ephemeral fields and preserve queued transaction events', () => {
       const { station } = createMockChargingStation({
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -198,6 +203,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const internals = station as unknown as MockStationInternals
       internals.evses.clear()
 
+      const eventTimestamp = new Date('2026-08-31T12:00:00.000Z')
+      const queuedTimestamp = new Date('2026-08-31T12:00:01.000Z')
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -205,7 +212,19 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEnding: true,
-        transactionEventQueue: [],
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 1,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 1,
+            timestamp: queuedTimestamp,
+          },
+        ],
         transactionStarting: true,
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
@@ -232,7 +251,25 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.ok(!('transactionStarting' in connectorStatus))
       assert.ok(!('transactionEndedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectorStatus))
-      assert.ok(!('transactionEventQueue' in connectorStatus))
+      assert.deepEqual(connectorStatus.transactionEventQueue, [
+        {
+          request: {
+            eventType: OCPP20TransactionEventEnumType.Updated,
+            seqNo: 1,
+            timestamp: eventTimestamp,
+            transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000001' },
+            triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+          },
+          seqNo: 1,
+          timestamp: queuedTimestamp,
+        },
+      ])
+      const persistedConnectorStatus = JSON.parse(
+        JSON.stringify(connectorStatus)
+      ) as ConnectorStatus
+      const restoredConnectorStatus = prepareConnectorStatus(persistedConnectorStatus)
+      assert.ok(restoredConnectorStatus.transactionEventQueue?.[0].timestamp instanceof Date)
+      assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
     })
 
     await it('should preserve connector IDs across serialization', () => {

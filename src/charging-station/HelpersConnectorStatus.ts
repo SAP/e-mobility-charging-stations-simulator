@@ -230,6 +230,25 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       delete connectorStatus.reservation
     }
   }
+  if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
+    connectorStatus.transactionEventQueue = connectorStatus.transactionEventQueue.filter(
+      queuedEvent => {
+        const queuedTimestamp = convertToDate(queuedEvent.timestamp)
+        const requestTimestamp = convertToDate(queuedEvent.request.timestamp)
+        if (queuedTimestamp == null || requestTimestamp == null) return false
+        queuedEvent.timestamp = queuedTimestamp
+        queuedEvent.request.timestamp = requestTimestamp
+        if (isNotEmptyArray(queuedEvent.request.meterValue)) {
+          for (const meterValue of queuedEvent.request.meterValue) {
+            const meterValueTimestamp = convertToDate(meterValue.timestamp)
+            if (meterValueTimestamp == null) return false
+            meterValue.timestamp = meterValueTimestamp
+          }
+        }
+        return true
+      }
+    )
+  }
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
       .filter(

@@ -122,7 +122,6 @@ export const buildEvsesStatus = (
             transactionEndedMeterValues,
             transactionEndedMeterValuesSetInterval,
             transactionEnding,
-            transactionEventQueue,
             transactionStarting,
             transactionUpdatedMeterValuesSetInterval,
             ...connector

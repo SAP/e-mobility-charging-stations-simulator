@@ -288,6 +288,7 @@ export class OCPP20ServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
+  private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventSendChains = new WeakMap<
     ConnectorStatus,
     Promise<unknown>
@@ -1304,6 +1305,20 @@ export class OCPP20ServiceUtils {
         )
         return { idTokenInfo: undefined }
       }
+      if (
+        eventType === OCPP20TransactionEventEnumType.Updated &&
+        triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock &&
+        OCPP20ServiceUtils.transactionEventSendChains.has(connectorStatus)
+      ) {
+        OCPP20ServiceUtils.enqueueTransactionEvent(connectorStatus, transactionEventRequest)
+        OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
+          chargingStation,
+          connectorId,
+          connectorStatus,
+          evseId
+        )
+        return { idTokenInfo: undefined }
+      }
 
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
@@ -2033,6 +2048,38 @@ export class OCPP20ServiceUtils {
       ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
       `No active transaction on connector ${connectorId.toString()}`
     )
+  }
+
+  private static scheduleTransactionEventQueueDrain (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    connectorStatus: ConnectorStatus,
+    evseId?: number
+  ): void {
+    if (OCPP20ServiceUtils.transactionEventQueueDrains.has(connectorStatus)) return
+    OCPP20ServiceUtils.transactionEventQueueDrains.add(connectorStatus)
+    OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId, evseId)
+      .finally(() => {
+        OCPP20ServiceUtils.transactionEventQueueDrains.delete(connectorStatus)
+        if (
+          isNotEmptyArray(connectorStatus.transactionEventQueue) &&
+          chargingStation.isWebSocketConnectionOpened() &&
+          chargingStation.inAcceptedState()
+        ) {
+          OCPP20ServiceUtils.scheduleTransactionEventQueueDrain(
+            chargingStation,
+            connectorId,
+            connectorStatus,
+            evseId
+          )
+        }
+      })
+      .catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.scheduleTransactionEventQueueDrain: Error draining queued TransactionEvents:`,
+          error
+        )
+      })
   }
 
   /**

@@ -2583,6 +2583,66 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepEqual(sentSequenceNumbers, [0, 0, 1])
       })
 
+      await it('queues aligned updates without stacking delivery promises', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const firstDeliveryStarted = Promise.withResolvers<undefined>()
+        const releaseFirstDelivery = Promise.withResolvers<undefined>()
+        const secondDeliveryCompleted = Promise.withResolvers<undefined>()
+        const sentSequenceNumbers: number[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          sentSequenceNumbers.push(payload.seqNo)
+          if (payload.seqNo === 0) {
+            firstDeliveryStarted.resolve(undefined)
+            await releaseFirstDelivery.promise
+          } else {
+            secondDeliveryCompleted.resolve(undefined)
+          }
+          return {} as EmptyObject
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+
+        const firstDelivery = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+        await firstDeliveryStarted.promise
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+        assert.strictEqual(
+          station.getConnectorStatus(connectorId)?.transactionEventQueue?.length,
+          1
+        )
+        releaseFirstDelivery.resolve(undefined)
+        await Promise.all([firstDelivery, secondDeliveryCompleted.promise])
+
+        assert.deepEqual(sentSequenceNumbers, [0, 1])
+        assert.deepEqual(station.getConnectorStatus(connectorId)?.transactionEventQueue, [])
+      })
+
       await it('releases a reserved public key when queued delivery fails before send', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
