@@ -103,8 +103,11 @@ export abstract class OCPPRequestService {
     discardBufferedRequests = false
   ): void {
     const cancellationError = new OCPPError(ErrorType.GENERIC_ERROR, message)
+    const bufferedRequestIds = discardBufferedRequests
+      ? undefined
+      : chargingStation.getBufferedRequestIds()
     for (const [messageId, [, errorCallback]] of [...chargingStation.requests.entries()]) {
-      if (!discardBufferedRequests && chargingStation.hasBufferedRequest(messageId)) continue
+      if (bufferedRequestIds?.has(messageId) === true) continue
       chargingStation.requests.delete(messageId)
       errorCallback(cancellationError, false)
     }

@@ -2169,10 +2169,7 @@ const buildIdentifiedMeterValue = (
     connectorStatus?.transactionStart
   const energyInterval =
     ownsEnergy && previousEnergyUpdate != null
-      ? Math.min(
-        interval,
-        Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
-      )
+      ? Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
       : interval
   const energyMeasurand = buildEnergyMeasurandValue(
     chargingStation,

@@ -150,6 +150,27 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stationLike.stopping, false)
     })
 
+    await it('coalesces transaction queue persistence to one dirty follow-up save', async () => {
+      const firstSave = Promise.withResolvers<undefined>()
+      const saveConfiguration = mock.fn()
+      const stationLike = {
+        pendingConfigurationSave: firstSave.promise,
+        saveConfiguration,
+      } as unknown as ChargingStation
+      const saveState = stationLike as unknown as {
+        transactionEventQueueSavePromise?: Promise<void>
+      }
+
+      for (let index = 0; index < 100; index++) {
+        ChargingStation.prototype.saveTransactionEventQueues.call(stationLike)
+      }
+
+      assert.strictEqual(saveConfiguration.mock.callCount(), 1)
+      firstSave.resolve(undefined)
+      await saveState.transactionEventQueueSavePromise
+      assert.strictEqual(saveConfiguration.mock.callCount(), 2)
+    })
+
     await it('persists events queued while transaction delivery settles during stop', async () => {
       const transactionEventQueue: unknown[] = []
       const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus

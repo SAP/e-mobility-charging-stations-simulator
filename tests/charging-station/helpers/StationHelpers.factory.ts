@@ -242,6 +242,23 @@ export function createMockChargingStation (
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
     },
+    getBufferedRequestIds (): Set<string> {
+      const messageIds = new Set<string>()
+      for (const message of this.messageQueue) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (
+            parsedMessage[0] === MessageType.CALL_MESSAGE &&
+            typeof parsedMessage[1] === 'string'
+          ) {
+            messageIds.add(parsedMessage[1])
+          }
+        } catch {
+          // Ignore malformed frames: they cannot identify a pending CALL.
+        }
+      }
+      return messageIds
+    },
     getCoherentSession (transactionId: number | string): CoherentSession | undefined {
       return this.coherentSessions.get(transactionId)
     },
@@ -352,14 +369,7 @@ export function createMockChargingStation (
       return websocketPingInterval
     },
     hasBufferedRequest (messageId: string): boolean {
-      return this.messageQueue.some(message => {
-        try {
-          const parsedMessage = JSON.parse(message) as unknown[]
-          return parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId
-        } catch {
-          return false
-        }
-      })
+      return this.getBufferedRequestIds().has(messageId)
     },
 
     hasConnector (connectorId: number): boolean {

@@ -243,6 +243,8 @@ export class ChargingStation extends EventEmitter {
   private stopPromise?: Promise<void>
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private transactionEventQueueSaveDirty = false
+  private transactionEventQueueSavePromise?: Promise<void>
   private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
@@ -486,6 +488,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
     }
+    await this.transactionEventQueueSavePromise
     this.ocppRequestService.cancelPendingRequests(
       this,
       'Charging station deleted while awaiting an OCPP response',
@@ -600,6 +603,24 @@ export class ChargingStation extends EventEmitter {
    */
   public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
+  }
+
+  /**
+   * Returns the ids of buffered CALL frames awaiting replay.
+   * Malformed buffered frames are ignored here and handled by the normal flush path.
+   * @returns Buffered OCPP CALL message ids
+   */
+  public getBufferedRequestIds (): Set<string> {
+    const messageIds = new Set<string>()
+    for (const message of this.messageQueue) {
+      try {
+        const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
+        if (parsedMessage[0] === MessageType.CALL_MESSAGE) messageIds.add(parsedMessage[1])
+      } catch {
+        // Ignore malformed frames: they cannot identify a pending CALL.
+      }
+    }
+    return messageIds
   }
 
   /**
@@ -909,14 +930,7 @@ export class ChargingStation extends EventEmitter {
    * @returns Whether the request is queued for replay
    */
   public hasBufferedRequest (messageId: string): boolean {
-    return this.messageQueue.some(message => {
-      try {
-        const parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
-        return parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId
-      } catch {
-        return false
-      }
-    })
+    return this.getBufferedRequestIds().has(messageId)
   }
 
   public hasConnector (connectorId: number): boolean {
@@ -1257,9 +1271,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  /** Persists connector transaction-event queues to storage. */
+  /** Coalesces queue snapshots to one in-flight save plus one latest-state save. */
   public saveTransactionEventQueues (): void {
-    this.saveConfiguration()
+    this.transactionEventQueueSaveDirty = true
+    this.transactionEventQueueSavePromise ??=
+      ChargingStation.prototype.drainTransactionEventQueueSaves.call(this)
   }
 
   /**
@@ -1607,6 +1623,15 @@ export class ChargingStation extends EventEmitter {
       clearInterval(this.flushMessageBufferSetInterval)
       delete this.flushMessageBufferSetInterval
     }
+  }
+
+  private async drainTransactionEventQueueSaves (): Promise<void> {
+    while (this.transactionEventQueueSaveDirty) {
+      this.transactionEventQueueSaveDirty = false
+      this.saveConfiguration()
+      await this.pendingConfigurationSave
+    }
+    delete this.transactionEventQueueSavePromise
   }
 
   private flushMessageBuffer (): void {
@@ -2905,6 +2930,7 @@ export class ChargingStation extends EventEmitter {
     this.templateFileWatcher?.close()
     delete this.bootNotificationResponse
     this.started = false
+    await this.transactionEventQueueSavePromise
     this.saveConfiguration()
     await this.pendingConfigurationSave
     this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)

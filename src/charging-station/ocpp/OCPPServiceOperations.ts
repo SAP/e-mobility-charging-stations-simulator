@@ -200,6 +200,7 @@ export const flushQueuedTransactionMessages = async (
           })
         }
       }
+      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(chargingStation)
       break
     default:
       break

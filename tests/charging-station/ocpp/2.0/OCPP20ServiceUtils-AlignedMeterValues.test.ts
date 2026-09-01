@@ -743,7 +743,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(powerSample?.value, 1000)
     })
 
-    await it('coalesces stalled idle requests to the latest snapshot per EVSE', async () => {
+    await it('preserves every aligned boundary while one request per EVSE is stalled', async () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -764,19 +764,23 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         mockStation,
         new Date(120_000)
       )
+      const thirdSweep = OCPP20ServiceUtils.emitClockAlignedMeterValues(
+        mockStation,
+        new Date(180_000)
+      )
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), firstRequestCount)
+      await Promise.all([secondSweep, thirdSweep])
       requestsBlocked = false
       firstRequests.resolve(undefined)
-      await Promise.all([firstSweep, secondSweep])
+      await firstSweep
       assert.strictEqual(requestHandlerMock.mock.callCount(), firstRequestCount * 2)
-      assert.ok(
-        sentPayloads(requestHandlerMock)
-          .slice(firstRequestCount)
-          .every(payload =>
-            payload.meterValue.every(meterValue => meterValue.timestamp.getTime() === 120_000)
-          )
-      )
+      for (const payload of sentPayloads(requestHandlerMock).slice(firstRequestCount)) {
+        assert.deepEqual(
+          payload.meterValue.map(meterValue => meterValue.timestamp.getTime()),
+          [120_000, 180_000]
+        )
+      }
     })
 
     await it('keeps an absent EVSE SendDuringIdle override linked to the station value', () => {
@@ -1512,6 +1516,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       connectorStatus.energyActiveImportRegisterValue = 100
       connectorStatus.transactionEnergyActiveImportRegisterValue = 100
       connectorStatus.transactionStart = new Date(firstAlignedAt.getTime() - 30_000)
+      connectorStatus.transactionRestored = true
 
       await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation, firstAlignedAt)
       mock.timers.enable({ apis: ['Date'], now: firstAlignedAt.getTime() + 30_000 })
@@ -1650,7 +1655,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       const queue = connectorStatus.transactionEventQueue
       assert.strictEqual(queue.length, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
-      assert.strictEqual(queue[0].seqNo, 1)
+      assert.strictEqual(queue[0].seqNo, 0)
+      assert.strictEqual(
+        queue.some(
+          ({ seqNo }) =>
+            seqNo === Math.floor((Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 1) / 2)
+        ),
+        false
+      )
       assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
       assert.strictEqual(saveSpy.mock.callCount(), 1)
     })
@@ -1704,7 +1716,14 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         connectorStatus.transactionEventQueue.at(-1)?.request.eventType,
         OCPP20TransactionEventEnumType.Ended
       )
-      assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue[0].seqNo, 0)
+      assert.strictEqual(
+        connectorStatus.transactionEventQueue.some(
+          ({ seqNo }) =>
+            seqNo === Math.floor((Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 1) / 2)
+        ),
+        false
+      )
     })
     await it('preserves a historical transaction public key during saturation eviction', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
@@ -1937,6 +1956,10 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         buildConfigKey(OCPP20ComponentName.AlignedDataCtrlr, OCPP20RequiredVariableName.Measurands),
         OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT
       )
+      if (mockStation.stationInfo != null) {
+        mockStation.stationInfo.conversionEfficiency = 0.8
+        mockStation.stationInfo.currentOutType = CurrentType.DC
+      }
       for (const evseId of [0, 1, 2]) {
         const evseStatus = mockStation.getEvseStatus(evseId)
         assert.ok(evseStatus != null)
@@ -1959,7 +1982,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const powerSample = stationPayload.meterValue
         .flatMap(meterValue => meterValue.sampledValue)
         .find(sample => sample.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)
-      assert.strictEqual(powerSample?.value, 1000)
+      assert.strictEqual(powerSample?.value, 1250)
     })
 
     await it('derives aggregate power from phase-only baseline samples', () => {

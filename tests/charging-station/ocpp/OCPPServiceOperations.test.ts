@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
+import { OCPP20ServiceUtils } from '../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -290,6 +291,23 @@ await describe('OCPPServiceOperations', async () => {
       await flushQueuedTransactionMessages(station)
 
       assert.strictEqual(connectorStatus.transactionEventQueue.length, 0)
+      setupConnectorWithTransaction(station, 1, {
+        transactionId: '550e8400-e29b-41d4-a716-446655440000',
+      })
+      connectorStatus.transactionRestored = true
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = new Date(0)
+      const resumedAfter = Date.now()
+
+      await flushQueuedTransactionMessages(station)
+
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      assert.ok(
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt.getTime() >= resumedAfter
+      )
+      assert.ok(connectorStatus.transactionUpdatedMeterValuesSetInterval != null)
+      assert.ok(connectorStatus.transactionEndedMeterValuesSetInterval != null)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
+      OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
     })
   })
 

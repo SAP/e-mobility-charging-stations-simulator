@@ -7,6 +7,7 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   AvailabilityType,
   type ConnectorStatusEnum,
+  CurrentType,
   ErrorType,
   type MeterValue,
   MeterValueUnit,
@@ -109,13 +110,13 @@ const hasOngoingTransaction = (connectorStatus: ConnectorStatus): boolean =>
   (connectorStatus.transactionStarting === true ||
     (connectorStatus.transactionStarted === true && connectorStatus.transactionId != null))
 
-const hasPeriodicTransactionEnergySamples = (chargingStation: ChargingStation): boolean => {
+const hasConfiguredEnergyMeasurand = (
+  chargingStation: ChargingStation,
+  variableName: OCPP20RequiredVariableName
+): boolean => {
   const configuredMeasurands = getConfigurationKey(
     chargingStation,
-    buildConfigKey(
-      OCPP20ComponentName.SampledDataCtrlr,
-      OCPP20RequiredVariableName.TxUpdatedMeasurands
-    )
+    buildConfigKey(OCPP20ComponentName.SampledDataCtrlr, variableName)
   )?.value
   return (
     configuredMeasurands == null ||
@@ -127,6 +128,15 @@ const hasPeriodicTransactionEnergySamples = (chargingStation: ChargingStation): 
       )
   )
 }
+
+const hasPeriodicTransactionEnergySamples = (chargingStation: ChargingStation): boolean =>
+  (OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation) > 0 &&
+    hasConfiguredEnergyMeasurand(
+      chargingStation,
+      OCPP20RequiredVariableName.TxUpdatedMeasurands
+    )) ||
+  (OCPP20ServiceUtils.getTxEndedInterval(chargingStation) > 0 &&
+    hasConfiguredEnergyMeasurand(chargingStation, OCPP20RequiredVariableName.TxEndedMeasurands))
 interface AdditiveUnitFamily {
   baseUnit: string
   kiloUnit?: string
@@ -714,7 +724,21 @@ export class OCPP20ServiceUtils {
           ) {
             sampledValueTemplates.push(...connectorStatus.MeterValues)
           }
-          if (evseId !== 0) physicalMeterValues.push(meterValue)
+          if (evseId !== 0) {
+            const configuredEfficiency =
+              chargingStation.stationInfo?.currentOutType === CurrentType.DC
+                ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
+                : 1
+            const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+            physicalMeterValues.push({
+              ...meterValue,
+              sampledValue: meterValue.sampledValue.map(sampledValue =>
+                sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT
+                  ? { ...sampledValue, value: sampledValue.value / conversionEfficiency }
+                  : sampledValue
+              ),
+            })
+          }
           if (transactionId != null) {
             if (!suppressEvseEmission) {
               pendingRequests.push({
@@ -1278,6 +1302,35 @@ export class OCPP20ServiceUtils {
       logger.debug(
         `${chargingStation.logPrefix()} OCPP20ServiceUtils.resetTransactionSequenceNumber: Reset transaction state for connector ${connectorId.toString()}`
       )
+    }
+  }
+
+  /**
+   * Re-arms transaction meter timers restored from persistent connector state.
+   * The accounting baseline starts when the running process resumes, so process
+   * downtime is not simulated as delivered energy.
+   * @param chargingStation - Target charging station
+   */
+  public static resumeRestoredTransactionMeterValues (chargingStation: ChargingStation): void {
+    const resumedAt = new Date()
+    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors()) {
+      if (connectorStatus.transactionRestored !== true || !hasOngoingTransaction(connectorStatus)) {
+        continue
+      }
+      connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = resumedAt
+      OCPP20ServiceUtils.startUpdatedMeterValues(
+        chargingStation,
+        connectorId,
+        OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation),
+        evseId
+      )
+      OCPP20ServiceUtils.startEndedMeterValues(
+        chargingStation,
+        connectorId,
+        OCPP20ServiceUtils.getTxEndedInterval(chargingStation),
+        evseId
+      )
+      delete connectorStatus.transactionRestored
     }
   }
 
@@ -2074,9 +2127,11 @@ export class OCPP20ServiceUtils {
         )
       }
       let removedEvents: QueuedTransactionEvent[] = []
-      const replaceableIndex = queue.findIndex(
-        queuedEvent => queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated
+      const replaceableIndexes = queue.flatMap((queuedEvent, index) =>
+        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ? [index] : []
       )
+      const replaceableIndex =
+        replaceableIndexes[Math.floor((replaceableIndexes.length - 1) / 2)] ?? -1
       if (replaceableIndex >= 0) {
         removedEvents = queue.splice(replaceableIndex, 1)
       } else if (!isUpdatedEvent) {
@@ -2350,13 +2405,15 @@ export class OCPP20ServiceUtils {
   }
 
   /**
-   * Serializes non-transactional aligned MeterValues per EVSE and coalesces
-   * stalled intervals to the latest snapshot.
+   * Serializes non-transactional aligned MeterValues per EVSE. While a request
+   * is stalled, every later sampling boundary is retained in the next batched
+   * request, but replacement-only callers settle immediately so they do not
+   * accumulate continuations on the long-lived drain promise.
    * @param chargingStation - Target charging station
    * @param evseId - Meter point EVSE identifier
-   * @param request - Latest aligned MeterValues request
+   * @param request - Aligned MeterValues request for one sampling boundary
    * @param responseTimeoutMs - Request response timeout in milliseconds
-   * @returns The current bounded drain operation
+   * @returns The drain operation for its first request, or an immediate acknowledgement when queued
    */
   private static sendClockAlignedMeterValuesRequest (
     chargingStation: ChargingStation,
@@ -2374,8 +2431,13 @@ export class OCPP20ServiceUtils {
       state = {}
       stationStates.set(evseId, state)
     }
-    state.pending = { request, responseTimeoutMs }
-    if (state.inFlight != null) return state.inFlight
+    if (state.pending == null) {
+      state.pending = { request, responseTimeoutMs }
+    } else {
+      state.pending.request.meterValue.push(...request.meterValue)
+      state.pending.responseTimeoutMs = responseTimeoutMs
+    }
+    if (state.inFlight != null) return Promise.resolve()
 
     const sendState = state
     const drain = async (): Promise<void> => {

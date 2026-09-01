@@ -382,6 +382,13 @@ await describe('G02 - Heartbeat', async () => {
       OCPP20RequestCommand.HEARTBEAT,
       {},
     ])
+    const transientErrorCallback = mock.fn()
+    context.station.requests.set('transient', [
+      () => undefined,
+      transientErrorCallback,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+    ])
     context.station.bufferMessage('[2,"buffered","Heartbeat",{}]')
 
     context.requestService.cancelPendingRequests(context.station)
@@ -389,6 +396,8 @@ await describe('G02 - Heartbeat', async () => {
     assert.strictEqual(context.station.requests.has('buffered'), true)
     assert.strictEqual(bufferedStation.messageQueue.length, 1)
     assert.strictEqual(errorCallback.mock.callCount(), 0)
+    assert.strictEqual(context.station.requests.has('transient'), false)
+    assert.strictEqual(transientErrorCallback.mock.callCount(), 1)
   })
 
   await it('discards buffered frames when pending requests are cancelled', () => {
