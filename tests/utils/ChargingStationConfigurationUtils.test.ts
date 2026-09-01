@@ -292,12 +292,35 @@ await describe('ChargingStationConfigurationUtils', async () => {
           {
             request: {
               eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: { malformed: true },
               seqNo: 5,
-              timestamp: 'bogus',
+              timestamp: eventTimestamp.toISOString(),
               transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000005' },
               triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
             },
             seqNo: 5,
+            timestamp: eventTimestamp.toISOString(),
+          },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 6,
+              timestamp: 'bogus',
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000006' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 6,
+            timestamp: eventTimestamp.toISOString(),
+          },
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 0,
+              timestamp: eventTimestamp.toISOString(),
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000007' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 7,
             timestamp: eventTimestamp.toISOString(),
           },
         ],
@@ -308,6 +331,49 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].timestamp instanceof Date)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+    })
+
+    await it('should release a reserved signing key when its persisted event is discarded', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000007'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        publicKeySentInTransaction: true,
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    {
+                      signedMeterValue: {
+                        encodingMethod: 'OCMF',
+                        publicKey: 'public-key',
+                        signedMeterData: 'signed-data',
+                        signingMethod: 'ECDSA-secp256r1-SHA256',
+                      },
+                      value: 1,
+                    },
+                  ],
+                  timestamp: 'bogus',
+                },
+              ],
+              seqNo: 7,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 7,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+
+      assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, false)
     })
 
     await it('should discard a non-array persisted transaction queue', () => {

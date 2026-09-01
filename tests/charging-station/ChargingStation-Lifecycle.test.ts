@@ -9,6 +9,7 @@ import type { ConnectorStatus } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { Constants } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
@@ -194,6 +195,51 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(savedQueueLength, 1)
     })
 
+    await it('should join a timed-out stop sequence after cancelling pending requests', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const stopSequence = Promise.withResolvers<undefined>()
+      let cancelCalls = 0
+      let stoppedEvents = 0
+      const lifecycleAbortController = new AbortController()
+      const stationLike = {
+        closeWSConnection: () => undefined,
+        configurationFileHash: 'test-configuration',
+        emitChargingStationEvent: () => {
+          stoppedEvents++
+        },
+        iterateConnectors: () => [],
+        lifecycleAbortController,
+        logPrefix: () => '',
+        ocppIncomingRequestService: { stop: () => undefined },
+        ocppRequestService: {
+          cancelPendingRequests: () => {
+            cancelCalls++
+          },
+        },
+        saveConfiguration: () => undefined,
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+        started: true,
+        stationInfo: { enableStatistics: false },
+        stopMessageSequence: () => stopSequence.promise,
+      }
+      const stopPromise = (
+        ChargingStation.prototype as unknown as {
+          performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
+        }
+      ).performStop.call(stationLike)
+      await Promise.resolve()
+
+      t.mock.timers.tick(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)
+      await Promise.resolve()
+      await Promise.resolve()
+
+      assert.strictEqual(cancelCalls, 1)
+      assert.strictEqual(stoppedEvents, 0)
+      stopSequence.resolve(undefined)
+      await stopPromise
+      assert.strictEqual(stoppedEvents, 1)
+    })
+
     await it('should clear bootNotificationResponse on stop()', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 1 })
@@ -338,6 +384,41 @@ await describe('ChargingStation Lifecycle', async () => {
         )
       })
       assert.strictEqual(station.getEvseStatus(99), undefined)
+    })
+
+    await it('should remove persisted EVSE meter templates absent from the current template', () => {
+      const result = createMockChargingStation({
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+      })
+      station = result.station
+      const initializeFromFile = (
+        ChargingStation.prototype as unknown as {
+          initializeConnectorsOrEvsesFromFile: (
+            configuration: unknown,
+            stationTemplate: unknown
+          ) => void
+        }
+      ).initializeConnectorsOrEvsesFromFile
+
+      initializeFromFile.call(
+        station,
+        {
+          evsesStatus: [
+            [
+              1,
+              {
+                availability: 'Operative',
+                connectorsStatus: [],
+                MeterValues: [{ measurand: 'Power.Active.Import', unit: 'W', value: '1000' }],
+              },
+            ],
+          ],
+        },
+        { Evses: { 1: {} } }
+      )
+
+      assert.deepEqual(station.getEvseStatus(1)?.MeterValues, [])
     })
 
     await it('should handle delete operation with pending transactions', async () => {

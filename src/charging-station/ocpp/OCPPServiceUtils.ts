@@ -986,6 +986,7 @@ export const buildEmptyMeterValue = (): MeterValue => ({
  * UTC slot `timestamp`, #2011 Category 2F).
  */
 interface ResolvedMeterValueIdentity {
+  advanceEnergy?: boolean
   connectorId?: number
   energyRegisterWhOverride?: number
   evseId?: number
@@ -1772,6 +1773,7 @@ export const buildMeterValue = (
  * aligned-signing semantics; idle connectors omit it and stay unsigned.
  * @param chargingStation - Target charging station.
  * @param identity - Direct connector/EVSE identification.
+ * @param identity.advanceEnergy - Whether this aligned sample owns energy accumulation.
  * @param identity.connectorId - Connector identifier.
  * @param identity.energyRegisterWhOverride - Optional station-level aggregate energy in Wh.
  * @param identity.idle - Whether the aggregate meter point is idle.
@@ -1788,6 +1790,7 @@ export const buildMeterValue = (
 export const buildClockAlignedConnectorMeterValue = (
   chargingStation: ChargingStation,
   identity: {
+    advanceEnergy?: boolean
     connectorId: number
     energyRegisterWhOverride?: number
     evseId: number
@@ -2156,17 +2159,19 @@ const buildIdentifiedMeterValue = (
     }
   }
   // Energy.Active.Import.Register measurand (default)
+  const advanceEnergy = identity.advanceEnergy === true
   const energyMeasurand = buildEnergyMeasurandValue(
     chargingStation,
     connectorId,
     interval,
     evseId,
     measurandsKey,
-    snapshot
+    snapshot && !advanceEnergy
   )
   if (energyMeasurand != null) {
-    // Reporting snapshots never evolve physical state.
-    if (identity.transactionId != null && !snapshot) {
+    // Aligned snapshots may own accumulation when periodic TxUpdated samples
+    // do not include the cumulative energy register.
+    if (identity.transactionId != null && (!snapshot || advanceEnergy)) {
       updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
     }
     const unitDivider =

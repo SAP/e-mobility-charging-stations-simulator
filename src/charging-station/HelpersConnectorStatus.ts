@@ -231,6 +231,56 @@ const convertPersistedDate = (value: unknown): Date | undefined => {
   }
 }
 
+const prepareQueuedTransactionEvent = (candidate: unknown): QueuedTransactionEvent | undefined => {
+  if (
+    !isJsonObject(candidate) ||
+    !isJsonObject(candidate.request) ||
+    !isJsonObject(candidate.request.transactionInfo) ||
+    typeof candidate.seqNo !== 'number' ||
+    !Number.isInteger(candidate.seqNo) ||
+    typeof candidate.request.seqNo !== 'number' ||
+    !Number.isInteger(candidate.request.seqNo) ||
+    typeof candidate.request.eventType !== 'string' ||
+    typeof candidate.request.triggerReason !== 'string' ||
+    typeof candidate.request.transactionInfo.transactionId !== 'string' ||
+    candidate.seqNo !== candidate.request.seqNo
+  ) {
+    return undefined
+  }
+  const queuedEvent = candidate as unknown as QueuedTransactionEvent
+  const queuedTimestamp = convertPersistedDate(queuedEvent.timestamp)
+  const requestTimestamp = convertPersistedDate(queuedEvent.request.timestamp)
+  if (queuedTimestamp == null || requestTimestamp == null) return undefined
+  queuedEvent.timestamp = queuedTimestamp
+  queuedEvent.request.timestamp = requestTimestamp
+  if (queuedEvent.request.meterValue != null) {
+    if (!isNotEmptyArray(queuedEvent.request.meterValue)) return undefined
+    for (const meterValue of queuedEvent.request.meterValue) {
+      if (!isJsonObject(meterValue) || !isNotEmptyArray(meterValue.sampledValue)) return undefined
+      const meterValueTimestamp = convertPersistedDate(meterValue.timestamp)
+      if (
+        meterValueTimestamp == null ||
+        !meterValue.sampledValue.every(sampledValue => isJsonObject(sampledValue))
+      ) {
+        return undefined
+      }
+      meterValue.timestamp = meterValueTimestamp
+    }
+  }
+  return queuedEvent
+}
+
+const queuedEventHasPublicKey = (
+  queuedEvent: QueuedTransactionEvent,
+  transactionId: string
+): boolean =>
+  queuedEvent.request.transactionInfo.transactionId === transactionId &&
+  queuedEvent.request.meterValue?.some(meterValue =>
+    meterValue.sampledValue.some(
+      sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
+    )
+  ) === true
+
 /**
  * Post-load rehydration hook: coerces the persisted reservation
  * `expiryDate` back into a `Date` instance (or drops the reservation
@@ -254,40 +304,35 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
     !Array.isArray(connectorStatus.transactionEventQueue)
   ) {
     delete connectorStatus.transactionEventQueue
+    connectorStatus.publicKeySentInTransaction = false
   } else if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
-    connectorStatus.transactionEventQueue = (
-      connectorStatus.transactionEventQueue as unknown[]
-    ).filter((candidate): candidate is QueuedTransactionEvent => {
-      if (
-        !isJsonObject(candidate) ||
-        !isJsonObject(candidate.request) ||
-        !isJsonObject(candidate.request.transactionInfo) ||
-        typeof candidate.seqNo !== 'number' ||
-        !Number.isInteger(candidate.seqNo) ||
-        typeof candidate.request.seqNo !== 'number' ||
-        !Number.isInteger(candidate.request.seqNo) ||
-        typeof candidate.request.eventType !== 'string' ||
-        typeof candidate.request.triggerReason !== 'string' ||
-        typeof candidate.request.transactionInfo.transactionId !== 'string'
-      ) {
-        return false
+    const transactionId = connectorStatus.transactionId?.toString()
+    let removedActiveTransactionEvent = false
+    const preparedQueue: QueuedTransactionEvent[] = []
+    for (const candidate of connectorStatus.transactionEventQueue as unknown[]) {
+      const candidateTransactionId =
+        isJsonObject(candidate) &&
+        isJsonObject(candidate.request) &&
+        isJsonObject(candidate.request.transactionInfo) &&
+        typeof candidate.request.transactionInfo.transactionId === 'string'
+          ? candidate.request.transactionInfo.transactionId
+          : undefined
+      const queuedEvent = prepareQueuedTransactionEvent(candidate)
+      if (queuedEvent != null) {
+        preparedQueue.push(queuedEvent)
+      } else if (transactionId != null && candidateTransactionId === transactionId) {
+        removedActiveTransactionEvent = true
       }
-      const queuedEvent = candidate as unknown as QueuedTransactionEvent
-      const queuedTimestamp = convertPersistedDate(queuedEvent.timestamp)
-      const requestTimestamp = convertPersistedDate(queuedEvent.request.timestamp)
-      if (queuedTimestamp == null || requestTimestamp == null) return false
-      queuedEvent.timestamp = queuedTimestamp
-      queuedEvent.request.timestamp = requestTimestamp
-      if (isNotEmptyArray(queuedEvent.request.meterValue)) {
-        for (const meterValue of queuedEvent.request.meterValue) {
-          if (!isJsonObject(meterValue)) return false
-          const meterValueTimestamp = convertPersistedDate(meterValue.timestamp)
-          if (meterValueTimestamp == null) return false
-          meterValue.timestamp = meterValueTimestamp
-        }
-      }
-      return true
-    })
+    }
+    connectorStatus.transactionEventQueue = preparedQueue
+    if (
+      removedActiveTransactionEvent &&
+      connectorStatus.publicKeySentInTransaction === true &&
+      transactionId != null &&
+      !preparedQueue.some(queuedEvent => queuedEventHasPublicKey(queuedEvent, transactionId))
+    ) {
+      connectorStatus.publicKeySentInTransaction = false
+    }
   }
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles

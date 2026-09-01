@@ -96,6 +96,10 @@ const SEND_DURING_IDLE_KEY = buildConfigKey(
   OCPP20ComponentName.AlignedDataCtrlr,
   OCPP20OptionalVariableName.SendDuringIdle
 )
+const TX_UPDATED_MEASURANDS_KEY = buildConfigKey(
+  OCPP20ComponentName.SampledDataCtrlr,
+  OCPP20RequiredVariableName.TxUpdatedMeasurands
+)
 const MESSAGE_TIMEOUT_KEY = buildConfigKey(
   OCPP20ComponentName.OCPPCommCtrlr,
   OCPP20RequiredVariableName.MessageTimeout,
@@ -1391,6 +1395,60 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 54321)
       assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 1234)
+    })
+
+    await it('advances active energy when only aligned register values are configured', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connectorStatus != null)
+      evseStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: '1',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      upsertConfigurationKey(
+        mockStation,
+        TX_UPDATED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.VOLTAGE
+      )
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: '00000000-0000-4000-8000-000000000011',
+      })
+      connectorStatus.energyActiveImportRegisterValue = 100
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, 102)
+      const alignedEvents = sentTransactionEvents(requestHandlerMock)
+      assert.strictEqual(alignedEvents.length, 2)
+      assert.deepEqual(
+        alignedEvents.map(
+          event =>
+            event.meterValue
+              ?.flatMap(meterValue => meterValue.sampledValue)
+              .find(
+                sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+              )?.value
+        ),
+        [101, 102]
+      )
     })
 
     await it('emits nothing when AlignedDataInterval=0 (spec §2.2)', () => {

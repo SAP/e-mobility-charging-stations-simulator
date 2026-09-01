@@ -107,6 +107,25 @@ const hasOngoingTransaction = (connectorStatus: ConnectorStatus): boolean =>
   !hasQueuedEndedEvent(connectorStatus) &&
   (connectorStatus.transactionStarting === true ||
     (connectorStatus.transactionStarted === true && connectorStatus.transactionId != null))
+
+const hasPeriodicTransactionEnergySamples = (chargingStation: ChargingStation): boolean => {
+  const configuredMeasurands = getConfigurationKey(
+    chargingStation,
+    buildConfigKey(
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20RequiredVariableName.TxUpdatedMeasurands
+    )
+  )?.value
+  return (
+    configuredMeasurands == null ||
+    configuredMeasurands
+      .split(',')
+      .some(
+        measurand =>
+          measurand.trim() === (OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER as string)
+      )
+  )
+}
 interface AdditiveUnitFamily {
   baseUnit: string
   kiloUnit?: string
@@ -582,6 +601,7 @@ export class OCPP20ServiceUtils {
       OCPP20ComponentName.AlignedDataCtrlr,
       OCPP20RequiredVariableName.Measurands
     )
+    const periodicTransactionEnergySamples = hasPeriodicTransactionEnergySamples(chargingStation)
     const canSendNonTransactional =
       chargingStation.isWebSocketConnectionOpened() && chargingStation.inAcceptedState()
     const pendingRequests: { evseId: number; send: () => Promise<void> }[] = []
@@ -636,6 +656,8 @@ export class OCPP20ServiceUtils {
             chargingStation,
             {
               connectorId,
+              ...(!periodicTransactionEnergySamples &&
+                transactionId != null && { advanceEnergy: true }),
               ...(evseId === 0 && {
                 idle: !chargingStation
                   .iterateConnectors(true)
@@ -1937,10 +1959,14 @@ export class OCPP20ServiceUtils {
           (responseState.received || chargingStation.isWebSocketConnectionOpened())
         ) {
           if (!responseState.sent) {
-            const publicKey = queuedEvent.request.meterValue
-              ?.flatMap(meterValue => meterValue.sampledValue)
-              .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-              .find(key => key != null && key.length > 0)
+            const publicKey = Array.isArray(queuedEvent.request.meterValue)
+              ? queuedEvent.request.meterValue
+                .flatMap(meterValue =>
+                  Array.isArray(meterValue.sampledValue) ? meterValue.sampledValue : []
+                )
+                .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
+                .find(key => key != null && key.length > 0)
+              : undefined
             const nextSignedSample = queue
               .slice(1)
               .filter(
@@ -1948,8 +1974,14 @@ export class OCPP20ServiceUtils {
                   remainingEvent.request.transactionInfo.transactionId ===
                   queuedEvent.request.transactionInfo.transactionId
               )
-              .flatMap(remainingEvent => remainingEvent.request.meterValue ?? [])
-              .flatMap(meterValue => meterValue.sampledValue)
+              .flatMap(remainingEvent =>
+                Array.isArray(remainingEvent.request.meterValue)
+                  ? remainingEvent.request.meterValue
+                  : []
+              )
+              .flatMap(meterValue =>
+                Array.isArray(meterValue.sampledValue) ? meterValue.sampledValue : []
+              )
               .find(sampledValue => sampledValue.signedMeterValue != null)
             if (publicKey != null && nextSignedSample?.signedMeterValue != null) {
               nextSignedSample.signedMeterValue.publicKey = publicKey

@@ -2315,15 +2315,13 @@ export class ChargingStation extends EventEmitter {
         const templateMeterValues = templateEvse.MeterValues
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
-          ...(isNotEmptyArray(templateMeterValues) && {
-            MeterValues: clone(templateMeterValues),
-          }),
           connectors: new Map<number, ConnectorStatus>(
             connEntries.map(([connectorId, connectorStatus]) => [
               connectorId,
               prepareConnectorStatus(connectorStatus),
             ])
           ),
+          MeterValues: clone(templateMeterValues ?? []),
         })
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus != null) {
@@ -2860,9 +2858,17 @@ export class ChargingStation extends EventEmitter {
     reason?: StopTransactionReason,
     stopTransactions?: boolean
   ): Promise<void> {
+    const stopMessageSequencePromise = this.stopMessageSequence(reason, stopTransactions).catch(
+      (error: unknown) => {
+        logger.error(
+          `${this.logPrefix()} ${moduleName}.stop: Error while stopping message sequence:`,
+          error
+        )
+      }
+    )
     try {
       await promiseWithTimeout(
-        this.stopMessageSequence(reason, stopTransactions),
+        stopMessageSequencePromise,
         Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS,
         `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)} reached at stopping message sequence`
       )
@@ -2876,6 +2882,10 @@ export class ChargingStation extends EventEmitter {
     this.closeWSConnection()
     this.lifecycleAbortController?.abort()
     this.ocppRequestService.cancelPendingRequests(this)
+    // A timeout stops waiting, not the sequence itself. Cancellation releases
+    // its pending request; join it before persisting final state or emitting
+    // `stopped`, otherwise stale shutdown messages can outlive this lifecycle.
+    await stopMessageSequencePromise
     await Promise.all(
       this.iterateConnectors().map(({ connectorStatus }) =>
         OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
@@ -3254,6 +3264,7 @@ export class ChargingStation extends EventEmitter {
     this.stopAlignedMeterValues()
     stopTransactions && (await stopRunningTransactions(this, reason))
     for (const { connectorId, connectorStatus, evseId } of this.iterateConnectors(true)) {
+      if (this.lifecycleAbortSignal.aborted) break
       await sendAndSetConnectorStatus(this, {
         connectorId,
         ...(evseId != null && { evseId }),
