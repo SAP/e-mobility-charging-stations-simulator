@@ -316,6 +316,7 @@ export class OCPP20ServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
+  private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventSendChains = new WeakMap<
     ConnectorStatus,
@@ -682,14 +683,16 @@ export class OCPP20ServiceUtils {
             OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           )
           if (!isNotEmptyArray(meterValue.sampledValue)) continue
-          if (
-            evseId !== 0 &&
-            !isNotEmptyArray(evseStatus.MeterValues) &&
-            isNotEmptyArray(connectorStatus.MeterValues)
-          ) {
-            sampledValueTemplates.push(...connectorStatus.MeterValues)
+          if (!suppressEvseEmission) {
+            if (
+              evseId !== 0 &&
+              !isNotEmptyArray(evseStatus.MeterValues) &&
+              isNotEmptyArray(connectorStatus.MeterValues)
+            ) {
+              sampledValueTemplates.push(...connectorStatus.MeterValues)
+            }
+            if (evseId !== 0) physicalMeterValues.push(meterValue)
           }
-          if (evseId !== 0) physicalMeterValues.push(meterValue)
           if (transactionId != null) {
             if (!suppressEvseEmission) {
               pendingRequests.push({
@@ -979,6 +982,12 @@ export class OCPP20ServiceUtils {
     if (!Number.isSafeInteger(intervalSeconds) || intervalSeconds > Constants.SECONDS_PER_DAY) {
       logger.warn(
         `${moduleName}.readAlignedDataIntervalSeconds: Out-of-range value '${value}' for AlignedDataCtrlr.Interval`
+      )
+      return
+    }
+    if (intervalSeconds > 0 && Constants.SECONDS_PER_DAY % intervalSeconds !== 0) {
+      logger.warn(
+        `${moduleName}.readAlignedDataIntervalSeconds: Value '${value}' does not divide the UTC day into evenly spaced intervals`
       )
       return
     }
@@ -2029,6 +2038,66 @@ export class OCPP20ServiceUtils {
     connectorStatus.transactionEventQueue ??= []
     const queue = connectorStatus.transactionEventQueue
     const transactionId = request.transactionInfo.transactionId
+    const isClockAlignedUpdate =
+      request.eventType === OCPP20TransactionEventEnumType.Updated &&
+      request.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock
+    if (queue.length >= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
+      if (isClockAlignedUpdate) {
+        if (!OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)) {
+          OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached ${Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH.toString()} entries; dropping new clock-aligned updates until delivery resumes`
+          )
+        }
+        const droppedPublicKey =
+          request.meterValue?.some(meterValue =>
+            meterValue.sampledValue.some(
+              sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
+            )
+          ) === true
+        const queuedPublicKey = queue.some(
+          queuedEvent =>
+            queuedEvent.request.transactionInfo.transactionId === transactionId &&
+            queuedEvent.request.meterValue?.some(meterValue =>
+              meterValue.sampledValue.some(
+                sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
+              )
+            ) === true
+        )
+        if (droppedPublicKey && !queuedPublicKey) {
+          connectorStatus.publicKeySentInTransaction = false
+        }
+        return
+      }
+      const replaceableIndex = queue.findLastIndex(
+        queuedEvent =>
+          queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated &&
+          queuedEvent.request.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock
+      )
+      if (replaceableIndex < 0) {
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
+          `TransactionEvent queue reached ${Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH.toString()} entries`
+        )
+      }
+      const [replacedEvent] = queue.splice(replaceableIndex, 1)
+      const replacedPublicKey = replacedEvent.request.meterValue
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
+        .find(publicKey => publicKey != null && publicKey.length > 0)
+      const replacementSignedSample = request.meterValue
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .find(sampledValue => sampledValue.signedMeterValue != null)
+      if (replacedPublicKey != null && replacementSignedSample?.signedMeterValue != null) {
+        replacementSignedSample.signedMeterValue.publicKey = replacedPublicKey
+      } else if (
+        replacedPublicKey != null &&
+        connectorStatus.transactionId?.toString() ===
+          replacedEvent.request.transactionInfo.transactionId
+      ) {
+        connectorStatus.publicKeySentInTransaction = false
+      }
+    }
     const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
     let insertionIndex = queue.length
     for (let index = queue.length - 1; index >= 0; index--) {

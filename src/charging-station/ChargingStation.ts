@@ -468,14 +468,15 @@ export class ChargingStation extends EventEmitter {
     // Cancel any pending reset() so a station deleted during its reset window is
     // not re-initialized and reconnected to the CSMS.
     this.deleteAbortController.abort()
+    const stopPromise = this.started || this.stopPromise != null ? this.stop() : undefined
     this.ocppRequestService.cancelPendingRequests(
       this,
       'Charging station deleted while awaiting an OCPP response',
       true
     )
-    if (this.started || this.stopPromise != null) {
+    if (stopPromise != null) {
       try {
-        await this.stop()
+        await stopPromise
       } catch (error) {
         const e = ensureError(error)
         logger.error(

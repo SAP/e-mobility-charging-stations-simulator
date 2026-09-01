@@ -21,6 +21,7 @@ import {
 } from '../types/index.js'
 import {
   clone,
+  Constants,
   convertToDate,
   convertToInt,
   isJsonObject,
@@ -205,6 +206,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
   delete connectorStatus.transactionGroupIdToken
+  delete connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
   delete connectorStatus.transactionEndedMeterValues
@@ -299,6 +301,15 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       delete connectorStatus.reservation
     }
   }
+  const transactionEnergyLastUpdatedAt = convertPersistedDate(
+    connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
+  )
+  if (transactionEnergyLastUpdatedAt != null) {
+    connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt =
+      transactionEnergyLastUpdatedAt
+  } else {
+    delete connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
+  }
   if (
     connectorStatus.transactionEventQueue != null &&
     !Array.isArray(connectorStatus.transactionEventQueue)
@@ -324,7 +335,31 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         removedActiveTransactionEvent = true
       }
     }
+    const activeTransactionMaxSeqNo =
+      transactionId != null
+        ? preparedQueue.reduce(
+          (maximumSeqNo, queuedEvent) =>
+            queuedEvent.request.transactionInfo.transactionId === transactionId
+              ? Math.max(maximumSeqNo, queuedEvent.seqNo)
+              : maximumSeqNo,
+          connectorStatus.transactionSeqNo ?? -1
+        )
+        : -1
+    if (preparedQueue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
+      const removedEvents = preparedQueue.splice(Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+      if (
+        transactionId != null &&
+        removedEvents.some(
+          queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
+        )
+      ) {
+        removedActiveTransactionEvent = true
+      }
+    }
     connectorStatus.transactionEventQueue = preparedQueue
+    if (activeTransactionMaxSeqNo >= 0) {
+      connectorStatus.transactionSeqNo = activeTransactionMaxSeqNo
+    }
     if (
       removedActiveTransactionEvent &&
       connectorStatus.publicKeySentInTransaction === true &&

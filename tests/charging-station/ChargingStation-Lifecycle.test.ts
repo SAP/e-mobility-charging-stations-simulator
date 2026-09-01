@@ -336,19 +336,27 @@ await describe('ChargingStation Lifecycle', async () => {
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.started = true
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
       const cleanupOrder: string[] = []
       mock.method(station.ocppRequestService, 'cancelPendingRequests', () => {
         cleanupOrder.push('cancel')
       })
       mock.method(station, 'stop', () => {
         cleanupOrder.push('stop')
+        ;(result.station as unknown as { stopping: boolean }).stopping = true
         result.station.started = false
         return Promise.resolve()
       })
 
-      await station.delete(false)
+      await ChargingStation.prototype.delete.call(station, false)
 
-      assert.deepEqual(cleanupOrder, ['stop', 'cancel'])
+      assert.deepEqual(cleanupOrder, ['stop', 'cancel', 'cancel'])
     })
 
     await it('should ignore persisted EVSEs absent from the current template', () => {

@@ -2160,10 +2160,21 @@ const buildIdentifiedMeterValue = (
   }
   // Energy.Active.Import.Register measurand (default)
   const advanceEnergy = identity.advanceEnergy === true
+  const ownsEnergy = identity.transactionId != null && (!snapshot || advanceEnergy)
+  const previousEnergyUpdate =
+    connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt ??
+    connectorStatus?.transactionStart
+  const energyInterval =
+    ownsEnergy && previousEnergyUpdate != null
+      ? Math.min(
+        interval,
+        Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
+      )
+      : interval
   const energyMeasurand = buildEnergyMeasurandValue(
     chargingStation,
     connectorId,
-    interval,
+    energyInterval,
     evseId,
     measurandsKey,
     snapshot && !advanceEnergy
@@ -2171,8 +2182,14 @@ const buildIdentifiedMeterValue = (
   if (energyMeasurand != null) {
     // Aligned snapshots may own accumulation when periodic TxUpdated samples
     // do not include the cumulative energy register.
-    if (identity.transactionId != null && (!snapshot || advanceEnergy)) {
+    if (ownsEnergy) {
       updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
+      if (
+        connectorStatus != null &&
+        (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate)
+      ) {
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
+      }
     }
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
@@ -2203,7 +2220,7 @@ const buildIdentifiedMeterValue = (
       evseId
     )
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
+      (connectorMaximumAvailablePower * energyInterval) / Constants.MS_PER_HOUR,
       2
     )
     const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
@@ -2215,7 +2232,7 @@ const buildIdentifiedMeterValue = (
       connectorMaximumEnergyRounded,
       energySampledValue.measurand,
       debug,
-      { interval }
+      { interval: energyInterval }
     )
   }
   // Snapshot builds re-project the full configured template identity set

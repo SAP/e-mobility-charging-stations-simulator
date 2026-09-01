@@ -212,6 +212,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValues: [{ sampledValue: [], timestamp: new Date() }],
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEnding: true,
+        transactionEnergyActiveImportRegisterLastUpdatedAt: eventTimestamp,
         transactionEventQueue: [
           {
             request: {
@@ -270,6 +271,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const restoredConnectorStatus = prepareConnectorStatus(persistedConnectorStatus)
       assert.ok(restoredConnectorStatus.transactionEventQueue?.[0].timestamp instanceof Date)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+      assert.ok(
+        restoredConnectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt instanceof Date
+      )
     })
 
     await it('should discard malformed persisted transaction queue entries', () => {
@@ -331,6 +335,66 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].timestamp instanceof Date)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+    })
+
+    await it('should advance the active transaction sequence past restored queued events', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000004'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        transactionEventQueue: [
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 4,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 4,
+            timestamp: eventTimestamp,
+          },
+        ],
+        transactionId,
+        transactionSeqNo: 3,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionSeqNo, 4)
+    })
+
+    await it('should bound an oversized persisted transaction queue', () => {
+      const transactionId = '00000000-0000-4000-8000-000000000004'
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const connectorStatus = {
+        transactionEventQueue: Array.from(
+          { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1 },
+          (_, seqNo) => ({
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo,
+              timestamp: eventTimestamp,
+              transactionInfo: { transactionId },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo,
+            timestamp: eventTimestamp,
+          })
+        ),
+        transactionId,
+        transactionSeqNo: 3,
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+
+      assert.strictEqual(
+        restoredConnectorStatus.transactionEventQueue?.length,
+        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      )
+      assert.strictEqual(
+        restoredConnectorStatus.transactionSeqNo,
+        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      )
     })
 
     await it('should release a reserved signing key when its persisted event is discarded', () => {
