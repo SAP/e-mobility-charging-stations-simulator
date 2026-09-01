@@ -306,6 +306,18 @@ await describe('OCPPServiceOperations', async () => {
       )
       assert.ok(connectorStatus.transactionUpdatedMeterValuesSetInterval != null)
       assert.ok(connectorStatus.transactionEndedMeterValuesSetInterval != null)
+      OCPP20ServiceUtils.pauseTransactionMeterValues(station)
+      assert.strictEqual(connectorStatus.transactionRestored, true)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+
+      await flushQueuedTransactionMessages(station)
+
+      const resumedConnectorStatus = station.getConnectorStatus(1)
+      assert.ok(resumedConnectorStatus != null)
+      assert.strictEqual(resumedConnectorStatus.transactionRestored, undefined)
+      assert.ok(resumedConnectorStatus.transactionUpdatedMeterValuesSetInterval != null)
+      assert.ok(resumedConnectorStatus.transactionEndedMeterValuesSetInterval != null)
       OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
       OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
     })

@@ -2891,6 +2891,7 @@ export class ChargingStation extends EventEmitter {
     reason?: StopTransactionReason,
     stopTransactions?: boolean
   ): Promise<void> {
+    OCPP20ServiceUtils.pauseTransactionMeterValues(this)
     const stopMessageSequencePromise = this.stopMessageSequence(reason, stopTransactions).catch(
       (error: unknown) => {
         logger.error(

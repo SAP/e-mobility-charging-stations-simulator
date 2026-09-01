@@ -1015,6 +1015,25 @@ export class OCPP20ServiceUtils {
     )
   }
 
+  /**
+   * Stops transaction meter timers before station shutdown while retaining
+   * enough state to re-arm them after a non-terminal restart.
+   * @param chargingStation - Target charging station
+   */
+  public static pauseTransactionMeterValues (chargingStation: ChargingStation): void {
+    if (
+      chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_20 &&
+      chargingStation.stationInfo?.ocppVersion !== OCPPVersion.VERSION_201
+    ) {
+      return
+    }
+    for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors()) {
+      OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
+      OCPP20ServiceUtils.stopEndedMeterValues(chargingStation, connectorId, evseId)
+      if (hasOngoingTransaction(connectorStatus)) connectorStatus.transactionRestored = true
+    }
+  }
+
   public static readAlignedDataIntervalSeconds (
     chargingStation: ChargingStation
   ): number | undefined {

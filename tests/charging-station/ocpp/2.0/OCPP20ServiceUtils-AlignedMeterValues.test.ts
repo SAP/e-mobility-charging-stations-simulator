@@ -19,6 +19,7 @@ import type {
 import type {
   ChargingStationInfo,
   EvseStatus,
+  OCPP20MeterValue,
   OCPP20MeterValuesRequest,
   OCPP20TransactionEventOptions,
   OCPP20TransactionEventRequest,
@@ -1732,7 +1733,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       setupConnectorWithTransaction(mockStation, 1, { transactionId: activeTransactionId })
       const connectorStatus = mockStation.getConnectorStatus(1, 1)
       assert.ok(connectorStatus != null)
-      const signedMeterValue = (publicKey: string) => [
+      const signedMeterValue = (publicKey: string): OCPP20MeterValue[] => [
         {
           sampledValue: [
             {
