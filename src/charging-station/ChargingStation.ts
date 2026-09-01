@@ -214,8 +214,6 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private alignedMeterValuesEmissionInFlight = false
-
   private alignedMeterValuesGeneration = 0
   private alignedMeterValuesRestartPending = false
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
@@ -1252,6 +1250,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /** Persists connector transaction-event queues to storage. */
+  public saveTransactionEventQueues (): void {
+    this.saveConfiguration()
+  }
+
   /**
    * Updates the supervision server URL and optionally the CSMS basic auth credentials.
    * @param url - The new supervision server URL
@@ -1428,13 +1431,7 @@ export class ChargingStation extends EventEmitter {
         if (generation !== this.alignedMeterValuesGeneration) return
         delete this.alignedMeterValuesSetTimeout
         scheduleNext()
-        if (this.alignedMeterValuesEmissionInFlight) return
-        this.alignedMeterValuesEmissionInFlight = true
-        emitCurrentSample()
-          .finally(() => {
-            this.alignedMeterValuesEmissionInFlight = false
-          })
-          .catch(logger.error)
+        emitCurrentSample().catch(logger.error)
       }, targetMs - now)
     }
     scheduleNext()

@@ -560,6 +560,9 @@ export function createMockChargingStation (
     saveOcppConfiguration (): void {
       /* empty */
     },
+    saveTransactionEventQueues (): void {
+      /* empty */
+    },
     start (): void {
       this.started = true
       this.starting = false

@@ -1,10 +1,11 @@
 import { secondsToMilliseconds } from 'date-fns'
 
+import type { ConnectorStatus, QueuedTransactionEvent } from '../../../types/ConnectorStatus.js'
+
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   AvailabilityType,
-  type ConnectorStatus,
   type ConnectorStatusEnum,
   ErrorType,
   type MeterValue,
@@ -1858,15 +1859,11 @@ export class OCPP20ServiceUtils {
     connectorStatus: ConnectorStatus,
     evseId?: number
   ): Promise<void> {
-    if (!isNotEmptyArray(connectorStatus.transactionEventQueue)) return
-
-    const queueLength = connectorStatus.transactionEventQueue.length
+    const queue: QueuedTransactionEvent[] = connectorStatus.transactionEventQueue ?? []
+    if (queue.length === 0) return
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queueLength.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queue.length.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
     )
-
-    const queue = [...connectorStatus.transactionEventQueue]
-    connectorStatus.transactionEventQueue = []
 
     const responseTimeoutMs = OCPP20ServiceUtils.readVariableAsIntervalMs(
       chargingStation,
@@ -1875,7 +1872,8 @@ export class OCPP20ServiceUtils {
       Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
       'Default'
     )
-    for (const [index, queuedEvent] of queue.entries()) {
+    while (queue.length > 0) {
+      const queuedEvent = queue[0]
       const responseState = { received: false, sent: false }
       try {
         logger.debug(
@@ -1900,6 +1898,8 @@ export class OCPP20ServiceUtils {
             queuedEvent.request.transactionInfo.transactionId
           )
         }
+        queue.shift()
+        chargingStation.saveTransactionEventQueues()
       } catch (error) {
         if (
           !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
@@ -1911,7 +1911,7 @@ export class OCPP20ServiceUtils {
               .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
               .find(key => key != null && key.length > 0)
             const nextSignedSample = queue
-              .slice(index + 1)
+              .slice(1)
               .filter(
                 remainingEvent =>
                   remainingEvent.request.transactionInfo.transactionId ===
@@ -1943,24 +1943,10 @@ export class OCPP20ServiceUtils {
               queuedEvent.request.transactionInfo.transactionId
             )
           }
+          queue.shift()
+          chargingStation.saveTransactionEventQueues()
           continue
         }
-        const remainingQueue = queue.slice(index)
-        const remainingKeys = new Set(
-          remainingQueue.map(
-            event => `${event.request.transactionInfo.transactionId}:${event.seqNo.toString()}`
-          )
-        )
-        const queuedDuringReplay = connectorStatus.transactionEventQueue ?? []
-        connectorStatus.transactionEventQueue = [
-          ...remainingQueue,
-          ...queuedDuringReplay.filter(
-            concurrentEvent =>
-              !remainingKeys.has(
-                `${concurrentEvent.request.transactionInfo.transactionId}:${concurrentEvent.seqNo.toString()}`
-              )
-          ),
-        ]
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Connection lost while sending queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}, preserving it and the remaining queue:`,
           error

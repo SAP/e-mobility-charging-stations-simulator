@@ -1645,6 +1645,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await it('should send all queued events when sendQueuedTransactionEvents is called', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
+        const saveQueueSpy = mock.method(mockStation, 'saveTransactionEventQueues')
 
         setOnline(false)
         OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
@@ -1674,6 +1675,66 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(sentRequests.length, 2)
         assert.strictEqual(sentRequests[0].payload.seqNo, 0)
         assert.strictEqual(sentRequests[1].payload.seqNo, 1)
+        assert.strictEqual(saveQueueSpy.mock.callCount(), 2)
+      })
+
+      await it('keeps a later Ended event visible while replaying Started', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        let sawQueuedEnded = false
+        const stationHolder: { station?: ChargingStation } = {}
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<EmptyObject> => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          if (payload.eventType === OCPP20TransactionEventEnumType.Started) {
+            const replayStation = stationHolder.station
+            assert.ok(replayStation != null)
+            sawQueuedEnded =
+              replayStation
+                .getConnectorStatus(connectorId)
+                ?.transactionEventQueue?.some(
+                  event => event.request.eventType === OCPP20TransactionEventEnumType.Ended
+                ) === true
+          }
+          requestParams.onMessageSent?.()
+          requestParams.onResponseReceived?.()
+          return Promise.resolve({} as EmptyObject)
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        stationHolder.station = station
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(station, connectorId)
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+
+        online = true
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        assert.strictEqual(sawQueuedEnded, true)
       })
 
       await it('should clear queue and cleanup connector after sending', async () => {
@@ -2733,6 +2794,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         releaseFirstDelivery.resolve(undefined)
         await Promise.all([firstDelivery, secondDeliveryCompleted.promise])
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
 
         assert.deepEqual(sentSequenceNumbers, [0, 1])
         assert.deepEqual(station.getConnectorStatus(connectorId)?.transactionEventQueue, [])
@@ -2883,6 +2947,87 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         assert.strictEqual(connectorStatus.publicKeySentInTransaction, false)
         assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      })
+
+      await it('moves a reserved public key to an event queued during replay', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        const stationHolder: { station?: ChargingStation } = {}
+        const replayedPayloads: OCPP20TransactionEventRequest[] = []
+        const buildSignedMeterValue = (publicKey: string): OCPP20MeterValue => ({
+          sampledValue: [
+            {
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+              signedMeterValue: {
+                encodingMethod: 'OCMF',
+                publicKey,
+                signedMeterData: 'signed-data',
+                signingMethod: '',
+              },
+              value: 1,
+            },
+          ],
+          timestamp: new Date(),
+        })
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          replayedPayloads.push(payload)
+          if (replayedPayloads.length === 1) {
+            const replayStation = stationHolder.station
+            assert.ok(replayStation != null)
+            await OCPP20ServiceUtils.sendTransactionEvent(
+              replayStation,
+              OCPP20TransactionEventEnumType.Updated,
+              OCPP20TriggerReasonEnumType.MeterValueClock,
+              connectorId,
+              transactionId,
+              { meterValue: [buildSignedMeterValue('')] }
+            )
+            throw new Error('delivery failed before send')
+          }
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          return {} as EmptyObject
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        stationHolder.station = station
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '1',
+          undefined,
+          { save: false }
+        )
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId,
+          { meterValue: [buildSignedMeterValue('public-key')] }
+        )
+        online = true
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        assert.strictEqual(replayedPayloads.length, 2)
+        assert.strictEqual(
+          replayedPayloads[1].meterValue?.[0].sampledValue[0].signedMeterValue?.publicKey,
+          'public-key'
+        )
       })
 
       await it('should retry, discard, and continue after configured E13 attempts', async () => {

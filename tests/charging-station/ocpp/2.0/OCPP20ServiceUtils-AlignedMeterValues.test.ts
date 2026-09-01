@@ -3121,7 +3121,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 2)
     })
 
-    await it('skips elapsed boundaries while a prior sweep remains in flight', async () => {
+    await it('captures every boundary while prior delivery remains in flight', async () => {
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseSweep: (() => void) | undefined
@@ -3137,11 +3137,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       station.startAlignedMeterValues()
       mock.timers.tick(60_000)
       for (let boundary = 0; boundary < 10; boundary++) mock.timers.tick(60_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      assert.strictEqual(emitSpy.mock.callCount(), 11)
       releaseSweep?.()
       await flushPendingPromises()
       mock.timers.tick(60_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 2)
+      assert.strictEqual(emitSpy.mock.callCount(), 12)
     })
 
     await it('aligns the first emission to the next wall-clock boundary', async () => {
@@ -3211,7 +3211,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(nextTimestamp instanceof Date)
       assert.strictEqual(nextTimestamp.getTime(), 180_000)
     })
-    await it('restarts the interval without overlapping an in-flight sweep', async () => {
+    await it('restarts the interval while prior boundary delivery remains in flight', async () => {
       station.started = true
       upsertConfigurationKey(station, ALIGNED_DATA_INTERVAL_KEY, '60')
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
@@ -3227,13 +3227,13 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.timers.tick(60_000)
       station.restartAlignedMeterValues()
       for (let boundary = 0; boundary < 10; boundary++) mock.timers.tick(60_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      assert.strictEqual(emitSpy.mock.callCount(), 11)
 
       firstSweep.resolve(undefined)
       await flushPendingPromises()
       mock.timers.tick(60_000)
 
-      assert.strictEqual(emitSpy.mock.callCount(), 2)
+      assert.strictEqual(emitSpy.mock.callCount(), 12)
     })
 
     await it('stops cleanly and survives repeated online cycles without leaks', () => {
@@ -3255,7 +3255,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(emitSpy.mock.callCount(), 1)
     })
 
-    await it('keeps at most one sweep in flight', async () => {
+    await it('starts every boundary while prior delivery remains in flight', async () => {
       mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'Date'], now: 0 })
       let releaseFirstSweep: () => void = noop
       const firstSweepBlocked = new Promise<void>(resolve => {
@@ -3275,12 +3275,12 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       mock.timers.tick(900_000)
       assert.strictEqual(emitSpy.mock.callCount(), 1)
       mock.timers.tick(900_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 1)
+      assert.strictEqual(emitSpy.mock.callCount(), 2)
 
       releaseFirstSweep()
       await flushPendingPromises()
       mock.timers.tick(900_000)
-      assert.strictEqual(emitSpy.mock.callCount(), 2)
+      assert.strictEqual(emitSpy.mock.callCount(), 3)
     })
 
     await it('keeps the cadence running while queued TransactionEvents replay', async () => {
