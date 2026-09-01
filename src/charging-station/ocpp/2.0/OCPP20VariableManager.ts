@@ -51,6 +51,38 @@ const isOCPP20RequiredVariableName = (name: string): name is OCPP20RequiredVaria
 const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string =>
   buildConfigKey(variableMetadata.component, variableMetadata.variable, variableMetadata.instance)
 
+const isEvseScopedVariable = (componentName: string, variableName: string): boolean =>
+  componentName.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
+  variableName.toLowerCase() === OCPP20OptionalVariableName.SendDuringIdle.toLowerCase()
+
+const buildScopedVariableKey = (component: ComponentType, variable: VariableType): string => {
+  const baseKey = buildCaseInsensitiveCompositeKey(
+    component.name,
+    component.instance,
+    variable.name
+  )
+  if (component.evse == null || !isEvseScopedVariable(component.name, variable.name)) return baseKey
+  return `${baseKey}.evse.${component.evse.id.toString()}`
+}
+
+const computeScopedConfigurationKeyName = (
+  variableMetadata: VariableMetadata,
+  component: ComponentType
+): string => {
+  if (
+    component.evse == null ||
+    !isEvseScopedVariable(variableMetadata.component, variableMetadata.variable)
+  ) {
+    return computeConfigurationKeyName(variableMetadata)
+  }
+  const evseScope = `EVSE.${component.evse.id.toString()}`
+  return buildConfigKey(
+    variableMetadata.component,
+    variableMetadata.variable,
+    [variableMetadata.instance, evseScope].filter(value => value != null).join('.')
+  )
+}
+
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
@@ -85,6 +117,29 @@ export class OCPP20VariableManager {
   public static getInstance (): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
+  }
+
+  /**
+   * Enumerates every supported component scope for a registry variable.
+   * Station-scoped variables return one component; EVSE-scoped variables also
+   * return one component per physical EVSE.
+   * @param chargingStation - Station whose Device Model topology is reported.
+   * @param variableMetadata - Canonical registry metadata.
+   * @returns Supported component descriptors in stable station/EVSE order.
+   */
+  public getSupportedComponents (
+    chargingStation: ChargingStation,
+    variableMetadata: VariableMetadata
+  ): ComponentType[] {
+    const component: ComponentType = { name: variableMetadata.component }
+    if (!isEvseScopedVariable(variableMetadata.component, variableMetadata.variable)) {
+      return [component]
+    }
+    const components = [component]
+    for (const { evseId } of chargingStation.iterateEvses()) {
+      if (evseId > 0) components.push({ evse: { id: evseId }, name: variableMetadata.component })
+    }
+    return components
   }
 
   public getVariables (
@@ -148,8 +203,17 @@ export class OCPP20VariableManager {
    */
   public resolveConfigurationKeyName (
     name: string
-  ): undefined | { component: string; instance?: string; variable: string } {
-    return this.#configurationKeyNameToVariable.get(name)
+  ): undefined | { component: string; evseId?: number; instance?: string; variable: string } {
+    const directMatch = this.#configurationKeyNameToVariable.get(name)
+    if (directMatch != null) return directMatch
+
+    const scopedMatch = /^(.*)\.EVSE\.(\d+)$/.exec(name)
+    if (scopedMatch == null) return undefined
+    const baseMatch = this.#configurationKeyNameToVariable.get(scopedMatch[1])
+    if (baseMatch == null || !isEvseScopedVariable(baseMatch.component, baseMatch.variable)) {
+      return undefined
+    }
+    return { ...baseMatch, evseId: Number(scopedMatch[2]) }
   }
 
   public setVariables (
@@ -166,11 +230,7 @@ export class OCPP20VariableManager {
       if (resolvedAttr !== AttributeEnumType.MinSet && resolvedAttr !== AttributeEnumType.MaxSet) {
         continue
       }
-      const varKey = buildCaseInsensitiveCompositeKey(
-        variableData.component.name,
-        variableData.component.instance,
-        variableData.variable.name
-      )
+      const varKey = buildScopedVariableKey(variableData.component, variableData.variable)
       const pairedBoundsEntry = pairedBounds.get(varKey) ?? {}
       if (resolvedAttr === AttributeEnumType.MinSet) {
         pairedBoundsEntry.minValue = variableData.attributeValue
@@ -234,11 +294,7 @@ export class OCPP20VariableManager {
         ) {
           continue
         }
-        const itemKey = buildCaseInsensitiveCompositeKey(
-          data.component.name,
-          data.component.instance,
-          data.variable.name
-        )
+        const itemKey = buildScopedVariableKey(data.component, data.variable)
         if (itemKey !== varKey) continue
         if (
           resolvedAttr === AttributeEnumType.MinSet &&
@@ -447,11 +503,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = buildCaseInsensitiveCompositeKey(
-      component.name,
-      component.instance,
-      variable.name
-    )
+    const variableKey = buildScopedVariableKey(component, variable)
     if (invalidVariables.has(variableKey)) {
       return this.rejectGet(
         variable,
@@ -590,11 +642,25 @@ export class OCPP20VariableManager {
     }
   }
 
-  private isComponentValid (_chargingStation: ChargingStation, component: ComponentType): boolean {
-    return this.#validComponentNames.has(component.name)
+  private isComponentValid (chargingStation: ChargingStation, component: ComponentType): boolean {
+    if (!this.#validComponentNames.has(component.name)) return false
+    if (component.evse?.id === 0) return false
+    if (component.evse == null) return true
+    const evseStatus = chargingStation.getEvseStatus(component.evse.id)
+    if (evseStatus == null) return false
+    return (
+      component.evse.connectorId == null || evseStatus.connectors.has(component.evse.connectorId)
+    )
   }
 
   private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
+    if (
+      component.name.toLowerCase() === OCPP20ComponentName.AlignedDataCtrlr.toLowerCase() &&
+      component.evse != null &&
+      (!isEvseScopedVariable(component.name, variable.name) || component.evse.connectorId != null)
+    ) {
+      return false
+    }
     return (
       getVariableMetadata(component.name, variable.name, variable.instance ?? component.instance) !=
         null || getVariableMetadata(component.name, variable.name) != null
@@ -655,23 +721,23 @@ export class OCPP20VariableManager {
     )
     if (!variableMetadata) return ''
 
-    const compositeKey = buildCaseInsensitiveCompositeKey(
-      component.name,
-      component.instance,
-      variable.name
-    )
+    const compositeKey = buildScopedVariableKey(component, variable)
 
     let value = resolveValue(chargingStation, variableMetadata)
 
     if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
-      const configurationKeyName = computeConfigurationKeyName(variableMetadata)
+      const evseScoped = isEvseScopedVariable(variableMetadata.component, variableMetadata.variable)
+      const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
       let cfg = getConfigurationKey(chargingStation, configurationKeyName)
 
-      if (cfg == null) {
+      if (cfg == null && evseScoped) {
+        cfg = getConfigurationKey(chargingStation, computeConfigurationKeyName(variableMetadata))
+      }
+      if (cfg == null && !evseScoped) {
         addConfigurationKey(
           chargingStation,
           configurationKeyName,
-          value, // Use the resolved default value
+          value,
           {
             readonly: isReadOnly(variableMetadata),
             reboot: variableMetadata.rebootRequired === true,
@@ -765,11 +831,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = buildCaseInsensitiveCompositeKey(
-      component.name,
-      component.instance,
-      variable.name
-    )
+    const variableKey = buildScopedVariableKey(component, variable)
     if (invalidVariables.has(variableKey) && resolvedAttributeType === AttributeEnumType.Actual) {
       if (!isWriteOnly(variableMetadata)) {
         return this.rejectSet(
@@ -1032,7 +1094,7 @@ export class OCPP20VariableManager {
     }
 
     let rebootRequired = false
-    const configurationKeyName = computeConfigurationKeyName(variableMetadata)
+    const configurationKeyName = computeScopedConfigurationKeyName(variableMetadata, component)
     const previousValue = getConfigurationKey(chargingStation, configurationKeyName)?.value
 
     if (isPersistent(variableMetadata) && !isWriteOnly(variableMetadata)) {
@@ -1046,7 +1108,7 @@ export class OCPP20VariableManager {
             readonly: isReadOnly(variableMetadata),
             reboot: variableMetadata.rebootRequired === true,
           },
-          { overwrite: false }
+          { overwrite: false, save: true }
         )
       } else if (configKey.value !== attributeValue) {
         setConfigurationKeyValue(chargingStation, configurationKeyName, attributeValue)

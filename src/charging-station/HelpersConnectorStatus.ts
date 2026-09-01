@@ -192,6 +192,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionEnding
+  delete connectorStatus.transactionStarting
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId
   delete connectorStatus.transactionIdTag
@@ -220,6 +221,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
  * @returns The same `connectorStatus` reference, after rehydration.
  */
 export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
+  delete connectorStatus.transactionStarting
   if (connectorStatus.reservation != null) {
     const reservationExpiryDate = convertToDate(connectorStatus.reservation.expiryDate)
     if (reservationExpiryDate != null) {

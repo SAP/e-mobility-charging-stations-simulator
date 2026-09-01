@@ -72,6 +72,7 @@ export const buildConnectorsStatus = (
           transactionEndedMeterValuesSetInterval,
           transactionEnding,
           transactionEventQueue,
+          transactionStarting,
           transactionUpdatedMeterValuesSetInterval,
           ...connectorStatus
         },
@@ -95,6 +96,7 @@ export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntryDat
               transactionEndedMeterValuesSetInterval,
               transactionEnding,
               transactionEventQueue,
+              transactionStarting,
               transactionUpdatedMeterValuesSetInterval,
               ...connectorStatus
             },
@@ -121,6 +123,7 @@ export const buildEvsesStatus = (
             transactionEndedMeterValuesSetInterval,
             transactionEnding,
             transactionEventQueue,
+            transactionStarting,
             transactionUpdatedMeterValuesSetInterval,
             ...connector
           },

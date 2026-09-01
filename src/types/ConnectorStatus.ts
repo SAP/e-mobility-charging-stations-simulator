@@ -49,6 +49,7 @@ export interface ConnectorStatus {
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionStarting?: boolean
   transactionUpdatedMeterValuesSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }

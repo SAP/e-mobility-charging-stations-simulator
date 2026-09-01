@@ -40,6 +40,7 @@ import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
 import {
   AvailabilityType,
   CurrentType,
+  MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
@@ -479,6 +480,95 @@ await describe('CoherentMeterValues', async () => {
         transactionRegisterBefore
       )
       assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should preserve the zero-flow snapshot for Transaction.Begin', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.CURRENT_IMPORT,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      ])
+      const registerBefore = connectorStatus.energyActiveImportRegisterValue
+      const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
+      const socBefore = session.socPercent
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        { intervalMs: 0, nowMs: TEST_METER_VALUES_INTERVAL_MS, rootSeed: 42 },
+        MeterValueContext.TRANSACTION_BEGIN
+      )
+
+      assert.strictEqual(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          )?.value
+        ),
+        0
+      )
+      assert.strictEqual(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.CURRENT_IMPORT
+          )?.value
+        ),
+        0
+      )
+      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, registerBefore)
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportRegisterValue,
+        transactionRegisterBefore
+      )
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should advance elapsed energy for Transaction.End even with interval zero', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      ])
+      const registerBefore = connectorStatus.energyActiveImportRegisterValue ?? 0
+      const socBefore = session.socPercent
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        { intervalMs: 0, nowMs: TEST_METER_VALUES_INTERVAL_MS, rootSeed: 42 },
+        MeterValueContext.TRANSACTION_END
+      )
+
+      assert.ok(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          )?.value
+        ) > 0
+      )
+      assert.ok((connectorStatus.energyActiveImportRegisterValue ?? 0) > registerBefore)
+      assert.ok(session.socPercent > socBefore)
     })
 
     await it('should use the EVSE-qualified connector power limit', () => {

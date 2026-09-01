@@ -11,7 +11,7 @@ import type {
   OCPP20FirmwareStatusNotificationRequest,
   OCPP20MeterValuesRequest,
   OCPP20StatusNotificationRequest,
-  OCPP20TransactionEventOptions,
+  OCPP20TransactionEventRequest,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
   RequestParams,
@@ -21,7 +21,6 @@ import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { buildTransactionEvent } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   MessageTriggerEnumType,
   OCPP20ChargingStateEnumType,
@@ -838,7 +837,7 @@ await describe('F06 - TriggerMessage', async () => {
      */
     function emitTransactionEventTrigger (
       evse?: OCPP20TriggerMessageRequest['evse']
-    ): OCPP20TransactionEventOptions[] {
+    ): OCPP20TransactionEventRequest[] {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.TransactionEvent,
         ...(evse != null && { evse }),
@@ -858,7 +857,7 @@ await describe('F06 - TriggerMessage', async () => {
             call.arguments as [
               unknown,
               OCPP20RequestCommand,
-              OCPP20TransactionEventOptions,
+              OCPP20TransactionEventRequest,
               RequestParams
             ]
         )
@@ -955,8 +954,8 @@ await describe('F06 - TriggerMessage', async () => {
       const payload = payloads[0]
       assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
       assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
-      assert.strictEqual(payload.transactionId, 'txn-evse-1')
-      assert.strictEqual(payload.connectorId, 1)
+      assert.strictEqual(payload.transactionInfo.transactionId, 'txn-evse-1')
+      assert.strictEqual(payload.evse?.id, 1)
       const meterValue = payload.meterValue
       if (meterValue == null) {
         assert.fail('Expected meterValue with TxUpdatedMeasurands to be defined')
@@ -970,9 +969,10 @@ await describe('F06 - TriggerMessage', async () => {
         meterValue[0].sampledValue[0].context,
         OCPP20ReadingContextEnumType.TRIGGER
       )
-      // F06.FR.07: building the emitted params yields transactionInfo.chargingState.
-      const built = buildTransactionEvent(mockStation, payload)
-      assert.strictEqual(built.transactionInfo.chargingState, OCPP20ChargingStateEnumType.Charging)
+      assert.strictEqual(
+        payload.transactionInfo.chargingState,
+        OCPP20ChargingStateEnumType.Charging
+      )
     })
 
     await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', () => {
@@ -991,8 +991,10 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)
       assert.strictEqual(payload.triggerReason, OCPP20TriggerReasonEnumType.Trigger)
       assert.strictEqual(payload.meterValue, undefined)
-      const built = buildTransactionEvent(mockStation, payload)
-      assert.strictEqual(built.transactionInfo.chargingState, OCPP20ChargingStateEnumType.Charging)
+      assert.strictEqual(
+        payload.transactionInfo.chargingState,
+        OCPP20ChargingStateEnumType.Charging
+      )
     })
 
     await it('should still emit a TransactionEvent when the meterValue build throws (F06.FR.10)', () => {
@@ -1020,7 +1022,9 @@ await describe('F06 - TriggerMessage', async () => {
       const payloads = emitTransactionEventTrigger()
 
       assert.strictEqual(payloads.length, 2)
-      const observedTransactions = new Set(payloads.map(payload => payload.transactionId))
+      const observedTransactions = new Set(
+        payloads.map(payload => payload.transactionInfo.transactionId)
+      )
       assert.deepStrictEqual([...observedTransactions].sort(), ['txn-evse-1', 'txn-evse-3'])
       for (const payload of payloads) {
         assert.strictEqual(payload.eventType, OCPP20TransactionEventEnumType.Updated)

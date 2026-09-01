@@ -21,18 +21,14 @@
  * whether the Energy measurand is emitted.
  */
 
-import type {
-  MeterValue,
-  MeterValueContext,
-  SampledValue,
-  SampledValueTemplate,
-} from '../../types/index.js'
+import type { MeterValue, SampledValue, SampledValueTemplate } from '../../types/index.js'
 import type { CoherentSample, ComputeSampleOptions } from './CoherentSampleComputer.js'
 import type { CoherentSession, ICoherentContext } from './types.js'
 
 import {
   type ConnectorStatus,
   CurrentType,
+  MeterValueContext,
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
@@ -48,6 +44,7 @@ import {
 } from '../../utils/index.js'
 import {
   advanceEnergyRegister,
+  advanceStationEnergyRegister,
   computeCoherentSampleAtTime,
   getCoherentSampleSnapshot,
   ROUNDING_SCALE,
@@ -178,8 +175,14 @@ const groupTemplatesByMeasurand = (
 const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
   phaseFamily(t.phase) === 'LineToNeutral'
 
-const templateFamilyKey = (t: SampledValueTemplate): string =>
-  JSON.stringify([t.context ?? null, t.format ?? null, t.location ?? null, t.unit ?? null])
+const templateFamilyKey = (template: SampledValueTemplate): string =>
+  JSON.stringify([
+    template.context ?? null,
+    template.customData ?? null,
+    template.format ?? null,
+    template.location ?? null,
+    template.unit ?? null,
+  ])
 
 /**
  * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
@@ -507,7 +510,9 @@ export const buildCoherentMeterValue = (
   registerValuesWithoutPhases?: boolean,
   timestamp = new Date(),
   connectorStatusOverride?: ConnectorStatus,
-  evseIdOverride?: number
+  evseIdOverride?: number,
+  useTransactionEnergyRegister = false,
+  explicitEnergyRegisterWhOverride?: number
 ): MeterValue => {
   const connectorStatus = connectorStatusOverride ?? context.getConnectorStatus(session.connectorId)
   if (connectorStatus == null) {
@@ -516,14 +521,24 @@ export const buildCoherentMeterValue = (
     )
     return { sampledValue: [], timestamp: new Date() }
   }
-  const sample = computeCoherentSampleAtTime(
-    context,
-    connectorStatus,
-    session,
-    options,
-    evseIdOverride
-  )
-  advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
+  const snapshotOnly = mvContext === MeterValueContext.TRANSACTION_BEGIN
+  const sample = snapshotOnly
+    ? getCoherentSampleSnapshot(context, connectorStatus, session)
+    : computeCoherentSampleAtTime(context, connectorStatus, session, options, evseIdOverride)
+  if (!snapshotOnly) {
+    advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
+    advanceStationEnergyRegister(
+      context,
+      evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
+      session.currentType,
+      sample.deltaEnergyWh
+    )
+  }
+  const energyRegisterWhOverride =
+    explicitEnergyRegisterWhOverride ??
+    (useTransactionEnergyRegister
+      ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
+      : undefined)
   return serializeCoherentMeterValue(
     context,
     session.connectorId,
@@ -536,7 +551,8 @@ export const buildCoherentMeterValue = (
     registerValuesWithoutPhases,
     timestamp,
     connectorStatus,
-    evseIdOverride
+    evseIdOverride,
+    energyRegisterWhOverride
   )
 }
 

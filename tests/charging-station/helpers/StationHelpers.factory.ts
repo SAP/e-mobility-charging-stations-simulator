@@ -4,6 +4,7 @@
 
 import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type {
+  CachedRequest,
   ConnectorEntry,
   ConnectorStatus,
   EvseEntry,
@@ -20,9 +21,12 @@ import type {
 } from './StationHelpers.types.js'
 
 import { getConfigurationKey } from '../../../src/charging-station/index.js'
+import { OCPPError } from '../../../src/exception/index.js'
 import {
   AvailabilityType,
   CurrentType,
+  ErrorType,
+  MessageType,
   OCPPVersion,
   RegistrationStatusEnumType,
   StandardParametersKey,
@@ -147,7 +151,7 @@ export function createMockChargingStation (
   }
 
   // Create requests map
-  const requests = new Map<string, unknown>()
+  const requests = new Map<string, CachedRequest>()
 
   // Create the station object that mimics ChargingStation
   const station = {
@@ -188,6 +192,9 @@ export function createMockChargingStation (
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
+    clearMessageBuffer (): void {
+      this.messageQueue.length = 0
+    },
     closeWSConnection (): void {
       if (this.wsConnection != null) {
         this.wsConnection.close()
@@ -196,8 +203,8 @@ export function createMockChargingStation (
     },
     // Coherent MeterValues session store (real class uses a private Map).
     coherentSessions: new Map<number | string, CoherentSession>(),
-
     connectors,
+
     createCoherentSession (
       _transactionId: number | string,
       _connectorId: number
@@ -209,19 +216,23 @@ export function createMockChargingStation (
       if (this.started) {
         await this.stop()
       }
-      this.requests.clear()
+      this.ocppRequestService.cancelPendingRequests(
+        this,
+        'Charging station deleted while awaiting an OCPP response',
+        true
+      )
       this.connectors.clear()
       this.evses.clear()
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
-
     destroyCoherentSession (transactionId: number | string | undefined): boolean {
       if (transactionId == null) {
         return false
       }
       return this.coherentSessions.delete(transactionId)
     },
+
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -339,6 +350,16 @@ export function createMockChargingStation (
     },
     getWebSocketPingInterval (): number {
       return websocketPingInterval
+    },
+    hasBufferedRequest (messageId: string): boolean {
+      return this.messageQueue.some(message => {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          return parsedMessage[0] === MessageType.CALL_MESSAGE && parsedMessage[1] === messageId
+        } catch {
+          return false
+        }
+      })
     },
 
     hasConnector (connectorId: number): boolean {
@@ -464,8 +485,23 @@ export function createMockChargingStation (
       },
       ...ocppIncomingRequestService,
     },
-
     ocppRequestService: {
+      cancelPendingRequests: (
+        targetStation: Pick<
+          ChargingStation,
+          'clearMessageBuffer' | 'hasBufferedRequest' | 'requests'
+        >,
+        message = 'Charging station stopped while awaiting an OCPP response',
+        discardBufferedRequests = false
+      ): void => {
+        const cancellationError = new OCPPError(ErrorType.GENERIC_ERROR, message)
+        for (const [messageId, [, errorCallback]] of [...targetStation.requests.entries()]) {
+          if (!discardBufferedRequests && targetStation.hasBufferedRequest(messageId)) continue
+          targetStation.requests.delete(messageId)
+          errorCallback(cancellationError, false)
+        }
+        if (discardBufferedRequests) targetStation.clearMessageBuffer()
+      },
       requestHandler: async () => {
         return await Promise.reject(
           new Error(

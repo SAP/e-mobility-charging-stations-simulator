@@ -84,6 +84,7 @@ export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
   onMessageSent?: () => void
+  onResponseReceived?: () => void
   rawPayload?: boolean
   responseTimeoutMs?: number
   skipBufferingOnError?: boolean

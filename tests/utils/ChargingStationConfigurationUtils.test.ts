@@ -206,6 +206,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         transactionEndedMeterValuesSetInterval: undefined,
         transactionEnding: true,
         transactionEventQueue: [],
+        transactionStarting: true,
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
 
@@ -228,6 +229,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const connectorStatus = connectorsStatus[0][1]
       assert.ok(!('transactionEndedMeterValues' in connectorStatus))
       assert.ok(!('transactionEnding' in connectorStatus))
+      assert.ok(!('transactionStarting' in connectorStatus))
       assert.ok(!('transactionEndedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionUpdatedMeterValuesSetInterval' in connectorStatus))
       assert.ok(!('transactionEventQueue' in connectorStatus))

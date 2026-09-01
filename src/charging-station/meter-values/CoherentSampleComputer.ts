@@ -283,6 +283,32 @@ export const advanceEnergyRegister = (
 }
 
 /**
+ * Advances the OCPP 2.0 station main-meter register from committed physical
+ * connector energy. DC connector energy is measured after conversion, so the
+ * corresponding inlet energy includes conversion losses.
+ * @param context - Station context containing the EVSE 0 main meter.
+ * @param evseId - Physical EVSE that committed the energy delta.
+ * @param currentType - Connector output current type.
+ * @param deltaEnergyWh - Committed connector-side energy delta in Wh.
+ */
+export const advanceStationEnergyRegister = (
+  context: ICoherentContext,
+  evseId: number | undefined,
+  currentType: CurrentType,
+  deltaEnergyWh: number
+): void => {
+  if (evseId == null || evseId <= 0) return
+  const mainConnectorStatus = context.getEvseStatus(0)?.connectors.get(0)
+  if (mainConnectorStatus == null) return
+  const configuredEfficiency =
+    currentType === CurrentType.DC ? (context.stationInfo?.conversionEfficiency ?? 1) : 1
+  const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+  const inputEnergyWh = deltaEnergyWh / conversionEfficiency
+  mainConnectorStatus.energyActiveImportRegisterValue =
+    Math.max(0, mainConnectorStatus.energyActiveImportRegisterValue ?? 0) + inputEnergyWh
+}
+
+/**
  * Computes a single coherent sample and mutates the caller-owned
  * `session.socPercent`. The energy register is NOT advanced here; the
  * caller (`buildCoherentMeterValue`) invokes {@link advanceEnergyRegister}

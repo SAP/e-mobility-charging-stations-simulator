@@ -5,8 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/index.js'
-
+import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
@@ -112,6 +111,39 @@ await describe('ChargingStation Lifecycle', async () => {
       // Assert - after stop() completes, stopping should be false
       assert.strictEqual((station as unknown as { stopping: boolean }).stopping, false)
       assert.strictEqual(station.started, false)
+    })
+
+    await it('should join an in-progress stop operation', async () => {
+      const stopGate = Promise.withResolvers<undefined>()
+      let performStopCalls = 0
+      const stationLike = {
+        logPrefix: () => '',
+        ocppRequestService: { cancelPendingRequests: () => undefined },
+        performStop: (): Promise<undefined> => {
+          performStopCalls++
+          return stopGate.promise
+        },
+        started: true,
+        stopping: false,
+      }
+
+      const firstStop = ChargingStation.prototype.stop.call(stationLike)
+      const secondStop = ChargingStation.prototype.stop.call(stationLike)
+      let secondStopSettled = false
+      secondStop
+        .then(() => {
+          secondStopSettled = true
+          return undefined
+        })
+        .catch(() => undefined)
+      await Promise.resolve()
+
+      assert.strictEqual(performStopCalls, 1)
+      assert.strictEqual(secondStopSettled, false)
+      stopGate.resolve(undefined)
+      await Promise.all([firstStop, secondStop])
+      assert.strictEqual(secondStopSettled, true)
+      assert.strictEqual(stationLike.stopping, false)
     })
 
     await it('should clear bootNotificationResponse on stop()', async () => {

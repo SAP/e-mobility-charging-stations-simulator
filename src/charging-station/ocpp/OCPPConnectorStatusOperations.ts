@@ -19,13 +19,14 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
  * Sends a StatusNotification request and updates the connector status locally.
  * @param chargingStation - Target charging station
  * @param commandParams - Cross-version StatusNotification input; `connectorStatus` (OCPP 2.0.1) takes precedence over `status` (OCPP 1.6)
- * @param options - Optional settings to control whether the request is actually sent
- * @param options.send - Whether to actually send the status notification
+ * @param options - Optional send behavior.
+ * @param options.send - Whether to send the status notification.
+ * @param options.waitForResponse - Whether local completion waits for the CSMS response.
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationOptions,
-  options?: { send: boolean }
+  options?: { send: boolean; waitForResponse?: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
   const { connectorId, errorCode, evseId } = commandParams
@@ -36,10 +37,20 @@ export const sendAndSetConnectorStatus = async (
   }
   if (options.send) {
     checkConnectorStatusTransition(chargingStation, connectorId, status, evseId)
-    await chargingStation.ocppRequestService.requestHandler<
+    const response = chargingStation.ocppRequestService.requestHandler<
       StatusNotificationOptions,
       StatusNotificationResponse
     >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
+    if (options.waitForResponse === false) {
+      response.catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} OCPPConnectorStatusOperations.sendAndSetConnectorStatus: Failed to send connector status:`,
+          error
+        )
+      })
+    } else {
+      await response
+    }
   }
   connectorStatus.status = status
   connectorStatus.errorCode = errorCode
@@ -56,11 +67,14 @@ export const sendAndSetConnectorStatus = async (
  * @param chargingStation - Target charging station
  * @param connectorId - Connector ID to transition
  * @param evseId - Optional EVSE identifier for EVSE-local connector ids
+ * @param options - Optional send behavior.
+ * @param options.waitForResponse - Whether local completion waits for the CSMS response.
  */
 export const sendPostTransactionStatus = async (
   chargingStation: ChargingStation,
   connectorId: number,
-  evseId?: number
+  evseId?: number,
+  options?: { waitForResponse?: boolean }
 ): Promise<void> => {
   const status =
     chargingStation.isChargingStationAvailable() &&
@@ -68,12 +82,16 @@ export const sendPostTransactionStatus = async (
       AvailabilityType.Operative
       ? ConnectorStatusEnum.Available
       : ConnectorStatusEnum.Unavailable
-  await sendAndSetConnectorStatus(chargingStation, {
-    connectorId,
-    connectorStatus: status,
-    ...(evseId != null && { evseId }),
-    status,
-  })
+  await sendAndSetConnectorStatus(
+    chargingStation,
+    {
+      connectorId,
+      connectorStatus: status,
+      ...(evseId != null && { evseId }),
+      status,
+    },
+    { send: true, ...options }
+  )
 }
 
 /**

@@ -7,13 +7,14 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
+import { OCPPConstants } from '../../../../src/charging-station/ocpp/OCPPConstants.js'
 import {
   type OCPP20HeartbeatRequest,
   OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { has } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -211,5 +212,197 @@ await describe('G02 - Heartbeat', async () => {
     )
     assert.strictEqual(context.station.requests.size, 0)
     assert.strictEqual(messageSentCount, 1)
+  })
+
+  await it('cancels pending response timers when deleting the station', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.started = false
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    mock.method(
+      wsConnection,
+      'send',
+      (_data: unknown, callback?: (error?: Error) => void): void => {
+        callback?.()
+      }
+    )
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      {
+        responseTimeoutMs: 3_600_000,
+        skipBufferingOnError: true,
+        throwError: true,
+      }
+    )
+    await flushMicrotasks()
+    assert.strictEqual(context.station.requests.size, 1)
+    const rejectedRequest = assert.rejects(
+      pendingRequest,
+      /deleted while awaiting an OCPP response/
+    )
+    await context.station.delete(false)
+
+    await rejectedRequest
+    assert.strictEqual(context.station.requests.size, 0)
+  })
+
+  await it('cancels a request while WebSocket.send is still pending', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    let sendCallback: ((error?: Error) => void) | undefined
+    mock.method(wsConnection, 'send', (_data: unknown, callback?: (error?: Error) => void) => {
+      sendCallback = callback
+    })
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      { responseTimeoutMs: 3_600_000, skipBufferingOnError: true, throwError: true }
+    )
+    await flushMicrotasks()
+    assert.strictEqual(context.station.requests.size, 1)
+    const rejectedRequest = assert.rejects(pendingRequest, /cancelled during WebSocket send/)
+
+    context.requestService.cancelPendingRequests(
+      context.station,
+      'Request cancelled during WebSocket send'
+    )
+    sendCallback?.()
+
+    await rejectedRequest
+    assert.strictEqual(context.station.requests.size, 0)
+  })
+
+  await it('does not resurrect a buffered request after cancellation', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    mock.method(wsConnection, 'send', () => undefined)
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      { responseTimeoutMs: 3_600_000, skipBufferingOnError: false, throwError: true }
+    )
+    await flushMicrotasks()
+    const rejectedRequest = assert.rejects(pendingRequest, /cancelled during WebSocket send/)
+
+    context.requestService.cancelPendingRequests(
+      context.station,
+      'Request cancelled during WebSocket send'
+    )
+    await rejectedRequest
+    t.mock.timers.tick(OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)
+    await flushMicrotasks()
+
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.strictEqual(context.station.requests.size, 0)
+    assert.strictEqual(bufferedStation.messageQueue.length, 0)
+  })
+
+  await it('cancels requests created by the stop sequence during deletion', async () => {
+    const context = createOCPP20RequestTestContext()
+    const pendingStopRequest = Promise.withResolvers<never>()
+    context.station.started = true
+    context.station.stop = (): Promise<void> => {
+      context.station.requests.set('stop-request', [
+        () => undefined,
+        error => {
+          pendingStopRequest.reject(error)
+        },
+        OCPP20RequestCommand.HEARTBEAT,
+        {},
+      ])
+      return Promise.resolve()
+    }
+    const rejectedRequest = assert.rejects(
+      pendingStopRequest.promise,
+      /deleted while awaiting an OCPP response/
+    )
+
+    await context.station.delete(false)
+
+    await rejectedRequest
+    assert.strictEqual(context.station.requests.size, 0)
+  })
+
+  await it('preserves buffered requests during a restart cancellation', () => {
+    const context = createOCPP20RequestTestContext()
+    const errorCallback = mock.fn()
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    context.station.requests.set('buffered', [
+      () => undefined,
+      errorCallback,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+    ])
+    context.station.bufferMessage('[2,"buffered","Heartbeat",{}]')
+
+    context.requestService.cancelPendingRequests(context.station)
+
+    assert.strictEqual(context.station.requests.has('buffered'), true)
+    assert.strictEqual(bufferedStation.messageQueue.length, 1)
+    assert.strictEqual(errorCallback.mock.callCount(), 0)
+  })
+
+  await it('discards buffered frames when pending requests are cancelled', () => {
+    const context = createOCPP20RequestTestContext()
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    context.station.bufferMessage('[2,"buffered","Heartbeat",{}]')
+    assert.strictEqual(bufferedStation.messageQueue.length, 1)
+
+    context.requestService.cancelPendingRequests(context.station, undefined, true)
+
+    assert.strictEqual(bufferedStation.messageQueue.length, 0)
+  })
+
+  await it('notifies when a CALLRESULT arrives before response handling completes', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    mock.method(
+      wsConnection,
+      'send',
+      (_data: unknown, callback?: (error?: Error) => void): void => {
+        callback?.()
+      }
+    )
+    let responseReceivedCount = 0
+
+    const requestPromise = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      {
+        onResponseReceived: () => {
+          responseReceivedCount++
+        },
+        skipBufferingOnError: true,
+        throwError: true,
+      }
+    )
+    await flushMicrotasks()
+    const cachedRequest = [...context.station.requests.values()].at(0)
+    assert.ok(cachedRequest != null)
+    const [responseCallback] = cachedRequest
+    responseCallback({ currentTime: new Date() }, {})
+    await requestPromise
+
+    assert.strictEqual(responseReceivedCount, 1)
   })
 })

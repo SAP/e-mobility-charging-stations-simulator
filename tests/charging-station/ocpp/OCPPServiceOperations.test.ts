@@ -142,10 +142,10 @@ await describe('OCPPServiceOperations', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
       requestHandler.mock.mockImplementation(async (...args: unknown[]) => {
-        const payload = args[2] as Record<string, unknown>
+        const payload = args[2] as OCPP20TransactionEventRequest
         sentPayloads.push({
           command: args[1] as string,
-          transactionId: payload.transactionId as string | undefined,
+          transactionId: payload.transactionInfo.transactionId,
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
@@ -169,10 +169,10 @@ await describe('OCPPServiceOperations', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
       requestHandler.mock.mockImplementation(async (...args: unknown[]) => {
-        const payload = args[2] as Record<string, unknown>
+        const payload = args[2] as OCPP20TransactionEventRequest
         sentPayloads.push({
           command: args[1] as string,
-          transactionId: payload.transactionId as string | undefined,
+          transactionId: payload.transactionInfo.transactionId,
         })
         return Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
       })
