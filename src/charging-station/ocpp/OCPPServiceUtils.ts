@@ -1413,6 +1413,7 @@ const expandClockAlignedSnapshotSamples = (
   context: MeterValueContext | undefined,
   registerValuesWithoutPhases: boolean,
   idle: boolean,
+  transactional: boolean,
   energyRegisterWhOverride?: number,
   preferBaseline = false,
   sampledValueTemplates?: SampledValueTemplate[]
@@ -1422,7 +1423,7 @@ const expandClockAlignedSnapshotSamples = (
   const energyRegister = Math.max(
     0,
     energyRegisterWhOverride ??
-      (!idle && chargingStation.stationInfo?.meteringPerTransaction === true
+      (transactional && chargingStation.stationInfo?.meteringPerTransaction === true
         ? (connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0)
         : (connectorStatus?.energyActiveImportRegisterValue ?? 0))
   )
@@ -1865,6 +1866,7 @@ const buildIdentifiedMeterValue = (
         context,
         registerValuesWithoutPhases,
         identity.idle ?? true,
+        identity.transactionId != null,
         identity.energyRegisterWhOverride,
         true,
         identity.sampledValueTemplates
@@ -2161,6 +2163,7 @@ const buildIdentifiedMeterValue = (
   // Energy.Active.Import.Register measurand (default)
   const advanceEnergy = identity.advanceEnergy === true
   const ownsEnergy = identity.transactionId != null && (!snapshot || advanceEnergy)
+  let snapshotEnergyRegisterWhOverride = identity.energyRegisterWhOverride
   const previousEnergyUpdate =
     connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt ??
     connectorStatus?.transactionStart
@@ -2191,6 +2194,9 @@ const buildIdentifiedMeterValue = (
         connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
       }
     }
+    if (ownsEnergy && snapshotEnergyRegisterWhOverride != null) {
+      snapshotEnergyRegisterWhOverride += energyMeasurand.value
+    }
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
@@ -2201,7 +2207,7 @@ const buildIdentifiedMeterValue = (
         (snapshot
           ? Math.max(
             0,
-            identity.energyRegisterWhOverride ??
+            snapshotEnergyRegisterWhOverride ??
                 connectorStatus?.energyActiveImportRegisterValue ??
                 0
           )
@@ -2251,7 +2257,8 @@ const buildIdentifiedMeterValue = (
       context,
       registerValuesWithoutPhases,
       idle,
-      identity.energyRegisterWhOverride
+      identity.transactionId != null,
+      snapshotEnergyRegisterWhOverride
     )
   }
   // Transactional snapshots defer this flag until their request is delivered.

@@ -237,6 +237,7 @@ export class ChargingStation extends EventEmitter {
   private lifecycleAbortController?: AbortController
   private readonly messageQueue: string[]
   private ocppIncomingRequestService!: OCPPIncomingRequestService
+  private pendingConfigurationSave: Promise<void> = Promise.resolve()
   private readonly sharedLRUCache: SharedLRUCache
   private stopping: boolean
   private stopPromise?: Promise<void>
@@ -2899,6 +2900,7 @@ export class ChargingStation extends EventEmitter {
     delete this.bootNotificationResponse
     this.started = false
     this.saveConfiguration()
+    await this.pendingConfigurationSave
     this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
     this.emitChargingStationEvent(ChargingStationEvents.stopped)
   }
@@ -2982,6 +2984,9 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.evsesStatus
         }
+        // Freeze one coherent persistence snapshot before hashing and before
+        // waiting for the shared configuration-file lock.
+        configurationData = clone(configurationData)
         delete configurationData.configurationHash
         const configurationHash = hash(
           Constants.DEFAULT_HASH_ALGORITHM,
@@ -2999,21 +3004,24 @@ export class ChargingStation extends EventEmitter {
           'hex'
         )
         if (this.configurationFileHash !== configurationHash) {
-          AsyncLock.runExclusive(AsyncLockType.configuration, () => {
-            configurationData.configurationHash = configurationHash
-            const measureId = `${FileType.ChargingStationConfiguration} write`
-            const beginId = PerformanceStatistics.beginMeasure(measureId)
-            atomicWriteFileSync(
-              this.configurationFile,
-              JSONStringify(configurationData, 2, MapStringifyFormat.object),
-              FileType.ChargingStationConfiguration,
-              this.logPrefix()
-            )
-            PerformanceStatistics.endMeasure(measureId, beginId)
-            this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
-            this.sharedLRUCache.setChargingStationConfiguration(configurationData)
-            this.configurationFileHash = configurationHash
-          }).catch((error: unknown) => {
+          this.pendingConfigurationSave = AsyncLock.runExclusive(
+            AsyncLockType.configuration,
+            () => {
+              configurationData.configurationHash = configurationHash
+              const measureId = `${FileType.ChargingStationConfiguration} write`
+              const beginId = PerformanceStatistics.beginMeasure(measureId)
+              atomicWriteFileSync(
+                this.configurationFile,
+                JSONStringify(configurationData, 2, MapStringifyFormat.object),
+                FileType.ChargingStationConfiguration,
+                this.logPrefix()
+              )
+              PerformanceStatistics.endMeasure(measureId, beginId)
+              this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
+              this.sharedLRUCache.setChargingStationConfiguration(configurationData)
+              this.configurationFileHash = configurationHash
+            }
+          ).catch((error: unknown) => {
             // File-system failures are already logged at error level by the atomic
             // write via handleFileException; absorb them here at debug level. Other
             // failures inside the lock body (JSON serialization, cache mutation, ...)

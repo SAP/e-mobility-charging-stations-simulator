@@ -226,6 +226,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
             timestamp: queuedTimestamp,
           },
         ],
+        transactionStart: eventTimestamp,
         transactionStarting: true,
         transactionUpdatedMeterValuesSetInterval: undefined,
       })
@@ -274,17 +275,35 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.ok(
         restoredConnectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt instanceof Date
       )
+      assert.ok(restoredConnectorStatus.transactionStart instanceof Date)
     })
 
     await it('should discard malformed persisted transaction queue entries', () => {
       const eventTimestamp = new Date('2026-09-01T12:00:00.000Z')
       const connectorStatus = {
+        publicKeySentInTransaction: true,
         transactionEventQueue: [
           null,
           {},
           {
             request: {
               eventType: OCPP20TransactionEventEnumType.Updated,
+              meterValue: [
+                {
+                  sampledValue: [
+                    {
+                      signedMeterValue: {
+                        encodingMethod: 'OCMF',
+                        publicKey: null,
+                        signedMeterData: 'signed-data',
+                        signingMethod: 'ECDSA-secp256r1-SHA256',
+                      },
+                      value: 1,
+                    },
+                  ],
+                  timestamp: eventTimestamp.toISOString(),
+                },
+              ],
               seqNo: 4,
               timestamp: eventTimestamp.toISOString(),
               transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000004' },
@@ -299,7 +318,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
               meterValue: { malformed: true },
               seqNo: 5,
               timestamp: eventTimestamp.toISOString(),
-              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000005' },
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000004' },
               triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
             },
             seqNo: 5,
@@ -328,6 +347,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
             timestamp: eventTimestamp.toISOString(),
           },
         ],
+        transactionId: '00000000-0000-4000-8000-000000000004',
       } as unknown as ConnectorStatus
 
       const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
@@ -335,6 +355,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].timestamp instanceof Date)
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+      assert.strictEqual(restoredConnectorStatus.publicKeySentInTransaction, false)
     })
 
     await it('should advance the active transaction sequence past restored queued events', () => {
@@ -393,6 +414,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       )
       assert.strictEqual(
         restoredConnectorStatus.transactionSeqNo,
+        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      )
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue[0].seqNo, 1)
+      assert.strictEqual(
+        restoredConnectorStatus.transactionEventQueue.at(-1)?.seqNo,
         Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
       )
     })

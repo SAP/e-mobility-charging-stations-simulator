@@ -154,6 +154,8 @@ await describe('ChargingStation Lifecycle', async () => {
       const transactionEventQueue: unknown[] = []
       const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus
       let savedQueueLength = -1
+      let stoppedEventEmitted = false
+      const configurationSave = Promise.withResolvers<undefined>()
       const waitMock = mock.method(
         OCPP20ServiceUtils,
         'waitForTransactionEventDelivery',
@@ -167,14 +169,18 @@ await describe('ChargingStation Lifecycle', async () => {
         bootNotificationResponse: {},
         closeWSConnection: () => undefined,
         configurationFileHash: 'test-configuration',
-        emitChargingStationEvent: () => undefined,
+        emitChargingStationEvent: () => {
+          stoppedEventEmitted = true
+        },
         iterateConnectors: () => [{ connectorStatus }],
         lifecycleAbortController: new AbortController(),
         logPrefix: () => '',
         ocppIncomingRequestService: { stop: () => undefined },
         ocppRequestService: { cancelPendingRequests: () => undefined },
+        pendingConfigurationSave: Promise.resolve(),
         saveConfiguration: () => {
           savedQueueLength = transactionEventQueue.length
+          stationLike.pendingConfigurationSave = configurationSave.promise
         },
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
@@ -183,16 +189,23 @@ await describe('ChargingStation Lifecycle', async () => {
       }
 
       try {
-        await (
+        const stopPromise = (
           ChargingStation.prototype as unknown as {
             performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
           }
         ).performStop.call(stationLike)
+        await new Promise(resolve => {
+          setImmediate(resolve)
+        })
+        assert.strictEqual(savedQueueLength, 1)
+        assert.strictEqual(stoppedEventEmitted, false)
+        configurationSave.resolve(undefined)
+        await stopPromise
       } finally {
         waitMock.mock.restore()
       }
 
-      assert.strictEqual(savedQueueLength, 1)
+      assert.strictEqual(stoppedEventEmitted, true)
     })
 
     await it('should join a timed-out stop sequence after cancelling pending requests', async t => {

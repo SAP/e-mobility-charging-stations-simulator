@@ -18,6 +18,7 @@ import {
   ChargingProfilePurposeType,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  OCPP20TransactionEventEnumType,
 } from '../types/index.js'
 import {
   clone,
@@ -278,9 +279,10 @@ const queuedEventHasPublicKey = (
 ): boolean =>
   queuedEvent.request.transactionInfo.transactionId === transactionId &&
   queuedEvent.request.meterValue?.some(meterValue =>
-    meterValue.sampledValue.some(
-      sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
-    )
+    meterValue.sampledValue.some(sampledValue => {
+      const publicKey = sampledValue.signedMeterValue?.publicKey
+      return typeof publicKey === 'string' && publicKey.length > 0
+    })
   ) === true
 
 /**
@@ -300,6 +302,12 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
     } else {
       delete connectorStatus.reservation
     }
+  }
+  const transactionStart = convertPersistedDate(connectorStatus.transactionStart)
+  if (transactionStart != null) {
+    connectorStatus.transactionStart = transactionStart
+  } else {
+    delete connectorStatus.transactionStart
   }
   const transactionEnergyLastUpdatedAt = convertPersistedDate(
     connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
@@ -346,15 +354,35 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
         )
         : -1
     if (preparedQueue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
-      const removedEvents = preparedQueue.splice(Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
-      if (
-        transactionId != null &&
-        removedEvents.some(
-          queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
-        )
-      ) {
-        removedActiveTransactionEvent = true
+      let excess = preparedQueue.length - Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      const retainedQueue = preparedQueue.filter(queuedEvent => {
+        if (
+          excess === 0 ||
+          queuedEvent.request.eventType !== OCPP20TransactionEventEnumType.Updated
+        ) {
+          return true
+        }
+        excess--
+        if (
+          transactionId != null &&
+          queuedEvent.request.transactionInfo.transactionId === transactionId
+        ) {
+          removedActiveTransactionEvent = true
+        }
+        return false
+      })
+      if (excess > 0) {
+        const removedEvents = retainedQueue.splice(0, excess)
+        if (
+          transactionId != null &&
+          removedEvents.some(
+            queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
+          )
+        ) {
+          removedActiveTransactionEvent = true
+        }
       }
+      preparedQueue.splice(0, preparedQueue.length, ...retainedQueue)
     }
     connectorStatus.transactionEventQueue = preparedQueue
     if (activeTransactionMaxSeqNo >= 0) {

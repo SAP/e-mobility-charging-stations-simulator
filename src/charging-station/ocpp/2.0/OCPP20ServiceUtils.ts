@@ -131,6 +131,16 @@ interface AdditiveUnitFamily {
   kiloUnit?: string
 }
 
+interface ClockAlignedMeterValuesSendState {
+  inFlight?: Promise<void>
+  pending?: PendingClockAlignedMeterValuesRequest
+}
+
+interface PendingClockAlignedMeterValuesRequest {
+  request: OCPP20MeterValuesRequest
+  responseTimeoutMs: number
+}
+
 const getClockAlignedAdditiveUnitFamily = (
   measurand: OCPP20MeasurandEnumType | undefined,
   configuredUnit: string | undefined
@@ -270,6 +280,11 @@ const aggregateClockAlignedSamples = (
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPP20ServiceUtils {
+  private static readonly clockAlignedMeterValuesSendStates = new WeakMap<
+    ChargingStation,
+    Map<number, ClockAlignedMeterValuesSendState>
+  >()
+
   private static readonly incomingRequestSchemaNames: readonly [
     OCPP20IncomingRequestCommand,
     string
@@ -671,7 +686,8 @@ export class OCPP20ServiceUtils {
                 ),
               }),
               ...(usesEvseMeterTemplate &&
-                !evseInTransaction && {
+                (!evseInTransaction ||
+                  chargingStation.stationInfo?.meteringPerTransaction !== true) && {
                 energyRegisterWhOverride: evseEnergyActiveImportRegisterValue,
               }),
               evseId,
@@ -683,16 +699,14 @@ export class OCPP20ServiceUtils {
             OCPP20ReadingContextEnumType.SAMPLE_CLOCK
           )
           if (!isNotEmptyArray(meterValue.sampledValue)) continue
-          if (!suppressEvseEmission) {
-            if (
-              evseId !== 0 &&
-              !isNotEmptyArray(evseStatus.MeterValues) &&
-              isNotEmptyArray(connectorStatus.MeterValues)
-            ) {
-              sampledValueTemplates.push(...connectorStatus.MeterValues)
-            }
-            if (evseId !== 0) physicalMeterValues.push(meterValue)
+          if (
+            evseId !== 0 &&
+            !isNotEmptyArray(evseStatus.MeterValues) &&
+            isNotEmptyArray(connectorStatus.MeterValues)
+          ) {
+            sampledValueTemplates.push(...connectorStatus.MeterValues)
           }
+          if (evseId !== 0) physicalMeterValues.push(meterValue)
           if (transactionId != null) {
             if (!suppressEvseEmission) {
               pendingRequests.push({
@@ -769,20 +783,12 @@ export class OCPP20ServiceUtils {
       pendingRequests.push({
         evseId,
         send: () =>
-          chargingStation.ocppRequestService
-            .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-              chargingStation,
-              OCPP20RequestCommand.METER_VALUES,
-              { evseId, meterValue: requestMeterValues },
-              { responseTimeoutMs, skipBufferingOnError: true, throwError: true }
-            )
-            .then(() => undefined)
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
-                error
-              )
-            }),
+          OCPP20ServiceUtils.sendClockAlignedMeterValuesRequest(
+            chargingStation,
+            evseId,
+            { evseId, meterValue: requestMeterValues },
+            responseTimeoutMs
+          ),
       })
     }
     await Promise.all(
@@ -2038,53 +2044,57 @@ export class OCPP20ServiceUtils {
     connectorStatus.transactionEventQueue ??= []
     const queue = connectorStatus.transactionEventQueue
     const transactionId = request.transactionInfo.transactionId
-    const isClockAlignedUpdate =
-      request.eventType === OCPP20TransactionEventEnumType.Updated &&
-      request.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock
-    if (queue.length >= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
-      if (isClockAlignedUpdate) {
-        if (!OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)) {
-          OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached ${Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH.toString()} entries; dropping new clock-aligned updates until delivery resumes`
-          )
-        }
-        const droppedPublicKey =
-          request.meterValue?.some(meterValue =>
-            meterValue.sampledValue.some(
-              sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
-            )
-          ) === true
-        const queuedPublicKey = queue.some(
-          queuedEvent =>
-            queuedEvent.request.transactionInfo.transactionId === transactionId &&
-            queuedEvent.request.meterValue?.some(meterValue =>
-              meterValue.sampledValue.some(
-                sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
-              )
-            ) === true
+    const isUpdatedEvent = request.eventType === OCPP20TransactionEventEnumType.Updated
+    const queueLimit = isUpdatedEvent
+      ? Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 2
+      : Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+    if (queue.length >= queueLimit) {
+      if (!OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)) {
+        OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded update capacity; replacing intermediate updates until delivery resumes`
         )
-        if (droppedPublicKey && !queuedPublicKey) {
-          connectorStatus.publicKeySentInTransaction = false
+      }
+      let removedEvents: QueuedTransactionEvent[] = []
+      const replaceableIndex = queue.findIndex(
+        queuedEvent => queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated
+      )
+      if (replaceableIndex >= 0) {
+        removedEvents = queue.splice(replaceableIndex, 1)
+      } else if (!isUpdatedEvent) {
+        const completedTransactionId = queue.find(
+          queuedEvent => queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended
+        )?.request.transactionInfo.transactionId
+        if (completedTransactionId != null) {
+          for (let index = queue.length - 1; index >= 0; index--) {
+            if (queue[index].request.transactionInfo.transactionId === completedTransactionId) {
+              removedEvents.push(...queue.splice(index, 1))
+            }
+          }
         }
+      }
+      if (removedEvents.length === 0 && !isUpdatedEvent) {
+        const oldestLifecycleEvent = queue.shift()
+        if (oldestLifecycleEvent != null) removedEvents.push(oldestLifecycleEvent)
+      }
+      if (removedEvents.length === 0) {
+        const droppedPublicKey =
+          request.meterValue
+            ?.flatMap(meterValue => meterValue.sampledValue)
+            .some(sampledValue => {
+              const publicKey = sampledValue.signedMeterValue?.publicKey
+              return typeof publicKey === 'string' && publicKey.length > 0
+            }) === true
+        if (droppedPublicKey) connectorStatus.publicKeySentInTransaction = false
         return
       }
-      const replaceableIndex = queue.findLastIndex(
-        queuedEvent =>
-          queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated &&
-          queuedEvent.request.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock
+      const replacedEvent = removedEvents.find(
+        queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
       )
-      if (replaceableIndex < 0) {
-        throw new OCPPError(
-          ErrorType.INTERNAL_ERROR,
-          `TransactionEvent queue reached ${Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH.toString()} entries`
-        )
-      }
-      const [replacedEvent] = queue.splice(replaceableIndex, 1)
-      const replacedPublicKey = replacedEvent.request.meterValue
+      const replacedPublicKey = replacedEvent?.request.meterValue
         ?.flatMap(meterValue => meterValue.sampledValue)
         .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-        .find(publicKey => publicKey != null && publicKey.length > 0)
+        .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
       const replacementSignedSample = request.meterValue
         ?.flatMap(meterValue => meterValue.sampledValue)
         .find(sampledValue => sampledValue.signedMeterValue != null)
@@ -2092,8 +2102,7 @@ export class OCPP20ServiceUtils {
         replacementSignedSample.signedMeterValue.publicKey = replacedPublicKey
       } else if (
         replacedPublicKey != null &&
-        connectorStatus.transactionId?.toString() ===
-          replacedEvent.request.transactionInfo.transactionId
+        connectorStatus.transactionId?.toString() === transactionId
       ) {
         connectorStatus.publicKeySentInTransaction = false
       }
@@ -2289,6 +2298,73 @@ export class OCPP20ServiceUtils {
       'TransactionEvent retry loop exhausted unexpectedly',
       OCPP20RequestCommand.TRANSACTION_EVENT
     )
+  }
+
+  /**
+   * Serializes non-transactional aligned MeterValues per EVSE and coalesces
+   * stalled intervals to the latest snapshot.
+   * @param chargingStation - Target charging station
+   * @param evseId - Meter point EVSE identifier
+   * @param request - Latest aligned MeterValues request
+   * @param responseTimeoutMs - Request response timeout in milliseconds
+   * @returns The current bounded drain operation
+   */
+  private static sendClockAlignedMeterValuesRequest (
+    chargingStation: ChargingStation,
+    evseId: number,
+    request: OCPP20MeterValuesRequest,
+    responseTimeoutMs: number
+  ): Promise<void> {
+    let stationStates = OCPP20ServiceUtils.clockAlignedMeterValuesSendStates.get(chargingStation)
+    if (stationStates == null) {
+      stationStates = new Map<number, ClockAlignedMeterValuesSendState>()
+      OCPP20ServiceUtils.clockAlignedMeterValuesSendStates.set(chargingStation, stationStates)
+    }
+    let state = stationStates.get(evseId)
+    if (state == null) {
+      state = {}
+      stationStates.set(evseId, state)
+    }
+    state.pending = { request, responseTimeoutMs }
+    if (state.inFlight != null) return state.inFlight
+
+    const sendState = state
+    const drain = async (): Promise<void> => {
+      while (sendState.pending != null) {
+        const pending = sendState.pending
+        delete sendState.pending
+        if (
+          !chargingStation.isWebSocketConnectionOpened() ||
+          !chargingStation.inAcceptedState() ||
+          OCPP20ServiceUtils.isChargingStationStopping(chargingStation)
+        ) {
+          break
+        }
+        try {
+          await chargingStation.ocppRequestService.requestHandler<
+            OCPP20MeterValuesRequest,
+            OCPP20MeterValuesResponse
+          >(chargingStation, OCPP20RequestCommand.METER_VALUES, pending.request, {
+            responseTimeoutMs: pending.responseTimeoutMs,
+            skipBufferingOnError: true,
+            throwError: true,
+          })
+        } catch (error: unknown) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.emitClockAlignedMeterValues: Error sending clock-aligned '${OCPP20RequestCommand.METER_VALUES}':`,
+            error
+          )
+        }
+      }
+    }
+    const inFlight = drain().finally(() => {
+      if (sendState.inFlight === inFlight) {
+        delete sendState.inFlight
+        if (sendState.pending == null) stationStates.delete(evseId)
+      }
+    })
+    sendState.inFlight = inFlight
+    return inFlight
   }
 
   private static async serializeTransactionEventDelivery<T>(
