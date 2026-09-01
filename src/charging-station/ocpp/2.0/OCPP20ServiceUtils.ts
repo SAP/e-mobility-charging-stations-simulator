@@ -1,7 +1,5 @@
 import { secondsToMilliseconds } from 'date-fns'
 
-import type { QueuedTransactionEvent } from '../../../types/ConnectorStatus.js'
-
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -1370,7 +1368,8 @@ export class OCPP20ServiceUtils {
         if (
           !deliveryState.responseReceived &&
           requestParams?.skipBufferingOnError !== true &&
-          (!deliveryState.sent ||
+          (OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
+            !deliveryState.sent ||
             !chargingStation.isWebSocketConnectionOpened() ||
             !chargingStation.inAcceptedState())
         ) {
@@ -1793,6 +1792,23 @@ export class OCPP20ServiceUtils {
     }
   }
 
+  /**
+   * Waits until all transaction-event work currently serialized for a connector has settled.
+   * New work chained while waiting is included before this method resolves.
+   * @param connectorStatus - Connector whose delivery chain must settle
+   */
+  public static async waitForTransactionEventDelivery (
+    connectorStatus: ConnectorStatus
+  ): Promise<void> {
+    let pending = OCPP20ServiceUtils.transactionEventSendChains.get(connectorStatus)
+    while (pending != null) {
+      await pending.catch(() => undefined)
+      const next = OCPP20ServiceUtils.transactionEventSendChains.get(connectorStatus)
+      if (next === pending) return
+      pending = next
+    }
+  }
+
   private static buildTransactionEndedMeterValues (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -1861,21 +1877,6 @@ export class OCPP20ServiceUtils {
     )
     for (const [index, queuedEvent] of queue.entries()) {
       const responseState = { received: false, sent: false }
-      const remainingQueue = queue.slice(index + 1)
-      const queuedDuringReplay: QueuedTransactionEvent[] =
-        connectorStatus.transactionEventQueue ?? []
-      connectorStatus.transactionEventQueue = [
-        ...remainingQueue,
-        ...queuedDuringReplay.filter(
-          concurrentEvent =>
-            !queue.some(
-              originalEvent =>
-                originalEvent.seqNo === concurrentEvent.seqNo &&
-                originalEvent.request.transactionInfo.transactionId ===
-                  concurrentEvent.request.transactionInfo.transactionId
-            )
-        ),
-      ]
       try {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending queued event with seqNo=${queuedEvent.seqNo.toString()}`
@@ -1900,7 +1901,10 @@ export class OCPP20ServiceUtils {
           )
         }
       } catch (error) {
-        if (responseState.received || chargingStation.isWebSocketConnectionOpened()) {
+        if (
+          !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
+          (responseState.received || chargingStation.isWebSocketConnectionOpened())
+        ) {
           if (!responseState.sent) {
             const publicKey = queuedEvent.request.meterValue
               ?.flatMap(meterValue => meterValue.sampledValue)
@@ -1942,16 +1946,18 @@ export class OCPP20ServiceUtils {
           continue
         }
         const remainingQueue = queue.slice(index)
+        const remainingKeys = new Set(
+          remainingQueue.map(
+            event => `${event.request.transactionInfo.transactionId}:${event.seqNo.toString()}`
+          )
+        )
         const queuedDuringReplay = connectorStatus.transactionEventQueue ?? []
         connectorStatus.transactionEventQueue = [
           ...remainingQueue,
           ...queuedDuringReplay.filter(
             concurrentEvent =>
-              !remainingQueue.some(
-                remainingEvent =>
-                  remainingEvent.seqNo === concurrentEvent.seqNo &&
-                  remainingEvent.request.transactionInfo.transactionId ===
-                    concurrentEvent.request.transactionInfo.transactionId
+              !remainingKeys.has(
+                `${concurrentEvent.request.transactionInfo.transactionId}:${concurrentEvent.seqNo.toString()}`
               )
           ),
         ]
@@ -1973,33 +1979,23 @@ export class OCPP20ServiceUtils {
     connectorStatus.transactionEventQueue ??= []
     const queue = connectorStatus.transactionEventQueue
     const transactionId = request.transactionInfo.transactionId
-    if (
-      queue.some(
-        queuedEvent =>
-          queuedEvent.seqNo === request.seqNo &&
-          queuedEvent.request.transactionInfo.transactionId === transactionId
-      )
-    ) {
-      return
-    }
     const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
-    const insertionIndex = queue.findIndex(
-      existingEvent =>
-        existingEvent.request.transactionInfo.transactionId === transactionId &&
-        existingEvent.seqNo > request.seqNo
-    )
-    if (insertionIndex >= 0) {
-      queue.splice(insertionIndex, 0, queuedEvent)
-      return
+    let insertionIndex = queue.length
+    for (let index = queue.length - 1; index >= 0; index--) {
+      const existingEvent = queue[index]
+      if (existingEvent.request.transactionInfo.transactionId !== transactionId) continue
+      if (existingEvent.seqNo === request.seqNo) return
+      insertionIndex = index
+      if (existingEvent.seqNo < request.seqNo) {
+        insertionIndex = index + 1
+        break
+      }
     }
-    const lastTransactionIndex = queue.findLastIndex(
-      existingEvent => existingEvent.request.transactionInfo.transactionId === transactionId
-    )
-    if (lastTransactionIndex >= 0) {
-      queue.splice(lastTransactionIndex + 1, 0, queuedEvent)
-      return
-    }
-    queue.push(queuedEvent)
+    queue.splice(insertionIndex, 0, queuedEvent)
+  }
+
+  private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
+    return (chargingStation as unknown as { isStopping?: () => boolean }).isStopping?.() === true
   }
 
   private static readVariableAsIntervalMs (
@@ -2126,6 +2122,8 @@ export class OCPP20ServiceUtils {
         Constants.DEFAULT_MESSAGE_TIMEOUT_SECONDS,
         'Default'
       )
+    const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
+      .lifecycleAbortSignal
     for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
       const deliveryState = { responseReceived: false, sent: false }
       try {
@@ -2158,8 +2156,6 @@ export class OCPP20ServiceUtils {
         ) {
           throw error
         }
-        const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
-          .lifecycleAbortSignal
         if (lifecycleAbortSignal == null) {
           await sleep(retryIntervalMs * attempt)
         } else {

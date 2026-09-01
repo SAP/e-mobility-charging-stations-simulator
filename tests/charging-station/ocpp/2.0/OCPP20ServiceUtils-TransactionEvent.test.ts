@@ -2182,6 +2182,101 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       })
 
+      await it('queues a sent event when station shutdown interrupts delivery', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          return Promise.reject(new Error('shutdown interrupted delivery'))
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isStopping = () => true
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '1',
+          undefined,
+          { save: false }
+        )
+
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.seqNo),
+          [0]
+        )
+      })
+
+      await it('preserves replayed events when station shutdown aborts delivery', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          return Promise.reject(new Error('shutdown interrupted replay'))
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '1',
+          undefined,
+          { save: false }
+        )
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+        station.isStopping = () => true
+        online = true
+
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.seqNo),
+          [0]
+        )
+      })
+
       await it('should not retry or queue an event after its response was received', async () => {
         const connectorId = 1
         const transactionId = generateUUID()

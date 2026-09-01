@@ -214,6 +214,8 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  private alignedMeterValuesEmissionInFlight = false
+
   private alignedMeterValuesGeneration = 0
   private alignedMeterValuesRestartPending = false
   private alignedMeterValuesSetTimeout?: NodeJS.Timeout
@@ -245,7 +247,6 @@ export class ChargingStation extends EventEmitter {
   private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
-
   /**
    * Creation options to re-apply when re-initializing on a reset or template
    * reload. Only a non-persistent station needs them: a persistent one restores
@@ -982,6 +983,10 @@ export class ChargingStation extends EventEmitter {
     return false
   }
 
+  public isStopping (): boolean {
+    return this.stopping
+  }
+
   public isWebSocketConnectionOpened (): boolean {
     return this.wsConnection?.readyState === WebSocket.OPEN
   }
@@ -1423,7 +1428,13 @@ export class ChargingStation extends EventEmitter {
         if (generation !== this.alignedMeterValuesGeneration) return
         delete this.alignedMeterValuesSetTimeout
         scheduleNext()
-        emitCurrentSample().catch(logger.error)
+        if (this.alignedMeterValuesEmissionInFlight) return
+        this.alignedMeterValuesEmissionInFlight = true
+        emitCurrentSample()
+          .finally(() => {
+            this.alignedMeterValuesEmissionInFlight = false
+          })
+          .catch(logger.error)
       }, targetMs - now)
     }
     scheduleNext()
@@ -1506,6 +1517,9 @@ export class ChargingStation extends EventEmitter {
 
     this.stopping = true
     this.lifecycleAbortController?.abort()
+    // Work already in flight keeps the aborted signal captured at creation;
+    // shutdown-generated TransactionEvents use a fresh signal for E13 retries.
+    this.lifecycleAbortController = new AbortController()
     const stopPromise = this.performStop(reason, stopTransactions)
     this.stopPromise = stopPromise
     try {
@@ -1515,7 +1529,6 @@ export class ChargingStation extends EventEmitter {
       // subsequent restart cannot resurrect stale state or leak
       // module-scope runtime PRNG closures.
       CoherentMeterValuesManager.peekInstance(this)?.dispose()
-      this.ocppRequestService.cancelPendingRequests(this)
       if (this.stopPromise === stopPromise) delete this.stopPromise
       this.stopping = false
     }
@@ -2852,6 +2865,13 @@ export class ChargingStation extends EventEmitter {
     }
     this.ocppIncomingRequestService.stop(this)
     this.closeWSConnection()
+    this.lifecycleAbortController?.abort()
+    this.ocppRequestService.cancelPendingRequests(this)
+    await Promise.all(
+      this.iterateConnectors().map(({ connectorStatus }) =>
+        OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
+      )
+    )
     if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.stop()
     }

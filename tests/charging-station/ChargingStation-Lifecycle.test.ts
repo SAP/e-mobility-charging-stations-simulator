@@ -3,9 +3,12 @@
  * @description Unit tests for charging station start/stop/restart and delete operations
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+
+import type { ConnectorStatus } from '../../src/types/index.js'
 
 import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './helpers/StationHelpers.js'
 
@@ -103,13 +106,13 @@ await describe('ChargingStation Lifecycle', async () => {
       station.start()
 
       // Assert initial state
-      assert.strictEqual((station as unknown as { stopping: boolean }).stopping, false)
+      assert.strictEqual(ChargingStation.prototype.isStopping.call(station), false)
 
       // Act
       await station.stop()
 
       // Assert - after stop() completes, stopping should be false
-      assert.strictEqual((station as unknown as { stopping: boolean }).stopping, false)
+      assert.strictEqual(ChargingStation.prototype.isStopping.call(station), false)
       assert.strictEqual(station.started, false)
     })
 
@@ -144,6 +147,51 @@ await describe('ChargingStation Lifecycle', async () => {
       await Promise.all([firstStop, secondStop])
       assert.strictEqual(secondStopSettled, true)
       assert.strictEqual(stationLike.stopping, false)
+    })
+
+    await it('persists events queued while transaction delivery settles during stop', async () => {
+      const transactionEventQueue: unknown[] = []
+      const connectorStatus = { transactionEventQueue } as unknown as ConnectorStatus
+      let savedQueueLength = -1
+      const waitMock = mock.method(
+        OCPP20ServiceUtils,
+        'waitForTransactionEventDelivery',
+        (status: ConnectorStatus) => {
+          assert.strictEqual(status, connectorStatus)
+          transactionEventQueue.push({})
+          return Promise.resolve()
+        }
+      )
+      const stationLike = {
+        bootNotificationResponse: {},
+        closeWSConnection: () => undefined,
+        configurationFileHash: 'test-configuration',
+        emitChargingStationEvent: () => undefined,
+        iterateConnectors: () => [{ connectorStatus }],
+        lifecycleAbortController: new AbortController(),
+        logPrefix: () => '',
+        ocppIncomingRequestService: { stop: () => undefined },
+        ocppRequestService: { cancelPendingRequests: () => undefined },
+        saveConfiguration: () => {
+          savedQueueLength = transactionEventQueue.length
+        },
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+        started: true,
+        stationInfo: { enableStatistics: false },
+        stopMessageSequence: () => Promise.resolve(),
+      }
+
+      try {
+        await (
+          ChargingStation.prototype as unknown as {
+            performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
+          }
+        ).performStop.call(stationLike)
+      } finally {
+        waitMock.mock.restore()
+      }
+
+      assert.strictEqual(savedQueueLength, 1)
     })
 
     await it('should clear bootNotificationResponse on stop()', async () => {
