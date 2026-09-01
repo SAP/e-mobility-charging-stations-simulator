@@ -10,6 +10,7 @@
  *   (`import { buildConnectorsMap, ... } from './Helpers.js'`).
  */
 
+import type { QueuedTransactionEvent } from '../types/ConnectorStatus.js'
 import type { ChargingStation } from './ChargingStation.js'
 
 import {
@@ -18,7 +19,14 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
 } from '../types/index.js'
-import { clone, convertToDate, convertToInt, isNotEmptyArray, logger } from '../utils/index.js'
+import {
+  clone,
+  convertToDate,
+  convertToInt,
+  isJsonObject,
+  isNotEmptyArray,
+  logger,
+} from '../utils/index.js'
 import { getSingleChargingSchedule } from './HelpersChargingProfile.js'
 import { getMaxNumberOfConnectors } from './HelpersConfig.js'
 
@@ -231,23 +239,39 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
     }
   }
   if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
-    connectorStatus.transactionEventQueue = connectorStatus.transactionEventQueue.filter(
-      queuedEvent => {
-        const queuedTimestamp = convertToDate(queuedEvent.timestamp)
-        const requestTimestamp = convertToDate(queuedEvent.request.timestamp)
-        if (queuedTimestamp == null || requestTimestamp == null) return false
-        queuedEvent.timestamp = queuedTimestamp
-        queuedEvent.request.timestamp = requestTimestamp
-        if (isNotEmptyArray(queuedEvent.request.meterValue)) {
-          for (const meterValue of queuedEvent.request.meterValue) {
-            const meterValueTimestamp = convertToDate(meterValue.timestamp)
-            if (meterValueTimestamp == null) return false
-            meterValue.timestamp = meterValueTimestamp
-          }
-        }
-        return true
+    connectorStatus.transactionEventQueue = (
+      connectorStatus.transactionEventQueue as unknown[]
+    ).filter((candidate): candidate is QueuedTransactionEvent => {
+      if (
+        !isJsonObject(candidate) ||
+        !isJsonObject(candidate.request) ||
+        !isJsonObject(candidate.request.transactionInfo) ||
+        typeof candidate.seqNo !== 'number' ||
+        !Number.isInteger(candidate.seqNo) ||
+        typeof candidate.request.seqNo !== 'number' ||
+        !Number.isInteger(candidate.request.seqNo) ||
+        typeof candidate.request.eventType !== 'string' ||
+        typeof candidate.request.triggerReason !== 'string' ||
+        typeof candidate.request.transactionInfo.transactionId !== 'string'
+      ) {
+        return false
       }
-    )
+      const queuedEvent = candidate as unknown as QueuedTransactionEvent
+      const queuedTimestamp = convertToDate(queuedEvent.timestamp)
+      const requestTimestamp = convertToDate(queuedEvent.request.timestamp)
+      if (queuedTimestamp == null || requestTimestamp == null) return false
+      queuedEvent.timestamp = queuedTimestamp
+      queuedEvent.request.timestamp = requestTimestamp
+      if (isNotEmptyArray(queuedEvent.request.meterValue)) {
+        for (const meterValue of queuedEvent.request.meterValue) {
+          if (!isJsonObject(meterValue)) return false
+          const meterValueTimestamp = convertToDate(meterValue.timestamp)
+          if (meterValueTimestamp == null) return false
+          meterValue.timestamp = meterValueTimestamp
+        }
+      }
+      return true
+    })
   }
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles

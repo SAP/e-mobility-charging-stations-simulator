@@ -272,6 +272,33 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
     })
 
+    await it('should discard malformed persisted transaction queue entries', () => {
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z')
+      const connectorStatus = {
+        transactionEventQueue: [
+          null,
+          {},
+          {
+            request: {
+              eventType: OCPP20TransactionEventEnumType.Updated,
+              seqNo: 4,
+              timestamp: eventTimestamp.toISOString(),
+              transactionInfo: { transactionId: '00000000-0000-4000-8000-000000000004' },
+              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+            },
+            seqNo: 4,
+            timestamp: eventTimestamp.toISOString(),
+          },
+        ],
+      } as unknown as ConnectorStatus
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+
+      assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
+      assert.ok(restoredConnectorStatus.transactionEventQueue[0].timestamp instanceof Date)
+      assert.ok(restoredConnectorStatus.transactionEventQueue[0].request.timestamp instanceof Date)
+    })
+
     await it('should preserve connector IDs across serialization', () => {
       const { station } = createMockChargingStation({
         connectorsCount: 1,

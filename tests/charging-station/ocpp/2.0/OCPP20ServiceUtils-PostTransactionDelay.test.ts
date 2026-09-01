@@ -83,6 +83,7 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     // Arrange
     assert.ok(station.stationInfo != null, 'stationInfo should be defined')
     station.stationInfo.postTransactionDelay = 0
+    const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues')
 
     // Act
     await OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
@@ -92,6 +93,27 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
     assert.strictEqual(connectorStatus.transactionId, undefined)
     assert.strictEqual(connectorStatus.locked, false)
     assert.ok(requestHandlerMock.mock.calls.length >= 1, 'Should send StatusNotification')
+    assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
+  })
+
+  await it('should abort post-transaction delay with the station lifecycle', async t => {
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const lifecycleAbortController = new AbortController()
+      Object.defineProperty(station, 'lifecycleAbortSignal', {
+        configurable: true,
+        get: () => lifecycleAbortController.signal,
+      })
+      const cleanup = OCPP20ServiceUtils.cleanupEndedTransaction(station, 1, connectorStatus)
+      await flushMicrotasks()
+
+      lifecycleAbortController.abort()
+      await cleanup
+
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.locked, false)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
   })
 
   await it('should not block cleanup on the post-transaction status response', async () => {

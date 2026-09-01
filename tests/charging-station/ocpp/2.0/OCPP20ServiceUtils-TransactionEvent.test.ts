@@ -2666,6 +2666,67 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepEqual(mockStation.getConnectorStatus(connectorId)?.transactionEventQueue, [])
       })
 
+      await it('does not let a later aligned event overtake a serialized live event', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const firstDeliveryStarted = Promise.withResolvers<undefined>()
+        const releaseFirstDelivery = Promise.withResolvers<undefined>()
+        const sentSequenceNumbers: number[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          sentSequenceNumbers.push(payload.seqNo)
+          if (payload.seqNo === 0) {
+            firstDeliveryStarted.resolve(undefined)
+            await releaseFirstDelivery.promise
+          }
+          return {} as EmptyObject
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+
+        const first = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.Trigger,
+          connectorId,
+          transactionId
+        )
+        await firstDeliveryStarted.promise
+        const second = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId
+        )
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+
+        releaseFirstDelivery.resolve(undefined)
+        await Promise.all([first, second])
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
+
+        assert.deepEqual(sentSequenceNumbers, [0, 1, 2])
+      })
+
       await it('should complete an Updated retry before a concurrent Ended event', async () => {
         const connectorId = 1
         const transactionId = generateUUID()

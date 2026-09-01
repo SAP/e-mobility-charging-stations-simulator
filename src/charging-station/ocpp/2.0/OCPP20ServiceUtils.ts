@@ -391,18 +391,25 @@ export class OCPP20ServiceUtils {
     const txId = connectorStatus.transactionId
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
+      .lifecycleAbortSignal
     if (postTransactionDelay > 0) {
       delete connectorStatus.transactionId
       // Destroy the coherent session BEFORE sleeping so an intervening
       // stop cannot leak it. `destroyCoherentSession` is idempotent so the
       // post-sleep call remains valid.
       chargingStation.destroyCoherentSession(txId)
-      await sleep(secondsToMilliseconds(postTransactionDelay))
+      if (lifecycleAbortSignal == null) {
+        await sleep(secondsToMilliseconds(postTransactionDelay))
+      } else {
+        await interruptibleSleep(secondsToMilliseconds(postTransactionDelay), lifecycleAbortSignal)
+      }
     }
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
-    if (!chargingStation.started) {
+    chargingStation.saveTransactionEventQueues()
+    if (!chargingStation.started || lifecycleAbortSignal?.aborted === true) {
       connectorStatus.status =
         chargingStation.isChargingStationAvailable() &&
         connectorStatus.availability === AvailabilityType.Operative
@@ -1327,20 +1334,24 @@ export class OCPP20ServiceUtils {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
+      const queuedEventsBeforeRequest = new Set(connectorStatus.transactionEventQueue ?? [])
       const deliveryState = { responseReceived: false, sent: false }
       try {
         return await OCPP20ServiceUtils.serializeTransactionEventDelivery(
           connectorStatus,
           async () => {
-            if (isNotEmptyArray(connectorStatus.transactionEventQueue)) {
+            if (queuedEventsBeforeRequest.size > 0) {
               await OCPP20ServiceUtils.drainQueuedTransactionEvents(
                 chargingStation,
                 connectorId,
                 connectorStatus,
-                evseId
+                evseId,
+                queuedEventsBeforeRequest
               )
               if (
-                isNotEmptyArray(connectorStatus.transactionEventQueue) ||
+                connectorStatus.transactionEventQueue?.some(queuedEvent =>
+                  queuedEventsBeforeRequest.has(queuedEvent)
+                ) === true ||
                 !chargingStation.isWebSocketConnectionOpened() ||
                 !chargingStation.inAcceptedState()
               ) {
@@ -1864,7 +1875,8 @@ export class OCPP20ServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     connectorStatus: ConnectorStatus,
-    evseId?: number
+    evseId?: number,
+    eligibleEvents?: ReadonlySet<QueuedTransactionEvent>
   ): Promise<void> {
     const queue: QueuedTransactionEvent[] = connectorStatus.transactionEventQueue ?? []
     if (queue.length === 0) return
@@ -1881,6 +1893,7 @@ export class OCPP20ServiceUtils {
     )
     while (queue.length > 0) {
       const queuedEvent = queue[0]
+      if (eligibleEvents != null && !eligibleEvents.has(queuedEvent)) break
       const responseState = { received: false, sent: false }
       try {
         logger.debug(
