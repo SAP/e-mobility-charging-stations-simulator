@@ -39,8 +39,11 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   OCPP20ComponentName,
+  type OCPP20MeterValue,
   OCPP20OptionalVariableName,
+  OCPP20PhaseEnumType,
   OCPP20ReadingContextEnumType,
+  type OCPP20SampledValue,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
@@ -61,6 +64,7 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
+  isOCPP20x,
   isValidRandomIntBounds,
   JSONStringify,
   logger,
@@ -69,6 +73,7 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
+import { advanceStationEnergyRegister } from '../meter-values/CoherentSampleComputer.js'
 import {
   buildCoherentMeterValue,
   type BuildVersionedSampledValue,
@@ -248,14 +253,17 @@ const buildSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  connectorLocalFallback = false
 ): null | SingleValueMeasurandData => {
   const socSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     MeterValueMeasurand.STATE_OF_CHARGE,
-    evseId
+    evseId,
+    undefined,
+    connectorLocalFallback
   )
   if (socSampledValueTemplate == null) {
     return null
@@ -316,14 +324,17 @@ const buildVoltageMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  connectorLocalFallback = false
 ): null | SingleValueMeasurandData => {
   const voltageSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     MeterValueMeasurand.VOLTAGE,
-    evseId
+    evseId,
+    undefined,
+    connectorLocalFallback
   )
   if (voltageSampledValueTemplate == null) {
     return null
@@ -386,15 +397,18 @@ const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   ) => TSampledValue,
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext,
-  noTemplateFallback?: number
+  noTemplateFallback?: number,
+  evseId?: number,
+  connectorLocalFallback = false
 ): void => {
   const phaseSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     MeterValueMeasurand.VOLTAGE,
-    undefined,
-    phaseLabel
+    evseId,
+    phaseLabel,
+    connectorLocalFallback
   )
   let phaseMeasurandValue: number | undefined
   if (phaseSampledValueTemplate != null) {
@@ -421,24 +435,41 @@ const buildEnergyMeasurandValue = (
   connectorId: number,
   interval: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  snapshot = false,
+  connectorLocalFallback = false
 ): null | SingleValueMeasurandData => {
+  if (
+    snapshot &&
+    resolveEnabledMeasurands(chargingStation, measurandsKey)?.has(
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    ) === false
+  ) {
+    return null
+  }
   const energyTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     undefined,
-    evseId
+    evseId,
+    undefined,
+    connectorLocalFallback
   )
   if (energyTemplate == null) {
     return null
+  }
+  if (snapshot) {
+    return { template: energyTemplate, value: 0 }
   }
 
   checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
   const unitDivider =
     energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? Constants.UNIT_DIVIDER_KILO : 1
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId)
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMaximumEnergyRounded = roundTo(
     (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
     2
@@ -468,8 +499,10 @@ const buildEnergyMeasurandValue = (
 }
 
 const updateConnectorEnergyValues = (
+  chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
-  energyValue: number
+  energyValue: number,
+  evseId?: number
 ): void => {
   if (connectorStatus != null) {
     if (
@@ -484,6 +517,12 @@ const updateConnectorEnergyValues = (
       connectorStatus.energyActiveImportRegisterValue = 0
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
     }
+    advanceStationEnergyRegister(
+      chargingStation,
+      evseId,
+      chargingStation.stationInfo?.currentOutType ?? CurrentType.AC,
+      energyValue
+    )
   }
 }
 
@@ -491,14 +530,18 @@ const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  idle = false,
+  connectorLocalFallback = false
 ): MultiPhaseMeasurandData | null => {
   const powerTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-    evseId
+    evseId,
+    undefined,
+    connectorLocalFallback
   )
   if (powerTemplate == null) {
     return null
@@ -513,7 +556,8 @@ const buildPowerMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
         evseId,
-        MeterValuePhase.L1_N
+        MeterValuePhase.L1_N,
+        connectorLocalFallback
       ),
       L2: getSampledValueTemplate(
         chargingStation,
@@ -521,7 +565,8 @@ const buildPowerMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
         evseId,
-        MeterValuePhase.L2_N
+        MeterValuePhase.L2_N,
+        connectorLocalFallback
       ),
       L3: getSampledValueTemplate(
         chargingStation,
@@ -529,17 +574,27 @@ const buildPowerMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
         evseId,
-        MeterValuePhase.L3_N
+        MeterValuePhase.L3_N,
+        connectorLocalFallback
       ),
     }
   }
 
   checkMeasurandPowerDivider(chargingStation, powerTemplate.measurand)
   const powerValues: MeasurandValues = {} as MeasurandValues
+  if (idle) {
+    return {
+      perPhaseTemplates,
+      template: powerTemplate,
+      values: { allPhases: 0, L1: 0, L2: 0, L3: 0 },
+    }
+  }
   const unitDivider =
     powerTemplate.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId)
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
   const connectorMaximumPowerPerPhase = Math.round(
     connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
@@ -702,14 +757,18 @@ const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   evseId?: number,
-  measurandsKey?: ConfigurationKeyType
+  measurandsKey?: ConfigurationKeyType,
+  idle = false,
+  connectorLocalFallback = false
 ): MultiPhaseMeasurandData | null => {
   const currentTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     measurandsKey,
     MeterValueMeasurand.CURRENT_IMPORT,
-    evseId
+    evseId,
+    undefined,
+    connectorLocalFallback
   )
   if (currentTemplate == null) {
     return null
@@ -724,7 +783,8 @@ const buildCurrentMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.CURRENT_IMPORT,
         evseId,
-        MeterValuePhase.L1
+        MeterValuePhase.L1,
+        connectorLocalFallback
       ),
       L2: getSampledValueTemplate(
         chargingStation,
@@ -732,7 +792,8 @@ const buildCurrentMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.CURRENT_IMPORT,
         evseId,
-        MeterValuePhase.L2
+        MeterValuePhase.L2,
+        connectorLocalFallback
       ),
       L3: getSampledValueTemplate(
         chargingStation,
@@ -740,15 +801,25 @@ const buildCurrentMeasurandValue = (
         measurandsKey,
         MeterValueMeasurand.CURRENT_IMPORT,
         evseId,
-        MeterValuePhase.L3
+        MeterValuePhase.L3,
+        connectorLocalFallback
       ),
     }
   }
 
   checkMeasurandPowerDivider(chargingStation, currentTemplate.measurand)
   const currentValues: MeasurandValues = {} as MeasurandValues
-  const connectorMaximumAvailablePower =
-    chargingStation.getConnectorMaximumAvailablePower(connectorId)
+  if (idle) {
+    return {
+      perPhaseTemplates,
+      template: currentTemplate,
+      values: { allPhases: 0, L1: 0, L2: 0, L3: 0 },
+    }
+  }
+  const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+    connectorId,
+    evseId
+  )
   const connectorMinimumAmperage = currentTemplate.minimumValue ?? 0
   let connectorMaximumAmperage: number
 
@@ -909,11 +980,32 @@ export const buildEmptyMeterValue = (): MeterValue => ({
 })
 
 /**
+ * Resolved meter-value identity shared by {@link buildIdentifiedMeterValue} and
+ * {@link createVersionedSampledValueDispatcher}. Either transaction-derived
+ * (legacy callers pass only `transactionId`) or provided directly for
+ * clock-aligned reporting (`connectorId` + `evseId` + `snapshot` + optional
+ * UTC slot `timestamp`, #2011 Category 2F).
+ */
+interface ResolvedMeterValueIdentity {
+  advanceEnergy?: boolean
+  connectorId?: number
+  energyRegisterWhOverride?: number
+  evseId?: number
+  idle?: boolean
+  sampledValueBaseline?: OCPP20SampledValue[]
+  sampledValueTemplates?: SampledValueTemplate[]
+  snapshot?: boolean
+  timestamp?: Date
+  transactionId?: number | string
+}
+
+/**
  * Internal dispatch bag returned by {@link createVersionedSampledValueDispatcher}
- * and consumed by {@link buildMeterValue}. Not exported: kept out of the
+ * and consumed by {@link buildIdentifiedMeterValue}. Not exported: kept out of the
  * module surface so external callers rely on the higher-level entry point.
  */
 interface VersionedSampledValueDispatch {
+  buildUnsignedVersionedSampledValue: BuildVersionedSampledValue
   buildVersionedSampledValue: BuildVersionedSampledValue
   connectorId: number
   evseId: number | undefined
@@ -928,22 +1020,33 @@ interface VersionedSampledValueDispatch {
 
 /**
  * Resolves the connector/EVSE ids and constructs the OCPP-version dispatcher
- * used by {@link buildMeterValue}. Extracted verbatim from the original
- * `buildMeterValue` switch so behavior is preserved exactly.
+ * used by {@link buildIdentifiedMeterValue}, the shared builder behind {@link buildMeterValue} and {@link buildClockAlignedConnectorMeterValue}.
+ * The identity is either transaction-derived (legacy callers) or provided
+ * directly (clock-aligned reporting for idle connectors, #2011 Category 2F).
  * @param chargingStation - Target charging station.
- * @param transactionId - Active transaction identifier.
+ * @param identity - Meter value source.
+ * @param identity.connectorId - Direct connector id (clock path) or resolved
+ *   from `transactionId`.
+ * @param identity.evseId - Direct EVSE id or resolved from `transactionId`.
+ * @param identity.snapshot - Whether this build serializes state without
+ *   advancing physical registers or coherent-session state.
+ * @param identity.transactionId - Active transaction identifier when building
+ *   transactional meter values.
  * @param context - Optional MeterValue reading context (drives signing
  *   configuration for OCPP 2.0.1).
  * @returns The dispatch bundle.
  */
 const createVersionedSampledValueDispatcher = (
   chargingStation: ChargingStation,
-  transactionId: number | string,
+  identity: ResolvedMeterValueIdentity,
   context?: MeterValueContext
 ): VersionedSampledValueDispatch => {
-  const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+  const { transactionId } = identity
+  const connectorId =
+    identity.connectorId ?? chargingStation.getConnectorIdByTransactionId(transactionId)
   let evseId: number | undefined
   let buildVersionedSampledValue: BuildVersionedSampledValue
+  let buildUnsignedVersionedSampledValue: BuildVersionedSampledValue
   let signingConfig: SampledValueSigningConfig | undefined
   const signingState = { publicKeyIncluded: false }
   switch (chargingStation.stationInfo?.ocppVersion) {
@@ -956,10 +1059,11 @@ const createVersionedSampledValueDispatcher = (
         )
       }
       buildVersionedSampledValue = buildOCPP16SampledValue
+      buildUnsignedVersionedSampledValue = buildOCPP16SampledValue
       break
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      evseId = identity.evseId ?? chargingStation.getEvseIdByTransactionId(transactionId)
       if (connectorId == null || evseId == null) {
         throw new OCPPError(
           ErrorType.INTERNAL_ERROR,
@@ -968,12 +1072,18 @@ const createVersionedSampledValueDispatcher = (
         )
       }
       {
+        const signReadingsComponent =
+          context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+            ? OCPP20ComponentName.AlignedDataCtrlr
+            : OCPP20ComponentName.SampledDataCtrlr
         const signReadings = isOCPP20FlagEnabled(
           chargingStation,
-          OCPP20ComponentName.SampledDataCtrlr,
+          signReadingsComponent,
           StandardParametersKey.SignReadings
         )
 
+        // Standard SignReadings applies to every configured aligned sample,
+        // including station/EVSE readings that have no transaction identity.
         if (signReadings) {
           let signingEnabledForContext = true
           if (context === OCPP20ReadingContextEnumType.TRANSACTION_BEGIN) {
@@ -982,14 +1092,10 @@ const createVersionedSampledValueDispatcher = (
               OCPP20ComponentName.SampledDataCtrlr,
               VendorParametersKey.SignStartedReadings
             )
-          } else if (
-            context == null ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
-            context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK
-          ) {
+          } else if (context == null || context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
-              OCPP20ComponentName.SampledDataCtrlr,
+              signReadingsComponent,
               VendorParametersKey.SignUpdatedReadings
             )
           }
@@ -1021,17 +1127,19 @@ const createVersionedSampledValueDispatcher = (
                 meterSerialNumber: chargingStation.stationInfo.meterSerialNumber ?? 'UNKNOWN',
                 publicKeyHex,
                 publicKeySentInTransaction:
-                  chargingStation.getConnectorStatus(connectorId)?.publicKeySentInTransaction ??
-                  false,
+                  chargingStation.getConnectorStatus(connectorId, evseId)
+                    ?.publicKeySentInTransaction ?? false,
                 publicKeyWithSignedMeterValue: parsePublicKeyWithSignedMeterValue(
                   publicKeyWithSignedMeterValueStr
                 ),
                 signingMethod: prerequisiteResult.signingMethod,
-                transactionId,
+                transactionId:
+                  transactionId ??
+                  `${chargingStation.stationInfo.chargingStationId ?? 'UNKNOWN'}:${evseId.toString()}:${connectorId.toString()}`,
               }
             } else {
               logger.warn(
-                `${chargingStation.logPrefix()} ${moduleName}.buildMeterValue: Signed meter values disabled: ${prerequisiteResult.reason}`
+                `${chargingStation.logPrefix()} ${moduleName}.createVersionedSampledValueDispatcher: Signed meter values disabled: ${prerequisiteResult.reason}`
               )
             }
           }
@@ -1052,9 +1160,16 @@ const createVersionedSampledValueDispatcher = (
           )
           if (result.publicKeyIncluded) {
             signingState.publicKeyIncluded = true
+            if (signingConfig != null) signingConfig.publicKeySentInTransaction = true
           }
           return result.sampledValue
         }
+        buildUnsignedVersionedSampledValue = (
+          sampledValueTemplate: SampledValueTemplate,
+          value: number,
+          ctx?: MeterValueContext,
+          phase?: MeterValuePhase
+        ) => buildOCPP20SampledValue(sampledValueTemplate, value, ctx, phase).sampledValue
       }
       break
     default:
@@ -1065,7 +1180,14 @@ const createVersionedSampledValueDispatcher = (
         RequestCommand.METER_VALUES
       )
   }
-  return { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState }
+  return {
+    buildUnsignedVersionedSampledValue,
+    buildVersionedSampledValue,
+    connectorId,
+    evseId,
+    signingConfig,
+    signingState,
+  }
 }
 
 // Module-scope keyed by `ChargingStation` instance (auto-collected on GC).
@@ -1151,6 +1273,471 @@ const resolveEnabledMeasurands = (
   return enabled
 }
 
+const resolveClockAlignedTemplates = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  evseId: number | undefined
+): SampledValueTemplate[] => {
+  const evseTemplates =
+    evseId != null ? chargingStation.getEvseStatus(evseId)?.MeterValues : undefined
+  return isNotEmptyArray(evseTemplates)
+    ? evseTemplates
+    : (chargingStation.getConnectorStatus(connectorId, evseId)?.MeterValues ?? [])
+}
+
+const resolveSnapshotUnitDivider = (
+  measurand: MeterValueMeasurand,
+  unit: string | undefined
+): number => {
+  const usesKiloUnit =
+    (measurand.startsWith('Power.Active.') && unit === MeterValueUnit.KILO_WATT) ||
+    (measurand.startsWith('Power.Reactive.') && unit === MeterValueUnit.KILO_VAR) ||
+    (measurand.startsWith('Power.Apparent.') && unit === MeterValueUnit.KILO_VOLT_AMP) ||
+    (measurand.startsWith('Energy.Active.') && unit === MeterValueUnit.KILO_WATT_HOUR) ||
+    (measurand.startsWith('Energy.Reactive.') && unit === MeterValueUnit.KILO_VAR_HOUR) ||
+    (measurand.startsWith('Energy.Apparent.') && unit === MeterValueUnit.KILO_VOLT_AMP_HOUR)
+  return usesKiloUnit ? Constants.UNIT_DIVIDER_KILO : 1
+}
+
+const areSnapshotUnitsCompatible = (
+  measurand: MeterValueMeasurand,
+  sourceUnit: string | undefined,
+  targetUnit: string | undefined
+): boolean => {
+  if (sourceUnit === targetUnit) return true
+  const family: readonly string[] | undefined = measurand.startsWith('Power.Reactive.')
+    ? [MeterValueUnit.VAR, MeterValueUnit.KILO_VAR]
+    : measurand.startsWith('Power.Apparent.')
+      ? [MeterValueUnit.VOLT_AMP, MeterValueUnit.KILO_VOLT_AMP]
+      : measurand.startsWith('Power.Active.')
+        ? [MeterValueUnit.WATT, MeterValueUnit.KILO_WATT]
+        : measurand.startsWith('Energy.Reactive.')
+          ? [MeterValueUnit.VAR_HOUR, MeterValueUnit.KILO_VAR_HOUR]
+          : measurand.startsWith('Energy.Apparent.')
+            ? [MeterValueUnit.VOLT_AMP_HOUR, MeterValueUnit.KILO_VOLT_AMP_HOUR]
+            : measurand.startsWith('Energy.Active.')
+              ? [MeterValueUnit.WATT_HOUR, MeterValueUnit.KILO_WATT_HOUR]
+              : undefined
+  return (
+    sourceUnit != null &&
+    targetUnit != null &&
+    family?.includes(sourceUnit) === true &&
+    family.includes(targetUnit)
+  )
+}
+
+const isLinePhase = (phase: MeterValuePhase | undefined): boolean =>
+  phase != null && /^(L[123]|L[123]-N)$/.test(phase)
+
+const resolveLinePhaseIndex = (phase: MeterValuePhase | undefined): number | undefined => {
+  switch (phase) {
+    case MeterValuePhase.L1:
+    case MeterValuePhase.L1_N:
+      return 1
+    case MeterValuePhase.L2:
+    case MeterValuePhase.L2_N:
+      return 2
+    case MeterValuePhase.L3:
+    case MeterValuePhase.L3_N:
+      return 3
+    default:
+      return undefined
+  }
+}
+
+const resolveSnapshotPhaseFamily = (
+  phase: MeterValuePhase | undefined
+): 'Aggregate' | 'Line' | 'LineToLine' | 'Neutral' | 'Unsupported' => {
+  if (phase == null) return 'Aggregate'
+  if (phase === MeterValuePhase.N) return 'Neutral'
+  if (isLinePhase(phase)) return 'Line'
+  switch (phase) {
+    case MeterValuePhase.L1_L2:
+    case MeterValuePhase.L2_L3:
+    case MeterValuePhase.L3_L1:
+      return 'LineToLine'
+    default:
+      return 'Unsupported'
+  }
+}
+
+const applySnapshotRegisterValuesWithoutPhases = (
+  templates: SampledValueTemplate[]
+): SampledValueTemplate[] => {
+  const result = templates.filter(
+    template =>
+      (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+  )
+  const families = new Map<string, SampledValueTemplate[]>()
+  for (const template of templates) {
+    if (
+      (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    ) {
+      continue
+    }
+    const key = JSON.stringify([
+      template.context,
+      template.format,
+      template.location,
+      template.unit,
+      template.customData,
+    ])
+    const family = families.get(key) ?? []
+    family.push(template)
+    families.set(key, family)
+  }
+  for (const family of families.values()) {
+    const lineTemplates = family.filter(template => isLinePhase(template.phase))
+    if (lineTemplates.length === 0) {
+      result.push(...family)
+      continue
+    }
+    const nonLineTemplates = family.filter(template => !isLinePhase(template.phase))
+    if (nonLineTemplates.some(template => template.phase == null)) {
+      result.push(...nonLineTemplates)
+    } else {
+      result.push({ ...lineTemplates[0], phase: undefined }, ...nonLineTemplates)
+    }
+  }
+  return result
+}
+
+const expandClockAlignedSnapshotSamples = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  evseId: number | undefined,
+  baseline: OCPP20SampledValue[],
+  buildVersionedSampledValue: BuildVersionedSampledValue,
+  measurandsKey: ConfigurationKeyType | undefined,
+  context: MeterValueContext | undefined,
+  registerValuesWithoutPhases: boolean,
+  idle: boolean,
+  transactional: boolean,
+  energyRegisterWhOverride?: number,
+  preferBaseline = false,
+  sampledValueTemplates?: SampledValueTemplate[]
+): SampledValue[] => {
+  const enabledMeasurands = resolveEnabledMeasurands(chargingStation, measurandsKey)
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+  const energyRegister = Math.max(
+    0,
+    energyRegisterWhOverride ??
+      (transactional && chargingStation.stationInfo?.meteringPerTransaction === true
+        ? (connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0)
+        : (connectorStatus?.energyActiveImportRegisterValue ?? 0))
+  )
+  const numberOfPhases = Math.max(1, chargingStation.getNumberOfPhases())
+  const expanded: SampledValue[] = []
+  const resolvedTemplates =
+    sampledValueTemplates ?? resolveClockAlignedTemplates(chargingStation, connectorId, evseId)
+  const templatesBeforePhaseSuppression =
+    sampledValueTemplates == null
+      ? resolvedTemplates
+      : [
+          ...new Map(
+            resolvedTemplates.map(template => {
+              const identity = resolveSampledValueFields(template, 0, context, template.phase)
+              return [
+                JSON.stringify([
+                  identity.measurand,
+                  identity.phase,
+                  identity.location,
+                  identity.unit,
+                  chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+                    ? template.format
+                    : template.customData,
+                ]),
+                template,
+              ]
+            })
+          ).values(),
+        ]
+  const templates = registerValuesWithoutPhases
+    ? applySnapshotRegisterValuesWithoutPhases(templatesBeforePhaseSuppression)
+    : templatesBeforePhaseSuppression
+
+  for (const template of templates) {
+    const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    if (enabledMeasurands != null && !enabledMeasurands.has(measurand)) continue
+    const phaseFamily = resolveSnapshotPhaseFamily(template.phase)
+    if (phaseFamily === 'Unsupported') continue
+    const resolvedIdentity = resolveSampledValueFields(template, 0, context, template.phase)
+    const exactSource = baseline.find(
+      sample =>
+        (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
+        sample.phase === template.phase &&
+        JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
+        (!preferBaseline ||
+          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
+    )
+    if (phaseFamily === 'Line') {
+      const linePhaseIndex = resolveLinePhaseIndex(template.phase)
+      if (
+        chargingStation.stationInfo?.currentOutType !== CurrentType.AC ||
+        linePhaseIndex == null ||
+        linePhaseIndex > numberOfPhases
+      ) {
+        continue
+      }
+    }
+    if (
+      phaseFamily === 'Neutral' &&
+      chargingStation.stationInfo?.currentOutType !== CurrentType.AC
+    ) {
+      continue
+    }
+    const aggregateSource = baseline.find(
+      sample =>
+        (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
+        sample.phase == null &&
+        JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+        (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
+        (!preferBaseline ||
+          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
+    )
+    const source =
+      exactSource ??
+      (phaseFamily === 'Aggregate' || phaseFamily === 'Line' ? aggregateSource : undefined)
+    const phasedPowerByLine = new Map<number, OCPP20SampledValue>()
+    if (
+      source == null &&
+      preferBaseline &&
+      phaseFamily === 'Aggregate' &&
+      measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+    ) {
+      for (const sample of baseline) {
+        const line = resolveLinePhaseIndex(sample.phase)
+        if (
+          line != null &&
+          !phasedPowerByLine.has(line) &&
+          JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+          sample.measurand === measurand &&
+          (sample.location === resolvedIdentity.location || evseId === 0) &&
+          areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
+        ) {
+          phasedPowerByLine.set(line, sample)
+        }
+      }
+    }
+    const phasedPower =
+      phasedPowerByLine.size >= numberOfPhases
+        ? [...phasedPowerByLine.values()].reduce(
+            (total, sample) =>
+              total +
+              sample.value * resolveSnapshotUnitDivider(measurand, sample.unitOfMeasure?.unit),
+            0
+          )
+        : undefined
+    let rawValue: number | undefined
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      if (phaseFamily === 'Aggregate') {
+        rawValue = energyRegister
+      } else if (phaseFamily === 'Line') {
+        rawValue = energyRegister / numberOfPhases
+      }
+    } else if (measurand === MeterValueMeasurand.CURRENT_IMPORT && phaseFamily === 'Neutral') {
+      rawValue = 0
+    } else if (measurand === MeterValueMeasurand.VOLTAGE && phaseFamily === 'Neutral') {
+      rawValue = 0
+    } else if (
+      (measurand === MeterValueMeasurand.CURRENT_IMPORT ||
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT) &&
+      (phaseFamily === 'LineToLine' || phaseFamily === 'Neutral')
+    ) {
+      continue
+    } else if (
+      measurand === MeterValueMeasurand.VOLTAGE &&
+      phaseFamily === 'LineToLine' &&
+      (numberOfPhases !== 3 || chargingStation.stationInfo?.currentOutType !== CurrentType.AC)
+    ) {
+      continue
+    } else if (
+      measurand === MeterValueMeasurand.STATE_OF_CHARGE &&
+      (idle || phaseFamily !== 'Aggregate')
+    ) {
+      continue
+    } else if (source != null && preferBaseline) {
+      rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+      if (
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+        source.phase == null &&
+        phaseFamily === 'Line'
+      ) {
+        rawValue /= numberOfPhases
+      }
+    } else if (phasedPower != null) {
+      rawValue = phasedPower
+    } else if (measurand === MeterValueMeasurand.VOLTAGE && isNotEmptyString(template.value)) {
+      rawValue = getRandomFloatFluctuatedRounded(
+        convertToFloat(template.value),
+        template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+      )
+    } else if (
+      measurand === MeterValueMeasurand.STATE_OF_CHARGE &&
+      isNotEmptyString(template.value)
+    ) {
+      rawValue = getRandomFloatFluctuatedRounded(
+        convertToInt(template.value),
+        template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+      )
+    } else if (
+      (measurand === MeterValueMeasurand.CURRENT_IMPORT ||
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT) &&
+      (isNotEmptyString(template.value) ||
+        (source == null && (phaseFamily === 'Aggregate' || phaseFamily === 'Line')))
+    ) {
+      if (idle) {
+        rawValue = 0
+      } else {
+        const divider = resolveSnapshotUnitDivider(measurand, template.unit as string | undefined)
+        const maximumValue =
+          measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+            ? chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId) /
+              (phaseFamily === 'Line' ? numberOfPhases : 1) /
+              divider
+            : chargingStation.stationInfo?.currentOutType === CurrentType.AC
+              ? ACElectricUtils.amperagePerPhaseFromPower(
+                numberOfPhases,
+                chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
+                chargingStation.getVoltageOut()
+              )
+              : DCElectricUtils.amperage(
+                chargingStation.getConnectorMaximumAvailablePower(connectorId, evseId),
+                chargingStation.getVoltageOut()
+              )
+        const minimumValue = template.minimumValue ?? 0
+        const value = isNotEmptyString(template.value)
+          ? getRandomFloatFluctuatedRounded(
+            getLimitFromSampledValueTemplateCustomValue(
+              template.value,
+              maximumValue,
+              minimumValue,
+              {
+                fallbackValue: minimumValue,
+                limitationEnabled: chargingStation.stationInfo?.customValueLimitationMeterValues,
+              }
+            ),
+            template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+          )
+          : getRandomFloatRounded(minimumValue, maximumValue)
+        rawValue = value * divider
+      }
+    } else if (
+      measurand === MeterValueMeasurand.STATE_OF_CHARGE &&
+      source == null &&
+      isValidRandomIntBounds(template.minimumValue ?? 0, Constants.SOC_MAXIMUM_PERCENT)
+    ) {
+      rawValue = randomInt(template.minimumValue ?? 0, Constants.SOC_MAXIMUM_PERCENT + 1)
+    } else if (source != null) {
+      rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+      if (
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+        source.phase == null &&
+        phaseFamily === 'Line'
+      ) {
+        rawValue /= numberOfPhases
+      }
+    } else if (isNotEmptyString(template.value)) {
+      rawValue =
+        getRandomFloatFluctuatedRounded(
+          convertToFloat(template.value),
+          template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+        ) * resolveSnapshotUnitDivider(measurand, template.unit as string | undefined)
+    } else if (measurand === MeterValueMeasurand.VOLTAGE) {
+      const nominal =
+        phaseFamily === 'LineToLine'
+          ? chargingStation.getVoltageOut() * Math.sqrt(3)
+          : chargingStation.getVoltageOut()
+      rawValue = getRandomFloatFluctuatedRounded(
+        nominal,
+        template.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+      )
+    }
+    if (rawValue == null) continue
+    const value = roundTo(
+      rawValue / resolveSnapshotUnitDivider(measurand, template.unit as string | undefined),
+      2
+    )
+    expanded.push(buildVersionedSampledValue(template, value, context))
+  }
+  return applyClockAlignedVoltageControls(
+    chargingStation,
+    expanded as OCPP20SampledValue[],
+    buildVersionedSampledValue,
+    context
+  )
+}
+
+const applyClockAlignedVoltageControls = (
+  chargingStation: ChargingStation,
+  sampledValues: OCPP20SampledValue[],
+  buildVersionedSampledValue: BuildVersionedSampledValue,
+  context: MeterValueContext | undefined
+): OCPP20SampledValue[] => {
+  if (
+    chargingStation.getNumberOfPhases() !== 3 ||
+    chargingStation.stationInfo?.currentOutType !== CurrentType.AC
+  ) {
+    return sampledValues
+  }
+  const aggregateVoltages = sampledValues.filter(
+    sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null
+  )
+  if (aggregateVoltages.length === 0) return sampledValues
+  const configuredPhaseSamples = sampledValues.filter(
+    sample => sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase != null
+  )
+  const automaticSamples: OCPP20SampledValue[] = []
+  for (const aggregateVoltage of aggregateVoltages) {
+    const configuredPhases = new Set(
+      configuredPhaseSamples
+        .filter(
+          sample =>
+            sample.context === aggregateVoltage.context &&
+            JSON.stringify(sample.customData) === JSON.stringify(aggregateVoltage.customData) &&
+            sample.format === aggregateVoltage.format &&
+            sample.location === aggregateVoltage.location &&
+            sample.unitOfMeasure?.unit === aggregateVoltage.unitOfMeasure?.unit
+        )
+        .map(sample => sample.phase)
+    )
+    const template = {
+      ...aggregateVoltage,
+      unit: aggregateVoltage.unitOfMeasure?.unit,
+    } as SampledValueTemplate
+    const addPhase = (phase: OCPP20PhaseEnumType, value: number): void => {
+      if (!configuredPhases.has(phase)) {
+        automaticSamples.push(
+          buildVersionedSampledValue(
+            template,
+            roundTo(value, 2),
+            context,
+            phase
+          ) as OCPP20SampledValue
+        )
+      }
+    }
+    addPhase(OCPP20PhaseEnumType.L1_N, aggregateVoltage.value)
+    addPhase(OCPP20PhaseEnumType.L2_N, aggregateVoltage.value)
+    addPhase(OCPP20PhaseEnumType.L3_N, aggregateVoltage.value)
+    if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
+      const lineToLineVoltage = aggregateVoltage.value * Math.sqrt(3)
+      addPhase(OCPP20PhaseEnumType.L1_L2, lineToLineVoltage)
+      addPhase(OCPP20PhaseEnumType.L2_L3, lineToLineVoltage)
+      addPhase(OCPP20PhaseEnumType.L3_L1, lineToLineVoltage)
+    }
+  }
+  const retainedSamples =
+    chargingStation.stationInfo.mainVoltageMeterValues === true
+      ? sampledValues
+      : sampledValues.filter(
+        sample => !(sample.measurand === MeterValueMeasurand.VOLTAGE && sample.phase == null)
+      )
+  return [...retainedSamples, ...automaticSamples]
+}
 /**
  * Builds a complete MeterValue with all configured measurands for a transaction.
  * @param chargingStation - Target charging station
@@ -1172,71 +1759,212 @@ export const buildMeterValue = (
   if (transactionId == null) {
     return buildEmptyMeterValue()
   }
-  const { buildVersionedSampledValue, connectorId, evseId, signingConfig, signingState } =
-    createVersionedSampledValueDispatcher(chargingStation, transactionId, context)
+  return buildIdentifiedMeterValue(
+    chargingStation,
+    { transactionId },
+    interval,
+    measurandsKey,
+    context,
+    debug
+  )
+}
+
+/**
+ * Builds a complete OCPP 2.0 MeterValue for a directly identified connector.
+ * Active connectors may provide a transaction id to preserve coherent and
+ * aligned-signing semantics; idle connectors omit it and stay unsigned.
+ * @param chargingStation - Target charging station.
+ * @param identity - Direct connector/EVSE identification.
+ * @param identity.advanceEnergy - Whether this aligned sample owns energy accumulation.
+ * @param identity.connectorId - Connector identifier.
+ * @param identity.energyRegisterWhOverride - Optional station-level aggregate energy in Wh.
+ * @param identity.idle - Whether the aggregate meter point is idle.
+ * @param identity.sampledValueBaseline - Optional pre-aggregated physical samples.
+ * @param identity.sampledValueTemplates - Optional aggregate template union.
+ * @param identity.evseId - EVSE identifier.
+ * @param identity.timestamp - Optional UTC slot timestamp shared across the aligned sweep.
+ * @param identity.transactionId - Optional active transaction identifier.
+ * @param interval - Clock-aligned data interval in milliseconds
+ * @param measurandsKey - Configuration key for the sampled measurands list
+ * @param context - Meter value reading context (Sample.Clock for aligned data)
+ * @returns Populated OCPP 2.0 MeterValue object
+ */
+export const buildClockAlignedConnectorMeterValue = (
+  chargingStation: ChargingStation,
+  identity: {
+    advanceEnergy?: boolean
+    connectorId: number
+    energyRegisterWhOverride?: number
+    evseId: number
+    idle?: boolean
+    sampledValueBaseline?: OCPP20SampledValue[]
+    sampledValueTemplates?: SampledValueTemplate[]
+    timestamp?: Date
+    transactionId?: number | string
+  },
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext
+): OCPP20MeterValue => {
+  if (!isOCPP20x(chargingStation.stationInfo?.ocppVersion)) {
+    throw new OCPPError(
+      ErrorType.INTERNAL_ERROR,
+      `Cannot build clock-aligned MeterValue for OCPP version ${String(chargingStation.stationInfo?.ocppVersion)}`,
+      RequestCommand.METER_VALUES
+    )
+  }
+  return buildIdentifiedMeterValue(
+    chargingStation,
+    { ...identity, snapshot: true },
+    interval,
+    measurandsKey,
+    context
+  ) as OCPP20MeterValue
+}
+
+const buildIdentifiedMeterValue = (
+  chargingStation: ChargingStation,
+  identity: ResolvedMeterValueIdentity,
+  interval: number,
+  measurandsKey?: ConfigurationKeyType,
+  context?: MeterValueContext,
+  debug = false
+): MeterValue => {
+  const {
+    buildUnsignedVersionedSampledValue,
+    buildVersionedSampledValue: buildSignedVersionedSampledValue,
+    connectorId,
+    evseId,
+    signingConfig,
+    signingState,
+  } = createVersionedSampledValueDispatcher(chargingStation, identity, context)
+  const snapshot = identity.snapshot === true
   // Coherent MeterValues strategy gate. Placed AFTER the versioned dispatcher
   // is available (so the coherent path can emit versioned SampledValues) and
   // BEFORE the random/fixed measurand generation runs. When coherent mode
   // is not active for this station or no session exists for the transaction,
   // this is a no-op and the random/fixed code path is unchanged.
-  const coherentSession = chargingStation.getCoherentSession(transactionId)
+  const coherentSession =
+    identity.transactionId != null
+      ? chargingStation.getCoherentSession(identity.transactionId)
+      : undefined
+  const registerValuesWithoutPhases = isOCPP20FlagEnabled(
+    chargingStation,
+    OCPP20ComponentName.SampledDataCtrlr,
+    OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+  )
+  if (snapshot && identity.sampledValueBaseline != null) {
+    const timestamp = identity.timestamp ?? new Date()
+    if (signingConfig != null) signingConfig.timestamp = timestamp
+    return {
+      sampledValue: expandClockAlignedSnapshotSamples(
+        chargingStation,
+        connectorId,
+        evseId,
+        identity.sampledValueBaseline,
+        buildSignedVersionedSampledValue,
+        measurandsKey,
+        context,
+        registerValuesWithoutPhases,
+        identity.idle ?? true,
+        identity.transactionId != null,
+        identity.energyRegisterWhOverride,
+        true,
+        identity.sampledValueTemplates
+      ),
+      timestamp,
+    } as OCPP20MeterValue
+  }
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   if (isCoherentModeActive(coherentSession)) {
-    // OCPP 2.0.1 SampledDataCtrlr.RegisterValuesWithoutPhases: threaded
-    // through to the coherent builder so per-phase L-N
-    // Energy.Active.Import.Register templates are skipped when the
-    // variable resolves to true. OCPP 1.6 stations do not carry the
-    // component-scoped key by default: `getConfigurationKey` returns
-    // `undefined`, `convertToBoolean(undefined) === false`, so current
-    // behavior is preserved.
-    const registerValuesWithoutPhases = isOCPP20FlagEnabled(
-      chargingStation,
-      OCPP20ComponentName.SampledDataCtrlr,
-      OCPP20OptionalVariableName.RegisterValuesWithoutPhases
-    )
-    return buildCoherentMeterValue(
+    const timestamp = identity.timestamp ?? new Date()
+    if (signingConfig != null) signingConfig.timestamp = timestamp
+    const enabledMeasurands = resolveEnabledMeasurands(chargingStation, measurandsKey)
+    const coherentMeterValue = buildCoherentMeterValue(
       chargingStation,
       coherentSession,
-      buildVersionedSampledValue,
+      buildSignedVersionedSampledValue,
       {
         intervalMs: interval,
-        nowMs: Date.now(),
+        nowMs: identity.timestamp?.getTime() ?? Date.now(),
         rootSeed: resolveRootSeed(chargingStation.stationInfo),
       },
       context,
-      resolveEnabledMeasurands(chargingStation, measurandsKey),
-      registerValuesWithoutPhases
+      enabledMeasurands,
+      registerValuesWithoutPhases,
+      timestamp,
+      connectorStatus,
+      evseId,
+      identity.transactionId != null &&
+        chargingStation.stationInfo?.meteringPerTransaction === true,
+      identity.energyRegisterWhOverride
     )
+    if (snapshot) {
+      const coherentOcpp20MeterValue = coherentMeterValue as OCPP20MeterValue
+      coherentOcpp20MeterValue.sampledValue = applyClockAlignedVoltageControls(
+        chargingStation,
+        coherentOcpp20MeterValue.sampledValue,
+        buildSignedVersionedSampledValue,
+        context
+      )
+    }
+    // Only transactional builds may flip the one-time public-key flag. A
+    // coherent session always carries a transactionId, but guard explicitly to
+    // stay symmetric with the random/fixed path below and robust to any future
+    // coherent-session model change.
+    if (
+      !snapshot &&
+      identity.transactionId != null &&
+      signingState.publicKeyIncluded &&
+      connectorStatus != null
+    ) {
+      connectorStatus.publicKeySentInTransaction = true
+    }
+    return coherentMeterValue
   }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  const buildVersionedSampledValue = snapshot
+    ? buildUnsignedVersionedSampledValue
+    : buildSignedVersionedSampledValue
   const meterValue: { sampledValue: SampledValue[]; timestamp: Date } = buildEmptyMeterValue()
+  if (identity.timestamp != null) meterValue.timestamp = identity.timestamp
   if (signingConfig != null) {
     signingConfig.timestamp = meterValue.timestamp
   }
-  // SoC measurand
-  const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId, measurandsKey)
-  if (socMeasurand != null) {
-    const socSampledValue = buildVersionedSampledValue(
-      socMeasurand.template,
-      socMeasurand.value,
-      context
-    )
-    meterValue.sampledValue.push(socSampledValue)
-    validateMeasurandValue(
+  // SoC only has transaction semantics in the simulator. An idle connector
+  // has no EV state to report.
+  if (identity.transactionId != null) {
+    const socMeasurand = buildSocMeasurandValue(
       chargingStation,
       connectorId,
-      convertToInt(socSampledValue.value),
-      socMeasurand.template.minimumValue ?? 0,
-      Constants.SOC_MAXIMUM_PERCENT,
-      socSampledValue.measurand,
-      debug
+      evseId,
+      measurandsKey,
+      snapshot
     )
+    if (socMeasurand != null) {
+      const socSampledValue = buildVersionedSampledValue(
+        socMeasurand.template,
+        socMeasurand.value,
+        context
+      )
+      meterValue.sampledValue.push(socSampledValue)
+      validateMeasurandValue(
+        chargingStation,
+        connectorId,
+        convertToInt(socSampledValue.value),
+        socMeasurand.template.minimumValue ?? 0,
+        Constants.SOC_MAXIMUM_PERCENT,
+        socSampledValue.measurand,
+        debug
+      )
+    }
   }
   // Voltage measurand
   const voltageMeasurand = buildVoltageMeasurandValue(
     chargingStation,
     connectorId,
     evseId,
-    measurandsKey
+    measurandsKey,
+    snapshot
   )
   if (voltageMeasurand != null) {
     addMainVoltageToMeterValue(
@@ -1261,7 +1989,9 @@ export const buildMeterValue = (
         buildVersionedSampledValue,
         measurandsKey,
         context,
-        voltageMeasurand.value
+        voltageMeasurand.value,
+        evseId,
+        snapshot
       )
       if (chargingStation.stationInfo?.phaseLineToLineVoltageMeterValues === true) {
         const nextPhase =
@@ -1284,25 +2014,33 @@ export const buildMeterValue = (
           lineToLineNominalVoltage,
           buildVersionedSampledValue,
           measurandsKey,
-          context
+          context,
+          undefined,
+          evseId,
+          snapshot
         )
       }
     }
   }
   // Power.Active.Import measurand
+  const idle = identity.transactionId == null
   const powerMeasurand = buildPowerMeasurandValue(
     chargingStation,
     connectorId,
     evseId,
-    measurandsKey
+    measurandsKey,
+    idle,
+    snapshot
   )
   if (powerMeasurand?.values.allPhases != null) {
     const unitDivider =
       powerMeasurand.template.unit === MeterValueUnit.KILO_WATT ? Constants.UNIT_DIVIDER_KILO : 1
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
-    const connectorMinimumPower = Math.round(powerMeasurand.template.minimumValue ?? 0)
+    const connectorMinimumPower = idle ? 0 : Math.round(powerMeasurand.template.minimumValue ?? 0)
 
     meterValue.sampledValue.push(
       buildVersionedSampledValue(powerMeasurand.template, powerMeasurand.values.allPhases, context)
@@ -1357,11 +2095,15 @@ export const buildMeterValue = (
     chargingStation,
     connectorId,
     evseId,
-    measurandsKey
+    measurandsKey,
+    idle,
+    snapshot
   )
   if (currentMeasurand?.values.allPhases != null) {
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumAmperage =
       chargingStation.stationInfo?.currentOutType === CurrentType.AC
         ? ACElectricUtils.amperagePerPhaseFromPower(
@@ -1370,7 +2112,7 @@ export const buildMeterValue = (
           chargingStation.getVoltageOut()
         )
         : DCElectricUtils.amperage(connectorMaximumAvailablePower, chargingStation.getVoltageOut())
-    const connectorMinimumAmperage = currentMeasurand.template.minimumValue ?? 0
+    const connectorMinimumAmperage = idle ? 0 : (currentMeasurand.template.minimumValue ?? 0)
 
     meterValue.sampledValue.push(
       buildVersionedSampledValue(
@@ -1420,15 +2162,40 @@ export const buildMeterValue = (
     }
   }
   // Energy.Active.Import.Register measurand (default)
+  const advanceEnergy = identity.advanceEnergy === true
+  const ownsEnergy = identity.transactionId != null && (!snapshot || advanceEnergy)
+  let snapshotEnergyRegisterWhOverride = identity.energyRegisterWhOverride
+  const previousEnergyUpdate =
+    connectorStatus?.transactionEnergyActiveImportRegisterLastUpdatedAt ??
+    connectorStatus?.transactionStart
+  const energyInterval =
+    ownsEnergy && previousEnergyUpdate != null
+      ? Math.max(0, meterValue.timestamp.getTime() - previousEnergyUpdate.getTime())
+      : interval
   const energyMeasurand = buildEnergyMeasurandValue(
     chargingStation,
     connectorId,
-    interval,
+    energyInterval,
     evseId,
-    measurandsKey
+    measurandsKey,
+    snapshot && !advanceEnergy,
+    snapshot
   )
   if (energyMeasurand != null) {
-    updateConnectorEnergyValues(connectorStatus, energyMeasurand.value)
+    // Aligned snapshots may own accumulation when periodic TxUpdated samples
+    // do not include the cumulative energy register.
+    if (ownsEnergy) {
+      updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
+      if (
+        connectorStatus != null &&
+        (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate)
+      ) {
+        connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = meterValue.timestamp
+      }
+    }
+    if (ownsEnergy && snapshotEnergyRegisterWhOverride != null) {
+      snapshotEnergyRegisterWhOverride += energyMeasurand.value
+    }
     const unitDivider =
       energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR
         ? Constants.UNIT_DIVIDER_KILO
@@ -1436,16 +2203,29 @@ export const buildMeterValue = (
     const energySampledValue = buildVersionedSampledValue(
       energyMeasurand.template,
       roundTo(
-        chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) / unitDivider,
+        (snapshot
+          ? Math.max(
+            0,
+            snapshotEnergyRegisterWhOverride ??
+                connectorStatus?.energyActiveImportRegisterValue ??
+                0
+          )
+          : chargingStation.getEnergyActiveImportRegisterByConnectorId(
+            connectorId,
+            false,
+            evseId
+          )) / unitDivider,
         2
       ),
       context
     )
     meterValue.sampledValue.push(energySampledValue)
-    const connectorMaximumAvailablePower =
-      chargingStation.getConnectorMaximumAvailablePower(connectorId)
+    const connectorMaximumAvailablePower = chargingStation.getConnectorMaximumAvailablePower(
+      connectorId,
+      evseId
+    )
     const connectorMaximumEnergyRounded = roundTo(
-      (connectorMaximumAvailablePower * interval) / Constants.MS_PER_HOUR,
+      (connectorMaximumAvailablePower * energyInterval) / Constants.MS_PER_HOUR,
       2
     )
     const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
@@ -1457,10 +2237,37 @@ export const buildMeterValue = (
       connectorMaximumEnergyRounded,
       energySampledValue.measurand,
       debug,
-      { interval }
+      { interval: energyInterval }
     )
   }
-  if (signingState.publicKeyIncluded && connectorStatus != null) {
+  // Snapshot builds re-project the full configured template identity set
+  // (location/unit/context/format families, fixed-value measurands,
+  // RegisterValuesWithoutPhases) from the base samples above, which only serve
+  // as the value source. The second pass is intentional (per-identity/phase
+  // coherence), not redundant computation.
+  if (snapshot) {
+    meterValue.sampledValue = expandClockAlignedSnapshotSamples(
+      chargingStation,
+      connectorId,
+      evseId,
+      meterValue.sampledValue as OCPP20SampledValue[],
+      buildSignedVersionedSampledValue,
+      measurandsKey,
+      context,
+      registerValuesWithoutPhases,
+      idle,
+      identity.transactionId != null,
+      snapshotEnergyRegisterWhOverride
+    )
+  }
+  // Transactional snapshots defer this flag until their request is delivered.
+  // Other transactional builds preserve the existing eager-commit behavior.
+  if (
+    !snapshot &&
+    identity.transactionId != null &&
+    signingState.publicKeyIncluded &&
+    connectorStatus != null
+  ) {
     connectorStatus.publicKeySentInTransaction = true
   }
   return meterValue as MeterValue
@@ -1539,6 +2346,7 @@ const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
  * @param measurand - Meter value measurand to match
  * @param evseId - Optional EVSE ID for OCPP 2.0.1 template lookup
  * @param phase - Optional phase to match in the template
+ * @param connectorLocalFallback - Use only the identified connector when EVSE templates are empty.
  * @returns Matching sampled value template, or undefined if not found
  */
 export const getSampledValueTemplate = (
@@ -1547,7 +2355,8 @@ export const getSampledValueTemplate = (
   measurandsKey: ConfigurationKeyType = StandardParametersKey.MeterValuesSampledData,
   measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   evseId?: number,
-  phase?: MeterValuePhase
+  phase?: MeterValuePhase,
+  connectorLocalFallback = false
 ): SampledValueTemplate | undefined => {
   const onPhaseStr = phase != null ? `on phase ${phase} ` : ''
   if (!isMeasurandSupported(measurand)) {
@@ -1571,6 +2380,8 @@ export const getSampledValueTemplate = (
     if (evseStatus != null) {
       if (isNotEmptyArray(evseStatus.MeterValues)) {
         sampledValueTemplates = evseStatus.MeterValues
+      } else if (connectorLocalFallback) {
+        sampledValueTemplates = chargingStation.getConnectorStatus(connectorId, evseId)?.MeterValues
       } else {
         const connectorTemplates: SampledValueTemplate[] = []
         for (const connectorStatus of evseStatus.connectors.values()) {

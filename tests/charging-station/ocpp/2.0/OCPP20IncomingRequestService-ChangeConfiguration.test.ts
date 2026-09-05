@@ -122,6 +122,25 @@ await describe('OCPP20IncomingRequestService — changeConfiguration seam', asyn
     assert.strictEqual(getConfigurationKey(station, name)?.value, 'true')
   })
 
+  await it('should round-trip an EVSE-scoped SendDuringIdle key', () => {
+    const name = buildConfigKey(
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20OptionalVariableName.SendDuringIdle,
+      'EVSE.1'
+    )
+
+    const status = incomingRequestService.changeConfiguration(station, name, 'false')
+
+    assert.strictEqual(status, ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(getConfigurationKey(station, name)?.value, 'false')
+    assert.deepStrictEqual(OCPP20VariableManager.getInstance().resolveConfigurationKeyName(name), {
+      component: OCPP20ComponentName.AlignedDataCtrlr,
+      evseId: 1,
+      instance: undefined,
+      variable: OCPP20OptionalVariableName.SendDuringIdle,
+    })
+  })
+
   await it('should return NotSupported for a key that does not resolve to a registry variable', () => {
     const status = incomingRequestService.changeConfiguration(station, 'Not.A.RegistryKey', '42')
 

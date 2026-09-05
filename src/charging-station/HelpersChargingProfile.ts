@@ -156,13 +156,19 @@ export const getChargingStationChargingProfilesLimit = (
  * and sorted by priorities
  * @param chargingStation - Charging station
  * @param connectorId - Connector id
+ * @param connectorStatus - Exact connector state when connector ids are EVSE-local.
  * @returns Connector charging profiles array
  */
 export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  connectorStatus?: ConnectorStatus
 ): ChargingProfile[] => {
-  return (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
+  const chargingProfiles =
+    connectorStatus != null
+      ? (connectorStatus.chargingProfiles ?? [])
+      : (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
+  return chargingProfiles
     .slice()
     .sort((a, b) => {
       if (
@@ -195,17 +201,24 @@ export const getConnectorChargingProfiles = (
  * @param chargingStation - Source charging station.
  * @param connectorId - Target connector id.
  * @returns Limit in watts, or `undefined` when no applicable profile is found.
+ * @param connectorStatus - Exact connector state when connector ids are EVSE-local.
  */
 export const getConnectorChargingProfilesLimit = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  connectorStatus?: ConnectorStatus
 ): number | undefined => {
-  const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
+  const chargingProfiles = getConnectorChargingProfiles(
+    chargingStation,
+    connectorId,
+    connectorStatus
+  )
   if (isNotEmptyArray(chargingProfiles)) {
     const chargingProfilesLimit = getChargingProfilesLimit(
       chargingStation,
       connectorId,
-      chargingProfiles
+      chargingProfiles,
+      connectorStatus
     )
     if (chargingProfilesLimit != null) {
       const limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
@@ -214,8 +227,10 @@ export const getConnectorChargingProfilesLimit = (
         return limit
       }
       const connectorMaximumPower =
-        chargingStation.getConnectorStatus(connectorId)?.maximumPower ??
-        maximumPower / (chargingStation.powerDivider ?? 1)
+        connectorStatus != null
+          ? (connectorStatus.maximumPower ?? maximumPower / (chargingStation.powerDivider ?? 1))
+          : (chargingStation.getConnectorStatus(connectorId)?.maximumPower ??
+            maximumPower / (chargingStation.powerDivider ?? 1))
       if (limit > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,
@@ -280,16 +295,18 @@ const buildChargingProfilesLimit = (
  * @param chargingStation - The charging station instance
  * @param connectorId - The connector identifier
  * @param chargingProfiles - Array of charging profiles
+ * @param connectorStatusOverride - Exact connector state when connector ids are EVSE-local.
  * @returns Charging profiles limit or undefined if no valid limit found
  */
 const getChargingProfilesLimit = (
   chargingStation: ChargingStation,
   connectorId: number,
-  chargingProfiles: ChargingProfile[]
+  chargingProfiles: ChargingProfile[],
+  connectorStatusOverride?: ConnectorStatus
 ): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profiles limit found: %j`
   const currentDate = new Date()
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  const connectorStatus = connectorStatusOverride ?? chargingStation.getConnectorStatus(connectorId)
   let previousActiveChargingProfile: ChargingProfile | undefined
   for (const chargingProfile of chargingProfiles) {
     const chargingProfileId = getChargingProfileId(chargingProfile)

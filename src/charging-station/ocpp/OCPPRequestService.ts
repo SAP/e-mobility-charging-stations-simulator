@@ -90,6 +90,31 @@ export abstract class OCPPRequestService {
   }
 
   /**
+   * Rejects pending requests so their response timers and captured station
+   * state are released when the station stops. Buffered CALLs remain registered
+   * for replay unless the station is being permanently deleted.
+   * @param chargingStation - Station whose pending requests are cancelled
+   * @param message - Error message delivered to pending callers
+   * @param discardBufferedRequests - Whether deferred CALL frames and callbacks are discarded
+   */
+  public cancelPendingRequests (
+    chargingStation: ChargingStation,
+    message = 'Charging station stopped while awaiting an OCPP response',
+    discardBufferedRequests = false
+  ): void {
+    const cancellationError = new OCPPError(ErrorType.GENERIC_ERROR, message)
+    const bufferedRequestIds = discardBufferedRequests
+      ? undefined
+      : chargingStation.getBufferedRequestIds()
+    for (const [messageId, [, errorCallback]] of [...chargingStation.requests.entries()]) {
+      if (bufferedRequestIds?.has(messageId) === true) continue
+      chargingStation.requests.delete(messageId)
+      errorCallback(cancellationError, false)
+    }
+    if (discardBufferedRequests) chargingStation.clearMessageBuffer()
+  }
+
+  /**
    * Sends an OCPP request and awaits its response.
    * @param chargingStation - Target charging station.
    * @param commandName - OCPP request command name.
@@ -385,13 +410,41 @@ export abstract class OCPPRequestService {
       // eslint-disable-next-line @typescript-eslint/no-this-alias -- stable outer-this reference captured for nested Promise executor and its response-handler closures
       const self = this
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
+        let responseTimeout: NodeJS.Timeout | undefined
+        let sendTimeout: NodeJS.Timeout | undefined
+        const clearResponseTimeout = (): void => {
+          if (responseTimeout != null) {
+            clearTimeout(responseTimeout)
+            responseTimeout = undefined
+          }
+        }
+        const clearSendTimeout = (): void => {
+          if (sendTimeout != null) {
+            clearTimeout(sendTimeout)
+            sendTimeout = undefined
+          }
+        }
         /**
          * Function that will receive the request's response
          * @param payload - The response payload
          * @param requestPayload - The original request payload
          */
         const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
+          clearResponseTimeout()
+          clearSendTimeout()
           chargingStation.recordRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE)
+          try {
+            params.onResponseReceived?.()
+          } catch (error: unknown) {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onResponseReceived callback failed for message id '${messageId}':`,
+              error
+            )
+          }
+          // The wire response has arrived: remove the correlation entry before
+          // asynchronous response-side effects so lifecycle cancellation cannot
+          // reject an already-answered request while its handler is still running.
+          chargingStation.requests.delete(messageId)
           self.ocppResponseService
             .responseHandler(
               chargingStation,
@@ -404,7 +457,6 @@ export abstract class OCPPRequestService {
               return undefined
             })
             .finally(() => {
-              chargingStation.requests.delete(messageId)
               chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
             })
             .catch(reject)
@@ -416,6 +468,8 @@ export abstract class OCPPRequestService {
          * @param requestStatistic - Whether to record request statistics
          */
         const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
+          clearResponseTimeout()
+          clearSendTimeout()
           if (requestStatistic) {
             chargingStation.recordRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE)
           }
@@ -462,9 +516,19 @@ export abstract class OCPPRequestService {
           messageType,
           commandName
         )
+        if (messageType === MessageType.CALL_MESSAGE) {
+          this.setCachedRequest(
+            chargingStation,
+            messageId,
+            messagePayload as JsonType,
+            commandName,
+            responseCallback,
+            errorCallback
+          )
+        }
         if (chargingStation.isWebSocketConnectionOpened()) {
           const beginId = PerformanceStatistics.beginMeasure(commandName)
-          const sendTimeout = setTimeout(() => {
+          sendTimeout = setTimeout(() => {
             handleSendError(
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
@@ -480,25 +544,48 @@ export abstract class OCPPRequestService {
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT_MS)
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
             PerformanceStatistics.endMeasure(commandName, beginId)
-            clearTimeout(sendTimeout)
+            clearSendTimeout()
+            if (
+              messageType === MessageType.CALL_MESSAGE &&
+              !chargingStation.requests.has(messageId)
+            ) {
+              return
+            }
             if (error == null) {
+              const notifyMessageSent = (): void => {
+                try {
+                  params.onMessageSent?.()
+                } catch (error: unknown) {
+                  logger.error(
+                    `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: onMessageSent callback failed for message id '${messageId}':`,
+                    error
+                  )
+                }
+              }
               logger.debug(
                 `${chargingStation.logPrefix()} ${moduleName}.internalSendMessage: >> Command '${commandName}' sent ${getMessageTypeString(
                   messageType
                 )} payload: ${messageToSend}`
               )
               if (messageType === MessageType.CALL_MESSAGE) {
-                this.setCachedRequest(
-                  chargingStation,
-                  messageId,
-                  messagePayload as JsonType,
-                  commandName,
-                  responseCallback,
-                  errorCallback
-                )
+                if (params.responseTimeoutMs != null && params.responseTimeoutMs > 0) {
+                  responseTimeout = setTimeout(() => {
+                    errorCallback(
+                      new OCPPError(
+                        ErrorType.GENERIC_ERROR,
+                        `Timeout ${formatDurationMilliSeconds(params.responseTimeoutMs ?? 0)} waiting for response to message id '${messageId}'`,
+                        commandName,
+                        messagePayload instanceof OCPPError ? messagePayload.details : undefined
+                      ),
+                      false
+                    )
+                  }, params.responseTimeoutMs)
+                }
+                notifyMessageSent()
               } else {
                 // Resolve response
                 resolve(messagePayload)
+                notifyMessageSent()
               }
             } else {
               handleSendError(

@@ -24,7 +24,10 @@ import type {
   SampledValueTemplate,
 } from '../../../src/types/index.js'
 
-import { buildCoherentMeterValue } from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
+import {
+  buildCoherentMeterValue,
+  buildCoherentMeterValueSnapshot,
+} from '../../../src/charging-station/meter-values/CoherentMeterValueBuilder.js'
 import {
   computeCoherentSample,
   disposeCoherentSessionRuntime,
@@ -37,6 +40,7 @@ import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
 import {
   AvailabilityType,
   CurrentType,
+  MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
@@ -237,7 +241,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('AC 1-phase invariants', async () => {
-    await it('should satisfy P = V·I·phases within ±1 W after rounding', () => {
+    await it('should satisfy P = V·I·phases within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 7400,
@@ -269,7 +273,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('AC 3-phase invariants', async () => {
-    await it('should satisfy P = V·I·3 within ±3 W after rounding', () => {
+    await it('should satisfy P = V·I·3 within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.AC,
         evseMaxPowerW: 22000,
@@ -300,7 +304,7 @@ await describe('CoherentMeterValues', async () => {
   })
 
   await describe('DC invariants', async () => {
-    await it('should satisfy P = V·I within ±1 W after rounding', () => {
+    await it('should satisfy P = V·I within ±0.01 W after rounding', () => {
       const { connectorStatus, context, sessions } = buildContext({
         currentType: CurrentType.DC,
         evseMaxPowerW: 50000,
@@ -439,6 +443,237 @@ await describe('CoherentMeterValues', async () => {
       })
       const after = connectorStatus.energyActiveImportRegisterValue ?? 0
       assert.ok(after > before, 'energy register must advance regardless of template presence')
+    })
+
+    await it('should serialize a coherent snapshot without advancing registers or SoC', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.CURRENT_IMPORT,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      ])
+      buildCoherentMeterValue(context, session, passThroughBuilder, {
+        intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+        nowMs: TEST_METER_VALUES_INTERVAL_MS,
+        rootSeed: 42,
+        voltageNoise: false,
+      })
+      const registerBefore = connectorStatus.energyActiveImportRegisterValue
+      const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
+      const socBefore = session.socPercent
+
+      const snapshot = buildCoherentMeterValueSnapshot(context, session, passThroughBuilder)
+
+      assert.ok(snapshot.sampledValue.length > 0)
+      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, registerBefore)
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportRegisterValue,
+        transactionRegisterBefore
+      )
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should preserve the zero-flow snapshot for Transaction.Begin', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.CURRENT_IMPORT,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      ])
+      const registerBefore = connectorStatus.energyActiveImportRegisterValue
+      const transactionRegisterBefore = connectorStatus.transactionEnergyActiveImportRegisterValue
+      const socBefore = session.socPercent
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        { intervalMs: 0, nowMs: TEST_METER_VALUES_INTERVAL_MS, rootSeed: 42 },
+        MeterValueContext.TRANSACTION_BEGIN
+      )
+
+      assert.strictEqual(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          )?.value
+        ),
+        0
+      )
+      assert.strictEqual(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.CURRENT_IMPORT
+          )?.value
+        ),
+        0
+      )
+      assert.strictEqual(connectorStatus.energyActiveImportRegisterValue, registerBefore)
+      assert.strictEqual(
+        connectorStatus.transactionEnergyActiveImportRegisterValue,
+        transactionRegisterBefore
+      )
+      assert.strictEqual(session.socPercent, socBefore)
+    })
+
+    await it('should advance elapsed energy for Transaction.End even with interval zero', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      ])
+      const registerBefore = connectorStatus.energyActiveImportRegisterValue ?? 0
+      const socBefore = session.socPercent
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        { intervalMs: 0, nowMs: TEST_METER_VALUES_INTERVAL_MS, rootSeed: 42 },
+        MeterValueContext.TRANSACTION_END
+      )
+
+      assert.ok(
+        Number(
+          meterValue.sampledValue.find(
+            sample => sample.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          )?.value
+        ) > 0
+      )
+      assert.ok((connectorStatus.energyActiveImportRegisterValue ?? 0) > registerBefore)
+      assert.ok(session.socPercent > socBefore)
+    })
+
+    await it('should use the EVSE-qualified connector power limit', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = templatesFor([MeterValueMeasurand.POWER_ACTIVE_IMPORT])
+      let requestedIdentity: [number, number | undefined] | undefined
+      context.getConnectorMaximumAvailablePower = (connectorId, evseId) => {
+        requestedIdentity = [connectorId, evseId]
+        return 22000
+      }
+
+      buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        {
+          intervalMs: TEST_METER_VALUES_INTERVAL_MS,
+          nowMs: TEST_METER_VALUES_INTERVAL_MS,
+          rootSeed: 42,
+          voltageNoise: false,
+        },
+        undefined,
+        undefined,
+        undefined,
+        new Date(0),
+        connectorStatus,
+        2
+      )
+
+      assert.deepEqual(requestedIdentity, [1, 2])
+    })
+
+    await it('should preserve enabled fixed non-physical measurands in coherent snapshots', () => {
+      const { connectorStatus, context, sessions } = buildContext()
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.FREQUENCY,
+          unit: MeterValueUnit.HERTZ,
+          value: '50',
+        },
+        {
+          fluctuationPercent: 0,
+          measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          unit: MeterValueUnit.WATT,
+          value: '9999',
+        },
+        {
+          measurand: MeterValueMeasurand.POWER_FACTOR,
+          value: '50Hz',
+        },
+        { measurand: MeterValueMeasurand.CURRENT_EXPORT },
+      ] as unknown as SampledValueTemplate[]
+      const enabledMeasurands = new Set([
+        MeterValueMeasurand.CURRENT_EXPORT,
+        MeterValueMeasurand.FREQUENCY,
+        MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        MeterValueMeasurand.POWER_FACTOR,
+      ])
+
+      const snapshot = buildCoherentMeterValueSnapshot(
+        context,
+        session,
+        passThroughBuilder,
+        undefined,
+        enabledMeasurands
+      )
+
+      assert.strictEqual(
+        snapshot.sampledValue.find(value => value.measurand === MeterValueMeasurand.FREQUENCY)
+          ?.value,
+        '50'
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.find(
+          value => value.measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+        )?.value,
+        '0'
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.some(value => value.measurand === MeterValueMeasurand.CURRENT_EXPORT),
+        false
+      )
+      assert.strictEqual(
+        snapshot.sampledValue.some(value => value.measurand === MeterValueMeasurand.POWER_FACTOR),
+        false
+      )
     })
   })
 

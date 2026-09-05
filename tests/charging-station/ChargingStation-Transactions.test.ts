@@ -668,6 +668,27 @@ await describe('ChargingStation Transaction Management', async () => {
       })
     })
 
+    await it('should preserve collected ended meter values when restarting the interval', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
+        const result = createMockChargingStation({
+          connectorsCount: 1,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station = result.station
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = 100
+        const collectedMeterValue = { sampledValue: [], timestamp: new Date() }
+        connectorStatus.transactionEndedMeterValues = [collectedMeterValue]
+
+        OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
+        OCPP20ServiceUtils.startEndedMeterValues(station, 1, 5000)
+
+        assert.deepEqual(connectorStatus.transactionEndedMeterValues, [collectedMeterValue])
+      })
+    })
+
     await it('should clear transaction ended interval when stopEndedMeterValues() is called', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange

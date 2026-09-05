@@ -4,6 +4,7 @@
 
 import type { ChargingStation, CoherentSession } from '../../../src/charging-station/index.js'
 import type {
+  CachedRequest,
   ConnectorEntry,
   ConnectorStatus,
   EvseEntry,
@@ -20,9 +21,12 @@ import type {
 } from './StationHelpers.types.js'
 
 import { getConfigurationKey } from '../../../src/charging-station/index.js'
+import { OCPPError } from '../../../src/exception/index.js'
 import {
   AvailabilityType,
   CurrentType,
+  ErrorType,
+  MessageType,
   OCPPVersion,
   RegistrationStatusEnumType,
   StandardParametersKey,
@@ -147,7 +151,7 @@ export function createMockChargingStation (
   }
 
   // Create requests map
-  const requests = new Map<string, unknown>()
+  const requests = new Map<string, CachedRequest>()
 
   // Create the station object that mimics ChargingStation
   const station = {
@@ -188,6 +192,9 @@ export function createMockChargingStation (
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
+    clearMessageBuffer (): void {
+      this.messageQueue.length = 0
+    },
     closeWSConnection (): void {
       if (this.wsConnection != null) {
         this.wsConnection.close()
@@ -196,8 +203,8 @@ export function createMockChargingStation (
     },
     // Coherent MeterValues session store (real class uses a private Map).
     coherentSessions: new Map<number | string, CoherentSession>(),
-
     connectors,
+
     createCoherentSession (
       _transactionId: number | string,
       _connectorId: number
@@ -209,19 +216,23 @@ export function createMockChargingStation (
       if (this.started) {
         await this.stop()
       }
-      this.requests.clear()
+      this.ocppRequestService.cancelPendingRequests(
+        this,
+        'Charging station deleted while awaiting an OCPP response',
+        true
+      )
       this.connectors.clear()
       this.evses.clear()
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
-
     destroyCoherentSession (transactionId: number | string | undefined): boolean {
       if (transactionId == null) {
         return false
       }
       return this.coherentSessions.delete(transactionId)
     },
+
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -230,6 +241,23 @@ export function createMockChargingStation (
     evses,
     getAuthorizeRemoteTxRequests (): boolean {
       return false // Default to false in mock
+    },
+    getBufferedRequestIds (): Set<string> {
+      const messageIds = new Set<string>()
+      for (const message of this.messageQueue) {
+        try {
+          const parsedMessage = JSON.parse(message) as unknown[]
+          if (
+            parsedMessage[0] === MessageType.CALL_MESSAGE &&
+            typeof parsedMessage[1] === 'string'
+          ) {
+            messageIds.add(parsedMessage[1])
+          }
+        } catch {
+          // Ignore malformed frames: they cannot identify a pending CALL.
+        }
+      }
+      return messageIds
     },
     getCoherentSession (transactionId: number | string): CoherentSession | undefined {
       return this.coherentSessions.get(transactionId)
@@ -248,19 +276,30 @@ export function createMockChargingStation (
         ({ connectorStatus }) => connectorStatus.transactionId === transactionId
       )?.connectorId
     },
-    getConnectorMaximumAvailablePower (_connectorId: number): number {
+    getConnectorMaximumAvailablePower (_connectorId: number, _evseId?: number): number {
       return stationInfoOverrides?.maximumPower ?? 22000
     },
-    getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+    getConnectorStatus (connectorId: number, evseId?: number): ConnectorStatus | undefined {
+      if (evseId != null) return this.getEvseStatus(evseId)?.connectors.get(connectorId)
       return this.iterateConnectors().find(({ connectorId: id }) => id === connectorId)
         ?.connectorStatus
     },
-    getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-      const connectorStatus = this.getConnectorStatus(connectorId)
+    getEnergyActiveImportRegisterByConnectorId (
+      connectorId: number,
+      rounded = false,
+      evseId?: number
+    ): number {
+      const connectorStatus = this.getConnectorStatus(connectorId, evseId)
       if (connectorStatus == null) {
         return 0
       }
-      const value = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      // `!== false` mirrors production's effective default: DEFAULT_STATION_INFO
+      // seeds meteringPerTransaction to true (Constants.ts), so an unset field
+      // reads transaction-scoped like ChargingStation.getEnergyActiveImportRegister.
+      const value =
+        this.stationInfo.meteringPerTransaction !== false
+          ? (connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0)
+          : (connectorStatus.energyActiveImportRegisterValue ?? 0)
       return rounded ? Math.round(value) : value
     },
     getEnergyActiveImportRegisterByTransactionId (
@@ -304,7 +343,7 @@ export function createMockChargingStation (
       return evses.has(0) ? evses.size - 1 : evses.size
     },
     getNumberOfPhases (): number {
-      return stationInfoOverrides?.numberOfPhases ?? 3
+      return this.stationInfo.numberOfPhases
     },
     getNumberOfRunningTransactions (): number {
       return this.iterateConnectors(true).reduce(
@@ -324,10 +363,13 @@ export function createMockChargingStation (
       )?.connectorStatus.transactionIdTag
     },
     getVoltageOut (): number {
-      return stationInfoOverrides?.voltageOut ?? 230
+      return this.stationInfo.voltageOut
     },
     getWebSocketPingInterval (): number {
       return websocketPingInterval
+    },
+    hasBufferedRequest (messageId: string): boolean {
+      return this.getBufferedRequestIds().has(messageId)
     },
 
     hasConnector (connectorId: number): boolean {
@@ -453,8 +495,23 @@ export function createMockChargingStation (
       },
       ...ocppIncomingRequestService,
     },
-
     ocppRequestService: {
+      cancelPendingRequests: (
+        targetStation: Pick<
+          ChargingStation,
+          'clearMessageBuffer' | 'hasBufferedRequest' | 'requests'
+        >,
+        message = 'Charging station stopped while awaiting an OCPP response',
+        discardBufferedRequests = false
+      ): void => {
+        const cancellationError = new OCPPError(ErrorType.GENERIC_ERROR, message)
+        for (const [messageId, [, errorCallback]] of [...targetStation.requests.entries()]) {
+          if (!discardBufferedRequests && targetStation.hasBufferedRequest(messageId)) continue
+          targetStation.requests.delete(messageId)
+          errorCallback(cancellationError, false)
+        }
+        if (discardBufferedRequests) targetStation.clearMessageBuffer()
+      },
       requestHandler: async () => {
         return await Promise.reject(
           new Error(
@@ -511,6 +568,9 @@ export function createMockChargingStation (
     },
 
     saveOcppConfiguration (): void {
+      /* empty */
+    },
+    saveTransactionEventQueues (): void {
       /* empty */
     },
     start (): void {

@@ -736,13 +736,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     if (resolved == null) {
       return ConfigurationStatus.NOT_SUPPORTED
     }
-    const { component, instance, variable } = resolved
+    const { component, evseId, instance, variable } = resolved
     const response = this.handleRequestSetVariables(chargingStation, {
       setVariableData: [
         {
           attributeType: AttributeEnumType.Actual,
           attributeValue: value,
-          component: { name: component, ...(instance != null && { instance }) },
+          component: {
+            name: component,
+            ...(evseId != null && { evse: { id: evseId } }),
+            ...(instance != null && { instance }),
+          },
           variable: { name: variable },
         },
       ],
@@ -1236,16 +1240,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     const reportData: ReportDataType[] = []
 
     switch (reportBase) {
-      case ReportBaseEnumType.ConfigurationInventory:
+      case ReportBaseEnumType.ConfigurationInventory: {
+        const variableManager = OCPP20VariableManager.getInstance()
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
+            const resolved = variableManager.resolveConfigurationKeyName(configKey.key)
+            const metadata =
+              resolved == null
+                ? undefined
+                : getVariableMetadata(resolved.component, resolved.variable, resolved.instance)
             reportData.push({
-              component: {
-                name: OCPP20ComponentName.OCPPCommCtrlr,
-              },
-              variable: {
-                name: configKey.key,
-              },
+              component:
+                resolved == null
+                  ? { name: OCPP20ComponentName.OCPPCommCtrlr }
+                  : {
+                      name: resolved.component,
+                      ...(resolved.evseId != null && { evse: { id: resolved.evseId } }),
+                    },
+              variable:
+                resolved == null
+                  ? { name: configKey.key }
+                  : {
+                      name: resolved.variable,
+                      ...(resolved.instance != null && { instance: resolved.instance }),
+                    },
               variableAttribute: [
                 {
                   type: AttributeEnumType.Actual,
@@ -1253,19 +1271,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
                 },
               ],
               variableCharacteristics: {
-                dataType: DataEnumType.string,
+                dataType: metadata?.dataType ?? DataEnumType.string,
                 supportsMonitoring: false,
               },
             })
           }
         }
         break
+      }
 
-      case ReportBaseEnumType.FullInventory:
+      case ReportBaseEnumType.FullInventory: {
         reportData.push(...buildStationInfoReportData(chargingStation, STATION_INFO_FIELDS_FULL))
+        const variableManager = OCPP20VariableManager.getInstance()
 
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
+            if (variableManager.resolveConfigurationKeyName(configKey.key) != null) continue
             const variableAttributes = []
             variableAttributes.push({
               type: AttributeEnumType.Actual,
@@ -1285,7 +1306,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         }
 
         try {
-          const variableManager = OCPP20VariableManager.getInstance()
           const getVariableData: OCPP20GetVariablesRequest['getVariableData'] = []
           for (const variableMetadata of Object.values(VARIABLE_REGISTRY)) {
             const variableDescriptor: { instance?: string; name: string } = {
@@ -1294,24 +1314,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
             if (variableMetadata.instance) {
               variableDescriptor.instance = variableMetadata.instance
             }
-            getVariableData.push({
-              attributeType: AttributeEnumType.Actual,
-              component: { name: variableMetadata.component },
-              variable: variableDescriptor,
-            })
-            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MinSet)) {
+            for (const component of variableManager.getSupportedComponents(
+              chargingStation,
+              variableMetadata
+            )) {
               getVariableData.push({
-                attributeType: AttributeEnumType.MinSet,
-                component: { name: variableMetadata.component },
+                attributeType: AttributeEnumType.Actual,
+                component,
                 variable: variableDescriptor,
               })
-            }
-            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
-              getVariableData.push({
-                attributeType: AttributeEnumType.MaxSet,
-                component: { name: variableMetadata.component },
-                variable: variableDescriptor,
-              })
+              if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MinSet)) {
+                getVariableData.push({
+                  attributeType: AttributeEnumType.MinSet,
+                  component,
+                  variable: variableDescriptor,
+                })
+              }
+              if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
+                getVariableData.push({
+                  attributeType: AttributeEnumType.MaxSet,
+                  component,
+                  variable: variableDescriptor,
+                })
+              }
             }
           }
           const getResults = variableManager.getVariables(chargingStation, getVariableData)
@@ -1325,7 +1350,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
             }
           >()
           for (const r of getResults) {
-            const key = `${r.component.name}::${r.variable.name}${r.variable.instance ? '::' + r.variable.instance : ''}`
+            const key = JSON.stringify([r.component, r.variable])
             const variableMetadata = getVariableMetadata(
               r.component.name,
               r.variable.name,
@@ -1415,6 +1440,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           })
         }
         break
+      }
 
       case ReportBaseEnumType.SummaryInventory:
         reportData.push(...buildStationInfoReportData(chargingStation, STATION_INFO_FIELDS_SUMMARY))

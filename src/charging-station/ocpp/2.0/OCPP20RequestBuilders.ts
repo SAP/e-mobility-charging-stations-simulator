@@ -65,6 +65,9 @@ export function buildOCPP20SampledValue (
 ): SignedSampledValueResult<OCPP20SampledValue> {
   const fields = resolveSampledValueFields(sampledValueTemplate, value, context, phase)
   const sampledValue: OCPP20SampledValue = {
+    ...(sampledValueTemplate.customData != null && {
+      customData: sampledValueTemplate.customData,
+    }),
     context: fields.context,
     location: fields.location,
     measurand: fields.measurand,

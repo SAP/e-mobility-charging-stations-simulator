@@ -55,6 +55,8 @@ import { createStreamPrng } from './PRNG.js'
  * auto-collected when the session becomes unreachable.
  */
 interface SessionRuntime {
+  lastComputedAtMs?: number
+  lastSample?: CoherentSample
   voltagePrng?: () => number
 }
 
@@ -93,6 +95,35 @@ export const disposeCoherentSessionRuntime = (session: CoherentSession | undefin
     return false
   }
   return sessionRuntimes.delete(session)
+}
+
+/**
+ * Returns the last committed coherent sample without advancing physics or the
+ * PRNG. Before the first committed sample, returns a conservative zero-flow
+ * snapshot from the current session/register state.
+ * @param context - Charging-station context.
+ * @param connectorStatus - Connector state.
+ * @param session - Active coherent session.
+ * @returns Immutable-by-convention sample snapshot.
+ */
+export const getCoherentSampleSnapshot = (
+  context: ICoherentContext,
+  connectorStatus: ConnectorStatus,
+  session: CoherentSession
+): CoherentSample => {
+  const lastSample = sessionRuntimes.get(session)?.lastSample
+  if (lastSample != null) {
+    return {
+      ...lastSample,
+      deltaEnergyWh: 0,
+      energyRegisterWh: Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0),
+    }
+  }
+  return buildZeroSample(
+    session.socPercent,
+    context.getVoltageOut(),
+    Math.max(0, connectorStatus.energyActiveImportRegisterValue ?? 0)
+  )
 }
 
 /**
@@ -252,6 +283,32 @@ export const advanceEnergyRegister = (
 }
 
 /**
+ * Advances the OCPP 2.0 station main-meter register from committed physical
+ * connector energy. DC connector energy is measured after conversion, so the
+ * corresponding inlet energy includes conversion losses.
+ * @param context - Station context containing the EVSE 0 main meter.
+ * @param evseId - Physical EVSE that committed the energy delta.
+ * @param currentType - Connector output current type.
+ * @param deltaEnergyWh - Committed connector-side energy delta in Wh.
+ */
+export const advanceStationEnergyRegister = (
+  context: ICoherentContext,
+  evseId: number | undefined,
+  currentType: CurrentType,
+  deltaEnergyWh: number
+): void => {
+  if (evseId == null || evseId <= 0) return
+  const mainConnectorStatus = context.getEvseStatus(0)?.connectors.get(0)
+  if (mainConnectorStatus == null) return
+  const configuredEfficiency =
+    currentType === CurrentType.DC ? (context.stationInfo?.conversionEfficiency ?? 1) : 1
+  const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+  const inputEnergyWh = deltaEnergyWh / conversionEfficiency
+  mainConnectorStatus.energyActiveImportRegisterValue =
+    Math.max(0, mainConnectorStatus.energyActiveImportRegisterValue ?? 0) + inputEnergyWh
+}
+
+/**
  * Computes a single coherent sample and mutates the caller-owned
  * `session.socPercent`. The energy register is NOT advanced here; the
  * caller (`buildCoherentMeterValue`) invokes {@link advanceEnergyRegister}
@@ -282,6 +339,7 @@ export const advanceEnergyRegister = (
  * @param connectorStatus - Connector status.
  * @param session - Active coherent session (resolved by caller).
  * @param options - Per-sample parameters (interval, seed material, ...).
+ * @param evseId - Exact EVSE id when connector ids are EVSE-local.
  * @returns The computed sample. `energyRegisterWh` reflects the projected
  *   register value AFTER `advanceEnergyRegister` is applied by the caller.
  */
@@ -289,7 +347,8 @@ export const computeCoherentSample = (
   context: ICoherentContext,
   connectorStatus: ConnectorStatus,
   session: CoherentSession,
-  options: ComputeSampleOptions
+  options: ComputeSampleOptions,
+  evseId?: number
 ): CoherentSample => {
   const transactionId = session.transactionId
 
@@ -382,7 +441,7 @@ export const computeCoherentSample = (
   const evAcceptanceW = acceptanceFraction * session.profile.maxPowerW
 
   // EVSE cap (already includes hardware/charging-profile clamps via ChargingStation).
-  const evseLimitW = context.getConnectorMaximumAvailablePower(session.connectorId)
+  const evseLimitW = context.getConnectorMaximumAvailablePower(session.connectorId, evseId)
 
   const socCap = session.socPercent >= 100 ? 0 : 1
   const targetPowerW = rampFactor * Math.min(evseLimitW, evAcceptanceW) * socCap
@@ -440,7 +499,7 @@ export const computeCoherentSample = (
   const deltaSocPercent = (deltaEnergyWh / session.profile.batteryCapacityWh) * 100
   session.socPercent = Math.min(100, session.socPercent + deltaSocPercent)
 
-  return {
+  const sample: CoherentSample = {
     currentA: roundedCurrent,
     deltaEnergyWh,
     energyRegisterWh: projectedRegisterWh,
@@ -448,4 +507,41 @@ export const computeCoherentSample = (
     socPercent: roundTo(session.socPercent, ROUNDING_SCALE),
     voltageV: roundedV,
   }
+  getSessionRuntime(session).lastSample = sample
+  getSessionRuntime(session).lastComputedAtMs = options.nowMs
+  return sample
+}
+/**
+ * Advances coherent physics to an absolute sample time without counting an
+ * interval twice when periodic and clock-aligned samplers interleave.
+ * The first sample integrates from the transaction start; later samples
+ * integrate only elapsed time since the last committed sample. Out-of-order
+ * or same-instant observations reuse the committed state without advancing it.
+ * @param context - Charging-station context.
+ * @param connectorStatus - Connector state.
+ * @param session - Active coherent session.
+ * @param options - Sample options whose `nowMs` is the observation time.
+ * @param evseId - Exact EVSE id when connector ids are EVSE-local.
+ * @returns The current coherent sample.
+ */
+export const computeCoherentSampleAtTime = (
+  context: ICoherentContext,
+  connectorStatus: ConnectorStatus,
+  session: CoherentSession,
+  options: ComputeSampleOptions,
+  evseId?: number
+): CoherentSample => {
+  const runtime = getSessionRuntime(session)
+  const previousSampleAtMs = runtime.lastComputedAtMs ?? session.sessionStartMs
+  const intervalMs = Math.max(0, options.nowMs - previousSampleAtMs)
+  if (intervalMs === 0) {
+    return getCoherentSampleSnapshot(context, connectorStatus, session)
+  }
+  return computeCoherentSample(
+    context,
+    connectorStatus,
+    session,
+    { ...options, intervalMs },
+    evseId
+  )
 }

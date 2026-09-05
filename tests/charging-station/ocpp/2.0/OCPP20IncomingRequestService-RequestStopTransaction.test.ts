@@ -284,7 +284,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
         await flushMicrotasks()
 
-        assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
         const args = requestHandlerMock.mock.calls[0].arguments as [
           unknown,
           string,
@@ -381,16 +381,19 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Partial<OCPP20TransactionEventRequest>
+        OCPP20TransactionEventRequest
       ]
-      const minimalParams = args[2]
+      const transactionEvent = args[2]
 
-      assert.strictEqual(minimalParams.eventType, OCPP20TransactionEventEnumType.Ended)
-      assert.strictEqual(minimalParams.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
-      assert.strictEqual(minimalParams.transactionId, transactionId)
-      assert.strictEqual(minimalParams.stoppedReason, OCPP20ReasonEnumType.Remote)
-      assert.notStrictEqual(minimalParams.connectorId, undefined)
-      assert.strictEqual(typeof minimalParams.connectorId, 'number')
+      assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+      assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
+      assert.strictEqual(
+        transactionEvent.transactionInfo.stoppedReason,
+        OCPP20ReasonEnumType.Remote
+      )
+      assert.strictEqual(transactionEvent.evse?.id, 2)
+      assert.strictEqual(transactionEvent.evse.connectorId, undefined)
     })
 
     // FR: F03.FR.09

@@ -36,6 +36,8 @@ export interface ConnectorStatus {
   transactionDeauthorizedEnergyWh?: number
   transactionEndedMeterValues?: MeterValue[]
   transactionEndedMeterValuesSetInterval?: NodeJS.Timeout
+  transactionEnding?: boolean
+  transactionEnergyActiveImportRegisterLastUpdatedAt?: Date
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   transactionEventQueue?: QueuedTransactionEvent[]
   transactionEvseSent?: boolean
@@ -45,9 +47,11 @@ export interface ConnectorStatus {
   transactionIdTokenSent?: boolean
   transactionPending?: boolean
   transactionRemoteStarted?: boolean
+  transactionRestored?: boolean
   transactionSeqNo?: number
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionStarting?: boolean
   transactionUpdatedMeterValuesSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }

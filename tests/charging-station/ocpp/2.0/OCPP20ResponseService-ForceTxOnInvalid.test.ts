@@ -80,12 +80,7 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
   })
 
   // 2.0-T2 — Force-tx on Invalid `Started`: deauth NOT called, connector
-  // locked, MV update + ended pumps started.
-  // TODO Phase 6 (golden set): add a fake-timer fence to verify the MV pump
-  // actually emits a TransactionEvent(Updated) over the wire — the helper-
-  // call assertion below stubs the pump and therefore does not catch a
-  // wire-level regression where startUpdatedMeterValues is invoked but the
-  // interval is bound to the wrong connector. Phase 6 closes this gap.
+  // locked, MV update + ended pumps started for the response EVSE.
   await it('should not deauthorize on Invalid Started when the flag is true', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(
@@ -121,6 +116,48 @@ await describe('OCPP20ResponseService — forceTransactionOnInvalidIdToken (issu
     assert.strictEqual(connectorStatus.locked, true)
     assert.strictEqual(mockStartUpdated.mock.calls.length, 1)
     assert.strictEqual(mockStartEnded.mock.calls.length, 1)
+    assert.strictEqual(mockStartUpdated.mock.calls[0].arguments[3], 1)
+    assert.strictEqual(mockStartEnded.mock.calls[0].arguments[3], 1)
+  })
+
+  await it('should keep a historical Started response from reviving an ended transaction', async () => {
+    if (station.stationInfo != null) station.stationInfo.forceTransactionOnInvalidIdToken = false
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = false
+    connectorStatus.locked = false
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          TEST_TRANSACTION_UUID,
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+    const deauthorize = mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
+      Promise.resolve({} as OCPP20TransactionEventResponse)
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => {
+      /* noop */
+    })
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => {
+      /* noop */
+    })
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Invalid } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(deauthorize.mock.callCount(), 0)
+    assert.strictEqual(startUpdated.mock.callCount(), 0)
+    assert.strictEqual(startEnded.mock.callCount(), 0)
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.locked, false)
   })
 
   // 2.0-T3 — Mid-transaction revocation (Updated) STILL aborts.

@@ -1,6 +1,7 @@
 import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import {
+  AvailabilityType,
   ChargingStationEvents,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -18,32 +19,47 @@ import { OCPP20Constants } from './2.0/OCPP20Constants.js'
  * Sends a StatusNotification request and updates the connector status locally.
  * @param chargingStation - Target charging station
  * @param commandParams - Cross-version StatusNotification input; `connectorStatus` (OCPP 2.0.1) takes precedence over `status` (OCPP 1.6)
- * @param options - Optional settings to control whether the request is actually sent
- * @param options.send - Whether to actually send the status notification
+ * @param options - Optional send behavior.
+ * @param options.send - Whether to send the status notification.
+ * @param options.waitForResponse - Whether local completion waits for the CSMS response.
+ * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
  */
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
   commandParams: StatusNotificationOptions,
-  options?: { send: boolean }
+  options?: { responseTimeoutMs?: number; send: boolean; waitForResponse?: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
-  const { connectorId, errorCode } = commandParams
+  const { connectorId, errorCode, evseId } = commandParams
   const status = commandParams.connectorStatus ?? commandParams.status
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
   if (connectorStatus == null) {
     return
   }
   if (options.send) {
-    checkConnectorStatusTransition(chargingStation, connectorId, status)
-    await chargingStation.ocppRequestService.requestHandler<
+    checkConnectorStatusTransition(chargingStation, connectorId, status, evseId)
+    const response = chargingStation.ocppRequestService.requestHandler<
       StatusNotificationOptions,
       StatusNotificationResponse
-    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
+    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams, {
+      responseTimeoutMs: options.responseTimeoutMs,
+    })
+    if (options.waitForResponse === false) {
+      response.catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} OCPPConnectorStatusOperations.sendAndSetConnectorStatus: Failed to send connector status:`,
+          error
+        )
+      })
+    } else {
+      await response
+    }
   }
   connectorStatus.status = status
   connectorStatus.errorCode = errorCode
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
+    ...(evseId != null && { evseId }),
     ...connectorStatus,
   })
 }
@@ -53,21 +69,33 @@ export const sendAndSetConnectorStatus = async (
  * Re-evaluates station and connector availability to determine the target status.
  * @param chargingStation - Target charging station
  * @param connectorId - Connector ID to transition
+ * @param evseId - Optional EVSE identifier for EVSE-local connector ids
+ * @param options - Optional send behavior.
+ * @param options.waitForResponse - Whether local completion waits for the CSMS response.
+ * @param options.responseTimeoutMs - Optional CSMS response timeout in milliseconds.
  */
 export const sendPostTransactionStatus = async (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  evseId?: number,
+  options?: { responseTimeoutMs?: number; waitForResponse?: boolean }
 ): Promise<void> => {
   const status =
     chargingStation.isChargingStationAvailable() &&
-    chargingStation.isConnectorAvailable(connectorId)
+    chargingStation.getConnectorStatus(connectorId, evseId)?.availability ===
+      AvailabilityType.Operative
       ? ConnectorStatusEnum.Available
       : ConnectorStatusEnum.Unavailable
-  await sendAndSetConnectorStatus(chargingStation, {
-    connectorId,
-    connectorStatus: status,
-    status,
-  })
+  await sendAndSetConnectorStatus(
+    chargingStation,
+    {
+      connectorId,
+      connectorStatus: status,
+      evseId,
+      status,
+    },
+    { responseTimeoutMs: options?.responseTimeoutMs, send: true, ...options }
+  )
 }
 
 /**
@@ -100,10 +128,14 @@ export const restoreConnectorStatus = async (
 const checkConnectorStatusTransition = (
   chargingStation: ChargingStation,
   connectorId: number,
-  status: ConnectorStatusEnum | undefined
+  status: ConnectorStatusEnum | undefined,
+  evseId?: number
 ): boolean => {
-  const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
-  let chargingStationTransitions: readonly { from?: ConnectorStatusEnum; to: ConnectorStatusEnum }[]
+  const fromStatus = chargingStation.getConnectorStatus(connectorId, evseId)?.status
+  let chargingStationTransitions: readonly {
+    from?: ConnectorStatusEnum
+    to: ConnectorStatusEnum
+  }[]
   let connectorTransitions: readonly { from?: ConnectorStatusEnum; to: ConnectorStatusEnum }[]
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
@@ -133,7 +165,7 @@ const checkConnectorStatusTransition = (
         chargingStation.stationInfo.ocppVersion
       } connector id ${connectorId.toString()} status transition from '${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        chargingStation.getConnectorStatus(connectorId)?.status
+        chargingStation.getConnectorStatus(connectorId, evseId)?.status
       }' to '${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         status

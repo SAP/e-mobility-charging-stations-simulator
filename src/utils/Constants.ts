@@ -14,6 +14,8 @@ const DAY_IN_SECONDS = 86_400
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
+  static readonly DEFAULT_ALIGNED_DATA_INTERVAL_SECONDS = 900
+
   static readonly DEFAULT_ATG_CONFIGURATION: Readonly<AutomaticTransactionGeneratorConfiguration> =
     Object.freeze({
       enable: false,
@@ -67,8 +69,8 @@ export class Constants {
   static readonly DEFAULT_PERFORMANCE_DIRECTORY = 'performance'
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
-  static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
 
+  static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
   /**
    * Peak jitter fraction: consumers scale the base delay by a uniform draw in
    * `[0, jitterPercent)`. See `computeExponentialBackOffDelay` (uni-directional
@@ -122,13 +124,13 @@ export class Constants {
   static readonly DEFAULT_TX_UPDATED_INTERVAL_SECONDS = 30
 
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
-  static readonly DEFAULT_UI_SERVER_PORT = 8080
 
+  static readonly DEFAULT_UI_SERVER_PORT = 8080
   static readonly DEFAULT_WS_HANDSHAKE_TIMEOUT_SECONDS = 30
+
   static readonly DEFAULT_WS_PING_INTERVAL_SECONDS = 30
   static readonly DEFAULT_WS_RECONNECT_DELAY_SECONDS = 30
   static readonly DEFAULT_WS_RECONNECT_TIMEOUT_OFFSET_MS = 1000
-
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})
 
   static readonly EMPTY_FUNCTION: () => void = Object.freeze(() => {
@@ -142,6 +144,9 @@ export class Constants {
   // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2_147_483_647
+
+  /** Hard safety bound for durable OCPP 2.0.1 TransactionEvent backlogs per connector. */
+  static readonly MAX_TRANSACTION_EVENT_QUEUE_LENGTH = 10_000
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */
   static readonly MS_PER_DAY = DAY_IN_MS
 
