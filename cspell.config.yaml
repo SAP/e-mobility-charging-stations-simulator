@@ -20,6 +20,7 @@ words:
   - evses
   - kvar
   - kvarh
+  - labelledby
   - varh
   - rfid
   - workerset
