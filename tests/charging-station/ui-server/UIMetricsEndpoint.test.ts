@@ -19,7 +19,6 @@ import type {
 } from '../../../src/types/index.js'
 
 import {
-  AbstractUIServer,
   isMetricsAllowedLabelName,
   METRICS_ALLOWED_LABEL_NAMES,
   METRICS_SOFT_CAP_WARN_PREFIX,
@@ -859,7 +858,6 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       )
     } finally {
       wsServer.stop()
-      void AbstractUIServer
     }
   })
 
@@ -1167,7 +1165,7 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
       assert.strictEqual(attachCalls, 2, 'attachTransport must run on each fresh start()')
       assert.notStrictEqual(
         server.getMetricsRegistry(),
-        undefined,
+        registry1,
         'metricsRegistry must be rebuilt on the second start()'
       )
       assert.strictEqual(
@@ -1175,7 +1173,6 @@ await describe('UIHttpServer /metrics endpoint (issue #851)', async () => {
         listenerCount1,
         'request listeners must not accumulate across start()→stop()→start() cycles'
       )
-      void registry1
     } finally {
       server.stop()
     }
