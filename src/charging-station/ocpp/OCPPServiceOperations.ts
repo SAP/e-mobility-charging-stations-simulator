@@ -200,7 +200,9 @@ export const flushQueuedTransactionMessages = async (
           })
         }
       }
-      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(chargingStation)
+      if (chargingStation.started && !chargingStation.isStopping()) {
+        OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(chargingStation)
+      }
       break
     default:
       break

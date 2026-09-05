@@ -169,6 +169,7 @@ import { CURRENT_SCHEMA_VERSION } from './TemplateMigrations.js'
 import { validateTemplate } from './TemplateValidation.js'
 
 const moduleName = 'ChargingStation'
+const TRANSACTION_EVENT_QUEUE_CHECKPOINT_INTERVAL_MS = 60_000
 
 export class ChargingStation extends EventEmitter {
   public automaticTransactionGenerator?: AutomaticTransactionGenerator
@@ -243,8 +244,11 @@ export class ChargingStation extends EventEmitter {
   private stopPromise?: Promise<void>
   private templateFileHash: string
   private templateFileWatcher?: FSWatcher
+  private transactionEventQueueSaveDelayResolve?: () => void
   private transactionEventQueueSaveDirty = false
+  private transactionEventQueueSaveImmediate = false
   private transactionEventQueueSavePromise?: Promise<void>
+  private transactionEventQueueSaveSetTimeout?: NodeJS.Timeout
   private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
@@ -488,6 +492,7 @@ export class ChargingStation extends EventEmitter {
         )
       }
     }
+    ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
     await this.transactionEventQueueSavePromise
     this.ocppRequestService.cancelPendingRequests(
       this,
@@ -1271,9 +1276,15 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  /** Coalesces queue snapshots to one in-flight save plus one latest-state save. */
-  public saveTransactionEventQueues (): void {
+  /**
+   * Coalesces queue snapshots to one in-flight save plus one latest-state save.
+   * @param deferred - Whether to pace this checkpoint behind the queue save interval
+   */
+  public saveTransactionEventQueues (deferred = false): void {
     this.transactionEventQueueSaveDirty = true
+    if (!deferred) {
+      ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+    }
     this.transactionEventQueueSavePromise ??=
       ChargingStation.prototype.drainTransactionEventQueueSaves.call(this)
   }
@@ -1627,7 +1638,11 @@ export class ChargingStation extends EventEmitter {
 
   private async drainTransactionEventQueueSaves (): Promise<void> {
     while (this.transactionEventQueueSaveDirty) {
+      if (!this.transactionEventQueueSaveImmediate) {
+        await ChargingStation.prototype.waitForTransactionEventQueueSaveDelay.call(this)
+      }
       this.transactionEventQueueSaveDirty = false
+      this.transactionEventQueueSaveImmediate = false
       this.saveConfiguration()
       await this.pendingConfigurationSave
     }
@@ -2931,6 +2946,7 @@ export class ChargingStation extends EventEmitter {
     this.templateFileWatcher?.close()
     delete this.bootNotificationResponse
     this.started = false
+    ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
     await this.transactionEventQueueSavePromise
     this.saveConfiguration()
     await this.pendingConfigurationSave
@@ -2968,6 +2984,17 @@ export class ChargingStation extends EventEmitter {
         `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retries failure: maximum retries reached (${this.wsConnectionRetryCount.toString()}) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries?.toString()})`
       )
     }
+  }
+
+  private releaseTransactionEventQueueSaveDelay (): void {
+    if (this.transactionEventQueueSaveDirty) this.transactionEventQueueSaveImmediate = true
+    if (this.transactionEventQueueSaveSetTimeout != null) {
+      clearTimeout(this.transactionEventQueueSaveSetTimeout)
+      delete this.transactionEventQueueSaveSetTimeout
+    }
+    const resolve = this.transactionEventQueueSaveDelayResolve
+    delete this.transactionEventQueueSaveDelayResolve
+    resolve?.()
   }
 
   private saveAutomaticTransactionGeneratorConfiguration (): void {
@@ -3327,5 +3354,15 @@ export class ChargingStation extends EventEmitter {
     if (this.isWebSocketConnectionOpened()) {
       this.wsConnection?.terminate()
     }
+  }
+
+  private async waitForTransactionEventQueueSaveDelay (): Promise<void> {
+    await new Promise<void>(resolve => {
+      this.transactionEventQueueSaveDelayResolve = resolve
+      this.transactionEventQueueSaveSetTimeout = setTimeout(() => {
+        ChargingStation.prototype.releaseTransactionEventQueueSaveDelay.call(this)
+      }, TRANSACTION_EVENT_QUEUE_CHECKPOINT_INTERVAL_MS)
+      this.transactionEventQueueSaveSetTimeout.unref()
+    })
   }
 }

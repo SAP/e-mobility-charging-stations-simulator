@@ -2784,6 +2784,83 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.ok(meterValue.sampledValue[0].value < 2100)
     })
 
+    await it('uses the energy-owning connector template independent of connector order', () => {
+      const { mockStation } = createAlignedStation({ connectorsCount: 2, evsesCount: 1 })
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      evseStatus.MeterValues = []
+      connector1.MeterValues = [
+        {
+          customData: { vendorId: 'connector-1' },
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: '100',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      connector2.MeterValues = [
+        {
+          customData: { vendorId: 'connector-2' },
+          fluctuationPercent: 0,
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+          value: '200',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      setupConnectorWithTransaction(mockStation, 2, { transactionId: 'tx-2' })
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      const baselineEnergy = 54_322
+      const previousEnergyUpdate = new Date('2026-01-01T00:00:00.000Z')
+      const timestamp = new Date('2026-01-01T00:01:00.000Z')
+      const connectorsById = new Map([
+        [1, connector1],
+        [2, connector2],
+      ])
+
+      for (const connectorOrder of [
+        [1, 2],
+        [2, 1],
+      ]) {
+        evseStatus.connectors.clear()
+        for (const connectorId of connectorOrder) {
+          const connectorStatus = connectorsById.get(connectorId)
+          assert.ok(connectorStatus != null)
+          evseStatus.connectors.set(connectorId, connectorStatus)
+        }
+        connector2.energyActiveImportRegisterValue = baselineEnergy
+        connector2.transactionEnergyActiveImportRegisterValue = 0
+        connector2.transactionEnergyActiveImportRegisterLastUpdatedAt = previousEnergyUpdate
+
+        const meterValue = buildClockAlignedConnectorMeterValue(
+          mockStation,
+          {
+            advanceEnergy: true,
+            connectorId: 2,
+            evseId: 1,
+            timestamp,
+            transactionId: 'tx-2',
+          },
+          60_000,
+          ALIGNED_MEASURANDS_KEY,
+          OCPP20ReadingContextEnumType.SAMPLE_CLOCK
+        )
+        const energySample = meterValue.sampledValue.find(
+          ({ measurand }) => measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+        )
+
+        assert.strictEqual(energySample?.customData?.vendorId, 'connector-2')
+        assert.strictEqual(energySample.value, baselineEnergy + 200)
+      }
+    })
+
     await it('keeps duplicate connector ids scoped to their EVSE', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,

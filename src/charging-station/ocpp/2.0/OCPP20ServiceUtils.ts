@@ -2219,7 +2219,7 @@ export class OCPP20ServiceUtils {
       }
     }
     queue.splice(insertionIndex, 0, queuedEvent)
-    chargingStation.saveTransactionEventQueues()
+    chargingStation.saveTransactionEventQueues(isUpdatedEvent)
   }
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {

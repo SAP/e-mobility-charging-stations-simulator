@@ -269,6 +269,8 @@ await describe('OCPPServiceOperations', async () => {
         evseConfiguration: { evsesCount: 1 },
         ocppVersion: OCPPVersion.VERSION_20,
       })
+      station.started = true
+      station.isStopping = () => false
       requestHandler.mock.mockImplementation(async (..._args: unknown[]) => Promise.resolve({}))
       const connectorStatus = station.getConnectorStatus(1)
       assert.notStrictEqual(connectorStatus, undefined)
@@ -320,6 +322,29 @@ await describe('OCPPServiceOperations', async () => {
       assert.ok(resumedConnectorStatus.transactionEndedMeterValuesSetInterval != null)
       OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
       OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
+    })
+
+    await it('should not resume restored transaction timers while station is stopped or stopping', async () => {
+      for (const lifecycleState of ['stopped', 'stopping'] as const) {
+        const { station } = createStationWithRequestHandler({
+          evseConfiguration: { evsesCount: 1 },
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
+        station.started = lifecycleState === 'stopping'
+        station.isStopping = () => lifecycleState === 'stopping'
+        setupConnectorWithTransaction(station, 1, {
+          transactionId: `tx-${lifecycleState}`,
+        })
+        const connectorStatus = station.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.transactionRestored = true
+
+        await flushQueuedTransactionMessages(station)
+
+        assert.strictEqual(connectorStatus.transactionRestored, true)
+        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+        assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+      }
     })
   })
 

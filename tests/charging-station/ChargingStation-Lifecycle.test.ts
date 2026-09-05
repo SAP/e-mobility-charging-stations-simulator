@@ -321,6 +321,93 @@ await describe('ChargingStation Lifecycle', async () => {
       // Assert - the real ChargingStation guards against this
       // (mock implementation doesn't fully replicate guard, but state is verified)
     })
+
+    await it('defers paced transaction queue checkpoints to one save per minute', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const saveConfiguration = mock.fn()
+      const stationLike = {
+        pendingConfigurationSave: Promise.resolve(),
+        saveConfiguration,
+      } as unknown as ChargingStation
+      const saveState = stationLike as unknown as {
+        transactionEventQueueSavePromise?: Promise<void>
+      }
+
+      for (let index = 0; index < 100; index++) {
+        ChargingStation.prototype.saveTransactionEventQueues.call(stationLike, true)
+      }
+      const savePromise = saveState.transactionEventQueueSavePromise
+
+      t.mock.timers.tick(59_999)
+      await Promise.resolve()
+      assert.strictEqual(saveConfiguration.mock.callCount(), 0)
+
+      t.mock.timers.tick(1)
+      await savePromise
+      assert.strictEqual(saveConfiguration.mock.callCount(), 1)
+    })
+
+    await it('flushes the latest deferred queue state when an immediate checkpoint is requested', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      let queueLength = 1
+      const savedQueueLengths: number[] = []
+      const stationLike = {
+        pendingConfigurationSave: Promise.resolve(),
+        saveConfiguration: () => {
+          savedQueueLengths.push(queueLength)
+        },
+      } as unknown as ChargingStation
+      const saveState = stationLike as unknown as {
+        transactionEventQueueSavePromise?: Promise<void>
+      }
+
+      ChargingStation.prototype.saveTransactionEventQueues.call(stationLike, true)
+      queueLength = 2
+      ChargingStation.prototype.saveTransactionEventQueues.call(stationLike, true)
+      assert.deepStrictEqual(savedQueueLengths, [])
+
+      ChargingStation.prototype.saveTransactionEventQueues.call(stationLike)
+      await saveState.transactionEventQueueSavePromise
+      assert.deepStrictEqual(savedQueueLengths, [2])
+    })
+
+    await it('forces a deferred transaction queue checkpoint before stop completes', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const transactionEventQueue: unknown[] = [{}]
+      const savedQueueLengths: number[] = []
+      const stationLike = {
+        bootNotificationResponse: {},
+        closeWSConnection: () => undefined,
+        configurationFileHash: 'test-configuration',
+        emitChargingStationEvent: () => undefined,
+        iterateConnectors: () => [],
+        lifecycleAbortController: new AbortController(),
+        logPrefix: () => '',
+        ocppIncomingRequestService: { stop: () => undefined },
+        ocppRequestService: { cancelPendingRequests: () => undefined },
+        pendingConfigurationSave: Promise.resolve(),
+        saveConfiguration: () => {
+          savedQueueLengths.push(transactionEventQueue.length)
+        },
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+        started: true,
+        stationInfo: { enableStatistics: false },
+        stopMessageSequence: () => Promise.resolve(),
+      } as unknown as ChargingStation
+
+      ChargingStation.prototype.saveTransactionEventQueues.call(stationLike, true)
+      transactionEventQueue.push({})
+      ChargingStation.prototype.saveTransactionEventQueues.call(stationLike, true)
+      assert.deepStrictEqual(savedQueueLengths, [])
+
+      await (
+        ChargingStation.prototype as unknown as {
+          performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
+        }
+      ).performStop.call(stationLike)
+
+      assert.deepStrictEqual(savedQueueLengths, [2, 2])
+    })
   })
 
   await describe('Delete Operations', async () => {
@@ -334,6 +421,33 @@ await describe('ChargingStation Lifecycle', async () => {
       if (station != null) {
         cleanupChargingStation(station)
       }
+    })
+
+    await it('should flush a deferred transaction queue checkpoint before delete', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+      let queueLength = 1
+      const savedQueueLengths: number[] = []
+      ;(station as unknown as { saveConfiguration: () => void }).saveConfiguration = () => {
+        savedQueueLengths.push(queueLength)
+      }
+
+      ChargingStation.prototype.saveTransactionEventQueues.call(station, true)
+      queueLength = 2
+      ChargingStation.prototype.saveTransactionEventQueues.call(station, true)
+      assert.deepStrictEqual(savedQueueLengths, [])
+
+      await ChargingStation.prototype.delete.call(station, false)
+
+      assert.deepStrictEqual(savedQueueLengths, [2])
     })
 
     await it('should handle delete() on stopped station', async () => {

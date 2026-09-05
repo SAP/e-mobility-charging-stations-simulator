@@ -436,7 +436,8 @@ const buildEnergyMeasurandValue = (
   interval: number,
   evseId?: number,
   measurandsKey?: ConfigurationKeyType,
-  snapshot = false
+  snapshot = false,
+  connectorLocalFallback = false
 ): null | SingleValueMeasurandData => {
   if (
     snapshot &&
@@ -453,7 +454,7 @@ const buildEnergyMeasurandValue = (
     undefined,
     evseId,
     undefined,
-    snapshot
+    connectorLocalFallback
   )
   if (energyTemplate == null) {
     return null
@@ -2177,7 +2178,8 @@ const buildIdentifiedMeterValue = (
     energyInterval,
     evseId,
     measurandsKey,
-    snapshot && !advanceEnergy
+    snapshot && !advanceEnergy,
+    snapshot
   )
   if (energyMeasurand != null) {
     // Aligned snapshots may own accumulation when periodic TxUpdated samples
