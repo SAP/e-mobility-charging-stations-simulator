@@ -432,9 +432,9 @@ export class ChargingStation extends EventEmitter {
   /**
    * Closes the WebSocket connection to the central server.
    * @param options - Close options
-   * @param options.byRequest - Whether the close is requested (the UI disconnect
-   *   action); a requested close is terminal (onClose does not reconnect), any
-   *   other close (e.g. certificate rotation) reconnects like a server-initiated drop
+   * @param options.byRequest - Whether the close is terminal (for example, a UI
+   *   disconnect or station stop); terminal closes do not reconnect, while other
+   *   closes (for example, certificate rotation) reconnect like a server-initiated drop
    */
   public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
     if (this.isWebSocketConnectionOpened()) {
@@ -2682,9 +2682,9 @@ export class ChargingStation extends EventEmitter {
     }
     // Reconnect on any close we did not request while still started: a
     // server-initiated drop, or an internal close wanting a fresh connection
-    // (e.g. certificate rotation), clean or abnormal. Only a requested close
-    // stays terminal.
-    if (this.started && !closedByRequest) {
+    // (e.g. certificate rotation), clean or abnormal. A requested close or
+    // an in-progress shutdown stays terminal.
+    if (this.started && !this.stopping && !closedByRequest) {
       this.reconnect()
         .then(() => {
           this.emitChargingStationEvent(ChargingStationEvents.updated)
@@ -2928,13 +2928,11 @@ export class ChargingStation extends EventEmitter {
       )
     }
     this.ocppIncomingRequestService.stop(this)
-    this.closeWSConnection()
+    this.closeWSConnection({ byRequest: true })
     this.lifecycleAbortController?.abort()
     this.ocppRequestService.cancelPendingRequests(this)
-    // A timeout stops waiting, not the sequence itself. Cancellation releases
-    // its pending request; join it before persisting final state or emitting
-    // `stopped`, otherwise stale shutdown messages can outlive this lifecycle.
-    await stopMessageSequencePromise
+    // The timeout is the hard shutdown bound. A sequence that settled normally
+    // was already joined above; never wait without a bound after cancellation.
     await Promise.all(
       this.iterateConnectors().map(({ connectorStatus }) =>
         OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
@@ -2969,6 +2967,9 @@ export class ChargingStation extends EventEmitter {
         `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retry in ${formatDurationMilliSeconds(reconnectDelay)}, timeout ${formatDurationMilliSeconds(reconnectTimeout)}`
       )
       await sleep(reconnectDelay)
+      if (!this.started || this.stopping) {
+        return
+      }
       logger.error(
         `${this.logPrefix()} ${moduleName}.reconnect: WebSocket connection retry #${this.wsConnectionRetryCount.toString()}`
       )

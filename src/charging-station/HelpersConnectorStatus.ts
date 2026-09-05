@@ -18,11 +18,9 @@ import {
   ChargingProfilePurposeType,
   type ConnectorStatus,
   ConnectorStatusEnum,
-  OCPP20TransactionEventEnumType,
 } from '../types/index.js'
 import {
   clone,
-  Constants,
   convertToDate,
   convertToInt,
   isJsonObject,
@@ -31,6 +29,10 @@ import {
 } from '../utils/index.js'
 import { getSingleChargingSchedule } from './HelpersChargingProfile.js'
 import { getMaxNumberOfConnectors } from './HelpersConfig.js'
+import {
+  boundTransactionEventQueue,
+  queuedTransactionEventHasPublicKey,
+} from './TransactionEventQueueUtils.js'
 
 const moduleName = 'HelpersConnectorStatus'
 
@@ -274,18 +276,6 @@ const prepareQueuedTransactionEvent = (candidate: unknown): QueuedTransactionEve
   return queuedEvent
 }
 
-const queuedEventHasPublicKey = (
-  queuedEvent: QueuedTransactionEvent,
-  transactionId: string
-): boolean =>
-  queuedEvent.request.transactionInfo.transactionId === transactionId &&
-  queuedEvent.request.meterValue?.some(meterValue =>
-    meterValue.sampledValue.some(sampledValue => {
-      const publicKey = sampledValue.signedMeterValue?.publicKey
-      return typeof publicKey === 'string' && publicKey.length > 0
-    })
-  ) === true
-
 /**
  * Post-load rehydration hook: coerces the persisted reservation
  * `expiryDate` back into a `Date` instance (or drops the reservation
@@ -356,62 +346,16 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
           connectorStatus.transactionSeqNo ?? -1
         )
         : -1
-    if (preparedQueue.length > Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH) {
-      const removedEvents: QueuedTransactionEvent[] = []
-      let excess = preparedQueue.length - Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
-      const retainedQueue = preparedQueue.filter(queuedEvent => {
-        if (
-          excess === 0 ||
-          queuedEvent.request.eventType !== OCPP20TransactionEventEnumType.Updated
-        ) {
-          return true
-        }
-        excess--
-        if (
-          transactionId != null &&
-          queuedEvent.request.transactionInfo.transactionId === transactionId
-        ) {
-          removedActiveTransactionEvent = true
-        }
-        removedEvents.push(queuedEvent)
-        return false
-      })
-      if (excess > 0) {
-        removedEvents.push(...retainedQueue.splice(0, excess))
-        if (
-          transactionId != null &&
-          removedEvents.some(
-            queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
-          )
-        ) {
-          removedActiveTransactionEvent = true
-        }
-      }
-      preparedQueue.splice(0, preparedQueue.length, ...retainedQueue)
-      for (const removedEvent of removedEvents) {
-        const removedTransactionId = removedEvent.request.transactionInfo.transactionId
-        const removedPublicKey = removedEvent.request.meterValue
-          ?.flatMap(meterValue => meterValue.sampledValue)
-          .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-          .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
-        if (removedPublicKey == null) continue
-        const replacementSignedSample = retainedQueue
-          .find(
-            retainedEvent =>
-              retainedEvent.request.transactionInfo.transactionId === removedTransactionId &&
-              retainedEvent.request.meterValue?.some(meterValue =>
-                meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
-              ) === true
-          )
-          ?.request.meterValue?.flatMap(meterValue => meterValue.sampledValue)
-          .find(sampledValue => sampledValue.signedMeterValue != null)
-        const replacementSignedMeterValue = replacementSignedSample?.signedMeterValue
-        if (replacementSignedMeterValue?.publicKey.length === 0) {
-          replacementSignedMeterValue.publicKey = removedPublicKey
-        }
-      }
-    }
     connectorStatus.transactionEventQueue = preparedQueue
+    const { removedEvents } = boundTransactionEventQueue(connectorStatus)
+    if (
+      transactionId != null &&
+      removedEvents.some(
+        queuedEvent => queuedEvent.request.transactionInfo.transactionId === transactionId
+      )
+    ) {
+      removedActiveTransactionEvent = true
+    }
     if (activeTransactionMaxSeqNo >= 0) {
       connectorStatus.transactionSeqNo = activeTransactionMaxSeqNo
     }
@@ -419,7 +363,9 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       removedActiveTransactionEvent &&
       connectorStatus.publicKeySentInTransaction === true &&
       transactionId != null &&
-      !preparedQueue.some(queuedEvent => queuedEventHasPublicKey(queuedEvent, transactionId))
+      preparedQueue.every(
+        queuedEvent => !queuedTransactionEventHasPublicKey(queuedEvent, transactionId)
+      )
     ) {
       connectorStatus.publicKeySentInTransaction = false
     }

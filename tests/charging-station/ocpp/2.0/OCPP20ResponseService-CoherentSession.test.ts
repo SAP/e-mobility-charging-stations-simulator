@@ -21,6 +21,7 @@ import {
   type TestableOCPP20ResponseService,
 } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20TransactionEventEnumType,
@@ -96,6 +97,29 @@ await describe('OCPP20ResponseServiceCoherentSession', async () => {
     await testable.handleResponseTransactionEvent(station, response, request)
 
     assert.strictEqual(createSpy.mock.calls.length, 1)
+  })
+
+  await it('defers restored session creation and timers until replay reconciliation', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionRestored = true
+    const startUpdatedSpy = mock.method(
+      OCPP20ServiceUtils,
+      'startUpdatedMeterValues',
+      () => undefined
+    )
+    const startEndedSpy = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildStartedRequest(TEST_TRANSACTION_UUID)
+    )
+
+    assert.strictEqual(createSpy.mock.callCount(), 0)
+    assert.strictEqual(startUpdatedSpy.mock.callCount(), 0)
+    assert.strictEqual(startEndedSpy.mock.callCount(), 0)
+    assert.strictEqual(connectorStatus.transactionRestored, true)
   })
 
   await it('should NOT create a coherent session on rejected idToken without force override', async () => {

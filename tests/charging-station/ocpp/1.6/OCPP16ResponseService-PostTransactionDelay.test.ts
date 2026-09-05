@@ -208,8 +208,13 @@ await describe('OCPP16ResponseService — PostTransactionDelay', async () => {
     )
   })
 
-  await it('should skip cleanup when station stops during delay', async t => {
+  await it('should abort the delay when stop lifecycle begins without post-delay mutation', async t => {
     // Arrange
+    const lifecycleAbortController = new AbortController()
+    Object.defineProperty(station, 'lifecycleAbortSignal', {
+      configurable: true,
+      value: lifecycleAbortController.signal,
+    })
     setupConnectorWithTransaction(station, 1, { transactionId: 400 })
     const requestPayload: OCPP16StopTransactionRequest = {
       meterStop: 4000,
@@ -222,21 +227,34 @@ await describe('OCPP16ResponseService — PostTransactionDelay', async () => {
 
     // Act
     await withMockTimers(t, ['setTimeout'], async () => {
-      const promise = responseService.responseHandler(
-        station,
-        OCPP16RequestCommand.STOP_TRANSACTION,
-        responsePayload,
-        requestPayload
-      )
-      for (let i = 0; i < 10; i++) {
+      let handlerSettled = false
+      const promise = responseService
+        .responseHandler(
+          station,
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          responsePayload,
+          requestPayload
+        )
+        .then(() => {
+          handlerSettled = true
+          return undefined
+        })
+      for (let index = 0; index < 10; index++) {
         await flushMicrotasks()
       }
-      station.started = false
-      t.mock.timers.tick(5000)
-      for (let i = 0; i < 10; i++) {
+
+      ;(station as unknown as { stopping: boolean }).stopping = true
+      lifecycleAbortController.abort()
+      for (let index = 0; index < 10; index++) {
         await flushMicrotasks()
       }
+
+      assert.strictEqual(handlerSettled, true, 'Stop lifecycle abort should release the handler')
       await promise
+      t.mock.timers.tick(5000)
+      for (let index = 0; index < 10; index++) {
+        await flushMicrotasks()
+      }
     })
 
     // Assert

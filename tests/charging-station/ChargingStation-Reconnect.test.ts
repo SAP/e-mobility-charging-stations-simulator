@@ -11,7 +11,7 @@ import { WebSocket } from 'ws'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { WebSocketCloseEventStatusCode } from '../../src/types/index.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import {
   cleanupStationTemplates,
   copyStationTemplate,
@@ -21,9 +21,12 @@ import {
 // onClose and reconnect are private; the tests drive onClose directly with a
 // spied reconnect to observe the reconnect decision without opening a socket.
 interface StationInternals {
+  getReconnectDelay: () => number
   onClose: (code: WebSocketCloseEventStatusCode, reason: Buffer) => void
+  openWSConnection: () => void
   reconnect: () => Promise<void>
   started: boolean
+  stopping: boolean
   wsConnection: unknown
 }
 
@@ -67,5 +70,38 @@ await describe('ChargingStation reconnect decision on WebSocket close', async ()
     internals.onClose(WebSocketCloseEventStatusCode.CLOSE_NORMAL, Buffer.from(''))
 
     assert.strictEqual(reconnectCount(), 0)
+  })
+
+  await it('should not reconnect when the socket closes while stopping', () => {
+    const { reconnectCount, station } = makeStation()
+    const internals = station as unknown as StationInternals
+    internals.stopping = true
+
+    internals.onClose(WebSocketCloseEventStatusCode.CLOSE_NORMAL, Buffer.from(''))
+
+    assert.strictEqual(reconnectCount(), 0)
+  })
+
+  await it('should not open a socket when stop begins during the reconnect delay', async t => {
+    const station = createStationFromTemplate(copyStationTemplate())
+    const internals = station as unknown as StationInternals
+    internals.started = true
+    let openCalls = 0
+    internals.getReconnectDelay = () => 1000
+    internals.openWSConnection = () => {
+      openCalls++
+    }
+    if (station.stationInfo != null) {
+      station.stationInfo.autoReconnectMaxRetries = -1
+    }
+
+    await withMockTimers(t, ['setTimeout'], async () => {
+      const reconnectPromise = internals.reconnect()
+      internals.stopping = true
+      t.mock.timers.tick(1000)
+      await reconnectPromise
+    })
+
+    assert.strictEqual(openCalls, 0)
   })
 })

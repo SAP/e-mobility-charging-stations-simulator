@@ -21,6 +21,7 @@ import {
   type OCPP20IdTokenInfoType,
   type OCPP20IdTokenType,
   OCPP20IncomingRequestCommand,
+  OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
@@ -67,6 +68,10 @@ import {
 } from '../../../utils/index.js'
 import { buildConfigKey, getConfigurationKey } from '../../index.js'
 import {
+  boundTransactionEventQueue,
+  getTransactionEventQueueBytes as calculateTransactionEventQueueBytes,
+} from '../../TransactionEventQueueUtils.js'
+import {
   mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
   OCPPAuthServiceFactory,
@@ -75,6 +80,7 @@ import { sendPostTransactionStatus } from '../OCPPConnectorStatusOperations.js'
 import {
   buildClockAlignedConnectorMeterValue,
   buildMeterValue,
+  canonicalizeCustomData,
   createPayloadConfigs,
   PayloadValidatorOptions,
 } from '../OCPPServiceUtils.js'
@@ -203,6 +209,53 @@ const normalizeClockAlignedAdditiveSample = (
   }
 }
 
+const normalizePhysicalMeterValueForStationAggregation = (
+  meterValue: OCPP20MeterValue
+): OCPP20MeterValue => {
+  const selectedSamples = new Map<
+    string,
+    { explicitInlet: boolean; sampledValue: OCPP20SampledValue }
+  >()
+  const passthroughSamples: OCPP20SampledValue[] = []
+  for (const sampledValue of meterValue.sampledValue) {
+    const additiveUnitFamily = getClockAlignedAdditiveUnitFamily(
+      sampledValue.measurand,
+      sampledValue.unitOfMeasure?.unit
+    )
+    if (additiveUnitFamily == null) {
+      passthroughSamples.push(sampledValue)
+      continue
+    }
+    const normalizedSample = {
+      ...sampledValue,
+      location: OCPP20LocationEnumType.Inlet,
+    }
+    const unitNormalizedSample = normalizeClockAlignedAdditiveSample(
+      normalizedSample,
+      additiveUnitFamily
+    )
+    const key = JSON.stringify([
+      unitNormalizedSample.measurand,
+      unitNormalizedSample.context,
+      unitNormalizedSample.location,
+      unitNormalizedSample.phase,
+      canonicalizeCustomData(unitNormalizedSample.customData),
+    ])
+    const explicitInlet = sampledValue.location === OCPP20LocationEnumType.Inlet
+    const existing = selectedSamples.get(key)
+    if (existing == null || (!existing.explicitInlet && explicitInlet)) {
+      selectedSamples.set(key, { explicitInlet, sampledValue: normalizedSample })
+    }
+  }
+  return {
+    ...meterValue,
+    sampledValue: [
+      ...passthroughSamples,
+      ...[...selectedSamples.values()].map(({ sampledValue }) => sampledValue),
+    ],
+  }
+}
+
 const aggregateClockAlignedSamples = (
   meterValues: readonly OCPP20MeterValue[],
   numberOfPhases: number
@@ -216,7 +269,7 @@ const aggregateClockAlignedSamples = (
         sample.context,
         sample.location,
         sample.phase,
-        sample.customData,
+        canonicalizeCustomData(sample.customData),
         ...(additive ? [] : [sample.unitOfMeasure?.unit, sample.unitOfMeasure?.multiplier]),
       ])
     for (const sampledValue of meterValue.sampledValue) {
@@ -244,7 +297,7 @@ const aggregateClockAlignedSamples = (
         sampledValue.measurand,
         sampledValue.context,
         sampledValue.location,
-        sampledValue.customData,
+        canonicalizeCustomData(sampledValue.customData),
       ])
       const group = additiveGroups.get(groupKey) ?? {
         aggregatePresent: false,
@@ -438,7 +491,9 @@ export class OCPP20ServiceUtils {
     }
     if (
       connectorStatus.transactionStarted !== true &&
-      connectorStatus.transactionPending !== true
+      connectorStatus.transactionPending !== true &&
+      connectorStatus.transactionStarting !== true &&
+      connectorStatus.transactionEnding !== true
     ) {
       return
     }
@@ -669,7 +724,10 @@ export class OCPP20ServiceUtils {
       const meterValues: OCPP20MeterValue[] = []
       const sampledValueTemplates: SampledValueTemplate[] = []
       let idleMeterConnectorId: number | undefined
-      for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+      const connectors = [...evseStatus.connectors.entries()].sort(
+        ([leftConnectorId], [rightConnectorId]) => leftConnectorId - rightConnectorId
+      )
+      for (const [connectorId, connectorStatus] of connectors) {
         if (!evseInTransaction && usesEvseMeterTemplate && idleMeterConnectorId != null) continue
         // A transaction whose Ended delivery is in flight already reports as
         // an idle meter point; it must not emit another Updated event.
@@ -689,8 +747,8 @@ export class OCPP20ServiceUtils {
             chargingStation,
             {
               connectorId,
-              ...((!periodicTransactionEnergySamples ||
-                connectorStatus.transactionRestored === true) &&
+              ...(!periodicTransactionEnergySamples &&
+                connectorStatus.transactionRestored !== true &&
                 transactionId != null && { advanceEnergy: true }),
               ...(evseId === 0 && {
                 idle: !chargingStation
@@ -730,14 +788,17 @@ export class OCPP20ServiceUtils {
                 ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
                 : 1
             const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
-            physicalMeterValues.push({
-              ...meterValue,
-              sampledValue: meterValue.sampledValue.map(sampledValue =>
-                sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT
-                  ? { ...sampledValue, value: sampledValue.value / conversionEfficiency }
-                  : sampledValue
-              ),
-            })
+            physicalMeterValues.push(
+              normalizePhysicalMeterValueForStationAggregation({
+                ...meterValue,
+                sampledValue: meterValue.sampledValue.map(sampledValue =>
+                  sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT &&
+                  sampledValue.location === OCPP20LocationEnumType.Outlet
+                    ? { ...sampledValue, value: sampledValue.value / conversionEfficiency }
+                    : sampledValue
+                ),
+              })
+            )
           }
           if (transactionId != null) {
             if (!suppressEvseEmission) {
@@ -1336,6 +1397,26 @@ export class OCPP20ServiceUtils {
       if (connectorStatus.transactionRestored !== true || !hasOngoingTransaction(connectorStatus)) {
         continue
       }
+      const transactionId = connectorStatus.transactionId
+      if (transactionId == null) continue
+      const restoredSession =
+        chargingStation.getCoherentSession(transactionId) ??
+        chargingStation.createCoherentSession(transactionId, connectorId)
+      if (restoredSession != null) {
+        const persistedEnergyWh = Math.max(
+          0,
+          connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+        )
+        restoredSession.socPercent = Math.min(
+          Constants.SOC_MAXIMUM_PERCENT,
+          Math.max(
+            0,
+            restoredSession.socPercent +
+              (persistedEnergyWh / restoredSession.profile.batteryCapacityWh) *
+                Constants.SOC_MAXIMUM_PERCENT
+          )
+        )
+      }
       connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt = resumedAt
       OCPP20ServiceUtils.startUpdatedMeterValues(
         chargingStation,
@@ -1659,7 +1740,13 @@ export class OCPP20ServiceUtils {
     const accepted =
       response.idTokenInfo == null ||
       response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
-    if (accepted && connectorStatus != null && connectorStatus.transactionStarted !== true) {
+    if (
+      accepted &&
+      chargingStation.started &&
+      !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
+      connectorStatus != null &&
+      connectorStatus.transactionStarted !== true
+    ) {
       const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
       connectorStatus.transactionStarted = true
       connectorStatus.transactionPending = false
@@ -2071,23 +2158,26 @@ export class OCPP20ServiceUtils {
                 .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
                 .find(key => key != null && key.length > 0)
               : undefined
-            const nextSignedSample = queue
+            const nextSignedEvent = queue
               .slice(1)
-              .filter(
+              .find(
                 remainingEvent =>
                   remainingEvent.request.transactionInfo.transactionId ===
-                  queuedEvent.request.transactionInfo.transactionId
+                    queuedEvent.request.transactionInfo.transactionId &&
+                  remainingEvent.request.meterValue?.some(meterValue =>
+                    meterValue.sampledValue.some(
+                      sampledValue => sampledValue.signedMeterValue != null
+                    )
+                  ) === true
               )
-              .flatMap(remainingEvent =>
-                Array.isArray(remainingEvent.request.meterValue)
-                  ? remainingEvent.request.meterValue
-                  : []
-              )
-              .flatMap(meterValue =>
-                Array.isArray(meterValue.sampledValue) ? meterValue.sampledValue : []
-              )
+            const nextSignedSample = nextSignedEvent?.request.meterValue
+              ?.flatMap(meterValue => meterValue.sampledValue)
               .find(sampledValue => sampledValue.signedMeterValue != null)
-            if (publicKey != null && nextSignedSample?.signedMeterValue != null) {
+            if (
+              publicKey != null &&
+              nextSignedEvent != null &&
+              nextSignedSample?.signedMeterValue != null
+            ) {
               nextSignedSample.signedMeterValue.publicKey = publicKey
             } else if (
               publicKey != null &&
@@ -2134,84 +2224,50 @@ export class OCPP20ServiceUtils {
     connectorStatus.transactionEventQueue ??= []
     const queue = connectorStatus.transactionEventQueue
     const transactionId = request.transactionInfo.transactionId
+    if (
+      queue.some(
+        queuedEvent =>
+          queuedEvent.request.transactionInfo.transactionId === transactionId &&
+          queuedEvent.seqNo === request.seqNo
+      )
+    ) {
+      const bounded = boundTransactionEventQueue(connectorStatus)
+      if (bounded.changed) chargingStation.saveTransactionEventQueues()
+      return
+    }
+
+    const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
+    const queuedEventBytes = OCPP20ServiceUtils.getQueuedTransactionEventBytes(queuedEvent)
     const isUpdatedEvent = request.eventType === OCPP20TransactionEventEnumType.Updated
-    const queueLimit = isUpdatedEvent
-      ? Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 2
-      : Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
-    if (queue.length >= queueLimit) {
+    const initiallyBounded = isUpdatedEvent
+      ? boundTransactionEventQueue(connectorStatus)
+      : { bytes: calculateTransactionEventQueueBytes(queue), changed: false }
+    const queueBytes = initiallyBounded.bytes
+    const updatedQueueLimit = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 2
+    const separatorBytes = queue.length === 0 ? 0 : 1
+    if (
+      isUpdatedEvent &&
+      (queue.length >= updatedQueueLimit ||
+        queueBytes + separatorBytes + queuedEventBytes >
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    ) {
       if (!OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)) {
         OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded update capacity; replacing intermediate updates until delivery resumes`
+          `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded update capacity; dropping updates until delivery resumes`
         )
       }
-      let removedEvents: QueuedTransactionEvent[] = []
-      const replaceableIndexes = queue.flatMap((queuedEvent, index) =>
-        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ? [index] : []
-      )
-      const replaceableIndex =
-        replaceableIndexes[Math.floor((replaceableIndexes.length - 1) / 2)] ?? -1
-      if (replaceableIndex >= 0) {
-        removedEvents = queue.splice(replaceableIndex, 1)
-      } else if (!isUpdatedEvent) {
-        const completedTransactionId = queue.find(
-          queuedEvent => queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended
-        )?.request.transactionInfo.transactionId
-        if (completedTransactionId != null) {
-          for (let index = queue.length - 1; index >= 0; index--) {
-            if (queue[index].request.transactionInfo.transactionId === completedTransactionId) {
-              removedEvents.push(...queue.splice(index, 1))
-            }
-          }
-        }
+      if (OCPP20ServiceUtils.requestHasPublicKey(request)) {
+        connectorStatus.publicKeySentInTransaction = false
       }
-      if (removedEvents.length === 0 && !isUpdatedEvent) {
-        const oldestLifecycleEvent = queue.shift()
-        if (oldestLifecycleEvent != null) removedEvents.push(oldestLifecycleEvent)
-      }
-      if (removedEvents.length === 0) {
-        const droppedPublicKey =
-          request.meterValue
-            ?.flatMap(meterValue => meterValue.sampledValue)
-            .some(sampledValue => {
-              const publicKey = sampledValue.signedMeterValue?.publicKey
-              return typeof publicKey === 'string' && publicKey.length > 0
-            }) === true
-        if (droppedPublicKey) connectorStatus.publicKeySentInTransaction = false
-        return
-      }
-      for (const removedEvent of removedEvents) {
-        const removedTransactionId = removedEvent.request.transactionInfo.transactionId
-        const removedPublicKey = removedEvent.request.meterValue
-          ?.flatMap(meterValue => meterValue.sampledValue)
-          .map(sampledValue => sampledValue.signedMeterValue?.publicKey)
-          .find(publicKey => typeof publicKey === 'string' && publicKey.length > 0)
-        if (removedPublicKey == null) continue
-        const replacementRequest = [...queue.map(queuedEvent => queuedEvent.request), request].find(
-          candidate =>
-            candidate.transactionInfo.transactionId === removedTransactionId &&
-            candidate.meterValue?.some(meterValue =>
-              meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
-            ) === true
-        )
-        const replacementSignedSample = replacementRequest?.meterValue
-          ?.flatMap(meterValue => meterValue.sampledValue)
-          .find(sampledValue => sampledValue.signedMeterValue != null)
-        if (replacementSignedSample?.signedMeterValue != null) {
-          if (replacementSignedSample.signedMeterValue.publicKey.length === 0) {
-            replacementSignedSample.signedMeterValue.publicKey = removedPublicKey
-          }
-        } else if (connectorStatus.transactionId?.toString() === removedTransactionId) {
-          connectorStatus.publicKeySentInTransaction = false
-        }
-      }
+      if (initiallyBounded.changed) chargingStation.saveTransactionEventQueues()
+      return
     }
-    const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
+
     let insertionIndex = queue.length
     for (let index = queue.length - 1; index >= 0; index--) {
       const existingEvent = queue[index]
       if (existingEvent.request.transactionInfo.transactionId !== transactionId) continue
-      if (existingEvent.seqNo === request.seqNo) return
       insertionIndex = index
       if (existingEvent.seqNo < request.seqNo) {
         insertionIndex = index + 1
@@ -2219,7 +2275,24 @@ export class OCPP20ServiceUtils {
       }
     }
     queue.splice(insertionIndex, 0, queuedEvent)
-    chargingStation.saveTransactionEventQueues(isUpdatedEvent)
+    const bounded = boundTransactionEventQueue(
+      connectorStatus,
+      isUpdatedEvent ? undefined : queuedEvent
+    )
+    if (
+      bounded.changed &&
+      !OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)
+    ) {
+      OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded capacity; compacting or evicting queued payload`
+      )
+    }
+    chargingStation.saveTransactionEventQueues(isUpdatedEvent && !initiallyBounded.changed)
+  }
+
+  private static getQueuedTransactionEventBytes (queuedEvent: QueuedTransactionEvent): number {
+    return Buffer.byteLength(JSON.stringify(queuedEvent), 'utf8')
   }
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
@@ -2272,6 +2345,14 @@ export class OCPP20ServiceUtils {
       : secondsToMilliseconds(defaultSeconds)
   }
 
+  private static requestHasPublicKey (request: OCPP20TransactionEventRequest): boolean {
+    return (
+      request.meterValue
+        ?.flatMap(meterValue => meterValue.sampledValue)
+        .some(sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0) === true
+    )
+  }
+
   private static resolveActiveTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -2281,7 +2362,8 @@ export class OCPP20ServiceUtils {
     if (
       connectorStatus?.transactionEnding !== true &&
       (connectorStatus?.transactionStarted === true ||
-        connectorStatus?.transactionPending === true) &&
+        connectorStatus?.transactionPending === true ||
+        connectorStatus?.transactionStarting === true) &&
       connectorStatus.transactionId != null
     ) {
       let transactionId: string
@@ -2425,9 +2507,9 @@ export class OCPP20ServiceUtils {
 
   /**
    * Serializes non-transactional aligned MeterValues per EVSE. While a request
-   * is stalled, every later sampling boundary is retained in the next batched
-   * request, but replacement-only callers settle immediately so they do not
-   * accumulate continuations on the long-lived drain promise.
+   * is stalled, only the latest later sampling boundary is retained, and
+   * replacement-only callers settle immediately so they do not accumulate
+   * continuations on the long-lived drain promise.
    * @param chargingStation - Target charging station
    * @param evseId - Meter point EVSE identifier
    * @param request - Aligned MeterValues request for one sampling boundary
@@ -2450,12 +2532,7 @@ export class OCPP20ServiceUtils {
       state = {}
       stationStates.set(evseId, state)
     }
-    if (state.pending == null) {
-      state.pending = { request, responseTimeoutMs }
-    } else {
-      state.pending.request.meterValue.push(...request.meterValue)
-      state.pending.responseTimeoutMs = responseTimeoutMs
-    }
+    state.pending = { request, responseTimeoutMs }
     if (state.inFlight != null) return Promise.resolve()
 
     const sendState = state

@@ -229,14 +229,20 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(stoppedEventEmitted, true)
     })
 
-    await it('should join a timed-out stop sequence after cancelling pending requests', async t => {
+    await it('should finish a timed-out never-settling stop sequence after cancellation', async t => {
       t.mock.timers.enable({ apis: ['setTimeout'] })
-      const stopSequence = Promise.withResolvers<undefined>()
+      const stopSequence = new Promise<undefined>(() => {
+        // Deliberately never settles.
+      })
+      const closeCalls: { byRequest?: boolean }[] = []
       let cancelCalls = 0
       let stoppedEvents = 0
+      let stopSettled = false
       const lifecycleAbortController = new AbortController()
       const stationLike = {
-        closeWSConnection: () => undefined,
+        closeWSConnection: (options?: { byRequest?: boolean }) => {
+          closeCalls.push(options ?? {})
+        },
         configurationFileHash: 'test-configuration',
         emitChargingStationEvent: () => {
           stoppedEvents++
@@ -254,23 +260,29 @@ await describe('ChargingStation Lifecycle', async () => {
         sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
         started: true,
         stationInfo: { enableStatistics: false },
-        stopMessageSequence: () => stopSequence.promise,
+        stopMessageSequence: () => stopSequence,
       }
       const stopPromise = (
         ChargingStation.prototype as unknown as {
           performStop: (reason?: unknown, stopTransactions?: boolean) => Promise<void>
         }
       ).performStop.call(stationLike)
+      void stopPromise.then(() => {
+        stopSettled = true
+        return undefined
+      })
       await Promise.resolve()
 
       t.mock.timers.tick(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)
-      await Promise.resolve()
-      await Promise.resolve()
+      for (let index = 0; index < 10; index++) {
+        await Promise.resolve()
+      }
 
-      assert.strictEqual(cancelCalls, 1)
-      assert.strictEqual(stoppedEvents, 0)
-      stopSequence.resolve(undefined)
+      assert.strictEqual(stopSettled, true)
       await stopPromise
+      assert.strictEqual(cancelCalls, 1)
+      assert.deepStrictEqual(closeCalls, [{ byRequest: true }])
+      assert.strictEqual(lifecycleAbortController.signal.aborted, true)
       assert.strictEqual(stoppedEvents, 1)
     })
 

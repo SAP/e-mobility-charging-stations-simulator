@@ -37,6 +37,7 @@ import {
 import {
   Constants,
   convertToInt,
+  interruptibleSleep,
   isNotEmptyArray,
   logger,
   sleep,
@@ -544,6 +545,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StopTransactionResponse,
     requestPayload: OCPP16StopTransactionRequest
   ): Promise<void> {
+    const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
+      .lifecycleAbortSignal
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     )
@@ -599,8 +602,12 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
       // is a no-op.
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
-      await sleep(secondsToMilliseconds(postTransactionDelay))
-      if (!chargingStation.started) {
+      if (lifecycleAbortSignal == null) {
+        await sleep(secondsToMilliseconds(postTransactionDelay))
+      } else {
+        await interruptibleSleep(secondsToMilliseconds(postTransactionDelay), lifecycleAbortSignal)
+      }
+      if (lifecycleAbortSignal?.aborted === true || !chargingStation.started) {
         return
       }
       transactionIdTag = finalizeTransactionConnectorStatus(

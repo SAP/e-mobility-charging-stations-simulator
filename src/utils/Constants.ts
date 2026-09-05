@@ -145,6 +145,8 @@ export class Constants {
   // Values exceeding this limit cause Node.js to reset the delay to 1ms
   static readonly MAX_SETINTERVAL_DELAY_MS = 2_147_483_647
 
+  /** Hard serialized-size safety bound for durable OCPP 2.0.1 TransactionEvent backlogs. */
+  static readonly MAX_TRANSACTION_EVENT_QUEUE_BYTES = 1024 * 1024
   /** Hard safety bound for durable OCPP 2.0.1 TransactionEvent backlogs per connector. */
   static readonly MAX_TRANSACTION_EVENT_QUEUE_LENGTH = 10_000
   /** Milliseconds per day; equal to `24 * MS_PER_HOUR`. */

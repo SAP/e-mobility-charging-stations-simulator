@@ -460,27 +460,28 @@ export class OCPP20ResponseService extends OCPPResponseService {
                 error
               )
             })
-            const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-            OCPP20ServiceUtils.startUpdatedMeterValues(
-              chargingStation,
-              connectorId,
-              txUpdatedInterval,
-              evseId
-            )
-            const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
-            OCPP20ServiceUtils.startEndedMeterValues(
-              chargingStation,
-              connectorId,
-              txEndedInterval,
-              evseId
-            )
-            // Create coherent MeterValues session after transactionId is known.
-            // No-op when the feature flag or the EV profile file is not
-            // configured (see ChargingStation.createCoherentSession).
-            chargingStation.createCoherentSession(
-              requestPayload.transactionInfo.transactionId,
-              connectorId
-            )
+            if (connectorStatus.transactionRestored !== true) {
+              const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
+              OCPP20ServiceUtils.startUpdatedMeterValues(
+                chargingStation,
+                connectorId,
+                txUpdatedInterval,
+                evseId
+              )
+              const txEndedInterval = OCPP20ServiceUtils.getTxEndedInterval(chargingStation)
+              OCPP20ServiceUtils.startEndedMeterValues(
+                chargingStation,
+                connectorId,
+                txEndedInterval,
+                evseId
+              )
+              // Create coherent MeterValues session after transactionId is known.
+              // Restored transactions are reconciled once after replay finishes.
+              chargingStation.createCoherentSession(
+                requestPayload.transactionInfo.transactionId,
+                connectorId
+              )
+            }
           }
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} STARTED on connector ${String(connectorId)}`

@@ -97,6 +97,22 @@ import {
 
 const moduleName = 'OCPPServiceUtils'
 
+/**
+ * Serializes custom data with recursively sorted object keys for stable meter-value identities.
+ * Array order remains significant.
+ * @param customData - JSON-compatible custom data to serialize
+ * @returns Canonical JSON, or `undefined` when custom data is absent
+ */
+export const canonicalizeCustomData = (customData: unknown): string | undefined =>
+  JSON.stringify(customData, (_key: string, value: unknown): unknown => {
+    if (value == null || typeof value !== 'object' || Array.isArray(value)) return value
+    const sortedValue: Record<string, unknown> = {}
+    for (const key of Object.keys(value).sort()) {
+      sortedValue[key] = (value as Record<string, unknown>)[key]
+    }
+    return sortedValue
+  })
+
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
   component: OCPP20ComponentName,
@@ -1382,7 +1398,7 @@ const applySnapshotRegisterValuesWithoutPhases = (
       template.format,
       template.location,
       template.unit,
-      template.customData,
+      canonicalizeCustomData(template.customData),
     ])
     const family = families.get(key) ?? []
     family.push(template)
@@ -1430,30 +1446,32 @@ const expandClockAlignedSnapshotSamples = (
   )
   const numberOfPhases = Math.max(1, chargingStation.getNumberOfPhases())
   const expanded: SampledValue[] = []
-  const resolvedTemplates =
+  const resolvedTemplates: SampledValueTemplate[] = (
     sampledValueTemplates ?? resolveClockAlignedTemplates(chargingStation, connectorId, evseId)
-  const templatesBeforePhaseSuppression =
-    sampledValueTemplates == null
-      ? resolvedTemplates
-      : [
-          ...new Map(
-            resolvedTemplates.map(template => {
-              const identity = resolveSampledValueFields(template, 0, context, template.phase)
-              return [
-                JSON.stringify([
-                  identity.measurand,
-                  identity.phase,
-                  identity.location,
-                  identity.unit,
-                  chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-                    ? template.format
-                    : template.customData,
-                ]),
-                template,
-              ]
-            })
-          ).values(),
-        ]
+  ).map((template): SampledValueTemplate => {
+    const measurand = template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    return evseId === 0 && template.location == null && isElectricalMeasurand(measurand)
+      ? ({ ...template, location: MeterValueLocation.INLET } as SampledValueTemplate)
+      : template
+  })
+  const templatesBeforePhaseSuppression = (() => {
+    if (sampledValueTemplates == null) return resolvedTemplates
+    const templatesByIdentity = new Map<string, SampledValueTemplate>()
+    for (const template of resolvedTemplates) {
+      const identity = resolveSampledValueFields(template, 0, context, template.phase)
+      const key = JSON.stringify([
+        identity.measurand,
+        identity.phase,
+        identity.location,
+        identity.unit,
+        chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
+          ? template.format
+          : canonicalizeCustomData(template.customData),
+      ])
+      if (!templatesByIdentity.has(key)) templatesByIdentity.set(key, template)
+    }
+    return [...templatesByIdentity.values()]
+  })()
   const templates = registerValuesWithoutPhases
     ? applySnapshotRegisterValuesWithoutPhases(templatesBeforePhaseSuppression)
     : templatesBeforePhaseSuppression
@@ -1468,7 +1486,7 @@ const expandClockAlignedSnapshotSamples = (
       sample =>
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
         sample.phase === template.phase &&
-        JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+        canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
         (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
@@ -1493,7 +1511,7 @@ const expandClockAlignedSnapshotSamples = (
       sample =>
         (sample.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) === measurand &&
         sample.phase == null &&
-        JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+        canonicalizeCustomData(sample.customData) === canonicalizeCustomData(template.customData) &&
         (sample.location === resolvedIdentity.location || (preferBaseline && evseId === 0)) &&
         (!preferBaseline ||
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit))
@@ -1513,7 +1531,8 @@ const expandClockAlignedSnapshotSamples = (
         if (
           line != null &&
           !phasedPowerByLine.has(line) &&
-          JSON.stringify(sample.customData) === JSON.stringify(template.customData) &&
+          canonicalizeCustomData(sample.customData) ===
+            canonicalizeCustomData(template.customData) &&
           sample.measurand === measurand &&
           (sample.location === resolvedIdentity.location || evseId === 0) &&
           areSnapshotUnitsCompatible(measurand, sample.unitOfMeasure?.unit, resolvedIdentity.unit)
@@ -1697,7 +1716,8 @@ const applyClockAlignedVoltageControls = (
         .filter(
           sample =>
             sample.context === aggregateVoltage.context &&
-            JSON.stringify(sample.customData) === JSON.stringify(aggregateVoltage.customData) &&
+            canonicalizeCustomData(sample.customData) ===
+              canonicalizeCustomData(aggregateVoltage.customData) &&
             sample.format === aggregateVoltage.format &&
             sample.location === aggregateVoltage.location &&
             sample.unitOfMeasure?.unit === aggregateVoltage.unitOfMeasure?.unit
@@ -2476,6 +2496,13 @@ export const resolveSampledValueFields = (
     value,
   }
 }
+
+const isElectricalMeasurand = (measurand: MeterValueMeasurand): boolean =>
+  measurand.startsWith('Current.') ||
+  measurand.startsWith('Energy.') ||
+  measurand.startsWith('Power.') ||
+  measurand === MeterValueMeasurand.FREQUENCY ||
+  measurand === MeterValueMeasurand.VOLTAGE
 
 const getMeasurandDefaultLocation = (
   measurandType: MeterValueMeasurand

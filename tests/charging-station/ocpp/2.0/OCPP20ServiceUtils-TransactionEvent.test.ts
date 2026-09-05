@@ -14,9 +14,12 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { CoherentSession } from '../../../../src/charging-station/meter-values/types.js'
 import type { ConnectorStatus, EmptyObject } from '../../../../src/types/index.js'
 
 import { addConfigurationKey } from '../../../../src/charging-station/index.js'
+import { createTestableResponseService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
+import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   buildTransactionEvent,
   OCPP20ServiceUtils,
@@ -27,6 +30,7 @@ import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
   ConnectorStatusEnum,
+  CurrentType,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   OCPP20IdTokenEnumType,
@@ -39,10 +43,12 @@ import {
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventRequest,
+  type OCPP20TransactionEventResponse,
   type OCPP20TransactionType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type RequestParams,
+  Voltage,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import {
@@ -3859,6 +3865,237 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(postStatus.transactionStarted, true)
         assert.strictEqual(postStatus.transactionId, transactionId)
       }
+    })
+  })
+
+  await describe('restored and interrupted transaction startup', async () => {
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('restores coherent SoC from persisted energy exactly once before arming timers', () => {
+      mock.timers.enable({ apis: ['setInterval'] })
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: async () => Promise.resolve({}) },
+        stationInfo: { coherentMeterValues: true, ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const transactionId = '00000000-0000-4000-8000-000000000077'
+      setupConnectorWithTransaction(station, 1, { transactionId })
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionRestored = true
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 4000
+      const session: CoherentSession = {
+        connectorId: 1,
+        currentType: CurrentType.AC,
+        numberOfPhases: 1,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [{ powerFraction: 1, socPercent: 0 }],
+          id: 'restored-profile',
+          initialSocPercentMax: 30,
+          initialSocPercentMin: 30,
+          maxPowerW: 11000,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: Date.now(),
+        socPercent: 30,
+        transactionId,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      }
+      let created = false
+      mock.method(station, 'getCoherentSession', () => (created ? session : undefined))
+      const createSpy = mock.method(station, 'createCoherentSession', () => {
+        created = true
+        return session
+      })
+      mock.method(OCPP20ServiceUtils, 'getTxUpdatedInterval', () => 1000)
+      mock.method(OCPP20ServiceUtils, 'getTxEndedInterval', () => 1000)
+      const assertRestorationApplied = (): void => {
+        assert.strictEqual(session.socPercent, 40)
+        assert.ok(connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt != null)
+      }
+      const updatedTimerSpy = mock.method(
+        OCPP20ServiceUtils,
+        'startUpdatedMeterValues',
+        assertRestorationApplied
+      )
+      const endedTimerSpy = mock.method(
+        OCPP20ServiceUtils,
+        'startEndedMeterValues',
+        assertRestorationApplied
+      )
+
+      const resumedAfter = Date.now()
+      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
+      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
+
+      assert.strictEqual(createSpy.mock.callCount(), 1)
+      assert.strictEqual(station.getCoherentSession(transactionId), session)
+      assert.strictEqual(session.socPercent, 40)
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      const lastUpdatedAt = connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
+      assert.ok(lastUpdatedAt != null)
+      assert.ok(lastUpdatedAt.getTime() >= resumedAfter)
+      assert.strictEqual(updatedTimerSpy.mock.callCount(), 1)
+      assert.strictEqual(endedTimerSpy.mock.callCount(), 1)
+    })
+
+    await it('applies restored energy once to an existing coherent session and clamps SoC', () => {
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: async () => Promise.resolve({}) },
+        stationInfo: { coherentMeterValues: true, ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      const transactionId = '00000000-0000-4000-8000-000000000078'
+      setupConnectorWithTransaction(station, 1, { transactionId })
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.transactionRestored = true
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 4000
+      const session: CoherentSession = {
+        connectorId: 1,
+        currentType: CurrentType.AC,
+        numberOfPhases: 1,
+        profile: {
+          batteryCapacityWh: 40000,
+          chargingCurve: [{ powerFraction: 1, socPercent: 0 }],
+          id: 'existing-restored-profile',
+          initialSocPercentMax: 95,
+          initialSocPercentMin: 95,
+          maxPowerW: 11000,
+          weight: 1,
+        },
+        rampUpDurationMs: 0,
+        sessionStartMs: Date.now(),
+        socPercent: 95,
+        transactionId,
+        voltageOutNominal: Voltage.VOLTAGE_230,
+      }
+      station.__injectCoherentSession(transactionId, session)
+      const createSpy = mock.method(station, 'createCoherentSession')
+      mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+      mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+
+      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
+      OCPP20ServiceUtils.resumeRestoredTransactionMeterValues(station)
+
+      assert.strictEqual(createSpy.mock.callCount(), 0)
+      assert.strictEqual(session.socPercent, Constants.SOC_MAXIMUM_PERCENT)
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+    })
+
+    await it('keeps an interrupted Started event queued without arming transaction timers', async () => {
+      let stopping = false
+      const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        stopping = true
+        station.started = false
+        return Promise.reject(new Error('shutdown interrupted Started'))
+      })
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: requestHandlerMock },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      station.started = true
+      station.isStopping = () => stopping
+      station.isWebSocketConnectionOpened = () => true
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+        '1',
+        undefined,
+        { save: false }
+      )
+
+      const result = await OCPP20ServiceUtils.startTransactionOnConnector(station, 1, 'TAG-1')
+
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(result.accepted, true)
+      assert.strictEqual(connectorStatus.transactionEventQueue?.length, 1)
+      assert.strictEqual(
+        connectorStatus.transactionEventQueue[0].request.eventType,
+        OCPP20TransactionEventEnumType.Started
+      )
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+    })
+
+    await it('queues Ended behind an interrupted Started and does not resurrect on replay', async () => {
+      const startedDelivery = Promise.withResolvers<OCPP20TransactionEventResponse>()
+      const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<unknown> => {
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        return await startedDelivery.promise
+      })
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        ocppRequestService: { requestHandler: requestHandlerMock },
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+      })
+      station.started = true
+      station.isWebSocketConnectionOpened = () => true
+      addConfigurationKey(
+        station,
+        `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+        '1',
+        undefined,
+        { save: false }
+      )
+
+      const startPromise = OCPP20ServiceUtils.startTransactionOnConnector(station, 1, 'TAG-1')
+      await new Promise(resolve => setImmediate(resolve))
+      const connectorStatus = station.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+
+      station.started = false
+      station.isStopping = () => true
+      station.isWebSocketConnectionOpened = () => false
+      const stopPromise = OCPP20ServiceUtils.requestStopTransaction(station, 1, 1)
+      startedDelivery.reject(new Error('shutdown interrupted Started'))
+      await Promise.all([startPromise, stopPromise])
+
+      assert.deepEqual(
+        connectorStatus.transactionEventQueue?.map(({ request }) => request.eventType),
+        [OCPP20TransactionEventEnumType.Started, OCPP20TransactionEventEnumType.Ended]
+      )
+      const responseService = createTestableResponseService(new OCPP20ResponseService())
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]): Promise<unknown> => {
+        const request = args[2] as OCPP20TransactionEventRequest
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        requestParams?.onResponseReceived?.()
+        await responseService.handleResponseTransactionEvent(station, {}, request)
+        return {}
+      })
+      station.started = true
+      station.isStopping = () => false
+      station.isWebSocketConnectionOpened = () => true
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, 1, 1)
+
+      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
     })
   })
 

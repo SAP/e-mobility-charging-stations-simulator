@@ -408,20 +408,91 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
       const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
 
-      assert.strictEqual(
-        restoredConnectorStatus.transactionEventQueue?.length,
-        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+      const queue = restoredConnectorStatus.transactionEventQueue
+      assert.ok(queue != null)
+      assert.ok(queue.length <= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(queue), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
       )
       assert.strictEqual(
         restoredConnectorStatus.transactionSeqNo,
         Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
       )
-      assert.strictEqual(restoredConnectorStatus.transactionEventQueue[0].seqNo, 1)
-      assert.strictEqual(
-        restoredConnectorStatus.transactionEventQueue.at(-1)?.seqNo,
-        Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
-      )
+      assert.ok(queue[0].seqNo > 0)
+      assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
     })
+    await it('should compact and evict lifecycle payloads while hydrating a byte-oversized queue', () => {
+      const eventTimestamp = new Date('2026-09-01T12:00:00.000Z').toISOString()
+      const queuedEvent = (
+        eventType: OCPP20TransactionEventEnumType,
+        transactionId: string,
+        seqNo: number,
+        payloadBytes: number
+      ) => ({
+        request: {
+          customData: { payload: 'x'.repeat(payloadBytes), vendorId: 'test' },
+          eventType,
+          seqNo,
+          timestamp: eventTimestamp,
+          transactionInfo: { transactionId },
+          triggerReason:
+            eventType === OCPP20TransactionEventEnumType.Ended
+              ? OCPP20TriggerReasonEnumType.StopAuthorized
+              : OCPP20TriggerReasonEnumType.Authorized,
+        },
+        seqNo,
+        timestamp: eventTimestamp,
+      })
+      const oversizedStartedTransactionId = '00000000-0000-4000-8000-000000000020'
+      const oldestCompletedTransactionId = '00000000-0000-4000-8000-000000000021'
+      const newestCompletedTransactionId = '00000000-0000-4000-8000-000000000022'
+      const connectorStatus = {
+        transactionEventQueue: [
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Started,
+            oversizedStartedTransactionId,
+            0,
+            Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+          ),
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Ended,
+            oldestCompletedTransactionId,
+            1,
+            642_000
+          ),
+          queuedEvent(
+            OCPP20TransactionEventEnumType.Ended,
+            newestCompletedTransactionId,
+            2,
+            642_000
+          ),
+        ],
+      } as unknown as ConnectorStatus
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(connectorStatus.transactionEventQueue?.[0]), 'utf8') >
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+
+      const restoredConnectorStatus = prepareConnectorStatus(connectorStatus)
+      const queue = restoredConnectorStatus.transactionEventQueue
+
+      assert.ok(queue != null)
+      assert.ok(queue.length <= Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(queue), 'utf8') <=
+          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
+      )
+      assert.deepStrictEqual(
+        queue.map(queued => queued.request.transactionInfo.transactionId),
+        [oversizedStartedTransactionId, newestCompletedTransactionId]
+      )
+      assert.strictEqual(queue[0].request.eventType, OCPP20TransactionEventEnumType.Started)
+      assert.strictEqual(queue[0].request.customData, undefined)
+      assert.strictEqual(queue[0].request.seqNo, 0)
+      assert.strictEqual(queue[0].request.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+    })
+
     await it('should transfer a historical signing key when trimming a persisted queue', () => {
       const activeTransactionId = '00000000-0000-4000-8000-000000000008'
       const historicalTransactionId = '00000000-0000-4000-8000-000000000007'
@@ -443,25 +514,23 @@ await describe('ChargingStationConfigurationUtils', async () => {
         },
       ]
       const connectorStatus = {
-        transactionEventQueue: Array.from(
-          { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH + 1 },
-          (_, seqNo) => ({
-            request: {
-              eventType: OCPP20TransactionEventEnumType.Updated,
-              ...(seqNo < 2 && {
-                meterValue: signedMeterValue(seqNo === 0 ? 'historical-public-key' : ''),
-              }),
-              seqNo,
-              timestamp: eventTimestamp,
-              transactionInfo: {
-                transactionId: seqNo < 2 ? historicalTransactionId : activeTransactionId,
-              },
-              triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
-            },
+        transactionEventQueue: Array.from({ length: 4 }, (_, seqNo) => ({
+          request: {
+            customData: { payload: 'x'.repeat(300_000), vendorId: 'test' },
+            eventType: OCPP20TransactionEventEnumType.Updated,
+            ...(seqNo < 2 && {
+              meterValue: signedMeterValue(seqNo === 0 ? 'historical-public-key' : ''),
+            }),
             seqNo,
             timestamp: eventTimestamp,
-          })
-        ),
+            transactionInfo: {
+              transactionId: seqNo < 2 ? historicalTransactionId : activeTransactionId,
+            },
+            triggerReason: OCPP20TriggerReasonEnumType.MeterValueClock,
+          },
+          seqNo,
+          timestamp: eventTimestamp,
+        })),
         transactionId: activeTransactionId,
         transactionStarted: true,
       } as unknown as ConnectorStatus
