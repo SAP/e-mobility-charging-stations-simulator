@@ -1,8 +1,7 @@
 packages:
-  - ./
-  - ./ui/common
-  - ./ui/cli
-  - ./ui/web
+  - ui/common
+  - ui/cli
+  - ui/web
 
 allowBuilds:
   '@parcel/watcher': false
