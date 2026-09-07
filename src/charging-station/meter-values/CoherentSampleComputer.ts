@@ -42,7 +42,7 @@
 import type { ConnectorStatus } from '../../types/index.js'
 import type { CoherentSession, ICoherentContext } from './types.js'
 
-import { CurrentType } from '../../types/index.js'
+import { CurrentType, MeterValueLocation } from '../../types/index.js'
 import { Constants, roundTo } from '../../utils/index.js'
 import { interpolateChargingCurve } from './EvProfiles.js'
 import { createStreamPrng } from './PRNG.js'
@@ -284,24 +284,28 @@ export const advanceEnergyRegister = (
 
 /**
  * Advances the OCPP 2.0 station main-meter register from committed physical
- * connector energy. DC connector energy is measured after conversion, so the
- * corresponding inlet energy includes conversion losses.
+ * energy. Explicit inlet energy is already grid-side; DC outlet energy is
+ * converted to its inlet equivalent exactly once to include conversion losses.
  * @param context - Station context containing the EVSE 0 main meter.
  * @param evseId - Physical EVSE that committed the energy delta.
  * @param currentType - Connector output current type.
- * @param deltaEnergyWh - Committed connector-side energy delta in Wh.
+ * @param sourceLocation - Location of the meter that produced the energy delta.
+ * @param deltaEnergyWh - Committed energy delta in Wh.
  */
 export const advanceStationEnergyRegister = (
   context: ICoherentContext,
   evseId: number | undefined,
   currentType: CurrentType,
+  sourceLocation: MeterValueLocation | undefined,
   deltaEnergyWh: number
 ): void => {
   if (evseId == null || evseId <= 0) return
   const mainConnectorStatus = context.getEvseStatus(0)?.connectors.get(0)
   if (mainConnectorStatus == null) return
   const configuredEfficiency =
-    currentType === CurrentType.DC ? (context.stationInfo?.conversionEfficiency ?? 1) : 1
+    currentType === CurrentType.DC && sourceLocation !== MeterValueLocation.INLET
+      ? (context.stationInfo?.conversionEfficiency ?? 1)
+      : 1
   const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
   const inputEnergyWh = deltaEnergyWh / conversionEfficiency
   mainConnectorStatus.energyActiveImportRegisterValue =

@@ -49,6 +49,7 @@ import {
   getCoherentSampleSnapshot,
   ROUNDING_SCALE,
 } from './CoherentSampleComputer.js'
+import { canonicalizeCustomData } from './MeterValueUtils.js'
 
 const moduleName = 'CoherentMeterValueBuilder'
 
@@ -178,7 +179,7 @@ const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
 const templateFamilyKey = (template: SampledValueTemplate): string =>
   JSON.stringify([
     template.context ?? null,
-    template.customData ?? null,
+    canonicalizeCustomData(template.customData) ?? null,
     template.format ?? null,
     template.location ?? null,
     template.unit ?? null,
@@ -526,11 +527,22 @@ export const buildCoherentMeterValue = (
     ? getCoherentSampleSnapshot(context, connectorStatus, session)
     : computeCoherentSampleAtTime(context, connectorStatus, session, options, evseIdOverride)
   if (!snapshotOnly) {
+    const energySourceLocation = resolveTemplates(
+      context,
+      session.connectorId,
+      connectorStatusOverride,
+      evseIdOverride
+    )?.find(
+      template =>
+        (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) ===
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    )?.location
     advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
     advanceStationEnergyRegister(
       context,
       evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
       session.currentType,
+      energySourceLocation,
       sample.deltaEnergyWh
     )
   }

@@ -19,7 +19,9 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 import { addConfigurationKey } from '../../../src/charging-station/index.js'
 import { buildMeterValue } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  CurrentType,
   MeterValueContext,
+  MeterValueLocation,
   MeterValueMeasurand,
   OCPPVersion,
   type SampledValueTemplate,
@@ -173,6 +175,44 @@ await describe('buildMeterValue', async () => {
         meterValue.sampledValue.length > 0,
         'should have sampled values from connector templates'
       )
+    })
+
+    await it('should convert only outlet DC energy when advancing the station main register', () => {
+      const advanceAtLocation = (location: MeterValueLocation): number => {
+        const { station: testStation } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        assert.ok(testStation.stationInfo != null)
+        testStation.stationInfo.conversionEfficiency = 0.8
+        testStation.stationInfo.currentOutType = CurrentType.DC
+        const connectorStatus = testStation.getConnectorStatus(1)
+        assert.ok(connectorStatus != null)
+        connectorStatus.energyActiveImportRegisterValue = 0
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+        connectorStatus.transactionId = TEST_TRANSACTION_ID_STRING
+        connectorStatus.MeterValues = [
+          {
+            fluctuationPercent: 0,
+            location,
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: 'Wh',
+            value: '1000',
+          },
+        ] as unknown as SampledValueTemplate[]
+
+        buildMeterValue(testStation, TEST_TRANSACTION_ID_STRING, 3_600_000)
+
+        return (
+          testStation.getEvseStatus(0)?.connectors.get(0)?.energyActiveImportRegisterValue ?? -1
+        )
+      }
+
+      assert.strictEqual(advanceAtLocation(MeterValueLocation.INLET), 1000)
+      assert.strictEqual(advanceAtLocation(MeterValueLocation.OUTLET), 1250)
     })
   })
 

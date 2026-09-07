@@ -80,6 +80,7 @@ import {
   isCoherentModeActive,
   resolveRootSeed,
 } from '../meter-values/index.js'
+import { canonicalizeCustomData } from '../meter-values/MeterValueUtils.js'
 import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
@@ -96,22 +97,6 @@ import {
 } from './OCPPSignedMeterValueUtils.js'
 
 const moduleName = 'OCPPServiceUtils'
-
-/**
- * Serializes custom data with recursively sorted object keys for stable meter-value identities.
- * Array order remains significant.
- * @param customData - JSON-compatible custom data to serialize
- * @returns Canonical JSON, or `undefined` when custom data is absent
- */
-export const canonicalizeCustomData = (customData: unknown): string | undefined =>
-  JSON.stringify(customData, (_key: string, value: unknown): unknown => {
-    if (value == null || typeof value !== 'object' || Array.isArray(value)) return value
-    const sortedValue: Record<string, unknown> = {}
-    for (const key of Object.keys(value).sort()) {
-      sortedValue[key] = (value as Record<string, unknown>)[key]
-    }
-    return sortedValue
-  })
 
 const isOCPP20FlagEnabled = (
   chargingStation: ChargingStation,
@@ -518,6 +503,7 @@ const updateConnectorEnergyValues = (
   chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   energyValue: number,
+  energyLocation: MeterValueLocation | undefined,
   evseId?: number
 ): void => {
   if (connectorStatus != null) {
@@ -537,6 +523,7 @@ const updateConnectorEnergyValues = (
       chargingStation,
       evseId,
       chargingStation.stationInfo?.currentOutType ?? CurrentType.AC,
+      energyLocation,
       energyValue
     )
   }
@@ -2205,7 +2192,13 @@ const buildIdentifiedMeterValue = (
     // Aligned snapshots may own accumulation when periodic TxUpdated samples
     // do not include the cumulative energy register.
     if (ownsEnergy) {
-      updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
+      updateConnectorEnergyValues(
+        chargingStation,
+        connectorStatus,
+        energyMeasurand.value,
+        energyMeasurand.template.location,
+        evseId
+      )
       if (
         connectorStatus != null &&
         (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate)

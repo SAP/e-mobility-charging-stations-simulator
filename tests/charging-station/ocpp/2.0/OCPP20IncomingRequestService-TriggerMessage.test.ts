@@ -21,6 +21,7 @@ import type { MockChargingStation } from '../../helpers/StationHelpers.js'
 import { addConfigurationKey, buildConfigKey } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   MessageTriggerEnumType,
   OCPP20ChargingStateEnumType,
@@ -882,6 +883,98 @@ await describe('F06 - TriggerMessage', async () => {
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
       assert.strictEqual(response.statusInfo, undefined)
+    })
+
+    await it('does not emit Updated after an Ended event is committed', async () => {
+      const transactionId = 'txn-ending'
+      seedActiveTransaction(1, transactionId)
+      const endedStarted = Promise.withResolvers<undefined>()
+      const releaseEnded = Promise.withResolvers<undefined>()
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]) => {
+        const command = args[1] as OCPP20RequestCommand
+        const payload = args[2] as OCPP20TransactionEventRequest
+        const requestParams = args[3] as RequestParams
+        if (
+          command === OCPP20RequestCommand.TRANSACTION_EVENT &&
+          payload.eventType === OCPP20TransactionEventEnumType.Ended
+        ) {
+          requestParams.onMessageSent?.()
+          endedStarted.resolve(undefined)
+          await releaseEnded.promise
+          requestParams.onResponseReceived?.()
+        }
+        return {}
+      })
+
+      const stop = OCPP20ServiceUtils.requestStopTransaction(mockStation, 1, 1)
+      await endedStarted.promise
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      }
+      const response = testableService.handleRequestTriggerMessage(mockStation, request)
+      try {
+        assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+        assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
+
+        listenerService.emit(
+          OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+          mockStation,
+          request,
+          response
+        )
+        await flushMicrotasks()
+
+        const transactionEvents = requestHandlerMock.mock.calls
+          .filter(call => call.arguments[1] === OCPP20RequestCommand.TRANSACTION_EVENT)
+          .map(call => call.arguments[2] as OCPP20TransactionEventRequest)
+        assert.deepEqual(
+          transactionEvents.map(({ eventType }) => eventType),
+          [OCPP20TransactionEventEnumType.Ended]
+        )
+      } finally {
+        releaseEnded.resolve(undefined)
+        await stop
+      }
+    })
+
+    await it('rejects a restored transaction with a matching queued Ended event', async () => {
+      const transactionId = 'txn-restored-ended'
+      seedActiveTransaction(1, transactionId)
+      mock.method(mockStation, 'isWebSocketConnectionOpened', () => false)
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        1,
+        transactionId,
+        { evseId: 1 }
+      )
+      const connectorStatus = mockStation.getConnectorStatus(1, 1)
+      assert.ok(connectorStatus != null)
+      assert.notStrictEqual(connectorStatus.transactionEnding, true)
+      assert.strictEqual(
+        connectorStatus.transactionEventQueue?.[0]?.request.eventType,
+        OCPP20TransactionEventEnumType.Ended
+      )
+
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.TransactionEvent,
+      }
+      const response = testableService.handleRequestTriggerMessage(mockStation, request)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxNotFound)
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
     await it('should treat evse.id === 0 as broadcast scope and Accept when a transaction is active (F06.FR.11)', () => {

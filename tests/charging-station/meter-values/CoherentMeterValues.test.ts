@@ -67,6 +67,7 @@ const baseProfile: EvProfile = {
 /**
  * Builds an in-memory ICoherentContext + connector status for unit tests.
  * @param overrides - Optional overrides bag for context knobs.
+ * @param overrides.conversionEfficiency - DC outlet-to-inlet conversion efficiency.
  * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
  * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
  * @param overrides.evseMeterValues - When defined and `groupUnderEvse !== false`, exposed via
@@ -88,6 +89,7 @@ const baseProfile: EvProfile = {
  */
 const buildContext = (
   overrides: {
+    conversionEfficiency?: number
     currentType?: CurrentType
     evseMaxPowerW?: number
     evseMeterValues?: SampledValueTemplate[]
@@ -99,6 +101,7 @@ const buildContext = (
 ): {
   connectorStatus: ConnectorStatus
   context: ICoherentContext
+  mainConnectorStatus: ConnectorStatus
   sessions: Map<number | string, CoherentSession>
   stationInfo: ChargingStationInfo
 } => {
@@ -111,6 +114,9 @@ const buildContext = (
     chargePointModel: 'model',
     chargePointVendor: 'vendor',
     coherentMeterValues: true,
+    ...(overrides.conversionEfficiency != null && {
+      conversionEfficiency: overrides.conversionEfficiency,
+    }),
     currentOutType: overrides.currentType ?? CurrentType.AC,
     hashId: 'hash-1',
     numberOfPhases,
@@ -129,6 +135,13 @@ const buildContext = (
     transactionId: 1,
   }
 
+  const mainConnectorStatus: ConnectorStatus = {
+    availability: AvailabilityType.Operative,
+    energyActiveImportRegisterValue: 0,
+    MeterValues: [],
+    transactionEnergyActiveImportRegisterValue: 0,
+  }
+
   const sessions = new Map<number | string, CoherentSession>()
 
   const context: ICoherentContext = {
@@ -142,6 +155,12 @@ const buildContext = (
       return overrides.evseMeterValues != null ? 1 : undefined
     },
     getEvseStatus: (evseId: number) => {
+      if (evseId === 0) {
+        return {
+          availability: AvailabilityType.Operative,
+          connectors: new Map<number, ConnectorStatus>([[0, mainConnectorStatus]]),
+        }
+      }
       const grouped =
         overrides.groupUnderEvse === true ||
         (overrides.groupUnderEvse !== false && overrides.evseMeterValues != null)
@@ -167,7 +186,7 @@ const buildContext = (
     logPrefix: () => '[test]',
     stationInfo,
   }
-  return { connectorStatus, context, sessions, stationInfo }
+  return { connectorStatus, context, mainConnectorStatus, sessions, stationInfo }
 }
 
 const templatesFor = (
@@ -443,6 +462,56 @@ await describe('CoherentMeterValues', async () => {
       })
       const after = connectorStatus.energyActiveImportRegisterValue ?? 0
       assert.ok(after > before, 'energy register must advance regardless of template presence')
+    })
+
+    await it('should convert DC outlet energy once while preserving explicit inlet energy', () => {
+      const advanceAtLocation = (
+        location: MeterValueLocation
+      ): { connectorEnergyWh: number; stationEnergyWh: number } => {
+        const { connectorStatus, context, mainConnectorStatus, sessions } = buildContext({
+          conversionEfficiency: 0.8,
+          currentType: CurrentType.DC,
+          evseMaxPowerW: 1000,
+          groupUnderEvse: true,
+        })
+        const session = createSessionOrFail(context, {
+          connectorId: 1,
+          now: 0,
+          profiles: [baseProfile],
+          rampUpDurationMs: 0,
+          rootSeed: 42,
+          transactionId: 1,
+        })
+        sessions.set(1, session)
+        connectorStatus.MeterValues = [
+          {
+            location,
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: MeterValueUnit.WATT_HOUR,
+            value: 0,
+          },
+        ] as SampledValueTemplate[]
+
+        buildCoherentMeterValue(context, session, passThroughBuilder, {
+          intervalMs: 3_600_000,
+          nowMs: 3_600_000,
+          rootSeed: 42,
+          voltageNoise: false,
+        })
+
+        return {
+          connectorEnergyWh: connectorStatus.energyActiveImportRegisterValue ?? 0,
+          stationEnergyWh: mainConnectorStatus.energyActiveImportRegisterValue ?? 0,
+        }
+      }
+
+      const inlet = advanceAtLocation(MeterValueLocation.INLET)
+      assert.strictEqual(inlet.connectorEnergyWh, 1000)
+      assert.strictEqual(inlet.stationEnergyWh, 1000)
+
+      const outlet = advanceAtLocation(MeterValueLocation.OUTLET)
+      assert.strictEqual(outlet.connectorEnergyWh, 1000)
+      assert.strictEqual(outlet.stationEnergyWh, 1250)
     })
 
     await it('should serialize a coherent snapshot without advancing registers or SoC', () => {
@@ -1616,6 +1685,59 @@ await describe('CoherentMeterValues', async () => {
           'both surviving samples must be aggregates (no phase qualifier)'
         )
       }
+    })
+
+    await it('should canonicalize recursively reordered customData into one no-phase register family', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+        voltageOut: 230,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [
+        {
+          customData: { details: { a: 1, b: 2 }, vendorId: 'acme' },
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          customData: (() => {
+            const details: Record<string, number> = {}
+            details.b = 2
+            details.a = 1
+            return { details, vendorId: 'acme' }
+          })(),
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+      ] as unknown as SampledValueTemplate[]
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        passThroughBuilder,
+        { intervalMs: 3_600_000, nowMs: 3_600_000, rootSeed: 42, voltageNoise: false },
+        undefined,
+        undefined,
+        true
+      )
+      const energySamples = meterValue.sampledValue.filter(
+        sample => sample.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+
+      assert.strictEqual(energySamples.length, 1)
+      assert.strictEqual(energySamples[0].phase, undefined)
     })
   })
 

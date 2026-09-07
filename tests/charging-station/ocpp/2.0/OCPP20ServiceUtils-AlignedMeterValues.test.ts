@@ -48,6 +48,9 @@ import {
   ConnectorStatusEnum,
   CurrentType,
   MeterValuePhase,
+  OCPP16MeterValueLocation,
+  OCPP16MeterValueMeasurand,
+  OCPP16MeterValueUnit,
   OCPP20ComponentName,
   OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
@@ -2334,6 +2337,92 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
 
       assert.strictEqual(await collectStationPower(OCPP20LocationEnumType.Inlet), 1000)
       assert.strictEqual(await collectStationPower(OCPP20LocationEnumType.Outlet), 1250)
+    })
+
+    await it('does not relabel Outlet DC current or voltage as station Inlet values', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        [
+          OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          OCPP20MeasurandEnumType.CURRENT_IMPORT,
+          OCPP20MeasurandEnumType.VOLTAGE,
+        ].join(',')
+      )
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.conversionEfficiency = 0.8
+      mockStation.stationInfo.currentOutType = CurrentType.DC
+      const stationEvse = mockStation.getEvseStatus(0)
+      const sourceEvse = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null)
+      assert.ok(sourceEvse != null)
+      stationEvse.MeterValues = [
+        OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+        OCPP20MeasurandEnumType.CURRENT_IMPORT,
+        OCPP20MeasurandEnumType.VOLTAGE,
+      ].map(measurand => ({
+        fluctuationPercent: 0,
+        location: OCPP20LocationEnumType.Inlet,
+        measurand,
+      })) as NonNullable<EvseStatus['MeterValues']>
+      sourceEvse.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          location: OCPP16MeterValueLocation.OUTLET,
+          measurand: OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+          unit: OCPP16MeterValueUnit.WATT,
+          value: '800',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP16MeterValueLocation.OUTLET,
+          measurand: OCPP16MeterValueMeasurand.CURRENT_IMPORT,
+          unit: OCPP16MeterValueUnit.AMP,
+          value: '2',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP16MeterValueLocation.OUTLET,
+          measurand: OCPP16MeterValueMeasurand.VOLTAGE,
+          unit: OCPP16MeterValueUnit.VOLT,
+          value: '400',
+        },
+      ]
+      setupConnectorWithTransaction(mockStation, 1, { transactionId: 'tx-dc-location' })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
+      assert.ok(stationPayload != null)
+      assert.deepEqual(
+        stationPayload.meterValue[0].sampledValue.map(({ location, measurand, value }) => [
+          measurand,
+          location,
+          value,
+        ]),
+        [[OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, OCPP20LocationEnumType.Inlet, 1000]]
+      )
+      const evseEvent = sentTransactionEvents(requestHandlerMock).find(({ evse }) => evse?.id === 1)
+      assert.ok(evseEvent != null)
+      assert.deepEqual(
+        evseEvent.meterValue?.[0].sampledValue.map(({ location, measurand, value }) => [
+          measurand,
+          location,
+          value,
+        ]),
+        [
+          [OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, OCPP20LocationEnumType.Outlet, 800],
+          [OCPP20MeasurandEnumType.CURRENT_IMPORT, OCPP20LocationEnumType.Outlet, 2],
+          [OCPP20MeasurandEnumType.VOLTAGE, OCPP20LocationEnumType.Outlet, 400],
+        ]
+      )
     })
 
     await it('derives aggregate power from phase-only baseline samples', () => {

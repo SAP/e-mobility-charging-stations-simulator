@@ -186,7 +186,11 @@ import {
 } from './OCPP20CertificateManager.js'
 import { OCPP20CertSigningRetryManager } from './OCPP20CertSigningRetryManager.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
-import { isOCPP20ConnectorStatus, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import {
+  isOCPP20ConnectorStatus,
+  isTransactionEnding,
+  OCPP20ServiceUtils,
+} from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
 
@@ -3568,10 +3572,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * (F06.FR.11 — "for all allowed evse values").
    *
    * The predicate requires `transactionStarted === true` and deliberately
-   * excludes `transactionPending` connectors (unlike the looser
-   * {@link OCPP20ServiceUtils.resolveActiveTransaction}): only a started
-   * transaction yields `chargingState = Charging`, which F06.FR.07 and the
-   * OCPP 2.0.1 conformance test cases TC_F_13/TC_F_14 mandate for the triggered
+   * excludes pending or ending transactions, including restored state with a
+   * matching queued Ended event. Only a started, non-ending transaction yields
+   * `chargingState = Charging`, which F06.FR.07 and the OCPP 2.0.1
+   * conformance test cases TC_F_13/TC_F_14 mandate for the triggered
    * TransactionEventRequest.
    * @param chargingStation - Target charging station.
    * @param evse - Optional EVSE scope from the TriggerMessageRequest.
@@ -3590,6 +3594,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       if (
         (targetEvseId == null || evseId === targetEvseId) &&
         connectorStatus.transactionStarted === true &&
+        !isTransactionEnding(connectorStatus) &&
         connectorStatus.transactionId != null
       ) {
         activeConnectors.push({
