@@ -249,8 +249,8 @@ export class ChargingStation extends EventEmitter {
   private transactionEventQueueSaveImmediate = false
   private transactionEventQueueSavePromise?: Promise<void>
   private transactionEventQueueSaveSetTimeout?: NodeJS.Timeout
-  private wsConnectionClosedByRequest: boolean
   private wsConnectionRetryCount: number
+  private readonly wsConnectionsClosedByRequest: WeakSet<WebSocket>
   private wsPingSetInterval?: NodeJS.Timeout
   /**
    * Creation options to re-apply when re-initializing on a reset or template
@@ -274,7 +274,7 @@ export class ChargingStation extends EventEmitter {
     this.deleteAbortController = new AbortController()
     this.lifecycleAbortController = new AbortController()
     this.wsConnection = null
-    this.wsConnectionClosedByRequest = false
+    this.wsConnectionsClosedByRequest = new WeakSet<WebSocket>()
     this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
@@ -437,11 +437,12 @@ export class ChargingStation extends EventEmitter {
    *   closes (for example, certificate rotation) reconnect like a server-initiated drop
    */
   public closeWSConnection ({ byRequest = false }: { byRequest?: boolean } = {}): void {
-    if (this.isWebSocketConnectionOpened()) {
+    const wsConnection = this.wsConnection
+    if (wsConnection?.readyState === WebSocket.OPEN) {
       if (byRequest) {
-        this.wsConnectionClosedByRequest = true
+        this.wsConnectionsClosedByRequest.add(wsConnection)
       }
-      this.wsConnection?.close()
+      wsConnection.close()
     }
   }
 
@@ -1134,14 +1135,15 @@ export class ChargingStation extends EventEmitter {
       `${this.logPrefix()} ${moduleName}.openWSConnection: Open OCPP connection to URL ${this.wsConnectionUrl.href}`
     )
 
-    this.wsConnection = new WebSocket(
+    const wsConnection = new WebSocket(
       this.wsConnectionUrl,
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `ocpp${this.stationInfo?.ocppVersion}`,
       options
     )
+    this.wsConnection = wsConnection
 
-    this.wsConnection.on('message', data => {
+    wsConnection.on('message', data => {
       this.onMessage(data).catch((error: unknown) =>
         logger.error(
           `${this.logPrefix()} ${moduleName}.openWSConnection: Error while processing WebSocket message:`,
@@ -1149,9 +1151,13 @@ export class ChargingStation extends EventEmitter {
         )
       )
     })
-    this.wsConnection.on('error', this.onError.bind(this))
-    this.wsConnection.on('close', this.onClose.bind(this))
-    this.wsConnection.on('open', () => {
+    wsConnection.on('error', error => {
+      this.onError(wsConnection, error)
+    })
+    wsConnection.on('close', (code, reason) => {
+      this.onClose(wsConnection, code, reason)
+    })
+    wsConnection.on('open', () => {
       this.onOpen().catch((error: unknown) =>
         logger.error(
           `${this.logPrefix()} ${moduleName}.openWSConnection: Error while opening WebSocket connection:`,
@@ -1159,8 +1165,8 @@ export class ChargingStation extends EventEmitter {
         )
       )
     })
-    this.wsConnection.on('ping', this.onPing.bind(this))
-    this.wsConnection.on('pong', this.onPong.bind(this))
+    wsConnection.on('ping', this.onPing.bind(this))
+    wsConnection.on('pong', this.onPong.bind(this))
   }
 
   /**
@@ -2654,13 +2660,18 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
+  private onClose (
+    wsConnection: WebSocket,
+    code: WebSocketCloseEventStatusCode,
+    reason: Buffer
+  ): void {
+    const closedByRequest = this.wsConnectionsClosedByRequest.delete(wsConnection)
+    if (wsConnection !== this.wsConnection) {
+      return
+    }
+    this.wsConnection = null
     this.emitChargingStationEvent(ChargingStationEvents.disconnected)
     this.emitChargingStationEvent(ChargingStationEvents.updated)
-    // Capture and clear the requested-close marker before deciding whether to
-    // reconnect.
-    const closedByRequest = this.wsConnectionClosedByRequest
-    this.wsConnectionClosedByRequest = false
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
@@ -2701,8 +2712,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private onError (error: WSError): void {
-    logger.error(`${this.logPrefix()} ${moduleName}.onError: WebSocket error:`, error)
+  private onError (wsConnection: WebSocket, error: WSError): void {
+    if (wsConnection === this.wsConnection) {
+      logger.error(`${this.logPrefix()} ${moduleName}.onError: WebSocket error:`, error)
+    }
   }
 
   private async onMessage (data: RawData): Promise<void> {

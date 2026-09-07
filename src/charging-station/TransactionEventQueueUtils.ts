@@ -372,6 +372,16 @@ const transferFirstEventIdentity = (
       replacementEvent.request.idToken = { ...removedEvent.request.idToken }
       changed = true
     }
+    const { remoteStartId } = removedEvent.request.transactionInfo
+    if (
+      replacementEvent.request.transactionInfo.remoteStartId == null &&
+      typeof remoteStartId === 'number' &&
+      Number.isFinite(remoteStartId) &&
+      Number.isInteger(remoteStartId)
+    ) {
+      replacementEvent.request.transactionInfo.remoteStartId = remoteStartId
+      changed = true
+    }
     if (changed) refreshQueuedEventBytes(accounting, replacementEvent)
   }
 }

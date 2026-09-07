@@ -208,8 +208,20 @@ const normalizeClockAlignedAdditiveSample = (
   }
 }
 
+// Only active import/export quantities have a defined DC output-to-AC-input projection.
+const DC_STATION_AGGREGATION_DIRECTION = new Map<OCPP20MeasurandEnumType, 'export' | 'import'>([
+  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_EXPORT_INTERVAL, 'export'],
+  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_EXPORT_REGISTER, 'export'],
+  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL, 'import'],
+  [OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER, 'import'],
+  [OCPP20MeasurandEnumType.POWER_ACTIVE_EXPORT, 'export'],
+  [OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT, 'import'],
+])
+
 const normalizePhysicalMeterValueForStationAggregation = (
-  meterValue: OCPP20MeterValue
+  meterValue: OCPP20MeterValue,
+  currentType: CurrentType | undefined,
+  conversionEfficiency: number
 ): OCPP20MeterValue => {
   const selectedSamples = new Map<
     string,
@@ -225,16 +237,33 @@ const normalizePhysicalMeterValueForStationAggregation = (
       passthroughSamples.push(sampledValue)
       continue
     }
+    const isOutlet = sampledValue.location === OCPP20LocationEnumType.Outlet
+    const dcProjectionDirection =
+      sampledValue.measurand == null
+        ? undefined
+        : DC_STATION_AGGREGATION_DIRECTION.get(sampledValue.measurand)
     const canPromoteOutletToInlet =
-      sampledValue.location === OCPP20LocationEnumType.Outlet &&
-      (sampledValue.measurand?.startsWith('Power.') === true ||
-        sampledValue.measurand?.startsWith('Energy.') === true)
-    if (sampledValue.location === OCPP20LocationEnumType.Outlet && !canPromoteOutletToInlet) {
+      isOutlet &&
+      (currentType === CurrentType.DC
+        ? dcProjectionDirection != null
+        : sampledValue.measurand?.startsWith('Power.') === true ||
+          sampledValue.measurand?.startsWith('Energy.') === true)
+    if (isOutlet && !canPromoteOutletToInlet) {
       passthroughSamples.push(sampledValue)
       continue
     }
+    const projectedValue =
+      currentType === CurrentType.DC && canPromoteOutletToInlet
+        ? dcProjectionDirection === 'import'
+          ? sampledValue.value / conversionEfficiency
+          : sampledValue.value * conversionEfficiency
+        : sampledValue.value
     const normalizedSample = canPromoteOutletToInlet
-      ? { ...sampledValue, location: OCPP20LocationEnumType.Inlet }
+      ? {
+          ...sampledValue,
+          location: OCPP20LocationEnumType.Inlet,
+          value: projectedValue,
+        }
       : sampledValue
     const unitNormalizedSample = normalizeClockAlignedAdditiveSample(
       normalizedSample,
@@ -271,8 +300,8 @@ const filterUnconvertibleDcStationSamples = (
   return sampledValues.filter(sampledValue => {
     if (
       sampledValue.location !== OCPP20LocationEnumType.Inlet ||
-      (sampledValue.measurand?.startsWith('Current.') !== true &&
-        sampledValue.measurand !== OCPP20MeasurandEnumType.VOLTAGE)
+      (sampledValue.measurand != null &&
+        DC_STATION_AGGREGATION_DIRECTION.has(sampledValue.measurand))
     ) {
       return true
     }
@@ -863,17 +892,11 @@ export class OCPP20ServiceUtils {
                 : 1
             const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
             physicalMeterValues.push(
-              normalizePhysicalMeterValueForStationAggregation({
-                ...meterValue,
-                sampledValue: meterValue.sampledValue.map(sampledValue =>
-                  (sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT ||
-                    sampledValue.measurand ===
-                      OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
-                  sampledValue.location === OCPP20LocationEnumType.Outlet
-                    ? { ...sampledValue, value: sampledValue.value / conversionEfficiency }
-                    : sampledValue
-                ),
-              })
+              normalizePhysicalMeterValueForStationAggregation(
+                meterValue,
+                chargingStation.stationInfo?.currentOutType,
+                conversionEfficiency
+              )
             )
           }
           if (transactionId != null) {
@@ -1511,7 +1534,9 @@ export class OCPP20ServiceUtils {
   }
 
   /**
-   * Send queued TransactionEvent requests accumulated while offline.
+   * Send the queued TransactionEvent generation present after acquiring the
+   * connector delivery lock. Events appended during replay remain queued for a
+   * later generation so reconnect resumption cannot be starved by producers.
    * @param chargingStation - Target charging station
    * @param connectorId - Connector identifier whose queue to drain
    * @param evseId - Optional EVSE identifier for EVSE-local connector ids
@@ -1523,14 +1548,16 @@ export class OCPP20ServiceUtils {
   ): Promise<void> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (connectorStatus == null) return
-    await OCPP20ServiceUtils.serializeTransactionEventDelivery(connectorStatus, () =>
-      OCPP20ServiceUtils.drainQueuedTransactionEvents(
+    await OCPP20ServiceUtils.serializeTransactionEventDelivery(connectorStatus, () => {
+      const eligibleEvents = new Set(connectorStatus.transactionEventQueue ?? [])
+      return OCPP20ServiceUtils.drainQueuedTransactionEvents(
         chargingStation,
         connectorId,
         connectorStatus,
-        evseId
+        evseId,
+        eligibleEvents
       )
-    )
+    })
   }
 
   /**
@@ -2422,13 +2449,19 @@ export class OCPP20ServiceUtils {
     connectorStatus: ConnectorStatus,
     evseId?: number
   ): void {
-    if (OCPP20ServiceUtils.transactionEventQueueDrains.has(connectorStatus)) return
+    if (
+      OCPP20ServiceUtils.isChargingStationStopping(chargingStation) ||
+      OCPP20ServiceUtils.transactionEventQueueDrains.has(connectorStatus)
+    ) {
+      return
+    }
     OCPP20ServiceUtils.transactionEventQueueDrains.add(connectorStatus)
     OCPP20ServiceUtils.sendQueuedTransactionEvents(chargingStation, connectorId, evseId)
       .finally(() => {
         OCPP20ServiceUtils.transactionEventQueueDrains.delete(connectorStatus)
         if (
           isNotEmptyArray(connectorStatus.transactionEventQueue) &&
+          !OCPP20ServiceUtils.isChargingStationStopping(chargingStation) &&
           chargingStation.isWebSocketConnectionOpened() &&
           chargingStation.inAcceptedState()
         ) {

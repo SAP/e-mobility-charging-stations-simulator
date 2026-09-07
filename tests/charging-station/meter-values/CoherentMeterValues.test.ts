@@ -609,6 +609,61 @@ await describe('CoherentMeterValues', async () => {
       ])
     })
 
+    await it('should omit unsupported explicit DC inlet current and voltage templates', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        conversionEfficiency: 0.8,
+        currentType: CurrentType.DC,
+        evseMaxPowerW: 1000,
+        groupUnderEvse: true,
+        voltageOut: 400,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [
+        MeterValueMeasurand.VOLTAGE,
+        MeterValueMeasurand.CURRENT_IMPORT,
+      ].flatMap(measurand =>
+        [MeterValueLocation.INLET, MeterValueLocation.OUTLET, undefined].map(location => ({
+          ...(location != null && { location }),
+          measurand,
+          unit:
+            measurand === MeterValueMeasurand.VOLTAGE ? MeterValueUnit.VOLT : MeterValueUnit.AMP,
+        }))
+      ) as unknown as SampledValueTemplate[]
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        (template, value, sampleContext, phase) =>
+          buildOCPP20SampledValue(template, value, sampleContext, phase).sampledValue,
+        {
+          intervalMs: 1000,
+          nowMs: 1000,
+          rootSeed: 42,
+          voltageNoise: false,
+        },
+        undefined,
+        undefined,
+        undefined,
+        new Date(1000),
+        connectorStatus,
+        1
+      )
+
+      for (const measurand of [MeterValueMeasurand.VOLTAGE, MeterValueMeasurand.CURRENT_IMPORT]) {
+        const samples = meterValue.sampledValue.filter(sample => sample.measurand === measurand)
+        assert.strictEqual(samples.length, 2)
+        assert.ok(samples.every(sample => sample.location === MeterValueLocation.OUTLET))
+      }
+    })
+
     await it('should keep mixed DC energy projections and main input energy order-independent', () => {
       const outletThenInlet = advanceDcEnergyAtLocations([
         MeterValueLocation.OUTLET,

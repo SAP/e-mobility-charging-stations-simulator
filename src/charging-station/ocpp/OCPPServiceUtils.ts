@@ -1097,7 +1097,11 @@ const createVersionedSampledValueDispatcher = (
               OCPP20ComponentName.SampledDataCtrlr,
               VendorParametersKey.SignStartedReadings
             )
-          } else if (context == null || context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC) {
+          } else if (
+            context == null ||
+            context === OCPP20ReadingContextEnumType.SAMPLE_PERIODIC ||
+            (context === OCPP20ReadingContextEnumType.SAMPLE_CLOCK && transactionId != null)
+          ) {
             signingEnabledForContext = isOCPP20FlagEnabled(
               chargingStation,
               signReadingsComponent,
@@ -1816,7 +1820,8 @@ export const buildMeterValue = (
 /**
  * Builds a complete OCPP 2.0 MeterValue for a directly identified connector.
  * Active connectors may provide a transaction id to preserve coherent and
- * aligned-signing semantics; idle connectors omit it and stay unsigned.
+ * aligned-signing semantics; idle connectors omit it and remain governed by
+ * the aligned `SignReadings` policy.
  * @param chargingStation - Target charging station.
  * @param identity - Direct connector/EVSE identification.
  * @param identity.advanceEnergy - Whether this aligned sample owns energy accumulation.

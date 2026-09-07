@@ -1710,6 +1710,79 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
       })
 
+      await it('returns after its initial replay generation while later events drain separately', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = false
+        const firstStarted = Promise.withResolvers<undefined>()
+        const releaseFirst = Promise.withResolvers<undefined>()
+        const secondStarted = Promise.withResolvers<undefined>()
+        const releaseSecond = Promise.withResolvers<undefined>()
+        const sentSeqNos: number[] = []
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          sentSeqNos.push(payload.seqNo)
+          requestParams.onMessageSent?.()
+          if (payload.seqNo === 0) {
+            firstStarted.resolve(undefined)
+            await releaseFirst.promise
+          } else {
+            secondStarted.resolve(undefined)
+            await releaseSecond.promise
+          }
+          requestParams.onResponseReceived?.()
+          return {}
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => online
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(station, connectorId)
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        online = true
+
+        const initialReplay = OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+        await firstStarted.promise
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId
+        )
+        releaseFirst.resolve(undefined)
+
+        await initialReplay
+        await secondStarted.promise
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.seqNo),
+          [1]
+        )
+
+        releaseSecond.resolve(undefined)
+        await OCPP20ServiceUtils.waitForTransactionEventDelivery(connectorStatus)
+        assert.deepEqual(connectorStatus.transactionEventQueue, [])
+        assert.deepEqual(sentSeqNos, [0, 1])
+      })
+
       await it('keeps a later Ended event visible while replaying Started', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
@@ -2424,6 +2497,82 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.deepEqual(
           connectorStatus.transactionEventQueue?.map(event => event.seqNo),
           [0]
+        )
+      })
+
+      await it('does not reschedule a preserved queue head after stopping begins', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        let online = true
+        let stopping = false
+        let callCount = 0
+        const firstStarted = Promise.withResolvers<undefined>()
+        const releaseFirst = Promise.withResolvers<undefined>()
+        const replayAttempted = Promise.withResolvers<undefined>()
+        const requestHandlerMock = mock.fn(async (...args: unknown[]): Promise<EmptyObject> => {
+          const payload = args[2] as OCPP20TransactionEventRequest
+          const requestParams = args[3] as RequestParams
+          callCount++
+          requestParams.onMessageSent?.()
+          if (payload.seqNo === 0) {
+            firstStarted.resolve(undefined)
+            await releaseFirst.promise
+            requestParams.onResponseReceived?.()
+            return {}
+          }
+          replayAttempted.resolve(undefined)
+          if (callCount >= 3) online = false
+          throw new Error('shutdown interrupted replay')
+        })
+        const { station } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        station.isWebSocketConnectionOpened = () => online
+        station.isStopping = () => stopping
+        addConfigurationKey(
+          station,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '1',
+          undefined,
+          { save: false }
+        )
+        setupConnectorWithTransaction(station, connectorId, { transactionId })
+        const startedSend = OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+        await firstStarted.promise
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          station,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValueClock,
+          connectorId,
+          transactionId
+        )
+        stopping = true
+        releaseFirst.resolve(undefined)
+        await startedSend
+        await replayAttempted.promise
+        await new Promise(resolve => setImmediate(resolve))
+        await new Promise(resolve => setImmediate(resolve))
+
+        const connectorStatus = station.getConnectorStatus(connectorId)
+        assert.ok(connectorStatus != null)
+        assert.strictEqual(callCount, 2)
+        assert.deepEqual(
+          connectorStatus.transactionEventQueue?.map(event => event.seqNo),
+          [1]
         )
       })
 

@@ -674,6 +674,93 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(stationPower()?.value, 3750)
     })
 
+    await it('converts DC active export and omits unsupported Outlet families at EVSE 0', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.currentOutType = CurrentType.DC
+      mockStation.stationInfo.conversionEfficiency = 0.8
+      const stationEvse = mockStation.getEvseStatus(0)
+      const physicalEvse = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null)
+      assert.ok(physicalEvse != null)
+      const templates = [
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_EXPORT,
+          unit: 'W',
+          value: '1000',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.POWER_REACTIVE_IMPORT,
+          unit: 'var',
+          value: '200',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.ENERGY_APPARENT_IMPORT,
+          unit: 'VAh',
+          value: '300',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.CURRENT_IMPORT,
+          unit: 'A',
+          value: '4',
+        },
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.VOLTAGE,
+          unit: 'V',
+          value: '400',
+        },
+      ]
+      physicalEvse.MeterValues = templates as unknown as NonNullable<EvseStatus['MeterValues']>
+      stationEvse.MeterValues = templates.map(template => ({
+        ...template,
+        location: OCPP20LocationEnumType.Inlet,
+        value: undefined,
+      })) as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        templates.map(({ measurand }) => measurand).join(',')
+      )
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
+      assert.ok(stationPayload != null)
+      const stationSamples = stationPayload.meterValue.flatMap(({ sampledValue }) => sampledValue)
+      const exportPower = stationSamples.find(
+        ({ measurand }) => measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_EXPORT
+      )
+      assert.ok(exportPower != null)
+      assert.strictEqual(exportPower.location, OCPP20LocationEnumType.Inlet)
+      assert.strictEqual(exportPower.value, 800)
+      const unsupportedMeasurands = new Set([
+        OCPP20MeasurandEnumType.CURRENT_IMPORT,
+        OCPP20MeasurandEnumType.ENERGY_APPARENT_IMPORT,
+        OCPP20MeasurandEnumType.POWER_REACTIVE_IMPORT,
+        OCPP20MeasurandEnumType.VOLTAGE,
+      ])
+      assert.ok(
+        stationSamples.every(
+          ({ measurand }) => measurand == null || !unsupportedMeasurands.has(measurand)
+        )
+      )
+    })
+
     await it('deduplicates equivalent units from one physical meter before aggregation', () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,
@@ -1238,7 +1325,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(energySample.value, 1234)
     })
 
-    await it('signs active aligned samples when standard SignReadings is enabled', () => {
+    await it('does not sign active aligned samples when aligned SignUpdatedReadings is disabled', () => {
       const { mockStation, requestHandlerMock } = alignedStation
       upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
       upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
@@ -1258,7 +1345,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       const transactionEvent = sentTransactionEvents(requestHandlerMock)[0]
       assert.ok(
         transactionEvent.meterValue?.every(meterValue =>
-          meterValue.sampledValue.every(sample => sample.signedMeterValue != null)
+          meterValue.sampledValue.every(sample => sample.signedMeterValue == null)
         )
       )
     })

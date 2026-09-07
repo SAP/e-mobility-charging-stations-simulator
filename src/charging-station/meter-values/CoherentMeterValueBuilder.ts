@@ -506,6 +506,15 @@ const serializeCoherentMeterValue = (
     const bucket = groups.get(measurand)
     if (bucket == null) continue
     for (const template of bucket) {
+      if (
+        currentType === CurrentType.DC &&
+        effectiveEvseId !== 0 &&
+        template.location === MeterValueLocation.INLET &&
+        (measurand === MeterValueMeasurand.CURRENT_IMPORT ||
+          measurand === MeterValueMeasurand.VOLTAGE)
+      ) {
+        continue
+      }
       const templateEnergyRegisterWh =
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           ? projectEnergyRegisterWh(
