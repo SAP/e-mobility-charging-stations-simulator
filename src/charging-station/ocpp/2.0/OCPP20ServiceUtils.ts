@@ -2374,10 +2374,11 @@ export class OCPP20ServiceUtils {
   ): { connectorStatus: ConnectorStatus; transactionId: string } {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
     if (
-      connectorStatus?.transactionEnding !== true &&
-      (connectorStatus?.transactionStarted === true ||
-        connectorStatus?.transactionPending === true ||
-        connectorStatus?.transactionStarting === true) &&
+      connectorStatus != null &&
+      !isTransactionEnding(connectorStatus) &&
+      (connectorStatus.transactionStarted === true ||
+        connectorStatus.transactionPending === true ||
+        connectorStatus.transactionStarting === true) &&
       connectorStatus.transactionId != null
     ) {
       let transactionId: string

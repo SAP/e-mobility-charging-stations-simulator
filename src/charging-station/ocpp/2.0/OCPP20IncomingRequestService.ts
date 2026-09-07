@@ -3139,6 +3139,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       }
     }
 
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId, evseId)
+    if (connectorStatus == null || isTransactionEnding(connectorStatus)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Transaction ID ${transactionId as string} is not active`
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Transaction ID ${transactionId as string} is not active`,
+          reasonCode: ReasonCodeEnumType.TxNotFound,
+        },
+      }
+    }
+
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId as string}'`
     )

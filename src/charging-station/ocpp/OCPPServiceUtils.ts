@@ -80,7 +80,10 @@ import {
   isCoherentModeActive,
   resolveRootSeed,
 } from '../meter-values/index.js'
-import { canonicalizeCustomData } from '../meter-values/MeterValueUtils.js'
+import {
+  buildSampledValueFamilyKey,
+  canonicalizeCustomData,
+} from '../meter-values/MeterValueUtils.js'
 import {
   buildOCPP16BootNotificationRequest,
   buildOCPP16SampledValue,
@@ -1365,7 +1368,8 @@ const resolveSnapshotPhaseFamily = (
 }
 
 const applySnapshotRegisterValuesWithoutPhases = (
-  templates: SampledValueTemplate[]
+  templates: SampledValueTemplate[],
+  context: MeterValueContext | undefined
 ): SampledValueTemplate[] => {
   const result = templates.filter(
     template =>
@@ -1380,13 +1384,14 @@ const applySnapshotRegisterValuesWithoutPhases = (
     ) {
       continue
     }
-    const key = JSON.stringify([
-      template.context,
-      template.format,
-      template.location,
-      template.unit,
-      canonicalizeCustomData(template.customData),
-    ])
+    const identity = resolveSampledValueFields(template, 0, context, template.phase)
+    const key = buildSampledValueFamilyKey({
+      context: identity.context,
+      customData: template.customData,
+      location: identity.location,
+      measurand: identity.measurand,
+      unit: identity.unit,
+    })
     const family = families.get(key) ?? []
     family.push(template)
     families.set(key, family)
@@ -1460,7 +1465,7 @@ const expandClockAlignedSnapshotSamples = (
     return [...templatesByIdentity.values()]
   })()
   const templates = registerValuesWithoutPhases
-    ? applySnapshotRegisterValuesWithoutPhases(templatesBeforePhaseSuppression)
+    ? applySnapshotRegisterValuesWithoutPhases(templatesBeforePhaseSuppression, context)
     : templatesBeforePhaseSuppression
 
   for (const template of templates) {
@@ -1539,7 +1544,9 @@ const expandClockAlignedSnapshotSamples = (
         : undefined
     let rawValue: number | undefined
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      if (phaseFamily === 'Aggregate') {
+      if (evseId !== 0 && source != null && preferBaseline) {
+        rawValue = source.value * resolveSnapshotUnitDivider(measurand, source.unitOfMeasure?.unit)
+      } else if (phaseFamily === 'Aggregate') {
         rawValue = energyRegister
       } else if (phaseFamily === 'Line') {
         rawValue = energyRegister / numberOfPhases

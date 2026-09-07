@@ -286,10 +286,12 @@ export const advanceEnergyRegister = (
  * Advances the OCPP 2.0 station main-meter register from committed physical
  * energy. Explicit inlet energy is already grid-side; DC outlet energy is
  * converted to its inlet equivalent exactly once to include conversion losses.
+ * Coherent callers pass `Outlet` because their computed connector delta is
+ * always output-side, independently of the templates selected for emission.
  * @param context - Station context containing the EVSE 0 main meter.
  * @param evseId - Physical EVSE that committed the energy delta.
  * @param currentType - Connector output current type.
- * @param sourceLocation - Location of the meter that produced the energy delta.
+ * @param sourceLocation - Physical side of the supplied energy delta.
  * @param deltaEnergyWh - Committed energy delta in Wh.
  */
 export const advanceStationEnergyRegister = (

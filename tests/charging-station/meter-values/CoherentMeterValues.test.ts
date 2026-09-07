@@ -20,6 +20,7 @@ import type {
 import type {
   ChargingStationInfo,
   ConnectorStatus,
+  OCPP20SampledValue,
   SampledValue,
   SampledValueTemplate,
 } from '../../../src/types/index.js'
@@ -37,6 +38,7 @@ import {
   resolveRootSeed,
 } from '../../../src/charging-station/meter-values/CoherentSession.js'
 import { hashLabel } from '../../../src/charging-station/meter-values/PRNG.js'
+import { buildOCPP20SampledValue } from '../../../src/charging-station/ocpp/2.0/OCPP20RequestBuilders.js'
 import {
   AvailabilityType,
   CurrentType,
@@ -69,7 +71,7 @@ const baseProfile: EvProfile = {
  * @param overrides - Optional overrides bag for context knobs.
  * @param overrides.conversionEfficiency - DC outlet-to-inlet conversion efficiency.
  * @param overrides.currentType - `CurrentType.AC` or `CurrentType.DC`.
- * @param overrides.evseMaxPowerW - EVSE cap returned by `getConnectorMaximumAvailablePower`.
+ * @param overrides.evseMaxPowerW - Template input power; the mock applies DC efficiency like production.
  * @param overrides.evseMeterValues - When defined and `groupUnderEvse !== false`, exposed via
  *   `getEvseStatus(evseId).MeterValues`. When omitted with `groupUnderEvse === true`,
  *   `getEvseStatus(evseId).MeterValues` is `undefined` (EVSE grouping present with no
@@ -145,7 +147,10 @@ const buildContext = (
   const sessions = new Map<number | string, CoherentSession>()
 
   const context: ICoherentContext = {
-    getConnectorMaximumAvailablePower: () => evseMax,
+    getConnectorMaximumAvailablePower: () =>
+      (overrides.currentType ?? CurrentType.AC) === CurrentType.DC
+        ? evseMax * (overrides.conversionEfficiency ?? 1)
+        : evseMax,
     getConnectorStatus: () => connectorStatus,
     getEvseIdByConnectorId: () => {
       // groupUnderEvse takes precedence over evseMeterValues heuristic.
@@ -237,7 +242,12 @@ const createSessionOrFail = (
 
 const advanceDcEnergyAtLocations = (
   locations: readonly (MeterValueLocation | undefined)[]
-): { connectorEnergyWh: number; stationEnergyWh: number } => {
+): {
+  connectorEnergyWh: number
+  inletEnergyWh: number | undefined
+  outletEnergyWh: number | undefined
+  stationEnergyWh: number
+} => {
   const { connectorStatus, context, mainConnectorStatus, sessions } = buildContext({
     conversionEfficiency: 0.8,
     currentType: CurrentType.DC,
@@ -260,15 +270,27 @@ const advanceDcEnergyAtLocations = (
     value: 0,
   })) as SampledValueTemplate[]
 
-  buildCoherentMeterValue(context, session, passThroughBuilder, {
-    intervalMs: 3_600_000,
-    nowMs: 3_600_000,
-    rootSeed: 42,
-    voltageNoise: false,
-  })
+  const meterValue = buildCoherentMeterValue(
+    context,
+    session,
+    (template, value, sampleContext, phase) =>
+      buildOCPP20SampledValue(template, value, sampleContext, phase).sampledValue,
+    {
+      intervalMs: 3_600_000,
+      nowMs: 3_600_000,
+      rootSeed: 42,
+      voltageNoise: false,
+    }
+  )
+  const energyAt = (location: MeterValueLocation): number | undefined => {
+    const sampledValue = meterValue.sampledValue.find(sample => sample.location === location)
+    return sampledValue == null ? undefined : Number(sampledValue.value)
+  }
 
   return {
     connectorEnergyWh: connectorStatus.energyActiveImportRegisterValue ?? 0,
+    inletEnergyWh: energyAt(MeterValueLocation.INLET),
+    outletEnergyWh: energyAt(MeterValueLocation.OUTLET),
     stationEnergyWh: mainConnectorStatus.energyActiveImportRegisterValue ?? 0,
   }
 }
@@ -502,22 +524,28 @@ await describe('CoherentMeterValues', async () => {
       assert.ok(after > before, 'energy register must advance regardless of template presence')
     })
 
-    await it('should convert DC outlet and unspecified energy once while preserving explicit inlet energy', () => {
+    await it('should keep DC connector energy output-side and project Inlet energy input-side', () => {
       assert.deepStrictEqual(advanceDcEnergyAtLocations([MeterValueLocation.INLET]), {
-        connectorEnergyWh: 1000,
+        connectorEnergyWh: 800,
+        inletEnergyWh: 1000,
+        outletEnergyWh: undefined,
         stationEnergyWh: 1000,
       })
       assert.deepStrictEqual(advanceDcEnergyAtLocations([MeterValueLocation.OUTLET]), {
-        connectorEnergyWh: 1000,
-        stationEnergyWh: 1250,
+        connectorEnergyWh: 800,
+        inletEnergyWh: undefined,
+        outletEnergyWh: 800,
+        stationEnergyWh: 1000,
       })
       assert.deepStrictEqual(advanceDcEnergyAtLocations([undefined]), {
-        connectorEnergyWh: 1000,
-        stationEnergyWh: 1250,
+        connectorEnergyWh: 800,
+        inletEnergyWh: undefined,
+        outletEnergyWh: 800,
+        stationEnergyWh: 1000,
       })
     })
 
-    await it('should prefer an explicit inlet register independent of mixed template order', () => {
+    await it('should keep mixed DC energy projections and main input energy order-independent', () => {
       const outletThenInlet = advanceDcEnergyAtLocations([
         MeterValueLocation.OUTLET,
         MeterValueLocation.INLET,
@@ -528,7 +556,9 @@ await describe('CoherentMeterValues', async () => {
       ])
 
       assert.deepStrictEqual(outletThenInlet, {
-        connectorEnergyWh: 1000,
+        connectorEnergyWh: 800,
+        inletEnergyWh: 1000,
+        outletEnergyWh: 800,
         stationEnergyWh: 1000,
       })
       assert.deepStrictEqual(inletThenOutlet, outletThenInlet)
@@ -1758,6 +1788,78 @@ await describe('CoherentMeterValues', async () => {
 
       assert.strictEqual(energySamples.length, 1)
       assert.strictEqual(energySamples[0].phase, undefined)
+    })
+
+    await it('should suppress register phases by effective emitted OCPP 2.0 identity', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        currentType: CurrentType.AC,
+        evseMaxPowerW: 22000,
+        numberOfPhases: 3,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.energyActiveImportRegisterValue = 6000
+      connectorStatus.MeterValues = [
+        { phase: MeterValuePhase.L1_N },
+        { context: MeterValueContext.TRANSACTION_BEGIN, phase: MeterValuePhase.L2_N },
+        { format: 'SignedData', phase: MeterValuePhase.L3_N },
+        {
+          location: MeterValueLocation.OUTLET,
+          phase: MeterValuePhase.L1_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          customData: { vendorId: 'sensor-b' },
+          phase: MeterValuePhase.L2_N,
+        },
+      ] as unknown as SampledValueTemplate[]
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        (template, value, sampleContext, phase) =>
+          buildOCPP20SampledValue(template, value, sampleContext, phase).sampledValue,
+        { intervalMs: 3_600_000, nowMs: 3_600_000, rootSeed: 42, voltageNoise: false },
+        MeterValueContext.SAMPLE_CLOCK,
+        undefined,
+        true
+      )
+      const energySamples = meterValue.sampledValue.filter(
+        sample => sample.measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+      ) as OCPP20SampledValue[]
+
+      assert.deepEqual(
+        energySamples.map(sample => [
+          sample.context,
+          sample.location,
+          sample.phase,
+          sample.unitOfMeasure?.unit,
+          sample.customData?.vendorId,
+        ]),
+        [
+          [
+            MeterValueContext.SAMPLE_CLOCK,
+            MeterValueLocation.OUTLET,
+            undefined,
+            MeterValueUnit.WATT_HOUR,
+            undefined,
+          ],
+          [
+            MeterValueContext.SAMPLE_CLOCK,
+            MeterValueLocation.OUTLET,
+            undefined,
+            MeterValueUnit.WATT_HOUR,
+            'sensor-b',
+          ],
+        ]
+      )
     })
   })
 

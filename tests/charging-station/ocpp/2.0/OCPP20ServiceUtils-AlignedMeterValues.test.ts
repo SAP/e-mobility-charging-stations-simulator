@@ -369,6 +369,58 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       )
     })
 
+    await it('preserves identity-distinct energy register families in an EVSE aggregate', () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 2,
+        evsesCount: 1,
+      })
+      const evseStatus = mockStation.getEvseStatus(1)
+      const connector1 = mockStation.getConnectorStatus(1, 1)
+      const connector2 = mockStation.getConnectorStatus(2, 1)
+      assert.ok(evseStatus != null)
+      assert.ok(connector1 != null)
+      assert.ok(connector2 != null)
+      evseStatus.MeterValues = []
+      connector1.energyActiveImportRegisterValue = 100
+      connector2.energyActiveImportRegisterValue = 200
+      connector1.MeterValues = [
+        {
+          customData: { vendorId: 'sensor-a' },
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      connector2.MeterValues = [
+        {
+          customData: { vendorId: 'sensor-b' },
+          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+          unit: 'Wh',
+        },
+      ] as unknown as NonNullable<EvseStatus['MeterValues']>
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+
+      void OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const payload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 1)
+      assert.ok(payload != null)
+      const energySamples = payload.meterValue[0].sampledValue.filter(
+        sample => sample.measurand === OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.deepEqual(
+        energySamples.map(sample => [sample.customData?.vendorId, sample.value]),
+        [
+          ['sensor-a', 100],
+          ['sensor-b', 200],
+        ]
+      )
+    })
+
     await it('chooses the lowest connector id for colliding connector-local templates', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 2,
@@ -3970,7 +4022,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       OCPP20ServiceUtils.stopEndedMeterValues(mockStation, 1, 2)
     })
 
-    await it('preserves every register template identity family during phase suppression', () => {
+    await it('deduplicates register families by effective OCPP 2.0 identity during phase suppression', () => {
       const { mockStation } = createAlignedStation({ connectorsCount: 1, evsesCount: 1 })
       if (mockStation.stationInfo != null) mockStation.stationInfo.numberOfPhases = 3
       const evseStatus = mockStation.getEvseStatus(1)
@@ -4014,7 +4066,7 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         OCPP20ReadingContextEnumType.SAMPLE_CLOCK
       )
 
-      assert.strictEqual(meterValue.sampledValue.length, 5)
+      assert.strictEqual(meterValue.sampledValue.length, 3)
       assert.ok(meterValue.sampledValue.every(sample => sample.phase == null))
       assert.ok(
         meterValue.sampledValue.every(
@@ -4024,8 +4076,6 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.deepEqual(
         meterValue.sampledValue.map(sample => [sample.location, sample.unitOfMeasure?.unit]),
         [
-          [OCPP20LocationEnumType.Inlet, 'Wh'],
-          [OCPP20LocationEnumType.Inlet, 'Wh'],
           [OCPP20LocationEnumType.Inlet, 'Wh'],
           [OCPP20LocationEnumType.Outlet, 'Wh'],
           [OCPP20LocationEnumType.Inlet, 'kWh'],

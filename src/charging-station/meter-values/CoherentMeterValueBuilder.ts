@@ -50,7 +50,7 @@ import {
   getCoherentSampleSnapshot,
   ROUNDING_SCALE,
 } from './CoherentSampleComputer.js'
-import { canonicalizeCustomData } from './MeterValueUtils.js'
+import { buildSampledValueFamilyKey } from './MeterValueUtils.js'
 
 const moduleName = 'CoherentMeterValueBuilder'
 
@@ -177,21 +177,25 @@ const groupTemplatesByMeasurand = (
 const isLineToNeutralTemplate = (t: SampledValueTemplate): boolean =>
   phaseFamily(t.phase) === 'LineToNeutral'
 
-const templateFamilyKey = (template: SampledValueTemplate): string =>
-  JSON.stringify([
-    template.context ?? null,
-    canonicalizeCustomData(template.customData) ?? null,
-    template.format ?? null,
-    template.location ?? null,
-    template.unit ?? null,
-  ])
+const templateFamilyKey = (
+  template: SampledValueTemplate,
+  context: MeterValueContext | undefined
+): string =>
+  buildSampledValueFamilyKey({
+    context: context ?? template.context ?? MeterValueContext.SAMPLE_PERIODIC,
+    customData: template.customData,
+    location: template.location ?? MeterValueLocation.OUTLET,
+    measurand: template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    unit: (template.unit as MeterValueUnit | undefined) ?? MeterValueUnit.WATT_HOUR,
+  })
 
 /**
  * Applies the OCPP 2.0.1 `SampledDataCtrlr.RegisterValuesWithoutPhases`
  * suppression to the `Energy.Active.Import.Register` bucket in-place.
- * Groups templates into identity families keyed by
- * `(context, format, location, unit)`; within each family, per-phase
- * L-N templates are filtered out (avoiding "unsupported combination"
+ * Groups templates by effective emitted OCPP 2.0 identity: caller-resolved
+ * context, default-resolved location/unit, measurand, and canonical customData.
+ * Source-only `format` is omitted because OCPP 2.0 does not emit it. Within
+ * each family, per-phase L-N templates are filtered out (avoiding "unsupported combination"
  * warnings for a configured skip). If a family has per-phase L-N
  * templates but no aggregate template, an aggregate is synthesized
  * from the first suppressed per-phase L-N of that family (phase
@@ -200,15 +204,19 @@ const templateFamilyKey = (template: SampledValueTemplate): string =>
  * by `PHASE_RANK` to preserve stable emit order. No-op when the
  * measurand bucket is absent or has no per-phase L-N templates.
  * @param groups - Grouped templates map (mutated in-place).
+ * @param context - Caller-selected context that overrides template context.
  */
 const applyRegisterValuesWithoutPhases = (
-  groups: Map<MeterValueMeasurand, SampledValueTemplate[]>
+  groups: Map<MeterValueMeasurand, SampledValueTemplate[]>,
+  context: MeterValueContext | undefined
 ): void => {
   const bucket = groups.get(MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
   if (bucket == null) return
   if (!bucket.some(isLineToNeutralTemplate)) return
   const surviving: SampledValueTemplate[] = []
-  for (const family of Map.groupBy(bucket, templateFamilyKey).values()) {
+  for (const family of Map.groupBy(bucket, template =>
+    templateFamilyKey(template, context)
+  ).values()) {
     const perPhaseLN = family.filter(isLineToNeutralTemplate)
     if (isEmpty(perPhaseLN)) {
       surviving.push(...family)
@@ -403,28 +411,38 @@ const resolveTemplates = (
 }
 
 /**
- * Resolves the source location used to accrue the station main register.
- * An explicit inlet register is authoritative regardless of template order;
- * otherwise an explicit outlet or the unspecified default keeps the existing
- * outlet-to-inlet conversion semantics.
- * @param templates - Effective connector or EVSE MeterValues templates.
- * @returns The deterministic source location for station register accrual.
+ * Projects an output-side connector register onto a configured meter location.
+ * DC Inlet samples include conversion loss; Outlet and default-location samples
+ * remain connector output-side. EVSE 0 already stores its register input-side.
+ * @param context - Charging-station context.
+ * @param currentType - Connector output current type.
+ * @param evseId - Effective EVSE identifier.
+ * @param template - Energy register template being emitted.
+ * @param connectorStatus - Connector containing the output-side register.
+ * @param energyRegisterWhOverride - Optional output-side aggregate register.
+ * @returns Register value in Wh on the template's physical side.
  */
-const resolveStationEnergySourceLocation = (
-  templates: SampledValueTemplate[] | undefined
-): MeterValueLocation | undefined => {
-  let hasOutlet = false
-  for (const template of templates ?? []) {
-    if (
-      (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
-      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    ) {
-      continue
-    }
-    if (template.location === MeterValueLocation.INLET) return MeterValueLocation.INLET
-    if (template.location === MeterValueLocation.OUTLET) hasOutlet = true
+const projectEnergyRegisterWh = (
+  context: ICoherentContext,
+  currentType: CurrentType,
+  evseId: number | undefined,
+  template: SampledValueTemplate,
+  connectorStatus: ConnectorStatus,
+  energyRegisterWhOverride?: number
+): number => {
+  const outputEnergyWh = Math.max(
+    0,
+    energyRegisterWhOverride ?? connectorStatus.energyActiveImportRegisterValue ?? 0
+  )
+  if (
+    currentType !== CurrentType.DC ||
+    evseId === 0 ||
+    template.location !== MeterValueLocation.INLET
+  ) {
+    return outputEnergyWh
   }
-  return hasOutlet ? MeterValueLocation.OUTLET : undefined
+  const configuredEfficiency = context.stationInfo?.conversionEfficiency ?? 1
+  return outputEnergyWh / (configuredEfficiency > 0 ? configuredEfficiency : 1)
 }
 
 /**
@@ -466,7 +484,7 @@ const serializeCoherentMeterValue = (
   const templates = resolveTemplates(context, connectorId, connectorStatus, evseIdOverride)
   const groups = groupTemplatesByMeasurand(templates)
   if (registerValuesWithoutPhases === true) {
-    applyRegisterValuesWithoutPhases(groups)
+    applyRegisterValuesWithoutPhases(groups, mvContext)
   }
   const sampledValue: SampledValue[] = []
   const isEnabled = (measurand: MeterValueMeasurand): boolean =>
@@ -477,6 +495,17 @@ const serializeCoherentMeterValue = (
     const bucket = groups.get(measurand)
     if (bucket == null) continue
     for (const template of bucket) {
+      const templateEnergyRegisterWh =
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+          ? projectEnergyRegisterWh(
+            context,
+            currentType,
+            evseIdOverride,
+            template,
+            connectorStatus,
+            energyRegisterWhOverride
+          )
+          : undefined
       const raw = resolvePhasedValue(
         measurand,
         template.phase,
@@ -484,7 +513,7 @@ const serializeCoherentMeterValue = (
         numberOfPhases,
         currentType,
         connectorStatus,
-        energyRegisterWhOverride
+        templateEnergyRegisterWh
       )
       if (raw == null) {
         logger.warn(
@@ -553,15 +582,12 @@ export const buildCoherentMeterValue = (
     ? getCoherentSampleSnapshot(context, connectorStatus, session)
     : computeCoherentSampleAtTime(context, connectorStatus, session, options, evseIdOverride)
   if (!snapshotOnly) {
-    const energySourceLocation = resolveStationEnergySourceLocation(
-      resolveTemplates(context, session.connectorId, connectorStatusOverride, evseIdOverride)
-    )
     advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
     advanceStationEnergyRegister(
       context,
       evseIdOverride ?? context.getEvseIdByConnectorId(session.connectorId),
       session.currentType,
-      energySourceLocation,
+      MeterValueLocation.OUTLET,
       sample.deltaEnergyWh
     )
   }

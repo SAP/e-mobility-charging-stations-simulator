@@ -9,6 +9,7 @@
  * - buildMeterValue — throws when transactionId not found
  * - getSampledValueTemplate — EVSE-level templates take priority over connector-level
  * - getSampledValueTemplate — merges connector templates when no EVSE-level templates
+ * - clock-aligned register phase suppression — effective OCPP 2.0 output identity
  */
 
 import assert from 'node:assert/strict'
@@ -16,13 +17,20 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/index.js'
 
-import { addConfigurationKey } from '../../../src/charging-station/index.js'
-import { buildMeterValue } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
+import { addConfigurationKey, buildConfigKey } from '../../../src/charging-station/index.js'
+import {
+  buildClockAlignedConnectorMeterValue,
+  buildMeterValue,
+} from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   CurrentType,
   MeterValueContext,
   MeterValueLocation,
   MeterValueMeasurand,
+  MeterValuePhase,
+  MeterValueUnit,
+  OCPP20ComponentName,
+  OCPP20OptionalVariableName,
   OCPPVersion,
   type SampledValueTemplate,
   StandardParametersKey,
@@ -213,6 +221,103 @@ await describe('buildMeterValue', async () => {
 
       assert.strictEqual(advanceAtLocation(MeterValueLocation.INLET), 1000)
       assert.strictEqual(advanceAtLocation(MeterValueLocation.OUTLET), 1250)
+    })
+
+    await it('should suppress register phases by effective OCPP 2.0 output identity', () => {
+      addConfigurationKey(
+        station,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20OptionalVariableName.RegisterValuesWithoutPhases
+        ),
+        'true',
+        undefined,
+        { overwrite: true }
+      )
+      const sensorA = { channel: { label: 'main', number: 1 }, vendorId: 'sensor-a' }
+      const reorderedSensorA = Object.assign(
+        {},
+        { vendorId: 'sensor-a' },
+        { channel: Object.assign({}, { number: 1 }, { label: 'main' }) }
+      )
+      const templates = [
+        {
+          context: MeterValueContext.SAMPLE_PERIODIC,
+          customData: reorderedSensorA,
+          format: 'Raw',
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+        },
+        {
+          context: MeterValueContext.TRANSACTION_BEGIN,
+          customData: sensorA,
+          format: 'SignedData',
+          location: MeterValueLocation.OUTLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.WATT_HOUR,
+        },
+        {
+          context: MeterValueContext.TRANSACTION_END,
+          customData: sensorA,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L3_N,
+        },
+        {
+          customData: sensorA,
+          location: MeterValueLocation.INLET,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L1_N,
+        },
+        {
+          customData: sensorA,
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L2_N,
+          unit: MeterValueUnit.KILO_WATT_HOUR,
+        },
+        {
+          customData: { vendorId: 'sensor-b' },
+          measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+          phase: MeterValuePhase.L3_N,
+        },
+      ] as unknown as SampledValueTemplate[]
+
+      const meterValue = buildClockAlignedConnectorMeterValue(
+        station,
+        {
+          connectorId: 1,
+          energyRegisterWhOverride: 6000,
+          evseId: 1,
+          sampledValueBaseline: [],
+          sampledValueTemplates: templates,
+        },
+        60_000,
+        undefined,
+        MeterValueContext.SAMPLE_CLOCK
+      )
+
+      assert.strictEqual(meterValue.sampledValue.length, 4)
+      assert.ok(
+        meterValue.sampledValue.every(
+          sample =>
+            sample.context === MeterValueContext.SAMPLE_CLOCK &&
+            sample.phase == null &&
+            !('format' in sample)
+        )
+      )
+      assert.deepEqual(
+        meterValue.sampledValue
+          .map(sample =>
+            [sample.customData?.vendorId, sample.location, sample.unitOfMeasure?.unit].join('|')
+          )
+          .sort(),
+        [
+          `sensor-a|${MeterValueLocation.INLET}|${MeterValueUnit.WATT_HOUR}`,
+          `sensor-a|${MeterValueLocation.OUTLET}|${MeterValueUnit.KILO_WATT_HOUR}`,
+          `sensor-a|${MeterValueLocation.OUTLET}|${MeterValueUnit.WATT_HOUR}`,
+          `sensor-b|${MeterValueLocation.OUTLET}|${MeterValueUnit.WATT_HOUR}`,
+        ].sort()
+      )
     })
   })
 
