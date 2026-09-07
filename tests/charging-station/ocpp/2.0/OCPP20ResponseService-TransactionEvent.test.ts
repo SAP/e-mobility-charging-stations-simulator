@@ -8,7 +8,12 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { OCPP20TransactionEventResponse, UUIDv4 } from '../../../../src/types/index.js'
+import type { QueuedTransactionEvent } from '../../../../src/types/ConnectorStatus.js'
+import type {
+  OCPP20TransactionEventRequest,
+  OCPP20TransactionEventResponse,
+  UUIDv4,
+} from '../../../../src/types/index.js'
 
 import {
   createTestableResponseService,
@@ -16,9 +21,11 @@ import {
 } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { boundTransactionEventQueue } from '../../../../src/charging-station/TransactionEventQueueUtils.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20MessageFormatEnumType,
+  OCPP20TransactionEventEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -280,5 +287,81 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
     assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[0], multiStation)
     assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[1], 1)
+  })
+
+  await it('should scope queued Ended events to the response transaction', async () => {
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          '00000000-0000-0000-0000-000000000099',
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+    const deauthorize = mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
+      Promise.resolve({} as OCPP20TransactionEventResponse)
+    )
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Invalid } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID)
+    )
+
+    assert.strictEqual(deauthorize.mock.callCount(), 1)
+  })
+
+  await it('should use cached Ended accounting for repeated responses on a 10k queue', async () => {
+    const connectorStatus = station.getConnectorStatus(1)
+    assert.ok(connectorStatus != null)
+    let queuedRequestEventTypeReads = 0
+    connectorStatus.transactionEventQueue = Array.from(
+      { length: Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH },
+      (_, seqNo): QueuedTransactionEvent => {
+        const isTargetEnd = seqNo === Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 1
+        const eventType = isTargetEnd
+          ? OCPP20TransactionEventEnumType.Ended
+          : OCPP20TransactionEventEnumType.Updated
+        const request = {
+          transactionInfo: {
+            transactionId: isTargetEnd ? TEST_TRANSACTION_UUID : 'q',
+          },
+        } as unknown as OCPP20TransactionEventRequest
+        Object.defineProperty(request, 'eventType', {
+          enumerable: true,
+          get: () => {
+            queuedRequestEventTypeReads++
+            return eventType
+          },
+        })
+        return { request, seqNo } as QueuedTransactionEvent
+      }
+    )
+    const boundedQueue = boundTransactionEventQueue(connectorStatus)
+    assert.strictEqual(boundedQueue.changed, false)
+    assert.strictEqual(
+      connectorStatus.transactionEventQueue.length,
+      Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
+    )
+    assert.ok(boundedQueue.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
+    queuedRequestEventTypeReads = 0
+    const deauthorize = mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
+      Promise.resolve({} as OCPP20TransactionEventResponse)
+    )
+    const payload: OCPP20TransactionEventResponse = {
+      idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Invalid },
+    }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_UUID)
+
+    for (let responseIndex = 0; responseIndex < 32; responseIndex++) {
+      await testable.handleResponseTransactionEvent(station, payload, requestPayload)
+    }
+
+    assert.strictEqual(queuedRequestEventTypeReads, 0)
+    assert.strictEqual(deauthorize.mock.callCount(), 0)
   })
 })

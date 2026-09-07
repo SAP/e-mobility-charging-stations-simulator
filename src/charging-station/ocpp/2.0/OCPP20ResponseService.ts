@@ -40,6 +40,7 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { convertToDate, logger } from '../../../utils/index.js'
+import { hasQueuedEndedTransactionEvent } from '../../TransactionEventQueueUtils.js'
 import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
@@ -403,12 +404,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
       chargingStation.getConnectorIdByTransactionId(requestPayload.transactionInfo.transactionId)
     const connectorStatus =
       connectorId != null ? chargingStation.getConnectorStatus(connectorId, evseId) : undefined
-    const endedTransactionQueued = connectorStatus?.transactionEventQueue?.some(
-      queuedEvent =>
-        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended &&
-        queuedEvent.request.transactionInfo.transactionId ===
-          requestPayload.transactionInfo.transactionId
-    )
+    const endedTransactionQueued =
+      connectorStatus != null &&
+      hasQueuedEndedTransactionEvent(connectorStatus, requestPayload.transactionInfo.transactionId)
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
@@ -435,7 +433,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
         break
       case OCPP20TransactionEventEnumType.Started:
-        if (connectorStatus != null && endedTransactionQueued !== true) {
+        if (connectorStatus != null && !endedTransactionQueued) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false
           connectorStatus.transactionId ??= requestPayload.transactionInfo.transactionId
@@ -513,7 +511,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       if (
         payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
         !overrideRejection &&
-        endedTransactionQueued !== true
+        !endedTransactionQueued
       ) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', de-authorizing transaction per E05.FR.09/E05.FR.10/E06.FR.04`
@@ -542,7 +540,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
       } else if (
         payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
-        endedTransactionQueued === true
+        endedTransactionQueued
       ) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} already has an Ended event queued; skipping redundant de-authorization events`

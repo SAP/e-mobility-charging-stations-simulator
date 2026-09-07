@@ -29,6 +29,7 @@ import {
   type ConnectorStatus,
   CurrentType,
   MeterValueContext,
+  MeterValueLocation,
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
@@ -402,6 +403,31 @@ const resolveTemplates = (
 }
 
 /**
+ * Resolves the source location used to accrue the station main register.
+ * An explicit inlet register is authoritative regardless of template order;
+ * otherwise an explicit outlet or the unspecified default keeps the existing
+ * outlet-to-inlet conversion semantics.
+ * @param templates - Effective connector or EVSE MeterValues templates.
+ * @returns The deterministic source location for station register accrual.
+ */
+const resolveStationEnergySourceLocation = (
+  templates: SampledValueTemplate[] | undefined
+): MeterValueLocation | undefined => {
+  let hasOutlet = false
+  for (const template of templates ?? []) {
+    if (
+      (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) !==
+      MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+    ) {
+      continue
+    }
+    if (template.location === MeterValueLocation.INLET) return MeterValueLocation.INLET
+    if (template.location === MeterValueLocation.OUTLET) hasOutlet = true
+  }
+  return hasOutlet ? MeterValueLocation.OUTLET : undefined
+}
+
+/**
  * Projects a coherent physical sample onto every configured template.
  * @param context - Charging-station context.
  * @param connectorId - Source connector identifier.
@@ -527,16 +553,9 @@ export const buildCoherentMeterValue = (
     ? getCoherentSampleSnapshot(context, connectorStatus, session)
     : computeCoherentSampleAtTime(context, connectorStatus, session, options, evseIdOverride)
   if (!snapshotOnly) {
-    const energySourceLocation = resolveTemplates(
-      context,
-      session.connectorId,
-      connectorStatusOverride,
-      evseIdOverride
-    )?.find(
-      template =>
-        (template.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) ===
-        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-    )?.location
+    const energySourceLocation = resolveStationEnergySourceLocation(
+      resolveTemplates(context, session.connectorId, connectorStatusOverride, evseIdOverride)
+    )
     advanceEnergyRegister(connectorStatus, sample.deltaEnergyWh)
     advanceStationEnergyRegister(
       context,

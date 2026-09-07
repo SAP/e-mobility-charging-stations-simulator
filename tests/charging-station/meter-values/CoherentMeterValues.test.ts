@@ -235,6 +235,44 @@ const createSessionOrFail = (
   return session
 }
 
+const advanceDcEnergyAtLocations = (
+  locations: readonly (MeterValueLocation | undefined)[]
+): { connectorEnergyWh: number; stationEnergyWh: number } => {
+  const { connectorStatus, context, mainConnectorStatus, sessions } = buildContext({
+    conversionEfficiency: 0.8,
+    currentType: CurrentType.DC,
+    evseMaxPowerW: 1000,
+    groupUnderEvse: true,
+  })
+  const session = createSessionOrFail(context, {
+    connectorId: 1,
+    now: 0,
+    profiles: [baseProfile],
+    rampUpDurationMs: 0,
+    rootSeed: 42,
+    transactionId: 1,
+  })
+  sessions.set(1, session)
+  connectorStatus.MeterValues = locations.map(location => ({
+    ...(location != null && { location }),
+    measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    unit: MeterValueUnit.WATT_HOUR,
+    value: 0,
+  })) as SampledValueTemplate[]
+
+  buildCoherentMeterValue(context, session, passThroughBuilder, {
+    intervalMs: 3_600_000,
+    nowMs: 3_600_000,
+    rootSeed: 42,
+    voltageNoise: false,
+  })
+
+  return {
+    connectorEnergyWh: connectorStatus.energyActiveImportRegisterValue ?? 0,
+    stationEnergyWh: mainConnectorStatus.energyActiveImportRegisterValue ?? 0,
+  }
+}
+
 await describe('CoherentMeterValues', async () => {
   afterEach(() => {
     standardCleanup()
@@ -464,54 +502,36 @@ await describe('CoherentMeterValues', async () => {
       assert.ok(after > before, 'energy register must advance regardless of template presence')
     })
 
-    await it('should convert DC outlet energy once while preserving explicit inlet energy', () => {
-      const advanceAtLocation = (
-        location: MeterValueLocation
-      ): { connectorEnergyWh: number; stationEnergyWh: number } => {
-        const { connectorStatus, context, mainConnectorStatus, sessions } = buildContext({
-          conversionEfficiency: 0.8,
-          currentType: CurrentType.DC,
-          evseMaxPowerW: 1000,
-          groupUnderEvse: true,
-        })
-        const session = createSessionOrFail(context, {
-          connectorId: 1,
-          now: 0,
-          profiles: [baseProfile],
-          rampUpDurationMs: 0,
-          rootSeed: 42,
-          transactionId: 1,
-        })
-        sessions.set(1, session)
-        connectorStatus.MeterValues = [
-          {
-            location,
-            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-            unit: MeterValueUnit.WATT_HOUR,
-            value: 0,
-          },
-        ] as SampledValueTemplate[]
+    await it('should convert DC outlet and unspecified energy once while preserving explicit inlet energy', () => {
+      assert.deepStrictEqual(advanceDcEnergyAtLocations([MeterValueLocation.INLET]), {
+        connectorEnergyWh: 1000,
+        stationEnergyWh: 1000,
+      })
+      assert.deepStrictEqual(advanceDcEnergyAtLocations([MeterValueLocation.OUTLET]), {
+        connectorEnergyWh: 1000,
+        stationEnergyWh: 1250,
+      })
+      assert.deepStrictEqual(advanceDcEnergyAtLocations([undefined]), {
+        connectorEnergyWh: 1000,
+        stationEnergyWh: 1250,
+      })
+    })
 
-        buildCoherentMeterValue(context, session, passThroughBuilder, {
-          intervalMs: 3_600_000,
-          nowMs: 3_600_000,
-          rootSeed: 42,
-          voltageNoise: false,
-        })
+    await it('should prefer an explicit inlet register independent of mixed template order', () => {
+      const outletThenInlet = advanceDcEnergyAtLocations([
+        MeterValueLocation.OUTLET,
+        MeterValueLocation.INLET,
+      ])
+      const inletThenOutlet = advanceDcEnergyAtLocations([
+        MeterValueLocation.INLET,
+        MeterValueLocation.OUTLET,
+      ])
 
-        return {
-          connectorEnergyWh: connectorStatus.energyActiveImportRegisterValue ?? 0,
-          stationEnergyWh: mainConnectorStatus.energyActiveImportRegisterValue ?? 0,
-        }
-      }
-
-      const inlet = advanceAtLocation(MeterValueLocation.INLET)
-      assert.strictEqual(inlet.connectorEnergyWh, 1000)
-      assert.strictEqual(inlet.stationEnergyWh, 1000)
-
-      const outlet = advanceAtLocation(MeterValueLocation.OUTLET)
-      assert.strictEqual(outlet.connectorEnergyWh, 1000)
-      assert.strictEqual(outlet.stationEnergyWh, 1250)
+      assert.deepStrictEqual(outletThenInlet, {
+        connectorEnergyWh: 1000,
+        stationEnergyWh: 1000,
+      })
+      assert.deepStrictEqual(inletThenOutlet, outletThenInlet)
     })
 
     await it('should serialize a coherent snapshot without advancing registers or SoC', () => {

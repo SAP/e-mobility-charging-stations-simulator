@@ -69,8 +69,10 @@ import {
 import { buildConfigKey, getConfigurationKey } from '../../index.js'
 import { canonicalizeCustomData } from '../../meter-values/MeterValueUtils.js'
 import {
-  boundTransactionEventQueue,
-  getTransactionEventQueueBytes as calculateTransactionEventQueueBytes,
+  enqueueBoundedTransactionEvent,
+  hasQueuedEndedTransactionEvent,
+  invalidateTransactionEventQueueAccounting,
+  shiftBoundedTransactionEvent,
 } from '../../TransactionEventQueueUtils.js'
 import {
   mapOCPP20AuthorizationStatus,
@@ -103,12 +105,7 @@ export interface RejectionReason {
 
 const hasQueuedEndedEvent = (connectorStatus: ConnectorStatus): boolean =>
   connectorStatus.transactionId != null &&
-  connectorStatus.transactionEventQueue?.some(
-    queuedEvent =>
-      queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended &&
-      queuedEvent.request.transactionInfo.transactionId ===
-        connectorStatus.transactionId?.toString()
-  ) === true
+  hasQueuedEndedTransactionEvent(connectorStatus, connectorStatus.transactionId.toString())
 
 export const isTransactionEnding = (connectorStatus: ConnectorStatus): boolean =>
   connectorStatus.transactionEnding === true || hasQueuedEndedEvent(connectorStatus)
@@ -851,7 +848,9 @@ export class OCPP20ServiceUtils {
               normalizePhysicalMeterValueForStationAggregation({
                 ...meterValue,
                 sampledValue: meterValue.sampledValue.map(sampledValue =>
-                  sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT &&
+                  (sampledValue.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT ||
+                    sampledValue.measurand ===
+                      OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL) &&
                   sampledValue.location === OCPP20LocationEnumType.Outlet
                     ? { ...sampledValue, value: sampledValue.value / conversionEfficiency }
                     : sampledValue
@@ -2216,7 +2215,7 @@ export class OCPP20ServiceUtils {
             queuedEvent.request.transactionInfo.transactionId
           )
         }
-        queue.shift()
+        shiftBoundedTransactionEvent(connectorStatus)
         queueChanged = true
       } catch (error) {
         if (
@@ -2253,6 +2252,7 @@ export class OCPP20ServiceUtils {
               nextSignedSample?.signedMeterValue != null
             ) {
               nextSignedSample.signedMeterValue.publicKey = publicKey
+              invalidateTransactionEventQueueAccounting(connectorStatus)
             } else if (
               publicKey != null &&
               connectorStatus.transactionId?.toString() ===
@@ -2274,7 +2274,7 @@ export class OCPP20ServiceUtils {
               queuedEvent.request.transactionInfo.transactionId
             )
           }
-          queue.shift()
+          shiftBoundedTransactionEvent(connectorStatus)
           queueChanged = true
           continue
         }
@@ -2295,78 +2295,26 @@ export class OCPP20ServiceUtils {
     markOffline = false
   ): void {
     if (markOffline) request.offline = true
-    connectorStatus.transactionEventQueue ??= []
-    const queue = connectorStatus.transactionEventQueue
-    const transactionId = request.transactionInfo.transactionId
-    if (
-      queue.some(
-        queuedEvent =>
-          queuedEvent.request.transactionInfo.transactionId === transactionId &&
-          queuedEvent.seqNo === request.seqNo
-      )
-    ) {
-      const bounded = boundTransactionEventQueue(connectorStatus)
-      if (bounded.changed) chargingStation.saveTransactionEventQueues()
-      return
-    }
-
-    const queuedEvent = { request, seqNo: request.seqNo, timestamp: new Date() }
-    const queuedEventBytes = OCPP20ServiceUtils.getQueuedTransactionEventBytes(queuedEvent)
     const isUpdatedEvent = request.eventType === OCPP20TransactionEventEnumType.Updated
-    const initiallyBounded = isUpdatedEvent
-      ? boundTransactionEventQueue(connectorStatus)
-      : { bytes: calculateTransactionEventQueueBytes(queue), changed: false }
-    const queueBytes = initiallyBounded.bytes
-    const updatedQueueLimit = Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH - 2
-    const separatorBytes = queue.length === 0 ? 0 : 1
-    if (
-      isUpdatedEvent &&
-      (queue.length >= updatedQueueLimit ||
-        queueBytes + separatorBytes + queuedEventBytes >
-          Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES)
-    ) {
-      if (!OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)) {
-        OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded update capacity; dropping updates until delivery resumes`
-        )
-      }
-      if (OCPP20ServiceUtils.requestHasPublicKey(request)) {
-        connectorStatus.publicKeySentInTransaction = false
-      }
-      if (initiallyBounded.changed) chargingStation.saveTransactionEventQueues()
+    const result = enqueueBoundedTransactionEvent(connectorStatus, {
+      request,
+      seqNo: request.seqNo,
+      timestamp: new Date(),
+    })
+    if (!result.inserted) {
+      if (result.changed) chargingStation.saveTransactionEventQueues()
       return
     }
-
-    let insertionIndex = queue.length
-    for (let index = queue.length - 1; index >= 0; index--) {
-      const existingEvent = queue[index]
-      if (existingEvent.request.transactionInfo.transactionId !== transactionId) continue
-      insertionIndex = index
-      if (existingEvent.seqNo < request.seqNo) {
-        insertionIndex = index + 1
-        break
-      }
-    }
-    queue.splice(insertionIndex, 0, queuedEvent)
-    const bounded = boundTransactionEventQueue(
-      connectorStatus,
-      isUpdatedEvent ? undefined : queuedEvent
-    )
     if (
-      bounded.changed &&
+      result.removedEvents.length > 0 &&
       !OCPP20ServiceUtils.saturatedTransactionEventQueues.has(connectorStatus)
     ) {
       OCPP20ServiceUtils.saturatedTransactionEventQueues.add(connectorStatus)
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded capacity; compacting or evicting queued payload`
+        `${chargingStation.logPrefix()} ${moduleName}.enqueueTransactionEvent: TransactionEvent queue reached its bounded capacity; decimating intermediate updates or compacting queued payload`
       )
     }
-    chargingStation.saveTransactionEventQueues(isUpdatedEvent && !initiallyBounded.changed)
-  }
-
-  private static getQueuedTransactionEventBytes (queuedEvent: QueuedTransactionEvent): number {
-    return Buffer.byteLength(JSON.stringify(queuedEvent), 'utf8')
+    chargingStation.saveTransactionEventQueues(isUpdatedEvent)
   }
 
   private static isChargingStationStopping (chargingStation: ChargingStation): boolean {
@@ -2417,14 +2365,6 @@ export class OCPP20ServiceUtils {
     return intervalSeconds > 0
       ? secondsToMilliseconds(intervalSeconds)
       : secondsToMilliseconds(defaultSeconds)
-  }
-
-  private static requestHasPublicKey (request: OCPP20TransactionEventRequest): boolean {
-    return (
-      request.meterValue
-        ?.flatMap(meterValue => meterValue.sampledValue)
-        .some(sampledValue => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0) === true
-    )
   }
 
   private static resolveActiveTransaction (

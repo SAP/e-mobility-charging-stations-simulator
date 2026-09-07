@@ -12,6 +12,7 @@ import {
   resetConnectorStatus,
 } from '../../../charging-station/index.js'
 import {
+  AvailabilityType,
   ChargingStationEvents,
   type ConnectorStatus,
   type JsonType,
@@ -583,10 +584,27 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     let transactionIdTag: string | undefined
+    const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
+    if (chargingStation.isStopping()) {
+      decrementPowerDivider(chargingStation)
+      OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
+      finalizeTransactionConnectorStatus(
+        chargingStation,
+        transactionConnectorStatus,
+        requestPayload
+      )
+      if (transactionConnectorStatus != null) {
+        transactionConnectorStatus.status =
+          chargingStation.isChargingStationAvailable() &&
+          transactionConnectorStatus.availability === AvailabilityType.Operative
+            ? OCPP16ChargePointStatus.Available
+            : OCPP16ChargePointStatus.Unavailable
+      }
+      return
+    }
     if (postTransactionDelay > 0) {
       decrementPowerDivider(chargingStation)
       // Send Finishing status if not already set (idempotency guard)
-      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       if (transactionConnectorStatus?.status !== OCPP16ChargePointStatus.Finishing) {
         await sendAndSetConnectorStatus(chargingStation, {
           connectorId: transactionConnectorId,
@@ -602,24 +620,39 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // subsequent call from `finalizeTransactionConnectorStatus` post-sleep
       // is a no-op.
       chargingStation.destroyCoherentSession(requestPayload.transactionId)
-      if (lifecycleAbortSignal == null) {
-        await sleep(secondsToMilliseconds(postTransactionDelay))
-      } else {
-        await interruptibleSleep(secondsToMilliseconds(postTransactionDelay), lifecycleAbortSignal)
-      }
-      if (lifecycleAbortSignal?.aborted === true || !chargingStation.started) {
-        return
+      if (!chargingStation.isStopping()) {
+        if (lifecycleAbortSignal == null) {
+          await sleep(secondsToMilliseconds(postTransactionDelay))
+        } else {
+          await interruptibleSleep(
+            secondsToMilliseconds(postTransactionDelay),
+            lifecycleAbortSignal
+          )
+        }
       }
       transactionIdTag = finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,
         requestPayload
       )
+      if (
+        chargingStation.isStopping() ||
+        lifecycleAbortSignal?.aborted === true ||
+        !chargingStation.started
+      ) {
+        if (transactionConnectorStatus != null) {
+          transactionConnectorStatus.status =
+            chargingStation.isChargingStationAvailable() &&
+            transactionConnectorStatus.availability === AvailabilityType.Operative
+              ? OCPP16ChargePointStatus.Available
+              : OCPP16ChargePointStatus.Unavailable
+        }
+        return
+      }
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
     } else {
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
       decrementPowerDivider(chargingStation)
-      const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
       transactionIdTag = finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,

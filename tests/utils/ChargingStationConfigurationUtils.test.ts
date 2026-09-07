@@ -419,7 +419,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
         restoredConnectorStatus.transactionSeqNo,
         Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH
       )
-      assert.ok(queue[0].seqNo > 0)
+      assert.strictEqual(queue[0].seqNo, 0)
       assert.strictEqual(queue.at(-1)?.seqNo, Constants.MAX_TRANSACTION_EVENT_QUEUE_LENGTH)
     })
     await it('should compact and evict lifecycle payloads while hydrating a byte-oversized queue', () => {
@@ -485,8 +485,14 @@ await describe('ChargingStationConfigurationUtils', async () => {
       )
       assert.deepStrictEqual(
         queue.map(queued => queued.request.transactionInfo.transactionId),
-        [oversizedStartedTransactionId, newestCompletedTransactionId]
+        [oversizedStartedTransactionId, oldestCompletedTransactionId, newestCompletedTransactionId]
       )
+      assert.strictEqual(queue[0].request.customData, undefined)
+      assert.strictEqual(queue[1].request.customData, undefined)
+      assert.deepEqual(queue[2].request.customData, {
+        payload: 'x'.repeat(642_000),
+        vendorId: 'test',
+      })
       assert.strictEqual(queue[0].request.eventType, OCPP20TransactionEventEnumType.Started)
       assert.strictEqual(queue[0].request.customData, undefined)
       assert.strictEqual(queue[0].request.seqNo, 0)
