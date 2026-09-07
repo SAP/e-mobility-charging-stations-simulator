@@ -185,7 +185,7 @@ await describe('buildMeterValue', async () => {
       )
     })
 
-    await it('should convert only outlet DC energy when advancing the station main register', () => {
+    await it('should treat physical DC energy as output-side when advancing the station main register', () => {
       const advanceAtLocation = (location: MeterValueLocation): number => {
         const { station: testStation } = createMockChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -219,7 +219,7 @@ await describe('buildMeterValue', async () => {
         )
       }
 
-      assert.strictEqual(advanceAtLocation(MeterValueLocation.INLET), 1000)
+      assert.strictEqual(advanceAtLocation(MeterValueLocation.INLET), 1250)
       assert.strictEqual(advanceAtLocation(MeterValueLocation.OUTLET), 1250)
     })
 

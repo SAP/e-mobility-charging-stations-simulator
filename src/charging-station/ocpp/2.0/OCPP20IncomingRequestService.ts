@@ -2382,10 +2382,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
     }
 
     const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+    const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+    const connectorStatus =
+      connectorId != null ? chargingStation.getConnectorStatus(connectorId, evseId) : undefined
 
     return {
       messagesInQueue: this.hasQueuedTransactionEvents(chargingStation, transactionId),
-      ongoingIndicator: evseId != null,
+      ongoingIndicator: connectorStatus != null && !isTransactionEnding(connectorStatus),
     }
   }
 

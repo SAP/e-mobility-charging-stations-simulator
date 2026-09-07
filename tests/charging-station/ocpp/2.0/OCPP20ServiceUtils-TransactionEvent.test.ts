@@ -2217,6 +2217,63 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.transactionEventQueue, undefined)
       })
 
+      await it('should scale TransactionEvent retry delays by preceding transmissions', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const attemptTimes: number[] = []
+        const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+          attemptTimes.push(Date.now())
+          const requestParams = args[3] as RequestParams
+          requestParams.onMessageSent?.()
+          return Promise.reject(new Error('CSMS rejected event'))
+        })
+        const { station: retryStation } = createMockChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 1,
+          evseConfiguration: { evsesCount: 1 },
+          ocppRequestService: { requestHandler: requestHandlerMock },
+          stationInfo: {
+            ocppStrictCompliance: true,
+            ocppVersion: OCPPVersion.VERSION_201,
+          },
+          websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
+        })
+        addConfigurationKey(
+          retryStation,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttempts}.TransactionEvent`,
+          '3',
+          undefined,
+          { save: false }
+        )
+        addConfigurationKey(
+          retryStation,
+          `${OCPP20ComponentName.OCPPCommCtrlr}.${OCPP20RequiredVariableName.MessageAttemptInterval}.TransactionEvent`,
+          '1',
+          undefined,
+          { save: false }
+        )
+        retryStation.isWebSocketConnectionOpened = () => true
+        setupConnectorWithTransaction(retryStation, connectorId, { transactionId })
+
+        await assert.rejects(
+          OCPP20ServiceUtils.sendTransactionEvent(
+            retryStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.MeterValueClock,
+            connectorId,
+            transactionId,
+            {},
+            { skipBufferingOnError: true, throwError: true }
+          ),
+          /CSMS rejected event/
+        )
+
+        assert.strictEqual(attemptTimes.length, 3)
+        const intervals = attemptTimes.slice(1).map((time, index) => time - attemptTimes[index])
+        assert.ok(intervals[0] >= 900 && intervals[0] < 1500, intervals.join(','))
+        assert.ok(intervals[1] >= 1900 && intervals[1] < 2500, intervals.join(','))
+      })
+
       await it('should cancel a TransactionEvent retry delay when its lifecycle is aborted', async () => {
         const connectorId = 1
         const transactionId = generateUUID()

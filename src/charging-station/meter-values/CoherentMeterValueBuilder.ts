@@ -411,17 +411,34 @@ const resolveTemplates = (
 }
 
 /**
- * Projects an output-side connector register onto a configured meter location.
+ * Projects an output-side physical value onto a configured meter location.
  * DC Inlet samples include conversion loss; Outlet and default-location samples
- * remain connector output-side. EVSE 0 already stores its register input-side.
+ * remain connector output-side. EVSE 0 already stores input-side values.
  * @param context - Charging-station context.
  * @param currentType - Connector output current type.
  * @param evseId - Effective EVSE identifier.
- * @param template - Energy register template being emitted.
- * @param connectorStatus - Connector containing the output-side register.
- * @param energyRegisterWhOverride - Optional output-side aggregate register.
- * @returns Register value in Wh on the template's physical side.
+ * @param template - Meter template being emitted.
+ * @param outputValue - Physical output-side value.
+ * @returns Value on the template's physical side.
  */
+const projectDcOutputValue = (
+  context: ICoherentContext,
+  currentType: CurrentType,
+  evseId: number | undefined,
+  template: SampledValueTemplate,
+  outputValue: number
+): number => {
+  if (
+    currentType !== CurrentType.DC ||
+    evseId === 0 ||
+    template.location !== MeterValueLocation.INLET
+  ) {
+    return outputValue
+  }
+  const configuredEfficiency = context.stationInfo?.conversionEfficiency ?? 1
+  return outputValue / (configuredEfficiency > 0 ? configuredEfficiency : 1)
+}
+
 const projectEnergyRegisterWh = (
   context: ICoherentContext,
   currentType: CurrentType,
@@ -429,21 +446,14 @@ const projectEnergyRegisterWh = (
   template: SampledValueTemplate,
   connectorStatus: ConnectorStatus,
   energyRegisterWhOverride?: number
-): number => {
-  const outputEnergyWh = Math.max(
-    0,
-    energyRegisterWhOverride ?? connectorStatus.energyActiveImportRegisterValue ?? 0
+): number =>
+  projectDcOutputValue(
+    context,
+    currentType,
+    evseId,
+    template,
+    Math.max(0, energyRegisterWhOverride ?? connectorStatus.energyActiveImportRegisterValue ?? 0)
   )
-  if (
-    currentType !== CurrentType.DC ||
-    evseId === 0 ||
-    template.location !== MeterValueLocation.INLET
-  ) {
-    return outputEnergyWh
-  }
-  const configuredEfficiency = context.stationInfo?.conversionEfficiency ?? 1
-  return outputEnergyWh / (configuredEfficiency > 0 ? configuredEfficiency : 1)
-}
 
 /**
  * Projects a coherent physical sample onto every configured template.
@@ -487,6 +497,7 @@ const serializeCoherentMeterValue = (
     applyRegisterValuesWithoutPhases(groups, mvContext)
   }
   const sampledValue: SampledValue[] = []
+  const effectiveEvseId = evseIdOverride ?? context.getEvseIdByConnectorId(connectorId)
   const isEnabled = (measurand: MeterValueMeasurand): boolean =>
     enabledMeasurands == null || enabledMeasurands.has(measurand)
 
@@ -500,7 +511,7 @@ const serializeCoherentMeterValue = (
           ? projectEnergyRegisterWh(
             context,
             currentType,
-            evseIdOverride,
+            effectiveEvseId,
             template,
             connectorStatus,
             energyRegisterWhOverride
@@ -521,8 +532,12 @@ const serializeCoherentMeterValue = (
         )
         continue
       }
+      const physicalValue =
+        measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT
+          ? projectDcOutputValue(context, currentType, effectiveEvseId, template, raw)
+          : raw
       const unitDivider = resolveUnitDivider(measurand, template.unit as MeterValueUnit | undefined)
-      const scaled = roundTo(raw / unitDivider, ROUNDING_SCALE)
+      const scaled = roundTo(physicalValue / unitDivider, ROUNDING_SCALE)
       sampledValue.push(buildVersionedSampledValue(template, scaled, mvContext))
     }
   }

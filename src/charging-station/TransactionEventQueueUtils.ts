@@ -1,7 +1,16 @@
 import type { ConnectorStatus, QueuedTransactionEvent } from '../types/ConnectorStatus.js'
 
-import { type OCPP20SignedMeterValue, OCPP20TransactionEventEnumType } from '../types/index.js'
+import {
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
+  OCPP20ReadingContextEnumType,
+  type OCPP20SampledValue,
+  type OCPP20SignedMeterValue,
+  OCPP20TransactionEventEnumType,
+  OCPP20UnitEnumType,
+} from '../types/index.js'
 import { Constants } from '../utils/index.js'
+import { canonicalizeCustomData } from './meter-values/MeterValueUtils.js'
 
 export interface BoundedTransactionEventQueue {
   bytes: number
@@ -136,79 +145,39 @@ const removeCustomData = (value: unknown): boolean => {
     delete record.customData
     changed = true
   }
-  for (const nestedValue of Object.values(record)) {
+  for (const [key, nestedValue] of Object.entries(record)) {
+    if (key === 'meterValue') continue
     changed = removeCustomData(nestedValue) || changed
   }
   return changed
 }
 
-const isBillingSampledValue = (
-  sampledValue: NonNullable<
-    QueuedTransactionEvent['request']['meterValue']
-  >[number]['sampledValue'][number]
-): boolean => {
-  const context = sampledValue.context?.toString()
-  return (
-    sampledValue.measurand == null ||
-    sampledValue.measurand.includes('.Register') ||
-    context === 'Transaction.Begin' ||
-    context === 'Transaction.End'
-  )
+const getEffectiveUnit = (sampledValue: OCPP20SampledValue): string | undefined => {
+  if (sampledValue.unitOfMeasure?.unit != null) return sampledValue.unitOfMeasure.unit
+  const measurand = sampledValue.measurand ?? OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+  return measurand.startsWith('Energy.') ? OCPP20UnitEnumType.WATT_HOUR : undefined
 }
 
-const isBillingMeterValue = (
-  meterValue: NonNullable<QueuedTransactionEvent['request']['meterValue']>[number]
-): boolean => meterValue.sampledValue.some(isBillingSampledValue)
-
-const isSignedMeterValue = (
-  meterValue: NonNullable<QueuedTransactionEvent['request']['meterValue']>[number]
-): boolean => meterValue.sampledValue.some(sampledValue => sampledValue.signedMeterValue != null)
-
-const hasPublicKey = (
-  sampledValue: NonNullable<
-    QueuedTransactionEvent['request']['meterValue']
-  >[number]['sampledValue'][number]
-): boolean => (sampledValue.signedMeterValue?.publicKey.length ?? 0) > 0
-
-const addMatchingEndpointIndexes = <T>(
-  retainedIndexes: Set<number>,
-  values: readonly T[],
-  predicate: (value: T) => boolean
-): void => {
-  let firstIndex: number | undefined
-  let lastIndex: number | undefined
-  for (const [index, value] of values.entries()) {
-    if (!predicate(value)) continue
-    firstIndex ??= index
-    lastIndex = index
-  }
-  if (firstIndex != null) retainedIndexes.add(firstIndex)
-  if (lastIndex != null) retainedIndexes.add(lastIndex)
-}
-
-const compactLifecycleMeterValueIntermediates = (
-  accounting: TransactionEventQueueAccounting,
-  queuedEvent: QueuedTransactionEvent
-): boolean => {
-  const meterValues = queuedEvent.request.meterValue
-  if (
-    queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ||
-    meterValues == null ||
-    meterValues.length <= 2
-  ) {
-    return false
-  }
-  const retainedMeterValues = meterValues.filter(
-    (meterValue, index) =>
-      index === 0 ||
-      index === meterValues.length - 1 ||
-      isBillingMeterValue(meterValue) ||
-      isSignedMeterValue(meterValue)
-  )
-  if (retainedMeterValues.length === meterValues.length) return false
-  queuedEvent.request.meterValue = retainedMeterValues
-  refreshQueuedEventBytes(accounting, queuedEvent)
-  return true
+const getSampledValueIdentity = (sampledValue: OCPP20SampledValue): string => {
+  const signedMeterValue = sampledValue.signedMeterValue
+  return JSON.stringify([
+    sampledValue.measurand ?? OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+    sampledValue.context ?? OCPP20ReadingContextEnumType.SAMPLE_PERIODIC,
+    sampledValue.phase,
+    sampledValue.location ?? OCPP20LocationEnumType.Outlet,
+    getEffectiveUnit(sampledValue),
+    sampledValue.unitOfMeasure?.multiplier ?? 0,
+    canonicalizeCustomData(sampledValue.customData),
+    canonicalizeCustomData(sampledValue.unitOfMeasure?.customData),
+    signedMeterValue == null
+      ? undefined
+      : [
+          signedMeterValue.encodingMethod,
+          signedMeterValue.signingMethod,
+          canonicalizeCustomData(signedMeterValue.customData),
+          signedMeterValue.publicKey.length > 0,
+        ],
+  ])
 }
 
 const compactLifecycleMeterValueEndpoints = (
@@ -218,35 +187,65 @@ const compactLifecycleMeterValueEndpoints = (
   const meterValues = queuedEvent.request.meterValue
   if (
     queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Updated ||
-    meterValues == null
+    meterValues == null ||
+    meterValues.length === 0
   ) {
     return false
   }
 
-  const retainedMeterValueIndexes = new Set([0, meterValues.length - 1])
-  addMatchingEndpointIndexes(retainedMeterValueIndexes, meterValues, isBillingMeterValue)
-  addMatchingEndpointIndexes(retainedMeterValueIndexes, meterValues, isSignedMeterValue)
-  addMatchingEndpointIndexes(retainedMeterValueIndexes, meterValues, meterValue =>
-    meterValue.sampledValue.some(hasPublicKey)
-  )
-  const retainedMeterValues = meterValues.filter((_, index) => retainedMeterValueIndexes.has(index))
-  let changed = retainedMeterValues.length !== meterValues.length
-
-  for (const meterValue of retainedMeterValues) {
-    const { sampledValue } = meterValue
-    const retainedSampleIndexes = new Set([0, sampledValue.length - 1])
-    addMatchingEndpointIndexes(retainedSampleIndexes, sampledValue, isBillingSampledValue)
-    addMatchingEndpointIndexes(
-      retainedSampleIndexes,
-      sampledValue,
-      sample => sample.signedMeterValue != null
-    )
-    addMatchingEndpointIndexes(retainedSampleIndexes, sampledValue, hasPublicKey)
-    const retainedSamples = sampledValue.filter((_, index) => retainedSampleIndexes.has(index))
-    if (retainedSamples.length === sampledValue.length) continue
-    meterValue.sampledValue = retainedSamples
-    changed = true
+  const meterValueEndpoints = new Map<string, { first: number; last: number }>()
+  for (const [meterValueIndex, meterValue] of meterValues.entries()) {
+    const identities = new Set<string>()
+    for (const sampledValue of meterValue.sampledValue) {
+      identities.add(getSampledValueIdentity(sampledValue))
+    }
+    for (const identity of identities) {
+      const endpoints = meterValueEndpoints.get(identity)
+      if (endpoints == null) {
+        meterValueEndpoints.set(identity, { first: meterValueIndex, last: meterValueIndex })
+      } else {
+        endpoints.last = meterValueIndex
+      }
+    }
   }
+
+  const retainedMeterValueIndexes = new Set([0, meterValues.length - 1])
+  for (const endpoints of meterValueEndpoints.values()) {
+    retainedMeterValueIndexes.add(endpoints.first)
+    retainedMeterValueIndexes.add(endpoints.last)
+  }
+  let changed = retainedMeterValueIndexes.size !== meterValues.length
+  const retainedMeterValues = meterValues.filter((meterValue, meterValueIndex) => {
+    if (!retainedMeterValueIndexes.has(meterValueIndex)) return false
+
+    const sampleEndpoints = new Map<string, { first: number; last: number }>()
+    for (const [sampledValueIndex, sampledValue] of meterValue.sampledValue.entries()) {
+      const identity = getSampledValueIdentity(sampledValue)
+      const endpoints = sampleEndpoints.get(identity)
+      if (endpoints == null) {
+        sampleEndpoints.set(identity, { first: sampledValueIndex, last: sampledValueIndex })
+      } else {
+        endpoints.last = sampledValueIndex
+      }
+    }
+
+    const retainedSampleIndexes = new Set<number>()
+    for (const endpoints of sampleEndpoints.values()) {
+      retainedSampleIndexes.add(endpoints.first)
+      retainedSampleIndexes.add(endpoints.last)
+    }
+    if (retainedSampleIndexes.size === 0 && meterValue.sampledValue.length > 0) {
+      retainedSampleIndexes.add(0)
+      retainedSampleIndexes.add(meterValue.sampledValue.length - 1)
+    }
+    if (retainedSampleIndexes.size !== meterValue.sampledValue.length) {
+      meterValue.sampledValue = meterValue.sampledValue.filter((_, sampledValueIndex) =>
+        retainedSampleIndexes.has(sampledValueIndex)
+      )
+      changed = true
+    }
+    return true
+  })
 
   if (!changed) return false
   queuedEvent.request.meterValue = retainedMeterValues
@@ -268,14 +267,6 @@ const compactOversizedLifecycleEvent = (
     return changed
   }
 
-  if (compactLifecycleMeterValueIntermediates(accounting, queuedEvent)) changed = true
-  if (
-    (accounting.eventBytes.get(queuedEvent) ?? 0) + 2 <=
-    Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES
-  ) {
-    return changed
-  }
-
   if (compactLifecycleMeterValueEndpoints(accounting, queuedEvent)) changed = true
   if (
     (accounting.eventBytes.get(queuedEvent) ?? 0) + 2 <=
@@ -289,6 +280,8 @@ const compactOversizedLifecycleEvent = (
   const transactionInfo = request.transactionInfo
   queuedEvent.request = {
     eventType: request.eventType,
+    ...(request.evse != null && { evse: request.evse }),
+    ...(request.idToken != null && { idToken: request.idToken }),
     ...(typeof request.offline === 'boolean' && { offline: request.offline }),
     ...(request.meterValue != null && { meterValue: request.meterValue }),
     seqNo: request.seqNo,
@@ -346,6 +339,40 @@ const transferPublicKeys = (
     replacement.publicKey = publicKey
     const replacementEvent = replacementEvents.get(transactionId)
     if (replacementEvent != null) refreshQueuedEventBytes(accounting, replacementEvent)
+  }
+}
+
+const transferFirstEventIdentity = (
+  accounting: TransactionEventQueueAccounting,
+  removedEvents: ReadonlySet<QueuedTransactionEvent>
+): void => {
+  for (const removedEvent of removedEvents) {
+    if (removedEvent.request.eventType !== OCPP20TransactionEventEnumType.Started) continue
+    const { transactionId } = removedEvent.request.transactionInfo
+    let replacementEvent: QueuedTransactionEvent | undefined
+    for (const queuedEvent of accounting.queue) {
+      if (
+        removedEvents.has(queuedEvent) ||
+        queuedEvent.request.transactionInfo.transactionId !== transactionId
+      ) {
+        continue
+      }
+      if (replacementEvent == null || queuedEvent.seqNo < replacementEvent.seqNo) {
+        replacementEvent = queuedEvent
+      }
+    }
+    if (replacementEvent == null) continue
+
+    let changed = false
+    if (removedEvent.request.evse != null) {
+      replacementEvent.request.evse = { ...removedEvent.request.evse }
+      changed = true
+    }
+    if (removedEvent.request.idToken != null) {
+      replacementEvent.request.idToken = { ...removedEvent.request.idToken }
+      changed = true
+    }
+    if (changed) refreshQueuedEventBytes(accounting, replacementEvent)
   }
 }
 
@@ -437,6 +464,7 @@ export const boundTransactionEventQueue = (
   const remove = (candidates: readonly QueuedTransactionEvent[]): void => {
     if (candidates.length === 0) return
     const candidateSet = new Set(candidates)
+    transferFirstEventIdentity(accounting, candidateSet)
     const publicKeys = new Map<string, string>()
     for (const candidate of candidates) {
       const transactionId = candidate.request.transactionInfo.transactionId
@@ -497,6 +525,9 @@ export const boundTransactionEventQueue = (
   }
 
   const removeOldestCompletedTransaction = (): boolean => {
+    const retainedTransactionId =
+      protectedEvent?.request.transactionInfo.transactionId ??
+      queue.at(-1)?.request.transactionInfo.transactionId
     const completedTransactionIds = new Set(
       queue
         .filter(candidate => candidate.request.eventType === OCPP20TransactionEventEnumType.Ended)
@@ -505,7 +536,9 @@ export const boundTransactionEventQueue = (
     const completedTransactionGroupsById = new Map<string, QueuedTransactionEvent[]>()
     for (const candidate of queue) {
       const transactionId = candidate.request.transactionInfo.transactionId
-      if (candidate === protectedEvent || !completedTransactionIds.has(transactionId)) continue
+      if (transactionId === retainedTransactionId || !completedTransactionIds.has(transactionId)) {
+        continue
+      }
       const transactionGroup = completedTransactionGroupsById.get(transactionId) ?? []
       transactionGroup.push(candidate)
       completedTransactionGroupsById.set(transactionId, transactionGroup)
@@ -517,13 +550,13 @@ export const boundTransactionEventQueue = (
   }
 
   while (isOverHardBounds() && removeOldestCompletedTransaction()) {
-    // Evict complete history before degrading any retained lifecycle billing evidence.
+    // Evict complete history before degrading retained meter-value identity endpoints.
   }
 
   if (accounting.bytes > Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES) {
     for (const queuedEvent of queue) {
       if (accounting.bytes <= Constants.MAX_TRANSACTION_EVENT_QUEUE_BYTES) break
-      if (!compactLifecycleMeterValueIntermediates(accounting, queuedEvent)) continue
+      if (!compactLifecycleMeterValueEndpoints(accounting, queuedEvent)) continue
       changed = true
     }
   }

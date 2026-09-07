@@ -92,6 +92,138 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
   })
 
+  await it('should ignore an Accepted Started response while the transaction is ending', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = true
+    connectorStatus.locked = false
+    connectorStatus.transactionEnding = true
+    connectorStatus.transactionSeqNo = 1
+    const statusBefore = connectorStatus.status
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (async () => await Promise.resolve({})) as typeof station.ocppRequestService.requestHandler
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+    const startedRequest = buildTransactionEventRequest(
+      TEST_TRANSACTION_UUID,
+      OCPP20TransactionEventEnumType.Started
+    )
+    startedRequest.seqNo = 0
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      startedRequest
+    )
+
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionPending, true)
+    assert.strictEqual(connectorStatus.locked, false)
+    assert.strictEqual(connectorStatus.status, statusBefore)
+    assert.strictEqual(requestHandler.mock.callCount(), 0)
+    assert.strictEqual(startUpdated.mock.callCount(), 0)
+    assert.strictEqual(startEnded.mock.callCount(), 0)
+  })
+
+  await it('should skip de-authorization follow-up while the transaction is ending', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEnding = true
+    const deauthorize = mock.method(OCPP20ServiceUtils, 'requestDeauthorizeTransaction', async () =>
+      Promise.resolve({} as OCPP20TransactionEventResponse)
+    )
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Invalid } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(deauthorize.mock.callCount(), 0)
+  })
+
+  await it('should ignore an Accepted Started response when a matching Ended event is queued', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = true
+    connectorStatus.locked = false
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          TEST_TRANSACTION_UUID,
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+    const statusBefore = connectorStatus.status
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (async () => await Promise.resolve({})) as typeof station.ocppRequestService.requestHandler
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionPending, true)
+    assert.strictEqual(connectorStatus.locked, false)
+    assert.strictEqual(connectorStatus.status, statusBefore)
+    assert.strictEqual(requestHandler.mock.callCount(), 0)
+    assert.strictEqual(startUpdated.mock.callCount(), 0)
+    assert.strictEqual(startEnded.mock.callCount(), 0)
+  })
+
+  await it('should process Started normally when only another transaction has Ended queued', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = true
+    connectorStatus.locked = false
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          '00000000-0000-0000-0000-000000000099',
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+    const requestHandler = mock.method(
+      station.ocppRequestService,
+      'requestHandler',
+      (async () => await Promise.resolve({})) as typeof station.ocppRequestService.requestHandler
+    )
+    const startUpdated = mock.method(OCPP20ServiceUtils, 'startUpdatedMeterValues', () => undefined)
+    const startEnded = mock.method(OCPP20ServiceUtils, 'startEndedMeterValues', () => undefined)
+
+    await testable.handleResponseTransactionEvent(
+      station,
+      { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+      buildTransactionEventRequest(TEST_TRANSACTION_UUID, OCPP20TransactionEventEnumType.Started)
+    )
+
+    assert.strictEqual(connectorStatus.transactionStarted, true)
+    assert.strictEqual(connectorStatus.transactionPending, false)
+    assert.strictEqual(connectorStatus.locked, true)
+    assert.strictEqual(requestHandler.mock.callCount(), 1)
+    assert.strictEqual(startUpdated.mock.callCount(), 1)
+    assert.strictEqual(startEnded.mock.callCount(), 1)
+  })
+
   await it('should stop only the specific transaction when idTokenInfo status is Invalid', async () => {
     // Arrange
     const mockDeauthTransaction = mock.method(

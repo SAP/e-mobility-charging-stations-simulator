@@ -10,14 +10,18 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
+import { OCPP20TransactionEventEnumType, OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_TRANSACTION_UUID,
+} from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { buildTransactionEventRequest } from './OCPP20ResponseServiceTestUtils.js'
 
 await describe('D14 - GetTransactionStatus', async () => {
   let station: ChargingStation
@@ -89,6 +93,66 @@ await describe('D14 - GetTransactionStatus', async () => {
     })
 
     assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.ongoingIndicator, true)
+    assert.strictEqual(response.messagesInQueue, false)
+  })
+
+  await it('should return ongoingIndicator false while the transaction is ending', () => {
+    setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_UUID })
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEnding = true
+
+    const response = testableService.handleRequestGetTransactionStatus(station, {
+      transactionId: TEST_TRANSACTION_UUID,
+    })
+
+    assert.strictEqual(response.ongoingIndicator, false)
+    assert.strictEqual(response.messagesInQueue, false)
+  })
+
+  await it('should return ongoingIndicator false when a matching Ended event is queued', () => {
+    setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_UUID })
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          TEST_TRANSACTION_UUID,
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+
+    const response = testableService.handleRequestGetTransactionStatus(station, {
+      transactionId: TEST_TRANSACTION_UUID,
+    })
+
+    assert.strictEqual(response.ongoingIndicator, false)
+    assert.strictEqual(response.messagesInQueue, true)
+  })
+
+  await it('should ignore an unrelated queued Ended event for the current transaction', () => {
+    setupConnectorWithTransaction(station, 1, { transactionId: TEST_TRANSACTION_UUID })
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    assert.ok(connectorStatus != null)
+    connectorStatus.transactionEventQueue = [
+      {
+        request: buildTransactionEventRequest(
+          '00000000-0000-0000-0000-000000000099',
+          OCPP20TransactionEventEnumType.Ended
+        ),
+        seqNo: 1,
+        timestamp: new Date(),
+      },
+    ]
+
+    const response = testableService.handleRequestGetTransactionStatus(station, {
+      transactionId: TEST_TRANSACTION_UUID,
+    })
+
     assert.strictEqual(response.ongoingIndicator, true)
     assert.strictEqual(response.messagesInQueue, false)
   })

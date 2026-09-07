@@ -45,7 +45,7 @@ import { sendAndSetConnectorStatus } from '../OCPPConnectorStatusOperations.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { createPayloadValidatorMap, isRequestCommandSupported } from '../OCPPServiceUtils.js'
 import { OCPP20IncomingRequestService } from './OCPP20IncomingRequestService.js'
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import { isTransactionEnding, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'
 
 /**
@@ -407,6 +407,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
     const endedTransactionQueued =
       connectorStatus != null &&
       hasQueuedEndedTransactionEvent(connectorStatus, requestPayload.transactionInfo.transactionId)
+    const transactionEnding =
+      connectorStatus != null && (isTransactionEnding(connectorStatus) || endedTransactionQueued)
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
@@ -433,7 +435,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
         break
       case OCPP20TransactionEventEnumType.Started:
-        if (connectorStatus != null && !endedTransactionQueued) {
+        if (connectorStatus != null && !transactionEnding) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false
           connectorStatus.transactionId ??= requestPayload.transactionInfo.transactionId
@@ -511,7 +513,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       if (
         payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
         !overrideRejection &&
-        !endedTransactionQueued
+        !transactionEnding
       ) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', de-authorizing transaction per E05.FR.09/E05.FR.10/E06.FR.04`
@@ -540,10 +542,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
       } else if (
         payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted &&
-        endedTransactionQueued
+        transactionEnding
       ) {
         logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} already has an Ended event queued; skipping redundant de-authorization events`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} is already ending; skipping redundant de-authorization events`
         )
       } else if (overrideRejection) {
         logger.warn(

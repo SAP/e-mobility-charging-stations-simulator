@@ -506,7 +506,6 @@ const updateConnectorEnergyValues = (
   chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   energyValue: number,
-  energyLocation: MeterValueLocation | undefined,
   evseId?: number
 ): void => {
   if (connectorStatus != null) {
@@ -526,7 +525,7 @@ const updateConnectorEnergyValues = (
       chargingStation,
       evseId,
       chargingStation.stationInfo?.currentOutType ?? CurrentType.AC,
-      energyLocation,
+      MeterValueLocation.OUTLET,
       energyValue
     )
   }
@@ -1305,6 +1304,29 @@ const resolveSnapshotUnitDivider = (
   return usesKiloUnit ? Constants.UNIT_DIVIDER_KILO : 1
 }
 
+const projectSnapshotDcOutputValue = (
+  chargingStation: ChargingStation,
+  evseId: number | undefined,
+  location: MeterValueLocation | undefined,
+  measurand: MeterValueMeasurand,
+  outputValue: number,
+  baselineAlreadyProjected: boolean
+): number => {
+  if (
+    baselineAlreadyProjected ||
+    evseId == null ||
+    evseId === 0 ||
+    chargingStation.stationInfo?.currentOutType !== CurrentType.DC ||
+    location !== MeterValueLocation.INLET ||
+    (measurand !== MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
+      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
+  ) {
+    return outputValue
+  }
+  const configuredEfficiency = chargingStation.stationInfo.conversionEfficiency ?? 1
+  return outputValue / (configuredEfficiency > 0 ? configuredEfficiency : 1)
+}
+
 const areSnapshotUnitsCompatible = (
   measurand: MeterValueMeasurand,
   sourceUnit: string | undefined,
@@ -1670,8 +1692,16 @@ const expandClockAlignedSnapshotSamples = (
       )
     }
     if (rawValue == null) continue
+    const physicalValue = projectSnapshotDcOutputValue(
+      chargingStation,
+      evseId,
+      resolvedIdentity.location,
+      measurand,
+      rawValue,
+      preferBaseline
+    )
     const value = roundTo(
-      rawValue / resolveSnapshotUnitDivider(measurand, template.unit as string | undefined),
+      physicalValue / resolveSnapshotUnitDivider(measurand, template.unit as string | undefined),
       2
     )
     expanded.push(buildVersionedSampledValue(template, value, context))
@@ -2199,13 +2229,7 @@ const buildIdentifiedMeterValue = (
     // Aligned snapshots may own accumulation when periodic TxUpdated samples
     // do not include the cumulative energy register.
     if (ownsEnergy) {
-      updateConnectorEnergyValues(
-        chargingStation,
-        connectorStatus,
-        energyMeasurand.value,
-        energyMeasurand.template.location,
-        evseId
-      )
+      updateConnectorEnergyValues(chargingStation, connectorStatus, energyMeasurand.value, evseId)
       if (
         connectorStatus != null &&
         (previousEnergyUpdate == null || meterValue.timestamp > previousEnergyUpdate)

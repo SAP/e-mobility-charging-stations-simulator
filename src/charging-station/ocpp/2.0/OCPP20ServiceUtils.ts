@@ -296,17 +296,28 @@ const aggregateClockAlignedSamples = (
   numberOfPhases: number
 ): OCPP20SampledValue[] => {
   const samples = new Map<string, OCPP20SampledValue>()
+  const phaseOnlyGroups = new Map<string, Map<string, OCPP20SampledValue>>()
+  const buildKey = (sample: OCPP20SampledValue, additive: boolean): string =>
+    JSON.stringify([
+      sample.measurand,
+      sample.context,
+      sample.location,
+      sample.phase,
+      canonicalizeCustomData(sample.customData),
+      ...(additive ? [] : [sample.unitOfMeasure?.unit, sample.unitOfMeasure?.multiplier]),
+    ])
+  const buildGroupKey = (sample: OCPP20SampledValue): string =>
+    JSON.stringify([
+      sample.measurand,
+      sample.context,
+      sample.location,
+      sample.unitOfMeasure?.unit,
+      sample.unitOfMeasure?.multiplier,
+      canonicalizeCustomData(sample.customData),
+    ])
+
   for (const meterValue of meterValues) {
     const meterSamples = new Map<string, { additive: boolean; sampledValue: OCPP20SampledValue }>()
-    const buildKey = (sample: OCPP20SampledValue, additive: boolean): string =>
-      JSON.stringify([
-        sample.measurand,
-        sample.context,
-        sample.location,
-        sample.phase,
-        canonicalizeCustomData(sample.customData),
-        ...(additive ? [] : [sample.unitOfMeasure?.unit, sample.unitOfMeasure?.multiplier]),
-      ])
     for (const sampledValue of meterValue.sampledValue) {
       const additiveUnitFamily = getClockAlignedAdditiveUnitFamily(
         sampledValue.measurand,
@@ -322,43 +333,30 @@ const aggregateClockAlignedSamples = (
       })
     }
 
-    const additiveGroups = new Map<
-      string,
-      { aggregatePresent: boolean; byLine: Map<string, OCPP20SampledValue> }
-    >()
-    for (const { additive, sampledValue } of meterSamples.values()) {
-      if (!additive) continue
-      const groupKey = JSON.stringify([
-        sampledValue.measurand,
-        sampledValue.context,
-        sampledValue.location,
-        canonicalizeCustomData(sampledValue.customData),
-      ])
-      const group = additiveGroups.get(groupKey) ?? {
-        aggregatePresent: false,
-        byLine: new Map<string, OCPP20SampledValue>(),
+    const meterGroups = Map.groupBy(
+      [...meterSamples.values()].filter(({ additive }) => additive),
+      ({ sampledValue }) => buildGroupKey(sampledValue)
+    )
+    for (const [groupKey, groupSamples] of meterGroups) {
+      if (groupSamples.some(({ sampledValue }) => sampledValue.phase == null)) continue
+      const meterPhases = new Map<string, OCPP20SampledValue>()
+      for (const { sampledValue } of groupSamples) {
+        const lineMatch =
+          sampledValue.phase == null ? null : /^L([123])(?:-N)?$/.exec(sampledValue.phase)
+        const line = lineMatch?.[1]
+        if (line != null && !meterPhases.has(line)) meterPhases.set(line, sampledValue)
       }
-      if (sampledValue.phase == null) {
-        group.aggregatePresent = true
-      } else {
-        const lineMatch = /^L([123])(?:-N)?$/.exec(sampledValue.phase)
-        if (lineMatch?.[1] != null && !group.byLine.has(lineMatch[1])) {
-          group.byLine.set(lineMatch[1], sampledValue)
+      const accumulatedPhases =
+        phaseOnlyGroups.get(groupKey) ?? new Map<string, OCPP20SampledValue>()
+      for (const [line, sampledValue] of meterPhases) {
+        const existing = accumulatedPhases.get(line)
+        if (existing == null) {
+          accumulatedPhases.set(line, { ...sampledValue })
+        } else {
+          existing.value += sampledValue.value
         }
       }
-      additiveGroups.set(groupKey, group)
-    }
-    for (const { aggregatePresent, byLine } of additiveGroups.values()) {
-      if (aggregatePresent || byLine.size < Math.max(1, numberOfPhases)) continue
-      const values = [...byLine.values()]
-      const first = values[0]
-      const total = values.reduce((sum, sample) => sum + sample.value, 0)
-      const aggregate = {
-        ...first,
-        phase: undefined,
-        value: first.measurand?.startsWith('Current.') === true ? total / values.length : total,
-      }
-      meterSamples.set(buildKey(aggregate, true), { additive: true, sampledValue: aggregate })
+      phaseOnlyGroups.set(groupKey, accumulatedPhases)
     }
 
     for (const [key, { additive, sampledValue }] of meterSamples) {
@@ -372,6 +370,26 @@ const aggregateClockAlignedSamples = (
         delete aggregate.signedMeterValue
         samples.set(key, aggregate)
       }
+    }
+  }
+
+  for (const byLine of phaseOnlyGroups.values()) {
+    if (byLine.size < Math.max(1, numberOfPhases)) continue
+    const values = [...byLine.values()]
+    const first = values[0]
+    const total = values.reduce((sum, sample) => sum + sample.value, 0)
+    const aggregate = {
+      ...first,
+      phase: undefined,
+      value: first.measurand?.startsWith('Current.') === true ? total / values.length : total,
+    }
+    delete aggregate.signedMeterValue
+    const key = buildKey(aggregate, true)
+    const existing = samples.get(key)
+    if (existing == null) {
+      samples.set(key, aggregate)
+    } else {
+      existing.value += aggregate.value
     }
   }
   return [...samples.values()]

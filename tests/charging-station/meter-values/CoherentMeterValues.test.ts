@@ -545,6 +545,70 @@ await describe('CoherentMeterValues', async () => {
       })
     })
 
+    await it('should project coherent DC power and energy to each configured meter side exactly once', () => {
+      const { connectorStatus, context, sessions } = buildContext({
+        conversionEfficiency: 0.8,
+        currentType: CurrentType.DC,
+        evseMaxPowerW: 1000,
+        groupUnderEvse: true,
+        voltageOut: 400,
+      })
+      const session = createSessionOrFail(context, {
+        connectorId: 1,
+        now: 0,
+        profiles: [baseProfile],
+        rampUpDurationMs: 0,
+        rootSeed: 42,
+        transactionId: 1,
+      })
+      sessions.set(1, session)
+      connectorStatus.MeterValues = [MeterValueLocation.INLET, MeterValueLocation.OUTLET].flatMap(
+        location => [
+          {
+            location,
+            measurand: MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+            unit: MeterValueUnit.WATT,
+          },
+          {
+            location,
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: MeterValueUnit.WATT_HOUR,
+          },
+        ]
+      ) as unknown as SampledValueTemplate[]
+
+      const meterValue = buildCoherentMeterValue(
+        context,
+        session,
+        (template, value, sampleContext, phase) =>
+          buildOCPP20SampledValue(template, value, sampleContext, phase).sampledValue,
+        {
+          intervalMs: 3_600_000,
+          nowMs: 3_600_000,
+          rootSeed: 42,
+          voltageNoise: false,
+        },
+        undefined,
+        undefined,
+        undefined,
+        new Date(3_600_000),
+        connectorStatus,
+        1
+      )
+      const values = meterValue.sampledValue.map(sample => [
+        sample.measurand,
+        sample.location,
+        Number(sample.value),
+      ])
+
+      assert.deepEqual(values, [
+        [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueLocation.INLET, 1000],
+        [MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueLocation.OUTLET, 800],
+        [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueLocation.INLET, 1000],
+        [MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER, MeterValueLocation.OUTLET, 800],
+      ])
+    })
+
     await it('should keep mixed DC energy projections and main input energy order-independent', () => {
       const outletThenInlet = advanceDcEnergyAtLocations([
         MeterValueLocation.OUTLET,
