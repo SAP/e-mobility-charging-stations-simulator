@@ -15,6 +15,7 @@ import {
   MessageType,
   type OCPPVersion,
   type OutgoingRequest,
+  type PendingRequestCancellationCallback,
   RequestCommand,
   type RequestParams,
   type Response,
@@ -106,8 +107,12 @@ export abstract class OCPPRequestService {
     const bufferedRequestIds = discardBufferedRequests
       ? undefined
       : chargingStation.getBufferedRequestIds()
-    for (const [messageId, [, errorCallback]] of [...chargingStation.requests.entries()]) {
+    for (const [messageId, [, errorCallback, , , cancelPendingSend]] of [
+      ...chargingStation.requests.entries(),
+    ]) {
       if (bufferedRequestIds?.has(messageId) === true) continue
+      // Preserve shutdown-critical CALLs before their send timers and initiating promises are settled.
+      if (!discardBufferedRequests && cancelPendingSend?.(cancellationError) === true) continue
       chargingStation.requests.delete(messageId)
       errorCallback(cancellationError, false)
     }
@@ -413,6 +418,7 @@ export abstract class OCPPRequestService {
         let responseTimeout: NodeJS.Timeout | undefined
         let sendTimeout: NodeJS.Timeout | undefined
         let sendErrorHandled = false
+        let sendErrorBuffered = false
         const clearResponseTimeout = (): void => {
           if (responseTimeout != null) {
             clearTimeout(responseTimeout)
@@ -489,11 +495,14 @@ export abstract class OCPPRequestService {
         const shouldBufferOnError = (): boolean =>
           params.skipBufferingOnError === false ||
           (params.bufferOnErrorDuringStationStop === true && chargingStation.isStopping())
-        const handleSendError = (ocppError: OCPPError): void => {
-          if (sendErrorHandled) return
+        const handleSendError = (ocppError: OCPPError, forceBuffer = false): boolean => {
+          if (sendErrorHandled) return sendErrorBuffered
           sendErrorHandled = true
-          if (shouldBufferOnError()) {
+          clearResponseTimeout()
+          clearSendTimeout()
+          if (forceBuffer || shouldBufferOnError()) {
             chargingStation.bufferMessage(messageToSend)
+            sendErrorBuffered = true
             if (messageType === MessageType.CALL_MESSAGE) {
               this.setCachedRequest(
                 chargingStation,
@@ -508,6 +517,7 @@ export abstract class OCPPRequestService {
             chargingStation.requests.delete(messageId)
           }
           reject(ocppError)
+          return sendErrorBuffered
         }
 
         chargingStation.recordRequestStatistic(commandName, messageType)
@@ -519,13 +529,18 @@ export abstract class OCPPRequestService {
           commandName
         )
         if (messageType === MessageType.CALL_MESSAGE) {
+          const cancelPendingSend: PendingRequestCancellationCallback | undefined =
+            params.bufferOnErrorDuringStationStop === true
+              ? ocppError => handleSendError(ocppError, true)
+              : undefined
           this.setCachedRequest(
             chargingStation,
             messageId,
             messagePayload as JsonType,
             commandName,
             responseCallback,
-            errorCallback
+            errorCallback,
+            cancelPendingSend
           )
         }
         if (chargingStation.isWebSocketConnectionOpened()) {
@@ -555,6 +570,17 @@ export abstract class OCPPRequestService {
               return
             }
             if (error == null) {
+              sendErrorHandled = true
+              if (messageType === MessageType.CALL_MESSAGE) {
+                this.setCachedRequest(
+                  chargingStation,
+                  messageId,
+                  messagePayload as JsonType,
+                  commandName,
+                  responseCallback,
+                  errorCallback
+                )
+              }
               const notifyMessageSent = (): void => {
                 try {
                   params.onMessageSent?.()
@@ -635,13 +661,15 @@ export abstract class OCPPRequestService {
     messagePayload: JsonType,
     commandName: IncomingRequestCommand | RequestCommand,
     responseCallback: ResponseCallback,
-    errorCallback: ErrorCallback
+    errorCallback: ErrorCallback,
+    cancelPendingSend?: PendingRequestCancellationCallback
   ): void {
     chargingStation.requests.set(messageId, [
       responseCallback,
       errorCallback,
       commandName,
       messagePayload,
+      cancelPendingSend,
     ])
   }
 }

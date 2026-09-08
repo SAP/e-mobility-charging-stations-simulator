@@ -1563,7 +1563,11 @@ export class OCPP20ServiceUtils {
   public static resumeRestoredTransactionMeterValues (chargingStation: ChargingStation): void {
     const resumedAt = new Date()
     for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors()) {
-      if (connectorStatus.transactionRestored !== true || !hasOngoingTransaction(connectorStatus)) {
+      if (
+        connectorStatus.transactionRestored !== true ||
+        connectorStatus.transactionStarted !== true ||
+        !hasOngoingTransaction(connectorStatus)
+      ) {
         continue
       }
       const transactionId = connectorStatus.transactionId

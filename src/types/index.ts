@@ -391,6 +391,7 @@ export {
   MessageTrigger,
   type MeterValuesRequest,
   type OutgoingRequest,
+  type PendingRequestCancellationCallback,
   RequestCommand,
   type RequestParams,
   type ResponseCallback,

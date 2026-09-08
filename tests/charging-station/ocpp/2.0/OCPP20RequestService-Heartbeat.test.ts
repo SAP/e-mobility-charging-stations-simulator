@@ -315,6 +315,50 @@ await describe('G02 - Heartbeat', async () => {
     assert.strictEqual(context.station.requests.size, 0)
   })
 
+  await it('buffers an unacknowledged station-stop request exactly once before cancellation', async () => {
+    const context = createOCPP20RequestTestContext()
+    const wsConnection = context.station.wsConnection
+    assert.ok(wsConnection != null)
+    context.station.recordRequestStatistic = () => undefined
+    context.station.emitChargingStationEvent = () => undefined
+    context.station.isStopping = () => true
+    let sendCallback: ((error?: Error) => void) | undefined
+    let serializedMessage: string | undefined
+    mock.method(wsConnection, 'send', (data: unknown, callback?: (error?: Error) => void) => {
+      serializedMessage = String(data)
+      sendCallback = callback
+    })
+
+    const pendingRequest = context.requestService.requestHandler(
+      context.station,
+      OCPP20RequestCommand.HEARTBEAT,
+      {},
+      {
+        bufferOnErrorDuringStationStop: true,
+        responseTimeoutMs: 3_600_000,
+        skipBufferingOnError: true,
+        throwError: true,
+      }
+    )
+    const rejectedRequest = assert.rejects(pendingRequest, /cancelled during station stop/)
+    await flushMicrotasks()
+
+    context.requestService.cancelPendingRequests(
+      context.station,
+      'Request cancelled during station stop'
+    )
+    const bufferedStation = context.station as unknown as { messageQueue: string[] }
+    assert.deepStrictEqual(bufferedStation.messageQueue, [serializedMessage])
+    assert.strictEqual(context.station.requests.size, 1)
+
+    sendCallback?.(new Error('late send failure'))
+    sendCallback?.(new Error('duplicate late send failure'))
+    await rejectedRequest
+
+    assert.deepStrictEqual(bufferedStation.messageQueue, [serializedMessage])
+    assert.strictEqual(context.station.requests.size, 1)
+  })
+
   await it('does not resurrect a buffered request after cancellation', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     const context = createOCPP20RequestTestContext()

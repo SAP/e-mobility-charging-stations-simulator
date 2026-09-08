@@ -435,11 +435,16 @@ export class OCPP20ResponseService extends OCPPResponseService {
         }
         break
       case OCPP20TransactionEventEnumType.Started: {
+        const ownsRestoredQueuedStart =
+          connectorStatus?.transactionRestored === true &&
+          connectorStatus.transactionStarted !== true &&
+          connectorStatus.transactionEventQueue?.[0]?.request === requestPayload
         const ownsActiveStart =
           connectorStatus?.transactionId?.toString() ===
             requestPayload.transactionInfo.transactionId &&
           (connectorStatus.transactionStarting === true ||
-            connectorStatus.transactionPending === true)
+            connectorStatus.transactionPending === true ||
+            ownsRestoredQueuedStart)
         if (ownsActiveStart && !transactionEnding) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false

@@ -25,7 +25,10 @@ import {
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-import { startUpdatedMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceOperations.js'
+import {
+  flushQueuedTransactionMessages,
+  startUpdatedMeterValues,
+} from '../../../../src/charging-station/ocpp/OCPPServiceOperations.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -4821,7 +4824,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(connectorStatus.transactionRestored, undefined)
     })
 
-    await it('keeps a restored owning Started event recoverable after terminal replay failure', async () => {
+    await it('keeps a restored owning Started event recoverable after repeated terminal replay failures', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       let online = false
@@ -4851,6 +4854,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
       })
       stationHolder.station = station
+      station.started = true
+      station.isStopping = () => false
       station.isWebSocketConnectionOpened = () => online
       addConfigurationKey(
         station,
@@ -4870,6 +4875,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const connectorStatus = station.getConnectorStatus(connectorId)
       assert.ok(connectorStatus?.transactionEventQueue?.[0] != null)
       connectorStatus.transactionPending = false
+      connectorStatus.transactionStarted = false
       connectorStatus.transactionStarting = true
       connectorStatus.transactionRestored = true
       const queuedEvent = connectorStatus.transactionEventQueue[0]
@@ -4877,7 +4883,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const saveQueueSpy = mock.method(station, 'saveTransactionEventQueues')
       online = true
 
-      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+      await flushQueuedTransactionMessages(station)
       await new Promise(resolve => setImmediate(resolve))
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
@@ -4886,26 +4892,48 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.deepEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
       assert.strictEqual(connectorStatus.transactionStarting, true)
+      assert.strictEqual(connectorStatus.transactionRestored, true)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
       assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
 
-      rejectReplay = false
-      await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+      await flushQueuedTransactionMessages(station)
+      await new Promise(resolve => setImmediate(resolve))
 
-      assert.strictEqual(replayedRequests.length, 2)
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
+      assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
+      assert.strictEqual(connectorStatus.transactionEventQueue[0], queuedEvent)
+      assert.deepEqual(connectorStatus.transactionEventQueue[0].request, originalPayload)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(connectorStatus.transactionStarting, true)
+      assert.strictEqual(connectorStatus.transactionRestored, true)
+      assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+      assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+      assert.strictEqual(saveQueueSpy.mock.callCount(), 2)
+
+      rejectReplay = false
+      await flushQueuedTransactionMessages(station)
+
+      assert.strictEqual(replayedRequests.length, 3)
       assert.strictEqual(replayedRequests[0], replayedRequests[1])
+      assert.strictEqual(replayedRequests[1], replayedRequests[2])
       assert.deepEqual(connectorStatus.transactionEventQueue, [])
       assert.strictEqual(connectorStatus.transactionStarted, true)
       assert.strictEqual(connectorStatus.transactionStarting, false)
       assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(station, connectorId)
+      OCPP20ServiceUtils.stopEndedMeterValues(station, connectorId)
     })
 
-    await it('keeps an interrupted Started event queued without arming transaction timers', async () => {
+    await it('commits an interrupted Started on same-instance restart without arming timers early', async () => {
       let stopping = false
-      const requestHandlerMock = mock.fn((...args: unknown[]): Promise<never> => {
+      const requestHandlerMock = mock.fn((...args: unknown[]): Promise<unknown> => {
         const requestParams = args[3] as RequestParams | undefined
         requestParams?.onMessageSent?.()
         stopping = true
         station.started = false
+        OCPP20ServiceUtils.pauseTransactionMeterValues(station)
         return Promise.reject(new Error('shutdown interrupted Started'))
       })
       const { station } = createMockChargingStation({
@@ -4932,14 +4960,40 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       const connectorStatus = station.getConnectorStatus(1)
       assert.ok(connectorStatus != null)
       assert.strictEqual(result.accepted, true)
-      assert.strictEqual(connectorStatus.transactionEventQueue.length, 1)
-      assert.strictEqual(
-        connectorStatus.transactionEventQueue[0].request.eventType,
-        OCPP20TransactionEventEnumType.Started
-      )
+      const transactionEventQueue = connectorStatus.transactionEventQueue
+      assert.ok(transactionEventQueue != null)
+      assert.strictEqual(transactionEventQueue.length, 1)
+      const queuedRequest = transactionEventQueue[0].request
+      assert.strictEqual(queuedRequest.eventType, OCPP20TransactionEventEnumType.Started)
       assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionStarting, false)
+      assert.strictEqual(connectorStatus.transactionRestored, true)
       assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
       assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
+      const transactionId = connectorStatus.transactionId
+      const responseService = createTestableResponseService(new OCPP20ResponseService())
+      requestHandlerMock.mock.mockImplementation(async (...args: unknown[]): Promise<unknown> => {
+        if (args[1] !== OCPP20RequestCommand.TRANSACTION_EVENT) return {}
+        const request = args[2] as OCPP20TransactionEventRequest
+        const requestParams = args[3] as RequestParams | undefined
+        requestParams?.onMessageSent?.()
+        await responseService.handleResponseTransactionEvent(station, {}, request)
+        requestParams?.onResponseReceived?.()
+        return {}
+      })
+      stopping = false
+      station.started = true
+
+      await flushQueuedTransactionMessages(station)
+
+      assert.deepEqual(connectorStatus.transactionEventQueue, [])
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.transactionStarting, false)
+      assert.strictEqual(connectorStatus.transactionId, transactionId)
+      assert.strictEqual(connectorStatus.transactionRestored, undefined)
+      assert.strictEqual(queuedRequest.transactionInfo.transactionId, transactionId)
+      OCPP20ServiceUtils.stopUpdatedMeterValues(station, 1)
+      OCPP20ServiceUtils.stopEndedMeterValues(station, 1)
     })
 
     await it('queues Ended behind an interrupted Started and does not resurrect on replay', async () => {

@@ -4897,14 +4897,11 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
         ],
       })
 
-      assert.strictEqual(
-        response.setVariableResult[0].attributeStatus,
-        SetVariableStatusEnumType.Rejected
-      )
-      assert.strictEqual(
-        response.setVariableResult[0].attributeStatusInfo.reasonCode,
-        ReasonCodeEnumType.ValueTooHigh
-      )
+      const setVariableResult = response.setVariableResult[0]
+      assert.strictEqual(setVariableResult.attributeStatus, SetVariableStatusEnumType.Rejected)
+      const attributeStatusInfo = setVariableResult.attributeStatusInfo
+      assert.ok(attributeStatusInfo != null)
+      assert.strictEqual(attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValueTooHigh)
       assert.strictEqual(restartSpy.mock.callCount(), 0)
       assert.strictEqual(stopSpy.mock.callCount(), 0)
     })

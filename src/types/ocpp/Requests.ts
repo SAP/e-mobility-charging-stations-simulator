@@ -44,7 +44,8 @@ export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
   IncomingRequestCommand | RequestCommand,
-  JsonType
+  JsonType,
+  PendingRequestCancellationCallback?
 ]
 
 export type DataTransferRequest = OCPP16DataTransferRequest | OCPP20DataTransferRequest
@@ -62,6 +63,12 @@ export type HeartbeatRequest = OCPP16HeartbeatRequest | OCPP20HeartbeatRequest
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType]
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType]
+
+/**
+ * Cancels a request whose WebSocket send has not been acknowledged yet.
+ * Returns whether the serialized CALL was retained for replay.
+ */
+export type PendingRequestCancellationCallback = (ocppError: OCPPError) => boolean
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,

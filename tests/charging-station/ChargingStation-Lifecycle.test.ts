@@ -288,15 +288,16 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(cancelCalls, 1)
     })
 
-    await it('replays one immutable StopTransaction after its shutdown send fails', async t => {
+    await it('buffers an unacknowledged StopTransaction once when station stop times out', async t => {
+      t.mock.timers.enable({ apis: ['setTimeout'] })
       const responseService = new OCPP16ResponseService()
       const requestService = new OCPP16RequestService(responseService)
       const initialSendStarted = Promise.withResolvers<undefined>()
-      const replayComplete = Promise.withResolvers<undefined>()
       const wireMessages: string[] = []
       let initialSendCallback: ((error?: Error) => void) | undefined
       const result = createMockChargingStation({
         connectorsCount: 1,
+        ocppIncomingRequestService: { stop: () => undefined },
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: { beginEndMeterValues: false, ocppVersion: OCPPVersion.VERSION_16 },
       })
@@ -306,6 +307,8 @@ await describe('ChargingStation Lifecycle', async () => {
       activeStation.isStopping = () => ChargingStation.prototype.isStopping.call(activeStation)
       activeStation.recordRequestStatistic = () => undefined
       activeStation.ocppRequestService = requestService
+      const acceptedBootNotificationResponse = activeStation.bootNotificationResponse
+      assert.ok(acceptedBootNotificationResponse != null)
       setupConnectorWithTransaction(activeStation, 1, { transactionId: 102 })
       const connectorStatus = activeStation.getConnectorStatus(1)
       assert.ok(connectorStatus != null)
@@ -330,17 +333,33 @@ await describe('ChargingStation Lifecycle', async () => {
           }
         }
       )
-      ;(
-        activeStation as unknown as {
+      const performStop = (
+        ChargingStation.prototype as unknown as {
           performStop: (
             reason?: Parameters<ChargingStation['stop']>[0],
             stopTransactions?: boolean
           ) => Promise<void>
         }
-      ).performStop = async (reason, stopTransactions) => {
+      ).performStop
+      ;(
+        activeStation as unknown as {
+          performStop: typeof performStop
+        }
+      ).performStop = performStop
+      Object.assign(activeStation, {
+        configurationFileHash: 'timeout-regression',
+        saveConfiguration: () => undefined,
+        sharedLRUCache: { deleteChargingStationConfiguration: () => undefined },
+      })
+      ;(
+        activeStation as unknown as {
+          stopMessageSequence: (
+            reason?: Parameters<ChargingStation['stop']>[0],
+            stopTransactions?: boolean
+          ) => Promise<void>
+        }
+      ).stopMessageSequence = async (reason, stopTransactions) => {
         stopTransactions === true && (await stopRunningTransactions(activeStation, reason))
-        activeStation.ocppRequestService.cancelPendingRequests(activeStation)
-        activeStation.started = false
       }
       const transactionData = [
         {
@@ -356,18 +375,28 @@ await describe('ChargingStation Lifecycle', async () => {
         { idTag: 'SHUTDOWN-TAG', transactionData }
       )
       await initialSendStarted.promise
+      const rejectedCallerStop = assert.rejects(
+        callerStop,
+        /Charging station stopped while awaiting an OCPP response/
+      )
       const stationStop = ChargingStation.prototype.stop.call(activeStation, undefined, true)
       await Promise.resolve()
-      const sendFailure = new Error('connection dropped during shutdown')
-      initialSendCallback?.(sendFailure)
-      initialSendCallback?.(sendFailure)
+      t.mock.timers.tick(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT_MS)
+      for (let index = 0; index < 10; index++) {
+        await Promise.resolve()
+      }
 
-      await assert.rejects(callerStop, /WebSocket errored for buffered message/)
+      await rejectedCallerStop
       await stationStop
+      const stationInternals = activeStation as unknown as { messageQueue: string[] }
+      assert.strictEqual(stationInternals.messageQueue.length, 1)
+      assert.strictEqual(activeStation.requests.size, 1)
+      const sendFailure = new Error('late transport failure after shutdown cancellation')
+      initialSendCallback?.(sendFailure)
+      initialSendCallback?.(sendFailure)
       transactionData[0].sampledValue[0].value = 'mutated-after-rejection'
       transactionData.push({ sampledValue: [{ value: 'late' }], timestamp: new Date() })
 
-      const stationInternals = activeStation as unknown as { messageQueue: string[] }
       assert.strictEqual(stationInternals.messageQueue.length, 1)
       assert.strictEqual(activeStation.requests.size, 1)
       assert.strictEqual(wireMessages.length, 1)
@@ -406,10 +435,9 @@ await describe('ChargingStation Lifecycle', async () => {
       ;(
         activeStation as unknown as { sendMessageBuffer: typeof sendMessageBuffer }
       ).sendMessageBuffer = sendMessageBuffer
-      sendMessageBuffer.call(activeStation, () => {
-        replayComplete.resolve(undefined)
-      })
-      await replayComplete.promise
+      activeStation.bootNotificationResponse = acceptedBootNotificationResponse
+      activeStation.wsConnection = wsConnection
+      sendMessageBuffer.call(activeStation, () => undefined)
 
       assert.strictEqual(stationInternals.messageQueue.length, 0)
       assert.strictEqual(wireMessages.length, 2)
