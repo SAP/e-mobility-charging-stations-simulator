@@ -3,6 +3,9 @@
  * @description Unit tests for charging station start/stop/restart and delete operations
  */
 import assert from 'node:assert/strict'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ConnectorStatus } from '../../src/types/index.js'
@@ -784,6 +787,32 @@ await describe('ChargingStation Lifecycle', async () => {
       assert.strictEqual(station.getNumberOfConnectors(), 0)
       assert.strictEqual(station.getNumberOfEvses(), 0)
       assert.strictEqual(station.requests.size, 0)
+    })
+
+    await it('should honor a later configuration purge after delete cleanup completed', async () => {
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const directory = mkdtempSync(join(tmpdir(), 'charging-station-delete-'))
+      const configurationFile = join(directory, 'station.json')
+      writeFileSync(configurationFile, '{}', 'utf8')
+      ;(station as unknown as { configurationFile: string }).configurationFile = configurationFile
+      ;(station as unknown as { deleteAbortController: AbortController }).deleteAbortController =
+        new AbortController()
+      ;(
+        station as unknown as {
+          chargingStationWorkerBroadcastChannel: { unref: () => void }
+        }
+      ).chargingStationWorkerBroadcastChannel = { unref: () => undefined }
+
+      try {
+        await ChargingStation.prototype.delete.call(station, false)
+        assert.strictEqual(existsSync(configurationFile), true)
+
+        await ChargingStation.prototype.delete.call(station, true)
+        assert.strictEqual(existsSync(configurationFile), false)
+      } finally {
+        rmSync(directory, { force: true, recursive: true })
+      }
     })
 
     await it('should stop station before delete() if running', async () => {

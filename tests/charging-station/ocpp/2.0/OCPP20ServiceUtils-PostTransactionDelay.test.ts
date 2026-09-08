@@ -76,7 +76,7 @@ await describe('OCPP20ServiceUtilsPostTransactionDelay', async () => {
       assert.strictEqual(connectorStatus.transactionEnding, undefined)
       assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
       assert.strictEqual(connectorStatus.transactionEndedMeterValuesSetInterval, undefined)
-      assert.strictEqual(connectorStatus.locked, false)
+      assert.strictEqual(connectorStatus.locked, true)
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Finishing)
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
       assert.strictEqual(saveQueueSpy.mock.callCount(), 1)

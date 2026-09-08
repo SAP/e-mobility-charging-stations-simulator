@@ -3604,19 +3604,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
    * TransactionEventRequest.
    * @param chargingStation - Target charging station.
    * @param evse - Optional EVSE scope from the TriggerMessageRequest.
-   * @returns The `{ connectorId, transactionId }` pair of each active transaction within the trigger scope.
+   * @returns The connector, EVSE, and transaction identity of each active transaction within the trigger scope.
    * @see {@link hasEvseActiveTransactions} for the looser presence-only predicate used elsewhere.
    */
   private resolveActiveTransactionConnectors (
     chargingStation: ChargingStation,
     evse: OCPP20TriggerMessageRequest['evse']
-  ): { connectorId: number; transactionId: string }[] {
+  ): { connectorId: number; evseId: number; transactionId: string }[] {
     const targetEvseId = evse?.id != null && evse.id > 0 ? evse.id : undefined
-    const activeConnectors: { connectorId: number; transactionId: string }[] = []
+    const activeConnectors: { connectorId: number; evseId: number; transactionId: string }[] = []
     for (const { connectorId, connectorStatus, evseId } of chargingStation.iterateConnectors(
       true
     )) {
       if (
+        evseId != null &&
         (targetEvseId == null || evseId === targetEvseId) &&
         connectorStatus.transactionStarted === true &&
         !isTransactionEnding(connectorStatus) &&
@@ -3624,6 +3625,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       ) {
         activeConnectors.push({
           connectorId,
+          evseId,
           transactionId: connectorStatus.transactionId.toString(),
         })
       }
@@ -4536,7 +4538,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
       OCPP20ComponentName.SampledDataCtrlr,
       OCPP20RequiredVariableName.TxUpdatedMeasurands
     )
-    for (const { connectorId, transactionId } of this.resolveActiveTransactionConnectors(
+    for (const { connectorId, evseId, transactionId } of this.resolveActiveTransactionConnectors(
       chargingStation,
       evse
     )) {
@@ -4551,7 +4553,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
           transactionId,
           txUpdatedInterval,
           txUpdatedMeasurandsKey,
-          OCPP20ReadingContextEnumType.TRIGGER
+          OCPP20ReadingContextEnumType.TRIGGER,
+          false,
+          { connectorId, evseId }
         ) as OCPP20MeterValue
         // OCPP 2.0.1 `MeterValueType.sampledValue` cardinality is `1..*`, while
         // `TransactionEventRequest.meterValue` is `0..*`: when TxUpdatedMeasurands
@@ -4571,7 +4575,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService<OCP
         OCPP20TriggerReasonEnumType.Trigger,
         connectorId,
         transactionId,
-        eventPayload
+        { ...eventPayload, evseId }
       ).catch(errorHandler)
     }
   }

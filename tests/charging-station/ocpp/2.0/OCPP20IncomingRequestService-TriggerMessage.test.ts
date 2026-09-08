@@ -1069,6 +1069,34 @@ await describe('F06 - TriggerMessage', async () => {
       )
     })
 
+    await it('preserves EVSE identity when connector ids are local to each EVSE', async () => {
+      const evseStatus = mockStation.getEvseStatus(2)
+      const connectorStatus = evseStatus?.connectors.get(2)
+      assert.ok(evseStatus != null && connectorStatus != null)
+      evseStatus.connectors.delete(2)
+      evseStatus.connectors.set(1, connectorStatus)
+      evseStatus.MeterValues = [{ unit: 'Wh' }] as unknown as EvseStatus['MeterValues']
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = 'txn-evse-2-local-connector'
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 1234
+      addConfigurationKey(
+        mockStation,
+        buildConfigKey(
+          OCPP20ComponentName.SampledDataCtrlr,
+          OCPP20RequiredVariableName.TxUpdatedMeasurands
+        ),
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+        undefined,
+        { save: false }
+      )
+
+      const payloads = await emitTransactionEventTrigger({ id: 2 })
+
+      assert.strictEqual(payloads.length, 1)
+      assert.strictEqual(payloads[0].transactionInfo.transactionId, 'txn-evse-2-local-connector')
+      assert.deepEqual(payloads[0].evse, { connectorId: 1, id: 2 })
+    })
+
     await it('should still emit a TransactionEvent carrying chargingState when no TxUpdated sample is produced (F06.FR.10)', async () => {
       // Active transaction but no TxUpdatedMeasurands configured: buildMeterValue
       // yields no sampledValue, yet an Accepted trigger MUST still send the event
@@ -1093,10 +1121,8 @@ await describe('F06 - TriggerMessage', async () => {
 
     await it('should still emit a TransactionEvent when the meterValue build throws (F06.FR.10)', async () => {
       seedActiveTransaction(1, 'txn-evse-1')
-      // Force buildMeterValue to throw: it resolves the connector via
-      // getConnectorIdByTransactionId (which sendTransactionEvent does not use),
-      // so the build fails while the event send stays reachable.
-      mock.method(mockStation, 'getConnectorIdByTransactionId', () => {
+      // Force buildMeterValue to throw before sendTransactionEvent builds the event.
+      mock.method(mockStation, 'getCoherentSession', () => {
         throw new Error('meterValue build failure')
       })
 

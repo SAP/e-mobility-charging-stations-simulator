@@ -107,6 +107,9 @@ export abstract class OCPPRequestService {
     const bufferedRequestIds = discardBufferedRequests
       ? undefined
       : chargingStation.getBufferedRequestIds()
+    // Clear buffered frames before invoking callbacks. Their terminal cleanup
+    // can then remain idempotent without repeatedly scanning a shrinking queue.
+    if (discardBufferedRequests) chargingStation.clearMessageBuffer()
     for (const [messageId, [, errorCallback, , , cancelPendingSend]] of [
       ...chargingStation.requests.entries(),
     ]) {
@@ -116,7 +119,6 @@ export abstract class OCPPRequestService {
       chargingStation.requests.delete(messageId)
       errorCallback(cancellationError, false)
     }
-    if (discardBufferedRequests) chargingStation.clearMessageBuffer()
   }
 
   /**

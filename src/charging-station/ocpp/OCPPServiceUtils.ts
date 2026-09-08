@@ -1317,18 +1317,23 @@ const projectSnapshotDcOutputValue = (
   baselineAlreadyProjected: boolean
 ): number => {
   if (
-    baselineAlreadyProjected ||
     evseId == null ||
-    evseId === 0 ||
     chargingStation.stationInfo?.currentOutType !== CurrentType.DC ||
-    location !== MeterValueLocation.INLET ||
     (measurand !== MeterValueMeasurand.POWER_ACTIVE_IMPORT &&
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)
   ) {
     return outputValue
   }
   const configuredEfficiency = chargingStation.stationInfo.conversionEfficiency ?? 1
-  return outputValue / (configuredEfficiency > 0 ? configuredEfficiency : 1)
+  const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
+  if (evseId === 0) {
+    return baselineAlreadyProjected && location === MeterValueLocation.OUTLET
+      ? outputValue * conversionEfficiency
+      : outputValue
+  }
+  return !baselineAlreadyProjected && location === MeterValueLocation.INLET
+    ? outputValue / conversionEfficiency
+    : outputValue
 }
 
 const areSnapshotUnitsCompatible = (
@@ -1794,6 +1799,7 @@ const applyClockAlignedVoltageControls = (
  * @param measurandsKey - Configuration key for the sampled measurands list
  * @param context - Meter value reading context
  * @param debug - Enable debug logging for measurand validation
+ * @param identity - Optional direct connector/EVSE identity for EVSE-local connector ids
  * @returns Populated MeterValue object
  */
 export const buildMeterValue = (
@@ -1802,14 +1808,15 @@ export const buildMeterValue = (
   interval: number,
   measurandsKey?: ConfigurationKeyType,
   context?: MeterValueContext,
-  debug = false
+  debug = false,
+  identity?: Pick<ResolvedMeterValueIdentity, 'connectorId' | 'evseId'>
 ): MeterValue => {
   if (transactionId == null) {
     return buildEmptyMeterValue()
   }
   return buildIdentifiedMeterValue(
     chargingStation,
-    { transactionId },
+    { ...identity, transactionId },
     interval,
     measurandsKey,
     context,

@@ -2869,6 +2869,55 @@ await describe('J01 - Autonomous clock-aligned MeterValues (#2011 Category 2F)',
       assert.strictEqual(await collectStationPower(OCPP20LocationEnumType.Outlet), 1000)
     })
 
+    await it('projects a DC station Outlet template from the normalized Inlet aggregate', async () => {
+      const { mockStation, requestHandlerMock } = createAlignedStation({
+        connectorsCount: 1,
+        evsesCount: 1,
+      })
+      upsertConfigurationKey(mockStation, ALIGNED_DATA_INTERVAL_KEY, '60')
+      upsertConfigurationKey(mockStation, ALIGNED_ENABLED_KEY, 'true')
+      upsertConfigurationKey(mockStation, SEND_DURING_IDLE_KEY, 'false')
+      upsertConfigurationKey(
+        mockStation,
+        ALIGNED_MEASURANDS_KEY,
+        OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT
+      )
+      assert.ok(mockStation.stationInfo != null)
+      mockStation.stationInfo.conversionEfficiency = 0.8
+      mockStation.stationInfo.currentOutType = CurrentType.DC
+      const stationEvse = mockStation.getEvseStatus(0)
+      const sourceEvse = mockStation.getEvseStatus(1)
+      assert.ok(stationEvse != null && sourceEvse != null)
+      stationEvse.MeterValues = [
+        {
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          unit: 'W',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      sourceEvse.MeterValues = [
+        {
+          fluctuationPercent: 0,
+          location: OCPP20LocationEnumType.Outlet,
+          measurand: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
+          unit: 'W',
+          value: '800',
+        },
+      ] as unknown as EvseStatus['MeterValues']
+      setupConnectorWithTransaction(mockStation, 1, {
+        transactionId: 'tx-station-outlet-power',
+      })
+
+      await OCPP20ServiceUtils.emitClockAlignedMeterValues(mockStation)
+
+      const stationPayload = sentPayloads(requestHandlerMock).find(({ evseId }) => evseId === 0)
+      const powerSample = stationPayload?.meterValue
+        .flatMap(meterValue => meterValue.sampledValue)
+        .find(sample => sample.measurand === OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT)
+      assert.strictEqual(powerSample?.location, OCPP20LocationEnumType.Outlet)
+      assert.strictEqual(powerSample.value, 800)
+    })
+
     await it('converts DC Outlet interval energy once before station Inlet aggregation', async () => {
       const { mockStation, requestHandlerMock } = createAlignedStation({
         connectorsCount: 1,

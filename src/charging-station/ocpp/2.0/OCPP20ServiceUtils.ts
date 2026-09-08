@@ -629,11 +629,12 @@ export class OCPP20ServiceUtils {
       return false
     }
     const txId = connectorStatus.transactionId
+    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
     OCPP20ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId, evseId)
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
-    connectorStatus.locked = false
-    const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
+    // The connector remains occupied during the configured unplug delay.
+    connectorStatus.locked = postTransactionDelay > 0
     const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
       .lifecycleAbortSignal
     if (postTransactionDelay > 0) {
@@ -658,6 +659,7 @@ export class OCPP20ServiceUtils {
     ) {
       return true
     }
+    connectorStatus.locked = false
     if (!chargingStation.started || lifecycleAbortSignal?.aborted === true) {
       connectorStatus.status =
         chargingStation.isChargingStationAvailable() &&

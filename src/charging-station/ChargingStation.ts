@@ -483,9 +483,14 @@ export class ChargingStation extends EventEmitter {
     // Deletion is single-flight: concurrent callers join the same bounded stop
     // and cleanup instead of cancelling lifecycle requests started by the first.
     this.deletePromise ??= Promise.resolve().then(() =>
-      ChargingStation.prototype.performDelete.call(this, deleteConfiguration)
+      ChargingStation.prototype.performDelete.call(this)
     )
-    return this.deletePromise
+    return deleteConfiguration
+      ? this.deletePromise.then(() => {
+        ChargingStation.prototype.performDeleteConfiguration.call(this)
+        return undefined
+      })
+      : this.deletePromise
   }
 
   /**
@@ -2887,7 +2892,7 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
-  private async performDelete (deleteConfiguration: boolean): Promise<void> {
+  private async performDelete (): Promise<void> {
     const stopPromise = this.started || this.stopPromise != null ? this.stop() : undefined
     if (stopPromise != null) {
       try {
@@ -2930,20 +2935,22 @@ export class ChargingStation extends EventEmitter {
     this.evses.clear()
     this.clearMessageBuffer()
     this.templateFileWatcher?.unref()
-    if (deleteConfiguration && existsSync(this.configurationFile)) {
-      try {
-        rmSync(this.configurationFile, { force: true })
-      } catch (error) {
-        const e = ensureError(error)
-        logger.error(
-          `${this.logPrefix()} ${moduleName}.delete: Failed to delete configuration file ${this.configurationFile}:`,
-          e
-        )
-      }
-    }
     this.chargingStationWorkerBroadcastChannel.unref()
     this.emitChargingStationEvent(ChargingStationEvents.deleted)
     this.removeAllListeners()
+  }
+
+  private performDeleteConfiguration (): void {
+    if (!existsSync(this.configurationFile)) return
+    try {
+      rmSync(this.configurationFile, { force: true })
+    } catch (error) {
+      const e = ensureError(error)
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.delete: Failed to delete configuration file ${this.configurationFile}:`,
+        e
+      )
+    }
   }
 
   private async performStop (
