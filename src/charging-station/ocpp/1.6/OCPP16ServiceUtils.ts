@@ -1199,7 +1199,6 @@ export class OCPP16ServiceUtils {
           )
         }
 
-        OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, connectorId)
         publicKeyReserved =
           oncePerTransactionPublicKey &&
           connectorStatus.transactionId === rawTransactionId &&

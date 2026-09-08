@@ -73,8 +73,7 @@ const finalizeTransactionConnectorStatus = (
   chargingStation: ChargingStation,
   connectorStatus: ConnectorStatus | undefined,
   requestPayload: OCPP16StopTransactionRequest
-): string | undefined => {
-  const transactionIdTag = requestPayload.idTag ?? connectorStatus?.transactionIdTag
+): void => {
   // resetConnectorStatus deletes transactionId (Helpers.ts:508). Destroy the
   // coherent session using requestPayload.transactionId, which is always
   // present in the StopTransaction request and unaffected by the reset.
@@ -83,7 +82,6 @@ const finalizeTransactionConnectorStatus = (
   if (connectorStatus != null) {
     connectorStatus.locked = false
   }
-  return transactionIdTag
 }
 
 /**
@@ -551,6 +549,18 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     )
+    const transactionConnectorStatus =
+      transactionConnectorId != null
+        ? chargingStation.getConnectorStatus(transactionConnectorId)
+        : undefined
+    const transactionIdTag = requestPayload.idTag ?? transactionConnectorStatus?.transactionIdTag
+    if (payload.idTagInfo != null && transactionIdTag != null) {
+      OCPP16ServiceUtils.updateAuthorizationCache(
+        chargingStation,
+        transactionIdTag,
+        payload.idTagInfo
+      )
+    }
     if (transactionConnectorId == null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non-existent transaction with id ${requestPayload.transactionId.toString()}`
@@ -583,8 +593,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
     }
     const postTransactionDelay = chargingStation.stationInfo?.postTransactionDelay ?? 0
-    let transactionIdTag: string | undefined
-    const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
     if (chargingStation.isStopping()) {
       decrementPowerDivider(chargingStation)
       OCPP16ServiceUtils.stopUpdatedMeterValues(chargingStation, transactionConnectorId)
@@ -630,7 +638,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         }
       }
-      transactionIdTag = finalizeTransactionConnectorStatus(
+      finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,
         requestPayload
@@ -653,7 +661,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     } else {
       await sendPostTransactionStatus(chargingStation, transactionConnectorId)
       decrementPowerDivider(chargingStation)
-      transactionIdTag = finalizeTransactionConnectorStatus(
+      finalizeTransactionConnectorStatus(
         chargingStation,
         transactionConnectorStatus,
         requestPayload
@@ -672,13 +680,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.info(logMsg)
     } else {
       logger.warn(logMsg)
-    }
-    if (payload.idTagInfo != null && transactionIdTag != null) {
-      OCPP16ServiceUtils.updateAuthorizationCache(
-        chargingStation,
-        transactionIdTag,
-        payload.idTagInfo
-      )
     }
   }
 

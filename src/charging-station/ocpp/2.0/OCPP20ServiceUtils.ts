@@ -293,6 +293,43 @@ const normalizePhysicalMeterValueForStationAggregation = (
   }
 }
 
+// An EVSE template describes one physical register even when its value is copied
+// into multiple connector-scoped TransactionEvent payloads.
+const filterDuplicateEvseRegisterSamples = (
+  meterValue: OCPP20MeterValue,
+  seenRegisterSamples: Set<string>
+): OCPP20MeterValue => ({
+  ...meterValue,
+  sampledValue: meterValue.sampledValue.filter(sampledValue => {
+    if (
+      sampledValue.measurand?.startsWith('Energy.') !== true ||
+      !sampledValue.measurand.endsWith('.Register')
+    ) {
+      return true
+    }
+    const unitFamily = getClockAlignedAdditiveUnitFamily(
+      sampledValue.measurand,
+      sampledValue.unitOfMeasure?.unit
+    )
+    const normalizedSample =
+      unitFamily != null
+        ? normalizeClockAlignedAdditiveSample(sampledValue, unitFamily)
+        : sampledValue
+    const identity = JSON.stringify([
+      normalizedSample.measurand,
+      normalizedSample.context,
+      normalizedSample.location,
+      normalizedSample.phase,
+      canonicalizeCustomData(normalizedSample.customData),
+      normalizedSample.unitOfMeasure?.unit,
+      normalizedSample.unitOfMeasure?.multiplier,
+    ])
+    if (seenRegisterSamples.has(identity)) return false
+    seenRegisterSamples.add(identity)
+    return true
+  }),
+})
+
 const filterUnconvertibleDcStationSamples = (
   sampledValues: OCPP20SampledValue[],
   physicalBaseline: readonly OCPP20SampledValue[],
@@ -813,6 +850,8 @@ export class OCPP20ServiceUtils {
       const meterValues: OCPP20MeterValue[] = []
       const sampledValueTemplates: SampledValueTemplate[] = []
       let idleMeterConnectorId: number | undefined
+      const physicalEvseRegisterSamples =
+        usesEvseMeterTemplate && evseInTransaction ? new Set<string>() : undefined
       const connectors = [...evseStatus.connectors.entries()].sort(
         ([leftConnectorId], [rightConnectorId]) => leftConnectorId - rightConnectorId
       )
@@ -892,19 +931,27 @@ export class OCPP20ServiceUtils {
           ) {
             sampledValueTemplates.push(...connectorStatus.MeterValues)
           }
-          if (evseId !== 0) {
+          if (evseId !== 0 && !suppressEvseEmission) {
             const configuredEfficiency =
               chargingStation.stationInfo?.currentOutType === CurrentType.DC
                 ? (chargingStation.stationInfo.conversionEfficiency ?? 1)
                 : 1
             const conversionEfficiency = configuredEfficiency > 0 ? configuredEfficiency : 1
-            physicalMeterValues.push(
-              normalizePhysicalMeterValueForStationAggregation(
-                meterValue,
-                chargingStation.stationInfo?.currentOutType,
-                conversionEfficiency
-              )
+            const physicalMeterValue = normalizePhysicalMeterValueForStationAggregation(
+              meterValue,
+              chargingStation.stationInfo?.currentOutType,
+              conversionEfficiency
             )
+            const stationMeterValue =
+              physicalEvseRegisterSamples != null
+                ? filterDuplicateEvseRegisterSamples(
+                  physicalMeterValue,
+                  physicalEvseRegisterSamples
+                )
+                : physicalMeterValue
+            if (isNotEmptyArray(stationMeterValue.sampledValue)) {
+              physicalMeterValues.push(stationMeterValue)
+            }
           }
           if (transactionId != null) {
             if (!suppressEvseEmission) {
@@ -1520,14 +1567,18 @@ export class OCPP20ServiceUtils {
       }
       const transactionId = connectorStatus.transactionId
       if (transactionId == null) continue
+      const persistedEnergy = connectorStatus.transactionEnergyActiveImportRegisterValue
+      const persistedEnergyWh =
+        typeof persistedEnergy === 'number' &&
+        Number.isFinite(persistedEnergy) &&
+        persistedEnergy >= 0
+          ? persistedEnergy
+          : 0
+      connectorStatus.transactionEnergyActiveImportRegisterValue = persistedEnergyWh
       const restoredSession =
         chargingStation.getCoherentSession(transactionId) ??
         chargingStation.createCoherentSession(transactionId, connectorId)
       if (restoredSession != null) {
-        const persistedEnergyWh = Math.max(
-          0,
-          connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
-        )
         restoredSession.socPercent = Math.min(
           Constants.SOC_MAXIMUM_PERCENT,
           Math.max(

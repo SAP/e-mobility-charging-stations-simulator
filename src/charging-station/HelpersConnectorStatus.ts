@@ -18,6 +18,7 @@ import {
   ChargingProfilePurposeType,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  OCPP20TransactionEventEnumType,
 } from '../types/index.js'
 import {
   clone,
@@ -300,8 +301,15 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
   } else {
     delete connectorStatus.transactionStart
   }
-  connectorStatus.transactionRestored =
-    connectorStatus.transactionStarted === true && connectorStatus.transactionId != null
+  const restoredTransactionEnergy = connectorStatus.transactionEnergyActiveImportRegisterValue
+  if (
+    restoredTransactionEnergy != null &&
+    (typeof restoredTransactionEnergy !== 'number' ||
+      !Number.isFinite(restoredTransactionEnergy) ||
+      restoredTransactionEnergy < 0)
+  ) {
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+  }
   const transactionEnergyLastUpdatedAt = convertPersistedDate(
     connectorStatus.transactionEnergyActiveImportRegisterLastUpdatedAt
   )
@@ -370,6 +378,18 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
       connectorStatus.publicKeySentInTransaction = false
     }
   }
+  const transactionId = connectorStatus.transactionId?.toString()
+  const ownsQueuedStartedEvent =
+    connectorStatus.transactionStarted !== true &&
+    transactionId != null &&
+    connectorStatus.transactionEventQueue?.some(
+      queuedEvent =>
+        queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Started &&
+        queuedEvent.request.transactionInfo.transactionId === transactionId
+    ) === true
+  if (ownsQueuedStartedEvent) connectorStatus.transactionStarting = true
+  connectorStatus.transactionRestored =
+    transactionId != null && (connectorStatus.transactionStarted === true || ownsQueuedStartedEvent)
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
       .filter(

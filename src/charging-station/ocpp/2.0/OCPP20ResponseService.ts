@@ -443,6 +443,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         if (ownsActiveStart && !transactionEnding) {
           connectorStatus.transactionStarted = true
           connectorStatus.transactionPending = false
+          connectorStatus.transactionStarting = false
           connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
           connectorStatus.transactionStart ??= new Date()
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0

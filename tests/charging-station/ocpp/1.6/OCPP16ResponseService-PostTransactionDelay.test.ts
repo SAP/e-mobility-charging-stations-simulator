@@ -313,8 +313,16 @@ await describe('OCPP16ResponseService — PostTransactionDelay', async () => {
       configurable: true,
       value: lifecycleAbortController.signal,
     })
-    setupConnectorWithTransaction(station, 1, { transactionId: 500 })
+    setupConnectorWithTransaction(station, 1, {
+      idTag: 'SHUTDOWN-TAG',
+      transactionId: 500,
+    })
     const emitSpy = mock.method(station, 'emitChargingStationEvent')
+    const updateAuthMock = mock.method(
+      OCPP16ServiceUtils,
+      'updateAuthorizationCache',
+      () => undefined
+    )
     ;(station as unknown as { stopping: boolean }).stopping = true
     const requestPayload: OCPP16StopTransactionRequest = {
       meterStop: 5000,
@@ -369,6 +377,9 @@ await describe('OCPP16ResponseService — PostTransactionDelay', async () => {
     assert.strictEqual(connectorStatus.transactionIdTag, undefined)
     assert.strictEqual(connectorStatus.locked, false)
     assert.strictEqual(connectorStatus.status, OCPP16ChargePointStatus.Available)
+    assert.strictEqual(updateAuthMock.mock.callCount(), 1)
+    assert.strictEqual(updateAuthMock.mock.calls[0].arguments[1], 'SHUTDOWN-TAG')
+    assert.deepStrictEqual(updateAuthMock.mock.calls[0].arguments[2], responsePayload.idTagInfo)
     const statusCalls = requestCalls.filter(
       call => call[1] === OCPP16RequestCommand.STATUS_NOTIFICATION
     )

@@ -1103,6 +1103,60 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(stopAttempts, 2)
     })
 
+    await it('should keep one recoverable stop intent and the active meter timer after send failure', async () => {
+      const sendFailure = new Error('StopTransaction send failure')
+      let stopAttempts = 0
+      const requestHandler = mock.fn((...args: unknown[]): Promise<unknown> => {
+        if (args[1] === OCPP16RequestCommand.STOP_TRANSACTION) {
+          stopAttempts++
+          if (stopAttempts === 1) return Promise.reject(sendFailure)
+          return Promise.resolve({
+            idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED },
+          })
+        }
+        return Promise.resolve({})
+      })
+      const { station } = createMockChargingStation({
+        ocppRequestService: { requestHandler },
+        ocppVersion: OCPPVersion.VERSION_16,
+      })
+      setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+      const connectorStatus = station.getConnectorStatus(1)
+      assert.ok(connectorStatus != null)
+      connectorStatus.status = OCPP16ChargePointStatus.Charging
+      const meterValuesTimer = setInterval(() => undefined, 60_000)
+      connectorStatus.transactionUpdatedMeterValuesSetInterval = meterValuesTimer
+
+      try {
+        const firstStop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+        const joinedStop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+
+        assert.strictEqual(joinedStop, firstStop)
+        const failedStops = await Promise.allSettled([firstStop, joinedStop])
+        assert.ok(
+          failedStops.every(result => result.status === 'rejected' && result.reason === sendFailure)
+        )
+        assert.strictEqual(stopAttempts, 1)
+        assert.strictEqual(
+          connectorStatus.transactionUpdatedMeterValuesSetInterval,
+          meterValuesTimer
+        )
+        assert.strictEqual(connectorStatus.transactionStarted, true)
+        assert.strictEqual(connectorStatus.transactionId, 100)
+
+        await OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
+
+        assert.strictEqual(stopAttempts, 2)
+        assert.strictEqual(
+          connectorStatus.transactionUpdatedMeterValuesSetInterval,
+          meterValuesTimer
+        )
+      } finally {
+        clearInterval(meterValuesTimer)
+        delete connectorStatus.transactionUpdatedMeterValuesSetInterval
+      }
+    })
+
     await it('should retry a key-bearing stop after Finishing fails before dispatch', async () => {
       const finishingFailure = new Error('Finishing failed before StopTransaction dispatch')
       let finishingAttempts = 0

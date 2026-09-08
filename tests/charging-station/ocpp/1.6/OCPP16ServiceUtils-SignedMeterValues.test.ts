@@ -561,12 +561,17 @@ await describe('OCPP 1.6 — Signed MeterValues', async () => {
         )
 
         OCPP16ServiceUtils.startUpdatedMeterValues(station, 1, 60)
+        const meterValuesTimer = connectorStatus.transactionUpdatedMeterValuesSetInterval
+        assert.ok(meterValuesTimer != null)
         const stop = OCPP16ServiceUtils.stopTransactionOnConnector(station, 1)
         await statusRequestStarted.promise
         t.mock.timers.tick(minutesToMilliseconds(1))
 
         assert.strictEqual(meterValueRequests, 0)
-        assert.strictEqual(connectorStatus.transactionUpdatedMeterValuesSetInterval, undefined)
+        assert.strictEqual(
+          connectorStatus.transactionUpdatedMeterValuesSetInterval,
+          meterValuesTimer
+        )
         statusResponse.resolve({})
         await stop
       })

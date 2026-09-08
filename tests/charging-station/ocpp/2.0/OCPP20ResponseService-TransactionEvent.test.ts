@@ -8,13 +8,18 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { QueuedTransactionEvent } from '../../../../src/types/ConnectorStatus.js'
+import type {
+  ConnectorStatus,
+  QueuedTransactionEvent,
+} from '../../../../src/types/ConnectorStatus.js'
 import type {
   OCPP20TransactionEventRequest,
   OCPP20TransactionEventResponse,
+  RequestParams,
   UUIDv4,
 } from '../../../../src/types/index.js'
 
+import { prepareConnectorStatus } from '../../../../src/charging-station/HelpersConnectorStatus.js'
 import {
   createTestableResponseService,
   type TestableOCPP20ResponseService,
@@ -184,6 +189,55 @@ await describe('D01 - TransactionEvent Response', async () => {
     assert.strictEqual(requestHandler.mock.callCount(), 0)
     assert.strictEqual(startUpdated.mock.callCount(), 0)
     assert.strictEqual(startEnded.mock.callCount(), 0)
+  })
+
+  await it('commits a persisted queued Started event after its accepted replay', async () => {
+    const connectorStatus = station.getConnectorStatus(1, 1)
+    const evseStatus = station.getEvseStatus(1)
+    assert.ok(connectorStatus != null)
+    assert.ok(evseStatus != null)
+    connectorStatus.transactionStarted = false
+    connectorStatus.transactionPending = false
+    connectorStatus.transactionStarting = true
+    connectorStatus.locked = false
+    const startedRequest = buildTransactionEventRequest(
+      TEST_TRANSACTION_UUID,
+      OCPP20TransactionEventEnumType.Started
+    )
+    startedRequest.seqNo = 0
+    delete startedRequest.meterValue
+    connectorStatus.transactionEventQueue = [
+      { request: startedRequest, seqNo: 0, timestamp: startedRequest.timestamp },
+    ]
+    const persistedConnectorStatus = JSON.parse(JSON.stringify(connectorStatus)) as ConnectorStatus
+    const restoredConnectorStatus = prepareConnectorStatus(persistedConnectorStatus)
+    evseStatus.connectors.set(1, restoredConnectorStatus)
+    assert.strictEqual(restoredConnectorStatus.transactionEventQueue?.length, 1)
+    assert.strictEqual(restoredConnectorStatus.transactionStarting, true)
+    assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+    station.isWebSocketConnectionOpened = () => true
+    station.inAcceptedState = () => true
+    mock.method(station.ocppRequestService, 'requestHandler', (async (...args: unknown[]) => {
+      const request = args[2] as OCPP20TransactionEventRequest
+      const requestParams = args[3] as RequestParams
+      requestParams.onMessageSent?.()
+      await testable.handleResponseTransactionEvent(
+        station,
+        { idTokenInfo: { status: OCPP20AuthorizationStatusEnumType.Accepted } },
+        request
+      )
+      requestParams.onResponseReceived?.()
+      return {}
+    }) as typeof station.ocppRequestService.requestHandler)
+
+    await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, 1, 1)
+
+    assert.strictEqual(restoredConnectorStatus.transactionStarted, true)
+    assert.strictEqual(restoredConnectorStatus.transactionPending, false)
+    assert.strictEqual(restoredConnectorStatus.transactionStarting, false)
+    assert.strictEqual(restoredConnectorStatus.locked, true)
+    assert.strictEqual(restoredConnectorStatus.transactionRestored, true)
+    assert.deepEqual(restoredConnectorStatus.transactionEventQueue, [])
   })
 
   await it('should not resurrect a cleared transaction from a late Started response', async () => {
