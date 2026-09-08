@@ -55,6 +55,7 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import {
+  flushMicrotasks,
   setupConnectorWithTransaction,
   standardCleanup,
   withMockTimers,
@@ -1883,7 +1884,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(connectorStatus.locked, false)
       })
 
-      await it('persists replayed Ended cleanup only after shifting the acknowledged head', async () => {
+      await it('keeps every persisted replayed Ended snapshot consistent during post-transaction delay', async t => {
         const connectorId = 1
         const transactionId = generateUUID()
         let online = false
@@ -1914,6 +1915,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           stationInfo: {
             ocppStrictCompliance: true,
             ocppVersion: OCPPVersion.VERSION_201,
+            postTransactionDelay: 3,
           },
           websocketPingInterval: Constants.DEFAULT_WS_PING_INTERVAL_SECONDS,
         })
@@ -1922,6 +1924,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorStatus = station.getConnectorStatus(connectorId)
         assert.ok(connectorStatus != null)
         connectorStatus.locked = true
+        connectorStatus.status = ConnectorStatusEnum.Occupied
 
         await OCPP20ServiceUtils.sendTransactionEvent(
           station,
@@ -1942,17 +1945,39 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         })
         online = true
 
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+        await withMockTimers(t, ['setTimeout'], async () => {
+          const replay = OCPP20ServiceUtils.sendQueuedTransactionEvents(station, connectorId)
+          for (let index = 0; index < 10; index++) await flushMicrotasks()
 
-        assert.strictEqual(saveQueueSpy.mock.callCount(), 1)
-        assert.strictEqual(
-          snapshots.some(
-            snapshot =>
-              snapshot.transactionStarted !== true &&
-              snapshot.eventTypes.includes(OCPP20TransactionEventEnumType.Ended)
-          ),
-          false
-        )
+          assert.deepEqual(connectorStatus.transactionEventQueue, [])
+          assert.strictEqual(connectorStatus.transactionStarted, true)
+          assert.strictEqual(connectorStatus.transactionId, transactionId)
+          station.saveTransactionEventQueues()
+
+          t.mock.timers.tick(3000)
+          for (let index = 0; index < 10; index++) await flushMicrotasks()
+          await replay
+        })
+
+        assert.strictEqual(saveQueueSpy.mock.callCount(), 3)
+        assert.ok(snapshots.length > 0)
+        for (const snapshot of snapshots) {
+          assert.strictEqual(
+            snapshot.eventTypes.includes(OCPP20TransactionEventEnumType.Ended),
+            false
+          )
+          assert.notStrictEqual(
+            snapshot.transactionStarted === true && snapshot.transactionId == null,
+            true
+          )
+        }
+        assert.deepEqual(snapshots[0], {
+          eventTypes: [],
+          status: ConnectorStatusEnum.Occupied,
+          transactionId,
+          transactionStarted: true,
+        })
+        assert.deepEqual(snapshots[1], snapshots[0])
         assert.deepEqual(snapshots.at(-1), {
           eventTypes: [],
           status: ConnectorStatusEnum.Available,

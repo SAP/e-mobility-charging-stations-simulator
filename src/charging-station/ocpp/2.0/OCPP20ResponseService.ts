@@ -409,19 +409,19 @@ export class OCPP20ResponseService extends OCPPResponseService {
       hasQueuedEndedTransactionEvent(connectorStatus, requestPayload.transactionInfo.transactionId)
     const transactionEnding =
       connectorStatus != null && (isTransactionEnding(connectorStatus) || endedTransactionQueued)
-    const ownsReplayedQueueHead =
-      connectorStatus?.transactionEventQueue?.[0]?.request === requestPayload
+    const replayedTransactionEvent =
+      OCPP20ServiceUtils.isReplayedTransactionEventRequest(requestPayload)
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
+        if (replayedTransactionEvent) break
         if (connectorId != null && connectorStatus != null) {
           await OCPP20ServiceUtils.cleanupEndedTransaction(
             chargingStation,
             connectorId,
             connectorStatus,
             evseId,
-            requestPayload.transactionInfo.transactionId,
-            { persistTransactionEventQueue: !ownsReplayedQueueHead }
+            requestPayload.transactionInfo.transactionId
           )
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`

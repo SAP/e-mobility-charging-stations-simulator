@@ -521,6 +521,9 @@ export class OCPP20ServiceUtils {
     Map<string, number>
   >()
 
+  private static readonly replayedTransactionEventRequests =
+    new WeakSet<OCPP20TransactionEventRequest>()
+
   private static readonly retryableTransactionEventQueueFailures = new WeakSet<ConnectorStatus>()
   private static readonly saturatedTransactionEventQueues = new WeakSet<ConnectorStatus>()
   private static readonly transactionEventQueueDrains = new WeakSet<ConnectorStatus>()
@@ -602,16 +605,13 @@ export class OCPP20ServiceUtils {
    * @param connectorStatus - Connector status to reset
    * @param evseId - Optional EVSE identifier for EVSE-local connector ids
    * @param expectedTransactionId - Transaction that is allowed to own the connector cleanup
-   * @param options - Cleanup persistence behavior
-   * @param options.persistTransactionEventQueue - Whether to persist the queue immediately
    */
   public static async cleanupEndedTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
     connectorStatus: ConnectorStatus,
     evseId?: number,
-    expectedTransactionId?: string,
-    options?: { persistTransactionEventQueue?: boolean }
+    expectedTransactionId?: string
   ): Promise<void> {
     if (
       expectedTransactionId != null &&
@@ -635,7 +635,9 @@ export class OCPP20ServiceUtils {
     const lifecycleAbortSignal = (chargingStation as { lifecycleAbortSignal?: AbortSignal })
       .lifecycleAbortSignal
     if (postTransactionDelay > 0) {
-      delete connectorStatus.transactionId
+      // Keep the connector transaction state complete until the delayed cleanup.
+      // Persistence can run concurrently, and transactionStarted without its id
+      // is not a restart-safe snapshot.
       // Destroy the coherent session BEFORE sleeping so an intervening
       // stop cannot leak it. `destroyCoherentSession` is idempotent so the
       // post-sleep call remains valid.
@@ -649,15 +651,13 @@ export class OCPP20ServiceUtils {
     resetConnectorStatus(connectorStatus)
     chargingStation.destroyCoherentSession(txId)
     connectorStatus.locked = false
-    if (options?.persistTransactionEventQueue !== false) {
-      chargingStation.saveTransactionEventQueues()
-    }
     if (!chargingStation.started || lifecycleAbortSignal?.aborted === true) {
       connectorStatus.status =
         chargingStation.isChargingStationAvailable() &&
         connectorStatus.availability === AvailabilityType.Operative
           ? OCPP20ConnectorStatusEnumType.Available
           : OCPP20ConnectorStatusEnumType.Unavailable
+      chargingStation.saveTransactionEventQueues()
       return
     }
     sendPostTransactionStatus(chargingStation, connectorId, evseId, {
@@ -674,6 +674,7 @@ export class OCPP20ServiceUtils {
         error
       )
     })
+    chargingStation.saveTransactionEventQueues()
   }
 
   /**
@@ -1248,6 +1249,15 @@ export class OCPP20ServiceUtils {
       false,
       evseId
     )
+  }
+
+  /**
+   * Check whether the queue replay owner is currently delivering a request.
+   * @param request - TransactionEvent request handled by the response service
+   * @returns Whether queue replay owns response cleanup for this request
+   */
+  public static isReplayedTransactionEventRequest (request: OCPP20TransactionEventRequest): boolean {
+    return OCPP20ServiceUtils.replayedTransactionEventRequests.has(request)
   }
 
   /**
@@ -2360,34 +2370,40 @@ export class OCPP20ServiceUtils {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending queued event with seqNo=${queuedEvent.seqNo.toString()}`
         )
-        await OCPP20ServiceUtils.sendBuiltTransactionEvent(
-          chargingStation,
-          queuedEvent.request,
-          {
-            onMessageSent: () => {
-              responseState.sent = true
-            },
-            onResponseReceived: () => {
-              responseState.received = true
-            },
-            responseTimeoutMs,
-            skipBufferingOnError: true,
-          },
-          lifecycleAbortSignal
-        )
-        if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-          await OCPP20ServiceUtils.cleanupEndedTransaction(
+        OCPP20ServiceUtils.replayedTransactionEventRequests.add(queuedEvent.request)
+        try {
+          await OCPP20ServiceUtils.sendBuiltTransactionEvent(
             chargingStation,
-            connectorId,
-            connectorStatus,
-            evseId,
-            queuedEvent.request.transactionInfo.transactionId,
-            { persistTransactionEventQueue: queue[0] !== queuedEvent }
+            queuedEvent.request,
+            {
+              onMessageSent: () => {
+                responseState.sent = true
+              },
+              onResponseReceived: () => {
+                responseState.received = true
+              },
+              responseTimeoutMs,
+              skipBufferingOnError: true,
+            },
+            lifecycleAbortSignal
           )
+        } finally {
+          OCPP20ServiceUtils.replayedTransactionEventRequests.delete(queuedEvent.request)
         }
         if (queue[0] === queuedEvent) {
           shiftBoundedTransactionEvent(connectorStatus)
           queueChanged = true
+          if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
+            chargingStation.saveTransactionEventQueues()
+            queueChanged = false
+            await OCPP20ServiceUtils.cleanupEndedTransaction(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              evseId,
+              queuedEvent.request.transactionInfo.transactionId
+            )
+          }
         }
       } catch (error) {
         if (
@@ -2453,19 +2469,20 @@ export class OCPP20ServiceUtils {
             `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Discarding queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()} ${responseState.received ? 'after its response handler failed' : 'after configured delivery attempts'}:`,
             error
           )
-          if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
-            await OCPP20ServiceUtils.cleanupEndedTransaction(
-              chargingStation,
-              connectorId,
-              connectorStatus,
-              evseId,
-              queuedEvent.request.transactionInfo.transactionId,
-              { persistTransactionEventQueue: queue[0] !== queuedEvent }
-            )
-          }
           if (queue[0] === queuedEvent) {
             shiftBoundedTransactionEvent(connectorStatus)
             queueChanged = true
+            if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
+              chargingStation.saveTransactionEventQueues()
+              queueChanged = false
+              await OCPP20ServiceUtils.cleanupEndedTransaction(
+                chargingStation,
+                connectorId,
+                connectorStatus,
+                evseId,
+                queuedEvent.request.transactionInfo.transactionId
+              )
+            }
           }
           continue
         }
